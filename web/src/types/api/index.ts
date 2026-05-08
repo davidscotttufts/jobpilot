@@ -4,3 +4,4 @@ export * from "./credential";
 export * from "./resume";
 export * from "./application";
 export * from "./run";
+export * from "./batch";

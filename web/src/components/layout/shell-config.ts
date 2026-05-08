@@ -3,6 +3,7 @@ import {
   BusinessCenter,
   Dashboard,
   Person,
+  PlaylistAddCheck,
   Storage,
   WorkHistory,
   type SvgIconComponent,
@@ -24,6 +25,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/", icon: Dashboard },
       { label: "Applications", href: "/applications", icon: AssignmentTurnedIn },
+      { label: "Batch queue", href: "/batch", icon: PlaylistAddCheck },
       { label: "Runs", href: "/runs", icon: WorkHistory },
     ],
   },

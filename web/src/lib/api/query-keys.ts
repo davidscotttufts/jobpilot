@@ -39,4 +39,10 @@ export const queryKeys = {
     detail: (runId: string) => [...queryKeys.runs.all, "detail", runId] as const,
     stats: () => [...queryKeys.runs.all, "stats"] as const,
   },
+
+  batch: {
+    all: ["batch"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.batch.all, "list", filters] as const,
+  },
 } as const;
