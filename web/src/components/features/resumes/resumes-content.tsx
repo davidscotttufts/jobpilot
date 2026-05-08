@@ -3,15 +3,15 @@
 import { useRef, useState, type ReactElement } from "react";
 import { CloudUpload, Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Box, Button, IconButton, Stack, TextField, Typography } from "@mui/material";
-import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { ConfirmDialog } from "@/components/ui/feedback";
+import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { ProfileResponse, ResumeDto } from "@/types/api";
 
-export function ResumesTab(): ReactElement {
+export function ResumesContent(): ReactElement {
   const [pendingDelete, setPendingDelete] = useState<ResumeDto | null>(null);
   const [label, setLabel] = useState("default");
   const fileInputRef = useRef<HTMLInputElement | null>(null);

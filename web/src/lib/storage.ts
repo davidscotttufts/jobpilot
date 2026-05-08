@@ -30,5 +30,5 @@ export function generateResumeFilename(originalName: string): string {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 60) || "resume";
-  return `${Date.now()}-${slug}${ext}`;
+  return `${slug}-${Date.now()}${ext}`;
 }

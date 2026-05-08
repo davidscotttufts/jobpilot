@@ -8,7 +8,7 @@ import { theme } from "@/theme";
 export function ThemeProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <AppRouterCacheProvider options={{ key: "mui", enableCssLayer: true }}>
+    <AppRouterCacheProvider options={{ key: "mui" }}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
         {children}

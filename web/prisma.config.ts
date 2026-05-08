@@ -1,5 +1,4 @@
 import path from "node:path";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { defineConfig } from "prisma/config";
 
 const dbPath = path.resolve(__dirname, "prisma", "dev.db");
@@ -11,5 +10,4 @@ export default defineConfig({
   migrations: {
     seed: "bun run prisma/seed/default-boards.ts",
   },
-  adapter: async () => new PrismaLibSql({ url: dbUrl }),
 });

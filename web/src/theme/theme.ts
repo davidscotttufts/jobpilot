@@ -25,7 +25,7 @@ export const theme = createTheme({
     accent,
     line,
   },
-  shape: { borderRadius: radii.md },
+  shape: { borderRadius: 1 },
   typography,
   gradients,
   motion,

@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 8000",
-    "build": "next build",
-    "start": "next start -p 8000",
-    "lint": "next lint",
-    "typegen": "next typegen",
+    "dev": "bun --bun next dev -p 8000",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start -p 8000",
+    "lint": "bun --bun next lint",
+    "typegen": "bun --bun next typegen",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "db:generate": "prisma generate --schema ./prisma/schema",
     "db:migrate": "prisma migrate dev --schema ./prisma/schema",
+    "db:migrate:apply": "prisma migrate deploy --schema ./prisma/schema",
     "db:studio": "prisma studio --schema ./prisma/schema",
     "db:seed": "bun run prisma/seed/default-boards.ts",
     "db:reset": "prisma migrate reset --schema ./prisma/schema --skip-seed"
@@ -34,7 +35,7 @@
     "next": "^16.2.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "zod": "^3.24.1"
+    "zod": "^4.4.0"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",

@@ -1,7 +1,7 @@
 import type { Components, Theme } from "@mui/material/styles";
 
 export const textFieldOverrides: Components<Theme>["MuiTextField"] = {
-  defaultProps: { variant: "outlined", fullWidth: true, size: "small" },
+  defaultProps: { variant: "outlined", size: "small" },
 };
 
 export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
@@ -18,12 +18,7 @@ export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
       },
       "&.Mui-focused": { boxShadow: theme.shadows_custom.focus },
     }),
-    input: { fontSize: "0.875rem" },
   },
-};
-
-export const inputLabelOverrides: Components<Theme>["MuiInputLabel"] = {
-  styleOverrides: { root: { fontSize: "0.875rem" } },
 };
 
 export const formHelperTextOverrides: Components<Theme>["MuiFormHelperText"] = {

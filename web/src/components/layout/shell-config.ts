@@ -3,7 +3,6 @@ import {
   BusinessCenter,
   Dashboard,
   Person,
-  PlaylistAddCheck,
   Storage,
   WorkHistory,
   type SvgIconComponent,
@@ -26,7 +25,6 @@ export const navGroups: NavGroup[] = [
       { label: "Dashboard", href: "/", icon: Dashboard },
       { label: "Applications", href: "/applications", icon: AssignmentTurnedIn },
       { label: "Runs", href: "/runs", icon: WorkHistory },
-      { label: "Batch", href: "/batch", icon: PlaylistAddCheck },
     ],
   },
   {
@@ -34,7 +32,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Boards", href: "/boards", icon: BusinessCenter },
       { label: "Profile", href: "/profile", icon: Person },
-      { label: "Resumes", href: "/profile?tab=resumes", icon: Storage },
+      { label: "Resumes", href: "/resumes", icon: Storage },
     ],
   },
 ];

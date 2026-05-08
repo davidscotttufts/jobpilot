@@ -51,6 +51,7 @@ export function StageTransitionDialog(props: StageTransitionDialogProps): ReactE
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField
               select
+              fullWidth
               label="New stage"
               value={toStage}
               onChange={(e) => setToStage(e.target.value as Stage)}
@@ -63,6 +64,7 @@ export function StageTransitionDialog(props: StageTransitionDialogProps): ReactE
             </TextField>
             <TextField
               label="Note (optional)"
+              fullWidth
               multiline
               rows={3}
               value={note}

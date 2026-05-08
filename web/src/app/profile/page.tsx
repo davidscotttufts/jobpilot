@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Container, Stack } from "@mui/material";
-import { ProfileContent } from "@/components/features/profile/profile-content";
-import { PageHeader } from "@/components/ui/layout/page-header";
+import { ProfileContent } from "@/components/features/profile";
+import { PageHeader } from "@/components/ui/layout";
 
 export default function ProfilePage(): ReactElement {
   return (
