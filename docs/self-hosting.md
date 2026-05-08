@@ -16,16 +16,16 @@ no auth, no external services beyond the job boards your skills visit.
 
 ```bash
 git clone https://github.com/suxrobgm/jobpilot.git
-cd jobpilot/web
+cd jobpilot/src/web
 bun install
-bunx prisma migrate dev          # creates web/prisma/dev.db + applies migrations
+bunx prisma migrate dev          # creates src/web/prisma/dev.db + applies migrations
 bun run db:seed                  # seeds default job boards (LinkedIn, Indeed, ...)
 ```
 
 ## Running
 
 ```bash
-cd web && bun dev                # http://127.0.0.1:8000
+cd src/web && bun dev            # http://127.0.0.1:8000
 ```
 
 Keep this running while skills are active. Skills check `/api/health` at
@@ -49,7 +49,7 @@ All four are managed in the web UI. There is no `profile.json` to edit.
   `indeed.com`, …). Skills look up credentials in the order: per-board
   override on the JobBoard row → scope-matched credential → default.
 - **Resumes** under Profile → Resumes — multipart PDF upload to
-  `web/storage/resumes/`. Pick any one as the default; the path
+  `src/web/storage/resumes/`. Pick any one as the default; the path
   `data.defaultResumeAbsolutePath` is what skills hand to
   `browser_file_upload`.
 
@@ -62,14 +62,14 @@ pull the next chunk and PATCHes each entry to `consumed` when applied.
 
 ## Backups
 
-The whole database is one file: `web/prisma/dev.db`. Copy it for a
-backup. Resume PDFs live alongside in `web/storage/resumes/`. Together
+The whole database is one file: `src/web/prisma/dev.db`. Copy it for a
+backup. Resume PDFs live alongside in `src/web/storage/resumes/`. Together
 those two paths are the entire local state.
 
 ## Resetting
 
 - **Drop the database**: `bunx prisma migrate reset --schema ./prisma/schema --skip-seed` (then re-run `bun db:seed`).
-- **Drop just resumes**: `rm -rf web/storage/resumes/*` and clear `Resume`
+- **Drop just resumes**: `rm -rf src/web/storage/resumes/*` and clear `Resume`
   rows in the UI.
 - **Drop the singleton profile to re-onboard**: delete the row in Prisma
   Studio (`bun db:studio`).
@@ -86,13 +86,13 @@ Playwright MCP. There are no permissions for outbound HTTP except to
 
 | Path | Owner |
 |---|---|
-| `web/prisma/dev.db` | All persistent state. |
-| `web/storage/resumes/*.pdf` | Uploaded resumes. |
-| `web/prisma/schema/*.prisma` | Database schema (split per domain). |
-| `web/src/app/api/**/route.ts` | API endpoints. |
-| `web/src/app/**/page.tsx` | Pages (RSC). |
-| `web/src/components/features/<domain>/` | Domain-specific React components. |
-| `web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
+| `src/web/prisma/dev.db` | All persistent state. |
+| `src/web/storage/resumes/*.pdf` | Uploaded resumes. |
+| `src/web/prisma/schema/*.prisma` | Database schema (split per domain). |
+| `src/web/src/app/api/**/route.ts` | API endpoints. |
+| `src/web/src/app/**/page.tsx` | Pages (RSC). |
+| `src/web/src/components/features/<domain>/` | Domain-specific React components. |
+| `src/web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
 | `skills/<name>/SKILL.md` | Claude Code skill prompts. |
 | `skills/_shared/*.md` | Shared instructions referenced by skills. |
 | `skills/humanizer/` | Cover-letter humanizer (git submodule). |
@@ -100,7 +100,7 @@ Playwright MCP. There are no permissions for outbound HTTP except to
 ## Troubleshooting
 
 **`curl: (7) Failed to connect to 127.0.0.1 port 8000`** — the web app
-isn't running. `cd web && bun dev`.
+isn't running. `cd src/web && bun dev`.
 
 **`ERR_DLOPEN_FAILED` from Prisma** — better-sqlite3 doesn't load under
 Bun on Windows. JobPilot uses `@prisma/adapter-libsql` instead — re-run

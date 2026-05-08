@@ -9,11 +9,11 @@ that Claude reads as instructions. They're the "AI muscle": parse a job
 posting, score it against the resume, drive Playwright to fill an
 application, write a cover letter. They don't store anything themselves.
 
-**Next.js + SQLite web app** under `web/` is the "data layer + UI". It
+**Next.js + SQLite web app** under `src/web/` is the "data layer + UI". It
 owns every persistent fact: who you are, what jobs you've applied to,
 what stage each application is in, every autopilot run with its per-job
 status. The Prisma schema lives across one file per domain under
-`web/prisma/schema/`.
+`src/web/prisma/schema/`.
 
 Skills call the web app via `curl http://127.0.0.1:8000/api/...`. They
 never touch the database directly; they never read or write JSON files.
@@ -37,8 +37,8 @@ flowchart LR
 
     subgraph Data["Persistence"]
         Prisma["Prisma 7<br/>libSQL adapter"]
-        DB[("SQLite<br/>web/prisma/dev.db")]
-        Files["web/storage/resumes/*.pdf"]
+        DB[("SQLite<br/>src/web/prisma/dev.db")]
+        Files["src/web/storage/resumes/*.pdf"]
     end
 
     Browser["Browser UI<br/>http://127.0.0.1:8000"]
@@ -178,18 +178,18 @@ All under `/api/`, JSON in/out, response shape `{ ok, data | error }`:
 
 ### Prisma schema (multi-file)
 
-`web/prisma/schema/` holds one file per domain — `base.prisma`,
+`src/web/prisma/schema/` holds one file per domain — `base.prisma`,
 `profile.prisma`, `resume.prisma`, `credential.prisma`, `job-board.prisma`,
 `application.prisma`, `run.prisma`, `batch.prisma`. Prisma 7's modern
-`prisma-client` generator emits TS into `web/src/generated/prisma/`.
+`prisma-client` generator emits TS into `src/web/src/generated/prisma/`.
 
-The dev SQLite file is at `web/prisma/dev.db`. The driver adapter is
+The dev SQLite file is at `src/web/prisma/dev.db`. The driver adapter is
 `@prisma/adapter-libsql` (rather than `better-sqlite3`) because the
 better-sqlite3 native module fails to load under Bun on Windows.
 
 ### Fuzzy duplicate detection
 
-`web/src/lib/matching.ts` implements Jaro-Winkler similarity on
+`src/web/src/lib/matching.ts` implements Jaro-Winkler similarity on
 normalized job title + company name (seniority and legal-suffix tokens
 stripped). Title weighted 60%, company 40%, threshold ≥ 90, 30-day
 rolling window. Pattern lifted from job-ops's
@@ -197,7 +197,7 @@ rolling window. Pattern lifted from job-ops's
 
 ### Live runs
 
-`web/src/lib/sse.ts` is an in-process per-runId broker:
+`src/web/src/lib/sse.ts` is an in-process per-runId broker:
 `Map<runId, Set<controller>>` with 15-second heartbeats. `/api/runs/[id]`
 PATCH and `/api/runs/[id]/jobs/[jobKey]` PATCH publish events alongside
 the DB write. The browser uses `EventSource` via the
@@ -211,7 +211,7 @@ named exports (default only on `page.tsx`/`layout.tsx`), barrel MUI
 imports, `interface` for `<Name>Props`, destructure props inside the
 function body, no `useCallback`/`useMemo`/`memo`, prefer `&&` over
 `: null` ternaries, Zod imports from `zod/v4`. The DTOs in
-`web/src/types/api/`, the structured `queryKeys` in
-`web/src/lib/api/query-keys.ts`, and the typed UI primitives under
-`web/src/components/ui/{data,display,feedback,form,layout}/` are the
+`src/web/src/types/api/`, the structured `queryKeys` in
+`src/web/src/lib/api/query-keys.ts`, and the typed UI primitives under
+`src/web/src/components/ui/{data,display,feedback,form,layout}/` are the
 load-bearing reuse points.

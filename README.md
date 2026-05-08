@@ -6,7 +6,7 @@ Next.js + SQLite web app that owns all of the state.
 - **Skills** (Claude Code) do the work: scrape job boards, score postings
   against your resume, fill in applications via Playwright, write cover
   letters and interview prep, etc.
-- **Web app** (`web/`) at `http://127.0.0.1:8000` owns all data: profile,
+- **Web app** (`src/web/`) at `http://127.0.0.1:8000` owns all data: profile,
   credentials, resumes, job boards, applications with stage funnel, runs
   with SSE-driven live progress, batch URL queue.
 - **Skills talk to the web app over HTTP** (`curl`), not the filesystem.
@@ -18,7 +18,7 @@ Next.js + SQLite web app that owns all of the state.
 ```bash
 # 1. Install web dependencies (one-time)
 git clone https://github.com/suxrobgm/jobpilot.git
-cd jobpilot/web
+cd jobpilot/src/web
 bun install
 bun run db:migrate:apply         # creates the SQLite database and applies the schema
 bun run db:seed                  # seeds default job boards
@@ -72,7 +72,7 @@ operations + configuration runbook. Convention rules live in
 |---|---|
 | Runtime | Bun 1.3 |
 | Framework | Next.js 16 (App Router, RSC, typed routes) |
-| UI | MUI 9, themed (`web/src/theme/`); MUI X DataGrid for tables; emotion via `AppRouterCacheProvider` |
+| UI | MUI 9, themed (`src/web/src/theme/`); MUI X DataGrid for tables; emotion via `AppRouterCacheProvider` |
 | Forms | TanStack Form 1 + Zod v4 (shared between API validators and form validators) |
 | Server state | TanStack Query 5 with structured `queryKeys` |
 | Database | SQLite via Prisma 7 modern client + `@prisma/adapter-libsql` (Bun-compatible on Windows) |

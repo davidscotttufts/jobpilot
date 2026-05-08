@@ -5,13 +5,16 @@
 JobPilot 2.0 is a Claude Code plugin for AI-driven job applications, paired
 with a local Next.js + SQLite web app at `http://127.0.0.1:8000` that owns
 all of the persistent state. Skills are markdown prompts (`skills/*/SKILL.md`);
-the web app is real TypeScript code under `web/`.
+the web app is real TypeScript code under `src/web/`. A small ASP.NET Core
+sidecar at `src/JobPilot.Terminal/` (port 8001) hosts the Claude Code PTY so
+the web UI can embed an interactive terminal and inject slash commands.
 
 ## Architecture
 
 - **Skills** live in `skills/<name>/SKILL.md` as markdown with YAML frontmatter. They drive Playwright via the MCP server, parse pages, score against the resume, fill forms.
 - **Shared instructions** in `skills/_shared/` (setup, auth, form-filling, browser-tips) are referenced by skills to avoid duplication.
-- **Web app** in `web/` is the data + UI layer: Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at `web/prisma/dev.db`; uploaded resumes at `web/storage/resumes/`.
+- **Web app** in `src/web/` is the data + UI layer: Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at `src/web/prisma/dev.db`; uploaded resumes at `src/web/storage/resumes/`.
+- **Terminal sidecar** in `src/JobPilot.Terminal/` is a .NET 10 ASP.NET Core minimal API. It owns the `claude` PTY (winpty via Quick.PtyNet, vendored from the user's stealth-code project) and exposes a WebSocket on `/ws` plus HTTP endpoints (`/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`). The web UI's terminal panel speaks to it.
 - **Skills talk to the web app over HTTP.** They do not read or write any local JSON or text files. Every skill calls `GET /api/health` first; if the app is down it stops with a clear message.
 - **Humanizer** is an external git submodule at `skills/humanizer/`, invoked by `cover-letter` and `upwork-proposal` skills.
 
@@ -49,23 +52,28 @@ the web app is real TypeScript code under `web/`.
 | `skills/_shared/*.md` | Shared instructions (setup, auth, form-filling, browser-tips). |
 | `skills/*/SKILL.md` | Individual skill prompts. |
 | `skills/humanizer/` | Cover-letter humanizer (git submodule). |
-| `web/prisma/schema/*.prisma` | Multi-file Prisma schema (one file per domain). |
-| `web/prisma/dev.db` | SQLite database (gitignored). |
-| `web/storage/resumes/*.pdf` | Uploaded resumes (gitignored). |
-| `web/src/app/api/**/route.ts` | API endpoints. |
-| `web/src/app/**/page.tsx` | Pages (RSC). |
-| `web/src/components/features/<domain>/` | Domain-specific React components. |
-| `web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
-| `web/src/lib/db.ts` | Prisma client singleton (libSQL adapter). |
-| `web/src/lib/sse.ts` | In-process SSE broker. |
-| `web/src/lib/matching.ts` | Jaro-Winkler fuzzy duplicate detection. |
-| `web/src/lib/schemas/*.ts` | Zod schemas (shared by API + form validators). |
-| `web/src/lib/api/query-keys.ts` | Structured TanStack Query keys. |
-| `web/src/types/api/*.ts` | DTOs returned by API endpoints. |
+| `JobPilot.slnx` | Solution file referencing the C# sidecar project. |
+| `package.json` | Root scripts (`bun run dev` runs sidecar + web together). |
+| `src/JobPilot.Terminal/` | .NET sidecar — Program.cs, SessionManager, TerminalHub, vendored PTY code under `Pty/`. |
+| `src/web/prisma/schema/*.prisma` | Multi-file Prisma schema (one file per domain). |
+| `src/web/prisma/dev.db` | SQLite database (gitignored). |
+| `src/web/storage/resumes/*.pdf` | Uploaded resumes (gitignored). |
+| `src/web/src/app/api/**/route.ts` | API endpoints. |
+| `src/web/src/app/**/page.tsx` | Pages (RSC). |
+| `src/web/src/components/features/<domain>/` | Domain-specific React components. |
+| `src/web/src/components/features/terminal/` | xterm.js terminal panel + WS client + inject context. |
+| `src/web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
+| `src/web/src/lib/db.ts` | Prisma client singleton (libSQL adapter). |
+| `src/web/src/lib/sidecar.ts` | Sidecar HTTP client (`startSession`, `injectCommand`, `killSession`). |
+| `src/web/src/lib/sse.ts` | In-process SSE broker. |
+| `src/web/src/lib/matching.ts` | Jaro-Winkler fuzzy duplicate detection. |
+| `src/web/src/lib/schemas/*.ts` | Zod schemas (shared by API + form validators). |
+| `src/web/src/lib/api/query-keys.ts` | Structured TanStack Query keys. |
+| `src/web/src/types/api/*.ts` | DTOs returned by API endpoints. |
 
 ## Frontend Conventions
 
-Apply to all code under `web/src/`.
+Apply to all code under `src/web/src/`.
 
 ### File Naming
 
