@@ -1,12 +1,18 @@
 {
   "name": "jobpilot",
+  "version": "2.0.0",
   "private": true,
+  "workspaces": [
+    "src/web"
+  ],
   "scripts": {
     "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet run --project src/JobPilot.Terminal\" \"bun --cwd src/web run dev\"",
     "build:terminal": "dotnet publish src/JobPilot.Terminal -c Release -o dist/terminal",
     "build:web": "bun --cwd src/web run build"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
+    "concurrently": "^9.1.0",
+    "prettier": "^3.8.3"
   }
 }

@@ -26,18 +26,17 @@ the web UI.
 # 1. Install (one-time)
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
-bun install                                 # root deps (concurrently)
-bun --cwd src/web install                   # web deps
-bun --cwd src/web run db:migrate:apply      # creates the SQLite database
-bun --cwd src/web run db:seed               # seeds default job boards
+bun install    # install all dependencies
+
+# Initialize the SQLite database and seed default job boards
+cd src/web
+bun run db:migrate:apply      # creates the SQLite database
+bun run db:seed               # seeds default job boards
+
+cd ../..  # back to root
 
 # 2. Start everything (web + JobPilot.Terminal in one command)
-bun run dev                                 # web on :8000, terminal on :8001
-
-# 3. In the browser, open http://127.0.0.1:8000 and click the
-#    Terminal button in the sidebar. That panel is your live Claude
-#    Code session — type slash commands directly, or click the inject
-#    buttons on /batch and /runs to fire them for you.
+bun run dev  # web on :8000, terminal on :8001
 ```
 
 If you prefer to run skills from a separate Claude Code window, you
