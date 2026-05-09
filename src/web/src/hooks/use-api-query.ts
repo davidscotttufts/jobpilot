@@ -2,7 +2,7 @@
 
 import {
   useQuery,
-  type UndefinedInitialDataOptions,
+  type UseQueryOptions,
   type UseQueryResult,
 } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -13,27 +13,34 @@ type QueryFn<T> = () => Promise<ClientResult<T>>;
 
 type ApiQueryKey = readonly unknown[];
 
-interface UseApiQueryOptions<T>
-  extends Omit<UndefinedInitialDataOptions<T, Error, T, ApiQueryKey>, "queryKey" | "queryFn"> {
+type UseApiQueryOptions<TData, TSelected = TData> = Omit<
+  UseQueryOptions<TData, Error, TSelected, ApiQueryKey>,
+  "queryKey" | "queryFn"
+> & {
   errorMessage?: string | ((error: Error) => string);
-}
+};
 
-export function useApiQuery<T>(
+export type ApiQueryResult<TData> = Omit<UseQueryResult<TData, Error>, "data" | "error"> & {
+  data: TData | undefined;
+  error: Error | null;
+};
+
+export function useApiQuery<TData, TSelected = TData>(
   queryKey: ApiQueryKey,
-  queryFn: QueryFn<T>,
-  options?: UseApiQueryOptions<T>,
-): UseQueryResult<T, Error> {
+  queryFn: QueryFn<TData>,
+  options?: UseApiQueryOptions<NoInfer<TData>, TSelected>,
+): ApiQueryResult<TSelected> {
   const { errorMessage, ...queryOptions } = options ?? {};
   const toast = useToast();
 
-  const result = useQuery<T, Error, T, ApiQueryKey>({
+  const result = useQuery<TData, Error, TSelected, ApiQueryKey>({
     queryKey,
-    queryFn: async (): Promise<T> => {
+    queryFn: async (): Promise<TData> => {
       const { data, error } = await queryFn();
       if (error) {
         throw new Error(error.message);
       }
-      return data as T;
+      return data as TData;
     },
     ...queryOptions,
   });
@@ -45,5 +52,5 @@ export function useApiQuery<T>(
     }
   }, [result.error, errorMessage, toast]);
 
-  return result;
+  return result as ApiQueryResult<TSelected>;
 }

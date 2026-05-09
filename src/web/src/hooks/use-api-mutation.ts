@@ -11,26 +11,34 @@ import { useToast } from "@/providers/notification-provider";
 
 type MutationFn<TData, TVariables> = (vars: TVariables) => Promise<ClientResult<TData>>;
 
-interface UseApiMutationOptions<TData, TVariables> extends Omit<
-  UseMutationOptions<TData, Error, TVariables>,
-  "mutationFn"
-> {
+type UseApiMutationOptions<TData, TVariables, TContext = unknown> = Omit<
+  UseMutationOptions<TData, Error, TVariables, TContext>,
+  "mutationFn" | "onSuccess" | "onError"
+> & {
   successMessage?: string | ((data: TData, vars: TVariables) => string);
   errorMessage?: string | ((error: Error, vars: TVariables) => string);
   invalidate?: ReadonlyArray<ReadonlyArray<unknown>>;
   onSuccess?: (data: TData, variables: TVariables) => void;
   onError?: (error: Error, variables: TVariables) => void;
-}
+};
 
-export function useApiMutation<TData, TVariables>(
+export type ApiMutationResult<TData, TVariables = void, TContext = unknown> = Omit<
+  UseMutationResult<TData, Error, TVariables, TContext>,
+  "data" | "error"
+> & {
+  data: TData | undefined;
+  error: Error | null;
+};
+
+export function useApiMutation<TData, TVariables = void, TContext = unknown>(
   mutationFn: MutationFn<TData, TVariables>,
-  options?: UseApiMutationOptions<TData, TVariables>,
-): UseMutationResult<TData, Error, TVariables> {
+  options?: UseApiMutationOptions<NoInfer<TData>, NoInfer<TVariables>, TContext>,
+): ApiMutationResult<TData, TVariables, TContext> {
   const { successMessage, errorMessage, invalidate, onSuccess, onError, ...rest } = options ?? {};
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  return useMutation<TData, Error, TVariables>({
+  return useMutation<TData, Error, TVariables, TContext>({
     mutationFn: async (vars: TVariables) => {
       const { data, error } = await mutationFn(vars);
       if (error) {
@@ -61,5 +69,5 @@ export function useApiMutation<TData, TVariables>(
       onError?.(error, vars);
     },
     ...rest,
-  });
+  }) as ApiMutationResult<TData, TVariables, TContext>;
 }
