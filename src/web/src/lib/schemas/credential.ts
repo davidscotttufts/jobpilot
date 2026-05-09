@@ -6,7 +6,7 @@ export const credentialSchema = z.object({
   password: z.string().min(1),
 });
 
-export type CredentialInput = z.infer<typeof credentialSchema>;
-
 export const credentialPatchSchema = credentialSchema.partial();
+
+export type CredentialInput = z.infer<typeof credentialSchema>;
 export type CredentialPatch = z.infer<typeof credentialPatchSchema>;

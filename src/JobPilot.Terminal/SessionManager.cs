@@ -107,7 +107,7 @@ public sealed class SessionManager : IDisposable
             state = SessionState.Stopped;
         }
 
-        var msg = $"\r\n\x1b[31m[JobPilot.Terminal] Claude Code exited with code {code}. Use Restart to reopen.\x1b[0m\r\n";
+        var msg = $"\r\n\e[31m[JobPilot.Terminal] Claude Code exited with code {code}. Use Restart to reopen.\e[0m\r\n";
         Broadcast(Encoding.UTF8.GetBytes(msg));
     }
 

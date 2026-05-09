@@ -2,11 +2,9 @@ import { z } from "zod/v4";
 
 export const RUN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const runStatusSchema = z.enum(RUN_STATUSES);
-export type RunStatus = z.infer<typeof runStatusSchema>;
 
 export const RUN_SOURCES = ["autopilot", "apply-batch"] as const;
 export const runSourceSchema = z.enum(RUN_SOURCES);
-export type RunSource = z.infer<typeof runSourceSchema>;
 
 export const RUN_JOB_STATUSES = [
   "pending",
@@ -17,14 +15,12 @@ export const RUN_JOB_STATUSES = [
   "skipped",
 ] as const;
 export const runJobStatusSchema = z.enum(RUN_JOB_STATUSES);
-export type RunJobStatus = z.infer<typeof runJobStatusSchema>;
 
 export const runConfigSchema = z.object({
   minMatchScore: z.number().int().min(0).max(10).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
   boards: z.array(z.string()).optional(),
 });
-export type RunConfig = z.infer<typeof runConfigSchema>;
 
 export const runSummarySchema = z.object({
   totalFound: z.number().int().min(0).default(0),
@@ -34,7 +30,6 @@ export const runSummarySchema = z.object({
   skipped: z.number().int().min(0).default(0),
   remaining: z.number().int().min(0).default(0),
 });
-export type RunSummary = z.infer<typeof runSummarySchema>;
 
 export const createRunSchema = z.object({
   runId: z.string().min(1),
@@ -42,14 +37,12 @@ export const createRunSchema = z.object({
   source: runSourceSchema,
   config: runConfigSchema.optional(),
 });
-export type CreateRunInput = z.infer<typeof createRunSchema>;
 
 export const updateRunSchema = z.object({
   status: runStatusSchema.optional(),
   summary: runSummarySchema.partial().optional(),
   completedAt: z.iso.datetime().optional().nullable(),
 });
-export type UpdateRunInput = z.infer<typeof updateRunSchema>;
 
 export const addRunJobSchema = z.object({
   jobKey: z.string().min(1),
@@ -65,7 +58,6 @@ export const addRunJobSchema = z.object({
   status: runJobStatusSchema.optional(),
   description: z.string().optional().nullable(),
 });
-export type AddRunJobInput = z.infer<typeof addRunJobSchema>;
 
 export const patchRunJobSchema = z.object({
   status: runJobStatusSchema.optional(),
@@ -76,14 +68,23 @@ export const patchRunJobSchema = z.object({
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: z.string().optional().nullable(),
 });
-export type PatchRunJobInput = z.infer<typeof patchRunJobSchema>;
 
 export const RUN_EVENT_TYPES = ["log", "progress", "status", "job-update"] as const;
 export const runEventTypeSchema = z.enum(RUN_EVENT_TYPES);
-export type RunEventType = z.infer<typeof runEventTypeSchema>;
 
 export const runEventSchema = z.object({
   type: runEventTypeSchema,
   payload: z.record(z.string(), z.unknown()),
 });
+
+export type RunStatus = z.infer<typeof runStatusSchema>;
+export type RunJobStatus = z.infer<typeof runJobStatusSchema>;
+export type RunConfig = z.infer<typeof runConfigSchema>;
+export type RunSummary = z.infer<typeof runSummarySchema>;
+export type CreateRunInput = z.infer<typeof createRunSchema>;
+export type UpdateRunInput = z.infer<typeof updateRunSchema>;
+export type AddRunJobInput = z.infer<typeof addRunJobSchema>;
+export type PatchRunJobInput = z.infer<typeof patchRunJobSchema>;
+export type RunSource = z.infer<typeof runSourceSchema>;
+export type RunEventType = z.infer<typeof runEventTypeSchema>;
 export type RunEventInput = z.infer<typeof runEventSchema>;

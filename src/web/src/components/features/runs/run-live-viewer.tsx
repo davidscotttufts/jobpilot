@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useRunEvents } from "@/hooks/use-run-events";
 import { apiClient } from "@/lib/api-client";

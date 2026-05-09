@@ -24,7 +24,7 @@ public sealed class PtyService : IDisposable
             provider?.Dispose();
             provider = null;
 
-            var error = $"\x1b[31mFailed to start '{command}': {ex.Message}\x1b[0m\r\n";
+            var error = $"\e[31mFailed to start '{command}': {ex.Message}\e[0m\r\n";
             OutputReceived?.Invoke(System.Text.Encoding.UTF8.GetBytes(error));
             ProcessExited?.Invoke(-1);
         }

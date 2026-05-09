@@ -33,8 +33,6 @@ export const profileSchema = z.object({
   defaultResumeId: z.number().int().nullable().optional(),
 });
 
-export type ProfileInput = z.infer<typeof profileSchema>;
-
 export const autopilotSettingsSchema = z.object({
   minMatchScore: z.number().int().min(0).max(10),
   maxApplicationsPerRun: z.number().int().min(1).max(500),
@@ -47,10 +45,10 @@ export const autopilotSettingsSchema = z.object({
   defaultStartDate: z.string(),
 });
 
-export type AutopilotSettingsInput = z.infer<typeof autopilotSettingsSchema>;
-
 export const profileWithAutopilotSchema = profileSchema.extend({
   autopilot: autopilotSettingsSchema.optional(),
 });
 
+export type ProfileInput = z.infer<typeof profileSchema>;
+export type AutopilotSettingsInput = z.infer<typeof autopilotSettingsSchema>;
 export type ProfileWithAutopilotInput = z.infer<typeof profileWithAutopilotSchema>;

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { Suspense, type ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { TerminalToggleButton } from "@/components/features/terminal";
 import { NavGroup } from "./nav-group";
@@ -34,9 +34,11 @@ export function Sidebar(): ReactElement {
         </Typography>
       </Stack>
       <Box sx={{ flex: 1, overflowY: "auto", py: 1 }}>
-        {navGroups.map((group, idx) => (
-          <NavGroup key={group.label ?? idx} group={group} />
-        ))}
+        <Suspense fallback={null}>
+          {navGroups.map((group, idx) => (
+            <NavGroup key={group.label ?? idx} group={group} />
+          ))}
+        </Suspense>
       </Box>
       <Stack
         sx={(t) => ({

@@ -11,7 +11,7 @@ export const jobBoardSchema = z.object({
   sortOrder: z.number().int(),
 });
 
-export type JobBoardInput = z.infer<typeof jobBoardSchema>;
-
 export const jobBoardPatchSchema = jobBoardSchema.partial();
+
+export type JobBoardInput = z.infer<typeof jobBoardSchema>;
 export type JobBoardPatch = z.infer<typeof jobBoardPatchSchema>;

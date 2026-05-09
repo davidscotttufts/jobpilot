@@ -23,7 +23,10 @@ public sealed class TerminalHub(SessionManager session, ILogger<TerminalHub> log
                     break;
                 }
 
-                if (result.MessageType != WebSocketMessageType.Text) continue;
+                if (result.MessageType != WebSocketMessageType.Text)
+                {
+                  continue;
+                }
 
                 var text = Encoding.UTF8.GetString(buffer, 0, result.Count);
                 Dispatch(text);
@@ -49,7 +52,11 @@ public sealed class TerminalHub(SessionManager session, ILogger<TerminalHub> log
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
-            if (!root.TryGetProperty("type", out var typeProp)) return;
+            if (!root.TryGetProperty("type", out var typeProp))
+            {
+              return;
+            }
+            
             var type = typeProp.GetString();
 
             switch (type)

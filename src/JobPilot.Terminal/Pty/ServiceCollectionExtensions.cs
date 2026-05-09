@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace JobPilot.Terminal.Pty;
 
 public static class ServiceCollectionExtensions

@@ -13,11 +13,8 @@ export const STAGES = [
 ] as const;
 
 export const stageSchema = z.enum(STAGES);
-export type Stage = z.infer<typeof stageSchema>;
-
 export const APPLICATION_SOURCES = ["apply", "apply-batch", "autopilot", "manual"] as const;
 export const sourceSchema = z.enum(APPLICATION_SOURCES);
-export type ApplicationSource = z.infer<typeof sourceSchema>;
 
 export const logApplicationSchema = z.object({
   url: z.url(),
@@ -32,11 +29,12 @@ export const logApplicationSchema = z.object({
   failReason: z.string().optional().nullable(),
 });
 
-export type LogApplicationInput = z.infer<typeof logApplicationSchema>;
-
 export const stageTransitionSchema = z.object({
   toStage: stageSchema,
   note: z.string().optional().nullable(),
 });
 
+export type Stage = z.infer<typeof stageSchema>;
+export type ApplicationSource = z.infer<typeof sourceSchema>;
+export type LogApplicationInput = z.infer<typeof logApplicationSchema>;
 export type StageTransitionInput = z.infer<typeof stageTransitionSchema>;
