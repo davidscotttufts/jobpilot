@@ -17,7 +17,7 @@ and inject slash commands.
 - **Web app** in `src/web/` is the data + UI layer: Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at `src/web/prisma/dev.db`; uploaded resumes at `src/web/storage/resumes/`.
 - **JobPilot.Terminal** in `src/JobPilot.Terminal/` is a .NET 10 ASP.NET Core minimal API. It owns the `claude` PTY (winpty via Quick.PtyNet, vendored from the user's stealth-code project) and exposes a WebSocket on `/ws` plus HTTP endpoints (`/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`). The web UI's terminal panel speaks to it.
 - **Skills talk to the web app over HTTP.** They do not read or write any local JSON or text files. Every skill calls `GET /api/health` first; if the app is down it stops with a clear message.
-- **Humanizer** is an external git submodule at `skills/humanizer/`, invoked by `cover-letter` and `upwork-proposal` skills.
+- **Humanizer** is a vendored skill at `src/JobPilot.Terminal/.claude/skills/humanizer/`, invoked by `cover-letter` and `upwork-proposal` skills.
 
 ## Key Patterns
 
@@ -34,7 +34,7 @@ and inject slash commands.
 - Skill files use imperative instructions directed at Claude (e.g., "Use `browser_navigate` to open the URL").
 - Browser automation uses `browser_snapshot` (accessibility tree), not screenshots.
 - For token overflow from large pages, use targeted `browser_snapshot` with the `ref` parameter.
-- Cover letters chain through `/jobpilot:cover-letter`, which already invokes the humanizer.
+- Cover letters chain through `/cover-letter`, which already invokes the humanizer.
 - Plugin manifest is in `.claude-plugin/plugin.json` (currently `2.0.0`).
 - MCP config (Playwright server) is in `.mcp.json`.
 - API permissions in `.claude/settings.json` allow `Bash(curl:*)`, `Bash(jq:*)`, `Bash(date:*)` explicitly.
@@ -52,7 +52,7 @@ and inject slash commands.
 | `docs/self-hosting.md`                                           | Operations + configuration runbook.                                                      |
 | `skills/_shared/*.md`                                            | Shared instructions (setup, auth, form-filling, browser-tips).                           |
 | `skills/*/SKILL.md`                                              | Individual skill prompts.                                                                |
-| `skills/humanizer/`                                              | Cover-letter humanizer (git submodule).                                                  |
+| `src/JobPilot.Terminal/.claude/skills/humanizer/`                | Cover-letter humanizer (vendored skill).                                                 |
 | `JobPilot.slnx`                                                  | Solution file referencing the C# terminal project.                                       |
 | `package.json`                                                   | Root scripts (`bun run dev` runs terminal + web together).                               |
 | `src/JobPilot.Terminal/`                                         | .NET terminal — Program.cs, SessionManager, TerminalHub, vendored PTY code under `Pty/`. |
@@ -63,8 +63,8 @@ and inject slash commands.
 | `src/web/src/app/**/page.tsx`                                    | Pages (RSC).                                                                             |
 | `src/web/src/components/features/<domain>/`                      | Domain-specific React components.                                                        |
 | `src/web/src/components/features/terminal/`                      | xterm.js terminal panel + WS client.                                                     |
-| `src/web/src/components/features/batch/batch-run-button.tsx`     | Injects `/jobpilot:apply-batch` into the embedded terminal.                              |
-| `src/web/src/components/features/runs/autopilot-run-button.tsx`  | Popover form that injects `/jobpilot:autopilot <query>` into the embedded terminal.      |
+| `src/web/src/components/features/batch/batch-run-button.tsx`     | Injects `/apply-batch` into the embedded terminal.                                       |
+| `src/web/src/components/features/runs/autopilot-run-button.tsx`  | Popover form that injects `/autopilot <query>` into the embedded terminal.               |
 | `src/web/src/providers/terminal-provider.tsx`                    | Open/toggle state + `inject(command)` helper used by the buttons above.                  |
 | `src/web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives.                                                                           |
 | `src/web/src/lib/db.ts`                                          | Prisma client singleton (libSQL adapter).                                                |

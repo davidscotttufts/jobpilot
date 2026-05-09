@@ -1,88 +1,74 @@
 # JobPilot
 
-A Claude Code plugin for AI-driven job applications, paired with a local
-Next.js + SQLite web app that owns all of the state and a small .NET
-companion process that hosts an interactive Claude Code session inside
-the web UI.
+A local-first AI job-application app. A Next.js + SQLite web UI owns
+all state and embeds an interactive Claude Code session that runs the
+JobPilot skills (apply, autopilot, search, cover letter, …) against
+real job boards via Playwright.
 
-- **Skills** (Claude Code) do the work: scrape job boards, score postings
-  against your resume, fill in applications via Playwright, write cover
-  letters and interview prep, etc.
-- **Web app** (`src/web/`) at `http://127.0.0.1:8000` owns all data: profile,
-  credentials, resumes, job boards, applications with stage funnel, runs
-  with SSE-driven live progress, batch URL queue. It also embeds a Claude
-  Code terminal panel and exposes "Run autopilot" / "Run apply-batch"
-  buttons that inject slash commands directly into that session.
-- **JobPilot.Terminal** (`src/JobPilot.Terminal/`) at `http://127.0.0.1:8001`
-  is a .NET 10 ASP.NET Core process that owns the `claude` PTY (winpty)
-  and bridges it to the web UI's xterm.js panel over WebSocket.
-- **Skills talk to the web app over HTTP** (`curl`), not the filesystem.
-  No more `profile.json`, `applied-jobs.json`, `runs/*.json`, or shell
-  scripts.
+## Components
+
+- **Web app** ([src/web/](src/web/)) — `http://127.0.0.1:8000`. Owns
+  profile, credentials, resumes, job boards, applications, runs, batch
+  queue. Embeds an xterm.js terminal panel and exposes "Run autopilot" /
+  "Run apply-batch" buttons that inject slash commands into the session.
+- **JobPilot.Terminal** ([src/JobPilot.Terminal/](src/JobPilot.Terminal/))
+  — `http://127.0.0.1:8001`. .NET 10 ASP.NET Core process that owns the
+  `claude` PTY (winpty) and bridges it to the web UI over WebSocket. Its
+  working directory holds [.claude/skills/](src/JobPilot.Terminal/.claude/skills/)
+  and [.mcp.json](src/JobPilot.Terminal/.mcp.json), so the spawned
+  `claude` auto-loads the JobPilot skills and the Playwright MCP server.
+- **Skills** — markdown prompts under
+  [src/JobPilot.Terminal/.claude/skills/](src/JobPilot.Terminal/.claude/skills/).
+  They drive Playwright, score postings against your resume, fill
+  forms, and call the web app over HTTP (`curl`).
 
 ## Quick start
 
 ```bash
-# 1. Install (one-time)
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
-bun install    # install all dependencies
+bun install
+bun --cwd src/web run db:migrate:apply
+bun --cwd src/web run db:seed
 
-# Initialize the SQLite database and seed default job boards
-cd src/web
-bun run db:migrate:apply      # creates the SQLite database
-bun run db:seed               # seeds default job boards
-
-cd ../..  # back to root
-
-# 2. Start everything (web + JobPilot.Terminal in one command)
-bun run dev  # web on :8000, terminal on :8001
+bun run dev   # web :8000 + terminal :8001
 ```
 
-If you prefer to run skills from a separate Claude Code window, you
-can: the web app continues to function as before. The embedded terminal
-panel is optional (the Terminal toggle in the sidebar shows it).
+Open `http://127.0.0.1:8000` and toggle the Terminal panel.
 
 ## Skills
 
-| Slash command | Purpose | Inject button |
-|---|---|---|
-| `/jobpilot:apply <url>` | Auto-fill a single application after a fit review and dedupe check. | — |
-| `/jobpilot:apply-batch` | Pull URLs from `/api/batch/pending`, score against your resume, get one-click batch approval, apply to all. | `/batch` page |
-| `/jobpilot:autopilot <query>` | Search every enabled board, score, batch-approve, apply autonomously. Live viewer at `/runs/<id>`. | `/runs` page |
-| `/jobpilot:search <query>` | Search boards and rank results without applying. | — |
-| `/jobpilot:cover-letter <description>` | Tailored cover letter, run through the humanizer. | — |
-| `/jobpilot:upwork-proposal <job>` | Tailored Upwork proposal. | — |
-| `/jobpilot:interview <description>` | Behavioral / technical / company-research interview prep. | — |
-
-## Web app
-
-A local Next.js dashboard at `http://127.0.0.1:8000` that owns every
-persistent fact: profile, resumes, credentials, job boards, applied jobs
-with stage funnel, autopilot/batch runs, and the URL queue. It's where
-you configure JobPilot, watch runs progress live over SSE, and review
-your application history. Skills read and write everything through its
-HTTP API.
+| Skill             | Purpose                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| `apply`           | Auto-fill a single application after fit review and dedupe check.         |
+| `apply-batch`     | Score the queued URLs from `/batch`, batch-approve, apply to all.         |
+| `autopilot`       | Search every enabled board, score, batch-approve, apply autonomously.     |
+| `search`          | Search boards and rank results without applying.                          |
+| `cover-letter`    | Tailored cover letter, run through the humanizer.                         |
+| `upwork-proposal` | Tailored Upwork proposal.                                                 |
+| `interview`       | Behavioral / technical / company-research interview prep.                 |
 
 ## Documentation
 
-See [docs/architecture.md](docs/architecture.md) for the architecture
-walk-through and [docs/self-hosting.md](docs/self-hosting.md) for the
-operations + configuration runbook. Convention rules live in
-[CLAUDE.md](CLAUDE.md).
+- [docs/architecture.md](docs/architecture.md) — architecture walk-through.
+- [docs/self-hosting.md](docs/self-hosting.md) — operations + configuration.
+- [CLAUDE.md](CLAUDE.md) — coding conventions.
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Runtime | Bun 1.3 |
-| Framework | Next.js 16 (App Router, RSC, typed routes) |
-| UI | MUI 9, themed (`src/web/src/theme/`); MUI X DataGrid for tables; emotion via `AppRouterCacheProvider` |
-| Forms | TanStack Form 1 + Zod v4 (shared between API validators and form validators) |
-| Server state | TanStack Query 5 with structured `queryKeys` |
-| Database | SQLite via Prisma 7 modern client + `@prisma/adapter-libsql` (Bun-compatible on Windows) |
-| Browser automation | Playwright via the Claude Code Playwright MCP |
+| Layer              | Choice                                                                    |
+| ------------------ | ------------------------------------------------------------------------- |
+| Runtime            | Bun 1.3                                                                   |
+| Framework          | Next.js 16 (App Router, RSC, typed routes)                                |
+| UI                 | MUI 9 + MUI X DataGrid                                                    |
+| Forms              | TanStack Form 1 + Zod v4                                                  |
+| Server state       | TanStack Query 5                                                          |
+| Database           | SQLite via Prisma 7 + `@prisma/adapter-libsql`                            |
+| Terminal host      | .NET 10 ASP.NET Core, winpty via Quick.PtyNet                             |
+| Browser automation | Playwright via the Playwright MCP server                                  |
 
 ## License
 
-MIT. The Humanizer submodule has its own license — see `skills/humanizer/`.
+MIT. The bundled humanizer skill at
+[src/JobPilot.Terminal/.claude/skills/humanizer/](src/JobPilot.Terminal/.claude/skills/humanizer/)
+ships with its own LICENSE file.
