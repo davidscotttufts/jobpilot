@@ -41,39 +41,39 @@ and inject slash commands.
 
 ## File Inventory
 
-| Path | Purpose |
-| --- | --- |
-| `.claude-plugin/plugin.json` | Plugin manifest (name, version, author). |
-| `.claude/settings.json` | Claude Code permissions. |
-| `.mcp.json` | Playwright MCP server config. |
-| `CLAUDE.md` | This file: architecture summary + frontend conventions. |
-| `README.md` | User-facing intro + quick start. |
-| `docs/architecture.md` | Deeper architecture walk-through. |
-| `docs/self-hosting.md` | Operations + configuration runbook. |
-| `skills/_shared/*.md` | Shared instructions (setup, auth, form-filling, browser-tips). |
-| `skills/*/SKILL.md` | Individual skill prompts. |
-| `skills/humanizer/` | Cover-letter humanizer (git submodule). |
-| `JobPilot.slnx` | Solution file referencing the C# sidecar project. |
-| `package.json` | Root scripts (`bun run dev` runs sidecar + web together). |
-| `src/JobPilot.Terminal/` | .NET sidecar — Program.cs, SessionManager, TerminalHub, vendored PTY code under `Pty/`. |
-| `src/web/prisma/schema/*.prisma` | Multi-file Prisma schema (one file per domain). |
-| `src/web/prisma/dev.db` | SQLite database (gitignored). |
-| `src/web/storage/resumes/*.pdf` | Uploaded resumes (gitignored). |
-| `src/web/src/app/api/**/route.ts` | API endpoints. |
-| `src/web/src/app/**/page.tsx` | Pages (RSC). |
-| `src/web/src/components/features/<domain>/` | Domain-specific React components. |
-| `src/web/src/components/features/terminal/` | xterm.js terminal panel + WS client. |
-| `src/web/src/components/features/batch/batch-run-button.tsx` | Injects `/jobpilot:apply-batch` into the embedded terminal. |
-| `src/web/src/components/features/runs/autopilot-run-button.tsx` | Popover form that injects `/jobpilot:autopilot <query>` into the embedded terminal. |
-| `src/web/src/providers/terminal-provider.tsx` | Open/toggle state + `inject(command)` helper used by the buttons above. |
-| `src/web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
-| `src/web/src/lib/db.ts` | Prisma client singleton (libSQL adapter). |
-| `src/web/src/lib/sidecar.ts` | Sidecar HTTP client (`startSession`, `injectCommand`, `killSession`). |
-| `src/web/src/lib/sse.ts` | In-process SSE broker. |
-| `src/web/src/lib/matching.ts` | Jaro-Winkler fuzzy duplicate detection. |
-| `src/web/src/lib/schemas/*.ts` | Zod schemas (shared by API + form validators). |
-| `src/web/src/lib/api/query-keys.ts` | Structured TanStack Query keys. |
-| `src/web/src/types/api/*.ts` | DTOs returned by API endpoints. |
+| Path                                                             | Purpose                                                                                  |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `.claude-plugin/plugin.json`                                     | Plugin manifest (name, version, author).                                                 |
+| `.claude/settings.json`                                          | Claude Code permissions.                                                                 |
+| `.mcp.json`                                                      | Playwright MCP server config.                                                            |
+| `CLAUDE.md`                                                      | This file: architecture summary + frontend conventions.                                  |
+| `README.md`                                                      | User-facing intro + quick start.                                                         |
+| `docs/architecture.md`                                           | Deeper architecture walk-through.                                                        |
+| `docs/self-hosting.md`                                           | Operations + configuration runbook.                                                      |
+| `skills/_shared/*.md`                                            | Shared instructions (setup, auth, form-filling, browser-tips).                           |
+| `skills/*/SKILL.md`                                              | Individual skill prompts.                                                                |
+| `skills/humanizer/`                                              | Cover-letter humanizer (git submodule).                                                  |
+| `JobPilot.slnx`                                                  | Solution file referencing the C# terminal project.                                       |
+| `package.json`                                                   | Root scripts (`bun run dev` runs terminal + web together).                               |
+| `src/JobPilot.Terminal/`                                         | .NET terminal — Program.cs, SessionManager, TerminalHub, vendored PTY code under `Pty/`. |
+| `src/web/prisma/schema/*.prisma`                                 | Multi-file Prisma schema (one file per domain).                                          |
+| `src/web/prisma/dev.db`                                          | SQLite database (gitignored).                                                            |
+| `src/web/storage/resumes/*.pdf`                                  | Uploaded resumes (gitignored).                                                           |
+| `src/web/src/app/api/**/route.ts`                                | API endpoints.                                                                           |
+| `src/web/src/app/**/page.tsx`                                    | Pages (RSC).                                                                             |
+| `src/web/src/components/features/<domain>/`                      | Domain-specific React components.                                                        |
+| `src/web/src/components/features/terminal/`                      | xterm.js terminal panel + WS client.                                                     |
+| `src/web/src/components/features/batch/batch-run-button.tsx`     | Injects `/jobpilot:apply-batch` into the embedded terminal.                              |
+| `src/web/src/components/features/runs/autopilot-run-button.tsx`  | Popover form that injects `/jobpilot:autopilot <query>` into the embedded terminal.      |
+| `src/web/src/providers/terminal-provider.tsx`                    | Open/toggle state + `inject(command)` helper used by the buttons above.                  |
+| `src/web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives.                                                                           |
+| `src/web/src/lib/db.ts`                                          | Prisma client singleton (libSQL adapter).                                                |
+| `src/web/src/lib/terminal.ts`                                    | Terminal HTTP client (`startSession`, `injectCommand`, `killSession`).                   |
+| `src/web/src/lib/sse.ts`                                         | In-process SSE broker.                                                                   |
+| `src/web/src/lib/matching.ts`                                    | Jaro-Winkler fuzzy duplicate detection.                                                  |
+| `src/web/src/lib/schemas/*.ts`                                   | Zod schemas (shared by API + form validators).                                           |
+| `src/web/src/lib/api/query-keys.ts`                              | Structured TanStack Query keys.                                                          |
+| `src/web/src/types/api/*.ts`                                     | DTOs returned by API endpoints.                                                          |
 
 ## Frontend Conventions
 
@@ -127,10 +127,14 @@ Prefer `&&` over a ternary when the false branch is `null`:
 
 ```tsx
 // CORRECT
-{description && <Typography variant="body2Muted">{description}</Typography>}
+{
+  description && <Typography variant="body2Muted">{description}</Typography>;
+}
 
 // WRONG
-{description ? <Typography variant="body2Muted">{description}</Typography> : null}
+{
+  description ? <Typography variant="body2Muted">{description}</Typography> : null;
+}
 ```
 
 ### MUI Imports
