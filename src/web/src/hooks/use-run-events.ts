@@ -1,8 +1,9 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEventSource } from "@/lib/sse/use-event-source";
 import { queryKeys } from "@/lib/api/query-keys";
+import type { RunEventInput } from "@/lib/schemas/run";
 
 /**
  * Subscribe to /api/runs/:runId/events. On every event, invalidate the
@@ -12,24 +13,12 @@ import { queryKeys } from "@/lib/api/query-keys";
  */
 export function useRunEvents(runId: string | undefined): void {
   const queryClient = useQueryClient();
+  const url = runId ? `/api/runs/${encodeURIComponent(runId)}/events` : undefined;
 
-  useEffect(() => {
-    if (!runId) {
-      return;
-    }
-    const url = `/api/runs/${encodeURIComponent(runId)}/events`;
-    const source = new EventSource(url);
-
-    source.onmessage = () => {
+  useEventSource<RunEventInput>(url, {
+    onMessage: () => {
+      if (!runId) return;
       queryClient.invalidateQueries({ queryKey: queryKeys.runs.detail(runId) });
-    };
-
-    source.onerror = () => {
-      // Browser handles auto-reconnect for EventSource; nothing to do.
-    };
-
-    return () => {
-      source.close();
-    };
-  }, [runId, queryClient]);
+    },
+  });
 }

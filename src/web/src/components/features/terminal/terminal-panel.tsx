@@ -6,6 +6,8 @@ import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { startSession, TERMINAL_WS_URL } from "@/lib/terminal";
+import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
+import { toBase64 } from "@/utils/base64";
 
 export function TerminalPanel(): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -34,7 +36,8 @@ export function TerminalPanel(): ReactElement {
     terminal.open(container);
     fit.fit();
 
-    let socket: WebSocket | null = null;
+    let socket: WebSocketClient | null = null;
+    let inputDisposable: { dispose: () => void } | null = null;
     let disposed = false;
 
     const initialize = async () => {
@@ -51,30 +54,29 @@ export function TerminalPanel(): ReactElement {
         return;
       }
 
-      socket = new WebSocket(TERMINAL_WS_URL);
-      socket.binaryType = "arraybuffer";
-
-      socket.addEventListener("open", () => {
-        socket?.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
+      socket = connectWebSocket(TERMINAL_WS_URL, {
+        onOpen(client) {
+          client.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
+        },
+        onBinary(data) {
+          if (!disposed) {
+            terminal.write(data);
+          }
+        },
+        onText(data) {
+          if (!disposed) {
+            terminal.write(data);
+          }
+        },
+        onClose() {
+          if (!disposed) {
+            terminal.writeln("\r\n\x1b[33m[terminal] disconnected\x1b[0m");
+          }
+        },
       });
 
-      socket.addEventListener("message", (event) => {
-        if (event.data instanceof ArrayBuffer) {
-          terminal.write(new Uint8Array(event.data));
-        } else if (typeof event.data === "string") {
-          terminal.write(event.data);
-        }
-      });
-
-      socket.addEventListener("close", () => {
-        terminal.writeln("\r\n\x1b[33m[terminal] disconnected\x1b[0m");
-      });
-
-      terminal.onData((data) => {
-        if (socket?.readyState === WebSocket.OPEN) {
-          const base64 = btoa(unescape(encodeURIComponent(data)));
-          socket.send(JSON.stringify({ type: "input", data: base64 }));
-        }
+      inputDisposable = terminal.onData((data) => {
+        socket?.sendJson({ type: "input", data: toBase64(data) });
       });
     };
 
@@ -88,11 +90,7 @@ export function TerminalPanel(): ReactElement {
         resizeTimer = null;
         try {
           fit.fit();
-          if (socket?.readyState === WebSocket.OPEN) {
-            socket.send(
-              JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }),
-            );
-          }
+          socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
         } catch {
           // ignore until container is laid out
         }
@@ -104,6 +102,7 @@ export function TerminalPanel(): ReactElement {
       disposed = true;
       if (resizeTimer !== null) clearTimeout(resizeTimer);
       observer.disconnect();
+      inputDisposable?.dispose();
       socket?.close(1000, "panel unmounted");
       terminal.dispose();
     };

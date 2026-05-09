@@ -15,9 +15,13 @@ public sealed class WinPtyProvider : IPtyProvider
     private Thread? readThread;
     private volatile bool disposed;
 
+    /// <inheritdoc />
     public event Action<byte[]>? OutputReceived;
+
+    /// <inheritdoc />
     public event Action<int>? ProcessExited;
 
+    /// <inheritdoc />
     public void Start(string command, string[] args, string workingDirectory, int cols, int rows)
     {
         var options = new PtyOptions
@@ -47,6 +51,7 @@ public sealed class WinPtyProvider : IPtyProvider
         readThread.Start();
     }
 
+    /// <inheritdoc />
     public void Write(byte[] data)
     {
         try
@@ -59,6 +64,7 @@ public sealed class WinPtyProvider : IPtyProvider
         }
     }
 
+    /// <inheritdoc />
     public void Resize(int cols, int rows)
     {
         connection?.Resize(cols, rows);
@@ -84,6 +90,7 @@ public sealed class WinPtyProvider : IPtyProvider
         }
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (disposed) return;

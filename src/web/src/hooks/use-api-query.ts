@@ -1,27 +1,34 @@
 "use client";
 
-import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useQuery,
+  type UndefinedInitialDataOptions,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { ClientResult } from "@/lib/api-client";
 import { useToast } from "@/providers/notification-provider";
 
 type QueryFn<T> = () => Promise<ClientResult<T>>;
 
-interface UseApiQueryOptions<T> extends Omit<UseQueryOptions<T>, "queryKey" | "queryFn"> {
+type ApiQueryKey = readonly unknown[];
+
+interface UseApiQueryOptions<T>
+  extends Omit<UndefinedInitialDataOptions<T, Error, T, ApiQueryKey>, "queryKey" | "queryFn"> {
   errorMessage?: string | ((error: Error) => string);
 }
 
 export function useApiQuery<T>(
-  queryKey: readonly unknown[],
+  queryKey: ApiQueryKey,
   queryFn: QueryFn<T>,
   options?: UseApiQueryOptions<T>,
-): UseQueryResult<T> {
+): UseQueryResult<T, Error> {
   const { errorMessage, ...queryOptions } = options ?? {};
   const toast = useToast();
 
-  const result = useQuery<T>({
+  const result = useQuery<T, Error, T, ApiQueryKey>({
     queryKey,
-    queryFn: async () => {
+    queryFn: async (): Promise<T> => {
       const { data, error } = await queryFn();
       if (error) {
         throw new Error(error.message);

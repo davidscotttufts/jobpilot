@@ -4,8 +4,17 @@ using System.Text.Json;
 
 namespace JobPilot.Terminal;
 
+/// <summary>
+/// Handles the browser WebSocket connection used by the embedded terminal.
+/// </summary>
 public sealed class TerminalHub(SessionManager session, ILogger<TerminalHub> logger)
 {
+    /// <summary>
+    /// Registers a WebSocket client, receives terminal protocol messages, and forwards them to the
+    /// active session.
+    /// </summary>
+    /// <param name="socket">Accepted WebSocket connection from the browser.</param>
+    /// <param name="ct">Cancellation token tied to the HTTP request lifetime.</param>
     public async Task HandleAsync(WebSocket socket, CancellationToken ct)
     {
         session.RegisterClient(socket);

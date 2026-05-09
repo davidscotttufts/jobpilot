@@ -20,5 +20,9 @@ shell_variant = bash
 [*.json]
 indent_size = 2
 
+[*.{cs,csx}]
+indent_size = 4
+tab_width = 4
+
 [*.txt]
 indent_size = 2

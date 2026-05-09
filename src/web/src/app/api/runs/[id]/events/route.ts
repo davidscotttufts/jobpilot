@@ -10,7 +10,11 @@ interface Params {
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await ctx.params;
   const run = await db.run.findUnique({ where: { runId: id }, select: { runId: true } });
-  if (!run) return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
+
+  if (!run) {
+    return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
+  }
+
   const stream = subscribeToRun(id);
   return new Response(stream, {
     headers: {
