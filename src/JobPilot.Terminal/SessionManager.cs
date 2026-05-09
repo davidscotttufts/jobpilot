@@ -2,8 +2,6 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using JobPilot.Terminal.Pty;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal;
 
@@ -27,7 +25,7 @@ public sealed class SessionManager : IDisposable
 {
     private readonly PtyService pty;
     private readonly ILogger<SessionManager> logger;
-    private readonly string pluginDir;
+    private readonly TerminalSessionPaths paths;
     private readonly ConcurrentDictionary<WebSocket, byte> clients = new();
     private readonly Lock stateLock = new();
     private SessionState state = SessionState.Stopped;
@@ -37,17 +35,11 @@ public sealed class SessionManager : IDisposable
     /// </summary>
     /// <param name="pty">The PTY service used to start and control the terminal process.</param>
     /// <param name="logger">Logger for session lifecycle events.</param>
-    /// <param name="configuration">Application configuration, including optional Claude Code settings.</param>
-    /// <param name="environment">Host environment used to resolve the bundled plugin path.</param>
-    public SessionManager(
-        PtyService pty,
-        ILogger<SessionManager> logger,
-        IConfiguration configuration,
-        IHostEnvironment environment)
+    public SessionManager(PtyService pty, ILogger<SessionManager> logger)
     {
         this.pty = pty;
         this.logger = logger;
-        pluginDir = ResolvePluginDir(configuration["Claude:PluginDir"], environment.ContentRootPath);
+        paths = TerminalSessionPaths.Resolve();
 
         pty.OutputReceived += OnPtyOutput;
         pty.ProcessExited += OnPtyExit;
@@ -70,10 +62,10 @@ public sealed class SessionManager : IDisposable
     /// <summary>
     /// Starts the Claude Code PTY session if it is not already running.
     /// </summary>
-    /// <param name="workingDir">Working directory for the spawned process.</param>
+    /// <param name="requestedWorkingDir">Optional working directory for the spawned process.</param>
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
-    public void Start(string workingDir, int cols, int rows)
+    public void Start(string? requestedWorkingDir, int cols, int rows)
     {
         lock (stateLock)
         {
@@ -83,13 +75,14 @@ public sealed class SessionManager : IDisposable
                 return;
             }
 
+            var workingDir = paths.ResolveWorkingDir(requestedWorkingDir);
             logger.LogInformation(
                 "Starting Claude Code: cwd={Cwd} pluginDir={PluginDir} cols={Cols} rows={Rows}",
                 workingDir,
-                pluginDir,
+                paths.PluginDir,
                 cols,
                 rows);
-            pty.Start("claude", ["--plugin-dir", pluginDir], workingDir, cols, rows);
+            pty.Start("claude", ["--plugin-dir", paths.PluginDir], workingDir, cols, rows);
             state = SessionState.Running;
         }
     }
@@ -188,49 +181,6 @@ public sealed class SessionManager : IDisposable
                 logger.LogDebug(ex, "Broadcast to client failed; will be cleaned up on next disconnect.");
             }
         }
-    }
-
-    private static string ResolvePluginDir(string? configuredPath, string contentRootPath)
-    {
-        if (!string.IsNullOrWhiteSpace(configuredPath))
-        {
-            var resolved = ResolveAgainst(contentRootPath, configuredPath);
-            if (IsPluginDir(resolved)) return resolved;
-
-            throw new DirectoryNotFoundException(
-                $"Configured Claude plugin directory does not contain .claude-plugin/plugin.json: {resolved}");
-        }
-
-        var roots = new[] { Environment.CurrentDirectory, contentRootPath, AppContext.BaseDirectory };
-        var relatives = new[]
-        {
-            Path.Combine("src", "jobpilot-claude-plugin"),
-            "jobpilot-claude-plugin",
-            Path.Combine("..", "jobpilot-claude-plugin"),
-            Path.Combine("..", "..", "..", "..", "jobpilot-claude-plugin")
-        };
-
-        foreach (var root in roots)
-        {
-            foreach (var relative in relatives)
-            {
-                var candidate = ResolveAgainst(root, relative);
-                if (IsPluginDir(candidate)) return candidate;
-            }
-        }
-
-        throw new DirectoryNotFoundException(
-            "Could not find the JobPilot Claude plugin. Set Claude:PluginDir to src/jobpilot-claude-plugin.");
-    }
-
-    private static string ResolveAgainst(string root, string path)
-    {
-        return Path.GetFullPath(Path.IsPathRooted(path) ? path : Path.Combine(root, path));
-    }
-
-    private static bool IsPluginDir(string path)
-    {
-        return File.Exists(Path.Combine(path, ".claude-plugin", "plugin.json"));
     }
 
     /// <summary>

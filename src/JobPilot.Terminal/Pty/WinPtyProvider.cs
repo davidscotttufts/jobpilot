@@ -24,10 +24,14 @@ public sealed class WinPtyProvider : IPtyProvider
     /// <inheritdoc />
     public void Start(string command, string[] args, string workingDirectory, int cols, int rows)
     {
+        var commandLine = new string[args.Length + 1];
+        commandLine[0] = command;
+        Array.Copy(args, 0, commandLine, 1, args.Length);
+
         var options = new PtyOptions
         {
             App = command,
-            CommandLine = args,
+            CommandLine = commandLine,
             Cwd = workingDirectory,
             Cols = cols,
             Rows = rows,

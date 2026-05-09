@@ -9,6 +9,12 @@ import { startSession, TERMINAL_WS_URL } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { toBase64 } from "@/utils/base64";
 
+const RESIZE_DEBOUNCE_MS = 220;
+const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+
+/**
+ * Hosts the xterm.js instance that bridges browser input/output to JobPilot.Terminal.
+ */
 export function TerminalPanel(): ReactElement {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
@@ -21,8 +27,11 @@ export function TerminalPanel(): ReactElement {
 
     const terminal = new Terminal({
       cursorBlink: true,
-      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+      fontFamily: TERMINAL_FONT_FAMILY,
       fontSize: 13,
+      scrollOnUserInput: true,
+      smoothScrollDuration: 0,
+      windowsPty: { backend: "winpty" },
       theme: {
         background: theme.palette.surfaces.base,
         foreground: theme.palette.text.primary,
@@ -39,9 +48,41 @@ export function TerminalPanel(): ReactElement {
     let socket: WebSocketClient | null = null;
     let inputDisposable: { dispose: () => void } | null = null;
     let disposed = false;
+    let lastCols = terminal.cols;
+    let lastRows = terminal.rows;
+
+    const writeOutput = (data: string | Uint8Array) => {
+      if (!disposed) {
+        terminal.write(data);
+      }
+    };
+
+    const sendResize = () => {
+      socket?.sendJson({ type: "resize", cols: lastCols, rows: lastRows });
+    };
+
+    const syncSize = () => {
+      if (disposed) {
+        return;
+      }
+      try {
+        fit.fit();
+        if (terminal.cols === lastCols && terminal.rows === lastRows) {
+          return;
+        }
+
+        lastCols = terminal.cols;
+        lastRows = terminal.rows;
+        sendResize();
+        terminal.scrollToBottom();
+      } catch {
+        // ignore until container is laid out
+      }
+    };
 
     const initialize = async () => {
       try {
+        syncSize();
         await startSession({ cols: terminal.cols, rows: terminal.rows });
       } catch (err) {
         terminal.writeln(
@@ -55,23 +96,17 @@ export function TerminalPanel(): ReactElement {
       }
 
       socket = connectWebSocket(TERMINAL_WS_URL, {
-        onOpen(client) {
-          client.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
+        onOpen() {
+          sendResize();
         },
         onBinary(data) {
-          if (!disposed) {
-            terminal.write(data);
-          }
+          writeOutput(data);
         },
         onText(data) {
-          if (!disposed) {
-            terminal.write(data);
-          }
+          writeOutput(data);
         },
         onClose() {
-          if (!disposed) {
-            terminal.writeln("\r\n\x1b[33m[terminal] disconnected\x1b[0m");
-          }
+          writeOutput("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n");
         },
       });
 
@@ -85,22 +120,22 @@ export function TerminalPanel(): ReactElement {
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
     const observer = new ResizeObserver(() => {
-      if (resizeTimer !== null) clearTimeout(resizeTimer);
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+
       resizeTimer = setTimeout(() => {
         resizeTimer = null;
-        try {
-          fit.fit();
-          socket?.sendJson({ type: "resize", cols: terminal.cols, rows: terminal.rows });
-        } catch {
-          // ignore until container is laid out
-        }
-      }, 120);
+        syncSize();
+      }, RESIZE_DEBOUNCE_MS);
     });
     observer.observe(container);
 
     return () => {
       disposed = true;
-      if (resizeTimer !== null) clearTimeout(resizeTimer);
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
       observer.disconnect();
       inputDisposable?.dispose();
       socket?.close(1000, "panel unmounted");
@@ -115,8 +150,17 @@ export function TerminalPanel(): ReactElement {
         flex: 1,
         minHeight: 0,
         backgroundColor: t.palette.surfaces.base,
+        overflow: "hidden",
+        position: "relative",
         px: 1,
         py: 0.5,
+        "& .xterm": {
+          height: "100%",
+          maxWidth: "100%",
+        },
+        "& .xterm-viewport": {
+          overscrollBehavior: "contain",
+        },
       })}
     />
   );

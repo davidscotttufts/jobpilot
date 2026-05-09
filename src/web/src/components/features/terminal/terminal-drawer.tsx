@@ -1,24 +1,29 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useState, type MouseEvent, type ReactElement } from "react";
 import { Close, RestartAlt, StopCircle } from "@mui/icons-material";
 import { Box, IconButton, Stack, Tooltip, Typography } from "@mui/material";
-import { killSession, startSession } from "@/lib/terminal";
+import { killSession } from "@/lib/terminal";
 import { useTerminal } from "@/providers/terminal-provider";
 import { TerminalPanel } from "./terminal-panel";
 
-const MIN_HEIGHT = 160;
+const MIN_HEIGHT = 240;
 const MAX_HEIGHT = 720;
-const DEFAULT_HEIGHT = 320;
+const DEFAULT_HEIGHT = 480;
 
-export function TerminalDrawer(): ReactElement | null {
+/**
+ * Renders the resizable terminal drawer and its session controls.
+ */
+export function TerminalDrawer(): ReactElement {
   const { open, setOpen } = useTerminal();
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const [reloadKey, setReloadKey] = useState(0);
 
-  if (!open) return null;
+  if (!open) {
+    return <></>;
+  }
 
-  const startDrag = (event: React.MouseEvent): void => {
+  const startDrag = (event: MouseEvent): void => {
     event.preventDefault();
     const startY = event.clientY;
     const startHeight = height;
@@ -36,11 +41,11 @@ export function TerminalDrawer(): ReactElement | null {
     document.addEventListener("mouseup", onUp);
   };
 
-  const handleStop = async (): Promise<void> => {
+  const handleStop = async () => {
     await killSession();
   };
 
-  const handleRestart = async (): Promise<void> => {
+  const handleRestart = async () => {
     await killSession();
     setReloadKey((k) => k + 1);
   };
@@ -54,12 +59,14 @@ export function TerminalDrawer(): ReactElement | null {
         backgroundColor: t.palette.surfaces.base,
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden",
       })}
     >
       <Box
         onMouseDown={startDrag}
         sx={(t) => ({
           height: 6,
+          flexShrink: 0,
           cursor: "ns-resize",
           backgroundColor: t.palette.line.divider,
           "&:hover": { backgroundColor: t.palette.line.border },
@@ -70,6 +77,7 @@ export function TerminalDrawer(): ReactElement | null {
         sx={(t) => ({
           alignItems: "center",
           gap: 0.5,
+          flexShrink: 0,
           px: 1.5,
           py: 0.5,
           borderBottom: `1px solid ${t.palette.line.divider}`,

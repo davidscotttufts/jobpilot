@@ -10,5 +10,6 @@ bin/
 obj/
 *.user
 dist/
+.tmp/
 
 .idea/
