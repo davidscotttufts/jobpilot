@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type ReactElement } from "react";
+import { SyntheticEvent, useRef, useState, type ReactElement } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import { Box, Button, Popover, Stack, TextField, Typography } from "@mui/material";
+import { formatSkillCommand } from "@/lib/terminal";
 import { useTerminal } from "@/providers/terminal-provider";
 
 export function AutopilotRunButton(): ReactElement {
@@ -11,7 +12,7 @@ export function AutopilotRunButton(): ReactElement {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const handleSubmit = async (event: SyntheticEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     const trimmed = query.trim();
     if (!trimmed) return;
@@ -20,7 +21,7 @@ export function AutopilotRunButton(): ReactElement {
     await injectSkill("autopilot", trimmed);
   };
 
-  const command = provider === "codex" ? "$jobpilot-autopilot" : "/jobpilot:autopilot";
+  const command = formatSkillCommand(provider, "autopilot");
 
   return (
     <>

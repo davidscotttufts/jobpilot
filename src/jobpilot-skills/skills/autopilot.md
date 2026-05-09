@@ -23,17 +23,17 @@ profile, resume, and credentials. Take `data.autopilot` from the profile
 response as the configuration object. Apply these defaults if a field is
 missing:
 
-| Setting                 | Default          | Description                                                                                                      |
-| ----------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 6                | Minimum score (1-10) to qualify                                                                                  |
-| `maxApplicationsPerRun` | 10               | Max jobs to apply to in one run                                                                                  |
-| `skipCompanies`         | []               | Company names to skip                                                                                            |
-| `skipTitleKeywords`     | []               | Title keywords to skip (e.g., "intern", "principal")                                                             |
-| `confirmMode`           | "batch"          | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore`. |
-| `minSalary`             | 0                | Skip jobs with listed comp below this. 0 = no filter.                                                            |
-| `maxSalary`             | 0                | Skip jobs above this. 0 = no filter.                                                                             |
-| `salaryExpectation`     | ""               | Auto-fill salary expectation fields.                                                                             |
-| `defaultStartDate`      | "2 weeks notice" | Default start date answer.                                                                                       |
+| Setting                 | Default          | Description                                                                                                           |
+| ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `minMatchScore`         | 6                | Minimum score on a 1-10 scale; compared against the persisted 0-100 `matchScore` as `minMatchScore × 10`              |
+| `maxApplicationsPerRun` | 10               | Max jobs to apply to in one run                                                                                       |
+| `skipCompanies`         | []               | Company names to skip                                                                                                 |
+| `skipTitleKeywords`     | []               | Title keywords to skip (e.g., "intern", "principal")                                                                  |
+| `confirmMode`           | "batch"          | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore × 10`. |
+| `minSalary`             | 0                | Skip jobs with listed comp below this. 0 = no filter.                                                                 |
+| `maxSalary`             | 0                | Skip jobs above this. 0 = no filter.                                                                                  |
+| `salaryExpectation`     | ""               | Auto-fill salary expectation fields.                                                                                  |
+| `defaultStartDate`      | "2 weeks notice" | Default start date answer.                                                                                            |
 
 Inline argument overrides take precedence:
 
@@ -120,10 +120,11 @@ If `data.applied` is true, add the job to the run with
 
 For each surviving job:
 
-- Score 1-10 based on tech overlap, experience, education, domain, seniority,
-  location.
-- If below `minMatchScore` â†’ status `"skipped"`,
-  `skipReason: "Below minimum match score (X < Y)"`.
+- Score 0-100 based on tech overlap, experience, education, domain, seniority,
+  location. The persisted `matchScore` is on a 0-100 scale; `minMatchScore` is
+  on a 1-10 scale, so compare against `minMatchScore × 10`.
+- If the score is below `minMatchScore × 10` â†’ status `"skipped"`,
+  `skipReason: "Below minimum match score (X < Y)"` (X and Y on the 0-100 scale).
 - If company in `skipCompanies` â†’ `skipped`, `"Company in skip list"`.
 - If title matches `skipTitleKeywords` â†’ `skipped`, `"Title contains blocked keyword: <k>"`.
 - If listed salary < `minSalary` (and minSalary > 0) â†’ `skipped`,
@@ -163,8 +164,8 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
 
 ### Auto Mode (`confirmMode: "auto"`)
 
-If every qualified job scores >= `minMatchScore`, PATCH all qualified jobs to
-`status: "approved"` and skip to Phase 3. **If any qualified job is borderline,
+If every qualified job scores >= `minMatchScore × 10`, PATCH all qualified jobs
+to `status: "approved"` and skip to Phase 3. **If any qualified job is borderline,
 fall back to batch mode** regardless of the setting â€” humans always review the
 edge cases.
 
@@ -173,20 +174,20 @@ edge cases.
 ```
 ## Autopilot Run: "<query>"
 
-Found <totalFound> jobs across <N> boards. <qualified> qualify (score >= <minMatchScore>/10).
+Found <totalFound> jobs across <N> boards. <qualified> qualify (score >= <minMatchScore × 10>/100).
 
-| # | Score | Title | Company | Location | Board |
-|---|-------|-------|---------|----------|-------|
-| 1 | 9/10  | Senior Full Stack Dev | Acme Corp | Remote | linkedin.com |
+| # | Score  | Title                 | Company   | Location | Board        |
+|---|--------|-----------------------|-----------|----------|--------------|
+| 1 | 90/100 | Senior Full Stack Dev | Acme Corp | Remote   | linkedin.com |
 
 Live view: http://localhost:8000/runs/<RUN_ID>
 
 **Commands:**
-- "go" â€” apply to all qualified jobs
-- "go 1,3,5" â€” apply only to specific jobs
-- "remove 3,7" â€” exclude specific jobs
-- "details 2" â€” show full description before deciding
-- "stop" â€” pause the run
+- "go" apply to all qualified jobs
+- "go 1,3,5" apply only to specific jobs
+- "remove 3,7" exclude specific jobs
+- "details 2" show full description before deciding
+- "stop" pause the run
 ```
 
 This is the **single confirmation gate.** After "go", apply autonomously.
@@ -327,4 +328,3 @@ the full job-by-job breakdown. Suggest follow-ups:
 
 Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md` for
 handling large pages, popups, and general browser best practices.
-

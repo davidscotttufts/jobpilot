@@ -18,6 +18,16 @@ public static class TerminalProviders
             _ => throw new ArgumentException($"Unsupported terminal provider '{provider}'.")
         };
     }
+
+    /// <summary>
+    /// Returns the user-facing display name for a normalized provider id.
+    /// </summary>
+    public static string GetDisplayName(string id) => id switch
+    {
+        Claude => "Claude Code",
+        Codex => "Codex",
+        _ => throw new ArgumentException($"Unsupported terminal provider '{id}'.")
+    };
 }
 
 /// <summary>

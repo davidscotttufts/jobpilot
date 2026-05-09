@@ -1,6 +1,16 @@
 namespace JobPilot.Terminal.Pty;
 
 /// <summary>
+/// Raised when a PTY provider fails to spawn the requested executable.
+/// </summary>
+public sealed class PtyStartException(string command, Exception innerException)
+    : Exception($"Failed to start '{command}': {innerException.Message}", innerException)
+{
+    /// <summary>Gets the executable that failed to start.</summary>
+    public string Command { get; } = command;
+}
+
+/// <summary>
 /// Selects a platform PTY provider and exposes a stable service API for session management.
 /// </summary>
 public sealed class PtyService : IDisposable
@@ -25,27 +35,36 @@ public sealed class PtyService : IDisposable
     /// <param name="workingDirectory">Working directory for the process.</param>
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
-    public void Start(string command, string[] args, string workingDirectory, int cols, int rows)
+    /// <param name="environment">Additional environment variables exported to the spawned process.</param>
+    /// <exception cref="PtyStartException">Thrown when the underlying PTY provider fails to spawn the process.</exception>
+    public void Start(
+        string command,
+        string[] args,
+        string workingDirectory,
+        int cols,
+        int rows,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         Stop();
 
-        provider = CreateProvider();
-        provider.OutputReceived += data => OutputReceived?.Invoke(data);
-        provider.ProcessExited += code => ProcessExited?.Invoke(code);
+        var next = CreateProvider();
+        next.OutputReceived += data => OutputReceived?.Invoke(data);
+        next.ProcessExited += code => ProcessExited?.Invoke(code);
 
         try
         {
-            provider.Start(command, args, workingDirectory, cols, rows);
+            next.Start(command, args, workingDirectory, cols, rows, environment);
         }
         catch (Exception ex)
         {
-            provider?.Dispose();
-            provider = null;
+            next.Dispose();
 
             var error = $"\e[31mFailed to start '{command}': {ex.Message}\e[0m\r\n";
             OutputReceived?.Invoke(System.Text.Encoding.UTF8.GetBytes(error));
-            ProcessExited?.Invoke(-1);
+            throw new PtyStartException(command, ex);
         }
+
+        provider = next;
     }
 
     /// <summary>

@@ -79,16 +79,11 @@ public sealed record TerminalSessionPaths(
     public TerminalLaunchSpec GetLaunchSpec(string? provider, string workingDir)
     {
         var normalized = TerminalProviders.Normalize(provider);
+        var info = new TerminalProviderInfo(normalized, TerminalProviders.GetDisplayName(normalized));
         return normalized switch
         {
-            TerminalProviders.Claude => new TerminalLaunchSpec(
-                new TerminalProviderInfo(TerminalProviders.Claude, "Claude Code"),
-                "claude",
-                ["--plugin-dir", ClaudePluginDir]),
-            TerminalProviders.Codex => new TerminalLaunchSpec(
-                new TerminalProviderInfo(TerminalProviders.Codex, "Codex"),
-                "codex",
-                ["--no-alt-screen", "-C", workingDir]),
+            TerminalProviders.Claude => new TerminalLaunchSpec(info, "claude", ["--plugin-dir", ClaudePluginDir]),
+            TerminalProviders.Codex => new TerminalLaunchSpec(info, "codex", ["--no-alt-screen", "-C", workingDir]),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, null)
         };
     }
@@ -100,8 +95,8 @@ public sealed record TerminalSessionPaths(
     {
         return
         [
-            new TerminalProviderInfo(TerminalProviders.Claude, "Claude Code"),
-            new TerminalProviderInfo(TerminalProviders.Codex, "Codex")
+            new TerminalProviderInfo(TerminalProviders.Claude, TerminalProviders.GetDisplayName(TerminalProviders.Claude)),
+            new TerminalProviderInfo(TerminalProviders.Codex, TerminalProviders.GetDisplayName(TerminalProviders.Codex))
         ];
     }
 

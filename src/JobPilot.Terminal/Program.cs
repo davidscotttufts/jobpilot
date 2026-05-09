@@ -1,6 +1,7 @@
 using JobPilot.Terminal;
 using JobPilot.Terminal.Models;
 using JobPilot.Terminal.Pty;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,15 +29,31 @@ app.MapGet("/healthz", (SessionManager session) =>
   return TypedResults.Ok(new SessionStatus("ok", sessionState, session.ActiveProvider, SessionManager.Providers));
 });
 
-app.MapPost("/sessions/start", (StartSessionRequest request, SessionManager session) =>
+app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session) =>
 {
-  session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows);
+  try
+  {
+    session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows);
+  }
+  catch (PtyStartException ex)
+  {
+    return TypedResults.Problem(
+      title: "Failed to start terminal session",
+      detail: ex.Message,
+      statusCode: StatusCodes.Status500InternalServerError);
+  }
   return TypedResults.Ok(new SessionStatus("ok", "running", session.ActiveProvider, SessionManager.Providers));
 });
 
-app.MapPost("/sessions/inject", (InjectRequest request, SessionManager session) =>
+app.MapPost("/sessions/inject", Results<Ok, ProblemHttpResult> (InjectRequest request, SessionManager session) =>
 {
-  session.Inject(request.Command);
+  if (!session.Inject(request.Command, request.Provider))
+  {
+    return TypedResults.Problem(
+      title: "Inject rejected",
+      detail: "The session is not running or the active provider does not match the requested provider.",
+      statusCode: StatusCodes.Status409Conflict);
+  }
   return TypedResults.Ok();
 });
 

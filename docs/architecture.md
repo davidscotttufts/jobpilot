@@ -13,9 +13,12 @@ split per domain under `src/web/prisma/schema/`.
 **JobPilot.Terminal** ([src/JobPilot.Terminal/](../src/JobPilot.Terminal/)) is
 an ASP.NET Core minimal API on `127.0.0.1:8001`. It owns one active provider
 PTY (winpty via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
-over WebSocket. HTTP endpoints (`/sessions/start`, `/sessions/inject`,
-`/sessions/current`, `/healthz`) let UI buttons write provider-specific
-commands directly into the active provider's stdin.
+over WebSocket. HTTP endpoints (`POST /sessions/start`, `POST /sessions/inject`,
+`DELETE /sessions/current`, `GET /healthz`, `GET /ws`) let UI buttons write
+provider-specific commands directly into the active provider's stdin. When
+spawning a provider it also exports `JOBPILOT_SKILLS_ROOT` and
+`JOBPILOT_WORKSPACE_ROOT` so wrappers can resolve shared skills without
+filesystem inference.
 
 **Shared JobPilot skills** ([src/jobpilot-skills/](../src/jobpilot-skills/))
 contain the provider-neutral workflow instructions. Claude and Codex plugins

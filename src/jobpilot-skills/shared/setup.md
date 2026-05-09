@@ -74,9 +74,10 @@ Each row has `{ id, scope, email, password }`. The `scope` is either
 `"default"` or a board domain like `"linkedin.com"`. Lookup order when you
 need credentials for a job board domain:
 
-1. Find a credential with `scope === <board-domain>` (e.g. `linkedin.com`).
-2. If that board has its own `email`/`password` overrides on its `JobBoard` row
-   (`/api/job-boards`), prefer those.
+1. If the `JobBoard` row (`/api/job-boards`) has its own `email`/`password`
+   override, use those.
+2. Otherwise find a credential with `scope === <board-domain>`
+   (e.g. `linkedin.com`).
 3. Otherwise fall back to the credential with `scope === "default"`.
 4. If nothing matches, report it to the user â€” do not guess.
 

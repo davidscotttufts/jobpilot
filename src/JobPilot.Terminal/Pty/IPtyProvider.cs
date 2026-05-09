@@ -13,7 +13,14 @@ public interface IPtyProvider : IDisposable
     /// <param name="workingDirectory">Working directory for the process.</param>
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
-    void Start(string command, string[] args, string workingDirectory, int cols, int rows);
+    /// <param name="environment">Additional environment variables exported to the spawned process.</param>
+    void Start(
+        string command,
+        string[] args,
+        string workingDirectory,
+        int cols,
+        int rows,
+        IReadOnlyDictionary<string, string>? environment = null);
 
     /// <summary>
     /// Writes raw terminal input bytes to the PTY.

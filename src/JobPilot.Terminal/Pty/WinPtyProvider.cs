@@ -22,11 +22,29 @@ public sealed class WinPtyProvider : IPtyProvider
     public event Action<int>? ProcessExited;
 
     /// <inheritdoc />
-    public void Start(string command, string[] args, string workingDirectory, int cols, int rows)
+    public void Start(
+        string command,
+        string[] args,
+        string workingDirectory,
+        int cols,
+        int rows,
+        IReadOnlyDictionary<string, string>? environment = null)
     {
         var commandLine = new string[args.Length + 1];
         commandLine[0] = command;
         Array.Copy(args, 0, commandLine, 1, args.Length);
+
+        var env = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["TERM"] = "xterm-256color"
+        };
+        if (environment is not null)
+        {
+            foreach (var kvp in environment)
+            {
+                env[kvp.Key] = kvp.Value;
+            }
+        }
 
         var options = new PtyOptions
         {
@@ -36,10 +54,7 @@ public sealed class WinPtyProvider : IPtyProvider
             Cols = cols,
             Rows = rows,
             ForceWinPty = true,
-            Environment = new Dictionary<string, string>
-            {
-                ["TERM"] = "xterm-256color"
-            }
+            Environment = env
         };
 
         connection = Task.Run(() => PtyProvider.SpawnAsync(options, CancellationToken.None))
