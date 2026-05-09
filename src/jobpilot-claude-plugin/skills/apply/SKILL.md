@@ -68,7 +68,7 @@ endpoint matches both by exact URL **and** by fuzzy normalized title+company
 over a 30-day window, so pass everything you have:
 
 ```bash
-JOBPILOT_API=http://127.0.0.1:8000
+JOBPILOT_API=http://localhost:8000
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 TITLE_ENCODED=$(jq -rn --arg v "<job-title>" '$v|@uri')
 COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')

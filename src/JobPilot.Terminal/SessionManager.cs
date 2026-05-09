@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using JobPilot.Terminal.Pty;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal;
 
@@ -25,6 +27,7 @@ public sealed class SessionManager : IDisposable
 {
     private readonly PtyService pty;
     private readonly ILogger<SessionManager> logger;
+    private readonly string pluginDir;
     private readonly ConcurrentDictionary<WebSocket, byte> clients = new();
     private readonly Lock stateLock = new();
     private SessionState state = SessionState.Stopped;
@@ -34,10 +37,17 @@ public sealed class SessionManager : IDisposable
     /// </summary>
     /// <param name="pty">The PTY service used to start and control the terminal process.</param>
     /// <param name="logger">Logger for session lifecycle events.</param>
-    public SessionManager(PtyService pty, ILogger<SessionManager> logger)
+    /// <param name="configuration">Application configuration, including optional Claude Code settings.</param>
+    /// <param name="environment">Host environment used to resolve the bundled plugin path.</param>
+    public SessionManager(
+        PtyService pty,
+        ILogger<SessionManager> logger,
+        IConfiguration configuration,
+        IHostEnvironment environment)
     {
         this.pty = pty;
         this.logger = logger;
+        pluginDir = ResolvePluginDir(configuration["Claude:PluginDir"], environment.ContentRootPath);
 
         pty.OutputReceived += OnPtyOutput;
         pty.ProcessExited += OnPtyExit;
@@ -73,8 +83,13 @@ public sealed class SessionManager : IDisposable
                 return;
             }
 
-            logger.LogInformation("Starting Claude Code: cwd={Cwd} cols={Cols} rows={Rows}", workingDir, cols, rows);
-            pty.Start("claude", [], workingDir, cols, rows);
+            logger.LogInformation(
+                "Starting Claude Code: cwd={Cwd} pluginDir={PluginDir} cols={Cols} rows={Rows}",
+                workingDir,
+                pluginDir,
+                cols,
+                rows);
+            pty.Start("claude", ["--plugin-dir", pluginDir], workingDir, cols, rows);
             state = SessionState.Running;
         }
     }
@@ -173,6 +188,49 @@ public sealed class SessionManager : IDisposable
                 logger.LogDebug(ex, "Broadcast to client failed; will be cleaned up on next disconnect.");
             }
         }
+    }
+
+    private static string ResolvePluginDir(string? configuredPath, string contentRootPath)
+    {
+        if (!string.IsNullOrWhiteSpace(configuredPath))
+        {
+            var resolved = ResolveAgainst(contentRootPath, configuredPath);
+            if (IsPluginDir(resolved)) return resolved;
+
+            throw new DirectoryNotFoundException(
+                $"Configured Claude plugin directory does not contain .claude-plugin/plugin.json: {resolved}");
+        }
+
+        var roots = new[] { Environment.CurrentDirectory, contentRootPath, AppContext.BaseDirectory };
+        var relatives = new[]
+        {
+            Path.Combine("src", "jobpilot-claude-plugin"),
+            "jobpilot-claude-plugin",
+            Path.Combine("..", "jobpilot-claude-plugin"),
+            Path.Combine("..", "..", "..", "..", "jobpilot-claude-plugin")
+        };
+
+        foreach (var root in roots)
+        {
+            foreach (var relative in relatives)
+            {
+                var candidate = ResolveAgainst(root, relative);
+                if (IsPluginDir(candidate)) return candidate;
+            }
+        }
+
+        throw new DirectoryNotFoundException(
+            "Could not find the JobPilot Claude plugin. Set Claude:PluginDir to src/jobpilot-claude-plugin.");
+    }
+
+    private static string ResolveAgainst(string root, string path)
+    {
+        return Path.GetFullPath(Path.IsPathRooted(path) ? path : Path.Combine(root, path));
+    }
+
+    private static bool IsPluginDir(string path)
+    {
+        return File.Exists(Path.Combine(path, ".claude-plugin", "plugin.json"));
     }
 
     /// <summary>

@@ -9,13 +9,13 @@ argument-hint: "<search_query OR 'resume' OR 'retry-failed <run-id>'>"
 You autonomously search job boards, score results against the user's resume,
 present a batch for one-time approval, then apply to every approved job
 without further confirmation. Progress lives in the JobPilot database; the
-live viewer at `http://127.0.0.1:8000/runs/<run-id>` reflects every state
+live viewer at `http://localhost:8000/runs/<run-id>` reflects every state
 change in real time.
 
 ## Setup
 
 ```bash
-JOBPILOT_API=http://127.0.0.1:8000
+JOBPILOT_API=http://localhost:8000
 ```
 
 Read and follow `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the
@@ -23,19 +23,20 @@ profile, resume, and credentials. Take `data.autopilot` from the profile
 response as the configuration object. Apply these defaults if a field is
 missing:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `minMatchScore` | 6 | Minimum score (1-10) to qualify |
-| `maxApplicationsPerRun` | 10 | Max jobs to apply to in one run |
-| `skipCompanies` | [] | Company names to skip |
-| `skipTitleKeywords` | [] | Title keywords to skip (e.g., "intern", "principal") |
-| `confirmMode` | "batch" | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore`. |
-| `minSalary` | 0 | Skip jobs with listed comp below this. 0 = no filter. |
-| `maxSalary` | 0 | Skip jobs above this. 0 = no filter. |
-| `salaryExpectation` | "" | Auto-fill salary expectation fields. |
-| `defaultStartDate` | "2 weeks notice" | Default start date answer. |
+| Setting                 | Default          | Description                                                                                                      |
+| ----------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `minMatchScore`         | 6                | Minimum score (1-10) to qualify                                                                                  |
+| `maxApplicationsPerRun` | 10               | Max jobs to apply to in one run                                                                                  |
+| `skipCompanies`         | []               | Company names to skip                                                                                            |
+| `skipTitleKeywords`     | []               | Title keywords to skip (e.g., "intern", "principal")                                                             |
+| `confirmMode`           | "batch"          | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore`. |
+| `minSalary`             | 0                | Skip jobs with listed comp below this. 0 = no filter.                                                            |
+| `maxSalary`             | 0                | Skip jobs above this. 0 = no filter.                                                                             |
+| `salaryExpectation`     | ""               | Auto-fill salary expectation fields.                                                                             |
+| `defaultStartDate`      | "2 weeks notice" | Default start date answer.                                                                                       |
 
 Inline argument overrides take precedence:
+
 - `/jobpilot:autopilot "senior fullstack React remote" --min-score 7 --max-apps 5`
 
 ### Run Modes
@@ -73,7 +74,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs" \
     '{runId:$id, query:$q, source:"autopilot", config:{minMatchScore:$minScore, maxApplications:$maxApps, boards:$boards}}')"
 ```
 
-Surface the live-view link to the user: `http://127.0.0.1:8000/runs/<RUN_ID>`.
+Surface the live-view link to the user: `http://localhost:8000/runs/<RUN_ID>`.
 
 ## Phase 1: Search Job Boards
 
@@ -178,7 +179,7 @@ Found <totalFound> jobs across <N> boards. <qualified> qualify (score >= <minMat
 |---|-------|-------|---------|----------|-------|
 | 1 | 9/10  | Senior Full Stack Dev | Acme Corp | Remote | linkedin.com |
 
-Live view: http://127.0.0.1:8000/runs/<RUN_ID>
+Live view: http://localhost:8000/runs/<RUN_ID>
 
 **Commands:**
 - "go" — apply to all qualified jobs
@@ -300,8 +301,9 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table and link to `http://127.0.0.1:8000/runs/<RUN_ID>` for
+Print a summary table and link to `http://localhost:8000/runs/<RUN_ID>` for
 the full job-by-job breakdown. Suggest follow-ups:
+
 - `retry-failed <RUN_ID>` to retry failures.
 - A new search.
 

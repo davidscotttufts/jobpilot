@@ -15,4 +15,12 @@
     <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\jobpilot-claude-plugin\**\*">
+      <Link>jobpilot-claude-plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

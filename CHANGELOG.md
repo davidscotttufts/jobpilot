@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [2.0.0] - 2026-05-07
 
 The whole state layer moved out of JSON/text files at the plugin root and
-into a local Next.js + SQLite web app at `http://127.0.0.1:8000`. Skills
+into a local Next.js + SQLite web app at `http://localhost:8000`. Skills
 now drive the app via `curl`. The `scripts/`, `applied-jobs.json`,
 `runs/*.json`, `profile.json`, `profile.example.json`,
 `jobs-to-apply.txt`, and `jobs-to-apply.example.txt` are gone. **Run the
@@ -16,8 +16,8 @@ web app before running any skill.**
 - **`web/`** — Bun + Next.js 16 (App Router, RSC, typed routes) + MUI 9 +
   Prisma 7 (`prisma-client` generator, `@prisma/adapter-libsql` adapter
   for Bun-on-Windows compatibility) + TanStack Query 5 + TanStack Form 1
-  + Zod v4. Bound to `127.0.0.1:8000` with no auth (single-user local
-  tool).
+  - Zod v4. Bound to `127.0.0.1:8000` with no auth (single-user local
+    tool).
 - **Themed MUI** module under `web/src/theme/` with split palette /
   tokens / typography / per-component overrides, plus a custom
   `MuiSvgIcon` `fontSize` size scale (`xs|sm|md|lg|xl|xxl|2xxl`) so no
@@ -61,8 +61,8 @@ web app before running any skill.**
   `queryKeys.runs.detail(runId)` on every event so the live viewer at
   `/runs/[id]` reflects every state change in real time.
 - **Stage funnel for applications**: `applied → recruiter_screen →
-  assessment → hiring_manager_screen → technical_interview → onsite →
-  offer / rejected / withdrawn`. Each transition writes a `StageEvent`
+assessment → hiring_manager_screen → technical_interview → onsite →
+offer / rejected / withdrawn`. Each transition writes a `StageEvent`
   row; the application detail page renders the timeline.
 - **`skills/_shared/setup.md`** rewritten as the single source of truth
   for "load profile/resume/credentials" via the API.
@@ -107,7 +107,7 @@ web app before running any skill.**
 - `jobs-to-apply.txt`, `jobs-to-apply.example.txt` (now `BatchInput`
   rows, managed at `/batch`).
 - `dashboard` skill — superseded by the web dashboard at
-  `http://127.0.0.1:8000/`. Use the browser; the per-skill text summary
+  `http://localhost:8000/`. Use the browser; the per-skill text summary
   was redundant.
 - `docs/configuration.md` (replaced by `docs/self-hosting.md`).
 - `docs/how-it-works.md` (replaced by `docs/architecture.md`).

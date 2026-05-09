@@ -7,7 +7,7 @@ argument-hint: "(none — pulls pending URLs from /api/batch/pending)"
 # Batch Apply - Apply to a Queued List of Job URLs
 
 You apply to a queued list of jobs managed in the JobPilot web app. URLs are
-added through the web UI (`http://127.0.0.1:8000/batch`) or via
+added through the web UI (`http://localhost:8000/batch`) or via
 `POST /api/batch`; this skill pulls the pending queue, scores each job,
 presents a ranked batch for approval, and applies autonomously.
 
@@ -16,7 +16,7 @@ presents a ranked batch for approval, and applies autonomously.
 Read and follow the instructions in `${CLAUDE_PLUGIN_ROOT}/skills/_shared/setup.md` to load the profile, resume, and credentials.
 
 ```bash
-JOBPILOT_API=http://127.0.0.1:8000
+JOBPILOT_API=http://localhost:8000
 ```
 
 ### Load Configuration
@@ -24,13 +24,13 @@ JOBPILOT_API=http://127.0.0.1:8000
 Read `data.autopilot` from the profile response (already loaded by setup.md).
 Apply these defaults if a field is missing:
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `minMatchScore` | 6 | Minimum score (1-10) to include in batch |
-| `maxApplicationsPerRun` | 10 | Max jobs to apply to |
-| `confirmMode` | "batch" | `"batch"` = review before applying. `"auto"` = skip confirmation when ALL jobs score >= `minMatchScore`. |
-| `salaryExpectation` | "" | Auto-fill salary expectation fields |
-| `defaultStartDate` | "2 weeks notice" | Default answer for start date fields |
+| Setting                 | Default          | Description                                                                                              |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `minMatchScore`         | 6                | Minimum score (1-10) to include in batch                                                                 |
+| `maxApplicationsPerRun` | 10               | Max jobs to apply to                                                                                     |
+| `confirmMode`           | "batch"          | `"batch"` = review before applying. `"auto"` = skip confirmation when ALL jobs score >= `minMatchScore`. |
+| `salaryExpectation`     | ""               | Auto-fill salary expectation fields                                                                      |
+| `defaultStartDate`      | "2 weeks notice" | Default answer for start date fields                                                                     |
 
 ## Phase 1: Pull the Pending Batch
 
@@ -40,7 +40,7 @@ curl -fsS "$JOBPILOT_API/api/batch/pending"
 
 `data` is an array of `{ id, url, note, status }`. If empty, tell the user:
 
-> No pending URLs in the batch queue. Open http://127.0.0.1:8000/batch to add
+> No pending URLs in the batch queue. Open http://localhost:8000/batch to add
 > some, or paste a list in the Batch page.
 
 Otherwise report: **"Found N URLs in the batch queue. Visiting each to gather
@@ -57,7 +57,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs" \
 ```
 
 Hold on to `RUN_ID` for the rest of the run. The created `Run` is now visible
-at `http://127.0.0.1:8000/runs/<RUN_ID>`.
+at `http://localhost:8000/runs/<RUN_ID>`.
 
 ## Phase 2: Visit and Score Each Job
 
@@ -155,6 +155,7 @@ Visited <total> jobs. <qualified> qualify (score >= <minMatchScore>/10).
 ```
 
 Process the response by PATCHing each job's status:
+
 - `go` → set every qualified job to `approved`
 - `go 1,3,5` → those become `approved`; rest become `skipped` with `skipReason: "Not selected by user"`
 - `remove N` → that job becomes `skipped` with `skipReason: "Removed by user"`, re-present table
@@ -241,7 +242,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
 ```
 
 This emits an SSE `progress` event so the live viewer at
-`http://127.0.0.1:8000/runs/<RUN_ID>` updates in real time.
+`http://localhost:8000/runs/<RUN_ID>` updates in real time.
 
 ### Step 4.7: Check Limits
 
@@ -258,7 +259,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table and point the user at `http://127.0.0.1:8000/runs/<RUN_ID>` for the live view.
+Print a summary table and point the user at `http://localhost:8000/runs/<RUN_ID>` for the live view.
 
 ## Important Rules
 

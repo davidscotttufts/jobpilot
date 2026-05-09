@@ -14,7 +14,7 @@ You search job boards for relevant positions and rank them by qualification fit 
 2. Fetch the enabled search boards from the API:
 
    ```bash
-   JOBPILOT_API=http://127.0.0.1:8000
+   JOBPILOT_API=http://localhost:8000
    curl -fsS "$JOBPILOT_API/api/job-boards"
    ```
 

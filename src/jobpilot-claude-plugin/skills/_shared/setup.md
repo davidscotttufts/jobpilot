@@ -1,11 +1,11 @@
 # Setup: Load Profile and Resume from the JobPilot API
 
 JobPilot stores all configuration in a local SQLite database served by a Next.js
-app at `http://127.0.0.1:8000`. Skills must call this API instead of reading
+app at `http://localhost:8000`. Skills must call this API instead of reading
 files. Set this once near the top of any skill that needs config:
 
 ```bash
-JOBPILOT_API=http://127.0.0.1:8000
+JOBPILOT_API=http://localhost:8000
 ```
 
 ## 1. Verify the web app is running
@@ -19,7 +19,7 @@ curl -fsS "$JOBPILOT_API/api/health"
 If the request fails (connection refused / non-200), **stop and tell the user**:
 
 > The JobPilot web app is not running. Start it with `cd web && bun dev`, then
-> open http://127.0.0.1:8000 once before re-running this skill.
+> open http://localhost:8000 once before re-running this skill.
 
 Do not fall back to reading any local JSON files — they have been removed.
 
@@ -32,7 +32,7 @@ curl -fsS "$JOBPILOT_API/api/profile"
 Inspect `data.profile`:
 
 - If `data.profile` is `null`, the user has not completed onboarding. Stop and
-  tell them: "Open http://127.0.0.1:8000/onboarding to set up your profile,
+  tell them: "Open http://localhost:8000/onboarding to set up your profile,
   then re-run this skill."
 - Otherwise read fields directly from `data.profile` (firstName, lastName,
   email, phone, address, work auth, EEO answers, preferredLocations, …) and
