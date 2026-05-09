@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { Container, Stack } from "@mui/material";
-import { RunLiveViewer } from "@/components/features/runs/run-live-viewer";
-import { PageHeader } from "@/components/ui/layout/page-header";
+import { RunLiveViewer } from "@/components/features/runs";
+import { PageHeader } from "@/components/ui/layout";
 
 interface RunDetailPageProps {
   params: Promise<{ id: string }>;

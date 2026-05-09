@@ -1,0 +1,12 @@
+{
+  "name": "jobpilot",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet run --project src/JobPilot.Terminal\" \"bun --cwd src/web run dev\"",
+    "build:terminal": "dotnet publish src/JobPilot.Terminal -c Release -o dist/terminal",
+    "build:web": "bun --cwd src/web run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

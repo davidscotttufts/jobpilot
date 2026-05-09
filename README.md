@@ -1,14 +1,21 @@
 # JobPilot
 
 A Claude Code plugin for AI-driven job applications, paired with a local
-Next.js + SQLite web app that owns all of the state.
+Next.js + SQLite web app that owns all of the state and a small .NET
+companion process that hosts an interactive Claude Code session inside
+the web UI.
 
 - **Skills** (Claude Code) do the work: scrape job boards, score postings
   against your resume, fill in applications via Playwright, write cover
   letters and interview prep, etc.
 - **Web app** (`src/web/`) at `http://127.0.0.1:8000` owns all data: profile,
   credentials, resumes, job boards, applications with stage funnel, runs
-  with SSE-driven live progress, batch URL queue.
+  with SSE-driven live progress, batch URL queue. It also embeds a Claude
+  Code terminal panel and exposes "Run autopilot" / "Run apply-batch"
+  buttons that inject slash commands directly into that session.
+- **JobPilot.Terminal** (`src/JobPilot.Terminal/`) at `http://127.0.0.1:8001`
+  is a .NET 10 ASP.NET Core process that owns the `claude` PTY (winpty)
+  and bridges it to the web UI's xterm.js panel over WebSocket.
 - **Skills talk to the web app over HTTP** (`curl`), not the filesystem.
   No more `profile.json`, `applied-jobs.json`, `runs/*.json`, or shell
   scripts.
@@ -16,39 +23,38 @@ Next.js + SQLite web app that owns all of the state.
 ## Quick start
 
 ```bash
-# 1. Install web dependencies (one-time)
+# 1. Install (one-time)
 git clone https://github.com/suxrobgm/jobpilot.git
-cd jobpilot/src/web
-bun install
-bun run db:migrate:apply         # creates the SQLite database and applies the schema
-bun run db:seed                  # seeds default job boards
+cd jobpilot
+bun install                                 # root deps (concurrently)
+bun --cwd src/web install                   # web deps
+bun --cwd src/web run db:migrate:apply      # creates the SQLite database
+bun --cwd src/web run db:seed               # seeds default job boards
 
-# 2. Start the web app (keep this running)
-bun dev                          # serves on http://127.0.0.1:8000
+# 2. Start everything (web + JobPilot.Terminal in one command)
+bun run dev                                 # web on :8000, terminal on :8001
 
-# 3. Install the plugin in Claude Code
-# Add this directory to your Claude Code plugins, then run any skill:
-/jobpilot:apply <job-url>
-/jobpilot:autopilot "senior fullstack developer remote"
-/jobpilot:search "react contract us-remote"
+# 3. In the browser, open http://127.0.0.1:8000 and click the
+#    Terminal button in the sidebar. That panel is your live Claude
+#    Code session — type slash commands directly, or click the inject
+#    buttons on /batch and /runs to fire them for you.
 ```
 
-For dashboards and history, open the web app at `http://127.0.0.1:8000/`.
-
-If a skill is run while the web app is down it stops with a clear
-message and tells you to start it.
+If you prefer to run skills from a separate Claude Code window, you
+can: the web app continues to function as before. The embedded terminal
+panel is optional (the Terminal toggle in the sidebar shows it).
 
 ## Skills
 
-| Slash command | Purpose |
-|---|---|
-| `/jobpilot:apply <url>` | Auto-fill a single application after a fit review and dedupe check. |
-| `/jobpilot:apply-batch` | Pull URLs from `/api/batch/pending`, score against your resume, get one-click batch approval, apply to all. |
-| `/jobpilot:autopilot <query>` | Search every enabled board, score, batch-approve, apply autonomously. Live viewer at `/runs/<id>`. |
-| `/jobpilot:search <query>` | Search boards and rank results without applying. |
-| `/jobpilot:cover-letter <description>` | Tailored cover letter, run through the humanizer. |
-| `/jobpilot:upwork-proposal <job>` | Tailored Upwork proposal. |
-| `/jobpilot:interview <description>` | Behavioral / technical / company-research interview prep. |
+| Slash command | Purpose | Inject button |
+|---|---|---|
+| `/jobpilot:apply <url>` | Auto-fill a single application after a fit review and dedupe check. | — |
+| `/jobpilot:apply-batch` | Pull URLs from `/api/batch/pending`, score against your resume, get one-click batch approval, apply to all. | `/batch` page |
+| `/jobpilot:autopilot <query>` | Search every enabled board, score, batch-approve, apply autonomously. Live viewer at `/runs/<id>`. | `/runs` page |
+| `/jobpilot:search <query>` | Search boards and rank results without applying. | — |
+| `/jobpilot:cover-letter <description>` | Tailored cover letter, run through the humanizer. | — |
+| `/jobpilot:upwork-proposal <job>` | Tailored Upwork proposal. | — |
+| `/jobpilot:interview <description>` | Behavioral / technical / company-research interview prep. | — |
 
 ## Web app
 

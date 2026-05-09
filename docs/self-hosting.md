@@ -10,26 +10,50 @@ no auth, no external services beyond the job boards your skills visit.
 - **Node 22+** is also installed by default with Bun and is needed for
   one-off Prisma migration commands. (`bunx prisma ...` shells out to
   Node internally.)
-- **Claude Code** for invoking skills.
+- **.NET 10 SDK** for `JobPilot.Terminal`. Skip this if you don't want
+  the embedded terminal panel — the web app runs fine on its own.
+- **Claude Code** on `PATH` (`claude --version`). Required for both the
+  embedded terminal panel and for invoking skills directly from a
+  separate Claude Code window.
 
 ## One-time setup
 
 ```bash
 git clone https://github.com/suxrobgm/jobpilot.git
-cd jobpilot/src/web
-bun install
-bunx prisma migrate dev          # creates src/web/prisma/dev.db + applies migrations
-bun run db:seed                  # seeds default job boards (LinkedIn, Indeed, ...)
+cd jobpilot
+bun install                                 # root concurrently launcher
+bun --cwd src/web install                   # web deps
+bun --cwd src/web run db:migrate:apply      # creates src/web/prisma/dev.db
+bun --cwd src/web run db:seed               # seeds default job boards
 ```
 
 ## Running
 
 ```bash
-cd src/web && bun dev            # http://127.0.0.1:8000
+bun run dev                                 # web :8000 + JobPilot.Terminal :8001
 ```
 
-Keep this running while skills are active. Skills check `/api/health` at
-the start of each invocation and stop with a clear error if it's down.
+Or run them separately if you want them in their own windows:
+
+```bash
+bun --cwd src/web run dev                   # http://127.0.0.1:8000
+dotnet run --project src/JobPilot.Terminal  # http://127.0.0.1:8001
+```
+
+Keep these running while skills are active. Skills check `/api/health`
+at the start of each invocation and stop with a clear error if the web
+app is down. The JobPilot.Terminal process is only needed if you want
+to drive Claude Code from inside the web UI — skipping it just means
+the sidebar's Terminal button shows a connection error.
+
+## Production launch
+
+```bash
+bun run build:terminal                      # publishes to dist/terminal/
+bun run build:web                           # next build (standalone output)
+dist/terminal/JobPilot.Terminal.exe         # in one window
+bun --cwd src/web run start                 # in another, http://127.0.0.1:8000
+```
 
 First-time visit to `http://127.0.0.1:8000/` redirects to
 `/onboarding`, a 5-step wizard that creates the singleton Profile and

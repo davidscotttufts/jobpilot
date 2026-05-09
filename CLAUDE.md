@@ -62,7 +62,10 @@ and inject slash commands.
 | `src/web/src/app/api/**/route.ts` | API endpoints. |
 | `src/web/src/app/**/page.tsx` | Pages (RSC). |
 | `src/web/src/components/features/<domain>/` | Domain-specific React components. |
-| `src/web/src/components/features/terminal/` | xterm.js terminal panel + WS client + inject context. |
+| `src/web/src/components/features/terminal/` | xterm.js terminal panel + WS client. |
+| `src/web/src/components/features/batch/batch-run-button.tsx` | Injects `/jobpilot:apply-batch` into the embedded terminal. |
+| `src/web/src/components/features/runs/autopilot-run-button.tsx` | Popover form that injects `/jobpilot:autopilot <query>` into the embedded terminal. |
+| `src/web/src/providers/terminal-provider.tsx` | Open/toggle state + `inject(command)` helper used by the buttons above. |
 | `src/web/src/components/ui/{data,display,feedback,form,layout}/` | UI primitives. |
 | `src/web/src/lib/db.ts` | Prisma client singleton (libSQL adapter). |
 | `src/web/src/lib/sidecar.ts` | Sidecar HTTP client (`startSession`, `injectCommand`, `killSession`). |

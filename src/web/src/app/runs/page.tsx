@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Container, Stack } from "@mui/material";
-import { RunsContent } from "@/components/features/runs/runs-content";
+import { AutopilotRunButton, RunsContent } from "@/components/features/runs";
 import { PageHeader } from "@/components/ui/layout/page-header";
 
 export default function RunsPage(): ReactElement {
@@ -11,6 +11,7 @@ export default function RunsPage(): ReactElement {
           eyebrow="History"
           title="Runs"
           description="Autopilot and apply-batch runs. Click a row for the live viewer."
+          actions={<AutopilotRunButton />}
         />
         <RunsContent />
       </Stack>
