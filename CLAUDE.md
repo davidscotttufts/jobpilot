@@ -5,16 +5,17 @@
 JobPilot 2.0 is a Claude Code plugin for AI-driven job applications, paired
 with a local Next.js + SQLite web app at `http://127.0.0.1:8000` that owns
 all of the persistent state. Skills are markdown prompts (`skills/*/SKILL.md`);
-the web app is real TypeScript code under `src/web/`. A small ASP.NET Core
-sidecar at `src/JobPilot.Terminal/` (port 8001) hosts the Claude Code PTY so
-the web UI can embed an interactive terminal and inject slash commands.
+the web app is real TypeScript code under `src/web/`. A companion .NET
+process — **JobPilot.Terminal** at `src/JobPilot.Terminal/` (port 8001) —
+hosts the Claude Code PTY so the web UI can embed an interactive terminal
+and inject slash commands.
 
 ## Architecture
 
 - **Skills** live in `skills/<name>/SKILL.md` as markdown with YAML frontmatter. They drive Playwright via the MCP server, parse pages, score against the resume, fill forms.
 - **Shared instructions** in `skills/_shared/` (setup, auth, form-filling, browser-tips) are referenced by skills to avoid duplication.
 - **Web app** in `src/web/` is the data + UI layer: Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. SQLite database at `src/web/prisma/dev.db`; uploaded resumes at `src/web/storage/resumes/`.
-- **Terminal sidecar** in `src/JobPilot.Terminal/` is a .NET 10 ASP.NET Core minimal API. It owns the `claude` PTY (winpty via Quick.PtyNet, vendored from the user's stealth-code project) and exposes a WebSocket on `/ws` plus HTTP endpoints (`/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`). The web UI's terminal panel speaks to it.
+- **JobPilot.Terminal** in `src/JobPilot.Terminal/` is a .NET 10 ASP.NET Core minimal API. It owns the `claude` PTY (winpty via Quick.PtyNet, vendored from the user's stealth-code project) and exposes a WebSocket on `/ws` plus HTTP endpoints (`/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`). The web UI's terminal panel speaks to it.
 - **Skills talk to the web app over HTTP.** They do not read or write any local JSON or text files. Every skill calls `GET /api/health` first; if the app is down it stops with a clear message.
 - **Humanizer** is an external git submodule at `skills/humanizer/`, invoked by `cover-letter` and `upwork-proposal` skills.
 

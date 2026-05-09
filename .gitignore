@@ -4,3 +4,9 @@ node_modules/
 *.csv
 snapshot-*.md
 .claude/settings.local.json
+
+# .NET
+bin/
+obj/
+*.user
+dist/

@@ -1,8 +1,8 @@
 # Architecture
 
-JobPilot 2.0 is two pieces glued together over HTTP.
+JobPilot 2.0 is three pieces glued together over HTTP and a single PTY.
 
-## The two halves
+## The three pieces
 
 **Claude Code skills** under `skills/<name>/SKILL.md` are markdown prompts
 that Claude reads as instructions. They're the "AI muscle": parse a job
@@ -15,10 +15,46 @@ what stage each application is in, every autopilot run with its per-job
 status. The Prisma schema lives across one file per domain under
 `src/web/prisma/schema/`.
 
+**JobPilot.Terminal** under `src/JobPilot.Terminal/` is a small ASP.NET
+Core minimal API on `127.0.0.1:8001`. It owns the `claude` PTY (winpty via
+Quick.PtyNet, vendored from the user's stealth-code project) and bridges
+it to the web UI's xterm.js terminal panel over WebSocket. It also
+exposes HTTP endpoints (`/sessions/start`, `/sessions/inject`,
+`/sessions/current`, `/healthz`) that let UI buttons (e.g. "Run Apply
+Batch") write slash commands directly into Claude Code's stdin.
+
 Skills call the web app via `curl http://127.0.0.1:8000/api/...`. They
 never touch the database directly; they never read or write JSON files.
 If the web app is down, skills stop with a clear message asking the user
 to start it.
+
+## JobPilot.Terminal
+
+```text
+Browser (xterm.js)  ←─ WS binary ──→  JobPilot.Terminal :8001  ←─ PTY ──→  claude.exe
+                    ── POST /inject ─→  JobPilot.Terminal           (stdin write)
+Next.js :8000 API   ←── curl ─────────  claude skills    (unchanged)
+                                        └ inserts/updates runs/jobs in SQLite
+```
+
+The PTY layer is vendored from `StealthCode.Terminal` in the user's
+[stealth-code](https://github.com/suxrobGM/stealth-code) project. It uses
+winpty (via `Quick.PtyNet`) rather than ConPTY, which avoids rendering
+bugs on newer Windows 11 builds. Files live under
+`src/JobPilot.Terminal/Pty/` (namespace `JobPilot.Terminal.Pty`).
+
+The session is single-tenant — one `claude` process per JobPilot.Terminal
+instance, one machine, no auth (loopback only). `SessionManager` is a DI
+singleton that wraps `PtyService`, broadcasts PTY output to all connected
+WebSockets, and surfaces a synthetic ANSI red exit message if Claude
+exits. The web UI's terminal panel sends `{type:"input", data:base64}`
+and `{type:"resize", cols, rows}` JSON frames; PTY output flows back as
+binary frames that xterm.js writes verbatim.
+
+Closing the browser tab does not kill the PTY. Reopening the tab
+attaches a new WebSocket to the same live session — output emitted while
+disconnected is lost (no replay buffer in v1; the current Claude Code
+session can scroll up to recover history).
 
 ## High-level diagram
 
