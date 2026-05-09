@@ -15,7 +15,7 @@ export default function RootLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>
             <NotificationProvider>

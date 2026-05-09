@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors();
 builder.Services.AddTerminal();
 builder.Services.AddSingleton<SessionManager>();
 builder.Services.AddSingleton<TerminalHub>();
