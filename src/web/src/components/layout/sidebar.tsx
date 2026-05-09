@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
+import { TerminalToggleButton } from "@/components/features/terminal";
 import { NavGroup } from "./nav-group";
 import { APP_TITLE, navGroups, SIDEBAR_WIDTH } from "./shell-config";
 
@@ -16,9 +17,7 @@ export function Sidebar(): ReactElement {
         backgroundColor: t.palette.surfaces.card,
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
-        position: "sticky",
-        top: 0,
+        height: "100%",
       })}
     >
       <Stack direction="row" sx={{ p: 2, pb: 1, alignItems: "center", gap: 1 }}>
@@ -39,14 +38,16 @@ export function Sidebar(): ReactElement {
           <NavGroup key={group.label ?? idx} group={group} />
         ))}
       </Box>
-      <Box
+      <Stack
         sx={(t) => ({
           p: 2,
+          gap: 1,
           borderTop: `1px solid ${t.palette.line.divider}`,
         })}
       >
+        <TerminalToggleButton />
         <Typography variant="captionMuted">Local · 127.0.0.1:8000</Typography>
-      </Box>
+      </Stack>
     </Box>
   );
 }

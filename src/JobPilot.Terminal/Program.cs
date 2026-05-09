@@ -41,7 +41,8 @@ app.MapGet("/healthz", (SessionManager session) =>
 
 app.MapPost("/sessions/start", (StartSessionRequest request, SessionManager session) =>
 {
-    session.Start(request.WorkingDir, request.Cols, request.Rows);
+    var cwd = request.WorkingDir ?? Environment.CurrentDirectory;
+    session.Start(cwd, request.Cols, request.Rows);
     return Results.Ok(new SessionStatus("ok", "running"));
 });
 
