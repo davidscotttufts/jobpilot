@@ -1,10 +1,10 @@
 "use client";
 
+import "@xterm/xterm/css/xterm.css";
 import { useEffect, useRef, type ReactElement } from "react";
 import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
-import "@xterm/xterm/css/xterm.css";
 import { startSession, TERMINAL_WS_URL } from "@/lib/terminal";
 
 export function TerminalPanel(): ReactElement {
@@ -13,7 +13,9 @@ export function TerminalPanel(): ReactElement {
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -45,7 +47,9 @@ export function TerminalPanel(): ReactElement {
         return;
       }
 
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
 
       socket = new WebSocket(TERMINAL_WS_URL);
       socket.binaryType = "arraybuffer";
@@ -76,20 +80,29 @@ export function TerminalPanel(): ReactElement {
 
     initialize();
 
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
     const observer = new ResizeObserver(() => {
-      try {
-        fit.fit();
-        if (socket?.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }));
+      if (resizeTimer !== null) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeTimer = null;
+        try {
+          fit.fit();
+          if (socket?.readyState === WebSocket.OPEN) {
+            socket.send(
+              JSON.stringify({ type: "resize", cols: terminal.cols, rows: terminal.rows }),
+            );
+          }
+        } catch {
+          // ignore until container is laid out
         }
-      } catch {
-        // ignore until container is laid out
-      }
+      }, 120);
     });
     observer.observe(container);
 
     return () => {
       disposed = true;
+      if (resizeTimer !== null) clearTimeout(resizeTimer);
       observer.disconnect();
       socket?.close(1000, "panel unmounted");
       terminal.dispose();

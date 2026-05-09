@@ -14,7 +14,9 @@ export function useRunEvents(runId: string | undefined): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!runId) return;
+    if (!runId) {
+      return;
+    }
     const url = `/api/runs/${encodeURIComponent(runId)}/events`;
     const source = new EventSource(url);
 

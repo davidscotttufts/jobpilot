@@ -18,42 +18,47 @@ interface UseApiMutationOptions<TData, TVariables> extends Omit<
   successMessage?: string | ((data: TData, vars: TVariables) => string);
   errorMessage?: string | ((error: Error, vars: TVariables) => string);
   invalidate?: ReadonlyArray<ReadonlyArray<unknown>>;
+  onSuccess?: (data: TData, variables: TVariables) => void;
+  onError?: (error: Error, variables: TVariables) => void;
 }
 
 export function useApiMutation<TData, TVariables>(
   mutationFn: MutationFn<TData, TVariables>,
   options?: UseApiMutationOptions<TData, TVariables>,
 ): UseMutationResult<TData, Error, TVariables> {
-  const opts = options ?? {};
-  const { successMessage, errorMessage, invalidate, onSuccess, onError, ...rest } = opts;
+  const { successMessage, errorMessage, invalidate, onSuccess, onError, ...rest } = options ?? {};
   const toast = useToast();
   const queryClient = useQueryClient();
 
   return useMutation<TData, Error, TVariables>({
-    mutationFn: async (vars) => {
+    mutationFn: async (vars: TVariables) => {
       const { data, error } = await mutationFn(vars);
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
       return data as TData;
     },
-    onSuccess: (data, vars, onMutateResult, ctx) => {
+    onSuccess: (data: TData, vars: TVariables) => {
       if (invalidate) {
-        for (const key of invalidate) queryClient.invalidateQueries({ queryKey: [...key] });
+        for (const key of invalidate) {
+          queryClient.invalidateQueries({ queryKey: [...key] });
+        }
       }
-      if (successMessage != null) {
+      if (successMessage) {
         const msg =
           typeof successMessage === "function" ? successMessage(data, vars) : successMessage;
         toast.success(msg);
       }
-      onSuccess?.(data, vars, onMutateResult, ctx);
+      onSuccess?.(data, vars);
     },
-    onError: (error, vars, onMutateResult, ctx) => {
-      if (errorMessage != null) {
+    onError: (error: Error, vars: TVariables) => {
+      if (errorMessage) {
         const msg = typeof errorMessage === "function" ? errorMessage(error, vars) : errorMessage;
         toast.error(msg);
       } else {
         toast.error(error.message);
       }
-      onError?.(error, vars, onMutateResult, ctx);
+      onError?.(error, vars);
     },
     ...rest,
   });

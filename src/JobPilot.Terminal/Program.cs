@@ -9,52 +9,55 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddTerminal();
 builder.Services.AddSingleton<SessionManager>();
 builder.Services.AddSingleton<TerminalHub>();
+builder.Services.ConfigureHttpJsonOptions(c =>
+    c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
 
 var app = builder.Build();
 
+app.UseCors(c => c.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
 app.Lifetime.ApplicationStopping.Register(() =>
 {
-    var session = app.Services.GetRequiredService<SessionManager>();
-    session.Stop();
+  var session = app.Services.GetRequiredService<SessionManager>();
+  session.Stop();
 });
 
 app.MapGet("/healthz", (SessionManager session) =>
 {
-    var sessionState = session.State == SessionState.Running ? "running" : "stopped";
-    return TypedResults.Ok(new SessionStatus("ok", sessionState));
+  var sessionState = session.State == SessionState.Running ? "running" : "stopped";
+  return TypedResults.Ok(new SessionStatus("ok", sessionState));
 });
 
 app.MapPost("/sessions/start", (StartSessionRequest request, SessionManager session) =>
 {
-    var cwd = request.WorkingDir ?? Environment.CurrentDirectory;
-    session.Start(cwd, request.Cols, request.Rows);
-    return TypedResults.Ok(new SessionStatus("ok", "running"));
+  var cwd = request.WorkingDir ?? Environment.CurrentDirectory;
+  session.Start(cwd, request.Cols, request.Rows);
+  return TypedResults.Ok(new SessionStatus("ok", "running"));
 });
 
 app.MapPost("/sessions/inject", (InjectRequest request, SessionManager session) =>
 {
-    session.Inject(request.Command);
-    return TypedResults.Ok();
+  session.Inject(request.Command);
+  return TypedResults.Ok();
 });
 
 app.MapDelete("/sessions/current", (SessionManager session) =>
 {
-    session.Stop();
-    return TypedResults.Ok(new SessionStatus("ok", "stopped"));
+  session.Stop();
+  return TypedResults.Ok(new SessionStatus("ok", "stopped"));
 });
 
 app.Map("/ws", async (HttpContext ctx, TerminalHub hub) =>
 {
-    if (!ctx.WebSockets.IsWebSocketRequest)
-    {
-        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
-        return;
-    }
+  if (!ctx.WebSockets.IsWebSocketRequest)
+  {
+    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+    return;
+  }
 
-    using var socket = await ctx.WebSockets.AcceptWebSocketAsync();
-    await hub.HandleAsync(socket, ctx.RequestAborted);
+  using var socket = await ctx.WebSockets.AcceptWebSocketAsync();
+  await hub.HandleAsync(socket, ctx.RequestAborted);
 });
 
 app.Run();

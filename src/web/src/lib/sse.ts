@@ -55,9 +55,13 @@ export function subscribeToRun(runId: string): ReadableStream<Uint8Array> {
       const cleanup = () => {
         clearInterval(heartbeat);
         const current = subscribers.get(runId);
-        if (!current) return;
+        if (!current) {
+          return;
+        }
         current.delete(controller);
-        if (current.size === 0) subscribers.delete(runId);
+        if (current.size === 0) {
+          subscribers.delete(runId);
+        }
       };
 
       (controller as any).__cleanup = cleanup;

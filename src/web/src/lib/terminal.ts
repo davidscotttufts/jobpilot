@@ -1,4 +1,4 @@
-export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://127.0.0.1:8001";
+export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://localhost:8001";
 
 export const TERMINAL_WS_URL = TERMINAL_HTTP_URL.replace(/^http/, "ws") + "/ws";
 

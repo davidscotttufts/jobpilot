@@ -16,15 +16,16 @@ export function useApiQuery<T>(
   queryFn: QueryFn<T>,
   options?: UseApiQueryOptions<T>,
 ): UseQueryResult<T> {
-  const opts = options ?? {};
-  const { errorMessage, ...queryOptions } = opts;
+  const { errorMessage, ...queryOptions } = options ?? {};
   const toast = useToast();
 
   const result = useQuery<T>({
     queryKey,
     queryFn: async () => {
       const { data, error } = await queryFn();
-      if (error) throw new Error(error.message);
+      if (error) {
+        throw new Error(error.message);
+      }
       return data as T;
     },
     ...queryOptions,
