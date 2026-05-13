@@ -11,6 +11,7 @@ import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+const SHIFT_ENTER_INPUT = "\x1b[13;2u";
 
 interface TerminalPanelProps {
   provider: TerminalProviderId;
@@ -113,6 +114,16 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         onClose() {
           writeOutput("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n");
         },
+      });
+
+      terminal.attachCustomKeyEventHandler((event) => {
+        if (event.type !== "keydown" || event.key !== "Enter" || !event.shiftKey) {
+          return true;
+        }
+
+        event.preventDefault();
+        socket?.sendJson({ type: "input", data: toBase64(SHIFT_ENTER_INPUT) });
+        return false;
       });
 
       inputDisposable = terminal.onData((data) => {
