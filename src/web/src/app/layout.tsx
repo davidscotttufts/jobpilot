@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata } from "next";
+import { Container } from "@mui/material";
 import { AppShell } from "@/components/layout/app-shell";
 import { NotificationProvider } from "@/providers/notification-provider";
 import { QueryProvider } from "@/providers/query-provider";
@@ -19,7 +20,11 @@ export default function RootLayout(props: PropsWithChildren): ReactElement {
         <ThemeProvider>
           <QueryProvider>
             <NotificationProvider>
-              <AppShell>{children}</AppShell>
+              <AppShell>
+                <Container maxWidth="lg" sx={{ py: 4 }}>
+                  {children}
+                </Container>
+              </AppShell>
             </NotificationProvider>
           </QueryProvider>
         </ThemeProvider>

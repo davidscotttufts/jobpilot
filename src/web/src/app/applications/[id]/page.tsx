@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { ApplicationDetail } from "@/components/features/applications/application-detail";
+import { ApplicationDetail } from "@/components/features/applications";
 
 interface ApplicationDetailPageProps {
   params: Promise<{ id: string }>;

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Container, Stack } from "@mui/material";
+import { Stack } from "@mui/material";
 import { ResumeDetail } from "@/components/features/resumes";
 import { PageHeader } from "@/components/ui/layout";
 
@@ -12,15 +12,13 @@ export default async function ResumeDetailPage(props: PageProps): Promise<ReactE
   const numericId = Number(id);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Stack spacing={3}>
-        <PageHeader
-          eyebrow="Resumes"
-          title="Edit resume"
-          description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
-        />
-        <ResumeDetail resumeId={numericId} />
-      </Stack>
-    </Container>
+    <Stack spacing={3}>
+      <PageHeader
+        eyebrow="Resumes"
+        title="Edit resume"
+        description="Structured fields render to PDF on the right. Variants tailored from this base appear below."
+      />
+      <ResumeDetail resumeId={numericId} />
+    </Stack>
   );
 }

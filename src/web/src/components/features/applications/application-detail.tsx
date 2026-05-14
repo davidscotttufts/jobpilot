@@ -2,15 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Delete, Launch } from "@mui/icons-material";
-import {
-  Box,
-  Button,
-  Container,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { StageChip } from "@/components/ui/display/stage-chip";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
@@ -58,17 +50,13 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   );
 
   if (detail.isLoading || !detail.data) {
-    return (
-      <Container maxWidth="md" sx={{ py: 4 }}>
-        <LinearProgress />
-      </Container>
-    );
+    return <LinearProgress />;
   }
 
   const app = detail.data;
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <>
       <Stack spacing={3}>
         <PageHeader
           eyebrow={app.company}
@@ -151,7 +139,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         onConfirm={() => remove.mutate()}
         onCancel={() => setConfirmDelete(false)}
       />
-    </Container>
+    </>
   );
 }
 
