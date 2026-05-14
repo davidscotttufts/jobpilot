@@ -10,7 +10,7 @@ export default function RunsPage(): ReactElement {
         <PageHeader
           eyebrow="History"
           title="Runs"
-          description="Autopilot and apply-batch runs. Click a row for the live viewer."
+          description="Autopilot and apply runs. Click a row for the live viewer."
           actions={<AutopilotRunButton />}
         />
         <RunsContent />

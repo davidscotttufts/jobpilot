@@ -1,24 +1,24 @@
 import type { ReactElement } from "react";
 import { Container, Stack } from "@mui/material";
-import { BatchAddUrlsButton, BatchContent, BatchRunButton } from "@/components/features/batch";
+import { QueueAddUrlsButton, QueueContent, QueueRunButton } from "@/components/features/queue";
 import { PageHeader } from "@/components/ui/layout";
 
-export default function BatchPage(): ReactElement {
+export default function QueuePage(): ReactElement {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={2}>
         <PageHeader
           eyebrow="Queue"
-          title="Batch queue"
-          description="Job URLs the apply-batch skill will visit, score, and apply to. Add as many as you like; the skill drains them on its next run."
+          title="Apply queue"
+          description="Job URLs the apply skill will visit, score, and apply to. Add as many as you like; the skill drains them on its next run."
           actions={
             <Stack direction="row" spacing={1}>
-              <BatchAddUrlsButton />
-              <BatchRunButton />
+              <QueueAddUrlsButton />
+              <QueueRunButton />
             </Stack>
           }
         />
-        <BatchContent />
+        <QueueContent />
       </Stack>
     </Container>
   );

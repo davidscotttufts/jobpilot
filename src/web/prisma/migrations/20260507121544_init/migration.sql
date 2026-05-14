@@ -32,7 +32,7 @@ CREATE TABLE "StageEvent" (
 );
 
 -- CreateTable
-CREATE TABLE "BatchInput" (
+CREATE TABLE "QueueEntry" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "url" TEXT NOT NULL,
     "note" TEXT,
@@ -185,10 +185,10 @@ CREATE INDEX "Application_runId_idx" ON "Application"("runId");
 CREATE INDEX "StageEvent_applicationId_occurredAt_idx" ON "StageEvent"("applicationId", "occurredAt");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "BatchInput_url_key" ON "BatchInput"("url");
+CREATE UNIQUE INDEX "QueueEntry_url_key" ON "QueueEntry"("url");
 
 -- CreateIndex
-CREATE INDEX "BatchInput_status_idx" ON "BatchInput"("status");
+CREATE INDEX "QueueEntry_status_idx" ON "QueueEntry"("status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Credential_scope_key" ON "Credential"("scope");

@@ -25,7 +25,7 @@ missing:
 
 | Setting                 | Default          | Description                                                                                                           |
 | ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 6                | Minimum score on a 1-10 scale; compared against the persisted 0-100 `matchScore` as `minMatchScore × 10`              |
+| `minMatchScore`         | 6                | Minimum score on a 0-10 scale; compared against the persisted 0-100 `matchScore` as `minMatchScore × 10`              |
 | `maxApplicationsPerRun` | 10               | Max jobs to apply to in one run                                                                                       |
 | `skipCompanies`         | []               | Company names to skip                                                                                                 |
 | `skipTitleKeywords`     | []               | Title keywords to skip (e.g., "intern", "principal")                                                                  |
@@ -122,7 +122,7 @@ For each surviving job:
 
 - Score 0-100 based on tech overlap, experience, education, domain, seniority,
   location. The persisted `matchScore` is on a 0-100 scale; `minMatchScore` is
-  on a 1-10 scale, so compare against `minMatchScore × 10`.
+  on a 0-10 scale, so compare against `minMatchScore × 10`.
 - If the score is below `minMatchScore × 10` â†’ status `"skipped"`,
   `skipReason: "Below minimum match score (X < Y)"` (X and Y on the 0-100 scale).
 - If company in `skipCompanies` â†’ `skipped`, `"Company in skip list"`.

@@ -9,7 +9,7 @@ runs the JobPilot provider skills against real job boards via Playwright.
 - **Web app** ([src/web/](src/web/)) - `http://localhost:8000`. Owns
   profile, credentials, resumes, job boards, applications, runs, and the
   batch queue. It embeds an xterm.js terminal panel and exposes "Run
-  autopilot" / "Run apply-batch" buttons that inject slash commands.
+  autopilot" / "Run apply" buttons that inject slash commands.
 - **JobPilot.Terminal** ([src/JobPilot.Terminal/](src/JobPilot.Terminal/)) -
   `http://localhost:8001`. .NET 10 ASP.NET Core process that owns one active
   provider PTY (winpty) and bridges it to the web UI over WebSocket. The
@@ -60,8 +60,7 @@ $jobpilot-autopilot senior typescript remote
 
 | Skill             | Purpose                                                              |
 | ----------------- | -------------------------------------------------------------------- |
-| `apply`           | Auto-fill a single application after fit review and dedupe check.    |
-| `apply-batch`     | Score queued URLs from `/batch`, batch-approve, and apply to all.    |
+| `apply`           | Apply to a single URL (with fit review) or drain the `/queue` page.  |
 | `autopilot`       | Search enabled boards, score, batch-approve, and apply autonomously. |
 | `search`          | Search boards and rank results without applying.                     |
 | `cover-letter`    | Draft a tailored cover letter and run it through the humanizer.      |

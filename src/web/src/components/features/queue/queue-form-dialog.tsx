@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 
-interface BatchFormDialogProps {
+interface QueueFormDialogProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (urls: string[], note: string | null) => void;
@@ -47,7 +47,7 @@ function parseUrls(raw: string): ParseResult {
   return { urls, invalid };
 }
 
-export function BatchFormDialog(props: BatchFormDialogProps): ReactElement {
+export function QueueFormDialog(props: QueueFormDialogProps): ReactElement {
   const { open, onClose, onSubmit, submitting } = props;
   const [raw, setRaw] = useState("");
   const [note, setNote] = useState("");
@@ -71,11 +71,11 @@ export function BatchFormDialog(props: BatchFormDialogProps): ReactElement {
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add URLs to batch</DialogTitle>
+      <DialogTitle>Add URLs to queue</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <Typography variant="body2Muted">
-            Paste one job URL per line. The apply-batch skill picks these up next time it runs.
+            Paste one job URL per line. The apply skill picks these up next time it runs.
           </Typography>
           <TextField
             multiline

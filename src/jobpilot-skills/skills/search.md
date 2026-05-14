@@ -87,7 +87,7 @@ For each job result (excluding previously applied), perform a quick fit assessme
 
 1. Read the job title and visible description/requirements.
 2. Compare against the candidate's resume skills and experience.
-3. Assign a **match score (1-10)** based on:
+3. Assign a **match score (0-100)** based on:
    - Tech stack overlap
    - Years of experience match
    - Education match
@@ -101,19 +101,19 @@ Output a ranked table sorted by match score (highest first):
 ```
 ## Job Search Results: "[query]"
 
-| # | Score | Title | Company | Location | Board |
-|---|-------|-------|---------|----------|-------|
-| 1 | 9/10  | Senior Full Stack Developer | Acme Corp | Remote | LinkedIn |
-| 2 | 8/10  | Full Stack Engineer | Startup Inc | Portland, ME | Indeed |
+| # | Score  | Title | Company | Location | Board |
+|---|--------|-------|---------|----------|-------|
+| 1 | 90/100 | Senior Full Stack Developer | Acme Corp | Remote | LinkedIn |
+| 2 | 80/100 | Full Stack Engineer | Startup Inc | Portland, ME | Indeed |
 | ... |
 
 ### Top Matches
 
-**#1: Senior Full Stack Developer at Acme Corp** (9/10)
+**#1: Senior Full Stack Developer at Acme Corp** (90/100)
 - Why: [1-2 sentences explaining the strong match]
 - Link: [URL]
 
-**#2: Full Stack Engineer at Startup Inc** (8/10)
+**#2: Full Stack Engineer at Startup Inc** (80/100)
 - Why: [1-2 sentences]
 - Link: [URL]
 ```
@@ -132,7 +132,7 @@ After presenting results, offer:
 1. **Only search enabled boards.** Respect the user's `/api/job-boards` config.
 2. **Don't create accounts.** If a board requires login and no credentials exist, skip it and tell the user.
 3. **Handle rate limiting.** If a board blocks or throttles, note it and move to the next board.
-4. **Be honest about match scores.** Don't inflate scores to please the user. A 5/10 is a stretch and should be labeled as such.
+4. **Be honest about match scores.** Don't inflate scores to please the user. A 50/100 is a stretch and should be labeled as such.
 5. **Deduplicate** jobs that appear on multiple boards.
 
 Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md` for handling large pages, popups, and general browser best practices.

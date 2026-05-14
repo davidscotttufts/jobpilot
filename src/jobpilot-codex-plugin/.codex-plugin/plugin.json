@@ -19,7 +19,7 @@
     "defaultPrompt": [
       "$jobpilot-search senior typescript remote",
       "$jobpilot-autopilot senior fullstack remote",
-      "$jobpilot-apply-batch"
+      "$jobpilot-apply"
     ],
     "brandColor": "#2563EB",
     "screenshots": []

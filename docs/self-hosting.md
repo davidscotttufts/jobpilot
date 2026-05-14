@@ -118,10 +118,10 @@ All managed in the web UI:
   `src/web/storage/resumes/`. The chosen default path is what skills hand to
   `browser_file_upload`.
 
-## Batch Queue
+## Apply Queue
 
-URLs go in via `/batch` (paste a list, or `POST /api/batch` with
-`{"urls": [...]}`). The apply-batch skill calls `/api/batch/pending` to pull
+URLs go in via `/queue` (paste a list, or `POST /api/queue` with
+`{"urls": [...]}`). The apply skill calls `/api/queue/pending` to pull
 the next chunk and PATCHes each entry to `consumed` when applied.
 
 ## Backups

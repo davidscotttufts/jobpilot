@@ -27,7 +27,7 @@ export const navGroups: NavGroup[] = [
       { label: "Dashboard", href: "/", icon: Dashboard },
       { label: "Applications", href: "/applications", icon: AssignmentTurnedIn },
       { label: "Inbox", href: "/inbox", icon: Inbox },
-      { label: "Batch queue", href: "/batch", icon: PlaylistAddCheck },
+      { label: "Apply queue", href: "/queue", icon: PlaylistAddCheck },
       { label: "Runs", href: "/runs", icon: WorkHistory },
     ],
   },

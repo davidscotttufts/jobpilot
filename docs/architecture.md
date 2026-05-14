@@ -83,7 +83,7 @@ permission policy.
 sequenceDiagram
     participant U as User
     participant T as JobPilot.Terminal
-    participant S as Provider apply skill
+    participant S as Provider apply skill (single-job or queue mode)
     participant API as Next.js API
     participant B as Playwright MCP
 
@@ -101,7 +101,7 @@ sequenceDiagram
 
 ## Live Runs
 
-Autopilot and apply-batch create and update run rows through `/api/runs/*`.
+Autopilot and apply create and update run rows through `/api/runs/*`.
 The web UI opens `EventSource /api/runs/[id]/events`, receives in-process SSE
 events, and invalidates the run detail query so the page refetches canonical
 state from SQLite.
@@ -129,7 +129,7 @@ Routes:
 - `/` dashboard
 - `/applications`, `/applications/[id]` stage funnel and manual transitions
 - `/runs`, `/runs/[id]` live viewer over SSE
-- `/batch` apply-batch URL queue
+- `/queue` apply URL queue
 - `/boards` job-board CRUD
 - `/profile` profile, credentials, resumes, and autopilot defaults
 - `/onboarding` setup wizard
@@ -150,8 +150,8 @@ All under `/api/`, JSON in/out, response shape `{ ok, data | error }`:
 - `/api/runs` GET/POST, `/api/runs/[id]` GET/PATCH,
   `/api/runs/[id]/jobs` GET/POST, `/api/runs/[id]/jobs/[jobKey]` PATCH,
   `/api/runs/[id]/events` POST + GET, `/api/runs/stats` GET
-- `/api/batch` GET/POST, `/api/batch/pending` GET,
-  `/api/batch/[id]` PATCH/DELETE
+- `/api/queue` GET/POST, `/api/queue/pending` GET,
+  `/api/queue/[id]` PATCH/DELETE
 
 ## Data
 

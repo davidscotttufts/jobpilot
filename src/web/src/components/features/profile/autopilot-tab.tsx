@@ -22,7 +22,7 @@ export function AutopilotTab(props: AutopilotTabProps): ReactElement {
   return (
     <FormSection
       title="Autopilot"
-      description="Defaults used by the autopilot and apply-batch skills."
+      description="Defaults used by the autopilot and apply skills."
     >
       <Stack direction="row" spacing={2}>
         <FormTextField

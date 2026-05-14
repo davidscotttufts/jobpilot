@@ -19,52 +19,52 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { BATCH_STATUSES, type BatchStatus } from "@/lib/schemas/batch";
-import type { BatchInputDto } from "@/types/api";
+import { QUEUE_STATUSES, type QueueStatus } from "@/lib/schemas/queue";
+import type { QueueEntryDto } from "@/types/api";
 
-const STATUS_LABEL: Record<BatchStatus, string> = {
+const STATUS_LABEL: Record<QueueStatus, string> = {
   pending: "Pending",
   consumed: "Consumed",
   skipped: "Skipped",
 };
 
-const STATUS_COLOR: Record<BatchStatus, "default" | "info" | "success"> = {
+const STATUS_COLOR: Record<QueueStatus, "default" | "info" | "success"> = {
   pending: "info",
   consumed: "success",
   skipped: "default",
 };
 
-const STATUS_OPTIONS = BATCH_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
+const STATUS_OPTIONS = QUEUE_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
 
 interface PatchPayload {
   id: number;
-  status: BatchStatus;
+  status: QueueStatus;
 }
 
-export function BatchContent(): ReactElement {
-  const [status, setStatus] = useState<BatchStatus | undefined>("pending");
-  const [pendingDelete, setPendingDelete] = useState<BatchInputDto | null>(null);
+export function QueueContent(): ReactElement {
+  const [status, setStatus] = useState<QueueStatus | undefined>("pending");
+  const [pendingDelete, setPendingDelete] = useState<QueueEntryDto | null>(null);
 
   const filters = { status: status ?? "all" };
   const queryString = status ? `?status=${status}` : "";
 
-  const items = useApiQuery<BatchInputDto[]>(queryKeys.batch.list(filters), () =>
-    apiClient.get<BatchInputDto[]>(`/api/batch${queryString}`),
+  const items = useApiQuery<QueueEntryDto[]>(queryKeys.queue.list(filters), () =>
+    apiClient.get<QueueEntryDto[]>(`/api/queue${queryString}`),
   );
 
-  const patch = useApiMutation<BatchInputDto, PatchPayload>(
-    ({ id, status: next }) => apiClient.patch<BatchInputDto>(`/api/batch/${id}`, { status: next }),
+  const patch = useApiMutation<QueueEntryDto, PatchPayload>(
+    ({ id, status: next }) => apiClient.patch<QueueEntryDto>(`/api/queue/${id}`, { status: next }),
     {
       successMessage: "Updated",
-      invalidate: [queryKeys.batch.all],
+      invalidate: [queryKeys.queue.all],
     },
   );
 
   const remove = useApiMutation<{ deleted: number }, number>(
-    (id) => apiClient.del<{ deleted: number }>(`/api/batch/${id}`),
+    (id) => apiClient.del<{ deleted: number }>(`/api/queue/${id}`),
     {
       successMessage: "Removed",
-      invalidate: [queryKeys.batch.all],
+      invalidate: [queryKeys.queue.all],
       onSuccess: () => setPendingDelete(null),
     },
   );
@@ -74,7 +74,7 @@ export function BatchContent(): ReactElement {
   return (
     <>
       <FilterBar>
-        <SelectFilter<BatchStatus>
+        <SelectFilter<QueueStatus>
           label="Status"
           value={status}
           options={STATUS_OPTIONS}
@@ -184,7 +184,7 @@ export function BatchContent(): ReactElement {
 
       <ConfirmDialog
         open={pendingDelete !== null}
-        title="Delete batch entry?"
+        title="Delete queue entry?"
         message={
           pendingDelete
             ? `Remove "${pendingDelete.url}" from the queue? This can't be undone.`

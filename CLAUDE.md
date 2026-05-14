@@ -55,7 +55,7 @@ and inject provider-specific commands.
 - Previously applied jobs are matched by exact URL and fuzzy normalized
   title+company over a 30-day window via `GET /api/applied/check`.
 - After every successful application, skills `POST /api/applied`. After every
-  state change in an autopilot/apply-batch run, they
+  state change in an autopilot/apply run, they
   `PATCH /api/runs/[id]/jobs/[jobKey]` and `PATCH /api/runs/[id]` so the live
   viewer reflects reality.
 
@@ -103,7 +103,7 @@ and inject provider-specific commands.
 | `src/web/src/app/**/page.tsx`                                               | Pages (RSC).                                                            |
 | `src/web/src/components/features/<domain>/`                                 | Domain-specific React components.                                       |
 | `src/web/src/components/features/terminal/`                                 | xterm.js terminal panel + WS client.                                    |
-| `src/web/src/components/features/batch/batch-run-button.tsx`                | Injects provider-specific apply-batch commands into the terminal.       |
+| `src/web/src/components/features/queue/queue-run-button.tsx`                | Injects provider-specific apply commands into the terminal.             |
 | `src/web/src/components/features/runs/autopilot-run-button.tsx`             | Injects provider-specific autopilot commands into the terminal.         |
 | `src/web/src/providers/terminal-provider.tsx`                               | Open/toggle state + `inject(command)` helper used by the buttons above. |
 | `src/web/src/components/ui/{data,display,feedback,form,layout}/`            | UI primitives.                                                          |

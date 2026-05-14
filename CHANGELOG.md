@@ -34,7 +34,7 @@ web app before running any skill.**
   `form-file-upload-field`, `form-section`).
 - **Pages**: `/` (dashboard), `/applications` + `/applications/[id]`
   (DataGrid + filters + detail with stage timeline), `/runs` +
-  `/runs/[id]` (live SSE viewer), `/batch` (URL queue), `/boards`
+  `/runs/[id]` (live SSE viewer), `/queue` (apply URL queue), `/boards`
   (CRUD), `/profile` (7-tab editor), `/onboarding` (5-step wizard
   reusing the same tab components). Header chrome is server-rendered;
   data-fetching/interactive bodies are client.
@@ -45,11 +45,11 @@ web app before running any skill.**
   `/applied/[id]` GET/DELETE, `/applied/[id]/stage` POST,
   `/applied/export.csv` GET, `/dashboard/stats` GET, `/runs` CRUD,
   `/runs/[id]/jobs` CRUD, `/runs/[id]/jobs/[jobKey]` PATCH,
-  `/runs/[id]/events` POST + GET (SSE), `/runs/stats` GET, `/batch`
-  GET/POST, `/batch/pending` GET, `/batch/[id]` PATCH/DELETE.
+  `/runs/[id]/events` POST + GET (SSE), `/runs/stats` GET, `/queue`
+  GET/POST, `/queue/pending` GET, `/queue/[id]` PATCH/DELETE.
 - **Multi-file Prisma schema** under `web/prisma/schema/` — one file per
   domain (`base`, `profile`, `resume`, `credential`, `job-board`,
-  `application`, `run`, `batch`).
+  `application`, `run`, `queue`).
 - **Fuzzy duplicate matching** (`web/src/lib/matching.ts`) — Jaro-Winkler
   on normalized title + company (seniority + legal-suffix tokens
   stripped); 60/40 weighted score; threshold 90; 30-day rolling window.
@@ -75,12 +75,18 @@ offer / rejected / withdrawn`. Each transition writes a `StageEvent`
 
 ### Changed
 
-- All remaining skills (`apply`, `apply-batch`, `autopilot`, `search`,
-  `cover-letter`, `interview`, `upwork-proposal`) rewritten to call the
-  JobPilot API via `curl`.
-- `apply-batch` no longer takes a file path argument; it consumes URLs
-  from `/api/batch/pending` (managed via the `/batch` page in the web
-  UI). Each entry is PATCHed to `consumed` after a successful apply.
+- All remaining skills (`apply`, `autopilot`, `search`, `cover-letter`,
+  `interview`, `upwork-proposal`) rewritten to call the JobPilot API via
+  `curl`.
+- The `apply` skill now handles both single-job and queue invocations:
+  with a URL or pasted job page argument it runs a qualitative fit
+  review and applies just that job; with no argument it drains the URL
+  queue at `/api/queue/pending`. Run records and applied records both
+  use `source: "apply"`.
+- Match-score display standardised on the 0-100 storage scale across
+  `search`, `apply`, and `autopilot`. The autopilot config
+  `minMatchScore` stays on the 0-10 scale (compared against stored
+  scores via `× 10`).
 - `autopilot` resume-mode lists incomplete runs via
   `GET /api/runs?status=in_progress`; per-job status changes during
   the apply loop are PATCHes that emit SSE events for the live viewer.
@@ -104,8 +110,8 @@ offer / rejected / withdrawn`. Each transition writes a `StageEvent`
 - `profile.json`, `profile.example.json` (now `Profile` +
   `AutopilotSettings` rows; first-run users hit the onboarding wizard
   at `/onboarding`).
-- `jobs-to-apply.txt`, `jobs-to-apply.example.txt` (now `BatchInput`
-  rows, managed at `/batch`).
+- `jobs-to-apply.txt`, `jobs-to-apply.example.txt` (now `QueueEntry`
+  rows, managed at `/queue`).
 - `dashboard` skill — superseded by the web dashboard at
   `http://localhost:8000/`. Use the browser; the per-skill text summary
   was redundant.

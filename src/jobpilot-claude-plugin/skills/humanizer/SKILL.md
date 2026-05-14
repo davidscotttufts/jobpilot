@@ -27,7 +27,6 @@ Set these provider values for the shared workflow:
 - `JOBPILOT_SKILLS_ROOT=${CLAUDE_PLUGIN_ROOT}/../jobpilot-skills`
 - `JOBPILOT_WORKSPACE_ROOT` is the current JobPilot repository/workspace root.
 - `<apply-command>` = `/jobpilot:apply`
-- `<apply-batch-command>` = `/jobpilot:apply-batch`
 - `<autopilot-command>` = `/jobpilot:autopilot`
 - `<cover-letter-command>` = `/jobpilot:cover-letter`
 - `<humanizer-command>` = `/jobpilot:humanizer`

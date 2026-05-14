@@ -13,7 +13,7 @@ export const STAGES = [
 ] as const;
 
 export const stageSchema = z.enum(STAGES);
-export const APPLICATION_SOURCES = ["apply", "apply-batch", "autopilot", "manual"] as const;
+export const APPLICATION_SOURCES = ["apply", "autopilot", "manual"] as const;
 export const sourceSchema = z.enum(APPLICATION_SOURCES);
 
 export const logApplicationSchema = z.object({

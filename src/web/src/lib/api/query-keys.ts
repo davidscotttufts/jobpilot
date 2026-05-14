@@ -40,10 +40,10 @@ export const queryKeys = {
     stats: () => [...queryKeys.runs.all, "stats"] as const,
   },
 
-  batch: {
-    all: ["batch"] as const,
+  queue: {
+    all: ["queue"] as const,
     list: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.batch.all, "list", filters] as const,
+      [...queryKeys.queue.all, "list", filters] as const,
   },
 
   email: {

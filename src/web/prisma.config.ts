@@ -8,6 +8,7 @@ export default defineConfig({
   schema: path.join("prisma", "schema"),
   datasource: { url: dbUrl },
   migrations: {
+    path: path.join("prisma", "migrations"),
     seed: "bun run prisma/seed/default-boards.ts",
   },
 });

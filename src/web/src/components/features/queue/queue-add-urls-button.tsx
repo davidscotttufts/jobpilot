@@ -6,21 +6,21 @@ import { Button } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { BatchFormDialog } from "./batch-form-dialog";
+import { QueueFormDialog } from "./queue-form-dialog";
 
 interface AddPayload {
   urls: string[];
   note: string | null;
 }
 
-export function BatchAddUrlsButton(): ReactElement {
+export function QueueAddUrlsButton(): ReactElement {
   const [open, setOpen] = useState(false);
 
   const add = useApiMutation<{ inserted: number }, AddPayload>(
-    (vars) => apiClient.post<{ inserted: number }>("/api/batch", vars),
+    (vars) => apiClient.post<{ inserted: number }>("/api/queue", vars),
     {
       successMessage: (data) => `Added ${data.inserted} URL${data.inserted === 1 ? "" : "s"}`,
-      invalidate: [queryKeys.batch.all],
+      invalidate: [queryKeys.queue.all],
       onSuccess: () => setOpen(false),
     },
   );
@@ -30,7 +30,7 @@ export function BatchAddUrlsButton(): ReactElement {
       <Button variant="contained" startIcon={<Add />} onClick={() => setOpen(true)}>
         Add URLs
       </Button>
-      <BatchFormDialog
+      <QueueFormDialog
         open={open}
         onClose={() => setOpen(false)}
         onSubmit={(urls, note) => add.mutate({ urls, note })}
