@@ -2,6 +2,7 @@ import {
   AssignmentTurnedIn,
   BusinessCenter,
   Dashboard,
+  Inbox,
   Person,
   PlaylistAddCheck,
   Storage,
@@ -25,6 +26,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/", icon: Dashboard },
       { label: "Applications", href: "/applications", icon: AssignmentTurnedIn },
+      { label: "Inbox", href: "/inbox", icon: Inbox },
       { label: "Batch queue", href: "/batch", icon: PlaylistAddCheck },
       { label: "Runs", href: "/runs", icon: WorkHistory },
     ],

@@ -16,5 +16,7 @@ Set these provider values for the shared workflow:
 - <autopilot-command> = $jobpilot-autopilot
 - <cover-letter-command> = $jobpilot-cover-letter
 - <humanizer-command> = $jobpilot-humanizer
+- <scan-inbox-command> = $jobpilot-scan-inbox
+- <get-code-command> = $jobpilot-get-code
 
 Read and follow ${JOBPILOT_SKILLS_ROOT}/skills/autopilot.md.

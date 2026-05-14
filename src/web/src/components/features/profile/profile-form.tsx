@@ -10,6 +10,7 @@ import { profileWithAutopilotSchema, type ProfileWithAutopilotInput } from "@/li
 import { AddressTab } from "./address-tab";
 import { AutopilotTab } from "./autopilot-tab";
 import { EeoTab } from "./eeo-tab";
+import { EmailTab } from "./email-tab";
 import { PersonalTab } from "./personal-tab";
 import { WorkAuthTab } from "./work-auth-tab";
 
@@ -17,7 +18,7 @@ interface ProfileFormProps {
   defaultValues: ProfileWithAutopilotInput;
 }
 
-const TAB_KEYS = ["personal", "address", "work-auth", "eeo", "autopilot"] as const;
+const TAB_KEYS = ["personal", "address", "work-auth", "eeo", "autopilot", "email"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 export function ProfileForm(props: ProfileFormProps): ReactElement {
@@ -59,6 +60,7 @@ export function ProfileForm(props: ProfileFormProps): ReactElement {
           <Tab value="work-auth" label="Work auth" />
           <Tab value="eeo" label="EEO" />
           <Tab value="autopilot" label="Autopilot" />
+          <Tab value="email" label="Email" />
         </Tabs>
         <Box sx={{ pt: 1 }}>
           {tab === "personal" && <PersonalTab form={form as unknown as AnyReactForm} />}
@@ -66,12 +68,15 @@ export function ProfileForm(props: ProfileFormProps): ReactElement {
           {tab === "work-auth" && <WorkAuthTab form={form as unknown as AnyReactForm} />}
           {tab === "eeo" && <EeoTab form={form as unknown as AnyReactForm} />}
           {tab === "autopilot" && <AutopilotTab form={form as unknown as AnyReactForm} />}
+          {tab === "email" && <EmailTab />}
         </Box>
-        <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
-          <Button type="submit" variant="contained" disabled={save.isPending}>
-            {save.isPending ? "Saving…" : "Save profile"}
-          </Button>
-        </Stack>
+        {tab !== "email" && (
+          <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
+            <Button type="submit" variant="contained" disabled={save.isPending}>
+              {save.isPending ? "Saving…" : "Save profile"}
+            </Button>
+          </Stack>
+        )}
       </Stack>
     </form>
   );

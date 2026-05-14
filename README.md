@@ -67,6 +67,56 @@ $jobpilot-autopilot senior typescript remote
 | `cover-letter`    | Draft a tailored cover letter and run it through the humanizer.      |
 | `upwork-proposal` | Draft a tailored Upwork proposal.                                    |
 | `interview`       | Prepare behavioral, technical, and company-research interview notes. |
+| `scan-inbox`      | Classify new mail, fuzzy-match to applications, propose stage moves. |
+| `get-code`        | Pull the latest verification code or magic link for a board domain.  |
+
+## Email Integration (Gmail)
+
+JobPilot can read your Gmail inbox to track recruiter replies and auto-fill
+verification codes during login. Setup:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
+   create an OAuth 2.0 Client ID (type: **Web application**).
+2. Add `http://localhost:8000/api/email/oauth/callback` as an authorized
+   redirect URI.
+3. Enable the **Gmail API** for the project under "APIs & Services".
+4. Copy `Client ID` and `Client secret` into `src/web/.env`:
+
+   ```env
+   GOOGLE_CLIENT_ID=...
+   GOOGLE_CLIENT_SECRET=...
+   ```
+
+5. Add the **`gmail.readonly`** scope to the consent screen. Google
+   reorganized this UI — it now lives at
+   [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
+   Click **Add or remove scopes**, search for `gmail.readonly`, tick the
+   Gmail API row marked **Sensitive**, then **Save**. Without this the
+   token gets issued but Gmail API returns 403 "insufficient scopes".
+6. While in Testing mode, add your Gmail address under
+   [Audience → Test users](https://console.cloud.google.com/auth/audience).
+   Keep the app in Testing — `gmail.readonly` is a Sensitive scope, and
+   publishing requires a paid third-party CASA security audit. Testing
+   mode allows 100 test users; refresh tokens expire after 7 days so
+   you'll need to reconnect weekly.
+7. Restart `bun run dev`, open `/profile` → **Email** tab → **Connect Gmail**.
+
+The scope is `gmail.readonly` — JobPilot never sends or deletes mail. The
+account is stored as a singleton row in `EmailAccount` (refresh token kept
+locally in `src/web/prisma/dev.db`).
+
+**Troubleshooting**
+
+- **"Access blocked: app has not completed the Google verification
+  process"** — your Gmail isn't on the Test users list. Add it under
+  **Audience → Test users**.
+- **`403 PERMISSION_DENIED — Request had insufficient authentication
+scopes`** — the `gmail.readonly` scope isn't on the consent screen.
+  Add it under **Data access**, then **Disconnect** and reconnect in
+  `/profile` so a new token with the right scope is issued.
+- **Google 500 after publishing** — you published an app that uses a
+  Sensitive scope. Go back to Testing mode under
+  **Audience → Publishing status → Back to testing**.
 
 ## Documentation
 

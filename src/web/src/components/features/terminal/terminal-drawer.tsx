@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent as ReactMouseEvent, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement, type MouseEvent as ReactMouseEvent } from "react";
 import { Close, RestartAlt, StopCircle } from "@mui/icons-material";
 import {
   Box,
@@ -27,8 +27,13 @@ export function TerminalDrawer(): ReactElement {
   const { open, provider, setOpen, setProvider } = useTerminal();
   const [height, setHeight] = useState(DEFAULT_HEIGHT);
   const [reloadKey, setReloadKey] = useState(0);
+  const [everOpened, setEverOpened] = useState(false);
 
-  if (!open) {
+  useEffect(() => {
+    if (open) setEverOpened(true);
+  }, [open]);
+
+  if (!everOpened) {
     return <></>;
   }
 
@@ -77,7 +82,7 @@ export function TerminalDrawer(): ReactElement {
         flexShrink: 0,
         borderTop: `1px solid ${t.palette.line.divider}`,
         backgroundColor: t.palette.surfaces.base,
-        display: "flex",
+        display: open ? "flex" : "none",
         flexDirection: "column",
         overflow: "hidden",
       })}

@@ -28,17 +28,12 @@ export async function PATCH(req: Request, ctx: Params) {
     where: { runId_jobKey: { runId: id, jobKey } },
     data: {
       status: parsed.data.status,
-      appliedAt:
-        parsed.data.appliedAt === undefined
-          ? undefined
-          : parsed.data.appliedAt
-            ? new Date(parsed.data.appliedAt)
-            : null,
-      failReason: parsed.data.failReason ?? undefined,
-      retryNotes: parsed.data.retryNotes ?? undefined,
-      skipReason: parsed.data.skipReason ?? undefined,
-      matchScore: parsed.data.matchScore ?? undefined,
-      matchReason: parsed.data.matchReason ?? undefined,
+      appliedAt: parsed.data.appliedAt ? new Date(parsed.data.appliedAt) : null,
+      failReason: parsed.data.failReason,
+      retryNotes: parsed.data.retryNotes,
+      skipReason: parsed.data.skipReason,
+      matchScore: parsed.data.matchScore,
+      matchReason: parsed.data.matchReason,
     },
   });
 

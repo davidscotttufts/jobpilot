@@ -1,0 +1,125 @@
+"use client";
+
+import type { ReactElement } from "react";
+import { Box, Chip, Stack, Typography } from "@mui/material";
+import type { GridColDef } from "@mui/x-data-grid";
+import { DataTable } from "@/components/ui/data/data-table";
+import type { EmailMessageDto } from "@/types/api";
+
+interface InboxTableProps {
+  rows: ReadonlyArray<EmailMessageDto>;
+  loading?: boolean;
+  onRowClick: (row: EmailMessageDto) => void;
+}
+
+const CLASS_COLORS: Record<string, "default" | "primary" | "success" | "error" | "warning"> = {
+  interviewing: "primary",
+  offer: "success",
+  rejected: "error",
+  verification: "warning",
+  irrelevant: "default",
+};
+
+export function InboxTable(props: InboxTableProps): ReactElement {
+  const { rows, loading, onRowClick } = props;
+
+  const columns: GridColDef<EmailMessageDto>[] = [
+    {
+      field: "from",
+      headerName: "From",
+      flex: 1,
+      minWidth: 200,
+      sortable: false,
+      renderCell: (p) => (
+        <Stack spacing={0} sx={{ overflow: "hidden" }}>
+          <Typography variant="body2" noWrap sx={{ fontWeight: 600, lineHeight: 1.4 }}>
+            {p.row.fromName || p.row.fromAddress}
+          </Typography>
+          <Typography variant="captionMuted" noWrap sx={{ lineHeight: 1.4 }}>
+            {p.row.fromDomain}
+          </Typography>
+        </Stack>
+      ),
+    },
+    { field: "subject", headerName: "Subject", flex: 1.6, minWidth: 240 },
+    {
+      field: "classification",
+      headerName: "Class",
+      width: 160,
+      renderCell: (p) => {
+        const c = p.row.classification;
+        if (!c) {
+          return (
+            <Typography variant="captionMuted" sx={{ pl: 0.5 }}>
+              —
+            </Typography>
+          );
+        }
+        const color = CLASS_COLORS[c] ?? "default";
+        return (
+          <Stack direction="row" spacing={0.5} sx={{ height: "100%", alignItems: "center" }}>
+            <Chip size="small" label={c} color={color} />
+            {p.row.reviewStatus === "auto" && (
+              <Chip size="small" label="auto" variant="outlined" color="info" />
+            )}
+          </Stack>
+        );
+      },
+    },
+    {
+      field: "confidence",
+      headerName: "Conf.",
+      width: 90,
+      align: "right",
+      headerAlign: "right",
+      valueFormatter: (v) => (v == null ? "" : `${Math.round((v as number) * 100)}%`),
+    },
+    {
+      field: "matchedAppId",
+      headerName: "Matched app",
+      width: 200,
+      sortable: false,
+      renderCell: (p) => {
+        const matched = (
+          p.row as EmailMessageDto & {
+            matchedApp?: { title: string; company: string } | null;
+          }
+        ).matchedApp;
+        if (!matched) {
+          return (
+            <Typography variant="captionMuted" sx={{ pl: 0.5 }}>
+              —
+            </Typography>
+          );
+        }
+        return (
+          <Stack spacing={0} sx={{ overflow: "hidden" }}>
+            <Typography variant="body2" noWrap sx={{ lineHeight: 1.4 }}>
+              {matched.title}
+            </Typography>
+            <Typography variant="captionMuted" noWrap sx={{ lineHeight: 1.4 }}>
+              {matched.company}
+            </Typography>
+          </Stack>
+        );
+      },
+    },
+    {
+      field: "receivedAt",
+      headerName: "Received",
+      width: 140,
+      valueFormatter: (v) => (v ? new Date(v as string).toLocaleString() : ""),
+    },
+  ];
+
+  return (
+    <DataTable<EmailMessageDto>
+      rows={rows}
+      columns={columns}
+      loading={loading}
+      rowHeight={60}
+      onRowClick={(p) => onRowClick(p.row as EmailMessageDto)}
+      sx={{ "& .MuiDataGrid-row": { cursor: "pointer" } }}
+    />
+  );
+}

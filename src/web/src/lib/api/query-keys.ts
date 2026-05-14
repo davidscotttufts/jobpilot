@@ -45,4 +45,11 @@ export const queryKeys = {
     list: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.batch.all, "list", filters] as const,
   },
+
+  email: {
+    all: ["email"] as const,
+    account: () => [...queryKeys.email.all, "account"] as const,
+    messages: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.email.all, "messages", filters] as const,
+  },
 } as const;

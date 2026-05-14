@@ -24,9 +24,14 @@ Many ATS portals and job boards present challenges during login. These typically
 Some portals (especially Workday, iCIMS, Taleo) send a verification code to the user's email during login or account creation.
 
 1. Take a snapshot to confirm the page is asking for a verification code.
-2. **Ask the user:** "The site sent a verification code to your email. Please check your inbox and provide the code."
-3. Wait for the user to respond with the code.
-4. Fill the code into the verification field and submit.
+2. Determine the board domain from the current URL (e.g. `linkedin.com`, `myworkdayjobs.com`).
+3. If `<get-code-command>` is defined for the current provider, run it with the domain as the argument:
+   - `<get-code-command> "<board-domain>"`
+   - The skill prints a single JSON object to stdout. Parse it:
+     - If `code` is present, fill it into the verification field and submit.
+     - Else if `link` is present, navigate to it in the browser.
+     - If the response is `{}`, fall back to step 4.
+4. **Fallback — ask the user:** "The site sent a verification code to your email. Please check your inbox and provide the code." Wait for the user to respond, then fill and submit.
 5. Take a snapshot to confirm success.
 6. **Continue the autonomous flow.** This is a one-time interruption per board -- remaining jobs on this board should not need it again.
 

@@ -19,7 +19,8 @@ model Application {
   runId String?
   run   Run?    @relation(fields: [runId], references: [runId], onDelete: SetNull)
 
-  stageEvents StageEvent[]
+  stageEvents   StageEvent[]
+  emailMessages EmailMessage[]
 
   normalizedTitle   String
   normalizedCompany String
