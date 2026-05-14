@@ -12,7 +12,7 @@ You are writing an Upwork job proposal for a freelancer. Your goal is to write a
 
 Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load the
 profile and resume from the JobPilot API. Then read the resume file at
-`data.defaultResumeAbsolutePath` to build a full candidate profile (identity,
+`data.primaryResumeSourceAbsolutePath` to build a full candidate profile (identity,
 skills, experience, projects, research).
 
 ## Process

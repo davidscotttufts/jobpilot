@@ -12,7 +12,7 @@ You are writing a cover letter for a job applicant. Your goal is to write a comp
 
 Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load the
 profile and resume from the JobPilot API. Then read the resume file at
-`data.defaultResumeAbsolutePath` to build a full candidate profile (identity,
+`data.primaryResumeSourceAbsolutePath` to build a full candidate profile (identity,
 education, experience, skills, projects, research, awards).
 
 ## Process

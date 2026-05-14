@@ -56,7 +56,7 @@ export function ProfileContent(): ReactElement {
     eeoHispanicOrLatino: p.eeoHispanicOrLatino ?? "",
     eeoVeteranStatus: p.eeoVeteranStatus ?? "",
     eeoDisabilityStatus: p.eeoDisabilityStatus ?? "",
-    defaultResumeId: p.defaultResumeId,
+    primaryResumeId: p.primaryResumeId,
     autopilot: a,
   };
 

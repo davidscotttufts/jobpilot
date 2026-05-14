@@ -1,1 +1,2 @@
-export * from "./resumes-content";
+export { ResumeListViewer } from "./resumes-list-viewer";
+export { ResumeDetail } from "./resume-detail";

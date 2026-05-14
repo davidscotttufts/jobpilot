@@ -29,9 +29,9 @@ model Profile {
   eeoVeteranStatus    String?
   eeoDisabilityStatus String?
 
-  defaultResumeId Int?    @unique
-  defaultResume   Resume? @relation("DefaultResume", fields: [defaultResumeId], references: [id])
-  resumes         Resume[] @relation("AllResumes")
+  primaryResumeId Int?    @unique
+  primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
+  resumes         Resume[]
 
   autopilot AutopilotSettings?
 

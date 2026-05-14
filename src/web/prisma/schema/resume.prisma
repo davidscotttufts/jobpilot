@@ -1,13 +1,42 @@
 model Resume {
-  id        Int    @id @default(autoincrement())
-  label     String
-  filename  String
-  mimeType  String @default("application/pdf")
-  sizeBytes Int
+  id        Int     @id @default(autoincrement())
+  profileId Int
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  profileId  Int
-  profile    Profile  @relation("AllResumes", fields: [profileId], references: [id], onDelete: Cascade)
-  defaultFor Profile? @relation("DefaultResume")
+  label String
+
+  sourceFilename  String?
+  sourceMimeType  String?
+  sourceSizeBytes Int?
+
+  data    String?
+  version Int     @default(1)
+
+  variants   ResumeVariant[]
+  primaryFor Profile?        @relation("PrimaryResume")
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+}
+
+model ResumeVariant {
+  id       Int    @id @default(autoincrement())
+  resumeId Int
+  resume   Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  label         String
+  jobUrl        String?
+  applicationId Int?
+  application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+
+  data      String
+  diffNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resumeId])
+  @@index([applicationId])
 }

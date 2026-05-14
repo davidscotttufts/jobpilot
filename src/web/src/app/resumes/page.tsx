@@ -1,18 +1,18 @@
 import type { ReactElement } from "react";
 import { Container, Stack } from "@mui/material";
-import { ResumesContent } from "@/components/features/resumes";
+import { ResumeListViewer } from "@/components/features/resumes";
 import { PageHeader } from "@/components/ui/layout/page-header";
 
-export default function ResumesPage(): ReactElement {
+export default function ResumesIndexPage(): ReactElement {
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack spacing={3}>
         <PageHeader
-          eyebrow="Settings"
+          eyebrow="Profile"
           title="Resumes"
-          description="Upload PDFs that skills attach during applications. The default is used unless a board overrides it."
+          description="Your base resumes and the tailored variants AI produces from them. Upload a PDF to bootstrap a new base, or open one to edit its structure."
         />
-        <ResumesContent />
+        <ResumeListViewer />
       </Stack>
     </Container>
   );

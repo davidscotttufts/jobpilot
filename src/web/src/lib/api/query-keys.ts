@@ -9,9 +9,13 @@ export const queryKeys = {
     list: () => [...queryKeys.credentials.all, "list"] as const,
   },
 
-  resumes: {
-    all: ["resumes"] as const,
-    list: () => [...queryKeys.resumes.all, "list"] as const,
+  resume: {
+    all: ["resume"] as const,
+    list: () => [...queryKeys.resume.all, "list"] as const,
+    detail: (id: number) => [...queryKeys.resume.all, "detail", id] as const,
+    variants: (resumeId: number) =>
+      [...queryKeys.resume.all, "variants", "list", resumeId] as const,
+    variantDetail: (id: number) => [...queryKeys.resume.all, "variants", "detail", id] as const,
   },
 
   jobBoards: {

@@ -1,3 +1,5 @@
+import type { ResumeListItem } from "./resume";
+
 export interface ProfileDto {
   id: number;
   firstName: string;
@@ -29,7 +31,7 @@ export interface ProfileDto {
   eeoVeteranStatus: string | null;
   eeoDisabilityStatus: string | null;
 
-  defaultResumeId: number | null;
+  primaryResumeId: number | null;
   updatedAt: string;
 }
 
@@ -50,5 +52,6 @@ export interface AutopilotSettingsDto {
 export interface ProfileResponse {
   profile: ProfileDto | null;
   autopilot: AutopilotSettingsDto | null;
-  defaultResumeAbsolutePath: string | null;
+  primaryResumeSourceAbsolutePath: string | null;
+  resumes: ResumeListItem[];
 }

@@ -12,7 +12,7 @@ You generate tailored interview preparation material based on a job description 
 
 Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load the
 profile and resume from the JobPilot API. Then read the resume file at
-`data.defaultResumeAbsolutePath` to understand the candidate's full
+`data.primaryResumeSourceAbsolutePath` to understand the candidate's full
 background (skills, experience, projects, education, research).
 
 ## Process

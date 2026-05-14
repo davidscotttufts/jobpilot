@@ -9,8 +9,11 @@ export async function GET() {
   const profile = await db.profile.findUnique({
     where: { id: SINGLETON_ID },
     include: {
-      defaultResume: true,
-      resumes: { orderBy: { createdAt: "desc" } },
+      primaryResume: true,
+      resumes: {
+        orderBy: { updatedAt: "desc" },
+        include: { _count: { select: { variants: true } } },
+      },
       autopilot: true,
     },
   });
@@ -19,9 +22,20 @@ export async function GET() {
     return ok({
       profile: null,
       autopilot: null,
-      defaultResumeAbsolutePath: null,
+      primaryResumeSourceAbsolutePath: null,
+      resumes: [],
     });
   }
+
+  const resumes = profile.resumes.map((r) => ({
+    id: r.id,
+    label: r.label,
+    sourceFilename: r.sourceFilename,
+    hasData: r.data !== null,
+    variantCount: r._count.variants,
+    isPrimary: r.id === profile.primaryResumeId,
+    updatedAt: r.updatedAt.toISOString(),
+  }));
 
   return ok({
     profile: {
@@ -35,9 +49,10 @@ export async function GET() {
           skipTitleKeywords: JSON.parse(profile.autopilot.skipTitleKeywords) as string[],
         }
       : null,
-    defaultResumeAbsolutePath: profile.defaultResume
-      ? resumePath(profile.defaultResume.filename)
+    primaryResumeSourceAbsolutePath: profile.primaryResume?.sourceFilename
+      ? resumePath(profile.primaryResume.sourceFilename)
       : null,
+    resumes,
   });
 }
 
@@ -49,7 +64,7 @@ export async function PUT(req: Request) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid profile payload", 422, parsed.error.issues);
   }
 
-  const { autopilot, preferredLocations, ...profileFields } = parsed.data;
+  const { autopilot, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
   const preferredLocationsJson = JSON.stringify(preferredLocations);
 
   const profile = await db.profile.upsert({
@@ -58,10 +73,12 @@ export async function PUT(req: Request) {
       id: SINGLETON_ID,
       ...profileFields,
       preferredLocations: preferredLocationsJson,
+      primaryResumeId: primaryResumeId ?? null,
     },
     update: {
       ...profileFields,
       preferredLocations: preferredLocationsJson,
+      primaryResumeId: primaryResumeId ?? null,
     },
   });
 

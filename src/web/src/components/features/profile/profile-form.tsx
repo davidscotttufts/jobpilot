@@ -108,7 +108,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutopilotInput = {
   eeoHispanicOrLatino: "Prefer not to disclose",
   eeoVeteranStatus: "Prefer not to disclose",
   eeoDisabilityStatus: "Prefer not to disclose",
-  defaultResumeId: null,
+  primaryResumeId: null,
   autopilot: {
     minMatchScore: 6,
     maxApplicationsPerRun: 20,

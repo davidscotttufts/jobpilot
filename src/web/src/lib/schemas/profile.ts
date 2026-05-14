@@ -30,7 +30,7 @@ export const profileSchema = z.object({
   eeoVeteranStatus: z.string().optional().nullable(),
   eeoDisabilityStatus: z.string().optional().nullable(),
 
-  defaultResumeId: z.number().int().nullable().optional(),
+  primaryResumeId: z.number().int().nullable().optional(),
 });
 
 export const autopilotSettingsSchema = z.object({
