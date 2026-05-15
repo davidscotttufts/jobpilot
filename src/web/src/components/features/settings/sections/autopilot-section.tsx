@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
+import { FormCurrencyField } from "@/components/ui/form/form-currency-field";
 import { FormMultiselectField } from "@/components/ui/form/form-multiselect-field";
 import { FormSection } from "@/components/ui/form/form-section";
 import { FormSelectField } from "@/components/ui/form/form-select-field";
@@ -45,8 +46,8 @@ export function AutopilotSection(props: AutopilotSectionProps): ReactElement {
         items={CONFIRM_MODES}
       />
       <Stack direction="row" spacing={2}>
-        <FormTextField form={form} name="autopilot.minSalary" label="Min salary" type="number" />
-        <FormTextField form={form} name="autopilot.maxSalary" label="Max salary" type="number" />
+        <FormCurrencyField form={form} name="autopilot.minSalary" label="Min salary" />
+        <FormCurrencyField form={form} name="autopilot.maxSalary" label="Max salary" />
       </Stack>
       <FormTextField
         form={form}

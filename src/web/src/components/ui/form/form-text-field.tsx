@@ -16,20 +16,29 @@ interface FormTextFieldProps extends Omit<
 
 export function FormTextField(props: FormTextFieldProps): ReactElement {
   const { form, name, transform, helperText, ...rest } = props;
+  const isNumber = rest.type === "number";
+
   return (
     <form.Field name={name}>
       {(field: AnyFieldApi) => {
-        const value = (field.state.value as string | undefined) ?? "";
+        const raw = field.state.value as string | number | undefined;
+        const value = raw ?? "";
         const errMsg =
           (field.state.meta.errors[0] as { message?: string } | undefined)?.message ??
           field.state.meta.errors[0]?.toString();
+
         return (
           <TextField
             fullWidth
             value={value}
-            onChange={(e) =>
-              field.handleChange(transform ? transform(e.target.value) : e.target.value)
-            }
+            onChange={(e) => {
+              const next = e.target.value;
+              if (isNumber) {
+                field.handleChange(next === "" ? undefined : Number(next));
+                return;
+              }
+              field.handleChange(transform ? transform(next) : next);
+            }}
             onBlur={field.handleBlur}
             error={field.state.meta.errors.length > 0}
             helperText={errMsg ?? helperText}
