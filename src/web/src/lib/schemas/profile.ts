@@ -1,19 +1,71 @@
 import { z } from "zod/v4";
 
+const optionalUrl = z
+  .union([z.literal(""), z.url("Must be a valid URL")])
+  .optional()
+  .nullable();
+
+const optionalZipCode = z
+  .union([
+    z.literal(""),
+    z
+      .string()
+      .regex(
+        /^[A-Za-z0-9][A-Za-z0-9 -]{1,10}[A-Za-z0-9]$/,
+        "Enter a valid ZIP or postal code (e.g. 94103 or SW1A 1AA)",
+      ),
+  ])
+  .optional()
+  .nullable();
+
+const optionalPhone = z
+  .union([
+    z.literal(""),
+    z.string().regex(/^\+[1-9]\d{6,14}$/, "Must start with + and country code (e.g. +14155552671)"),
+  ])
+  .optional()
+  .nullable();
+
+const optionalLinkedinUrl = z
+  .union([
+    z.literal(""),
+    z
+      .url("Must be a valid URL")
+      .regex(
+        /^https?:\/\/([\w-]+\.)?linkedin\.com\/(in|pub|company)\/[\w\-%.]+\/?.*$/i,
+        "Must be a LinkedIn profile URL (e.g. https://linkedin.com/in/your-handle)",
+      ),
+  ])
+  .optional()
+  .nullable();
+
+const optionalGithubUrl = z
+  .union([
+    z.literal(""),
+    z
+      .url("Must be a valid URL")
+      .regex(
+        /^https?:\/\/([\w-]+\.)?github\.com\/[\w\-.]+\/?.*$/i,
+        "Must be a GitHub profile URL (e.g. https://github.com/your-handle)",
+      ),
+  ])
+  .optional()
+  .nullable();
+
 export const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   email: z.email(),
-  phone: z.string().optional().nullable(),
-  website: z.string().optional().nullable(),
-  linkedin: z.string().optional().nullable(),
-  github: z.string().optional().nullable(),
+  phone: optionalPhone,
+  website: optionalUrl,
+  linkedin: optionalLinkedinUrl,
+  github: optionalGithubUrl,
 
   street: z.string().optional().nullable(),
   aptUnit: z.string().optional().nullable(),
   city: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
-  zipCode: z.string().optional().nullable(),
+  zipCode: optionalZipCode,
   country: z.string().optional().nullable(),
 
   usAuthorized: z.boolean(),
@@ -34,7 +86,7 @@ export const profileSchema = z.object({
 });
 
 export const autopilotSettingsSchema = z.object({
-  minMatchScore: z.number().int().min(0).max(10),
+  minMatchScore: z.number().int().min(0).max(100),
   maxApplicationsPerRun: z.number().int().min(1).max(500),
   confirmMode: z.enum(["batch", "auto"]),
   skipCompanies: z.array(z.string()),
@@ -81,7 +133,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutopilotInput = {
   eeoDisabilityStatus: "Prefer not to disclose",
   primaryResumeId: null,
   autopilot: {
-    minMatchScore: 6,
+    minMatchScore: 70,
     maxApplicationsPerRun: 20,
     confirmMode: "batch",
     skipCompanies: [],

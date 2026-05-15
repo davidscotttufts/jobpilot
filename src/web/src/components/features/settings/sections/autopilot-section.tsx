@@ -28,7 +28,7 @@ export function AutopilotSection(props: AutopilotSectionProps): ReactElement {
         <FormTextField
           form={form}
           name="autopilot.minMatchScore"
-          label="Min match score (0-10)"
+          label="Min match score (0-100)"
           type="number"
         />
         <FormTextField

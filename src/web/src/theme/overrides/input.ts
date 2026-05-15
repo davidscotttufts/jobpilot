@@ -17,6 +17,14 @@ export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
         borderWidth: 1,
       },
       "&.Mui-focused": { boxShadow: theme.shadows_custom.focus },
+      "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active":
+        {
+          WebkitBoxShadow: `0 0 0 1000px ${theme.palette.surfaces.base} inset`,
+          WebkitTextFillColor: theme.palette.text.primary,
+          caretColor: theme.palette.text.primary,
+          borderRadius: "inherit",
+          transition: "background-color 5000s ease-in-out 0s",
+        },
     }),
   },
 };

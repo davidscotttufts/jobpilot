@@ -4,11 +4,13 @@ import { useState, type ReactElement } from "react";
 import { Button, Stack, Step, StepLabel, Stepper } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
-import { AddressSection } from "@/components/features/settings/sections/address-section";
-import { AutopilotSection } from "@/components/features/settings/sections/autopilot-section";
-import { EeoSection } from "@/components/features/settings/sections/eeo-section";
-import { PersonalSection } from "@/components/features/settings/sections/personal-section";
-import { WorkAuthSection } from "@/components/features/settings/sections/work-auth-section";
+import {
+  AddressSection,
+  AutopilotSection,
+  EeoSection,
+  PersonalSection,
+  WorkAuthSection,
+} from "@/components/features/settings/sections";
 import type { AnyReactForm } from "@/components/ui/form/types";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -76,7 +78,11 @@ export function OnboardingWizard(): ReactElement {
             {step === 3 && <EeoSection form={formApi} />}
             {step === 4 && <AutopilotSection form={formApi} />}
             <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-              <Button onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+              <Button
+                variant="outlined"
+                onClick={() => setStep((s) => Math.max(0, s - 1))}
+                disabled={step === 0}
+              >
                 Back
               </Button>
               <Button type="submit" variant="contained" disabled={save.isPending}>
