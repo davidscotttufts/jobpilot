@@ -14,6 +14,7 @@ import {
   DOCK_MIN_EXPANDED,
 } from "@/components/layout/shell-config";
 import { formatSkillCommand, injectCommand, type TerminalProviderId } from "@/lib/terminal";
+import { useToast } from "@/providers/notification-provider";
 
 const TERMINAL_PROVIDER_KEY = "jobpilot.terminal.provider";
 const DOCK_WIDTH_KEY = "jobpilot.dock.width";
@@ -31,7 +32,6 @@ export interface AgentContextValue {
   expanded: boolean;
   expand: () => void;
   collapse: () => void;
-  toggleExpanded: () => void;
 
   expandedWidth: number;
   setExpandedWidth: (px: number) => void;
@@ -45,8 +45,23 @@ export interface AgentContextValue {
 
 const AgentContext = createContext<AgentContextValue | null>(null);
 
+function describeInjectError(error: unknown): string {
+  if (error instanceof TypeError) {
+    return "JobPilot Terminal isn't reachable. Start it (bun run dev) and open the Terminal tab in the dock.";
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("-> 500") || message.includes("-> 409")) {
+    return "No active terminal session. Open the Terminal tab in the dock and start one.";
+  }
+  if (message.includes("-> 404")) {
+    return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
+  }
+  return `Failed to send command to terminal: ${message}`;
+}
+
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
+  const toast = useToast();
   const [expanded, setExpanded] = useState(false);
   const [provider, setProviderState] = useState<TerminalProviderId>(getProvider());
   const [expandedWidth, setExpandedWidthState] = useState<number>(DOCK_EXPANDED);
@@ -75,18 +90,32 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     window.localStorage.setItem(DOCK_WIDTH_KEY, String(next));
   };
 
+  const handleInject = async (command: string) => {
+    try {
+      await injectCommand(command, provider);
+    } catch (error) {
+      toast.error(describeInjectError(error));
+    }
+  };
+
+  const handleInjectSkill = async (skill: string, args?: string) => {
+    try {
+      await injectCommand(formatSkillCommand(provider, skill, args), provider);
+    } catch (error) {
+      toast.error(describeInjectError(error));
+    }
+  };
+
   const value: AgentContextValue = {
     expanded,
     expand: () => setExpanded(true),
     collapse: () => setExpanded(false),
-    toggleExpanded: () => setExpanded((prev) => !prev),
     expandedWidth,
     setExpandedWidth,
     provider,
     setProvider,
-    inject: (command: string) => injectCommand(command, provider),
-    injectSkill: (skill: string, args?: string) =>
-      injectCommand(formatSkillCommand(provider, skill, args), provider),
+    inject: handleInject,
+    injectSkill: handleInjectSkill,
   };
 
   return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>;

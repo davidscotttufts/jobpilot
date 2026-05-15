@@ -63,7 +63,7 @@ export function EmailSection(): ReactElement {
         <ConfirmDialog
           open={pendingDisconnect}
           title="Disconnect mailbox?"
-          message="JobPilot will stop reading new mail. Verification codes will fall back to asking you."
+          description="JobPilot will stop reading new mail. Verification codes will fall back to asking you."
           confirmLabel="Disconnect"
           destructive
           onConfirm={() => disconnect.mutate(undefined as unknown as void)}

@@ -4,11 +4,11 @@ import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { ConfirmDialog } from "@/components/ui/feedback";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { resumePdfUrl } from "@/lib/api/resume-urls";
+import { useConfirm } from "@/providers/confirm-provider";
 import type { ResumeDto } from "@/types/api";
 import { TailorForJobButton } from "./tailor-for-job-button";
 
@@ -19,8 +19,8 @@ interface ResumeHeaderBarProps {
 export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const { resume } = props;
   const router = useRouter();
+  const confirm = useConfirm();
   const [editingLabel, setEditingLabel] = useState(resume.label);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const renameLabel = useApiMutation<{ id: number }, { label: string }>(
     (vars) => apiClient.put<{ id: number }>(`/api/resumes/${resume.id}`, vars),
@@ -49,6 +49,16 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
       onSuccess: () => router.push("/resumes"),
     },
   );
+
+  const handleDelete = async () => {
+    const confirmed = await confirm({
+      title: "Delete resume?",
+      description: `Remove "${resume.label}" and all its variants? This cannot be undone.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) remove.mutate();
+  };
 
   return (
     <Stack
@@ -100,21 +110,9 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
       >
         <PictureAsPdf fontSize="md" />
       </IconButton>
-      <IconButton onClick={() => setConfirmDelete(true)} aria-label="Delete resume">
+      <IconButton onClick={handleDelete} aria-label="Delete resume">
         <Delete fontSize="md" />
       </IconButton>
-      <ConfirmDialog
-        open={confirmDelete}
-        title="Delete resume?"
-        message={`Remove "${resume.label}" and all its variants? This cannot be undone.`}
-        confirmLabel="Delete"
-        destructive
-        onConfirm={() => {
-          remove.mutate();
-          setConfirmDelete(false);
-        }}
-        onCancel={() => setConfirmDelete(false)}
-      />
     </Stack>
   );
 }

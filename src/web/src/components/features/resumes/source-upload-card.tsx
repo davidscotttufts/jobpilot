@@ -8,6 +8,7 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { ResumeDto } from "@/types/api";
+import { ExtractResumeButton } from "./extract-resume-button";
 
 interface SourceUploadCardProps {
   resume: ResumeDto;
@@ -50,7 +51,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
       title="Source PDF"
       description={
         resume.sourceFilename
-          ? "The PDF this resume was bootstrapped from. Tailor for a job to extract structured data and produce a tailored variant."
+          ? "The PDF this resume was bootstrapped from. Extract structured fields from it, or tailor it for a specific job."
           : "Upload a PDF to bootstrap this resume, or fill out the editor below directly."
       }
     >
@@ -68,8 +69,10 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
                   : "unknown size"}
               </Typography>
             </Box>
+            <ExtractResumeButton resume={resume} />
             <Button
               size="small"
+              variant="outlined"
               startIcon={<CloudUpload />}
               onClick={() => fileInputRef.current?.click()}
               disabled={upload.isPending}
@@ -86,7 +89,7 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
           </>
         ) : (
           <Button
-            variant="contained"
+            variant="outlined"
             startIcon={<CloudUpload />}
             onClick={() => fileInputRef.current?.click()}
             disabled={upload.isPending}

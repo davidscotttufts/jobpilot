@@ -1,9 +1,11 @@
 import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata } from "next";
-import { Geist, Fraunces, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Geist, JetBrains_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
-import { NotificationProvider } from "@/providers/notification-provider";
+import { AgentProvider } from "@/providers/agent-provider";
+import { ConfirmProvider } from "@/providers/confirm-provider";
+import { ToastProvider } from "@/providers/notification-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 
@@ -42,9 +44,13 @@ export default function RootLayout(props: PropsWithChildren): ReactElement {
       <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>
-            <NotificationProvider>
-              <AppShell>{children}</AppShell>
-            </NotificationProvider>
+            <ToastProvider>
+              <ConfirmProvider>
+                <AgentProvider>
+                  <AppShell>{children}</AppShell>
+                </AgentProvider>
+              </ConfirmProvider>
+            </ToastProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

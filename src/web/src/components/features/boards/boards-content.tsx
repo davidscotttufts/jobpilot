@@ -121,7 +121,7 @@ export function BoardsContent(): ReactElement {
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Delete board?"
-        message={
+        description={
           pendingDelete
             ? `Remove "${pendingDelete.name}"? Skills won't search this board until you add it back.`
             : ""

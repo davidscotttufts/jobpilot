@@ -96,7 +96,7 @@ export function CredentialsSection(): ReactElement {
       <ConfirmDialog
         open={pendingDelete !== null}
         title="Delete credential?"
-        message={
+        description={
           pendingDelete
             ? `Remove the "${pendingDelete.scope}" credential? Skills using this scope will fall back to the next match.`
             : ""

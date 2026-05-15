@@ -56,22 +56,14 @@ Fetch the chosen base's full row:
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
-If `data` is `null`:
+If `data` is `null`, delegate to the extract-resume skill so the
+extraction logic stays in one place:
 
-- Require `sourceFilename` to be set. If it's also null, stop and tell
-  the user to upload a PDF or fill in the editor first.
-- Resolve the absolute path to the source PDF. The profile response's
-  `primaryResumeSourceAbsolutePath` covers the primary; for non-primary
-  bases the path is
-  `{repo-root}/src/web/storage/resumes/{sourceFilename}`.
-- Use the `Read` tool to ingest the PDF.
-- Produce a Jake-template-compatible JSON matching `resumeDataSchema`
-  (basics, summary, experience[], projects[], skills[], education[]).
-  Preserve dates, employers, and education verbatim. Do not invent
-  content. Empty sections become `[]`.
-- `PUT /api/resumes/$BASE_ID` with `{ "data": { ... } }` to persist the
-  structured baseline. Refetch the base row afterwards — Step 4 needs the
-  saved `data`.
+> Run `<extract-resume-command> $BASE_ID` and wait for it to finish.
+
+Then refetch the base row — Step 4 needs the saved `data`. If the
+extract skill stops because the base has no `sourceFilename`, surface
+the same message to the user and stop.
 
 Bases that already have `hasData: true` skip this step.
 

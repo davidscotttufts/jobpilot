@@ -104,7 +104,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
       <ConfirmDialog
         open={confirmDelete !== null}
         title="Delete variant?"
-        message={
+        description={
           confirmDelete ? `Remove "${confirmDelete.label}"? This cannot be undone.` : ""
         }
         confirmLabel="Delete"

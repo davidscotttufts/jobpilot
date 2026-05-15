@@ -133,7 +133,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
       <ConfirmDialog
         open={confirmDelete}
         title="Delete application?"
-        message="This removes the record and its stage history. The duplicate-check API will no longer match this URL."
+        description="This removes the record and its stage history. The duplicate-check API will no longer match this URL."
         confirmLabel="Delete"
         destructive
         onConfirm={() => remove.mutate()}

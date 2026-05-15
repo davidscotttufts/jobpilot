@@ -11,23 +11,23 @@ import { Alert, Snackbar } from "@mui/material";
 
 type ToastSeverity = "success" | "info" | "warning" | "error";
 
-type Toast = {
+interface Toast {
   id: number;
   message: string;
   severity: ToastSeverity;
-};
+}
 
-type ToastApi = {
+interface ToastApi {
   show: (message: string, severity?: ToastSeverity) => void;
   success: (message: string) => void;
   error: (message: string) => void;
   info: (message: string) => void;
   warning: (message: string) => void;
-};
+}
 
 const ToastContext = createContext<ToastApi | null>(null);
 
-export function NotificationProvider(props: PropsWithChildren): ReactElement {
+export function ToastProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const [toast, setToast] = useState<Toast | null>(null);
 
