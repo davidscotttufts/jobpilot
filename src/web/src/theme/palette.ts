@@ -1,31 +1,50 @@
 export const surfaces = {
-  base: "#F8FAFC",
-  card: "#FFFFFF",
-  elevated: "#F1F5F9",
-  hover: "#E2E8F0",
+  base: "#161615",
+  card: "#1F1F1E",
+  elevated: "#2C2C2A",
+  hover: "#363633",
 } as const;
 
 export const accent = {
-  primary: "#4F46E5",
-  secondary: "#6366F1",
-  dark: "#3730A3",
+  primary: "#D9573A",
+  secondary: "#BF4A30",
+  dark: "#A33E26",
 } as const;
 
 export const textColors = {
-  primary: "#0F172A",
-  secondary: "#475569",
-  disabled: "#94A3B8",
+  primary: "#EEEAE0",
+  secondary: "#A8A49D",
+  disabled: "#646169",
 } as const;
 
 export const feedback = {
-  error: "#DC2626",
-  success: "#16A34A",
-  info: "#2563EB",
-  warning: "#D97706",
+  error: "#D86F5A",
+  success: "#8FA08F",
+  info: "#7FA0B8",
+  warning: "#D9A85C",
 } as const;
 
 export const line = {
-  divider: "#E2E8F0",
-  border: "#CBD5E1",
-  borderHi: "#94A3B8",
+  divider: "#363634",
+  border: "#42423F",
+  borderHi: "#54544F",
 } as const;
+
+export const stages = {
+  discovered: "#7A8B9E",
+  queued: "#C9A876",
+  applying: "#D9573A",
+  submitted: "#8FA08F",
+  replied: "#D9A85C",
+  rejected: "#D86F5A",
+} as const;
+
+export const editorial = {
+  paper: "#EEEAE0",
+  ink: "#161615",
+  sage: "#8FA08F",
+  ember: "#D9573A",
+  gold: "#D9A85C",
+} as const;
+
+export type StageKey = keyof typeof stages;

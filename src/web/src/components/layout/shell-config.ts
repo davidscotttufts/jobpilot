@@ -1,12 +1,9 @@
 import {
-  AssignmentTurnedIn,
   BusinessCenter,
-  Dashboard,
   Inbox,
-  Person,
-  PlaylistAddCheck,
+  Settings,
   Storage,
-  WorkHistory,
+  ViewKanban,
   type SvgIconComponent,
 } from "@mui/icons-material";
 
@@ -24,22 +21,18 @@ export interface NavGroup {
 export const navGroups: NavGroup[] = [
   {
     items: [
-      { label: "Dashboard", href: "/", icon: Dashboard },
-      { label: "Applications", href: "/applications", icon: AssignmentTurnedIn },
+      { label: "Pipeline", href: "/", icon: ViewKanban },
       { label: "Inbox", href: "/inbox", icon: Inbox },
-      { label: "Apply queue", href: "/queue", icon: PlaylistAddCheck },
-      { label: "Runs", href: "/runs", icon: WorkHistory },
-    ],
-  },
-  {
-    label: "Configure",
-    items: [
-      { label: "Boards", href: "/boards", icon: BusinessCenter },
-      { label: "Profile", href: "/profile", icon: Person },
       { label: "Resumes", href: "/resumes", icon: Storage },
+      { label: "Boards", href: "/boards", icon: BusinessCenter },
+      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ];
 
 export const APP_TITLE = "JobPilot";
-export const SIDEBAR_WIDTH = 240;
+export const RAIL_WIDTH = 56;
+export const DOCK_COLLAPSED = 56;
+export const DOCK_EXPANDED = 380;
+export const DOCK_MIN_EXPANDED = 320;
+export const DOCK_MAX_EXPANDED = 640;

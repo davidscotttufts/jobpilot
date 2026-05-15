@@ -1,6 +1,7 @@
 export const gradients = {
-  primary: "linear-gradient(135deg, #4F46E5, #6366F1)",
-  reversed: "linear-gradient(135deg, #6366F1, #4F46E5)",
+  primary: "linear-gradient(135deg, #D9573A, #A33E26)",
+  reversed: "linear-gradient(135deg, #A33E26, #D9573A)",
+  orb: "conic-gradient(from 200deg, #D9573A, #D9A85C, #8FA08F, #D9573A)",
 } as const;
 
 export const motion = {
@@ -10,22 +11,28 @@ export const motion = {
 } as const;
 
 export const shadows = {
-  sm: "0 1px 2px rgba(15,23,42,0.05)",
-  md: "0 1px 3px rgba(15,23,42,0.06), 0 6px 16px rgba(15,23,42,0.04)",
-  lg: "0 2px 8px rgba(15,23,42,0.08), 0 16px 40px rgba(15,23,42,0.06)",
-  focus: "0 0 0 3px rgba(79,70,229,0.18)",
+  sm: "none",
+  md: "0 4px 14px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04)",
+  lg: "0 18px 36px -10px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05)",
+  focus: "0 0 0 2px rgba(217, 87, 58, 0.45)",
 } as const;
 
 export const radii = {
-  xs: 4,
-  sm: 6,
-  md: 10,
-  lg: 14,
+  xs: 2,
+  sm: 3,
+  md: 6,
+  lg: 10,
   pill: 999,
 } as const;
 
 export const iconSizes = {
-  xs: 16,
-  sm: 20,
-  md: 24,
+  xs: 14,
+  sm: 16,
+  md: 18,
+  lg: 20,
+  xl: 24,
+  xxl: 28,
+  "2xxl": 32,
 } as const;
+
+export type IconSizeToken = keyof typeof iconSizes;
