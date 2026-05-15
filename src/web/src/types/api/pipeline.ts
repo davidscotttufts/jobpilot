@@ -3,7 +3,7 @@ export const PIPELINE_STAGES = [
   "queued",
   "applying",
   "submitted",
-  "replied",
+  "interviewing",
 ] as const;
 
 export type PipelineStage = (typeof PIPELINE_STAGES)[number];
@@ -13,7 +13,7 @@ export const PIPELINE_STAGE_LABEL: Record<PipelineStage, string> = {
   queued: "Queued",
   applying: "Applying",
   submitted: "Submitted",
-  replied: "Replied",
+  interviewing: "Interviewing",
 };
 
 export interface PipelineJobDto {
@@ -28,7 +28,7 @@ export interface PipelineJobDto {
   updatedAt: string;
   liveStep: string | null;
   liveMessage: string | null;
-  replySummary: string | null;
+  stageSummary: string | null;
   url: string;
   runId: string | null;
   applicationId: number | null;

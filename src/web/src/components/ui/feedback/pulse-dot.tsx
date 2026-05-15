@@ -28,7 +28,7 @@ function toneColor(theme: Theme, tone: PulseDotTone): string {
     case "blue":
       return theme.palette.info.main;
     case "peach":
-      return theme.palette.stages.replied;
+      return theme.palette.stages.interviewing;
     case "muted":
     default:
       return theme.palette.text.disabled;

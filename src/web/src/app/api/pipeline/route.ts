@@ -2,8 +2,8 @@ import { err, ErrorCodes, ok } from "@/lib/api";
 import {
   emptyPage,
   loadApplying,
+  loadInterviewing,
   loadQueued,
-  loadReplied,
   loadSubmitted,
 } from "./_lib/loaders";
 import { parsePipelineQuery } from "./_lib/params";
@@ -25,7 +25,7 @@ export async function GET(req: Request) {
       return ok(await loadApplying(cursor, limit, filters));
     case "submitted":
       return ok(await loadSubmitted(cursor, limit, filters));
-    case "replied":
-      return ok(await loadReplied(cursor, limit, filters));
+    case "interviewing":
+      return ok(await loadInterviewing(cursor, limit, filters));
   }
 }

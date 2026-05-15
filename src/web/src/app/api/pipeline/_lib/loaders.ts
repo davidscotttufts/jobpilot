@@ -79,13 +79,13 @@ export function loadSubmitted(
   });
 }
 
-export function loadReplied(
+export function loadInterviewing(
   cursor: number | null,
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
   return loadApplicationStage(
-    "replied",
+    "interviewing",
     { notIn: ["applied", "rejected", "withdrawn"] },
     cursor,
     limit,

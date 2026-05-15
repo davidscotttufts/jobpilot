@@ -28,8 +28,8 @@ export function PipelineView(): ReactElement {
   const queued = useStageTotal("queued");
   const applying = useStageTotal("applying");
   const submitted = useStageTotal("submitted");
-  const replied = useStageTotal("replied");
-  const total = discovered + queued + applying + submitted + replied;
+  const interviewing = useStageTotal("interviewing");
+  const total = discovered + queued + applying + submitted + interviewing;
 
   return (
     <Stack sx={{ height: "100%", minHeight: 0 }}>
@@ -55,7 +55,7 @@ export function PipelineView(): ReactElement {
               Pipeline
             </Typography>
             <Typography variant="body2Muted" sx={{ mt: 0.5 }}>
-              {total} jobs · {submitted} submitted · {replied} replied
+              {total} jobs · {submitted} submitted · {interviewing} interviewing
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>

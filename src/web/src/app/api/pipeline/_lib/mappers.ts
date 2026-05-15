@@ -1,6 +1,22 @@
 import type { Application, QueueEntry, RunJob } from "@/generated/prisma/client";
 import type { PipelineJobDto, PipelineStage } from "@/types/api/pipeline";
 
+const APPLICATION_STAGE_LABEL: Record<string, string> = {
+  applied: "Applied",
+  recruiter_screen: "Recruiter screen",
+  assessment: "Assessment",
+  hiring_manager_screen: "Hiring manager screen",
+  technical_interview: "Technical interview",
+  onsite: "Onsite",
+  offer: "Offer",
+  rejected: "Rejected",
+  withdrawn: "Withdrawn",
+};
+
+function formatApplicationStage(stage: string): string {
+  return APPLICATION_STAGE_LABEL[stage] ?? stage;
+}
+
 export function mapQueueEntry(entry: QueueEntry): PipelineJobDto {
   return {
     id: `queue:${entry.id}`,
@@ -14,7 +30,7 @@ export function mapQueueEntry(entry: QueueEntry): PipelineJobDto {
     updatedAt: entry.createdAt.toISOString(),
     liveStep: null,
     liveMessage: null,
-    replySummary: null,
+    stageSummary: null,
     url: entry.url,
     runId: null,
     applicationId: null,
@@ -34,7 +50,7 @@ export function mapRunJob(job: RunJob): PipelineJobDto {
     updatedAt: (job.appliedAt ?? new Date()).toISOString(),
     liveStep: job.status,
     liveMessage: job.retryNotes,
-    replySummary: null,
+    stageSummary: null,
     url: job.url,
     runId: job.runId,
     applicationId: null,
@@ -54,7 +70,7 @@ export function mapApplication(app: Application, stage: PipelineStage): Pipeline
     updatedAt: app.appliedAt.toISOString(),
     liveStep: null,
     liveMessage: null,
-    replySummary: stage === "replied" ? app.outcome ?? `Stage: ${app.stage}` : null,
+    stageSummary: stage === "interviewing" ? formatApplicationStage(app.stage) : null,
     url: app.url,
     runId: app.runId,
     applicationId: app.id,

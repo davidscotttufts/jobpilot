@@ -70,7 +70,7 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
         </Stack>
       </Stack>
 
-      {job.resumeVariant && job.stage !== "replied" && (
+      {job.resumeVariant && job.stage !== "interviewing" && (
         <Typography
           variant="captionMuted"
           sx={(theme) => ({
@@ -84,20 +84,20 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
         </Typography>
       )}
 
-      {job.replySummary && (
+      {job.stageSummary && (
         <Box
           sx={(theme) => ({
             mt: 1,
             padding: 0.75,
             borderRadius: theme.radii.xs,
-            backgroundColor: `${theme.palette.stages.replied}1A`,
-            border: `1px solid ${theme.palette.stages.replied}33`,
-            color: theme.palette.stages.replied,
+            backgroundColor: `${theme.palette.stages.interviewing}1A`,
+            border: `1px solid ${theme.palette.stages.interviewing}33`,
+            color: theme.palette.stages.interviewing,
             fontSize: "0.6875rem",
             lineHeight: 1.45,
           })}
         >
-          {job.replySummary}
+          {job.stageSummary}
         </Box>
       )}
     </Box>

@@ -35,7 +35,7 @@ export const stages = {
   queued: "#C9A876",
   applying: "#D9573A",
   submitted: "#8FA08F",
-  replied: "#D9A85C",
+  interviewing: "#D9A85C",
   rejected: "#D86F5A",
 } as const;
 

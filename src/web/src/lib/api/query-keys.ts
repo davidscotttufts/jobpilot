@@ -63,4 +63,9 @@ export const queryKeys = {
       [...queryKeys.pipeline.all, "column", stage, filters] as const,
     total: (stage: string) => [...queryKeys.pipeline.all, "total", stage] as const,
   },
+
+  overview: {
+    all: ["overview"] as const,
+    stats: () => [...queryKeys.overview.all, "stats"] as const,
+  },
 } as const;
