@@ -32,21 +32,55 @@ CREATE TABLE "StageEvent" (
 );
 
 -- CreateTable
-CREATE TABLE "QueueEntry" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "url" TEXT NOT NULL,
-    "note" TEXT,
-    "status" TEXT NOT NULL DEFAULT 'pending',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "consumedAt" DATETIME
-);
-
--- CreateTable
 CREATE TABLE "Credential" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "scope" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "EmailAccount" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
+    "provider" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "accessToken" TEXT,
+    "refreshToken" TEXT,
+    "tokenExpiresAt" DATETIME,
+    "scope" TEXT,
+    "historyId" TEXT,
+    "lastSyncAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
+
+-- CreateTable
+CREATE TABLE "EmailMessage" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "accountId" INTEGER NOT NULL,
+    "providerId" TEXT NOT NULL,
+    "threadId" TEXT,
+    "subject" TEXT NOT NULL,
+    "fromAddress" TEXT NOT NULL,
+    "fromName" TEXT,
+    "fromDomain" TEXT NOT NULL,
+    "snippet" TEXT NOT NULL,
+    "rawBody" TEXT NOT NULL,
+    "receivedAt" DATETIME NOT NULL,
+    "fetchedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "scannedAt" DATETIME,
+    "classification" TEXT,
+    "confidence" REAL,
+    "reasoning" TEXT,
+    "matchedAppId" INTEGER,
+    "matchScore" REAL,
+    "reviewStatus" TEXT NOT NULL DEFAULT 'pending',
+    "appliedStage" TEXT,
+    "verificationCode" TEXT,
+    "verificationLink" TEXT,
+    "verificationDomain" TEXT,
+    CONSTRAINT "EmailMessage_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "EmailAccount" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "EmailMessage_matchedAppId_fkey" FOREIGN KEY ("matchedAppId") REFERENCES "Application" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -90,16 +124,16 @@ CREATE TABLE "Profile" (
     "eeoHispanicOrLatino" TEXT,
     "eeoVeteranStatus" TEXT,
     "eeoDisabilityStatus" TEXT,
-    "defaultResumeId" INTEGER,
+    "primaryResumeId" INTEGER,
     "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Profile_defaultResumeId_fkey" FOREIGN KEY ("defaultResumeId") REFERENCES "Resume" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    CONSTRAINT "Profile_primaryResumeId_fkey" FOREIGN KEY ("primaryResumeId") REFERENCES "Resume" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
 CREATE TABLE "AutopilotSettings" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1,
     "profileId" INTEGER NOT NULL,
-    "minMatchScore" INTEGER NOT NULL DEFAULT 6,
+    "minMatchScore" INTEGER NOT NULL DEFAULT 70,
     "maxApplicationsPerRun" INTEGER NOT NULL DEFAULT 20,
     "confirmMode" TEXT NOT NULL DEFAULT 'batch',
     "skipCompanies" TEXT NOT NULL DEFAULT '[]',
@@ -112,15 +146,43 @@ CREATE TABLE "AutopilotSettings" (
 );
 
 -- CreateTable
+CREATE TABLE "QueueEntry" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "url" TEXT NOT NULL,
+    "note" TEXT,
+    "status" TEXT NOT NULL DEFAULT 'pending',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "consumedAt" DATETIME
+);
+
+-- CreateTable
 CREATE TABLE "Resume" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "label" TEXT NOT NULL,
-    "filename" TEXT NOT NULL,
-    "mimeType" TEXT NOT NULL DEFAULT 'application/pdf',
-    "sizeBytes" INTEGER NOT NULL,
     "profileId" INTEGER NOT NULL,
+    "label" TEXT NOT NULL,
+    "sourceFilename" TEXT,
+    "sourceMimeType" TEXT,
+    "sourceSizeBytes" INTEGER,
+    "data" TEXT,
+    "version" INTEGER NOT NULL DEFAULT 1,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "Resume_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "Profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- CreateTable
+CREATE TABLE "ResumeVariant" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "resumeId" INTEGER NOT NULL,
+    "label" TEXT NOT NULL,
+    "jobUrl" TEXT,
+    "applicationId" INTEGER,
+    "data" TEXT NOT NULL,
+    "diffNotes" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL,
+    CONSTRAINT "ResumeVariant_resumeId_fkey" FOREIGN KEY ("resumeId") REFERENCES "Resume" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "ResumeVariant_applicationId_fkey" FOREIGN KEY ("applicationId") REFERENCES "Application" ("id") ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- CreateTable
@@ -185,22 +247,46 @@ CREATE INDEX "Application_runId_idx" ON "Application"("runId");
 CREATE INDEX "StageEvent_applicationId_occurredAt_idx" ON "StageEvent"("applicationId", "occurredAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Credential_scope_key" ON "Credential"("scope");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmailMessage_providerId_key" ON "EmailMessage"("providerId");
+
+-- CreateIndex
+CREATE INDEX "EmailMessage_reviewStatus_receivedAt_idx" ON "EmailMessage"("reviewStatus", "receivedAt");
+
+-- CreateIndex
+CREATE INDEX "EmailMessage_matchedAppId_idx" ON "EmailMessage"("matchedAppId");
+
+-- CreateIndex
+CREATE INDEX "EmailMessage_fromDomain_receivedAt_idx" ON "EmailMessage"("fromDomain", "receivedAt");
+
+-- CreateIndex
+CREATE INDEX "EmailMessage_verificationDomain_receivedAt_idx" ON "EmailMessage"("verificationDomain", "receivedAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "JobBoard_domain_key" ON "JobBoard"("domain");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Profile_primaryResumeId_key" ON "Profile"("primaryResumeId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "AutopilotSettings_profileId_key" ON "AutopilotSettings"("profileId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "QueueEntry_url_key" ON "QueueEntry"("url");
 
 -- CreateIndex
 CREATE INDEX "QueueEntry_status_idx" ON "QueueEntry"("status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Credential_scope_key" ON "Credential"("scope");
+CREATE INDEX "Resume_profileId_idx" ON "Resume"("profileId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "JobBoard_domain_key" ON "JobBoard"("domain");
+CREATE INDEX "ResumeVariant_resumeId_idx" ON "ResumeVariant"("resumeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Profile_defaultResumeId_key" ON "Profile"("defaultResumeId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "AutopilotSettings_profileId_key" ON "AutopilotSettings"("profileId");
+CREATE INDEX "ResumeVariant_applicationId_idx" ON "ResumeVariant"("applicationId");
 
 -- CreateIndex
 CREATE INDEX "RunJob_runId_status_idx" ON "RunJob"("runId", "status");

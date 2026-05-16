@@ -42,7 +42,7 @@ model AutopilotSettings {
   id                    Int     @id @default(1)
   profileId             Int     @unique
   profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  minMatchScore         Int     @default(6)
+  minMatchScore         Int     @default(70)
   maxApplicationsPerRun Int     @default(20)
   confirmMode           String  @default("batch")
   skipCompanies         String  @default("[]")
