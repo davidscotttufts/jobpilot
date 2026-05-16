@@ -49,14 +49,8 @@ For each board returned by `/api/job-boards` where `enabled === true` and `type 
 
 1. Fill the search fields with the job title/keywords and location.
 2. Submit the search.
-3. Use `browser_snapshot` to read the results.
-4. Extract the first 10-15 results from each board:
-   - Job title
-   - Company name
-   - Location / remote status
-   - Posted date (if visible)
-   - URL to the listing
-   - Brief description or key requirements (if visible in the listing preview)
+3. **Read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/<board>-results.js` (`linkedin-results.js` for LinkedIn, `indeed-results.js` for Indeed, `generic-results.js` for other boards or as a fallback) and pass the contents to `browser_evaluate` as the `function` argument. Do **not** call `browser_snapshot` for this step â€” the extractor's JSON return value is far cheaper than a full a11y tree.
+4. The extractor returns an array of `{ title, company, location, url, postedAt }`. Take the first 10-15 entries. If a "brief description" is needed for the ranked table and the listing preview did not supply one, `browser_navigate` into the posting and run `extractors/job-details.js` for a digest; otherwise skip the per-job navigation to save tokens.
 
 The search URL for each board comes from the `searchUrl` field on the JobBoard
 row. Users add boards through the web UI at `/boards` (or via

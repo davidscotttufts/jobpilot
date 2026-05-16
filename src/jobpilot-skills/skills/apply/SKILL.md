@@ -33,9 +33,9 @@ Apply these defaults if a field is missing:
 
 | Setting                 | Default          | Description                                                                                                                                                                                                                |
 | ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 6                | Minimum score on a 0-10 scale to include a job in batch mode. Stored `matchScore` is on a 0-100 scale, so compare against `minMatchScore × 10`. Ignored in single-job mode (user explicitly chose the job).                |
+| `minMatchScore`         | 70               | Minimum score (0-100) to include a job in batch mode. Compared directly against the stored `matchScore`. Ignored in single-job mode (user explicitly chose the job).                                                       |
 | `maxApplicationsPerRun` | 10               | Maximum jobs to apply to in a single run. Read from `profile.autopilot.maxApplicationsPerRun` and sent to `POST /api/runs` as `config.maxApplications`. Single-job mode hard-codes this to `1`.                            |
-| `confirmMode`           | "batch"          | `"batch"` = review before applying. `"auto"` = skip confirmation when ALL jobs score >= `minMatchScore × 10`. Single-job mode always asks for confirmation after the fit review.                                           |
+| `confirmMode`           | "batch"          | `"batch"` = review before applying. `"auto"` = skip confirmation when ALL jobs score >= `minMatchScore`. Single-job mode always asks for confirmation after the fit review.                                           |
 | `salaryExpectation`     | ""               | Auto-fill salary expectation fields                                                                                                                                                                                        |
 | `defaultStartDate`      | "2 weeks notice" | Default answer for start date fields                                                                                                                                                                                       |
 
@@ -81,13 +81,9 @@ resume and present this review:
 **Verdict:** [1-2 sentence recommendation: strong fit / worth applying / stretch / skip]
 ```
 
-Extract from the posting: required skills/technologies, required years of
-experience, required education, nice-to-have skills, location / remote
-policy, visa/sponsorship stance.
+**Source the review from the structured digest, not the raw page.** If the input was a URL, `browser_navigate` to it and **read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/job-details.js`, passing the contents to `browser_evaluate`. The returned digest contains `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `salary`, `remote`, `location`, and a short `descriptionExcerpt`. Map each Strong/Partial/Gap entry to those fields. Do **not** take a `browser_snapshot` of the listing page â€” the digest is sufficient and orders of magnitude cheaper.
 
-If the input was a URL with no usable description yet (you haven't navigated
-yet), do `browser_navigate` + `browser_snapshot` first to read the listing,
-then run the review.
+If the input was pasted page content, parse the same fields from the paste and run the review.
 
 Then ask: **"Want me to proceed with the application?"**
 
@@ -203,9 +199,8 @@ visited the page.)
 ### Step 2.2: Visit the Job Page
 
 1. Use `browser_navigate` to open the URL.
-2. Use `browser_snapshot` with a targeted `ref` to read the listing.
-3. Extract title, company, location, salary, board, key requirements.
-4. If login is required, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` first, then re-read.
+2. **Read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/job-details.js` and pass the contents to `browser_evaluate`. The returned digest gives title, company, location, salary, requirements, responsibilities, techStack, yearsExperience. Use it for scoring â€” do **not** call `browser_snapshot` on the listing.
+3. If login is required, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` first, then re-run the extractor.
 
 Re-run the dedupe check now that you have title + company:
 
@@ -235,8 +230,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
     '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
 ```
 
-If the score is below `minMatchScore × 10` (config is 0-10, stored score is
-0-100), immediately PATCH the job to `skipped` with
+If the score is below `minMatchScore`, immediately PATCH the job to `skipped` with
 `skipReason: "Below minimum match score (X < Y)"`.
 
 ## Phase 3: Batch Confirmation (Batch Mode Only)
@@ -253,7 +247,7 @@ Present the qualified jobs in a ranked table:
 ```
 ## Batch Apply
 
-Visited <total> jobs. <qualified> qualify (score >= minMatchScore × 10).
+Visited <total> jobs. <qualified> qualify (score >= minMatchScore/100).
 
 | # | Score  | Title | Company | Location | Board |
 |---|--------|-------|---------|----------|-------|
@@ -292,13 +286,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 ### Step 4.2: Navigate, Find Apply, Authenticate
 
-Navigate to the job URL, snapshot the page, find the Apply button
-(`"Apply"`, `"Apply Now"`, `"Quick Apply"`, `"Apply for this job"`,
-`"Easy Apply"`, etc. — may be `<button>`, `<a>`, or `<input>`; prefer the
-most prominent one if there are duplicates in header/sidebar/footer), click
-it, and reassess. If a login or registration page is hit, follow
-`${JOBPILOT_SKILLS_ROOT}/shared/auth.md` first, then return to the apply
-flow.
+Navigate to the job URL. Take **one** narrowed `browser_snapshot` (header/main region) to locate the Apply button â€” extractors don't enumerate arbitrary buttons. Look for `"Apply"`, `"Apply Now"`, `"Quick Apply"`, `"Apply for this job"`, `"Easy Apply"`, etc. (may be `<button>`, `<a>`, or `<input>`; prefer the most prominent one if duplicated in header/sidebar/footer). Click it. After `browser_wait_for`, **read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate` instead of re-snapshotting. If a login or registration page is hit, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` first, then return to the apply flow.
 
 ### Step 4.3: Fill Forms
 
@@ -308,9 +296,8 @@ response for the standard salary/start-date fields.
 
 ### Step 4.4: Submit
 
-Submit without per-job confirmation — the user approved up front
-(Phase 1A.1 in single-job mode, Phase 3 in batch mode).
-`browser_wait_for` confirmation, take a targeted snapshot to verify.
+Submit without per-job confirmation â€” the user approved up front
+(Phase 1A.1 in single-job mode, Phase 3 in batch mode). `browser_wait_for` confirmation, then **read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate` to verify. Treat `{ submitted: true }` as success; a populated `error` field as failure with that message as `failReason`.
 
 ### Step 4.5: Record Result
 

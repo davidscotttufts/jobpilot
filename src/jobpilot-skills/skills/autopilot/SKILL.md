@@ -4,7 +4,7 @@ description: Autonomously search job boards and apply to matching positions in b
 argument-hint: "<search_query OR 'resume' OR 'retry-failed <run-id>'>"
 ---
 
-# Autopilot â€” Autonomous Job Application System
+# Autopilot Autonomous Job Application System
 
 You autonomously search job boards, score results against the user's resume,
 present a batch for one-time approval, then apply to every approved job
@@ -23,17 +23,17 @@ profile, resume, and credentials. Take `data.autopilot` from the profile
 response as the configuration object. Apply these defaults if a field is
 missing:
 
-| Setting                 | Default          | Description                                                                                                           |
-| ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 6                | Minimum score on a 0-10 scale; compared against the persisted 0-100 `matchScore` as `minMatchScore × 10`              |
-| `maxApplicationsPerRun` | 10               | Max jobs to apply to in one run                                                                                       |
-| `skipCompanies`         | []               | Company names to skip                                                                                                 |
-| `skipTitleKeywords`     | []               | Title keywords to skip (e.g., "intern", "principal")                                                                  |
-| `confirmMode`           | "batch"          | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore × 10`. |
-| `minSalary`             | 0                | Skip jobs with listed comp below this. 0 = no filter.                                                                 |
-| `maxSalary`             | 0                | Skip jobs above this. 0 = no filter.                                                                                  |
-| `salaryExpectation`     | ""               | Auto-fill salary expectation fields.                                                                                  |
-| `defaultStartDate`      | "2 weeks notice" | Default start date answer.                                                                                            |
+| Setting                 | Default          | Description                                                                                                      |
+| ----------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `minMatchScore`         | 70               | Minimum score (0-100) to qualify a job for application. Compared directly against the stored `matchScore`.       |
+| `maxApplicationsPerRun` | 10               | Max jobs to apply to in one run                                                                                  |
+| `skipCompanies`         | []               | Company names to skip                                                                                            |
+| `skipTitleKeywords`     | []               | Title keywords to skip (e.g., "intern", "principal")                                                             |
+| `confirmMode`           | "batch"          | `"batch"` reviews before applying. `"auto"` skips confirmation when ALL qualified jobs score >= `minMatchScore`. |
+| `minSalary`             | 0                | Skip jobs with listed comp below this. 0 = no filter.                                                            |
+| `maxSalary`             | 0                | Skip jobs above this. 0 = no filter.                                                                             |
+| `salaryExpectation`     | ""               | Auto-fill salary expectation fields.                                                                             |
+| `defaultStartDate`      | "2 weeks notice" | Default start date answer.                                                                                       |
 
 Inline argument overrides take precedence:
 
@@ -93,11 +93,11 @@ For each board where `enabled === true` and `type === "search"`:
 
 1. `browser_navigate` to `searchUrl`.
 2. Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`.
-3. Fill the search fields, submit, snapshot the results.
-4. Extract up to 15 results: title, company, location, URL, brief description.
+3. Fill the search fields and submit.
+4. **Read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/<board>-results.js` (use `linkedin-results.js` for LinkedIn, `indeed-results.js` for Indeed, `generic-results.js` for other boards or as fallback) and pass the contents to `browser_evaluate` as the `function` argument. The call returns an array of `{ title, company, location, url, postedAt }`. Do **not** call `browser_snapshot` for this step — the extractor's JSON is enough.
 5. POST each found job to the run as a `pending` `RunJob` (description below).
 
-`type === "ats"` boards (Greenhouse / Lever / Workday) are apply-only â€” skip
+`type === "ats"` boards (Greenhouse / Lever / Workday) are apply-only skip
 during search.
 
 ### Step 1.3: Dedupe + Previously-Applied Filter
@@ -118,19 +118,33 @@ If `data.applied` is true, add the job to the run with
 
 ### Step 1.4: Score and Add to Run
 
-For each surviving job:
+For each surviving job, `browser_navigate` to its URL and **read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/job-details.js`, passing the contents to `browser_evaluate`. The call returns a structured digest:
 
-- Score 0-100 based on tech overlap, experience, education, domain, seniority,
-  location. The persisted `matchScore` is on a 0-100 scale; `minMatchScore` is
-  on a 0-10 scale, so compare against `minMatchScore × 10`.
-- If the score is below `minMatchScore × 10` â†’ status `"skipped"`,
-  `skipReason: "Below minimum match score (X < Y)"` (X and Y on the 0-100 scale).
+```json
+{
+  "title": "...",
+  "company": "...",
+  "location": "...",
+  "salary": "...",
+  "employmentType": "...",
+  "remote": true,
+  "requirements": ["..."],
+  "responsibilities": ["..."],
+  "techStack": ["react", "typescript"],
+  "yearsExperience": 5,
+  "descriptionExcerpt": "..."
+}
+```
+
+**Score from the digest only — do NOT take a `browser_snapshot` of the listing page and do NOT re-read the full description.** The digest contains everything you need for an accurate qualitative match.
+
+- Score 0-100 based on `techStack` overlap with the resume, `yearsExperience` vs the candidate's experience, `requirements` vs resume skills, `responsibilities` vs domain/seniority, `location`/`remote` vs preferences.
+- If the score is below `minMatchScore` â†’ status `"skipped"`,
+  `skipReason: "Below minimum match score (X < Y)"`.
 - If company in `skipCompanies` â†’ `skipped`, `"Company in skip list"`.
 - If title matches `skipTitleKeywords` â†’ `skipped`, `"Title contains blocked keyword: <k>"`.
-- If listed salary < `minSalary` (and minSalary > 0) â†’ `skipped`,
-  `"Salary below minimum"`.
-- If listed salary > `maxSalary` (and maxSalary > 0) â†’ `skipped`,
-  `"Salary above maximum"`.
+- If `salary` parses to a value below `minSalary` (and minSalary > 0) â†’ `skipped`, `"Salary below minimum"`.
+- If `salary` parses to a value above `maxSalary` (and maxSalary > 0) â†’ `skipped`, `"Salary above maximum"`.
 - Otherwise status `"pending"`.
 
 POST every job to the run:
@@ -164,9 +178,9 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
 
 ### Auto Mode (`confirmMode: "auto"`)
 
-If every qualified job scores >= `minMatchScore × 10`, PATCH all qualified jobs
+If every qualified job scores >= `minMatchScore`, PATCH all qualified jobs
 to `status: "approved"` and skip to Phase 3. **If any qualified job is borderline,
-fall back to batch mode** regardless of the setting â€” humans always review the
+fall back to batch mode** regardless of the setting humans always review the
 edge cases.
 
 ### Batch Mode (default)
@@ -174,7 +188,7 @@ edge cases.
 ```
 ## Autopilot Run: "<query>"
 
-Found <totalFound> jobs across <N> boards. <qualified> qualify (score >= <minMatchScore × 10>/100).
+Found <totalFound> jobs across <N> boards. <qualified> qualify (score >= <minMatchScore>/100).
 
 | # | Score  | Title                 | Company   | Location | Board        |
 |---|--------|-----------------------|-----------|----------|--------------|
@@ -214,8 +228,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 ### Step 3.2: Navigate, Find Apply
 
-`browser_navigate` to the URL, snapshot, find/click the Apply button. After
-clicking, `browser_wait_for` and re-snapshot.
+`browser_navigate` to the URL. Take one `browser_snapshot` (narrowed to the header/main region if possible) to locate the Apply button's ref extractors don't enumerate arbitrary buttons. Click it. After `browser_wait_for`, **read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate` to enumerate the application form's fields with refs. Do **not** re-snapshot.
 
 ### Step 3.3: Authentication
 
@@ -234,8 +247,8 @@ remember for the rest of the run) and `autopilot.defaultStartDate`.
 
 ### Step 3.5: Submit
 
-Submit autonomously â€” the user already approved the batch in Phase 2.
-`browser_wait_for` confirmation, snapshot to verify.
+Submit autonomously the user already approved the batch in Phase 2.
+`browser_wait_for` confirmation, then **read** `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate` to verify. Treat `{ submitted: true }` as success; `{ error: "..." }` (from the page, not the extractor itself) as a failure with the message as `failReason`.
 
 ### Step 3.6: Record Result
 

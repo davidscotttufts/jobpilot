@@ -4,15 +4,15 @@ Job applications often span multiple pages/steps. For each page:
 
 ## Identify and Fill Fields
 
-1. **Take a snapshot** of the current form state.
-2. **Identify all form fields** -- text inputs, textareas, selects, checkboxes, radio buttons, file uploads.
-3. **Map each field** to the candidate's profile and resume data using field labels, placeholders, and names.
-4. **Fill fields** using Playwright MCP tools:
-   - Text inputs -> `browser_fill_form` or `browser_click` + `browser_type`
+1. **Enumerate fields** by running `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate`. The extractor returns each text input, textarea, select, checkbox, radio button, and (visible) input with its label, name, type, requiredness, options (for selects), and a stable `ref` you can pass to `browser_click` / `browser_type` / `browser_select_option`. **No `browser_snapshot` is needed for this step.**
+2. **Map each field** to the candidate's profile and resume data using the returned `label`, `placeholder`, and `name`.
+3. **Fill fields** using Playwright MCP tools, addressing each field by the `ref` from step 1:
+   - Text inputs -> `browser_type` (or `browser_fill_form` for batch)
    - Dropdowns/selects -> `browser_select_option`
    - Checkboxes/radio buttons -> `browser_click`
    - File uploads (resume) -> `browser_file_upload` with the selected resume path from `personal.resumes` (see Resume Selection in setup.md)
    - Date fields -> use the appropriate date format for the field
+4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) that `form-fields.js` could not enumerate: take a narrowed `browser_snapshot` of just that widget's container to obtain a ref.
 
 ## Special Fields
 
@@ -30,7 +30,7 @@ loaded by `shared/setup.md`).
 - **"How did you hear about us?"** -> "Job board" or "Company website" as appropriate.
 - **Years of experience** -> Calculate from the earliest work experience date in the resume.
 - **Custom questions** -> Use best judgment from the candidate's resume. If genuinely uncertain, ask the user (in autopilot mode: make a reasonable attempt and log it in notes).
-- **Relocation** -> Use `data.profile.willingToRelocate` to answer "Are you willing to relocate?" questions. If the form asks for preferred or target locations, use `data.profile.preferredLocations`. If empty `[]` or contains `"Anywhere"`, the user is open to any location â€” answer accordingly without asking.
+- **Relocation** -> Use `data.profile.willingToRelocate` to answer "Are you willing to relocate?" questions. If the form asks for preferred or target locations, use `data.profile.preferredLocations`. If empty `[]` or contains `"Anywhere"`, the user is open to any location answer accordingly without asking.
 - **Work authorization / visa sponsorship** -> Use `data.profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map these directly to the corresponding form questions. If the field is a dropdown, select the closest matching option.
 - **EEO/Diversity questions** -> Use `data.profile.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. If a specific field is null, default to "Prefer not to disclose".
 
@@ -41,5 +41,4 @@ Many applications have multiple steps (e.g., "Personal Info" -> "Experience" -> 
 1. After filling each page, look for "Next", "Continue", or "Save & Continue" buttons.
 2. Click to proceed to the next step.
 3. Repeat the form filling process for each new page.
-4. **Take a snapshot** after filling each page to verify.
-
+4. **Re-run `form-fields.js`** after filling each page to verify values landed, before clicking Next.
