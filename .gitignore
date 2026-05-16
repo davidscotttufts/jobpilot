@@ -15,3 +15,8 @@ dist/
 
 .idea/
 .VSCodeCounter/
+
+# Generated per-provider skill bundles (see scripts/sync-skills.ts).
+# Canonical source lives at src/jobpilot-skills/skills/.
+src/jobpilot-claude-plugin/skills/
+src/jobpilot-codex-plugin/skills/

@@ -4,14 +4,28 @@ JobPilot is local-first: SQLite on disk, Next.js bound to `127.0.0.1`, no
 auth, and no external services beyond the job boards your skills visit.
 
 The reusable JobPilot workflows live in
-[src/jobpilot-skills/](../src/jobpilot-skills/). Claude and Codex provider
-plugins wrap those workflows. The web UI can drive either provider through
-JobPilot.Terminal, and you can also run them directly:
+[src/jobpilot-skills/](../src/jobpilot-skills/) as `skills/<name>/SKILL.md`
+directories — this is the canonical, hand-edited source. The provider
+plugins under [src/jobpilot-claude-plugin/](../src/jobpilot-claude-plugin/)
+and [src/jobpilot-codex-plugin/](../src/jobpilot-codex-plugin/) only ship a
+manifest and `.mcp.json`; their `skills/` subtrees are generated (and
+gitignored) by [scripts/sync-skills.ts](../scripts/sync-skills.ts), which
+runs automatically before `bun run dev` and `bun run start`. After editing a
+canonical SKILL.md you can re-emit with `bun run sync-skills`.
+
+You can drive either provider through JobPilot.Terminal, or run them
+directly:
 
 ```bash
 claude --plugin-dir src/jobpilot-claude-plugin
 codex --no-alt-screen -C .
 ```
+
+For Codex, the repo ships
+[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json)
+which points Codex at `src/jobpilot-codex-plugin`. Codex auto-discovers it
+when launched with `-C <repo-root>`. On first launch open `/plugin` in
+Codex and enable **JobPilot**.
 
 ## Prerequisites
 
@@ -77,12 +91,12 @@ Claude commands:
 /jobpilot:apply https://example.com/job
 ```
 
-Codex commands:
+Codex commands (bare `$<skill>`, no `jobpilot-` prefix):
 
 ```text
-$jobpilot-search senior fullstack remote
-$jobpilot-autopilot senior fullstack remote
-$jobpilot-apply https://example.com/job
+$search senior fullstack remote
+$autopilot senior fullstack remote
+$apply https://example.com/job
 ```
 
 ## Production Launch
@@ -94,14 +108,26 @@ dist/terminal/JobPilot.Terminal.exe
 bun --cwd src/web run start
 ```
 
-The Terminal project copies these folders into build and publish output:
+The Terminal project copies these folders into build and publish output
+(after `bun run sync-skills` has populated the plugin `skills/` trees):
 
 - `jobpilot-skills/`
 - `jobpilot-claude-plugin/`
 - `jobpilot-codex-plugin/`
 
 If you package the app manually, keep all three folders next to
-`JobPilot.Terminal.exe`.
+`JobPilot.Terminal.exe`. For Codex, also register the local marketplace once
+on the target machine so `/plugin` can install JobPilot:
+
+```bash
+codex plugin marketplace add <path-to-repo-or-published-root>
+```
+
+That command expects the directory to contain `.agents/plugins/marketplace.json`
+(present in the repo root). In a published deployment without the `.agents/`
+folder, run Codex against the repo directly via `codex -C <repo-root>`, or
+copy the `.agents/` directory next to the executable and adjust the relative
+`path` in `marketplace.json` to point at the published plugin location.
 
 ## Profile, Boards, Credentials, Resumes
 
@@ -144,30 +170,10 @@ Two paths hold all local state:
 
 Root [.claude/settings.json](../.claude/settings.json) grants Claude sessions
 permission to use `curl`, `jq`, `date`, the Playwright MCP namespace, and the
-JobPilot skills. Codex plugin discovery is described by
-[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json). Each
-provider plugin owns its own `.mcp.json`.
-
-## File Map
-
-| Path                                                                        | Owner                                     |
-| --------------------------------------------------------------------------- | ----------------------------------------- |
-| `src/jobpilot-skills/shared/*.md`                                           | Shared setup/browser instructions.        |
-| `src/jobpilot-skills/skills/*.md`                                           | Provider-neutral JobPilot workflows.      |
-| `src/jobpilot-claude-plugin/.claude-plugin/plugin.json`                     | Claude Code plugin manifest.              |
-| `src/jobpilot-claude-plugin/.mcp.json`                                      | Claude Playwright MCP server config.      |
-| `src/jobpilot-claude-plugin/skills/<name>/SKILL.md`                         | Claude provider wrappers.                 |
-| `src/jobpilot-codex-plugin/.codex-plugin/plugin.json`                       | Codex plugin manifest.                    |
-| `src/jobpilot-codex-plugin/.mcp.json`                                       | Codex Playwright MCP server config.       |
-| `src/jobpilot-codex-plugin/skills/<name>/SKILL.md`                          | Codex provider wrappers.                  |
-| `src/web/prisma/dev.db`                                                     | All persistent state.                     |
-| `src/web/storage/resumes/*.pdf`                                             | Uploaded resumes.                         |
-| `src/web/prisma/schema/*.prisma`                                            | Database schema (split per domain).       |
-| `src/web/src/app/api/**/route.ts`                                           | API endpoints.                            |
-| `src/web/src/app/**/page.tsx`                                               | Pages (RSC).                              |
-| `src/web/src/components/features/<domain>/`                                 | Domain-specific React components.         |
-| `src/JobPilot.Terminal/Program.cs` + `SessionManager.cs` + `TerminalHub.cs` | .NET PTY host (HTTP + WebSocket).         |
-| `src/JobPilot.Terminal/Pty/`                                                | Vendored winpty wrapper (Quick.PtyNet).   |
+JobPilot skills. Codex auto-discovers the JobPilot plugin via
+[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json) when
+launched from the repo root (`codex -C <repo>`). The user enables it once
+through `/plugin`. Each provider plugin owns its own `.mcp.json`. | Vendored winpty wrapper (Quick.PtyNet). |
 
 ## Troubleshooting
 
@@ -181,11 +187,17 @@ on Windows. JobPilot uses `@prisma/adapter-libsql`; re-run `bun install` if
 **Claude does not see the JobPilot skills** - start Claude with
 `claude --plugin-dir src/jobpilot-claude-plugin`, or make sure
 `jobpilot-skills/` and `jobpilot-claude-plugin/` are next to the published
-Terminal executable.
+Terminal executable. If you edited a canonical SKILL.md, also run
+`bun run sync-skills` to regenerate the plugin tree.
 
 **Codex does not see the JobPilot skills** - run Codex from the repo root with
-`codex --no-alt-screen -C .` and install or enable the local JobPilot plugin
-from the marketplace entry in `.agents/plugins/marketplace.json`.
+`codex --no-alt-screen -C .` (so it can find `.agents/plugins/marketplace.json`)
+and enable the JobPilot plugin from Codex's `/plugin` menu. If `/plugin` does
+not list it, run `codex plugin marketplace add <repo-root>` once.
+
+**Claude or Codex shows empty `skills/` folder** - the generator has not
+run. Execute `bun run sync-skills` (or any `bun run dev` / `bun run start`,
+which triggers the `predev`/`prestart` hook).
 
 **Profile redirect loop** - `/profile` keeps bouncing to `/onboarding` when
 the singleton Profile row is missing. Open `bun db:studio`, confirm the

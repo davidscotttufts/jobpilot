@@ -20,17 +20,35 @@ spawning a provider it also exports `JOBPILOT_SKILLS_ROOT` and
 `JOBPILOT_WORKSPACE_ROOT` so wrappers can resolve shared skills without
 filesystem inference.
 
-**Shared JobPilot skills** ([src/jobpilot-skills/](../src/jobpilot-skills/))
-contain the provider-neutral workflow instructions. Claude and Codex plugins
-are thin wrappers that define provider command syntax and read those shared
-files.
+**Canonical skill pack** ([src/jobpilot-skills/](../src/jobpilot-skills/))
+holds the provider-neutral workflow instructions. Each workflow is a
+directory `skills/<name>/SKILL.md`; shared imports live under
+`shared/*.md`. Bodies use `<skill-name>-command` placeholders for cross-skill
+references and the `${JOBPILOT_SKILLS_ROOT}` env var for shared files. This is
+the only place skills are edited.
 
-**Provider plugins** live at
+**Skill generator** ([scripts/sync-skills.ts](../scripts/sync-skills.ts))
+reads the canonical pack and writes per-provider copies into each plugin's
+`skills/` directory. For Claude, it keeps the full frontmatter and rewrites
+`<X-command>` to `/jobpilot:X` and `${JOBPILOT_SKILLS_ROOT}` to
+`${CLAUDE_PLUGIN_ROOT}/../jobpilot-skills`. For Codex, it strips
+Claude-only frontmatter fields (`allowed-tools`, `disable-model-invocation`,
+…) and rewrites `<X-command>` to `$X`. Both generated `skills/` trees are
+gitignored; the script runs automatically via `predev`/`prestart` or on
+demand with `bun run sync-skills`.
+
+**Provider plugins** at
 [src/jobpilot-claude-plugin/](../src/jobpilot-claude-plugin/) and
-[src/jobpilot-codex-plugin/](../src/jobpilot-codex-plugin/). Terminal starts
-Claude Code with `--plugin-dir src/jobpilot-claude-plugin`, or Codex with
-`codex --no-alt-screen -C <repo>`. Developers can also run providers directly
-from the repo root:
+[src/jobpilot-codex-plugin/](../src/jobpilot-codex-plugin/) carry only the
+manifest (`.claude-plugin/plugin.json` / `.codex-plugin/plugin.json`) and a
+`.mcp.json` for the Playwright server. Terminal starts Claude Code with
+`--plugin-dir src/jobpilot-claude-plugin`, or Codex with
+`codex --no-alt-screen -C <repo>`. Codex has no `--plugin-dir` flag; it
+auto-discovers
+[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json) from
+the working directory, which points at `src/jobpilot-codex-plugin`. On first
+launch a user enables the plugin from the `/plugin` menu. Developers can also
+run providers directly:
 
 ```bash
 claude --plugin-dir src/jobpilot-claude-plugin
@@ -55,23 +73,28 @@ history.
 ## Plugin Layout
 
 ```text
-src/jobpilot-skills/
-|-- shared/                # setup, auth, form-filling, browser-tips
-`-- skills/                # provider-neutral workflows
+src/jobpilot-skills/                       # canonical (edit these)
+|-- shared/                                # setup, auth, form-filling, browser-tips
+`-- skills/<name>/SKILL.md                 # one directory per workflow
+
+scripts/sync-skills.ts                     # generator
 
 src/jobpilot-claude-plugin/
 |-- .claude-plugin/plugin.json
 |-- .mcp.json
-`-- skills/*/SKILL.md      # /jobpilot:<skill> wrappers
+`-- skills/                                # generated, gitignored
 
 src/jobpilot-codex-plugin/
 |-- .codex-plugin/plugin.json
 |-- .mcp.json
-`-- skills/*/SKILL.md      # $jobpilot-<skill> wrappers
+`-- skills/                                # generated, gitignored
+
+.agents/plugins/marketplace.json           # makes Codex aware of the local plugin
 ```
 
-Plugin skills are namespaced per provider. The web app formats injected
-commands as `/jobpilot:<skill>` for Claude and `$jobpilot-<skill>` for Codex.
+The web app formats injected commands as `/jobpilot:<skill>` for Claude
+(plugin namespace) and `$<skill>` for Codex (bare; the Codex plugin owns the
+namespace by virtue of being the only installed plugin in this workspace).
 
 Root `.claude/settings.json` grants the project permissions needed by the
 skills. The plugin owns reusable behavior; the repository owns local trust and
@@ -115,55 +138,7 @@ loading config. Every skill hits `/api/health`, then
 `GET /api/resumes/[id]/file` for a stream.
 
 `auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting browser
-behavior. `src/jobpilot-skills/skills/humanizer.md` is invoked by the
-cover-letter and upwork-proposal workflows through the active provider wrapper.
-
-## Web App Layer
-
-RSC-first. Most `app/<route>/page.tsx` files render a `Container + Stack +
-PageHeader` server-side and descend into a `*-content.tsx` client component
-for the data-fetching body.
-
-Routes:
-
-- `/` dashboard
-- `/applications`, `/applications/[id]` stage funnel and manual transitions
-- `/runs`, `/runs/[id]` live viewer over SSE
-- `/queue` apply URL queue
-- `/boards` job-board CRUD
-- `/profile` profile, credentials, resumes, and autopilot defaults
-- `/onboarding` setup wizard
-
-## API Surface
-
-All under `/api/`, JSON in/out, response shape `{ ok, data | error }`:
-
-- `/api/health`
-- `/api/profile` GET/PUT and `/api/profile/default-resume` POST
-- `/api/job-boards` GET/POST and `/api/job-boards/[id]` PATCH/DELETE
-- `/api/credentials` GET/POST and `/api/credentials/[id]` PATCH/DELETE
-- `/api/resumes` GET/POST, `/api/resumes/[id]` DELETE,
-  `/api/resumes/[id]/file` GET
-- `/api/applied` GET/POST, `/api/applied/check` GET,
-  `/api/applied/[id]` GET/DELETE, `/api/applied/[id]/stage` POST
-- `/api/dashboard/stats` GET
-- `/api/runs` GET/POST, `/api/runs/[id]` GET/PATCH,
-  `/api/runs/[id]/jobs` GET/POST, `/api/runs/[id]/jobs/[jobKey]` PATCH,
-  `/api/runs/[id]/events` POST + GET, `/api/runs/stats` GET
-- `/api/queue` GET/POST, `/api/queue/pending` GET,
-  `/api/queue/[id]` PATCH/DELETE
-
-## Data
-
-`src/web/prisma/schema/` holds one file per domain. Prisma emits TypeScript to
-`src/web/src/generated/prisma/`. Dev DB is `src/web/prisma/dev.db`. The app
-uses `@prisma/adapter-libsql` because better-sqlite3 fails to load under Bun
-on Windows.
-
-`src/web/src/lib/matching.ts` runs Jaro-Winkler on normalized title + company
-with seniority and legal-suffix tokens stripped.
-
-## Conventions
-
-`CLAUDE.md` at the repo root holds the coding conventions and current
-repository context.
+behavior. `src/jobpilot-skills/skills/humanizer/SKILL.md` is chained from the
+cover-letter and upwork-proposal workflows via the `<humanizer-command>`
+placeholder, which the generator rewrites to the active provider's
+invocation token.

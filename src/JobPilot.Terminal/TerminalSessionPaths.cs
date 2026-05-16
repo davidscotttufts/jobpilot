@@ -115,8 +115,9 @@ public sealed record TerminalSessionPaths(
 
     private static bool IsSharedSkillsDir(string path)
     {
+        // Canonical layout: shared/setup.md + skills/<name>/SKILL.md (one dir per skill).
         return File.Exists(Path.Combine(path, "shared", "setup.md"))
-            && File.Exists(Path.Combine(path, "skills", "autopilot.md"));
+            && File.Exists(Path.Combine(path, "skills", "autopilot", "SKILL.md"));
     }
 
     private static bool IsClaudePluginDir(string path)
