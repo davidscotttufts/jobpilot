@@ -65,11 +65,11 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       const { id } = await createProfile.mutateAsync();
       await setActive.mutateAsync(id);
       setBootstrapped(true);
-      bootstrapRef.current = false;
     };
 
     bootstrap();
-  }, [createProfile, setActive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = useApiMutation<{ id: number }, ProfileWithAutopilotInput>(
     (vars) => apiClient.put("/api/profile", vars),

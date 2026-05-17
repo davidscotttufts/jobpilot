@@ -51,15 +51,23 @@ const DEFAULT_BOARDS: BoardSeed[] = [
 ];
 
 async function main() {
-  for (const board of DEFAULT_BOARDS) {
-    await db.jobBoard.upsert({
-      where: { domain: board.domain },
-      create: { ...board, enabled: true },
-      update: {},
-    });
+  const profiles = await db.profile.findMany({ select: { id: true } });
+  if (profiles.length === 0) {
+    console.log("No profiles found. Skipping job board seed (boards seed per profile after onboarding).");
+    return;
+  }
+
+  for (const profile of profiles) {
+    for (const board of DEFAULT_BOARDS) {
+      await db.jobBoard.upsert({
+        where: { profileId_domain: { profileId: profile.id, domain: board.domain } },
+        create: { ...board, enabled: true, profileId: profile.id },
+        update: {},
+      });
+    }
   }
   const count = await db.jobBoard.count();
-  console.log(`Seeded job boards. Total: ${count}`);
+  console.log(`Seeded job boards for ${profiles.length} profile(s). Total: ${count}`);
 }
 
 main()

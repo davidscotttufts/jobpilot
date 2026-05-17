@@ -30,7 +30,7 @@ export function EmailSection(): ReactElement {
   if (status.isLoading || !status.data) {
     return (
       <SectionCard title="Email integration" description="Connect a mailbox.">
-        <Typography variant="body2Muted">Loadingâ€¦</Typography>
+        <Typography variant="body2Muted">Loading</Typography>
       </SectionCard>
     );
   }

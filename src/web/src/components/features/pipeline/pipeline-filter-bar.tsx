@@ -50,7 +50,7 @@ export function PipelineFilterBar(): ReactElement {
     >
       <TextField
         size="small"
-        placeholder="Search role, company, URLâ€¦"
+        placeholder="Search role, company, URL"
         value={searchDraft}
         onChange={(e) => setSearchDraft(e.target.value)}
         slotProps={{

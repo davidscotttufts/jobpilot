@@ -91,12 +91,12 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               )}
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
-              <Field label="Board" value={app.board ?? "â€”"} />
+              <Field label="Board" value={app.board ?? ""} />
               <Field label="Source" value={app.source} />
-              <Field label="Location" value={app.location ?? "â€”"} />
+              <Field label="Location" value={app.location ?? ""} />
               <Field
                 label="Match score"
-                value={app.matchScore !== null ? `${app.matchScore}/100` : "â€”"}
+                value={app.matchScore !== null ? `${app.matchScore}/100` : ""}
               />
               <Field label="Applied at" value={new Date(app.appliedAt).toLocaleString()} />
               {app.runId && <Field label="Run" value={app.runId} />}

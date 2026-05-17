@@ -172,7 +172,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
               startIcon={<Save fontSize="md" />}
               disabled={save.isPending}
             >
-              {save.isPending ? "Savingâ€¦" : "Save settings"}
+              {save.isPending ? "Saving" : "Save settings"}
             </Button>
           </Stack>
         </Stack>

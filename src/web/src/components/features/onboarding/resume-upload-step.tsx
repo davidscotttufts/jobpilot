@@ -153,7 +153,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
         >
           {injectError
             ? `Couldn't start the extractor: ${injectError}. Open the dock's Terminal tab, then retry.`
-            : "Reading your resume in the terminalâ€¦ fields will autofill when it finishes."}
+            : "Reading your resume in the terminal fields will autofill when it finishes."}
         </Alert>
       )}
 
@@ -173,7 +173,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
 
       {state === "done" && (
         <Alert severity="success" icon={<CheckCircle fontSize="md" />}>
-          Resume parsed. Moving onâ€¦
+          Resume parsed. Moving on
         </Alert>
       )}
 

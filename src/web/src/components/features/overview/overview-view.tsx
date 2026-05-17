@@ -23,7 +23,7 @@ export function OverviewView(): ReactElement {
   );
 
   if (query.isPending) {
-    return <Typography variant="body2Muted">Loading overviewâ€¦</Typography>;
+    return <Typography variant="body2Muted">Loading overview</Typography>;
   }
 
   if (!query.data) {

@@ -49,7 +49,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
         onClick={() => sync.mutate(undefined as unknown as void)}
         disabled={sync.isPending}
       >
-        {sync.isPending ? "Syncingâ€¦" : "Sync"}
+        {sync.isPending ? "Syncing" : "Sync"}
       </Button>
       <Button
         size="small"

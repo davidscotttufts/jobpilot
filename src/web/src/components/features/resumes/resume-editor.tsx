@@ -36,7 +36,8 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   const [dirty, setDirty] = useState(false);
 
   const save = useApiMutation<{ id: number; version: number }, ResumeData>(
-    (vars) => apiClient.put<{ id: number; version: number }>(`/api/resumes/${resumeId}`, { data: vars }),
+    (vars) =>
+      apiClient.put<{ id: number; version: number }>(`/api/resumes/${resumeId}`, { data: vars }),
     {
       successMessage: "Resume saved",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
@@ -60,7 +61,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
           onClick={() => save.mutate(data)}
           disabled={!dirty || save.isPending}
         >
-          {save.isPending ? "Savingâ€¦" : dirty ? "Save" : "Saved"}
+          {save.isPending ? "Saving" : dirty ? "Save" : "Saved"}
         </Button>
       }
     >
@@ -80,10 +81,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
               <BasicsSection value={data.basics} onChange={(v) => patch({ basics: v })} />
             </Box>
             <Box data-section-id="summary">
-              <SummarySection
-                value={data.summary ?? ""}
-                onChange={(v) => patch({ summary: v })}
-              />
+              <SummarySection value={data.summary ?? ""} onChange={(v) => patch({ summary: v })} />
             </Box>
             <Box data-section-id="experience">
               <ExperienceSection
@@ -98,10 +96,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
               <SkillsSection value={data.skills} onChange={(v) => patch({ skills: v })} />
             </Box>
             <Box data-section-id="education">
-              <EducationSection
-                value={data.education}
-                onChange={(v) => patch({ education: v })}
-              />
+              <EducationSection value={data.education} onChange={(v) => patch({ education: v })} />
             </Box>
           </Stack>
         </Box>
