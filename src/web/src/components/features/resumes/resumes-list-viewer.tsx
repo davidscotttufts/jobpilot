@@ -3,6 +3,7 @@
 import { useRef, useState, type ReactElement } from "react";
 import { Add, CloudUpload, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Box, Button, Chip, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
+import { Route } from "next";
 import Link from "next/link";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -123,22 +124,15 @@ export function ResumeListViewer(): ReactElement {
               })}
             >
               <Description fontSize="lg" sx={{ color: "text.secondary" }} />
-              <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box
+                component={Link}
+                href={`/resumes/${r.id}` as Route}
+                sx={{ flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }}
+              >
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <Link
-                    href={`/resumes/${r.id}`}
-                    style={{ textDecoration: "none", color: "inherit" }}
-                  >
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        fontWeight: 600,
-                        "&:hover": { textDecoration: "underline" },
-                      }}
-                    >
-                      {r.label}
-                    </Typography>
-                  </Link>
+                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                    {r.label}
+                  </Typography>
                   {r.isPrimary && <Chip label="Primary" size="small" color="primary" />}
                   {!r.hasData && <Chip label="No structure" size="small" variant="outlined" />}
                   {r.variantCount > 0 && (

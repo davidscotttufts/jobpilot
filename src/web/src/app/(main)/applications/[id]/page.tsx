@@ -11,10 +11,15 @@ interface PageProps {
 export default async function ApplicationDetailPage(props: PageProps): Promise<ReactElement> {
   const { id: idParam } = await props.params;
   const id = Number(idParam);
-  if (!Number.isInteger(id)) notFound();
+
+  if (!Number.isInteger(id)) {
+    notFound();
+  }
 
   const { data } = await apiGet<ApplicationDetailDto>(`/api/applied/${id}`);
-  if (!data) notFound();
+  if (!data) {
+    notFound();
+  }
 
   return <ApplicationDetail initialApplication={data} />;
 }
