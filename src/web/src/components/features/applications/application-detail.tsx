@@ -2,12 +2,11 @@
 
 import { useState, type ReactElement } from "react";
 import { Delete, Launch } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, Container, IconButton, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { StageChip } from "@/components/ui/display/stage-chip";
-import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
-import { PageHeader } from "@/components/ui/layout/page-header";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { StageChip } from "@/components/ui/display";
+import { ConfirmDialog } from "@/components/ui/feedback";
+import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
@@ -57,7 +56,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
 
   return (
     <>
-      <Stack spacing={3}>
+      <Container maxWidth="lg" sx={{ gap: 2 }}>
         <PageHeader
           eyebrow={app.company}
           title={app.title}
@@ -120,7 +119,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         <SectionCard title="Stage history">
           <StageTimeline events={app.stageEvents} />
         </SectionCard>
-      </Stack>
+      </Container>
 
       <StageTransitionDialog
         open={stageDialogOpen}

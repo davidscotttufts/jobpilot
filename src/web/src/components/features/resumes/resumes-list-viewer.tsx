@@ -72,13 +72,19 @@ export function ResumeListViewer(): ReactElement {
       >
         <Button
           variant="contained"
+          size="small"
           startIcon={<CloudUpload />}
           onClick={() => fileInputRef.current?.click()}
           disabled={upload.isPending}
         >
           {upload.isPending ? "Uploading…" : "Upload PDF"}
         </Button>
-        <Button variant="outlined" startIcon={<Add />} onClick={() => setDialogOpen(true)}>
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<Add />}
+          onClick={() => setDialogOpen(true)}
+        >
           Start blank
         </Button>
         <input

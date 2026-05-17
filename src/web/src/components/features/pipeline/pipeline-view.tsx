@@ -36,8 +36,6 @@ export function PipelineView(): ReactElement {
       <Stack
         sx={(theme) => ({
           paddingInline: 2.5,
-          paddingTop: 3,
-          paddingBottom: 2,
           borderBottom: `1px solid ${theme.palette.line.divider}`,
           gap: 2,
         })}

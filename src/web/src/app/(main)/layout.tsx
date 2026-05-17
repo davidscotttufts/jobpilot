@@ -1,11 +1,12 @@
 import type { PropsWithChildren, ReactElement } from "react";
-import { Container } from "@mui/material";
+import { Box } from "@mui/material";
+import { AppShell } from "@/components/layout";
 
 export default function MainLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {children}
-    </Container>
+    <AppShell>
+      <Box sx={{ py: 3 }}>{children}</Box>
+    </AppShell>
   );
 }

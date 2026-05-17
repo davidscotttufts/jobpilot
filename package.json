@@ -9,7 +9,7 @@
     "sync-skills": "bun scripts/sync-skills.ts",
     "predev": "bun run sync-skills",
     "prestart": "bun run sync-skills",
-    "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet watch --project src/JobPilot.Terminal run\" \"bun --cwd=src/web run dev\"",
+    "dev": "concurrently -k -n terminal,web -c cyan,green \"dotnet run --project src/JobPilot.Terminal\" \"bun --cwd=src/web run dev\"",
     "start": "bun run db:setup && bun run dev",
     "db:setup": "bun --cwd=src/web run db:migrate:apply && bun --cwd=src/web run db:seed",
     "prebuild:terminal": "bun run sync-skills",

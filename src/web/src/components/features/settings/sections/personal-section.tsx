@@ -22,7 +22,7 @@ export function PersonalSection(props: PersonalSectionProps): ReactElement {
         <FormTextField form={form} name="lastName" label="Last name" />
       </Stack>
       <FormTextField form={form} name="email" label="Email" type="email" />
-      <FormTextField form={form} name="phone" label="Phone" />
+      <FormTextField form={form} name="phone" label="Phone" placeholder="+1 555 123 4567" />
       <Stack direction="row" spacing={2}>
         <FormTextField form={form} name="website" label="Website" />
         <FormTextField form={form} name="linkedin" label="LinkedIn URL" />

@@ -46,9 +46,7 @@ export default function RootLayout(props: PropsWithChildren): ReactElement {
           <QueryProvider>
             <ToastProvider>
               <ConfirmProvider>
-                <AgentProvider>
-                  <AppShell>{children}</AppShell>
-                </AgentProvider>
+                <AgentProvider>{children}</AgentProvider>
               </ConfirmProvider>
             </ToastProvider>
           </QueryProvider>
