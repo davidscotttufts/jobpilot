@@ -3,6 +3,7 @@
 import type { ReactElement } from "react";
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
+import { PhoneField } from "@/components/ui/form";
 import type { ResumeBasics } from "@/lib/schemas/resume";
 
 interface BasicsSectionProps {
@@ -10,10 +11,9 @@ interface BasicsSectionProps {
   onChange: (next: ResumeBasics) => void;
 }
 
-const FIELDS: { key: keyof ResumeBasics; label: string; placeholder?: string }[] = [
+const TEXT_FIELDS: { key: Exclude<keyof ResumeBasics, "phone">; label: string; placeholder?: string }[] = [
   { key: "name", label: "Full name" },
   { key: "email", label: "Email" },
-  { key: "phone", label: "Phone" },
   { key: "location", label: "Location", placeholder: "City, ST" },
   { key: "website", label: "Website" },
   { key: "linkedin", label: "LinkedIn", placeholder: "linkedin.com/in/…" },
@@ -24,7 +24,7 @@ export function BasicsSection(props: BasicsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <Grid container spacing={2}>
-      {FIELDS.map((f) => (
+      {TEXT_FIELDS.map((f) => (
         <Grid key={f.key} size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
@@ -35,6 +35,13 @@ export function BasicsSection(props: BasicsSectionProps): ReactElement {
           />
         </Grid>
       ))}
+      <Grid size={{ xs: 12, sm: 6 }}>
+        <PhoneField
+          label="Phone"
+          value={value.phone ?? ""}
+          onChange={(next) => onChange({ ...value, phone: next })}
+        />
+      </Grid>
     </Grid>
   );
 }

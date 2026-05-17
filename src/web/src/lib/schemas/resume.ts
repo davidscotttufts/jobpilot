@@ -1,12 +1,13 @@
 import { z } from "zod/v4";
 import { normalizeLinkUrl } from "@/utils/url";
+import { optionalPhoneSchema } from "./phone";
 
 const linkUrl = z.string().transform(normalizeLinkUrl).optional();
 
 export const resumeBasicsSchema = z.object({
   name: z.string().min(1, "Required"),
   email: z.union([z.email(), z.literal("")]).optional(),
-  phone: z.string().optional(),
+  phone: optionalPhoneSchema,
   website: linkUrl,
   linkedin: linkUrl,
   github: linkUrl,

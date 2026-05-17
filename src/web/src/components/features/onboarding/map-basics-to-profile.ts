@@ -18,7 +18,7 @@ export function applyBasicsToForm(form: AnyReactForm, basics: ResumeBasics): voi
   setIfEmpty(form, "state", state);
 }
 
-function setIfEmpty(form: AnyReactForm, name: string, next?: string): void {
+function setIfEmpty(form: AnyReactForm, name: string, next?: string | null): void {
   if (!next) {
     return;
   }

@@ -3,7 +3,11 @@
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
-import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import {
+  FormPhoneField,
+  FormTextField,
+  type AnyReactForm,
+} from "@/components/ui/form/tanstack";
 
 interface PersonalSectionProps {
   form: AnyReactForm;
@@ -21,7 +25,7 @@ export function PersonalSection(props: PersonalSectionProps): ReactElement {
         <FormTextField form={form} name="lastName" label="Last name" />
       </Stack>
       <FormTextField form={form} name="email" label="Email" type="email" />
-      <FormTextField form={form} name="phone" label="Phone" placeholder="+1 555 123 4567" />
+      <FormPhoneField form={form} name="phone" label="Phone" />
       <Stack direction="row" spacing={2}>
         <FormTextField form={form} name="website" label="Website" />
         <FormTextField form={form} name="linkedin" label="LinkedIn URL" />

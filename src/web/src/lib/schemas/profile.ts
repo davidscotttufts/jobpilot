@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { optionalPhoneSchema } from "./phone";
 
 const optionalUrl = z
   .union([z.literal(""), z.url("Must be a valid URL")])
@@ -14,14 +15,6 @@ const optionalZipCode = z
         /^[A-Za-z0-9][A-Za-z0-9 -]{1,10}[A-Za-z0-9]$/,
         "Enter a valid ZIP or postal code (e.g. 94103 or SW1A 1AA)",
       ),
-  ])
-  .optional()
-  .nullable();
-
-const optionalPhone = z
-  .union([
-    z.literal(""),
-    z.string().regex(/^\+[1-9]\d{6,14}$/, "Must start with + and country code (e.g. +14155552671)"),
   ])
   .optional()
   .nullable();
@@ -56,7 +49,7 @@ export const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   email: z.email(),
-  phone: optionalPhone,
+  phone: optionalPhoneSchema,
   website: optionalUrl,
   linkedin: optionalLinkedinUrl,
   github: optionalGithubUrl,

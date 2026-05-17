@@ -145,7 +145,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
       )}
 
       <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
-        <Button variant="text" onClick={onContinue} disabled={isExtracting && !slow}>
+        <Button variant="text" onClick={onContinue} disabled={isExtracting}>
           Skip &mdash; fill manually
         </Button>
         {(isExtracting || state === "done") && (
