@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { FormTextField } from "@/components/ui/form/form-text-field";
+import { FormTextField } from "@/components/ui/form/tanstack";
 import { credentialSchema, type CredentialInput } from "@/lib/schemas/credential";
 
 interface CredentialFormDialogProps {

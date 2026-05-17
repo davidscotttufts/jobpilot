@@ -2,9 +2,8 @@
 
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
-import { FormSection } from "@/components/ui/form/form-section";
-import { FormTextField } from "@/components/ui/form/form-text-field";
-import type { AnyReactForm } from "@/components/ui/form/types";
+import { FormSection } from "@/components/ui/form";
+import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
 
 interface PersonalSectionProps {
   form: AnyReactForm;

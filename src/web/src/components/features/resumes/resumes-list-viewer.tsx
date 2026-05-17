@@ -1,21 +1,24 @@
 "use client";
 
-import { useRef, useState, type ReactElement } from "react";
-import { Add, CloudUpload, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
+import { useState, type ReactElement } from "react";
+import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Box, Button, Chip, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
 import { Route } from "next";
 import Link from "next/link";
+import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { resumePdfUrl } from "@/lib/api/resume-urls";
+import { MAX_RESUME_BYTES } from "@/lib/constants";
+import { useToast } from "@/providers/notification-provider";
 import type { ResumeListItem } from "@/types/api";
 import { NewResumeDialog } from "./new-resume-dialog";
 
 export function ResumeListViewer(): ReactElement {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () =>
@@ -31,9 +34,6 @@ export function ResumeListViewer(): ReactElement {
     {
       successMessage: "Resume uploaded",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
-      onSuccess: () => {
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      },
     },
   );
 
@@ -47,12 +47,6 @@ export function ResumeListViewer(): ReactElement {
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
     },
   );
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    upload.mutate(file);
-  };
 
   if (list.isLoading) {
     return <LinearProgress />;
@@ -71,15 +65,15 @@ export function ResumeListViewer(): ReactElement {
           borderRadius: t.radii.md,
         })}
       >
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<CloudUpload />}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={upload.isPending}
-        >
-          {upload.isPending ? "Uploading…" : "Upload PDF"}
-        </Button>
+        <FileUpload
+          accept="application/pdf"
+          maxBytes={MAX_RESUME_BYTES}
+          loading={upload.isPending}
+          label="Upload PDF"
+          buttonProps={{ variant: "contained" }}
+          onFile={(f) => upload.mutate(f)}
+          onError={(msg) => toast.error(msg)}
+        />
         <Button
           variant="outlined"
           size="small"
@@ -88,13 +82,6 @@ export function ResumeListViewer(): ReactElement {
         >
           Start blank
         </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/pdf"
-          hidden
-          onChange={handleFile}
-        />
         <Box sx={{ flex: 1 }} />
         <Typography variant="captionMuted">
           {rows.length} resume{rows.length === 1 ? "" : "s"}

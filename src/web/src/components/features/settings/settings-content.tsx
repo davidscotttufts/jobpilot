@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import type { AnyReactForm } from "@/components/ui/form/types";
+import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";

@@ -1,8 +1,7 @@
 import { z } from "zod/v4";
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
-
-const PROFILE_ID = 1;
 
 const bodySchema = z.object({
   resumeId: z.number().int().positive().nullable(),

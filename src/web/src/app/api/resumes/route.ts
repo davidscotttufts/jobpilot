@@ -2,13 +2,11 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod/v4";
 import { err, ErrorCodes, ok } from "@/lib/api";
+import { MAX_RESUME_BYTES, PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
 import { ensureResumesDir, generateResumeFilename } from "@/lib/storage";
 import type { ResumeListItem } from "@/types/api";
-
-const PROFILE_ID = 1;
-const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 
 export async function GET() {
   const profile = await db.profile.findUnique({
@@ -46,11 +44,6 @@ const jsonCreateSchema = z.object({
 export async function POST(req: Request) {
   const contentType = req.headers.get("content-type") ?? "";
 
-  const profileExists = await db.profile.findUnique({ where: { id: PROFILE_ID } });
-  if (!profileExists) {
-    return err(ErrorCodes.UNPROCESSABLE, "Profile not initialized; complete onboarding first", 422);
-  }
-
   if (contentType.includes("multipart/form-data")) {
     const form = await req.formData();
     const file = form.get("file");
@@ -72,6 +65,12 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(path.join(dir, filename), buffer);
 
+    await db.profile.upsert({
+      where: { id: PROFILE_ID },
+      create: { id: PROFILE_ID, firstName: "", lastName: "", email: "" },
+      update: {},
+    });
+
     const resume = await db.resume.create({
       data: {
         profileId: PROFILE_ID,
@@ -91,6 +90,11 @@ export async function POST(req: Request) {
     }
 
     return ok({ id: resume.id }, { status: 201 });
+  }
+
+  const profileExists = await db.profile.findUnique({ where: { id: PROFILE_ID } });
+  if (!profileExists) {
+    return err(ErrorCodes.UNPROCESSABLE, "Profile not initialized; complete onboarding first", 422);
   }
 
   const body = await req.json();

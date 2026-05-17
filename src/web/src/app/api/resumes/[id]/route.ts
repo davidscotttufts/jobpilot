@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import { z } from "zod/v4";
 import { err, ErrorCodes, ok } from "@/lib/api";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
+import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
 import {
@@ -10,8 +11,6 @@ import {
   resumeBackupPath,
 } from "@/lib/storage";
 import type { ResumeDto } from "@/types/api";
-
-const PROFILE_ID = 1;
 
 type Params = ApiRouteContext<{ id: string }>;
 

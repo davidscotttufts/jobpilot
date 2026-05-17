@@ -3,6 +3,7 @@ import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { err, ErrorCodes, ok } from "@/lib/api";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
+import { MAX_RESUME_BYTES, PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import {
   deleteResumeFile,
@@ -10,9 +11,6 @@ import {
   generateResumeFilename,
   resumePath,
 } from "@/lib/storage";
-
-const PROFILE_ID = 1;
-const MAX_RESUME_BYTES = 5 * 1024 * 1024;
 
 type Params = ApiRouteContext<{ id: string }>;
 

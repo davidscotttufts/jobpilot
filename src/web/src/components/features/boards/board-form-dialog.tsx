@@ -3,10 +3,12 @@
 import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import { FormSelectField } from "@/components/ui/form/form-select-field";
-import { FormSwitchField } from "@/components/ui/form/form-switch-field";
-import { FormTextField } from "@/components/ui/form/form-text-field";
-import type { AnyReactForm } from "@/components/ui/form/types";
+import {
+  FormSelectField,
+  FormSwitchField,
+  FormTextField,
+  type AnyReactForm,
+} from "@/components/ui/form/tanstack";
 import { jobBoardSchema, type JobBoardInput } from "@/lib/schemas/job-board";
 
 interface BoardFormDialogProps {

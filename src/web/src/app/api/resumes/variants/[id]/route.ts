@@ -1,10 +1,9 @@
 import { err, ErrorCodes, ok } from "@/lib/api";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
+import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeVariantPatchSchema } from "@/lib/schemas/resume";
 import type { ResumeVariantDto } from "@/types/api";
-
-const PROFILE_ID = 1;
 
 type Params = ApiRouteContext<{ id: string }>;
 

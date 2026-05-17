@@ -1,9 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { FormSection } from "@/components/ui/form/form-section";
-import { FormSelectField } from "@/components/ui/form/form-select-field";
-import type { AnyReactForm } from "@/components/ui/form/types";
+import { FormSection } from "@/components/ui/form";
+import { FormSelectField, type AnyReactForm } from "@/components/ui/form/tanstack";
 
 const PNTD = "Prefer not to disclose";
 const YES_NO_PNTD = [

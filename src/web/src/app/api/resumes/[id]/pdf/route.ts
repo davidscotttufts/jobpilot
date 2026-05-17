@@ -2,6 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import { err, ErrorCodes } from "@/lib/api";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
+import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { renderResumePdf } from "@/lib/pdf/render";
 import type { ResumeData } from "@/lib/schemas/resume";
@@ -11,8 +12,6 @@ import {
   resumePath,
   slugifyForDownload,
 } from "@/lib/storage";
-
-const PROFILE_ID = 1;
 
 type Params = ApiRouteContext<{ id: string }>;
 

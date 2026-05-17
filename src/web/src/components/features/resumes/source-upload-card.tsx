@@ -1,12 +1,15 @@
 "use client";
 
-import { useRef, type ReactElement } from "react";
-import { CloudUpload, Delete, PictureAsPdf } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import type { ReactElement } from "react";
+import { Delete, PictureAsPdf } from "@mui/icons-material";
+import { Box, IconButton, Stack, Typography } from "@mui/material";
+import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api-client";
 import { queryKeys } from "@/lib/api/query-keys";
+import { MAX_RESUME_BYTES } from "@/lib/constants";
+import { useToast } from "@/providers/notification-provider";
 import type { ResumeDto } from "@/types/api";
 import { ExtractResumeButton } from "./extract-resume-button";
 
@@ -16,7 +19,7 @@ interface SourceUploadCardProps {
 
 export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
   const { resume } = props;
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const toast = useToast();
 
   const upload = useApiMutation<{ id: number }, File>(
     (file) => {
@@ -27,9 +30,6 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
     {
       successMessage: "Source PDF uploaded",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
-      onSuccess: () => {
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      },
     },
   );
 
@@ -40,11 +40,6 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],
     },
   );
-
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) upload.mutate(file);
-  };
 
   return (
     <SectionCard
@@ -70,15 +65,14 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
               </Typography>
             </Box>
             <ExtractResumeButton resume={resume} />
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<CloudUpload />}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={upload.isPending}
-            >
-              Replace
-            </Button>
+            <FileUpload
+              accept="application/pdf"
+              maxBytes={MAX_RESUME_BYTES}
+              loading={upload.isPending}
+              label="Replace"
+              onFile={(f) => upload.mutate(f)}
+              onError={(msg) => toast.error(msg)}
+            />
             <IconButton
               onClick={() => remove.mutate()}
               disabled={remove.isPending}
@@ -88,22 +82,15 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
             </IconButton>
           </>
         ) : (
-          <Button
-            variant="outlined"
-            startIcon={<CloudUpload />}
-            onClick={() => fileInputRef.current?.click()}
-            disabled={upload.isPending}
-          >
-            {upload.isPending ? "Uploading…" : "Upload PDF"}
-          </Button>
+          <FileUpload
+            accept="application/pdf"
+            maxBytes={MAX_RESUME_BYTES}
+            loading={upload.isPending}
+            label="Upload PDF"
+            onFile={(f) => upload.mutate(f)}
+            onError={(msg) => toast.error(msg)}
+          />
         )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/pdf"
-          hidden
-          onChange={handleFile}
-        />
       </Stack>
     </SectionCard>
   );

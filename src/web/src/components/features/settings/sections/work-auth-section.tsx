@@ -1,11 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { FormMultiselectField } from "@/components/ui/form/form-multiselect-field";
-import { FormSection } from "@/components/ui/form/form-section";
-import { FormSwitchField } from "@/components/ui/form/form-switch-field";
-import { FormTextField } from "@/components/ui/form/form-text-field";
-import type { AnyReactForm } from "@/components/ui/form/types";
+import { FormSection } from "@/components/ui/form";
+import {
+  FormMultiselectField,
+  FormSwitchField,
+  FormTextField,
+  type AnyReactForm,
+} from "@/components/ui/form/tanstack";
 
 interface WorkAuthSectionProps {
   form: AnyReactForm;

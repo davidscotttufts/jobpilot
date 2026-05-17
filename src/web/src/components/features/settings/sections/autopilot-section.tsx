@@ -2,12 +2,14 @@
 
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
-import { FormCurrencyField } from "@/components/ui/form/form-currency-field";
-import { FormMultiselectField } from "@/components/ui/form/form-multiselect-field";
-import { FormSection } from "@/components/ui/form/form-section";
-import { FormSelectField } from "@/components/ui/form/form-select-field";
-import { FormTextField } from "@/components/ui/form/form-text-field";
-import type { AnyReactForm } from "@/components/ui/form/types";
+import { FormSection } from "@/components/ui/form";
+import {
+  FormCurrencyField,
+  FormMultiselectField,
+  FormSelectField,
+  FormTextField,
+  type AnyReactForm,
+} from "@/components/ui/form/tanstack";
 
 const CONFIRM_MODES = [
   { value: "batch", label: "Confirm in batch (recommended)" },
