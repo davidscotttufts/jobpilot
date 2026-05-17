@@ -22,6 +22,7 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 22,
+    lineHeight: 1.2,
     textAlign: "center",
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1,
@@ -30,7 +31,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     flexWrap: "wrap",
-    marginTop: 4,
+    marginTop: 8,
     fontSize: 9.5,
     color: "#222",
   },

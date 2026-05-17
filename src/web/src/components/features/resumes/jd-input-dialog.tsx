@@ -30,8 +30,10 @@ export function JdInputDialog(props: JdInputDialogProps): ReactElement {
 
   const handleSubmit = async () => {
     const arg = jd.trim();
-    if (!arg) return;
-    agent.expand();
+    if (!arg) {
+      return;
+    }
+
     await agent.injectSkill("tailor-resume", JSON.stringify(arg));
     handleClose();
   };

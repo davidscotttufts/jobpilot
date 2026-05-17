@@ -41,7 +41,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   const { isNewProfile } = props;
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [bootstrapped, setBootstrapped] = useState(false);
 
   const bootstrapRef = useRef(false);
@@ -124,15 +124,15 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       <SectionCard>
         <form onSubmit={submitForm}>
           <Stack spacing={3}>
-            {step === 1 && <ResumeUploadStep form={formApi} onContinue={() => setStep(2)} />}
-            {step === 2 && <PersonalSection form={formApi} />}
-            {step === 3 && <AddressSection form={formApi} />}
-            {step === 4 && <WorkAuthSection form={formApi} />}
-            {step === 5 && <EeoSection form={formApi} />}
-            {step === 6 && <AutopilotSection form={formApi} />}
-            {step !== 1 && (
+            {step === 0 && <ResumeUploadStep form={formApi} onContinue={() => setStep(1)} />}
+            {step === 1 && <PersonalSection form={formApi} />}
+            {step === 2 && <AddressSection form={formApi} />}
+            {step === 3 && <WorkAuthSection form={formApi} />}
+            {step === 4 && <EeoSection form={formApi} />}
+            {step === 5 && <AutopilotSection form={formApi} />}
+            {step !== 0 && (
               <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-                <Button variant="outlined" onClick={() => setStep((s) => Math.max(1, s - 1))}>
+                <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>
                   Back
                 </Button>
                 <Button type="submit" variant="contained" disabled={save.isPending}>

@@ -29,6 +29,7 @@ export function PipelineView(): ReactElement {
   const applying = useStageTotal("applying");
   const submitted = useStageTotal("submitted");
   const interviewing = useStageTotal("interviewing");
+
   const total = discovered + queued + applying + submitted + interviewing;
 
   return (

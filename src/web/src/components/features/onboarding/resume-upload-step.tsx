@@ -98,7 +98,6 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
     setInjectError(null);
     setState("extracting");
     startedAtRef.current = Date.now();
-    agent.expand();
 
     try {
       await agent.injectSkill("extract-resume", String(id));

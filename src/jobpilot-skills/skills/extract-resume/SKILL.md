@@ -107,13 +107,15 @@ Hard rules:
 
 ## Step 5 — Save
 
+The PUT body must be `{ "data": <resume-object> }` — the API rejects a bare resume payload with 400 "label or data required". Write the file with that wrapper, then send it:
+
 ```bash
 curl -fsS -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
   -H "Content-Type: application/json" \
-  -d @resume.json
+  --data-binary @resume.json
 ```
 
-(`--data-binary @-` works too.) On 422, read the issue list, fix the field, retry once.
+Where `resume.json` looks like `{"data": {"basics": {...}, "experience": [...], ...}}`. On 422, read the issue list, fix the field, retry once.
 
 ## Step 6 — Report
 

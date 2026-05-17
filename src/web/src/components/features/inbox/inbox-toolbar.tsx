@@ -25,7 +25,7 @@ const FILTERS: ReadonlyArray<{ key: InboxFilter; label: string }> = [
 
 export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
-  const { injectSkill, expand } = useAgent();
+  const { injectSkill } = useAgent();
 
   const sync = useApiMutation<SyncResultDto, void>(
     () => apiClient.post<SyncResultDto>("/api/email/sync"),
@@ -36,7 +36,6 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   );
 
   const handleScan = async (): Promise<void> => {
-    expand();
     await injectSkill("scan-inbox");
   };
 
