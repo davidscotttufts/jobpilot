@@ -12,7 +12,7 @@ export default async function ResumeDetailPage(props: PageProps): Promise<ReactE
   const numericId = Number(id);
 
   return (
-    <Container maxWidth="lg" sx={{ gap: 2 }}>
+    <Container maxWidth="xl" sx={{ gap: 2 }}>
       <PageHeader
         eyebrow="Resumes"
         title="Edit resume"

@@ -74,9 +74,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
   };
 
   useEventSource<ResumeEvent>(
-    resumeId !== null && isWaitingForExtraction(state)
-      ? `/api/resumes/${resumeId}/events`
-      : null,
+    resumeId !== null && isWaitingForExtraction(state) ? `/api/resumes/${resumeId}/events` : null,
     {
       onMessage: (event) => {
         if (event.type === "content.updated") {
@@ -90,13 +88,15 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
     if (state !== "extracting" || resumeId === null) {
       return;
     }
+
     // Handle the race where extraction completed before the EventSource opened.
     void applyExtractedBasics(resumeId);
+
     const slowTimer = setTimeout(() => {
       setState((s) => (s === "extracting" ? "slow" : s));
     }, EXTRACT_SLOW_AFTER_MS);
+
     return () => clearTimeout(slowTimer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, resumeId]);
 
   const startExtraction = async (id: number): Promise<void> => {

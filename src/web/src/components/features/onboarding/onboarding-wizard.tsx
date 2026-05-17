@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactElement, type SubmitEvent } from "react";
-import { Alert, Button, CircularProgress, Stack, Step, StepLabel, Stepper } from "@mui/material";
+import {
+  Alert,
+  AlertTitle,
+  Button,
+  CircularProgress,
+  Stack,
+  Step,
+  StepLabel,
+  Stepper,
+  Typography,
+} from "@mui/material";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -62,22 +72,44 @@ const FIELD_TO_STEP: Record<string, number> = {
   eeoDisabilityStatus: 4,
 };
 
-function firstInvalidStep(fieldMeta: Record<string, { errors?: unknown[] }>): number | null {
-  let earliest: number | null = null;
+interface ProfileListItem {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isActive: boolean;
+}
 
-  for (const [name, meta] of Object.entries(fieldMeta)) {
-    if (!meta?.errors || meta.errors.length === 0) {
-      continue;
-    }
-    const stepIndex = FIELD_TO_STEP[name];
-    if (stepIndex == null) {
-      continue;
-    }
-    if (earliest === null || stepIndex < earliest) {
-      earliest = stepIndex;
+function isEmptyDraft(p: ProfileListItem): boolean {
+  return !p.firstName?.trim() && !p.lastName?.trim() && !p.email?.trim();
+}
+
+interface ValidationIssue {
+  field: string;
+  path: string;
+  message: string;
+  stepIndex: number | null;
+}
+
+function describeIssues(issues: readonly { path: PropertyKey[]; message: string }[]): ValidationIssue[] {
+  return issues.map((issue) => {
+    const field = String(issue.path[0] ?? "");
+    return {
+      field,
+      path: issue.path.map(String).join(".") || "form",
+      message: issue.message,
+      stepIndex: FIELD_TO_STEP[field] ?? null,
+    };
+  });
+}
+
+function firstStepWithIssue(issues: ValidationIssue[]): number | null {
+  for (const issue of issues) {
+    if (issue.stepIndex !== null) {
+      return issue.stepIndex;
     }
   }
-  return earliest;
+  return null;
 }
 
 interface OnboardingWizardProps {
@@ -91,6 +123,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   const toast = useToast();
   const [step, setStep] = useState(0);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   const bootstrapRef = useRef(false);
 
@@ -110,8 +143,13 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
     bootstrapRef.current = true;
 
     const bootstrap = async (): Promise<void> => {
-      const { id } = await createProfile.mutateAsync();
-      await setActive.mutateAsync(id);
+      const list = await apiClient.get<ProfileListItem[]>("/api/profiles");
+      const reusable = list.data?.find(isEmptyDraft);
+      const profileId = reusable ? reusable.id : (await createProfile.mutateAsync()).id;
+
+      if (!reusable || !reusable.isActive) {
+        await setActive.mutateAsync(profileId);
+      }
       setBootstrapped(true);
     };
 
@@ -147,17 +185,22 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       return;
     }
 
-    await form.handleSubmit();
-    if (form.state.isSubmitted && !form.state.isValid) {
-      const target = firstInvalidStep(
-        form.state.fieldMeta as Record<string, { errors?: unknown[] }>,
-      );
+    const result = profileWithAutopilotSchema.safeParse(form.state.values);
+    if (!result.success) {
+      const issues = describeIssues(result.error.issues);
+      setShowValidationErrors(true);
+      const target = firstStepWithIssue(issues);
       if (target !== null) {
         setStep(target);
       }
       toast.error("Some fields need fixing before we can save your profile.");
+      return;
     }
+
+    setShowValidationErrors(false);
+    await form.handleSubmit();
   };
+
 
   const formApi = form as unknown as AnyReactForm;
   const isLastStep = step === STEPS.length - 1;
@@ -188,6 +231,34 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
             {step === 3 && <WorkAuthSection form={formApi} />}
             {step === 4 && <EeoSection form={formApi} />}
             {step === 5 && <AutopilotSection form={formApi} />}
+            {showValidationErrors && (
+              <form.Subscribe selector={(s) => s.values}>
+                {(values) => {
+                  const result = profileWithAutopilotSchema.safeParse(values);
+                  if (result.success) {
+                    return null;
+                  }
+                  const issues = describeIssues(result.error.issues);
+                  return (
+                    <Alert severity="error">
+                      <AlertTitle>Some fields need fixing</AlertTitle>
+                      <Stack spacing={0.5}>
+                        {issues.map((issue, i) => {
+                          const stepLabel =
+                            issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
+                          return (
+                            <Typography key={i} variant="body2">
+                              <strong>{issue.path}</strong>
+                              {stepLabel ? ` (${stepLabel} step)` : ""}: {issue.message}
+                            </Typography>
+                          );
+                        })}
+                      </Stack>
+                    </Alert>
+                  );
+                }}
+              </form.Subscribe>
+            )}
             {step !== 0 && (
               <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
                 <Button variant="outlined" onClick={() => setStep((s) => Math.max(0, s - 1))}>

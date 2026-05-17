@@ -1,8 +1,16 @@
 ﻿"use client";
 
-import { useState, type ReactElement } from "react";
-import { Save } from "@mui/icons-material";
-import { Box, Button, Stack } from "@mui/material";
+import { useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import {
+  AccountCircleOutlined,
+  Build,
+  DescriptionOutlined,
+  Save,
+  SchoolOutlined,
+  StarOutlined,
+  WorkOutlined,
+} from "@mui/icons-material";
+import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -21,14 +29,88 @@ interface ResumeEditorProps {
   initialData: ResumeData;
 }
 
-const ANCHORS: SectionAnchor[] = [
-  { id: "basics", label: "Basics" },
-  { id: "summary", label: "Summary" },
-  { id: "experience", label: "Experience" },
-  { id: "projects", label: "Projects" },
-  { id: "skills", label: "Skills" },
-  { id: "education", label: "Education" },
+interface EditorSection {
+  id: string;
+  label: string;
+  description: string;
+  icon: ComponentType<SvgIconProps>;
+}
+
+const SECTIONS: EditorSection[] = [
+  {
+    id: "basics",
+    label: "Basics",
+    description: "Name, contact info, and links.",
+    icon: AccountCircleOutlined,
+  },
+  {
+    id: "summary",
+    label: "Summary",
+    description: "Short professional summary at the top of the resume.",
+    icon: DescriptionOutlined,
+  },
+  {
+    id: "experience",
+    label: "Experience",
+    description: "Work history with role bullets.",
+    icon: WorkOutlined,
+  },
+  {
+    id: "projects",
+    label: "Projects",
+    description: "Notable side, open-source, or freelance projects.",
+    icon: Build,
+  },
+  {
+    id: "skills",
+    label: "Skills",
+    description: "Grouped skill keywords.",
+    icon: StarOutlined,
+  },
+  {
+    id: "education",
+    label: "Education",
+    description: "Degrees, schools, and details.",
+    icon: SchoolOutlined,
+  },
 ];
+
+const ANCHORS: SectionAnchor[] = SECTIONS.map((s) => ({ id: s.id, label: s.label }));
+
+interface SectionBlockProps {
+  section: EditorSection;
+  children: ReactNode;
+}
+
+function SectionBlock(props: SectionBlockProps): ReactElement {
+  const { section, children } = props;
+  const Icon = section.icon;
+  return (
+    <Box data-section-id={section.id}>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={(t) => ({
+          alignItems: "flex-start",
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
+          backgroundColor: t.palette.surfaces.card,
+          py: 1.5,
+          mb: 2,
+          borderBottom: `1px solid ${t.palette.line.divider}`,
+        })}
+      >
+        <Icon fontSize="small" sx={{ mt: "2px", color: "text.secondary" }} />
+        <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+          <Typography variant="h4">{section.label}</Typography>
+          <Typography variant="captionMuted">{section.description}</Typography>
+        </Stack>
+      </Stack>
+      {children}
+    </Box>
+  );
+}
 
 export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   const { resumeId, initialData } = props;
@@ -77,27 +159,27 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
 
         <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
           <Stack spacing={4}>
-            <Box data-section-id="basics">
+            <SectionBlock section={SECTIONS[0]}>
               <BasicsSection value={data.basics} onChange={(v) => patch({ basics: v })} />
-            </Box>
-            <Box data-section-id="summary">
+            </SectionBlock>
+            <SectionBlock section={SECTIONS[1]}>
               <SummarySection value={data.summary ?? ""} onChange={(v) => patch({ summary: v })} />
-            </Box>
-            <Box data-section-id="experience">
+            </SectionBlock>
+            <SectionBlock section={SECTIONS[2]}>
               <ExperienceSection
                 value={data.experience}
                 onChange={(v) => patch({ experience: v })}
               />
-            </Box>
-            <Box data-section-id="projects">
+            </SectionBlock>
+            <SectionBlock section={SECTIONS[3]}>
               <ProjectsSection value={data.projects} onChange={(v) => patch({ projects: v })} />
-            </Box>
-            <Box data-section-id="skills">
+            </SectionBlock>
+            <SectionBlock section={SECTIONS[4]}>
               <SkillsSection value={data.skills} onChange={(v) => patch({ skills: v })} />
-            </Box>
-            <Box data-section-id="education">
+            </SectionBlock>
+            <SectionBlock section={SECTIONS[5]}>
               <EducationSection value={data.education} onChange={(v) => patch({ education: v })} />
-            </Box>
+            </SectionBlock>
           </Stack>
         </Box>
       </Box>
