@@ -6,7 +6,11 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
 import { publishResumeEvent } from "@/lib/sse";
-import { deleteResumeFile, ensureResumeBackupsDir, resumeBackupPath } from "@/lib/storage";
+import {
+  deleteAllResumeArtifacts,
+  ensureResumeBackupsDir,
+  resumeBackupPath,
+} from "@/lib/storage";
 import type { ResumeDto } from "@/types/api";
 
 type Params = ApiRouteContext<{ id: string }>;
@@ -104,6 +108,11 @@ export async function DELETE(_req: Request, ctx: Params) {
   const profileId = await getActiveProfileId();
   const existing = await db.resume.findFirst({
     where: { id, profileId },
+    select: {
+      id: true,
+      sourceFilename: true,
+      variants: { select: { id: true } },
+    },
   });
   if (!existing) {
     return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
@@ -115,9 +124,11 @@ export async function DELETE(_req: Request, ctx: Params) {
   });
 
   await db.resume.delete({ where: { id } });
-  if (existing.sourceFilename) {
-    await deleteResumeFile(existing.sourceFilename);
-  }
+  await deleteAllResumeArtifacts({
+    resumeId: existing.id,
+    sourceFilename: existing.sourceFilename,
+    variantIds: existing.variants.map((v) => v.id),
+  });
 
   return ok({ deleted: id });
 }

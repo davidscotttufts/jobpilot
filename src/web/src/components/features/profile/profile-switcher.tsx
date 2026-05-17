@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type MouseEvent, type ReactElement } from "react";
-import { Add, Check } from "@mui/icons-material";
+import { Add, Check, DeleteOutlined } from "@mui/icons-material";
 import {
   Avatar,
   Box,
@@ -19,16 +19,14 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
+import { useConfirm } from "@/providers/confirm-provider";
+import type {
+  DeleteProfileResponse,
+  ProfileListItemDto,
+  SetActiveProfileResponse,
+} from "@/types/api";
 
-interface ProfileListItem {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  isActive: boolean;
-}
-
-function initials(p: ProfileListItem): string {
+function initials(p: ProfileListItemDto): string {
   const first = p.firstName?.[0] ?? "";
   const last = p.lastName?.[0] ?? "";
   const both = `${first}${last}`.trim();
@@ -38,7 +36,7 @@ function initials(p: ProfileListItem): string {
   return p.email?.[0]?.toUpperCase() ?? "?";
 }
 
-function displayName(p: ProfileListItem): string {
+function displayName(p: ProfileListItemDto): string {
   const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
   return name || p.email || "Untitled profile";
 }
@@ -46,14 +44,15 @@ function displayName(p: ProfileListItem): string {
 export function ProfileSwitcher(): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
-  const profilesQuery = useApiQuery<ProfileListItem[]>(queryKeys.profiles.list(), () =>
-    apiClient.get<ProfileListItem[]>("/api/profiles"),
+  const profilesQuery = useApiQuery<ProfileListItemDto[]>(queryKeys.profiles.list(), () =>
+    apiClient.get<ProfileListItemDto[]>("/api/profiles"),
   );
 
-  const switchTo = useApiMutation<{ profileId: number }, number>(
+  const switchTo = useApiMutation<SetActiveProfileResponse, number>(
     (profileId) => apiClient.post("/api/profiles/active", { profileId }),
     {
       invalidate: [queryKeys.profiles.all],
@@ -65,6 +64,18 @@ export function ProfileSwitcher(): ReactElement {
     },
   );
 
+  const remove = useApiMutation<DeleteProfileResponse, number>(
+    (profileId) => apiClient.del<DeleteProfileResponse>(`/api/profiles/${profileId}`),
+    {
+      successMessage: "Profile deleted",
+      invalidate: [queryKeys.profiles.all],
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        router.refresh();
+      },
+    },
+  );
+
   const profiles = profilesQuery.data ?? [];
 
   if (profiles.length === 0) {
@@ -72,6 +83,7 @@ export function ProfileSwitcher(): ReactElement {
   }
 
   const active = profiles.find((p) => p.isActive) ?? profiles[0]!;
+  const canDelete = profiles.length > 1;
 
   const handleOpen = (e: MouseEvent<HTMLElement>) => setAnchor(e.currentTarget);
   const handleClose = () => setAnchor(null);
@@ -87,6 +99,21 @@ export function ProfileSwitcher(): ReactElement {
   const handleCreate = () => {
     setAnchor(null);
     router.push("/onboarding?new=1");
+  };
+
+  const handleDelete = async (e: MouseEvent<HTMLElement>, profile: ProfileListItemDto) => {
+    e.stopPropagation();
+    setAnchor(null);
+    const confirmed = await confirm({
+      title: `Delete "${displayName(profile)}"?`,
+      description:
+        "This permanently removes the profile along with its resumes, applications, runs, credentials, and job boards. This cannot be undone.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) {
+      remove.mutate(profile.id);
+    }
   };
 
   return (
@@ -139,6 +166,7 @@ export function ProfileSwitcher(): ReactElement {
               onClick={() => handleSelect(p.id)}
               aria-current={isCurrent ? "true" : undefined}
               selected={isCurrent}
+              sx={{ pr: canDelete ? 1 : undefined }}
             >
               <ListItemIcon sx={{ minWidth: 32 }}>
                 {isCurrent && <Check fontSize="small" />}
@@ -151,6 +179,17 @@ export function ProfileSwitcher(): ReactElement {
                   secondary: { variant: "caption" },
                 }}
               />
+              {canDelete && (
+                <IconButton
+                  edge="end"
+                  size="small"
+                  aria-label={`Delete ${displayName(p)}`}
+                  onClick={(e) => handleDelete(e, p)}
+                  sx={{ ml: 1, color: "text.secondary" }}
+                >
+                  <DeleteOutlined fontSize="small" />
+                </IconButton>
+              )}
             </MenuItem>
           );
         })}

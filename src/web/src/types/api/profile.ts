@@ -55,3 +55,28 @@ export interface ProfileResponse {
   primaryResumeSourceAbsolutePath: string | null;
   resumes: ResumeListItem[];
 }
+
+export interface ProfileListItemDto {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  isActive: boolean;
+}
+
+export interface CreateProfileResponse {
+  id: number;
+}
+
+export interface ActiveProfileResponse {
+  profileId: number | null;
+}
+
+export interface SetActiveProfileResponse {
+  profileId: number;
+}
+
+export interface DeleteProfileResponse {
+  deleted: number;
+  activeProfileId: number;
+}

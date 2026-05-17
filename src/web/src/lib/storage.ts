@@ -1,4 +1,4 @@
-import { mkdir, unlink } from "node:fs/promises";
+import { mkdir, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
 
 const STORAGE_ROOT = path.resolve(process.cwd(), "storage");
@@ -43,6 +43,61 @@ export async function deleteResumeFile(filename: string): Promise<void> {
   } catch (e) {
     if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
   }
+}
+
+/** Unlinks files in a directory that match a given prefix and suffix. */
+async function unlinkMatching(dir: string, prefix: string, suffix: string): Promise<void> {
+  let entries: string[];
+  try {
+    entries = await readdir(dir);
+  } catch (e) {
+    if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+      return;
+    }
+    throw e;
+  }
+
+  await Promise.all(
+    entries
+      .filter((name) => name.startsWith(prefix) && name.endsWith(suffix))
+      .map(async (name) => {
+        try {
+          await unlink(path.join(dir, name));
+        } catch (e) {
+          if ((e as NodeJS.ErrnoException).code !== "ENOENT") {
+            throw e;
+          }
+        }
+      }),
+  );
+}
+
+export function deleteResumeBackups(resumeId: number): Promise<void> {
+  return unlinkMatching(BACKUPS_DIR, `resume-${resumeId}-`, ".json");
+}
+
+export function deleteGeneratedResumeFiles(resumeId: number): Promise<void> {
+  return unlinkMatching(GENERATED_DIR, `master-${resumeId}-`, ".pdf");
+}
+
+export function deleteGeneratedVariantFiles(variantId: number): Promise<void> {
+  return unlinkMatching(GENERATED_DIR, `variant-${variantId}-`, ".pdf");
+}
+
+interface ResumeArtifactRefs {
+  resumeId: number;
+  sourceFilename: string | null;
+  variantIds: number[];
+}
+
+export async function deleteAllResumeArtifacts(refs: ResumeArtifactRefs): Promise<void> {
+  const { resumeId, sourceFilename, variantIds } = refs;
+  await Promise.all([
+    sourceFilename ? deleteResumeFile(sourceFilename) : Promise.resolve(),
+    deleteResumeBackups(resumeId),
+    deleteGeneratedResumeFiles(resumeId),
+    ...variantIds.map((id) => deleteGeneratedVariantFiles(id)),
+  ]);
 }
 
 export function generateResumeFilename(originalName: string): string {

@@ -32,7 +32,9 @@ import {
   profileWithAutopilotSchema,
   type ProfileWithAutopilotInput,
 } from "@/lib/schemas/profile";
+import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
+import type { DeleteProfileResponse, SetActiveProfileResponse } from "@/types/api";
 import { ResumeUploadStep } from "./resume-upload-step";
 import { useEnsureDraftProfile } from "./use-ensure-draft-profile";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";
@@ -55,9 +57,12 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
-  const { ready } = useEnsureDraftProfile();
+  const confirm = useConfirm();
+  const { ready, draftProfileId, previousActiveId } = useEnsureDraftProfile();
   const [step, setStep] = useState(0);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+  const canCancel =
+    isNewProfile && previousActiveId !== null && draftProfileId !== null;
 
   const save = useApiMutation<{ id: number }, ProfileWithAutopilotInput>(
     (vars) => apiClient.put("/api/profile", vars),
@@ -71,6 +76,44 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       },
     },
   );
+
+  const discard = useApiMutation<DeleteProfileResponse, void>(
+    async () => {
+      if (previousActiveId === null || draftProfileId === null) {
+        return { data: null, error: { code: "INVALID_STATE", message: "No draft to discard" } };
+      }
+      const restored = await apiClient.post<SetActiveProfileResponse>(
+        "/api/profiles/active",
+        { profileId: previousActiveId },
+      );
+      if (restored.error) {
+        return { data: null, error: restored.error };
+      }
+      return apiClient.del<DeleteProfileResponse>(`/api/profiles/${draftProfileId}`);
+    },
+    {
+      successMessage: "Draft discarded",
+      invalidate: [queryKeys.profile.all, queryKeys.profiles.all],
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        router.refresh();
+        router.push("/");
+      },
+    },
+  );
+
+  const handleCancel = async () => {
+    const confirmed = await confirm({
+      title: "Discard new profile?",
+      description:
+        "Any data you've added — including uploaded resumes — will be deleted.",
+      confirmLabel: "Discard",
+      destructive: true,
+    });
+    if (confirmed) {
+      discard.mutate();
+    }
+  };
 
   const form = useForm({
     defaultValues: PROFILE_DEFAULT_VALUES,
@@ -115,6 +158,18 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
 
   return (
     <Stack spacing={3}>
+      {canCancel && (
+        <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={handleCancel}
+            disabled={discard.isPending}
+          >
+            {discard.isPending ? "Discarding…" : "Cancel"}
+          </Button>
+        </Stack>
+      )}
       <Stepper activeStep={step} alternativeLabel>
         {STEPS.map((s) => (
           <Step key={s.key}>

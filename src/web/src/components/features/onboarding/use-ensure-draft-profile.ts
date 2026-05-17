@@ -4,32 +4,41 @@ import { useEffect, useRef, useState } from "react";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
+import type {
+  ActiveProfileResponse,
+  CreateProfileResponse,
+  ProfileListItemDto,
+  SetActiveProfileResponse,
+} from "@/types/api";
 
-interface ProfileListItem {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  isActive: boolean;
+function isEmptyDraft(p: ProfileListItemDto): boolean {
+  return !p.firstName?.trim() && !p.lastName?.trim() && !p.email?.trim();
 }
 
-function isEmptyDraft(p: ProfileListItem): boolean {
-  return !p.firstName?.trim() && !p.lastName?.trim() && !p.email?.trim();
+interface DraftProfileState {
+  ready: boolean;
+  draftProfileId: number | null;
+  previousActiveId: number | null;
 }
 
 /**
  * Ensures an empty draft profile exists and is marked active. Reuses an
- * existing empty draft if one is found, otherwise creates a new one.
+ * existing empty draft if one is found, otherwise creates a new one. Captures
+ * the previously-active profile so the wizard can restore it on cancel.
  */
-export function useEnsureDraftProfile(): { ready: boolean } {
-  const [ready, setReady] = useState(false);
+export function useEnsureDraftProfile(): DraftProfileState {
+  const [state, setState] = useState<DraftProfileState>({
+    ready: false,
+    draftProfileId: null,
+    previousActiveId: null,
+  });
   const ranRef = useRef(false);
 
-  const createProfile = useApiMutation<{ id: number }, void>(() =>
-    apiClient.post<{ id: number }>("/api/profiles", {}),
+  const createProfile = useApiMutation<CreateProfileResponse, void>(() =>
+    apiClient.post<CreateProfileResponse>("/api/profiles", {}),
   );
 
-  const setActive = useApiMutation<{ profileId: number }, number>(
+  const setActive = useApiMutation<SetActiveProfileResponse, number>(
     (profileId) => apiClient.post("/api/profiles/active", { profileId }),
     { invalidate: [queryKeys.profiles.all] },
   );
@@ -41,18 +50,25 @@ export function useEnsureDraftProfile(): { ready: boolean } {
     ranRef.current = true;
 
     const bootstrap = async (): Promise<void> => {
-      const list = await apiClient.get<ProfileListItem[]>("/api/profiles");
+      const activeRes = await apiClient.get<ActiveProfileResponse>("/api/profiles/active");
+      const previousActiveId = activeRes.data?.profileId ?? null;
+
+      const list = await apiClient.get<ProfileListItemDto[]>("/api/profiles");
       const reusable = list.data?.find(isEmptyDraft);
-      const profileId = reusable ? reusable.id : (await createProfile.mutateAsync()).id;
+      const draftId = reusable ? reusable.id : (await createProfile.mutateAsync()).id;
+
+      const prior =
+        previousActiveId !== null && previousActiveId !== draftId ? previousActiveId : null;
 
       if (!reusable || !reusable.isActive) {
-        await setActive.mutateAsync(profileId);
+        await setActive.mutateAsync(draftId);
       }
-      setReady(true);
+
+      setState({ ready: true, draftProfileId: draftId, previousActiveId: prior });
     };
 
     void bootstrap();
   }, []);
 
-  return { ready };
+  return state;
 }
