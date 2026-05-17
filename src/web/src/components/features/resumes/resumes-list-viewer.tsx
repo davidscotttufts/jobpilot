@@ -131,7 +131,7 @@ export function ResumeListViewer(): ReactElement {
                   )}
                 </Stack>
                 <Typography variant="captionMuted">
-                  {r.sourceFilename ?? "no source PDF"} Â· updated{" "}
+                  {r.sourceFilename ?? "no source PDF"} · updated{" "}
                   {new Date(r.updatedAt).toLocaleDateString()}
                 </Typography>
               </Box>

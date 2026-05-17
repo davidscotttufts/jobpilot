@@ -43,7 +43,7 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Chip size="small" label={run.status} color={STATUS_COLOR[run.status]} variant="outlined" />
         <Typography variant="body2Muted">
-          Source: {run.source} Â· Started {new Date(run.startedAt).toLocaleString()}
+          Source: {run.source} · Started {new Date(run.startedAt).toLocaleString()}
         </Typography>
       </Stack>
       <RunSummaryTiles run={run} />

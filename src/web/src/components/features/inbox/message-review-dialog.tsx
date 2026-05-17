@@ -104,9 +104,9 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {m.fromName || m.fromAddress}
               </Typography>
-              <Typography variant="captionMuted">Â·</Typography>
+              <Typography variant="captionMuted">·</Typography>
               <Typography variant="captionMuted">{m.fromDomain}</Typography>
-              <Typography variant="captionMuted">Â·</Typography>
+              <Typography variant="captionMuted">·</Typography>
               <Typography variant="captionMuted">
                 {new Date(m.receivedAt).toLocaleString()}
               </Typography>

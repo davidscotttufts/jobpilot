@@ -50,7 +50,7 @@ export function EmailSection(): ReactElement {
               {data.email}
             </Typography>
             <Typography variant="captionMuted">
-              {data.provider} Â· last synced {last}
+              {data.provider} · last synced {last}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1.5}>

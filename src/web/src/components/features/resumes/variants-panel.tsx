@@ -78,7 +78,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                   )}
                 </Stack>
                 <Typography variant="captionMuted">
-                  {v.jobUrl ? `${v.jobUrl} Â· ` : ""}created{" "}
+                  {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
                   {new Date(v.createdAt).toLocaleDateString()}
                 </Typography>
               </Box>
@@ -91,10 +91,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
               >
                 <OpenInNew fontSize="md" />
               </IconButton>
-              <IconButton
-                onClick={() => setConfirmDelete(v)}
-                aria-label="Delete variant"
-              >
+              <IconButton onClick={() => setConfirmDelete(v)} aria-label="Delete variant">
                 <Delete fontSize="md" />
               </IconButton>
             </Stack>
@@ -104,9 +101,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
       <ConfirmDialog
         open={confirmDelete !== null}
         title="Delete variant?"
-        description={
-          confirmDelete ? `Remove "${confirmDelete.label}"? This cannot be undone.` : ""
-        }
+        description={confirmDelete ? `Remove "${confirmDelete.label}"? This cannot be undone.` : ""}
         confirmLabel="Delete"
         destructive
         onConfirm={() => confirmDelete && remove.mutate(confirmDelete.id)}
