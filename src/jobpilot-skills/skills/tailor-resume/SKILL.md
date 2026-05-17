@@ -1,147 +1,105 @@
 ---
 name: tailor-resume
-description: Pick the best existing resume for a job, or create a new tailored variant when nothing fits.
+description: Choose the best existing resume base/variant for a job, or create a new tailored variant when nothing fits.
 argument-hint: "<job-description-or-url>"
 ---
 
-# Tailor Resume — Reuse or Create a Variant
+# Tailor Resume — Reuse or Create
 
-You are choosing or producing a resume for a specific job. You may either
-**reuse** an existing base/variant or **create** a new variant under the
-best-matching base. You decide; the user does not pre-select.
+Choose or produce a resume for a specific job. You decide reuse vs create; the user does not pre-select.
 
 ## Setup
 
-Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. The profile
-response already includes `data.resumes` (every base, with `label`,
-`hasData`, `variantCount`, `isPrimary`).
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. The profile response includes `data.resumes` (every base with `label`, `hasData`, `variantCount`, `isPrimary`).
 
-## Step 1 — Read the job description
+## Step 1 — Read the JD
 
-The argument is either raw JD text or a URL. If it's a URL, fetch it with
-`browser_navigate` + `browser_snapshot` and extract title, company, role
-description, requirements. If it's text, parse directly.
+URL → `browser_navigate` + `browser_snapshot`, extract title/company/role/requirements. Text → parse directly.
 
-Extract:
+Extract: title and role family (frontend/backend/fullstack/data/ML/…), seniority (junior/mid/senior/staff/lead), core required tech (top 5–10 keywords), domain (fintech, healthtech, devtools, …), standout requirements (clearance, on-call, language fluency, …).
 
-- Title and role family (frontend / backend / fullstack / data / ML / …)
-- Seniority (junior / mid / senior / staff / lead)
-- Core required tech (top 5–10 keywords)
-- Domain (fintech, healthtech, devtools, …)
-- Standout requirements (clearance, on-call, language fluency, …)
+## Step 2 — Pick the Base
 
-## Step 2 — Pick the candidate base
-
-From `data.resumes`, score each entry:
+Score each entry in `data.resumes`:
 
 - `+3` if `label` matches the role family.
-- `+1` if the resume has `hasData: true` (already-structured bases are
-  cheaper to tailor — no extraction step needed).
-- `+1` if it's the primary (`isPrimary: true`).
+- `+1` if `hasData: true` (already structured, cheaper to tailor).
+- `+1` if `isPrimary: true`.
 
-Take the highest scorer. Tie-break to the primary, then to most recently
-updated. If every candidate has `hasData: false` AND no `sourceFilename`,
-**stop** and tell the user:
+Take the highest scorer. Tie-break to primary, then to most recently updated. If every candidate has `hasData: false` AND no `sourceFilename`, stop:
 
-> No usable base resume. Upload a PDF at <http://localhost:8000/resumes>,
-> or fill in a resume's editor manually, then re-run.
+> No usable base resume. Upload a PDF at <http://localhost:8000/resumes>, or fill in a resume's editor manually, then re-run.
 
 Let `BASE_ID` be the chosen id.
 
-## Step 2.5 — Extract structure if missing
-
-Fetch the chosen base's full row:
+## Step 2.5 — Extract Structure if Missing
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
-If `data` is `null`, delegate to the extract-resume skill so the
-extraction logic stays in one place:
+If `data` is `null`, delegate to extract-resume so the logic stays in one place:
 
 > Run `<extract-resume-command> $BASE_ID` and wait for it to finish.
 
-Then refetch the base row — Step 4 needs the saved `data`. If the
-extract skill stops because the base has no `sourceFilename`, surface
-the same message to the user and stop.
+Refetch the base row afterward — Step 4 needs the saved `data`. If extract-resume stops because there's no `sourceFilename`, surface the same message and stop.
 
-Bases that already have `hasData: true` skip this step.
+Skip this step when `hasData: true`.
 
-## Step 3 — Decide reuse vs create
-
-List the base's existing variants:
+## Step 3 — Decide Reuse vs Create
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
-For each variant `v`, fetch its full data:
+For each variant `v`, fetch `curl -fsS "$JOBPILOT_API/api/resumes/variants/$v.id"`. Compute keyword overlap between the JD's required tech and `v.data.skills` + project keywords + summary.
 
-```bash
-curl -fsS "$JOBPILOT_API/api/resumes/variants/$v.id"
-```
-
-Compute keyword overlap between the JD's required tech and `v.data.skills`
-+ project keywords + summary. **Reuse criteria** — ALL must hold:
+**Reuse criteria** (ALL must hold):
 
 - Same role family as the JD.
 - ≥70% of the JD's top-10 keywords appear in the variant's `data`.
-- Variant's seniority hint (summary tone, scope of bullets) matches.
+- Seniority hint (summary tone, bullet scope) matches.
 
-If any variant meets the reuse criteria, return:
+If any variant qualifies:
 
 > Reusing variant {id}: {label}.
 > http://localhost:8000/api/resumes/variants/{id}/pdf
 
 Stop. Do not create a new row.
 
-## Step 4 — Create a new variant (when none reuse)
-
-Fetch the base's full data:
+## Step 4 — Create a New Variant
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
-Produce a new `data` object by **modifying the base in-place** with these
-constraints:
+Modify the base in-place with these constraints:
 
-- **Preserve verbatim**: dates, employers, titles (unless rephrasing the
-  display title is clearly correct), education, contact info.
-- **Rewrite the summary** to ≤3 sentences targeting this role.
-- **Reorder and rewrite up to 6–10 bullets** across experience + projects
-  to surface the JD's required tech. Keep the original facts; change the
-  framing.
-- **Reorder skill groups** so the JD's keywords appear first within each
-  group.
-- **Do not fabricate** experience, scope, or numbers.
+- **Preserve verbatim**: dates, employers, titles (unless rephrasing display title is clearly correct), education, contact info.
+- **Rewrite summary** to ≤3 sentences targeting this role.
+- **Reorder + rewrite 6–10 bullets** across experience + projects to surface the JD's required tech. Keep facts; change framing.
+- **Reorder skill groups** so the JD's keywords appear first.
+- **No fabrication** of experience, scope, or numbers.
 
-After producing the new `data`, chain prose paragraphs (summary, project
-descriptions) through the humanizer command: `<humanizer-command>`. The
-humanizer keeps tone natural and removes AI tells; bullets are short
-enough to skip.
+Chain prose paragraphs (summary, project descriptions) through `<humanizer-command>`. Bullets are short enough to skip.
 
 Compose:
 
 - `label`: `"{Company} — {Title}"` (short).
-- `jobUrl`: the URL, if the argument was one.
-- `applicationId`: if the JD URL matches an existing Application row, set
-  this. Look up via `GET /api/applications?url=…` (or skip if not
-  available).
-- `diffNotes`: 1–3 sentences explaining what was rewritten and why (which
-  keywords were surfaced, which bullets were re-ordered, etc.). This is
-  shown to the user in the variants panel.
+- `jobUrl`: the URL if the argument was one.
+- `applicationId`: set if the JD URL matches an existing Application — `GET /api/applications?url=…`.
+- `diffNotes`: 1–3 sentences explaining what was rewritten and why.
 
-`POST /api/resumes/{baseId}/variants`:
-
-```json
-{
-  "label": "Acme — Senior Frontend Engineer",
-  "jobUrl": "https://...",
-  "applicationId": null,
-  "data": { ... },
-  "diffNotes": "Surfaced React/Next.js/TypeScript keywords ..."
-}
+```bash
+curl -fsS -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/variants" \
+  -H 'content-type: application/json' \
+  -d '{
+    "label": "Acme — Senior Frontend Engineer",
+    "jobUrl": "https://...",
+    "applicationId": null,
+    "data": { ... },
+    "diffNotes": "Surfaced React/Next.js/TypeScript keywords ..."
+  }'
 ```
 
 Echo:

@@ -1,120 +1,76 @@
-﻿---
+---
 name: interview
-description: Generate interview prep Q&A tailored to a job description and the user's resume. Covers technical, behavioral, and system design questions.
+description: Produce a tailored interview prep sheet (behavioral, technical, system design, company) from a job description and the user's resume.
 argument-hint: "<job_description>"
 ---
 
 # Interview Prep
 
-You generate tailored interview preparation material based on a job description and the user's resume.
+Generate interview prep tailored to a JD and the candidate's resume.
 
 ## Setup
 
-Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load the
-profile and resume from the JobPilot API. Then read the resume file at
-`data.primaryResumeSourceAbsolutePath` to understand the candidate's full
-background (skills, experience, projects, education, research).
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. Then `Read` the resume file at `data.primaryResumeSourceAbsolutePath` for the candidate's full background.
 
-## Process
+## Step 1: Analyze the Role
 
-### Step 1: Analyze the Role
+From the argument, identify: role title + level + team, core technical requirements, domain/industry, key responsibilities, company size/stage, any interview-process hints.
 
-Read the job description provided as the argument. Identify:
+## Step 2: Generate Questions
 
-- Role title, level, and team
-- Core technical requirements
-- Domain and industry context
-- Key responsibilities
-- Company size and stage (startup vs enterprise)
-- Any hints about interview process (if mentioned)
+### Behavioral (5–7)
 
-### Step 2: Generate Questions
+Focus on competencies the role requires. For each: question + suggested **STAR answer** (Situation, Task, Action, Result) using a real example from the resume + the experience to reference.
 
-Produce questions in these categories, tailored to the specific role:
-
-#### Behavioral Questions (5-7 questions)
-
-Focus on competencies the role requires. For each question:
-
-- State the question
-- Provide a suggested **STAR-format answer** (Situation, Task, Action, Result) using a real example from the candidate's resume
-- Note which resume experience to reference
-
-Example format:
+Example:
 
 ```
-**Q: Tell me about a time you led a major migration or refactoring effort.**
+**Q: Tell me about a time you led a major migration.**
 
 Suggested answer (STAR):
-- Situation: At EmTech Care Labs, the platform was on AWS Amplify Gen 1 which had slow builds and fragmented codebases.
+- Situation: At EmTech Care Labs, the platform was on AWS Amplify Gen 1 with slow builds.
 - Task: Lead the migration to Gen 2 and unify the codebase.
-- Action: Planned the migration in phases, unified into a TypeScript monorepo, consolidated 3 component libraries into one design system.
-- Result: Cut build/deployment times by 40%, created 40+ reusable components, improved team velocity.
+- Action: Phased migration, unified TypeScript monorepo, consolidated 3 component libraries into one design system.
+- Result: Cut build/deploy time 40%, created 40+ reusable components, improved velocity.
 ```
 
-#### Technical Questions (5-7 questions)
+### Technical (5–7)
 
-Based on the role's tech stack and requirements:
+Based on the role's stack and requirements: language/framework, architecture and patterns, technologies listed in the JD. For each: concise answer outline with talking points from the candidate's experience.
 
-- Language/framework specific questions
-- Architecture and design pattern questions
-- Questions about technologies listed in the job description
-- For each question, provide a concise answer outline with talking points from the candidate's experience
+### System Design (2–3)
 
-#### System Design Questions (2-3 questions)
+Scenarios relevant to the company's product area. For each: outline the approach + which candidate projects demonstrate relevant experience.
 
-Based on the role's domain:
+### Company / Domain (2–3)
 
-- Design a system relevant to the company's product area
-- For each, outline the approach and note which candidate projects demonstrate relevant experience
+Questions about the company's product, industry, competitors. Suggest research areas to explore before the interview.
 
-#### Company/Domain Questions (2-3 questions)
+## Step 3: Identify Weak Spots
 
-- Questions about the company's product, industry, or competitors
-- Suggest research areas the candidate should explore before the interview
+List requirements where the candidate's experience is thin. Suggest how to frame each gap positively (transferable skills, adjacent experience, quick-learner). Recommend areas to brush up on.
 
-### Step 3: Identify Weak Spots
-
-Based on the job description vs. the candidate's resume:
-
-- List any requirements where the candidate's experience is thin
-- Suggest how to frame gaps positively (transferable skills, quick learner, adjacent experience)
-- Recommend areas to study or brush up on before the interview
-
-### Step 4: Output the Prep Sheet
-
-Format the output as a structured prep document:
+## Step 4: Output
 
 ```
-# Interview Prep: [Role Title] at [Company]
+# Interview Prep: [Role] at [Company]
 
 ## Role Summary
-[2-3 sentence overview of what this role needs]
+[2-3 sentences]
 
 ## Behavioral Questions
-[Questions with STAR answers]
-
 ## Technical Questions
-[Questions with answer outlines]
-
 ## System Design
-[Scenarios with approach outlines]
-
 ## Company Research
-[Questions and suggested research areas]
-
 ## Watch Out For
-[Gaps and how to address them]
-
 ## Key Talking Points
-[3-5 bullet points the candidate should weave into any answer]
+[3-5 bullets to weave into any answer]
 ```
 
-## Important Rules
+## Rules
 
-1. **Use real experience only.** All suggested answers must reference actual projects, roles, or metrics from the resume. Never fabricate examples.
-2. **Be specific to the role.** Generic "tell me about yourself" prep is useless. Tailor every question to what THIS company would ask for THIS role.
-3. **Be honest about gaps.** If the candidate lacks a required skill, say so and suggest how to address it. Don't pretend the gap doesn't exist.
-4. **Keep answers concise.** Interview answers should be 1-2 minutes spoken. Don't write essays.
-5. **Prioritize likely questions.** Put the most probable questions first in each category.
-
+1. **Real experience only.** Every suggested answer references real projects/roles/metrics. Never fabricate.
+2. **Tailor to this role.** Generic "tell me about yourself" prep is useless.
+3. **Be honest about gaps.** Don't pretend they don't exist.
+4. **Concise answers.** 1–2 minutes spoken, not essays.
+5. **Probability-order.** Most likely questions first in each category.

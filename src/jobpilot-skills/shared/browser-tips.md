@@ -2,49 +2,48 @@
 
 ## Default to `browser_evaluate`, not `browser_snapshot`
 
-Playwright MCP is configured with `--snapshot-mode none`. Actions do **not** return snapshots automatically. The two tools you have for reading a page are:
+Playwright MCP runs with `--snapshot-mode none`. Actions do **not** return snapshots automatically.
 
-- **`browser_evaluate`** — runs a small JS function in the page and returns its JSON-serializable result. Typical payload: a few hundred to a few thousand tokens.
-- **`browser_snapshot`** — returns the accessibility tree of the page (or a subtree if `ref` is provided). Typical payload on a job board: 50,000–120,000 tokens.
+- **`browser_evaluate`** — runs a small JS function in the page, returns JSON. Typical payload: hundreds to a few thousand tokens.
+- **`browser_snapshot`** — returns the a11y tree (or a subtree with `ref`). Typical payload on a job board: 50k–120k tokens.
 
-`browser_evaluate` is the default verb. Reach for `browser_snapshot` only when you need an a11y `ref` to click or type on an element that you have not already located.
+`browser_evaluate` is the default. Use `browser_snapshot` only when you need a fresh `ref` to click or type on an element you haven't located yet.
 
-## Decision tree
+## Decision Tree
 
 | Goal | Use |
 | --- | --- |
 | Extract job listings from a search results page | `browser_evaluate` with `<board>-results.js` |
 | Read a single job posting (digest for scoring) | `browser_evaluate` with `job-details.js` |
-| Inventory the fields in an application form | `browser_evaluate` with `form-fields.js` (returns `ref`s) |
-| Check if the user is logged in on a board | `browser_evaluate` with `login-state.js` |
+| Inventory fields in an application form | `browser_evaluate` with `form-fields.js` (returns refs) |
+| Check if logged in on a board | `browser_evaluate` with `login-state.js` |
 | Confirm an application was submitted | `browser_evaluate` with `submit-confirmation.js` |
-| Click a button you have not seen yet (no ref) | `browser_snapshot` (no `ref` first time, then narrow) |
-| Click/type on an element whose ref you already have | use the ref directly — no snapshot needed |
+| Click a button you haven't seen yet (no ref) | `browser_snapshot` (no `ref` first, then narrow) |
+| Click/type on an element whose ref you already have | use the ref directly — no snapshot |
 
-If an extractor returns `{ error: "..." }`, the page structure was unexpected. Fall back to `browser_snapshot` (start without `ref`, identify a container, then narrow with `ref` on subsequent calls).
+If an extractor returns `{ error: "..." }`, fall back to `browser_snapshot` — start without `ref`, find a container, then narrow with `ref`.
 
-## Invoking an extractor
+## Invoking an Extractor
 
-The canonical extractors live at:
+Canonical extractors live at `${JOBPILOT_SKILLS_ROOT}/shared/extractors/`:
 
 ```text
-${JOBPILOT_SKILLS_ROOT}/shared/extractors/
-  linkedin-results.js
-  indeed-results.js
-  generic-results.js
-  job-details.js
-  form-fields.js
-  login-state.js
-  submit-confirmation.js
+linkedin-results.js
+indeed-results.js
+generic-results.js
+job-details.js
+form-fields.js
+login-state.js
+submit-confirmation.js
 ```
 
-Each file contains a single named `function` declaration with a JSDoc describing the return shape. To invoke one:
+Each contains a single named `function` with a JSDoc describing the return shape. To invoke:
 
-1. `Read` the extractor file to get its contents.
+1. `Read` the extractor file.
 2. Pass the contents as the `function` argument to `browser_evaluate`.
-3. Consume the returned JSON directly — no further snapshot.
+3. Consume the returned JSON — no further snapshot.
 
-Example flow on a job search page:
+Search-results example:
 
 ```text
 Read ${JOBPILOT_SKILLS_ROOT}/shared/extractors/linkedin-results.js
@@ -52,7 +51,7 @@ browser_evaluate(function: <contents>)
 → [{ title, company, location, url, postedAt }, ...]
 ```
 
-Example flow on an application form:
+Form example:
 
 ```text
 Read ${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js
@@ -61,28 +60,28 @@ browser_evaluate(function: <contents>)
 browser_type(ref: "<ref-from-extractor>", text: "...")
 ```
 
-Form-fields.js injects a `data-ref` attribute on inputs that lack an id, so the returned `ref` is always usable by subsequent `browser_click` / `browser_type` calls without ever taking a snapshot.
+`form-fields.js` injects `data-ref` on inputs lacking an id, so refs are usable by subsequent `browser_click` / `browser_type` calls without snapshotting.
 
-## When `browser_snapshot` is still required
+## When `browser_snapshot` Is Still Required
 
 - Locating the Apply button on a job posting (extractors don't enumerate buttons).
-- Clicking a custom widget (date picker, autocomplete) that `form-fields.js` couldn't tag.
-- Pages whose structure no extractor handles (e.g., novel ATS without canonical selectors).
+- Clicking a custom widget (date picker, autocomplete) `form-fields.js` couldn't tag.
+- Pages with structures no extractor handles (novel ATS without canonical selectors).
 
-When you must snapshot, always pass `ref` after the first call. Narrow to a single fieldset or container — never re-snapshot the whole page.
+When snapshotting, pass `ref` after the first call. Narrow to a single fieldset or container — never re-snapshot the whole page.
 
-## Handling token overflow
+## Token Overflow
 
-If a snapshot still exceeds token limits even with `ref`:
+If a snapshot exceeds limits even with `ref`:
 
-1. Narrow the `ref` further — target a smaller child element.
-2. Use the `Read` tool with `offset`/`limit` to read portions of saved output, or `Grep` for specific content.
-3. **Do NOT use inline Python/Node scripts to parse these files** — use `Read`, `Grep`, or `jq` against the JobPilot API responses.
+1. Narrow `ref` further — target a smaller child.
+2. Use `Read` with `offset`/`limit` for saved output, or `Grep` for content.
+3. **No inline Python/Node parsing** — use `Read`, `Grep`, or `jq` against API responses.
 
-## General best practices
+## Best Practices
 
-1. **Handle popups and modals** — close cookie banners, notification prompts, and overlays that block forms.
-2. **Be patient with page loads** — use `browser_wait_for` after navigation and form submissions.
-3. **If something goes wrong** (unexpected page, error, crashed form), run `submit-confirmation.js` or take a narrowed snapshot and report what you see rather than guessing.
-4. **For file uploads**, verify the resume file exists. If not, tell the user.
-5. **Never guess passwords** — always read from `/api/credentials` (see `shared/setup.md` credential lookup).
+1. **Handle popups and modals** — close cookie banners, notification prompts, overlays blocking forms.
+2. **Wait for loads** — `browser_wait_for` after navigation and form submissions.
+3. **When something goes wrong** (unexpected page, error, crashed form), run `submit-confirmation.js` or take a narrowed snapshot and report what you see — don't guess.
+4. **File uploads** — verify the resume file exists. If not, tell the user.
+5. **Never guess passwords** — always read from `/api/credentials` (see setup.md credential lookup).

@@ -1,81 +1,52 @@
-﻿---
+---
 name: upwork-proposal
-description: Generate an Upwork proposal from a job description using the user's resume. Applies humanizer for natural tone.
+description: Write a short, targeted Upwork proposal from a job description and the user's resume, humanized for natural tone.
 argument-hint: "<job_description>"
 ---
 
 # Upwork Proposal Generator
 
-You are writing an Upwork job proposal for a freelancer. Your goal is to write a concise, relevant, and winning proposal that directly addresses the client's needs.
+Write a concise, winning Upwork proposal that directly addresses the client's needs.
 
 ## Setup
 
-Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load the
-profile and resume from the JobPilot API. Then read the resume file at
-`data.primaryResumeSourceAbsolutePath` to build a full candidate profile (identity,
-skills, experience, projects, research).
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. Then `Read` the resume at `data.primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
 
-## Process
+## Step 1: Analyze the JD
 
-### Step 1: Analyze the Job Description
+Identify: what the client needs built/fixed, required tech and skills, scope and timeline clues, pain points/challenges, any specific questions the client asks.
 
-Read the job description provided as the argument. Identify:
+## Step 2: Select Relevant Experience
 
-- What the client needs built or fixed
-- Required technologies and skills
-- Project scope and timeline clues
-- Pain points or challenges the client mentions
-- Any specific questions the client asks
+Pick ONLY the 2–3 most relevant projects/experiences/skills. Don't list everything — be selective.
 
-### Step 2: Match Relevant Experience
+## Step 3: Write
 
-From the candidate's resume, select ONLY the experience, projects, and skills that directly relate to this job. Do not list everything -- be selective and targeted. Pick 2-3 most relevant projects or experiences.
+**Opening (1–2 sentences):** address the specific need directly, show you understand the problem (not just the tech stack). **No** "Hi" / "Dear client" / "I'm excited to apply".
 
-### Step 3: Write the Proposal
+**Relevant experience (2–3 short paragraphs):** connect your past work to what they need, include concrete metrics (users, perf gains), reference specific projects by name, focus on outcomes (not just technologies).
 
-Follow this structure:
+**Approach (1–2 sentences):** how you'd tackle this specific project, showing technical understanding.
 
-**Opening (1-2 sentences):**
+**Closing (1–2 sentences):** one clear next step (call, questions, prototype). Confident, not pushy.
 
-- Address the client's specific need directly
-- Show you understand the problem, not just the tech stack
-- Do NOT start with "Hi" or "Dear client" or "I'm excited to apply"
+## Step 4: Apply Humanizer
 
-**Relevant Experience (2-3 short paragraphs):**
+Invoke `<humanizer-command>` on the full text.
 
-- Connect your specific past work to what the client needs
-- Include concrete metrics and results (users, performance gains, etc.)
-- Reference specific projects by name with brief context
-- Focus on outcomes, not just technologies used
+## Rules
 
-**Approach (1-2 sentences):**
+1. **Under 200 words.** Brevity wins.
+2. **No fluff** — drop "passionate", "dedicated", "committed", "excited", "thrilled", "leverage", "utilize", "innovative", "cutting-edge".
+3. **No generic openings** ("I came across your job posting" / "I'm a senior developer with X years").
+4. **Be specific.** Real project names, metrics, tech from the resume.
+5. **Answer their questions** if the posting asks any.
+6. **Match tone.** Casual posting → casual; formal → professional.
+7. **One CTA.**
+8. **No fabrication.** Only reference resume content.
+9. **Don't mention freelance status** (Top Rated, JSS) in body — it's already on the profile. Exception: if the posting explicitly asks.
+10. **First person** as the candidate.
 
-- Briefly describe how you'd tackle this specific project
-- Show technical understanding of their problem
+## Output
 
-**Closing (1-2 sentences):**
-
-- Suggest next steps (call, questions, prototype)
-- Keep it confident but not pushy
-
-### Step 4: Apply Humanizer
-
-After writing the proposal, invoke the `<humanizer-command>` skill on the full text to remove any AI writing patterns. The final output must read as naturally written by a real person.
-
-## Important Rules
-
-1. **Keep it under 200 words.** Upwork clients skim proposals. Brevity wins.
-2. **No fluff.** Remove words like "passionate," "dedicated," "committed," "excited," "thrilled," "leverage," "utilize," "innovative," "cutting-edge."
-3. **No generic openings.** Never start with "I came across your job posting" or "I'm a senior developer with X years of experience."
-4. **Be specific.** Reference actual project names, actual metrics, actual tech from the resume. Vague claims lose.
-5. **Answer their questions.** If the job posting asks specific questions, answer them directly.
-6. **Match their tone.** If the posting is casual, write casually. If it's formal, be professional.
-7. **One call-to-action.** End with one clear next step.
-8. **Do not invent experience.** Only reference projects and skills from the resume.
-9. **Do not mention freelance platform status** (Top Rated, JSS) in the body -- it's already visible on the profile. Exception: if the posting specifically asks about freelancing track record.
-10. **Write in first person** as the candidate.
-
-## Output Format
-
-Output the proposal text ready to paste into Upwork. No markdown headers, no formatting -- just clean paragraphs that work in Upwork's plain text input.
-
+Plain text proposal, no markdown headers — clean paragraphs that paste into Upwork's input.

@@ -5,7 +5,6 @@
       "Bash(jq:*)",
       "Bash(date:*)",
       "mcp__plugin_jobpilot_playwright-jobpilot__*",
-      "mcp__plugin_jobpilot_playwright_jobpilot__*",
       "Skill(humanizer)",
       "Skill(cover-letter)",
       "Skill(upwork-proposal)",

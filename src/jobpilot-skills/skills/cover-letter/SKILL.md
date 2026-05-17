@@ -1,47 +1,28 @@
-﻿---
+---
 name: cover-letter
-description: Generate a tailored cover letter from a job description using the user's resume. Applies humanizer for natural tone.
+description: Write a tailored one-page cover letter from a job description and the user's resume, humanized for natural tone.
 argument-hint: "<job_description>"
 ---
 
 # Cover Letter Generator
 
-You are writing a cover letter for a job applicant. Your goal is to write a compelling, tailored cover letter that connects their experience to the role.
+Write a tailored, one-page cover letter connecting the candidate's resume to a specific role.
 
 ## Setup
 
-Read and follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load the
-profile and resume from the JobPilot API. Then read the resume file at
-`data.primaryResumeSourceAbsolutePath` to build a full candidate profile (identity,
-education, experience, skills, projects, research, awards).
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load profile and resume. Then `Read` the resume file at `data.primaryResumeSourceAbsolutePath` for full context (identity, education, experience, skills, projects, research, awards).
 
-## Process
+## Step 1: Analyze the JD
 
-### Step 1: Analyze the Job Description
+From the argument, identify: company + what they do, role title and level, key responsibilities, required/preferred qualifications, tech stack and domain, culture cues.
 
-Read the job description provided as the argument. Identify:
+## Step 2: Select Relevant Experience
 
-- Company name and what they do
-- Role title and level
-- Key responsibilities
-- Required and preferred qualifications
-- Tech stack and domain
-- Company culture cues and values
+From the resume, pick the most relevant: 2–3 work experiences, 2–3 projects, research (if AI/ML/CV), education (if relevant to level).
 
-### Step 2: Match Relevant Experience
+## Step 3: Write
 
-From the candidate's resume, select the most relevant:
-
-- 2-3 work experiences that align with the role
-- 2-3 projects that demonstrate required skills
-- Research work (if the role involves AI/ML/CV)
-- Education details (if relevant to the role level)
-
-### Step 3: Write the Cover Letter
-
-Follow this structure:
-
-**Header:**
+**Header** (values from `data.profile.*`):
 
 ```
 [Full Name]
@@ -49,40 +30,15 @@ Follow this structure:
 [LinkedIn] | [GitHub] | [Website]
 ```
 
-Use values from `data.profile.*` (firstName, lastName, email, phone, â€¦).
+**Opening (2–3 sentences):** state the role, lead with strongest specific qualifier, show you understand what the team needs. **No** "I'm excited to apply" / "I'm writing to express my interest".
 
-**Opening paragraph (2-3 sentences):**
+**Body 1 — relevant experience (3–5 sentences):** connect your closest work to their needs, include specific metrics and outcomes, name projects and results (not just technologies).
 
-- State the role you're applying for
-- Lead with your strongest, most relevant qualifier for this specific role
-- Show you understand what the company does or what the team needs
-- Do NOT use "I'm excited to apply" or "I'm writing to express my interest"
+**Body 2 — technical depth (3–5 sentences):** deeper alignment with their stack/domain, reference specific projects or research. For AI/ML roles: reference publications.
 
-**Body paragraph 1 -- Relevant experience (3-5 sentences):**
+**Body 3 — why this company (2–3 sentences):** what specifically draws you here (genuine, not generic), how your background uniquely fits, what you'd bring beyond the requirements.
 
-- Connect your most relevant work experience to their needs
-- Include specific metrics and outcomes
-- Name projects and results, not just technologies
-- Show you've solved problems similar to theirs
-
-**Body paragraph 2 -- Technical depth (3-5 sentences):**
-
-- Demonstrate deeper technical alignment with the role
-- Reference specific projects or research that match their stack/domain
-- Show understanding of their technical challenges
-- If AI/ML role: reference publications and research
-
-**Body paragraph 3 -- Why this company (2-3 sentences):**
-
-- What specifically draws you to this role/company (be genuine, not generic)
-- How your background uniquely positions you for their specific needs
-- What you'd bring beyond the technical requirements
-
-**Closing paragraph (2-3 sentences):**
-
-- Express interest in discussing further
-- Reference portfolio/GitHub if relevant
-- Thank them for their time
+**Closing (2–3 sentences):** interest in discussing further, portfolio/GitHub link if relevant, brief thanks.
 
 **Sign-off:**
 
@@ -91,26 +47,25 @@ Best regards,
 [Full Name]
 ```
 
-### Step 4: Apply Humanizer
+## Step 4: Apply Humanizer
 
-After writing the cover letter, invoke the `<humanizer-command>` skill on the full text to remove any AI writing patterns. The final output must read as naturally written by a real person.
+Invoke `<humanizer-command>` on the full text. The final output must read as written by a real person.
 
-## Important Rules
+## Rules
 
-1. **Keep it to one page.** 350-450 words for the body (excluding header/sign-off).
-2. **No fluff.** Remove words like "passionate," "dedicated," "committed," "excited," "thrilled," "leverage," "utilize," "innovative," "cutting-edge," "eager," "dynamic."
-3. **No generic openings.** Never start with "I am writing to express my interest" or "I was excited to see your posting."
-4. **Be specific.** Reference actual project names, metrics, and technologies from the resume. Vague claims are ignored.
-5. **Tailor aggressively.** Every sentence should connect to something in the job description. If a paragraph could apply to any job, rewrite it.
-6. **Show, don't tell.** Instead of "I'm a strong communicator," show it through your writing. Instead of "I'm experienced in X," describe what you built with X.
-7. **Match the company's tone.** Startup? Write conversationally. Enterprise/government? More formal.
-8. **Do not invent experience.** Only reference projects and skills from the resume.
-9. **Write in first person** as the candidate.
-10. **For AI/ML/research roles:** Lead with research publications and academic background.
-11. **For senior/lead roles:** Lead with years of experience, team collaboration, and architectural decisions.
-12. **For startup roles:** Lead with breadth of shipped products and autonomy.
+1. **One page.** 350–450 words for the body.
+2. **No fluff** — drop "passionate", "dedicated", "committed", "excited", "thrilled", "leverage", "utilize", "innovative", "cutting-edge", "eager", "dynamic".
+3. **No generic openings.**
+4. **Be specific.** Real project names, metrics, technologies from the resume.
+5. **Tailor aggressively.** Every sentence should connect to something in the JD.
+6. **Show, don't tell.** No "I'm a strong communicator" — demonstrate it through the writing.
+7. **Match tone.** Startup → conversational; enterprise/gov → formal.
+8. **No fabrication.** Only reference projects/skills from the resume.
+9. **First person** as the candidate.
+10. **AI/ML/research roles:** lead with publications and academic background.
+11. **Senior/lead roles:** lead with years, team collaboration, architectural decisions.
+12. **Startup roles:** lead with breadth of shipped products and autonomy.
 
-## Output Format
+## Output
 
-Output the complete cover letter with header and sign-off, formatted with proper spacing. Use plain text that can be pasted into any application form or converted to PDF.
-
+Plain text with header and sign-off, ready to paste or convert to PDF.

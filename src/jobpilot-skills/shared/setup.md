@@ -1,122 +1,76 @@
-﻿# Setup: Load Profile and Resume from the JobPilot API
+# Setup — Load Profile and Resume from the JobPilot API
 
-JobPilot stores all configuration in a local SQLite database served by a Next.js
-app at `http://localhost:8000`. Skills must call this API instead of reading
-files. Set this once near the top of any skill that needs config:
+JobPilot stores all config in a local SQLite database served by a Next.js app at `http://localhost:8000`. Skills call this API — never read files directly.
 
 ```bash
 JOBPILOT_API=http://localhost:8000
 ```
 
-## Active profile resolution
+## Active Profile
 
-The API automatically resolves the active profile for every request — no profile
-id needs to be threaded through. Resolution order:
+The API auto-resolves the active profile per request — no id needs threading through. Resolution order:
 
-1. HTTP cookie `jobpilot_active_profile` (browser only).
-2. The profile with `isActive: true` in the database (persisted server-side, set
-   when the user picks a profile in the UI switcher).
-3. The first profile by id (fallback).
+1. Cookie `jobpilot_active_profile` (browser only).
+2. Profile with `isActive: true` (set by the UI switcher).
+3. First profile by id (fallback).
 
-To inspect the active profile id from a skill:
+To inspect: `curl -fsS "$JOBPILOT_API/api/profiles/active"` → `{ data: { profileId } }`. All other endpoints (`/api/profile`, `/api/resumes`, `/api/applied`, `/api/runs`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) already filter by the active profile.
 
-```bash
-curl -fsS "$JOBPILOT_API/api/profiles/active"
-```
-
-Returns `{ data: { profileId } }`. All other endpoints (`/api/profile`,
-`/api/resumes`, `/api/applied`, `/api/runs`, `/api/queue`, `/api/credentials`,
-`/api/job-boards`, `/api/email/*`) already filter by the active profile — call
-them as before.
-
-## 1. Verify the web app is running
-
-Run a health check before doing anything else:
+## 1. Health Check
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/health"
 ```
 
-If the request fails (connection refused / non-200), **stop and tell the user**:
+On failure, stop and tell the user:
 
-> The JobPilot web app is not running. Start it with `cd web && bun dev`, then
-> open http://localhost:8000 once before re-running this skill.
+> The JobPilot web app is not running. Start it with `cd web && bun dev`, then open http://localhost:8000 once before re-running this skill.
 
-Do not fall back to reading any local JSON files â€” they have been removed.
+Do not fall back to local JSON files — they have been removed.
 
-## 2. Load the profile
+## 2. Load Profile
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/profile"
 ```
 
-Inspect `data.profile`:
-
-- If `data.profile` is `null`, the user has not completed onboarding. Stop and
-  tell them: "Open http://localhost:8000/onboarding to set up your profile,
-  then re-run this skill."
-- Otherwise read fields directly from `data.profile` (firstName, lastName,
-  email, phone, address, work auth, EEO answers, preferredLocations, â€¦) and
-  from `data.autopilot` (minMatchScore, maxApplicationsPerRun, confirmMode,
-  skipCompanies, skipTitleKeywords, salaryExpectation, defaultStartDate, â€¦).
+- If `data.profile` is `null`: "Open http://localhost:8000/onboarding to set up your profile, then re-run this skill."
+- Otherwise read from `data.profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `data.autopilot` (minMatchScore, maxApplicationsPerRun, confirmMode, skipCompanies, skipTitleKeywords, salaryExpectation, defaultStartDate, …).
 
 The response also includes:
 
-- `data.profile.primaryResumeId` the id of the user's primary base resume
-  (fallback when no specific match exists).
-- `data.primaryResumeSourceAbsolutePath` absolute filesystem path to the
-  primary resume's uploaded source PDF, ready for `browser_file_upload` or
-  for reading via the `Read` tool. May be `null` if the primary resume has
-  no uploaded PDF (it was created from scratch in the editor) or if no
-  primary is set.
-- `data.resumes` list of `{ id, label, sourceFilename, hasData,
-variantCount, isPrimary, updatedAt }` for every base resume.
+- `data.profile.primaryResumeId` — the primary base resume id (fallback when no specific match).
+- `data.primaryResumeSourceAbsolutePath` — absolute path to the primary's source PDF for `browser_file_upload` / `Read`. May be `null` if the primary has no uploaded PDF or no primary is set.
+- `data.resumes` — `[{ id, label, sourceFilename, hasData, variantCount, isPrimary, updatedAt }]` for every base.
 
-## 3. Resume selection
+## 3. Resume Selection
 
-The profile response already includes the resume list under `data.resumes`,
-so you usually don't need a separate call. The full structure of a base
-resume is at `GET /api/resumes/{id}`, and its tailored variants are at
-`GET /api/resumes/{id}/variants`.
+`data.resumes` is already in the profile response — no extra call needed. Full base structure at `GET /api/resumes/{id}`; variants at `GET /api/resumes/{id}/variants`.
 
 When applying to a specific role:
 
-1. Inspect `data.resumes`. If a base resume's `label` clearly matches the
-   role family (e.g. label `"Frontend"` for a Frontend Engineer posting),
-   prefer it.
-2. Otherwise pick the primary (`isPrimary: true`) as the starting point.
-3. If a tailored variant already exists under the chosen base that matches
-   this exact job, reuse it (`GET /api/resumes/variants/{id}/pdf`) instead
-   of creating a new one. Use the `tailor-resume` skill to make that
-   reuse-vs-create decision and to produce a new variant when needed.
+1. If a base's `label` matches the role family (e.g. `"Frontend"` for a Frontend Engineer posting), prefer it.
+2. Otherwise pick the primary (`isPrimary: true`).
+3. If a tailored variant under the chosen base already matches this job, reuse it (`GET /api/resumes/variants/{id}/pdf`). Use the `tailor-resume` skill to decide reuse vs create.
 
-To get a renderable PDF for any base or variant:
+Renderable PDFs:
 
-- Base PDF: `GET /api/resumes/{id}/pdf` (renders from `data` if present,
-  otherwise streams the uploaded source).
-- Variant PDF: `GET /api/resumes/variants/{id}/pdf`.
-
-Both endpoints stream `application/pdf` directly to disk:
+- Base: `GET /api/resumes/{id}/pdf` (renders from `data` if present, else streams the source).
+- Variant: `GET /api/resumes/variants/{id}/pdf`.
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/resumes/3/pdf" -o /tmp/resume-3.pdf
 ```
 
-## 4. Credential lookup
-
-Credentials live in their own table, accessed via `/api/credentials`:
+## 4. Credentials
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/credentials"
 ```
 
-Each row has `{ id, scope, email, password }`. The `scope` is either
-`"default"` or a board domain like `"linkedin.com"`. Lookup order when you
-need credentials for a job board domain:
+Each row: `{ id, scope, email, password }`. `scope` is `"default"` or a board domain (`"linkedin.com"`). Lookup order:
 
-1. If the `JobBoard` row (`/api/job-boards`) has its own `email`/`password`
-   override, use those.
-2. Otherwise find a credential with `scope === <board-domain>`
-   (e.g. `linkedin.com`).
-3. Otherwise fall back to the credential with `scope === "default"`.
-4. If nothing matches, report it to the user â€” do not guess.
+1. `JobBoard` row's own `email`/`password` override.
+2. Credential with `scope === <board-domain>`.
+3. Credential with `scope === "default"`.
+4. None → report to the user, do not guess.

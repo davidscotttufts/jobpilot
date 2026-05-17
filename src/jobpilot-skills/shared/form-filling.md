@@ -1,44 +1,40 @@
-﻿# Form Filling
+# Form Filling
 
-Job applications often span multiple pages/steps. For each page:
+Job applications often span multiple pages. For each page:
 
-## Identify and Fill Fields
+## Identify and Fill
 
-1. **Enumerate fields** by running `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate`. The extractor returns each text input, textarea, select, checkbox, radio button, and (visible) input with its label, name, type, requiredness, options (for selects), and a stable `ref` you can pass to `browser_click` / `browser_type` / `browser_select_option`. **No `browser_snapshot` is needed for this step.**
-2. **Map each field** to the candidate's profile and resume data using the returned `label`, `placeholder`, and `name`.
-3. **Fill fields** using Playwright MCP tools, addressing each field by the `ref` from step 1:
-   - Text inputs -> `browser_type` (or `browser_fill_form` for batch)
-   - Dropdowns/selects -> `browser_select_option`
-   - Checkboxes/radio buttons -> `browser_click`
-   - File uploads (resume) -> `browser_file_upload` with the selected resume path from `personal.resumes` (see Resume Selection in setup.md)
-   - Date fields -> use the appropriate date format for the field
-4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) that `form-fields.js` could not enumerate: take a narrowed `browser_snapshot` of just that widget's container to obtain a ref.
+1. **Enumerate fields** — run `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate`. Returns each input / textarea / select / checkbox / radio / visible input with `label`, `name`, `type`, `required`, `options` (selects), and a stable `ref` usable by `browser_click` / `browser_type` / `browser_select_option`. **No `browser_snapshot` needed.**
+2. **Map fields** to profile/resume data using `label`, `placeholder`, `name`.
+3. **Fill** addressing each by `ref`:
+   - Text inputs → `browser_type` (or `browser_fill_form` for batch)
+   - Selects → `browser_select_option`
+   - Checkboxes / radios → `browser_click`
+   - File uploads (resume) → `browser_file_upload` with the selected resume path (see Resume Selection in setup.md)
+   - Date fields → use the appropriate date format
+4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) that `form-fields.js` couldn't enumerate: narrowed `browser_snapshot` of just that widget's container to obtain a ref.
 
 ## Special Fields
 
-All field paths below refer to the response from `GET /api/profile` (already
-loaded by `shared/setup.md`).
+All paths refer to `GET /api/profile` (already loaded by setup.md).
 
-- **Address fields** -> use `data.profile.{street,aptUnit,city,state,zipCode,country}`
-- **Phone number** -> use `data.profile.phone`
-- **LinkedIn/GitHub/Website** -> use `data.profile.{linkedin,github,website}`
-- **Salary expectations** -> If `data.autopilot.salaryExpectation` is set, use that value. For radio buttons or dropdowns, select the option that best matches the configured value. If `salaryExpectation` is empty, ask the user (in autopilot mode: ask once on first encounter, remember for the rest of the run).
-- **Start date** -> "Immediately" or "2 weeks notice" unless configured otherwise in `data.autopilot.defaultStartDate`.
-- **Cover letter** -> Generate a tailored cover letter using `<cover-letter-command>` with the job description. The cover-letter skill already runs through the humanizer. Then determine the field type:
-  - **Text area** -> paste the cover letter text directly into the field.
-  - **File upload only** -> save the generated cover letter to `${JOBPILOT_WORKSPACE_ROOT}/cover-letter.txt` using the `Write` tool, then use `browser_file_upload` to upload that file. Reuse the same file path for each application (it gets overwritten each time).
-- **"How did you hear about us?"** -> "Job board" or "Company website" as appropriate.
-- **Years of experience** -> Calculate from the earliest work experience date in the resume.
-- **Custom questions** -> Use best judgment from the candidate's resume. If genuinely uncertain, ask the user (in autopilot mode: make a reasonable attempt and log it in notes).
-- **Relocation** -> Use `data.profile.willingToRelocate` to answer "Are you willing to relocate?" questions. If the form asks for preferred or target locations, use `data.profile.preferredLocations`. If empty `[]` or contains `"Anywhere"`, the user is open to any location answer accordingly without asking.
-- **Work authorization / visa sponsorship** -> Use `data.profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map these directly to the corresponding form questions. If the field is a dropdown, select the closest matching option.
-- **EEO/Diversity questions** -> Use `data.profile.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. If a specific field is null, default to "Prefer not to disclose".
+- **Address** → `data.profile.{street,aptUnit,city,state,zipCode,country}`
+- **Phone** → `data.profile.phone`
+- **LinkedIn / GitHub / Website** → `data.profile.{linkedin,github,website}`
+- **Salary expectations** → `data.autopilot.salaryExpectation` if set. For radios/dropdowns, pick the closest match. If empty, ask the user (autopilot: once on first encounter, remember).
+- **Start date** → "Immediately" or "2 weeks notice" unless `data.autopilot.defaultStartDate` overrides.
+- **Cover letter** → generate via `<cover-letter-command>` (already humanized). Then:
+  - Text area → paste the text directly.
+  - File-upload only → `Write` to `${JOBPILOT_WORKSPACE_ROOT}/cover-letter.txt` and `browser_file_upload`. Reuse the same path each time (overwritten).
+- **"How did you hear about us?"** → "Job board" or "Company website".
+- **Years of experience** → calculate from earliest work experience date.
+- **Custom questions** → best judgment from the resume. Genuinely uncertain → ask (autopilot: make a reasonable attempt and log in notes).
+- **Relocation** → `data.profile.willingToRelocate`. For preferred/target locations, use `data.profile.preferredLocations`. Empty `[]` or contains `"Anywhere"` → user is open, answer accordingly without asking.
+- **Work auth / visa** → `data.profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map to form questions; for dropdowns, pick the closest option.
+- **EEO / Diversity** → `data.profile.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. Null → "Prefer not to disclose".
 
 ## Multi-Page Navigation
 
-Many applications have multiple steps (e.g., "Personal Info" -> "Experience" -> "Education" -> "Review"):
-
-1. After filling each page, look for "Next", "Continue", or "Save & Continue" buttons.
-2. Click to proceed to the next step.
-3. Repeat the form filling process for each new page.
-4. **Re-run `form-fields.js`** after filling each page to verify values landed, before clicking Next.
+1. After filling each page, find "Next" / "Continue" / "Save & Continue" and click.
+2. Repeat the fill process on each new page.
+3. **Re-run `form-fields.js`** on each page to verify values landed before clicking Next.
