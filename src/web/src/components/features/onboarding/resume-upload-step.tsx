@@ -16,17 +16,11 @@ import { useToast } from "@/providers/notification-provider";
 import type { ResumeDto } from "@/types/api";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
-const EXTRACT_SLOW_AFTER_MS = 2 * 60 * 1000;
+type StepState = "idle" | "uploading" | "extracting" | "done";
 
 interface ResumeUploadStepProps {
   form: AnyReactForm;
   onContinue: () => void;
-}
-
-type StepState = "idle" | "uploading" | "extracting" | "slow" | "done";
-
-function isWaitingForExtraction(state: StepState): boolean {
-  return state === "extracting" || state === "slow";
 }
 
 export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
@@ -36,9 +30,12 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
   const agent = useAgent();
   const [state, setState] = useState<StepState>("idle");
   const [resumeId, setResumeId] = useState<number | null>(null);
-  const [injectError, setInjectError] = useState<string | null>(null);
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  const appliedRef = useRef(false);
+
+  const startExtraction = async (id: number): Promise<void> => {
+    setState("extracting");
+    await agent.injectSkill("extract-resume", String(id));
+  };
 
   const upload = useApiMutation<{ id: number }, File>(
     (file) => {
@@ -52,29 +49,28 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
       onSuccess: ({ id }) => {
         setResumeId(id);
         form.setFieldValue("primaryResumeId", id);
-        startExtraction(id);
+        void startExtraction(id);
       },
     },
   );
 
   const applyExtractedBasics = async (id: number): Promise<void> => {
-    if (!isWaitingForExtraction(stateRef.current)) {
+    if (appliedRef.current) {
       return;
     }
     const { data } = await apiClient.get<ResumeDto>(`/api/resumes/${id}`);
-    if (!isWaitingForExtraction(stateRef.current)) {
+    const basics = data?.content?.basics;
+    if (appliedRef.current || !basics || basics.name.trim().length === 0) {
       return;
     }
-    const basics = data?.content?.basics;
-    if (basics && basics.name.trim().length > 0) {
-      applyBasicsToForm(form, basics);
-      setState("done");
-      onContinue();
-    }
+    appliedRef.current = true;
+    applyBasicsToForm(form, basics);
+    setState("done");
+    onContinue();
   };
 
   useEventSource<ResumeEvent>(
-    resumeId !== null && isWaitingForExtraction(state) ? `/api/resumes/${resumeId}/events` : null,
+    resumeId !== null && state === "extracting" ? `/api/resumes/${resumeId}/events` : null,
     {
       onMessage: (event) => {
         if (event.type === "content.updated") {
@@ -84,39 +80,14 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
     },
   );
 
-  useEffect(() => {
-    if (state !== "extracting" || resumeId === null) {
-      return;
-    }
-
-    // Handle the race where extraction completed before the EventSource opened.
-    void applyExtractedBasics(resumeId);
-
-    const slowTimer = setTimeout(() => {
-      setState((s) => (s === "extracting" ? "slow" : s));
-    }, EXTRACT_SLOW_AFTER_MS);
-
-    return () => clearTimeout(slowTimer);
-  }, [state, resumeId]);
-
-  const startExtraction = async (id: number): Promise<void> => {
-    setInjectError(null);
-    setState("extracting");
-
-    try {
-      await agent.injectSkill("extract-resume", String(id));
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setInjectError(message);
-    }
-  };
-
   const retryInject = async (): Promise<void> => {
     if (resumeId === null) {
       return;
     }
     await startExtraction(resumeId);
   };
+
+  const isExtracting = state === "extracting";
 
   return (
     <Stack spacing={2}>
@@ -138,29 +109,16 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
           upload.mutate(f);
         }}
         onError={(msg) => toast.error(msg)}
-        disabled={isWaitingForExtraction(state)}
+        disabled={isExtracting}
       />
 
-      {state === "extracting" && (
-        <Alert
-          icon={<CircularProgress size={18} />}
-          severity="info"
-          variant="outlined"
-          action={
-            resumeId !== null && (
-              <Button color="inherit" size="small" onClick={() => retryInject()}>
-                Retry
-              </Button>
-            )
-          }
-        >
-          {injectError
-            ? `Couldn't start the extractor: ${injectError}. Open the dock's Terminal tab, then retry.`
-            : "Reading your resume in the terminal fields will autofill when it finishes."}
+      {isExtracting && (
+        <Alert icon={<CircularProgress size={18} />} severity="info" variant="outlined">
+          Reading your resume in the terminal fields will autofill when it finishes.
         </Alert>
       )}
 
-      {state === "slow" && (
+      {isExtracting && (
         <Alert
           severity="warning"
           icon={<HourglassEmpty fontSize="md" />}
@@ -187,10 +145,10 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
       )}
 
       <Stack direction="row" spacing={1.5} sx={{ justifyContent: "flex-end" }}>
-        <Button variant="text" onClick={onContinue} disabled={state === "extracting"}>
+        <Button variant="text" onClick={onContinue} disabled={isExtracting && !slow}>
           Skip &mdash; fill manually
         </Button>
-        {(state === "slow" || state === "done") && (
+        {(isExtracting || state === "done") && (
           <Button variant="contained" onClick={onContinue}>
             Continue
           </Button>
