@@ -1,11 +1,13 @@
 ﻿import type { Prisma } from "@/generated/prisma/client";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { parseQueryParams } from "@/lib/api/request";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/matching";
 import { logApplicationSchema } from "@/lib/schemas/application";
 
 export async function GET(req: Request) {
+  const profileId = await getActiveProfileId();
   const { stage, board, source, search } = parseQueryParams(req, [
     "stage",
     "board",
@@ -13,10 +15,17 @@ export async function GET(req: Request) {
     "search",
   ] as const);
 
-  const where: Prisma.ApplicationWhereInput = {};
-  if (stage) where.stage = stage;
-  if (board) where.board = board;
-  if (source) where.source = source;
+  const where: Prisma.ApplicationWhereInput = { profileId };
+
+  if (stage) {
+    where.stage = stage;
+  }
+  if (board) {
+    where.board = board;
+  }
+  if (source) {
+    where.source = source;
+  }
   if (search) {
     where.OR = [
       { title: { contains: search } },
@@ -34,6 +43,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const profileId = await getActiveProfileId();
   const body = await req.json();
   const parsed = logApplicationSchema.safeParse(body);
 
@@ -45,6 +55,7 @@ export async function POST(req: Request) {
   try {
     const application = await db.application.create({
       data: {
+        profileId,
         url: data.url,
         title: data.title,
         company: data.company,

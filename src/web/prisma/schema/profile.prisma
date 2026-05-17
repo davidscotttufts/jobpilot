@@ -1,5 +1,6 @@
 model Profile {
-  id        Int    @id @default(1)
+  id        Int    @id @default(autoincrement())
+  isActive  Boolean @default(false)
   firstName String
   lastName  String
   email     String
@@ -29,17 +30,25 @@ model Profile {
   eeoVeteranStatus    String?
   eeoDisabilityStatus String?
 
-  primaryResumeId Int?    @unique
-  primaryResume   Resume? @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
+  primaryResumeId Int?     @unique
+  primaryResume   Resume?  @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
   resumes         Resume[]
 
-  autopilot AutopilotSettings?
+  autopilot     AutopilotSettings?
+  applications  Application[]
+  runs          Run[]
+  credentials   Credential[]
+  jobBoards     JobBoard[]
+  queueEntries  QueueEntry[]
+  emailAccount  EmailAccount?
 
   updatedAt DateTime @updatedAt
+
+  @@index([isActive])
 }
 
 model AutopilotSettings {
-  id                    Int     @id @default(1)
+  id                    Int     @id @default(autoincrement())
   profileId             Int     @unique
   profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   minMatchScore         Int     @default(70)

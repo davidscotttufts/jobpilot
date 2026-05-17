@@ -8,6 +8,27 @@ files. Set this once near the top of any skill that needs config:
 JOBPILOT_API=http://localhost:8000
 ```
 
+## Active profile resolution
+
+The API automatically resolves the active profile for every request — no profile
+id needs to be threaded through. Resolution order:
+
+1. HTTP cookie `jobpilot_active_profile` (browser only).
+2. The profile with `isActive: true` in the database (persisted server-side, set
+   when the user picks a profile in the UI switcher).
+3. The first profile by id (fallback).
+
+To inspect the active profile id from a skill:
+
+```bash
+curl -fsS "$JOBPILOT_API/api/profiles/active"
+```
+
+Returns `{ data: { profileId } }`. All other endpoints (`/api/profile`,
+`/api/resumes`, `/api/applied`, `/api/runs`, `/api/queue`, `/api/credentials`,
+`/api/job-boards`, `/api/email/*`) already filter by the active profile — call
+them as before.
+
 ## 1. Verify the web app is running
 
 Run a health check before doing anything else:

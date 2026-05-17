@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { scanMessageSchema } from "@/lib/schemas/email";
@@ -13,8 +14,9 @@ export async function GET(_req: Request, ctx: Params) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
 
-  const message = await db.emailMessage.findUnique({
-    where: { id: msgId },
+  const profileId = await getActiveProfileId();
+  const message = await db.emailMessage.findFirst({
+    where: { id: msgId, account: { profileId } },
     include: {
       matchedApp: { select: { id: true, title: true, company: true, stage: true } },
     },
@@ -36,6 +38,15 @@ export async function PATCH(req: Request, ctx: Params) {
   const parsed = scanMessageSchema.safeParse(body);
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid scan payload", 422, parsed.error.issues);
+  }
+
+  const profileId = await getActiveProfileId();
+  const owned = await db.emailMessage.findFirst({
+    where: { id: msgId, account: { profileId } },
+    select: { id: true },
+  });
+  if (!owned) {
+    return err(ErrorCodes.NOT_FOUND, "Message not found", 404);
   }
 
   const data = parsed.data;

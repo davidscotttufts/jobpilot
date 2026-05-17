@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { runEventSchema } from "@/lib/schemas/run";
@@ -8,7 +9,11 @@ type Params = ApiRouteContext<{ id: string }>;
 
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await parsePathParams(ctx);
-  const run = await db.run.findUnique({ where: { runId: id }, select: { runId: true } });
+  const profileId = await getActiveProfileId();
+  const run = await db.run.findFirst({
+    where: { runId: id, profileId },
+    select: { runId: true },
+  });
 
   if (!run) {
     return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
@@ -26,6 +31,15 @@ export async function GET(_req: Request, ctx: Params) {
 
 export async function POST(req: Request, ctx: Params) {
   const { id } = await parsePathParams(ctx);
+  const profileId = await getActiveProfileId();
+  const run = await db.run.findFirst({
+    where: { runId: id, profileId },
+    select: { runId: true },
+  });
+  if (!run) {
+    return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
+  }
+
   const body = await req.json();
   const parsed = runEventSchema.safeParse(body);
 

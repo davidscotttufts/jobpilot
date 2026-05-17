@@ -1,9 +1,10 @@
 ﻿import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
-import { MAX_RESUME_BYTES, PROFILE_ID } from "@/lib/constants";
+import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { db } from "@/lib/db";
 import {
   deleteResumeFile,
@@ -24,8 +25,9 @@ export async function GET(_req: Request, ctx: Params) {
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
+  const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
   if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
   if (!resume.sourceFilename) {
@@ -55,8 +57,9 @@ export async function POST(req: Request, ctx: Params) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
 
+  const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
   if (!resume) {
     return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
@@ -97,8 +100,9 @@ export async function DELETE(_req: Request, ctx: Params) {
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
+  const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
   if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
 

@@ -1,11 +1,15 @@
-﻿import { ok } from "@/lib/api/response";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 
 export async function GET() {
-  const account = await db.emailAccount.findUnique({ where: { id: 1 } });
+  const profileId = await getActiveProfileId();
+  const account = await db.emailAccount.findUnique({ where: { profileId } });
+
   if (!account) {
     return ok({ connected: false });
   }
+
   return ok({
     connected: true,
     provider: account.provider,
@@ -15,6 +19,7 @@ export async function GET() {
 }
 
 export async function DELETE() {
-  await db.emailAccount.deleteMany({ where: { id: 1 } });
+  const profileId = await getActiveProfileId();
+  await db.emailAccount.deleteMany({ where: { profileId } });
   return ok({ disconnected: true });
 }

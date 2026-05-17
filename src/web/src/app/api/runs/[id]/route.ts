@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { updateRunSchema } from "@/lib/schemas/run";
@@ -8,8 +9,9 @@ type Params = ApiRouteContext<{ id: string }>;
 
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await parsePathParams(ctx);
-  const run = await db.run.findUnique({
-    where: { runId: id },
+  const profileId = await getActiveProfileId();
+  const run = await db.run.findFirst({
+    where: { runId: id, profileId },
     include: { jobs: { orderBy: { id: "asc" } } },
   });
   if (!run) return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
@@ -29,7 +31,8 @@ export async function PATCH(req: Request, ctx: Params) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid run patch", 422, parsed.error.issues);
   }
 
-  const existing = await db.run.findUnique({ where: { runId: id } });
+  const profileId = await getActiveProfileId();
+  const existing = await db.run.findFirst({ where: { runId: id, profileId } });
 
   if (!existing) {
     return err(ErrorCodes.NOT_FOUND, "Run not found", 404);

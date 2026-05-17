@@ -1,5 +1,6 @@
 ﻿import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
@@ -24,11 +25,12 @@ export async function GET(req: Request) {
 
   const provider = getProvider(providerName);
   const { tokens, email } = await provider.exchangeCode(code);
+  const profileId = await getActiveProfileId();
 
   await db.emailAccount.upsert({
-    where: { id: 1 },
+    where: { profileId },
     create: {
-      id: 1,
+      profileId,
       provider: providerName,
       email,
       accessToken: tokens.accessToken,

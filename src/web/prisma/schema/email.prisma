@@ -1,5 +1,7 @@
 model EmailAccount {
-  id             Int       @id @default(1)
+  id             Int       @id @default(autoincrement())
+  profileId      Int       @unique
+  profile        Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   provider       String
   email          String
   accessToken    String?

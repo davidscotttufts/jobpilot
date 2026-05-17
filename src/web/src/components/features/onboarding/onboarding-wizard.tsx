@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
-import { useState, type ReactElement, type SubmitEvent } from "react";
-import { Button, Stack, Step, StepLabel, Stepper } from "@mui/material";
+import { useEffect, useRef, useState, type ReactElement, type SubmitEvent } from "react";
+import { Alert, Button, CircularProgress, Stack, Step, StepLabel, Stepper } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   AddressSection,
@@ -32,16 +33,54 @@ const STEPS = [
   { key: "autopilot", label: "Autopilot" },
 ] as const;
 
-export function OnboardingWizard(): ReactElement {
+interface OnboardingWizardProps {
+  isNewProfile: boolean;
+}
+
+export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
+  const { isNewProfile } = props;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
+  const [bootstrapped, setBootstrapped] = useState(false);
+
+  const bootstrapRef = useRef(false);
+
+  const createProfile = useApiMutation<{ id: number }, void>(() =>
+    apiClient.post<{ id: number }>("/api/profiles", {}),
+  );
+
+  const setActive = useApiMutation<{ profileId: number }, number>(
+    (profileId) => apiClient.post("/api/profiles/active", { profileId }),
+    { invalidate: [queryKeys.profiles.all] },
+  );
+
+  useEffect(() => {
+    if (bootstrapRef.current) {
+      return;
+    }
+    bootstrapRef.current = true;
+
+    const bootstrap = async (): Promise<void> => {
+      const { id } = await createProfile.mutateAsync();
+      await setActive.mutateAsync(id);
+      setBootstrapped(true);
+      bootstrapRef.current = false;
+    };
+
+    bootstrap();
+  }, [createProfile, setActive]);
 
   const save = useApiMutation<{ id: number }, ProfileWithAutopilotInput>(
     (vars) => apiClient.put("/api/profile", vars),
     {
-      successMessage: "Profile created",
-      invalidate: [queryKeys.profile.all],
-      onSuccess: () => router.push("/settings"),
+      successMessage: isNewProfile ? "Profile created" : "Profile saved",
+      invalidate: [queryKeys.profile.all, queryKeys.profiles.all],
+      onSuccess: () => {
+        queryClient.invalidateQueries();
+        router.refresh();
+        router.push(isNewProfile ? "/" : "/settings");
+      },
     },
   );
 
@@ -64,6 +103,14 @@ export function OnboardingWizard(): ReactElement {
 
   const formApi = form as unknown as AnyReactForm;
   const isLastStep = step === STEPS.length - 1;
+
+  if (!bootstrapped) {
+    return (
+      <Stack sx={{ py: 6, alignItems: "center" }}>
+        <CircularProgress size={28} />
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={3}>
@@ -89,7 +136,7 @@ export function OnboardingWizard(): ReactElement {
                   Back
                 </Button>
                 <Button type="submit" variant="contained" disabled={save.isPending}>
-                  {isLastStep ? (save.isPending ? "Savingâ€¦" : "Finish") : "Next"}
+                  {isLastStep ? (save.isPending ? "Saving…" : "Finish") : "Next"}
                 </Button>
               </Stack>
             )}

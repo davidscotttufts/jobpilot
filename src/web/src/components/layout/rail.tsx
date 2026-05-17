@@ -3,6 +3,7 @@
 import { Suspense, type ReactElement } from "react";
 import { Box, Stack } from "@mui/material";
 import NextLink from "next/link";
+import { ProfileSwitcher } from "@/components/features/profile/profile-switcher";
 import { NavGroup } from "./nav-group";
 import { APP_TITLE, navGroups, RAIL_WIDTH } from "./shell-config";
 
@@ -83,6 +84,7 @@ export function Rail(): ReactElement {
           ))}
         </Suspense>
       </Box>
+      <ProfileSwitcher />
     </Stack>
   );
 }

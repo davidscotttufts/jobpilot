@@ -1,6 +1,6 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
-import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeVariantPatchSchema } from "@/lib/schemas/resume";
 import type { ResumeVariantDto } from "@/types/api";
@@ -13,8 +13,9 @@ function parseId(raw: string): number | null {
 }
 
 async function loadOwned(id: number) {
+  const profileId = await getActiveProfileId();
   return db.resumeVariant.findFirst({
-    where: { id, resume: { profileId: PROFILE_ID } },
+    where: { id, resume: { profileId } },
     include: { resume: { select: { label: true } } },
   });
 }

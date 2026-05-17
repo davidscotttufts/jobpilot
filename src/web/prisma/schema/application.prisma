@@ -1,6 +1,8 @@
 model Application {
   id        Int      @id @default(autoincrement())
-  url       String   @unique
+  profileId Int
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  url       String
   title     String
   company   String
   location  String?
@@ -27,6 +29,8 @@ model Application {
   normalizedTitle   String
   normalizedCompany String
 
+  @@unique([profileId, url])
+  @@index([profileId])
   @@index([normalizedTitle, normalizedCompany])
   @@index([appliedAt])
   @@index([runId])

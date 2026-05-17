@@ -1,4 +1,5 @@
-﻿import { ok } from "@/lib/api/response";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import type {
   OverviewPerDayEntry,
@@ -34,6 +35,7 @@ function isoDateKey(d: Date): string {
 }
 
 export async function GET() {
+  const profileId = await getActiveProfileId();
   const weekStart = startOfWeek();
   const timelineStart = startOfTimeline();
 
@@ -52,40 +54,46 @@ export async function GET() {
     boardGroupRows,
     failReasonRows,
   ] = await Promise.all([
-    db.application.count(),
-    db.application.count({ where: { stage: "applied" } }),
-    db.application.count({ where: { stage: { notIn: [...NON_INTERVIEWING_STAGES] } } }),
-    db.application.count({ where: { stage: "offer" } }),
-    db.application.count({ where: { stage: "rejected" } }),
-    db.queueEntry.count({ where: { status: "pending" } }),
-    db.application.count({ where: { stage: "applied", appliedAt: { gte: weekStart } } }),
+    db.application.count({ where: { profileId } }),
+    db.application.count({ where: { profileId, stage: "applied" } }),
+    db.application.count({
+      where: { profileId, stage: { notIn: [...NON_INTERVIEWING_STAGES] } },
+    }),
+    db.application.count({ where: { profileId, stage: "offer" } }),
+    db.application.count({ where: { profileId, stage: "rejected" } }),
+    db.queueEntry.count({ where: { profileId, status: "pending" } }),
+    db.application.count({
+      where: { profileId, stage: "applied", appliedAt: { gte: weekStart } },
+    }),
     db.application.count({
       where: {
+        profileId,
         stage: { notIn: [...NON_INTERVIEWING_STAGES] },
         appliedAt: { gte: weekStart },
       },
     }),
     db.application.count({
-      where: { stage: "rejected", appliedAt: { gte: weekStart } },
+      where: { profileId, stage: "rejected", appliedAt: { gte: weekStart } },
     }),
     db.application.groupBy({
       by: ["stage"],
+      where: { profileId },
       _count: { _all: true },
     }),
     db.application.findMany({
-      where: { appliedAt: { gte: timelineStart } },
+      where: { profileId, appliedAt: { gte: timelineStart } },
       select: { appliedAt: true },
     }),
     db.application.groupBy({
       by: ["board"],
-      where: { board: { not: null } },
+      where: { profileId, board: { not: null } },
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
       take: 5,
     }),
     db.runJob.groupBy({
       by: ["failReason"],
-      where: { failReason: { not: null } },
+      where: { failReason: { not: null }, run: { profileId } },
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
       take: 5,
@@ -98,17 +106,20 @@ export async function GET() {
   }));
 
   const perDayMap = new Map<string, number>();
+
   for (let i = 0; i < DAYS_IN_TIMELINE; i++) {
     const d = new Date(timelineStart);
     d.setDate(d.getDate() + i);
     perDayMap.set(isoDateKey(d), 0);
   }
+
   for (const row of timelineRows) {
     const key = isoDateKey(row.appliedAt);
     if (perDayMap.has(key)) {
       perDayMap.set(key, (perDayMap.get(key) ?? 0) + 1);
     }
   }
+
   const perDay: OverviewPerDayEntry[] = Array.from(perDayMap.entries()).map(([date, count]) => ({
     date,
     count,

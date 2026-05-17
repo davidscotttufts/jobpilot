@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { addRunJobSchema } from "@/lib/schemas/run";
@@ -8,8 +9,9 @@ type Params = ApiRouteContext<{ id: string }>;
 
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await parsePathParams(ctx);
+  const profileId = await getActiveProfileId();
   const jobs = await db.runJob.findMany({
-    where: { runId: id },
+    where: { runId: id, run: { profileId } },
     orderBy: { id: "asc" },
   });
   return ok(jobs);
@@ -24,7 +26,8 @@ export async function POST(req: Request, ctx: Params) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid run job payload", 422, parsed.error.issues);
   }
 
-  const existing = await db.run.findUnique({ where: { runId: id } });
+  const profileId = await getActiveProfileId();
+  const existing = await db.run.findFirst({ where: { runId: id, profileId } });
   if (!existing) {
     return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
   }

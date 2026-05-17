@@ -1,12 +1,14 @@
 ﻿import type { Prisma } from "@/generated/prisma/client";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { createRunSchema } from "@/lib/schemas/run";
 
 export async function GET(req: Request) {
+  const profileId = await getActiveProfileId();
   const { status, source } = parseQueryParams(req, ["status", "source"] as const);
-  const where: Prisma.RunWhereInput = {};
+  const where: Prisma.RunWhereInput = { profileId };
   if (status) where.status = status;
   if (source) where.source = source;
   const runs = await db.run.findMany({
@@ -24,6 +26,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const profileId = await getActiveProfileId();
   const body = await req.json();
   const parsed = createRunSchema.safeParse(body);
 
@@ -37,6 +40,7 @@ export async function POST(req: Request) {
     const run = await db.run.create({
       data: {
         runId: data.runId,
+        profileId,
         query: data.query,
         source: data.source,
         config: JSON.stringify(data.config ?? {}),

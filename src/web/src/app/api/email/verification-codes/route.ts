@@ -1,8 +1,10 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
+  const profileId = await getActiveProfileId();
   const { domain, sinceMinutes: sinceMinutesRaw } = parseQueryParams(req, [
     "domain",
     "sinceMinutes",
@@ -20,6 +22,7 @@ export async function GET(req: Request) {
       classification: "verification",
       verificationDomain: domain,
       receivedAt: { gte: cutoff },
+      account: { profileId },
     },
     orderBy: { receivedAt: "desc" },
   });

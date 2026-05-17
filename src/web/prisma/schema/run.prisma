@@ -1,5 +1,7 @@
 model Run {
   runId       String    @id
+  profileId   Int
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
   query       String
   source      String
   status      String    @default("in_progress")
@@ -12,6 +14,8 @@ model Run {
   jobs         RunJob[]
   events       RunEvent[]
   applications Application[]
+
+  @@index([profileId])
 }
 
 model RunJob {

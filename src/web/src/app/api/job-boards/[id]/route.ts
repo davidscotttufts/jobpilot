@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { jobBoardPatchSchema } from "@/lib/schemas/job-board";
@@ -20,18 +21,20 @@ export async function PATCH(req: Request, ctx: Params) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid patch", 422, parsed.error.issues);
   }
 
-  try {
-    const board = await db.jobBoard.update({
-      where: { id: boardId },
-      data: parsed.data,
-    });
-    return ok(board);
-  } catch (e) {
-    if ((e as { code?: string }).code === "P2025") {
-      return err(ErrorCodes.NOT_FOUND, "Board not found", 404);
-    }
-    throw e;
+  const profileId = await getActiveProfileId();
+  const existing = await db.jobBoard.findFirst({
+    where: { id: boardId, profileId },
+    select: { id: true },
+  });
+  if (!existing) {
+    return err(ErrorCodes.NOT_FOUND, "Board not found", 404);
   }
+
+  const board = await db.jobBoard.update({
+    where: { id: boardId },
+    data: parsed.data,
+  });
+  return ok(board);
 }
 
 export async function DELETE(_req: Request, ctx: Params) {
@@ -40,13 +43,16 @@ export async function DELETE(_req: Request, ctx: Params) {
   if (!Number.isInteger(boardId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
-  try {
-    await db.jobBoard.delete({ where: { id: boardId } });
-    return ok({ deleted: boardId });
-  } catch (e) {
-    if ((e as { code?: string }).code === "P2025") {
-      return err(ErrorCodes.NOT_FOUND, "Board not found", 404);
-    }
-    throw e;
+
+  const profileId = await getActiveProfileId();
+  const existing = await db.jobBoard.findFirst({
+    where: { id: boardId, profileId },
+    select: { id: true },
+  });
+  if (!existing) {
+    return err(ErrorCodes.NOT_FOUND, "Board not found", 404);
   }
+
+  await db.jobBoard.delete({ where: { id: boardId } });
+  return ok({ deleted: boardId });
 }

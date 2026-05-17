@@ -1,6 +1,6 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
-import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeVariantCreateSchema } from "@/lib/schemas/resume";
 import type { ResumeVariantListItem } from "@/types/api";
@@ -19,8 +19,9 @@ export async function GET(_req: Request, ctx: Params) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
 
+  const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
-    where: { id: resumeId, profileId: PROFILE_ID },
+    where: { id: resumeId, profileId },
     select: { id: true },
   });
   if (!resume) {
@@ -51,8 +52,9 @@ export async function POST(req: Request, ctx: Params) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
 
+  const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
-    where: { id: resumeId, profileId: PROFILE_ID },
+    where: { id: resumeId, profileId },
     select: { id: true },
   });
   if (!resume) {

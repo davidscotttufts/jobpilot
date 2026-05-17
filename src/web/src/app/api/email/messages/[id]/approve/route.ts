@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { approveSchema } from "@/lib/schemas/email";
@@ -34,7 +35,10 @@ export async function POST(req: Request, ctx: Params) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid approve payload", 422, parsed.error.issues);
   }
 
-  const message = await db.emailMessage.findUnique({ where: { id: msgId } });
+  const profileId = await getActiveProfileId();
+  const message = await db.emailMessage.findFirst({
+    where: { id: msgId, account: { profileId } },
+  });
   if (!message) return err(ErrorCodes.NOT_FOUND, "Message not found", 404);
   if (!message.matchedAppId) {
     return err(ErrorCodes.UNPROCESSABLE, "Message has no matched application", 422);
@@ -48,7 +52,9 @@ export async function POST(req: Request, ctx: Params) {
     return err(ErrorCodes.UNPROCESSABLE, "No target stage available", 422);
   }
 
-  const app = await db.application.findUnique({ where: { id: message.matchedAppId } });
+  const app = await db.application.findFirst({
+    where: { id: message.matchedAppId, profileId },
+  });
   if (!app) return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
 
   const fromStage = app.stage;

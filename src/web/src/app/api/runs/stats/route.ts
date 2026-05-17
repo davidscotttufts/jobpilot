@@ -1,4 +1,5 @@
-﻿import { ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import type { RunDto, RunStatsDto } from "@/types/api";
 
@@ -32,16 +33,18 @@ function rowToDto(r: RunRow): RunDto {
 }
 
 export async function GET() {
+  const profileId = await getActiveProfileId();
   const [runs, byBoardRows, failReasonRows] = await Promise.all([
-    db.run.findMany({ orderBy: { startedAt: "desc" } }),
+    db.run.findMany({ where: { profileId }, orderBy: { startedAt: "desc" } }),
     db.runJob.groupBy({
       by: ["board"],
+      where: { run: { profileId } },
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
     }),
     db.runJob.groupBy({
       by: ["failReason"],
-      where: { failReason: { not: null } },
+      where: { failReason: { not: null }, run: { profileId } },
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
       take: 10,
@@ -51,6 +54,7 @@ export async function GET() {
   let totalApplied = 0;
   let totalFailed = 0;
   let totalSkipped = 0;
+
   for (const r of runs) {
     const s = JSON.parse(r.summary) as SummaryShape;
     totalApplied += s.applied ?? 0;

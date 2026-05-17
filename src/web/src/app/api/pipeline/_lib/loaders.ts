@@ -8,6 +8,7 @@ export function emptyPage(stage: PipelineStage): PipelineColumnPage {
 }
 
 export async function loadQueued(
+  profileId: number,
   cursor: number | null,
   limit: number,
   filters: PipelineFilters,
@@ -16,7 +17,7 @@ export async function loadQueued(
     return emptyPage("queued");
   }
 
-  const baseWhere = { status: "pending" } as const;
+  const baseWhere = { profileId, status: "pending" } as const;
   const searchWhere = filters.search
     ? {
         OR: [{ url: { contains: filters.search } }, { note: { contains: filters.search } }],
@@ -37,12 +38,13 @@ export async function loadQueued(
 }
 
 export async function loadApplying(
+  profileId: number,
   cursor: number | null,
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
-    run: { status: "in_progress" },
+    run: { status: "in_progress", profileId },
     status: { notIn: ["applied", "failed", "skipped"] },
     ...(filters.board ? { board: filters.board } : {}),
     ...(filters.matchMin != null ? { matchScore: { gte: filters.matchMin } } : {}),
@@ -70,21 +72,24 @@ export async function loadApplying(
 }
 
 export function loadSubmitted(
+  profileId: number,
   cursor: number | null,
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
-  return loadApplicationStage("submitted", "applied", cursor, limit, filters, {
+  return loadApplicationStage(profileId, "submitted", "applied", cursor, limit, filters, {
     extraSearchFields: ["url"],
   });
 }
 
 export function loadInterviewing(
+  profileId: number,
   cursor: number | null,
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
   return loadApplicationStage(
+    profileId,
     "interviewing",
     { notIn: ["applied", "rejected", "withdrawn"] },
     cursor,
@@ -96,6 +101,7 @@ export function loadInterviewing(
 type ApplicationStageFilter = string | { notIn: string[] };
 
 async function loadApplicationStage(
+  profileId: number,
   stage: PipelineStage,
   stageFilter: ApplicationStageFilter,
   cursor: number | null,
@@ -104,6 +110,7 @@ async function loadApplicationStage(
   opts: { extraSearchFields?: ("url")[] } = {},
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
+    profileId,
     stage: stageFilter,
     ...(filters.board ? { board: filters.board } : {}),
     ...(filters.matchMin != null ? { matchScore: { gte: filters.matchMin } } : {}),

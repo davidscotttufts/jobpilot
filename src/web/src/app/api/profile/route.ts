@@ -1,13 +1,22 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+import { getActiveProfileIdOrNull } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { profileWithAutopilotSchema } from "@/lib/schemas/profile";
 import { resumePath } from "@/lib/storage";
 
-const SINGLETON_ID = 1;
-
 export async function GET() {
+  const id = await getActiveProfileIdOrNull();
+  if (id === null) {
+    return ok({
+      profile: null,
+      autopilot: null,
+      primaryResumeSourceAbsolutePath: null,
+      resumes: [],
+    });
+  }
+
   const profile = await db.profile.findUnique({
-    where: { id: SINGLETON_ID },
+    where: { id },
     include: {
       primaryResume: true,
       resumes: {
@@ -57,6 +66,11 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
+  const id = await getActiveProfileIdOrNull();
+  if (id === null) {
+    return err(ErrorCodes.UNPROCESSABLE, "No active profile. Create one via POST /api/profiles.", 422);
+  }
+
   const body = await req.json();
   const parsed = profileWithAutopilotSchema.safeParse(body);
 
@@ -67,15 +81,9 @@ export async function PUT(req: Request) {
   const { autopilot, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
   const preferredLocationsJson = JSON.stringify(preferredLocations);
 
-  const profile = await db.profile.upsert({
-    where: { id: SINGLETON_ID },
-    create: {
-      id: SINGLETON_ID,
-      ...profileFields,
-      preferredLocations: preferredLocationsJson,
-      primaryResumeId: primaryResumeId ?? null,
-    },
-    update: {
+  await db.profile.update({
+    where: { id },
+    data: {
       ...profileFields,
       preferredLocations: preferredLocationsJson,
       primaryResumeId: primaryResumeId ?? null,
@@ -84,10 +92,9 @@ export async function PUT(req: Request) {
 
   if (autopilot) {
     await db.autopilotSettings.upsert({
-      where: { profileId: SINGLETON_ID },
+      where: { profileId: id },
       create: {
-        id: SINGLETON_ID,
-        profileId: SINGLETON_ID,
+        profileId: id,
         ...autopilot,
         skipCompanies: JSON.stringify(autopilot.skipCompanies),
         skipTitleKeywords: JSON.stringify(autopilot.skipTitleKeywords),
@@ -100,5 +107,5 @@ export async function PUT(req: Request) {
     });
   }
 
-  return ok({ id: profile.id });
+  return ok({ id });
 }

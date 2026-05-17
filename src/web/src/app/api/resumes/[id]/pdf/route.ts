@@ -1,8 +1,8 @@
 ﻿import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
-import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { renderResumePdf } from "@/lib/pdf/render";
 import type { ResumeData } from "@/lib/schemas/resume";
@@ -35,12 +35,18 @@ async function streamFile(filePath: string, mime: string, downloadName: string):
 export async function GET(_req: Request, ctx: Params) {
   const { id: rawId } = await parsePathParams(ctx);
   const id = parseId(rawId);
-  if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
+  if (id === null) {
+    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  }
+
+  const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
-  if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  if (!resume) {
+    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  }
 
   const slug = slugifyForDownload(resume.label);
 

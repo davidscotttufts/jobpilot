@@ -1,8 +1,8 @@
 ﻿import { writeFile } from "node:fs/promises";
 import { z } from "zod/v4";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
-import { PROFILE_ID } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
 import {
@@ -24,12 +24,13 @@ export async function GET(_req: Request, ctx: Params) {
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
+  const profileId = await getActiveProfileId();
   const profile = await db.profile.findUnique({
-    where: { id: PROFILE_ID },
+    where: { id: profileId },
     select: { primaryResumeId: true },
   });
   const resume = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
   if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
 
@@ -68,8 +69,9 @@ export async function PUT(req: Request, ctx: Params) {
     return err(ErrorCodes.INVALID_REQUEST, "label or data required", 400);
   }
 
+  const profileId = await getActiveProfileId();
   const existing = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
   if (!existing) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
 
@@ -99,13 +101,14 @@ export async function DELETE(_req: Request, ctx: Params) {
   const id = parseId(rawId);
   if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
 
+  const profileId = await getActiveProfileId();
   const existing = await db.resume.findFirst({
-    where: { id, profileId: PROFILE_ID },
+    where: { id, profileId },
   });
   if (!existing) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
 
   await db.profile.updateMany({
-    where: { id: PROFILE_ID, primaryResumeId: id },
+    where: { id: profileId, primaryResumeId: id },
     data: { primaryResumeId: null },
   });
 

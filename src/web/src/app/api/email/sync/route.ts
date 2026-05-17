@@ -1,10 +1,12 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { getProvider } from "@/lib/email";
 import { publishInboxEvent } from "@/lib/sse/inbox-events";
 
 export async function POST() {
-  const account = await db.emailAccount.findUnique({ where: { id: 1 } });
+  const profileId = await getActiveProfileId();
+  const account = await db.emailAccount.findUnique({ where: { profileId } });
   if (!account) {
     return err(ErrorCodes.NOT_FOUND, "No email account connected", 404);
   }
@@ -17,7 +19,7 @@ export async function POST() {
     try {
       const refreshed = await provider.refresh(active.refreshToken);
       active = await db.emailAccount.update({
-        where: { id: 1 },
+        where: { id: active.id },
         data: {
           accessToken: refreshed.accessToken,
           refreshToken: refreshed.refreshToken ?? active.refreshToken,
@@ -57,13 +59,15 @@ export async function POST() {
       });
       inserted += 1;
     } catch (e) {
-      if ((e as { code?: string }).code === "P2002") continue;
+      if ((e as { code?: string }).code === "P2002") {
+        continue;
+      }
       throw e;
     }
   }
 
   await db.emailAccount.update({
-    where: { id: 1 },
+    where: { id: active.id },
     data: {
       historyId: result.historyId ?? active.historyId,
       lastSyncAt: new Date(),

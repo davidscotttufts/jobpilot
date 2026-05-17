@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import {
   emptyPage,
   loadApplying,
@@ -14,18 +15,19 @@ export async function GET(req: Request) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid or missing 'stage' parameter", 400);
   }
 
+  const profileId = await getActiveProfileId();
   const { stage, cursor, limit, filters } = query;
 
   switch (stage) {
     case "discovered":
       return ok(emptyPage("discovered"));
     case "queued":
-      return ok(await loadQueued(cursor, limit, filters));
+      return ok(await loadQueued(profileId, cursor, limit, filters));
     case "applying":
-      return ok(await loadApplying(cursor, limit, filters));
+      return ok(await loadApplying(profileId, cursor, limit, filters));
     case "submitted":
-      return ok(await loadSubmitted(cursor, limit, filters));
+      return ok(await loadSubmitted(profileId, cursor, limit, filters));
     case "interviewing":
-      return ok(await loadInterviewing(cursor, limit, filters));
+      return ok(await loadInterviewing(profileId, cursor, limit, filters));
   }
 }

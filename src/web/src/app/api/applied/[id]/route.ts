@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 
@@ -12,8 +13,9 @@ export async function GET(_req: Request, ctx: Params) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
 
-  const application = await db.application.findUnique({
-    where: { id: appId },
+  const profileId = await getActiveProfileId();
+  const application = await db.application.findFirst({
+    where: { id: appId, profileId },
     include: {
       stageEvents: { orderBy: { occurredAt: "asc" } },
     },
@@ -30,13 +32,16 @@ export async function DELETE(_req: Request, ctx: Params) {
   if (!Number.isInteger(appId)) {
     return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
   }
-  try {
-    await db.application.delete({ where: { id: appId } });
-    return ok({ deleted: appId });
-  } catch (e) {
-    if ((e as { code?: string }).code === "P2025") {
-      return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
-    }
-    throw e;
+
+  const profileId = await getActiveProfileId();
+  const existing = await db.application.findFirst({
+    where: { id: appId, profileId },
+    select: { id: true },
+  });
+  if (!existing) {
+    return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
   }
+
+  await db.application.delete({ where: { id: appId } });
+  return ok({ deleted: appId });
 }

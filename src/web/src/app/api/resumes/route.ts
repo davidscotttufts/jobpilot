@@ -1,22 +1,24 @@
-﻿import { writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod/v4";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { MAX_RESUME_BYTES, PROFILE_ID } from "@/lib/constants";
+import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
 import { ensureResumesDir, generateResumeFilename } from "@/lib/storage";
 import type { ResumeListItem } from "@/types/api";
 
 export async function GET() {
+  const profileId = await getActiveProfileId();
   const profile = await db.profile.findUnique({
-    where: { id: PROFILE_ID },
+    where: { id: profileId },
     select: { primaryResumeId: true },
   });
   const primaryId = profile?.primaryResumeId ?? null;
 
   const resumes = await db.resume.findMany({
-    where: { profileId: PROFILE_ID },
+    where: { profileId },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { variants: true } } },
   });
@@ -42,6 +44,7 @@ const jsonCreateSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const profileId = await getActiveProfileId();
   const contentType = req.headers.get("content-type") ?? "";
 
   if (contentType.includes("multipart/form-data")) {
@@ -65,15 +68,9 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     await writeFile(path.join(dir, filename), buffer);
 
-    await db.profile.upsert({
-      where: { id: PROFILE_ID },
-      create: { id: PROFILE_ID, firstName: "", lastName: "", email: "" },
-      update: {},
-    });
-
     const resume = await db.resume.create({
       data: {
-        profileId: PROFILE_ID,
+        profileId,
         label,
         sourceFilename: filename,
         sourceMimeType: file.type || "application/pdf",
@@ -81,20 +78,15 @@ export async function POST(req: Request) {
       },
     });
 
-    const isFirst = (await db.resume.count({ where: { profileId: PROFILE_ID } })) === 1;
+    const isFirst = (await db.resume.count({ where: { profileId } })) === 1;
     if (isFirst) {
       await db.profile.update({
-        where: { id: PROFILE_ID },
+        where: { id: profileId },
         data: { primaryResumeId: resume.id },
       });
     }
 
     return ok({ id: resume.id }, { status: 201 });
-  }
-
-  const profileExists = await db.profile.findUnique({ where: { id: PROFILE_ID } });
-  if (!profileExists) {
-    return err(ErrorCodes.UNPROCESSABLE, "Profile not initialized; complete onboarding first", 422);
   }
 
   const body = await req.json();
@@ -105,7 +97,7 @@ export async function POST(req: Request) {
 
   const resume = await db.resume.create({
     data: {
-      profileId: PROFILE_ID,
+      profileId,
       label: parsed.data.label,
       data: parsed.data.data ? JSON.stringify(parsed.data.data) : null,
     },

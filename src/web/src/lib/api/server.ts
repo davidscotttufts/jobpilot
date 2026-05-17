@@ -1,5 +1,5 @@
 import "server-only";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 interface ApiOk<T> {
   data: T;
@@ -33,7 +33,17 @@ async function resolveApiUrl(path: string): Promise<string> {
  */
 export async function apiGet<T>(path: string): Promise<ApiOk<T> | ApiNotFound> {
   const url = await resolveApiUrl(path);
-  const res = await fetch(url, { cache: "no-store" });
+  const jar = await cookies();
+
+  const cookie = jar
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
+
+  const res = await fetch(url, {
+    cache: "no-store",
+    headers: cookie ? { cookie } : undefined,
+  });
 
   if (res.status === 404) {
     return { data: null, status: 404 };

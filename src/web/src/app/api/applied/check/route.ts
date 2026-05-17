@@ -1,4 +1,5 @@
-﻿import { ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { ok } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import {
@@ -9,13 +10,16 @@ import {
 import type { DuplicateCheckResult } from "@/types/api";
 
 export async function GET(req: Request) {
+  const profileId = await getActiveProfileId();
   const query = parseQueryParams(req, ["url", "title", "company"] as const);
   const targetUrl = query.url?.trim();
   const title = query.title?.trim();
   const company = query.company?.trim();
 
   if (targetUrl) {
-    const exact = await db.application.findUnique({ where: { url: targetUrl } });
+    const exact = await db.application.findUnique({
+      where: { profileId_url: { profileId, url: targetUrl } },
+    });
     if (exact) {
       const result: DuplicateCheckResult = {
         applied: true,
@@ -42,7 +46,7 @@ export async function GET(req: Request) {
   if (title && company) {
     const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
     const candidates = await db.application.findMany({
-      where: { appliedAt: { gte: cutoff } },
+      where: { profileId, appliedAt: { gte: cutoff } },
       select: {
         id: true,
         url: true,

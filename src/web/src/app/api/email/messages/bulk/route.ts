@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { bulkActionSchema } from "@/lib/schemas/email";
 import { publishInboxEvent } from "@/lib/sse/inbox-events";
@@ -12,9 +13,10 @@ export async function POST(req: Request) {
 
   const { ids, action } = parsed.data;
   const status = action === "approve" ? "approved" : "denied";
+  const profileId = await getActiveProfileId();
 
   await db.emailMessage.updateMany({
-    where: { id: { in: ids } },
+    where: { id: { in: ids }, account: { profileId } },
     data: { reviewStatus: status },
   });
 

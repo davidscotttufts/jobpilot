@@ -1,4 +1,5 @@
-﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
+﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { patchRunJobSchema } from "@/lib/schemas/run";
@@ -15,8 +16,9 @@ export async function PATCH(req: Request, ctx: Params) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid run job patch", 422, parsed.error.issues);
   }
 
-  const existing = await db.runJob.findUnique({
-    where: { runId_jobKey: { runId: id, jobKey } },
+  const profileId = await getActiveProfileId();
+  const existing = await db.runJob.findFirst({
+    where: { runId: id, jobKey, run: { profileId } },
   });
 
   if (!existing) {

@@ -1,21 +1,21 @@
 ﻿import type { Prisma } from "@/generated/prisma/client";
-import { ok } from "@/lib/api/response";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { parseQueryParams } from "@/lib/api/request";
+import { ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 
 export async function GET(req: Request) {
-  const { reviewStatus, classification, since, domainHint, verificationDomain } =
-    parseQueryParams(req, [
-      "reviewStatus",
-      "classification",
-      "since",
-      "domainHint",
-      "verificationDomain",
-    ] as const);
+  const profileId = await getActiveProfileId();
+  const { reviewStatus, classification, since, domainHint, verificationDomain } = parseQueryParams(
+    req,
+    ["reviewStatus", "classification", "since", "domainHint", "verificationDomain"] as const,
+  );
 
-  const where: Prisma.EmailMessageWhereInput = {};
+  const where: Prisma.EmailMessageWhereInput = { account: { profileId } };
 
-  if (reviewStatus) where.reviewStatus = reviewStatus;
+  if (reviewStatus) {
+    where.reviewStatus = reviewStatus;
+  }
   if (classification === "null") {
     where.classification = null;
   } else if (classification) {
