@@ -20,3 +20,5 @@ dist/
 # Canonical source lives at src/jobpilot-skills/skills/.
 src/jobpilot-claude-plugin/skills/
 src/jobpilot-codex-plugin/skills/
+
+resume.json

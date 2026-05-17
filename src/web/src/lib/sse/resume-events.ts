@@ -1,6 +1,5 @@
+import type { ResumeEvent } from "./resume-events.types";
 import { createSseBroker } from "./sse-broker";
-
-export type ResumeEvent = { type: "content.updated"; resumeId: number; version: number };
 
 const resumeEvents = createSseBroker<ResumeEvent>();
 

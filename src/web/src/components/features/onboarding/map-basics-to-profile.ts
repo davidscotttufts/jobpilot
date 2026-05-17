@@ -1,5 +1,6 @@
 import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import type { ResumeBasics } from "@/lib/schemas/resume";
+import { normalizeLinkUrl } from "@/utils/url";
 
 export function applyBasicsToForm(form: AnyReactForm, basics: ResumeBasics): void {
   const [firstName, lastName] = splitName(basics.name);
@@ -8,9 +9,9 @@ export function applyBasicsToForm(form: AnyReactForm, basics: ResumeBasics): voi
   setIfEmpty(form, "lastName", lastName);
   setIfEmpty(form, "email", basics.email);
   setIfEmpty(form, "phone", basics.phone);
-  setIfEmpty(form, "website", basics.website);
-  setIfEmpty(form, "linkedin", basics.linkedin);
-  setIfEmpty(form, "github", basics.github);
+  setIfEmpty(form, "website", basics.website && normalizeLinkUrl(basics.website));
+  setIfEmpty(form, "linkedin", basics.linkedin && normalizeLinkUrl(basics.linkedin));
+  setIfEmpty(form, "github", basics.github && normalizeLinkUrl(basics.github));
 
   const { city, state } = parseLocation(basics.location);
   setIfEmpty(form, "city", city);

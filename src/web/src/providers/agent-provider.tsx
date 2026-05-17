@@ -13,33 +13,11 @@ import {
   DOCK_MAX_EXPANDED,
   DOCK_MIN_EXPANDED,
 } from "@/components/layout/shell-config";
-import {
-  formatSkillCommand,
-  getStatus,
-  injectCommand,
-  type TerminalProviderId,
-} from "@/lib/terminal";
+import { formatSkillCommand, injectCommand, type TerminalProviderId } from "@/lib/terminal";
 import { useToast } from "@/providers/notification-provider";
 
 const TERMINAL_PROVIDER_KEY = "jobpilot.terminal.provider";
 const DOCK_WIDTH_KEY = "jobpilot.dock.width";
-
-const SESSION_WAIT_TIMEOUT_MS = 15_000;
-const SESSION_POLL_INTERVAL_MS = 200;
-
-async function waitForRunningSession(): Promise<boolean> {
-  const deadline = Date.now() + SESSION_WAIT_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    try {
-      const status = await getStatus();
-      if (status.session === "running") return true;
-    } catch {
-      // terminal service may not be up yet; keep polling until deadline
-    }
-    await new Promise((r) => setTimeout(r, SESSION_POLL_INTERVAL_MS));
-  }
-  return false;
-}
 
 function getProvider(): TerminalProviderId {
   if (typeof window === "undefined") return "claude";
@@ -48,6 +26,10 @@ function getProvider(): TerminalProviderId {
 
 function clampWidth(value: number): number {
   return Math.max(DOCK_MIN_EXPANDED, Math.min(DOCK_MAX_EXPANDED, Math.round(value)));
+}
+
+async function wait(timeoutMs: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, timeoutMs));
 }
 
 export interface AgentContextValue {
@@ -112,19 +94,10 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     window.localStorage.setItem(DOCK_WIDTH_KEY, String(next));
   };
 
-  const ensureSessionReady = async (): Promise<boolean> => {
-    setExpanded(true);
-    const ready = await waitForRunningSession();
-    if (!ready) {
-      toast.error("Terminal session didn't start in time. Open the Terminal tab and try again.");
-    }
-    return ready;
-  };
-
   const handleInject = async (command: string) => {
-    if (!(await ensureSessionReady())) {
-      return;
-    }
+    setExpanded(true);
+    await wait(2000);
+
     try {
       await injectCommand(command, provider);
     } catch (error) {
@@ -133,9 +106,9 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   };
 
   const handleInjectSkill = async (skill: string, args?: string) => {
-    if (!(await ensureSessionReady())) {
-      return;
-    }
+    setExpanded(true);
+    await wait(2000);
+
     try {
       await injectCommand(formatSkillCommand(provider, skill, args), provider);
     } catch (error) {

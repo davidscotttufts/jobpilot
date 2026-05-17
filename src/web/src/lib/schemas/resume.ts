@@ -1,12 +1,15 @@
 import { z } from "zod/v4";
+import { normalizeLinkUrl } from "@/utils/url";
+
+const linkUrl = z.string().transform(normalizeLinkUrl).optional();
 
 export const resumeBasicsSchema = z.object({
   name: z.string().min(1, "Required"),
   email: z.union([z.email(), z.literal("")]).optional(),
   phone: z.string().optional(),
-  website: z.string().optional(),
-  linkedin: z.string().optional(),
-  github: z.string().optional(),
+  website: linkUrl,
+  linkedin: linkUrl,
+  github: linkUrl,
   location: z.string().optional(),
 });
 
@@ -21,7 +24,7 @@ export const resumeExperienceSchema = z.object({
 
 export const resumeProjectSchema = z.object({
   name: z.string().min(1, "Required"),
-  url: z.string().optional(),
+  url: linkUrl,
   description: z.string().optional(),
   bullets: z.array(z.string()).default([]),
   keywords: z.array(z.string()).default([]),
