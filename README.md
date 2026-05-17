@@ -40,7 +40,8 @@ runs the JobPilot provider skills against real job boards via Playwright.
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
 bun install
-bun run start   # web :8000 + terminal :8001 (auto-runs migrations + seed)
+bun run db:setup # Creates the SQLite database, runs migrations, and seeds initial data
+bun run dev   # web :8000 + terminal :8001
 ```
 
 Open `http://localhost:8000` and toggle the Terminal panel.
