@@ -1,8 +1,8 @@
-﻿import { createReadStream } from "node:fs";
+import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { renderResumePdf } from "@/lib/pdf/render";
 import type { ResumeData } from "@/lib/schemas/resume";
@@ -10,16 +10,10 @@ import { ensureGeneratedDir, generatedVariantPath, slugifyForDownload } from "@/
 
 type Params = ApiRouteContext<{ id: string }>;
 
-function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
-}
-
 export async function GET(_req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const profileId = await getActiveProfileId();

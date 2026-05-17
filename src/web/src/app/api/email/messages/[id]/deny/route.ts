@@ -1,21 +1,20 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { publishInboxEvent } from "@/lib/sse/inbox-events";
 
 type Params = ApiRouteContext<{ id: string }>;
 
 export async function POST(_req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const msgId = Number(id);
-  if (!Number.isInteger(msgId)) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const profileId = await getActiveProfileId();
   const owned = await db.emailMessage.findFirst({
-    where: { id: msgId, account: { profileId } },
+    where: { id, account: { profileId } },
     select: { id: true },
   });
   if (!owned) {
@@ -23,11 +22,11 @@ export async function POST(_req: Request, ctx: Params) {
   }
 
   await db.emailMessage.update({
-    where: { id: msgId },
+    where: { id },
     data: { reviewStatus: "denied" },
   });
 
-  publishInboxEvent({ type: "message.reviewed", id: msgId, status: "denied" });
+  publishInboxEvent({ type: "message.reviewed", id, status: "denied" });
 
-  return ok({ id: msgId, status: "denied" });
+  return ok({ id, status: "denied" });
 }

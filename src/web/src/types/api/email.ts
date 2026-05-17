@@ -34,9 +34,3 @@ export interface SyncResultDto {
   fetched: number;
   new: number;
 }
-
-export interface VerificationCodeDto {
-  code: string | null;
-  link: string | null;
-  receivedAt: string;
-}

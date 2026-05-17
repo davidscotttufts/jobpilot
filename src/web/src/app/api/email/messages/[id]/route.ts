@@ -1,6 +1,6 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { scanMessageSchema } from "@/lib/schemas/email";
 import { publishInboxEvent } from "@/lib/sse/inbox-events";
@@ -8,15 +8,14 @@ import { publishInboxEvent } from "@/lib/sse/inbox-events";
 type Params = ApiRouteContext<{ id: string }>;
 
 export async function GET(_req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const msgId = Number(id);
-  if (!Number.isInteger(msgId)) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const profileId = await getActiveProfileId();
   const message = await db.emailMessage.findFirst({
-    where: { id: msgId, account: { profileId } },
+    where: { id, account: { profileId } },
     include: {
       matchedApp: { select: { id: true, title: true, company: true, stage: true } },
     },
@@ -28,21 +27,21 @@ export async function GET(_req: Request, ctx: Params) {
 }
 
 export async function PATCH(req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const msgId = Number(id);
-  if (!Number.isInteger(msgId)) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const body = await req.json();
   const parsed = scanMessageSchema.safeParse(body);
+
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid scan payload", 422, parsed.error.issues);
   }
 
   const profileId = await getActiveProfileId();
   const owned = await db.emailMessage.findFirst({
-    where: { id: msgId, account: { profileId } },
+    where: { id, account: { profileId } },
     select: { id: true },
   });
   if (!owned) {
@@ -51,7 +50,7 @@ export async function PATCH(req: Request, ctx: Params) {
 
   const data = parsed.data;
   const message = await db.emailMessage.update({
-    where: { id: msgId },
+    where: { id },
     data: {
       classification: data.classification,
       confidence: data.confidence,
@@ -67,7 +66,7 @@ export async function PATCH(req: Request, ctx: Params) {
     },
   });
 
-  publishInboxEvent({ type: "message.scanned", id: msgId });
+  publishInboxEvent({ type: "message.scanned", id });
 
   return ok(message);
 }

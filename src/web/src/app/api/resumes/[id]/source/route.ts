@@ -1,9 +1,9 @@
-﻿import { createReadStream } from "node:fs";
+import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { db } from "@/lib/db";
 import {
@@ -15,21 +15,20 @@ import {
 
 type Params = ApiRouteContext<{ id: string }>;
 
-function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
-}
-
 export async function GET(_req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
+  }
 
   const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
     where: { id, profileId },
   });
-  if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+
+  if (!resume) {
+    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  }
   if (!resume.sourceFilename) {
     return err(ErrorCodes.NOT_FOUND, "No source PDF uploaded", 404);
   }
@@ -51,10 +50,9 @@ export async function GET(_req: Request, ctx: Params) {
 }
 
 export async function POST(req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const profileId = await getActiveProfileId();
@@ -96,15 +94,18 @@ export async function POST(req: Request, ctx: Params) {
 }
 
 export async function DELETE(_req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
+  }
 
   const profileId = await getActiveProfileId();
   const resume = await db.resume.findFirst({
     where: { id, profileId },
   });
-  if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  if (!resume) {
+    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  }
 
   if (resume.sourceFilename) {
     await deleteResumeFile(resume.sourceFilename);

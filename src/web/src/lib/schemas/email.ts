@@ -28,11 +28,6 @@ export const scanMessageSchema = z.object({
   verificationDomain: z.string().optional().nullable(),
 });
 
-export const bulkActionSchema = z.object({
-  ids: z.array(z.number().int()).min(1),
-  action: z.enum(["approve", "deny"]),
-});
-
 export const approveSchema = z.object({
   toStage: z.string().min(1).optional(),
   note: z.string().optional().nullable(),
@@ -42,5 +37,4 @@ export type EmailProviderName = z.infer<typeof emailProviderSchema>;
 export type Classification = z.infer<typeof classificationSchema>;
 export type ReviewStatus = z.infer<typeof reviewStatusSchema>;
 export type ScanMessageInput = z.infer<typeof scanMessageSchema>;
-export type BulkActionInput = z.infer<typeof bulkActionSchema>;
 export type ApproveInput = z.infer<typeof approveSchema>;

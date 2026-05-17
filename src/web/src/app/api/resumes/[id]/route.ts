@@ -1,28 +1,20 @@
 ﻿import { writeFile } from "node:fs/promises";
 import { z } from "zod/v4";
 import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
-import {
-  deleteResumeFile,
-  ensureResumeBackupsDir,
-  resumeBackupPath,
-} from "@/lib/storage";
+import { deleteResumeFile, ensureResumeBackupsDir, resumeBackupPath } from "@/lib/storage";
 import type { ResumeDto } from "@/types/api";
 
 type Params = ApiRouteContext<{ id: string }>;
 
-function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
-}
-
 export async function GET(_req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
+  }
 
   const profileId = await getActiveProfileId();
   const profile = await db.profile.findUnique({
@@ -56,9 +48,10 @@ const putSchema = z.object({
 });
 
 export async function PUT(req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
+  }
 
   const body = await req.json();
   const parsed = putSchema.safeParse(body);
@@ -97,15 +90,18 @@ export async function PUT(req: Request, ctx: Params) {
 }
 
 export async function DELETE(_req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-  if (id === null) return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
+  }
 
   const profileId = await getActiveProfileId();
   const existing = await db.resume.findFirst({
     where: { id, profileId },
   });
-  if (!existing) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  if (!existing) {
+    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
+  }
 
   await db.profile.updateMany({
     where: { id: profileId, primaryResumeId: id },

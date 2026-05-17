@@ -1,5 +1,5 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
-import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { stageTransitionSchema } from "@/lib/schemas/application";
@@ -16,11 +16,9 @@ const POSITIVE_STAGES = new Set([
 ]);
 
 export async function POST(req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const appId = Number(id);
-
-  if (!Number.isInteger(appId)) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const body = await req.json();
@@ -31,7 +29,7 @@ export async function POST(req: Request, ctx: Params) {
   }
 
   const profileId = await getActiveProfileId();
-  const existing = await db.application.findFirst({ where: { id: appId, profileId } });
+  const existing = await db.application.findFirst({ where: { id, profileId } });
 
   if (!existing) {
     return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
@@ -41,7 +39,7 @@ export async function POST(req: Request, ctx: Params) {
   const toStage = parsed.data.toStage;
 
   if (fromStage === toStage) {
-    return ok({ id: appId, stage: toStage, unchanged: true });
+    return ok({ id, stage: toStage, unchanged: true });
   }
 
   const outcome =
@@ -50,12 +48,12 @@ export async function POST(req: Request, ctx: Params) {
 
   await db.$transaction([
     db.application.update({
-      where: { id: appId },
+      where: { id },
       data: { stage: toStage, outcome, rejectedAt },
     }),
     db.stageEvent.create({
       data: {
-        applicationId: appId,
+        applicationId: id,
         fromStage,
         toStage,
         note: parsed.data.note ?? null,
@@ -63,5 +61,5 @@ export async function POST(req: Request, ctx: Params) {
     }),
   ]);
 
-  return ok({ id: appId, stage: toStage });
+  return ok({ id, stage: toStage });
 }

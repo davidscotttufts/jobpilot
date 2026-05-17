@@ -1,7 +1,7 @@
 ﻿import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import { getActiveProfileId } from "@/lib/active-profile";
-import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { renderResumePdf } from "@/lib/pdf/render";
@@ -14,11 +14,6 @@ import {
 } from "@/lib/storage";
 
 type Params = ApiRouteContext<{ id: string }>;
-
-function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
-}
 
 async function streamFile(filePath: string, mime: string, downloadName: string): Promise<Response> {
   const stats = await stat(filePath);
@@ -33,11 +28,9 @@ async function streamFile(filePath: string, mime: string, downloadName: string):
 }
 
 export async function GET(_req: Request, ctx: Params) {
-  const { id: rawId } = await parsePathParams(ctx);
-  const id = parseId(rawId);
-
-  if (id === null) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const profileId = await getActiveProfileId();

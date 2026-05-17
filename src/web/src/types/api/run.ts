@@ -59,14 +59,3 @@ export interface RunEventDto {
 export interface RunDetailDto extends RunDto {
   jobs: RunJobDto[];
 }
-
-export interface RunStatsDto {
-  totalRuns: number;
-  totalApplied: number;
-  totalFailed: number;
-  totalSkipped: number;
-  successRate: number;
-  byBoard: { board: string; count: number }[];
-  failReasons: { reason: string; count: number }[];
-  recentRuns: RunDto[];
-}

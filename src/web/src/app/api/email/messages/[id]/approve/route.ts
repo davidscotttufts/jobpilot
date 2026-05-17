@@ -1,6 +1,6 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { getActiveProfileId } from "@/lib/active-profile";
+import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { approveSchema } from "@/lib/schemas/email";
 import { publishInboxEvent } from "@/lib/sse/inbox-events";
@@ -23,23 +23,26 @@ const CLASSIFICATION_TO_STAGE: Record<string, string> = {
 };
 
 export async function POST(req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const msgId = Number(id);
-  if (!Number.isInteger(msgId)) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid id", 400);
+  const { id, error } = await parseIdParam(ctx);
+  if (error) {
+    return error;
   }
 
   const body = await req.json().catch(() => ({}));
   const parsed = approveSchema.safeParse(body);
+
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid approve payload", 422, parsed.error.issues);
   }
 
   const profileId = await getActiveProfileId();
   const message = await db.emailMessage.findFirst({
-    where: { id: msgId, account: { profileId } },
+    where: { id, account: { profileId } },
   });
-  if (!message) return err(ErrorCodes.NOT_FOUND, "Message not found", 404);
+
+  if (!message) {
+    return err(ErrorCodes.NOT_FOUND, "Message not found", 404);
+  }
   if (!message.matchedAppId) {
     return err(ErrorCodes.UNPROCESSABLE, "Message has no matched application", 422);
   }
@@ -48,6 +51,7 @@ export async function POST(req: Request, ctx: Params) {
     parsed.data.toStage ??
     message.appliedStage ??
     (message.classification ? CLASSIFICATION_TO_STAGE[message.classification] : undefined);
+
   if (!inferred) {
     return err(ErrorCodes.UNPROCESSABLE, "No target stage available", 422);
   }
@@ -55,7 +59,9 @@ export async function POST(req: Request, ctx: Params) {
   const app = await db.application.findFirst({
     where: { id: message.matchedAppId, profileId },
   });
-  if (!app) return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
+  if (!app) {
+    return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
+  }
 
   const fromStage = app.stage;
   const toStage = inferred;
@@ -77,12 +83,12 @@ export async function POST(req: Request, ctx: Params) {
       },
     }),
     db.emailMessage.update({
-      where: { id: msgId },
+      where: { id },
       data: { reviewStatus: "approved", appliedStage: toStage },
     }),
   ]);
 
-  publishInboxEvent({ type: "message.reviewed", id: msgId, status: "approved" });
+  publishInboxEvent({ type: "message.reviewed", id, status: "approved" });
 
-  return ok({ id: msgId, applicationId: app.id, stage: toStage });
+  return ok({ id, applicationId: app.id, stage: toStage });
 }
