@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Delete, Launch } from "@mui/icons-material";
@@ -9,7 +9,7 @@ import { ConfirmDialog } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { Stage, StageTransitionInput } from "@/lib/schemas/application";
 import type { ApplicationDetailDto } from "@/types/api";
@@ -91,12 +91,12 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               )}
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
-              <Field label="Board" value={app.board ?? "—"} />
+              <Field label="Board" value={app.board ?? "â€”"} />
               <Field label="Source" value={app.source} />
-              <Field label="Location" value={app.location ?? "—"} />
+              <Field label="Location" value={app.location ?? "â€”"} />
               <Field
                 label="Match score"
-                value={app.matchScore !== null ? `${app.matchScore}/100` : "—"}
+                value={app.matchScore !== null ? `${app.matchScore}/100` : "â€”"}
               />
               <Field label="Applied at" value={new Date(app.appliedAt).toLocaleString()} />
               {app.runId && <Field label="Run" value={app.runId} />}

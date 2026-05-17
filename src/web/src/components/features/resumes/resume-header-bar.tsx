@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { resumePdfUrl } from "@/lib/api/resume-urls";
 import { useConfirm } from "@/providers/confirm-provider";

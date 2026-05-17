@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import type { ReactElement } from "react";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@/lib/schemas/resume";
 import type { ResumeDto } from "@/types/api";

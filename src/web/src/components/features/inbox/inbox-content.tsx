@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Button, LinearProgress } from "@mui/material";
@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/data/empty-state";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useEventSource } from "@/lib/sse/use-event-source";
 import type { EmailAccountStatus, EmailMessageDto } from "@/types/api";

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 
 interface NewResumeDialogProps {

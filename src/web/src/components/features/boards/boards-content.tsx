@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Delete, Edit } from "@mui/icons-material";
@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { JobBoardPatch } from "@/lib/schemas/job-board";
 import type { JobBoardDto } from "@/types/api";

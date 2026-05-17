@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import type { ReactElement } from "react";
 import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useRunEvents } from "@/hooks/use-run-events";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { RunStatus } from "@/lib/schemas/run";
 import type { RunDetailDto } from "@/types/api";
@@ -43,7 +43,7 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Chip size="small" label={run.status} color={STATUS_COLOR[run.status]} variant="outlined" />
         <Typography variant="body2Muted">
-          Source: {run.source} · Started {new Date(run.startedAt).toLocaleString()}
+          Source: {run.source} Â· Started {new Date(run.startedAt).toLocaleString()}
         </Typography>
       </Stack>
       <RunSummaryTiles run={run} />

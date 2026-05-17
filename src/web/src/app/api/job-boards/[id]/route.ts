@@ -1,4 +1,4 @@
-import { err, ErrorCodes, ok } from "@/lib/api";
+﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { jobBoardPatchSchema } from "@/lib/schemas/job-board";

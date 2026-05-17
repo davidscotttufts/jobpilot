@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { OverviewStatsDto, OverviewTopBoardEntry } from "@/types/api";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
@@ -23,7 +23,7 @@ export function OverviewView(): ReactElement {
   );
 
   if (query.isPending) {
-    return <Typography variant="body2Muted">Loading overview…</Typography>;
+    return <Typography variant="body2Muted">Loading overviewâ€¦</Typography>;
   }
 
   if (!query.data) {

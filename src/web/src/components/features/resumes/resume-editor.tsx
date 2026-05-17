@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
@@ -6,7 +6,7 @@ import { Box, Button, Stack } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { ResumeData } from "@/lib/schemas/resume";
 import { BasicsSection } from "./editor/basics-section";
@@ -60,7 +60,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
           onClick={() => save.mutate(data)}
           disabled={!dirty || save.isPending}
         >
-          {save.isPending ? "Saving…" : dirty ? "Save" : "Saved"}
+          {save.isPending ? "Savingâ€¦" : dirty ? "Save" : "Saved"}
         </Button>
       }
     >

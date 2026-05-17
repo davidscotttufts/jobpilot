@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
@@ -7,7 +7,7 @@ import { FileUpload } from "@/components/ui/form";
 import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useAgent } from "@/providers/agent-provider";
@@ -145,7 +145,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
         >
           {injectError
             ? `Couldn't start the extractor: ${injectError}. Open the dock's Terminal tab, then retry.`
-            : "Reading your resume in the terminal… fields will autofill when it finishes."}
+            : "Reading your resume in the terminalâ€¦ fields will autofill when it finishes."}
         </Alert>
       )}
 
@@ -165,7 +165,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
 
       {state === "done" && (
         <Alert severity="success" icon={<CheckCircle fontSize="md" />}>
-          Resume parsed. Moving on…
+          Resume parsed. Moving onâ€¦
         </Alert>
       )}
 

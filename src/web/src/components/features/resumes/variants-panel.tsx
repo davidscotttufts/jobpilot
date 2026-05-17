@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Delete, OpenInNew } from "@mui/icons-material";
@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { variantPdfUrl } from "@/lib/api/resume-urls";
 import type { ResumeVariantListItem } from "@/types/api";
@@ -78,7 +78,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                   )}
                 </Stack>
                 <Typography variant="captionMuted">
-                  {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
+                  {v.jobUrl ? `${v.jobUrl} Â· ` : ""}created{" "}
                   {new Date(v.createdAt).toLocaleDateString()}
                 </Typography>
               </Box>

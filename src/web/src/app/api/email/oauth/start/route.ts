@@ -1,6 +1,6 @@
-import { randomBytes } from "node:crypto";
+﻿import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { err, ErrorCodes } from "@/lib/api";
+import { err, ErrorCodes } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
 import { getProvider } from "@/lib/email";
 

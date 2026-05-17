@@ -137,7 +137,10 @@ commands.
 | `src/web/src/hooks/use-debounced-value.ts`                                  | Generic debounced-value hook (used by pipeline search).                 |
 | `src/web/src/lib/db.ts`                                                     | Prisma client singleton (libSQL adapter).                               |
 | `src/web/src/lib/terminal.ts`                                               | Terminal HTTP client (`startSession`, `injectCommand`, `killSession`).  |
-| `src/web/src/lib/api/api-server.ts`                                         | Server-side `apiGet<T>(path)` for RSC → own-API fetches.                |
+| `src/web/src/lib/api/response.ts`                                           | Route handler response helpers (`ok`, `err`, `ErrorCodes`).             |
+| `src/web/src/lib/api/client.ts`                                             | Browser fetch wrapper (`apiClient`, `ClientResult`).                    |
+| `src/web/src/lib/api/server.ts`                                             | Server-side `apiGet<T>(path)` for RSC → own-API fetches.                |
+| `src/web/src/lib/api/request.ts`                                            | Route handler request parsers (`parseQueryParams`, `parsePathParams`).  |
 | `src/web/src/lib/sse.ts`                                                    | In-process SSE broker.                                                  |
 | `src/web/src/lib/matching.ts`                                               | Jaro-Winkler fuzzy duplicate detection.                                 |
 | `src/web/src/lib/schemas/*.ts`                                              | Zod schemas (shared by API + form validators).                          |

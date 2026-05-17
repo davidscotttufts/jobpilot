@@ -1,6 +1,6 @@
 "use client";
 
-import type { ApiResponse } from "./api";
+import type { ApiResponse } from "./response";
 
 export type ClientResult<T> = { data: T | null; error: { code: string; message: string } | null };
 

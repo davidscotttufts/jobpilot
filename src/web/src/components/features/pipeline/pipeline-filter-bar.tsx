@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, type ChangeEvent, type ReactElement } from "react";
 import { Clear, Search } from "@mui/icons-material";
@@ -6,7 +6,7 @@ import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/ma
 import type { JobBoard } from "@/generated/prisma/client";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { usePipelineFilters } from "./use-pipeline-filters";
 
@@ -50,7 +50,7 @@ export function PipelineFilterBar(): ReactElement {
     >
       <TextField
         size="small"
-        placeholder="Search role, company, URL…"
+        placeholder="Search role, company, URLâ€¦"
         value={searchDraft}
         onChange={(e) => setSearchDraft(e.target.value)}
         slotProps={{

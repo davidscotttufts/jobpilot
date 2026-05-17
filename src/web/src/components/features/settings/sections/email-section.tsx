@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
@@ -6,7 +6,7 @@ import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { EmailAccountStatus } from "@/types/api";
 
@@ -30,7 +30,7 @@ export function EmailSection(): ReactElement {
   if (status.isLoading || !status.data) {
     return (
       <SectionCard title="Email integration" description="Connect a mailbox.">
-        <Typography variant="body2Muted">Loading…</Typography>
+        <Typography variant="body2Muted">Loadingâ€¦</Typography>
       </SectionCard>
     );
   }
@@ -50,7 +50,7 @@ export function EmailSection(): ReactElement {
               {data.email}
             </Typography>
             <Typography variant="captionMuted">
-              {data.provider} · last synced {last}
+              {data.provider} Â· last synced {last}
             </Typography>
           </Box>
           <Stack direction="row" spacing={1.5}>

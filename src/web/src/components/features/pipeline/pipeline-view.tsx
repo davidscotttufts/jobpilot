@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import type { ReactElement } from "react";
 import { Add, PlayArrow } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
 import { type PipelineColumnPage, type PipelineJobDto, type PipelineStage } from "@/types/api";
@@ -53,7 +53,7 @@ export function PipelineView(): ReactElement {
               Pipeline
             </Typography>
             <Typography variant="body2Muted" sx={{ mt: 0.5 }}>
-              {total} jobs · {submitted} submitted · {interviewing} interviewing
+              {total} jobs Â· {submitted} submitted Â· {interviewing} interviewing
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>

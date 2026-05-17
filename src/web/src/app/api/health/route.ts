@@ -1,4 +1,4 @@
-import { ok } from "@/lib/api";
+﻿import { ok } from "@/lib/api/response";
 
 const VERSION = "2.0.0";
 

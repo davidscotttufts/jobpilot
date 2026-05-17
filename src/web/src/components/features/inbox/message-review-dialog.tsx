@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, type ReactElement } from "react";
 import {
@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { ApplicationDto, EmailMessageDto } from "@/types/api";
 
@@ -96,7 +96,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>{m?.subject ?? "Loading…"}</DialogTitle>
+      <DialogTitle>{m?.subject ?? "Loadingâ€¦"}</DialogTitle>
       <DialogContent dividers>
         {m ? (
           <Stack spacing={2}>
@@ -104,9 +104,9 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {m.fromName || m.fromAddress}
               </Typography>
-              <Typography variant="captionMuted">·</Typography>
+              <Typography variant="captionMuted">Â·</Typography>
               <Typography variant="captionMuted">{m.fromDomain}</Typography>
-              <Typography variant="captionMuted">·</Typography>
+              <Typography variant="captionMuted">Â·</Typography>
               <Typography variant="captionMuted">
                 {new Date(m.receivedAt).toLocaleString()}
               </Typography>
@@ -123,7 +123,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
             <Autocomplete<ApplicationDto>
               size="small"
               options={appOptions.data ?? []}
-              getOptionLabel={(o) => `${o.title} — ${o.company}`}
+              getOptionLabel={(o) => `${o.title} â€” ${o.company}`}
               value={matchedApp}
               onChange={(_, v) => {
                 setMatchedApp(v);
@@ -151,7 +151,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
             </Box>
           </Stack>
         ) : (
-          <Typography variant="body2Muted">Loading…</Typography>
+          <Typography variant="body2Muted">Loadingâ€¦</Typography>
         )}
       </DialogContent>
       <DialogActions>

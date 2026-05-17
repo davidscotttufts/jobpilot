@@ -1,4 +1,4 @@
-import { err, ErrorCodes, ok } from "@/lib/api";
+﻿import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { jobBoardSchema } from "@/lib/schemas/job-board";
 

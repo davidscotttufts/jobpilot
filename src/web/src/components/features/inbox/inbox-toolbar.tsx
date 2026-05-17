@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
 import { Button, Chip, Stack } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
 import type { SyncResultDto } from "@/types/api";
@@ -49,7 +49,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
         onClick={() => sync.mutate(undefined as unknown as void)}
         disabled={sync.isPending}
       >
-        {sync.isPending ? "Syncing…" : "Sync"}
+        {sync.isPending ? "Syncingâ€¦" : "Sync"}
       </Button>
       <Button
         size="small"

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
@@ -9,7 +9,7 @@ import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { resumePdfUrl } from "@/lib/api/resume-urls";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -131,7 +131,7 @@ export function ResumeListViewer(): ReactElement {
                   )}
                 </Stack>
                 <Typography variant="captionMuted">
-                  {r.sourceFilename ?? "no source PDF"} · updated{" "}
+                  {r.sourceFilename ?? "no source PDF"} Â· updated{" "}
                   {new Date(r.updatedAt).toLocaleDateString()}
                 </Typography>
               </Box>

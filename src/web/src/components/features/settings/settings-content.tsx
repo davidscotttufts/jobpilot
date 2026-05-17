@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
@@ -8,7 +8,7 @@ import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
@@ -172,7 +172,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
               startIcon={<Save fontSize="md" />}
               disabled={save.isPending}
             >
-              {save.isPending ? "Saving…" : "Save settings"}
+              {save.isPending ? "Savingâ€¦" : "Save settings"}
             </Button>
           </Stack>
         </Stack>

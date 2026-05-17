@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { ReactElement } from "react";
 import { Delete, PictureAsPdf } from "@mui/icons-material";
@@ -6,7 +6,7 @@ import { Box, IconButton, Stack, Typography } from "@mui/material";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useToast } from "@/providers/notification-provider";

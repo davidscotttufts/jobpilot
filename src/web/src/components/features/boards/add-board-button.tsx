@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { JobBoardInput } from "@/lib/schemas/job-board";
 import type { JobBoardDto } from "@/types/api";

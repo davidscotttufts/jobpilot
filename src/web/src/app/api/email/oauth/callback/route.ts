@@ -1,6 +1,6 @@
-import { cookies } from "next/headers";
+﻿import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { err, ErrorCodes } from "@/lib/api";
+import { err, ErrorCodes } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { getProvider } from "@/lib/email";

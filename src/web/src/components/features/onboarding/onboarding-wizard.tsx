@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, type ReactElement } from "react";
 import { Button, Stack, Step, StepLabel, Stepper } from "@mui/material";
@@ -14,7 +14,7 @@ import {
 import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api-client";
+import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
@@ -91,7 +91,7 @@ export function OnboardingWizard(): ReactElement {
                   Back
                 </Button>
                 <Button type="submit" variant="contained" disabled={save.isPending}>
-                  {isLastStep ? (save.isPending ? "Saving…" : "Finish") : "Next"}
+                  {isLastStep ? (save.isPending ? "Savingâ€¦" : "Finish") : "Next"}
                 </Button>
               </Stack>
             )}

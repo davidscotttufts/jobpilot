@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useMutation,
@@ -6,7 +6,7 @@ import {
   type UseMutationOptions,
   type UseMutationResult,
 } from "@tanstack/react-query";
-import type { ClientResult } from "@/lib/api-client";
+import type { ClientResult } from "@/lib/api/client";
 import { useToast } from "@/providers/notification-provider";
 
 type MutationFn<TData, TVariables> = (vars: TVariables) => Promise<ClientResult<TData>>;
