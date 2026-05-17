@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, type ReactElement } from "react";
+import { useState, type ReactElement, type SubmitEvent } from "react";
 import { Button, Stack, Step, StepLabel, Stepper } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ const STEPS = [
 
 export function OnboardingWizard(): ReactElement {
   const router = useRouter();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
 
   const save = useApiMutation<{ id: number }, ProfileWithAutopilotInput>(
     (vars) => apiClient.put("/api/profile", vars),
@@ -53,6 +53,15 @@ export function OnboardingWizard(): ReactElement {
     },
   });
 
+  const submitForm = (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isLastStep) {
+      form.handleSubmit();
+    } else {
+      setStep((s) => s + 1);
+    }
+  };
+
   const formApi = form as unknown as AnyReactForm;
   const isLastStep = step === STEPS.length - 1;
 
@@ -66,28 +75,17 @@ export function OnboardingWizard(): ReactElement {
         ))}
       </Stepper>
       <SectionCard>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (isLastStep) form.handleSubmit();
-            else setStep((s) => s + 1);
-          }}
-        >
+        <form onSubmit={submitForm}>
           <Stack spacing={3}>
-            {step === 0 && (
-              <ResumeUploadStep form={formApi} onContinue={() => setStep(1)} />
-            )}
-            {step === 1 && <PersonalSection form={formApi} />}
-            {step === 2 && <AddressSection form={formApi} />}
-            {step === 3 && <WorkAuthSection form={formApi} />}
-            {step === 4 && <EeoSection form={formApi} />}
-            {step === 5 && <AutopilotSection form={formApi} />}
-            {step !== 0 && (
+            {step === 1 && <ResumeUploadStep form={formApi} onContinue={() => setStep(2)} />}
+            {step === 2 && <PersonalSection form={formApi} />}
+            {step === 3 && <AddressSection form={formApi} />}
+            {step === 4 && <WorkAuthSection form={formApi} />}
+            {step === 5 && <EeoSection form={formApi} />}
+            {step === 6 && <AutopilotSection form={formApi} />}
+            {step !== 1 && (
               <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => setStep((s) => Math.max(0, s - 1))}
-                >
+                <Button variant="outlined" onClick={() => setStep((s) => Math.max(1, s - 1))}>
                   Back
                 </Button>
                 <Button type="submit" variant="contained" disabled={save.isPending}>

@@ -27,6 +27,7 @@ type StepState = "idle" | "uploading" | "extracting" | "done" | "timeout";
 
 export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
   const { form, onContinue } = props;
+
   const toast = useToast();
   const agent = useAgent();
   const [state, setState] = useState<StepState>("idle");
@@ -105,6 +106,13 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
       const message = e instanceof Error ? e.message : String(e);
       setInjectError(message);
     }
+  };
+
+  const retryInject = async (): Promise<void> => {
+    if (resumeId === null) {
+      return;
+    }
+    await startExtraction(resumeId);
   };
 
   return (
@@ -187,9 +195,4 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
       </Stack>
     </Stack>
   );
-
-  async function retryInject(): Promise<void> {
-    if (resumeId === null) return;
-    await startExtraction(resumeId);
-  }
 }
