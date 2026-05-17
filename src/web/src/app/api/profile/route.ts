@@ -40,7 +40,7 @@ export async function GET() {
     id: r.id,
     label: r.label,
     sourceFilename: r.sourceFilename,
-    hasData: r.data !== null,
+    hasData: r.content !== null,
     variantCount: r._count.variants,
     isPrimary: r.id === profile.primaryResumeId,
     updatedAt: r.updatedAt.toISOString(),

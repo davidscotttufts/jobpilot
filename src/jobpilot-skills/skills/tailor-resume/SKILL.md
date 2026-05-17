@@ -38,11 +38,11 @@ Let `BASE_ID` be the chosen id.
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
-If `data` is `null`, delegate to extract-resume so the logic stays in one place:
+If `content` is `null`, delegate to extract-resume so the logic stays in one place:
 
 > Run `<extract-resume-command> $BASE_ID` and wait for it to finish.
 
-Refetch the base row afterward — Step 4 needs the saved `data`. If extract-resume stops because there's no `sourceFilename`, surface the same message and stop.
+Refetch the base row afterward — Step 4 needs the saved `content`. If extract-resume stops because there's no `sourceFilename`, surface the same message and stop.
 
 Skip this step when `hasData: true`.
 
@@ -52,12 +52,12 @@ Skip this step when `hasData: true`.
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
-For each variant `v`, fetch `curl -fsS "$JOBPILOT_API/api/resumes/variants/$v.id"`. Compute keyword overlap between the JD's required tech and `v.data.skills` + project keywords + summary.
+For each variant `v`, fetch `curl -fsS "$JOBPILOT_API/api/resumes/variants/$v.id"`. Compute keyword overlap between the JD's required tech and `v.content.skills` + project keywords + summary.
 
 **Reuse criteria** (ALL must hold):
 
 - Same role family as the JD.
-- ≥70% of the JD's top-10 keywords appear in the variant's `data`.
+- ≥70% of the JD's top-10 keywords appear in the variant's `content`.
 - Seniority hint (summary tone, bullet scope) matches.
 
 If any variant qualifies:
@@ -97,7 +97,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/variants" \
     "label": "Acme — Senior Frontend Engineer",
     "jobUrl": "https://...",
     "applicationId": null,
-    "data": { ... },
+    "content": { ... },
     "diffNotes": "Surfaced React/Next.js/TypeScript keywords ..."
   }'
 ```

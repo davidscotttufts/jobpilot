@@ -9,7 +9,7 @@ model Resume {
   sourceMimeType  String?
   sourceSizeBytes Int?
 
-  data    String?
+  content String?
   version Int     @default(1)
 
   variants   ResumeVariant[]
@@ -31,7 +31,7 @@ model ResumeVariant {
   applicationId Int?
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
-  data      String
+  content   String
   diffNotes String?
 
   createdAt DateTime @default(now())

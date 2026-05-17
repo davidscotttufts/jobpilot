@@ -30,7 +30,7 @@ export async function GET(_req: Request, ctx: Params) {
     id: resume.id,
     profileId: resume.profileId,
     label: resume.label,
-    data: resume.data ? JSON.parse(resume.data) : null,
+    content: resume.content ? JSON.parse(resume.content) : null,
     version: resume.version,
     sourceFilename: resume.sourceFilename,
     sourceMimeType: resume.sourceMimeType,
@@ -44,7 +44,7 @@ export async function GET(_req: Request, ctx: Params) {
 
 const putSchema = z.object({
   label: z.string().min(1).optional(),
-  data: resumeDataSchema.optional(),
+  content: resumeDataSchema.optional(),
 });
 
 export async function PUT(req: Request, ctx: Params) {
@@ -58,8 +58,8 @@ export async function PUT(req: Request, ctx: Params) {
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid body", 422, parsed.error.issues);
   }
-  if (parsed.data.label === undefined && parsed.data.data === undefined) {
-    return err(ErrorCodes.INVALID_REQUEST, "label or data required", 400);
+  if (parsed.data.label === undefined && parsed.data.content === undefined) {
+    return err(ErrorCodes.INVALID_REQUEST, "label or content required", 400);
   }
 
   const profileId = await getActiveProfileId();
@@ -72,16 +72,16 @@ export async function PUT(req: Request, ctx: Params) {
     where: { id },
     data: {
       label: parsed.data.label ?? existing.label,
-      data: parsed.data.data ? JSON.stringify(parsed.data.data) : existing.data,
-      version: parsed.data.data ? existing.version + 1 : existing.version,
+      content: parsed.data.content ? JSON.stringify(parsed.data.content) : existing.content,
+      version: parsed.data.content ? existing.version + 1 : existing.version,
     },
   });
 
-  if (parsed.data.data) {
+  if (parsed.data.content) {
     await ensureResumeBackupsDir();
     await writeFile(
       resumeBackupPath(updated.id, updated.updatedAt.getTime()),
-      JSON.stringify(parsed.data.data, null, 2),
+      JSON.stringify(parsed.data.content, null, 2),
       "utf8",
     );
   }

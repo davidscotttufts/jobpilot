@@ -4,7 +4,7 @@ export interface ResumeDto {
   id: number;
   profileId: number;
   label: string;
-  data: ResumeData | null;
+  content: ResumeData | null;
   version: number;
   sourceFilename: string | null;
   sourceMimeType: string | null;
@@ -31,7 +31,7 @@ export interface ResumeVariantDto {
   label: string;
   jobUrl: string | null;
   applicationId: number | null;
-  data: ResumeData;
+  content: ResumeData;
   diffNotes: string | null;
   createdAt: string;
   updatedAt: string;

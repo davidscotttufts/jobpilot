@@ -30,7 +30,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
 
   if (detail.isLoading || !detail.data) return <LinearProgress />;
   const resume = detail.data;
-  const initialData: ResumeData = resume.data ?? EMPTY_RESUME_DATA;
+  const initialData: ResumeData = resume.content ?? EMPTY_RESUME_DATA;
 
   return (
     <Stack

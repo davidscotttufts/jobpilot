@@ -37,7 +37,7 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
 
   const save = useApiMutation<{ id: number; version: number }, ResumeData>(
     (vars) =>
-      apiClient.put<{ id: number; version: number }>(`/api/resumes/${resumeId}`, { data: vars }),
+      apiClient.put<{ id: number; version: number }>(`/api/resumes/${resumeId}`, { content: vars }),
     {
       successMessage: "Resume saved",
       invalidate: [queryKeys.resume.all, queryKeys.profile.all],

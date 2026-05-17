@@ -44,7 +44,7 @@ If `sourceMimeType !== "application/pdf"`, stop and ask the user to re-upload as
 
 ## Step 3 — Refuse to Clobber
 
-If `data` is non-null and `FORCE === false`, stop:
+If `content` is non-null and `FORCE === false`, stop:
 
 > Resume {id} ({label}) already has structured data (version {n}). Edit at <http://localhost:8000/resumes/{id}>, or re-run with `--force` to overwrite from the PDF.
 
@@ -107,7 +107,7 @@ Hard rules:
 
 ## Step 5 — Save
 
-The PUT body must be `{ "data": <resume-object> }` — the API rejects a bare resume payload with 400 "label or data required". Write the file with that wrapper, then send it:
+The PUT body must be `{ "content": <resume-object> }` — the API rejects a bare resume payload with 400 "label or content required". Write the file with that wrapper, then send it:
 
 ```bash
 curl -fsS -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
@@ -115,7 +115,7 @@ curl -fsS -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
   --data-binary @resume.json
 ```
 
-Where `resume.json` looks like `{"data": {"basics": {...}, "experience": [...], ...}}`. On 422, read the issue list, fix the field, retry once.
+Where `resume.json` looks like `{"content": {"basics": {...}, "experience": [...], ...}}`. On 422, read the issue list, fix the field, retry once.
 
 ## Step 6 — Report
 

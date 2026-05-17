@@ -74,7 +74,7 @@ export async function POST(req: Request, ctx: Params) {
       label: parsed.data.label,
       jobUrl: parsed.data.jobUrl ?? null,
       applicationId: parsed.data.applicationId ?? null,
-      data: JSON.stringify(parsed.data.data),
+      content: JSON.stringify(parsed.data.content),
       diffNotes: parsed.data.diffNotes ?? null,
     },
   });

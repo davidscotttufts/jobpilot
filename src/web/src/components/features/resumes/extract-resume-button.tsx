@@ -17,7 +17,7 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
   const [confirmOpen, setConfirmOpen] = useState(false);
   const agent = useAgent();
 
-  const hasData = resume.data !== null;
+  const hasData = resume.content !== null;
 
   const run = async (force: boolean) => {
     const args = force ? `${resume.id} --force` : String(resume.id);

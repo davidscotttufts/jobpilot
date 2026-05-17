@@ -29,7 +29,7 @@ export async function GET(_req: Request, ctx: Params) {
   try {
     await stat(cachePath);
   } catch {
-    const buffer = await renderResumePdf(JSON.parse(variant.data) as ResumeData);
+    const buffer = await renderResumePdf(JSON.parse(variant.content) as ResumeData);
     await writeFile(cachePath, buffer);
   }
 

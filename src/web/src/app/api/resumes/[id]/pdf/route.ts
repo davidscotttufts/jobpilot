@@ -43,13 +43,13 @@ export async function GET(_req: Request, ctx: Params) {
 
   const slug = slugifyForDownload(resume.label);
 
-  if (resume.data) {
+  if (resume.content) {
     await ensureGeneratedDir();
     const cachePath = generatedResumePath(resume.id, resume.updatedAt.getTime());
     try {
       await stat(cachePath);
     } catch {
-      const buffer = await renderResumePdf(JSON.parse(resume.data) as ResumeData);
+      const buffer = await renderResumePdf(JSON.parse(resume.content) as ResumeData);
       await writeFile(cachePath, buffer);
     }
     return streamFile(cachePath, "application/pdf", `${slug}.pdf`);

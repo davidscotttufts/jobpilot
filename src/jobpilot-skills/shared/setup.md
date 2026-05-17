@@ -55,7 +55,7 @@ When applying to a specific role:
 
 Renderable PDFs:
 
-- Base: `GET /api/resumes/{id}/pdf` (renders from `data` if present, else streams the source).
+- Base: `GET /api/resumes/{id}/pdf` (renders from `content` if present, else streams the source).
 - Variant: `GET /api/resumes/variants/{id}/pdf`.
 
 ```bash

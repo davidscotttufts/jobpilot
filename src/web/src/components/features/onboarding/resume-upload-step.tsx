@@ -16,14 +16,18 @@ import type { ResumeDto } from "@/types/api";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
 const POLL_INTERVAL_MS = 1500;
-const EXTRACT_TIMEOUT_MS = 2 * 60 * 1000;
+const EXTRACT_SLOW_AFTER_MS = 2 * 60 * 1000;
 
 interface ResumeUploadStepProps {
   form: AnyReactForm;
   onContinue: () => void;
 }
 
-type StepState = "idle" | "uploading" | "extracting" | "done" | "timeout";
+type StepState = "idle" | "uploading" | "extracting" | "slow" | "done";
+
+function isWaitingForExtraction(state: StepState): boolean {
+  return state === "extracting" || state === "slow";
+}
 
 export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
   const { form, onContinue } = props;
@@ -56,19 +60,19 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
     queryKeys.resume.detail(resumeId ?? 0),
     () => apiClient.get<ResumeDto>(`/api/resumes/${resumeId}`),
     {
-      enabled: state === "extracting" && resumeId !== null,
+      enabled: isWaitingForExtraction(state) && resumeId !== null,
       refetchInterval: POLL_INTERVAL_MS,
     },
   );
 
   useEffect(() => {
-    if (state !== "extracting") {
+    if (!isWaitingForExtraction(state)) {
       return;
     }
 
-    const data = poll.data?.data;
-    if (data?.basics) {
-      applyBasicsToForm(form, data.basics);
+    const basics = poll.data?.content?.basics;
+    if (basics && basics.name.trim().length > 0) {
+      applyBasicsToForm(form, basics);
       setState("done");
       onContinue();
     }
@@ -84,13 +88,13 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
       return;
     }
 
-    const remaining = EXTRACT_TIMEOUT_MS - (Date.now() - startedAt);
+    const remaining = EXTRACT_SLOW_AFTER_MS - (Date.now() - startedAt);
     if (remaining <= 0) {
-      setState("timeout");
+      setState("slow");
       return;
     }
 
-    const t = setTimeout(() => setState("timeout"), remaining);
+    const t = setTimeout(() => setState("slow"), remaining);
     return () => clearTimeout(t);
   }, [state]);
 
@@ -134,7 +138,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
           upload.mutate(f);
         }}
         onError={(msg) => toast.error(msg)}
-        disabled={state === "extracting"}
+        disabled={isWaitingForExtraction(state)}
       />
 
       {state === "extracting" && (
@@ -156,7 +160,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
         </Alert>
       )}
 
-      {state === "timeout" && (
+      {state === "slow" && (
         <Alert
           severity="warning"
           icon={<HourglassEmpty fontSize="md" />}
@@ -186,7 +190,7 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
         <Button variant="text" onClick={onContinue} disabled={state === "extracting"}>
           Skip &mdash; fill manually
         </Button>
-        {(state === "timeout" || state === "done") && (
+        {(state === "slow" || state === "done") && (
           <Button variant="contained" onClick={onContinue}>
             Continue
           </Button>

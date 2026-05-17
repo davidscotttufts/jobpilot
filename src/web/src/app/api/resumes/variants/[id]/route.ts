@@ -33,7 +33,7 @@ export async function GET(_req: Request, ctx: Params) {
     label: variant.label,
     jobUrl: variant.jobUrl,
     applicationId: variant.applicationId,
-    data: JSON.parse(variant.data),
+    content: JSON.parse(variant.content),
     diffNotes: variant.diffNotes,
     createdAt: variant.createdAt.toISOString(),
     updatedAt: variant.updatedAt.toISOString(),
@@ -63,7 +63,7 @@ export async function PATCH(req: Request, ctx: Params) {
       jobUrl: parsed.data.jobUrl === undefined ? undefined : parsed.data.jobUrl,
       applicationId:
         parsed.data.applicationId === undefined ? undefined : parsed.data.applicationId,
-      data: parsed.data.data ? JSON.stringify(parsed.data.data) : undefined,
+      content: parsed.data.content ? JSON.stringify(parsed.data.content) : undefined,
       diffNotes: parsed.data.diffNotes === undefined ? undefined : parsed.data.diffNotes,
     },
   });

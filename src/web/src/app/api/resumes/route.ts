@@ -28,7 +28,7 @@ export async function GET() {
       id: r.id,
       label: r.label,
       sourceFilename: r.sourceFilename,
-      hasData: r.data !== null,
+      hasData: r.content !== null,
       variantCount: r._count.variants,
       isPrimary: r.id === primaryId,
       updatedAt: r.updatedAt.toISOString(),
@@ -40,7 +40,7 @@ export async function GET() {
 
 const jsonCreateSchema = z.object({
   label: z.string().min(1),
-  data: resumeDataSchema.optional(),
+  content: resumeDataSchema.optional(),
 });
 
 export async function POST(req: Request) {
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     data: {
       profileId,
       label: parsed.data.label,
-      data: parsed.data.data ? JSON.stringify(parsed.data.data) : null,
+      content: parsed.data.content ? JSON.stringify(parsed.data.content) : null,
     },
   });
 
