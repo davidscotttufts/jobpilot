@@ -5,6 +5,7 @@ import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
+import { publishResumeEvent } from "@/lib/sse";
 import { deleteResumeFile, ensureResumeBackupsDir, resumeBackupPath } from "@/lib/storage";
 import type { ResumeDto } from "@/types/api";
 
@@ -84,6 +85,11 @@ export async function PUT(req: Request, ctx: Params) {
       JSON.stringify(parsed.data.content, null, 2),
       "utf8",
     );
+    publishResumeEvent(updated.id, {
+      type: "content.updated",
+      resumeId: updated.id,
+      version: updated.version,
+    });
   }
 
   return ok({ id: updated.id, version: updated.version });

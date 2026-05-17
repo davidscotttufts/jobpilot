@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
@@ -6,16 +6,15 @@ import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/materia
 import { FileUpload } from "@/components/ui/form";
 import type { AnyReactForm } from "@/components/ui/form/tanstack";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
+import { useEventSource, type ResumeEvent } from "@/lib/sse";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import type { ResumeDto } from "@/types/api";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
-const POLL_INTERVAL_MS = 1500;
 const EXTRACT_SLOW_AFTER_MS = 2 * 60 * 1000;
 
 interface ResumeUploadStepProps {
@@ -37,7 +36,8 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
   const [state, setState] = useState<StepState>("idle");
   const [resumeId, setResumeId] = useState<number | null>(null);
   const [injectError, setInjectError] = useState<string | null>(null);
-  const startedAtRef = useRef<number | null>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const upload = useApiMutation<{ id: number }, File>(
     (file) => {
@@ -56,52 +56,51 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
     },
   );
 
-  const poll = useApiQuery<ResumeDto>(
-    queryKeys.resume.detail(resumeId ?? 0),
-    () => apiClient.get<ResumeDto>(`/api/resumes/${resumeId}`),
-    {
-      enabled: isWaitingForExtraction(state) && resumeId !== null,
-      refetchInterval: POLL_INTERVAL_MS,
-    },
-  );
-
-  useEffect(() => {
-    if (!isWaitingForExtraction(state)) {
+  const applyExtractedBasics = async (id: number): Promise<void> => {
+    if (!isWaitingForExtraction(stateRef.current)) {
       return;
     }
-
-    const basics = poll.data?.content?.basics;
+    const { data } = await apiClient.get<ResumeDto>(`/api/resumes/${id}`);
+    if (!isWaitingForExtraction(stateRef.current)) {
+      return;
+    }
+    const basics = data?.content?.basics;
     if (basics && basics.name.trim().length > 0) {
       applyBasicsToForm(form, basics);
       setState("done");
       onContinue();
     }
-  }, [poll.data, state, form, onContinue]);
+  };
+
+  useEventSource<ResumeEvent>(
+    resumeId !== null && isWaitingForExtraction(state)
+      ? `/api/resumes/${resumeId}/events`
+      : null,
+    {
+      onMessage: (event) => {
+        if (event.type === "content.updated") {
+          void applyExtractedBasics(event.resumeId);
+        }
+      },
+    },
+  );
 
   useEffect(() => {
-    if (state !== "extracting") {
+    if (state !== "extracting" || resumeId === null) {
       return;
     }
-
-    const startedAt = startedAtRef.current;
-    if (!startedAt) {
-      return;
-    }
-
-    const remaining = EXTRACT_SLOW_AFTER_MS - (Date.now() - startedAt);
-    if (remaining <= 0) {
-      setState("slow");
-      return;
-    }
-
-    const t = setTimeout(() => setState("slow"), remaining);
-    return () => clearTimeout(t);
-  }, [state]);
+    // Handle the race where extraction completed before the EventSource opened.
+    void applyExtractedBasics(resumeId);
+    const slowTimer = setTimeout(() => {
+      setState((s) => (s === "extracting" ? "slow" : s));
+    }, EXTRACT_SLOW_AFTER_MS);
+    return () => clearTimeout(slowTimer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, resumeId]);
 
   const startExtraction = async (id: number): Promise<void> => {
     setInjectError(null);
     setState("extracting");
-    startedAtRef.current = Date.now();
 
     try {
       await agent.injectSkill("extract-resume", String(id));

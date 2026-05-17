@@ -2,10 +2,12 @@
 
 import type { ReactElement } from "react";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@/lib/schemas/resume";
+import { useEventSource, type ResumeEvent } from "@/lib/sse";
 import type { ResumeDto } from "@/types/api";
 import { ResumeEditor } from "./resume-editor";
 import { ResumeHeaderBar } from "./resume-header-bar";
@@ -21,12 +23,21 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
   const { resumeId } = props;
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"));
+  const queryClient = useQueryClient();
 
   const detail = useApiQuery<ResumeDto>(
     queryKeys.resume.detail(resumeId),
     () => apiClient.get<ResumeDto>(`/api/resumes/${resumeId}`),
     { errorMessage: "Failed to load resume" },
   );
+
+  useEventSource<ResumeEvent>(`/api/resumes/${resumeId}/events`, {
+    onMessage: (event) => {
+      if (event.type === "content.updated") {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.resume.detail(resumeId) });
+      }
+    },
+  });
 
   if (detail.isLoading || !detail.data) return <LinearProgress />;
   const resume = detail.data;
@@ -41,7 +52,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
       <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
         <ResumeHeaderBar resume={resume} />
         <SourceUploadCard resume={resume} />
-        <ResumeEditor resumeId={resumeId} initialData={initialData} />
+        <ResumeEditor key={resume.version} resumeId={resumeId} initialData={initialData} />
         <VariantsPanel resumeId={resumeId} resumeLabel={resume.label} />
       </Stack>
       <Stack
