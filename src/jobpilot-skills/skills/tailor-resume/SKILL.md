@@ -14,21 +14,30 @@ Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. The profile response includes 
 
 ## Step 1 — Read the JD
 
-URL → `browser_navigate` + `browser_snapshot`, extract title/company/role/requirements. Text → parse directly.
+URL → `browser_navigate` + `browser_snapshot`. Text → parse directly. Build a `JD` object:
 
-Extract: title and role family (frontend/backend/fullstack/data/ML/…), seniority (junior/mid/senior/staff/lead), core required tech (top 5–10 keywords), domain (fintech, healthtech, devtools, …), standout requirements (clearance, on-call, language fluency, …).
+- `title`, `domain` (fintech/healthtech/devtools/…), `standouts` (clearance, on-call, on-site, …).
+- `roleFamily` ∈ `frontend | backend | fullstack | mobile | data | ml | devops | qa | other` — match title + first paragraph against: frontend (`frontend`, `ui`, `react`, `vue`, `angular`), backend (`backend`, `api`, `services`), fullstack (`full-stack`), mobile (`ios`, `android`, `react native`, `flutter`), data (`data engineer/scientist`, `analytics`, `etl`), ml (`ml`, `ai engineer`, `mlops`), devops (`devops`, `sre`, `platform`, `infrastructure`), qa (`qa`, `sdet`, `test engineer`).
+- `seniority` ∈ `junior | mid | senior | staff | lead` — from title (`junior`/`entry` → junior; `senior`/`sr.` → senior; `staff` → staff; `lead`/`principal` → lead; else mid). Cross-check `yearsExperience`: 0–2 junior, 3–5 mid, 6–9 senior, 10+ staff/lead.
+- `keywords` — top 10 required-tech terms (must-have > nice-to-have). Lowercase, deduped.
+- `responsibilityTerms` — top 5 verbs/nouns from responsibilities (`design`, `mentor`, `migrate`, `on-call`, …).
 
 ## Step 2 — Pick the Base
 
-Score each entry in `data.resumes`:
+Score each `data.resumes` entry (max 10):
 
-- `+3` if `label` matches the role family.
-- `+1` if `hasData: true` (already structured, cheaper to tailor).
-- `+1` if `isPrimary: true`.
+| Signal                  | Points | Rule                                                                       |
+| ----------------------- | ------ | -------------------------------------------------------------------------- |
+| Exact role-family       | +4     | `label` maps to `JD.roleFamily`.                                           |
+| Adjacent family         | +2     | frontend↔fullstack, backend↔fullstack, ml↔data, devops↔backend. Not both.  |
+| `hasData: true`         | +1     | Enables content scoring; cheaper to tailor.                                |
+| `isPrimary: true`       | +1     |                                                                            |
+| JD keyword coverage     | +0..+3 | If `hasData`, fetch base; `round(3 × matched/10)` over skills + projects + summary. |
+| Recency                 | +1     | `updatedAt` within 90 days.                                                |
 
-Take the highest scorer. Tie-break to primary, then to most recently updated. If every candidate has `hasData: false` AND no `sourceFilename`, stop:
+Highest wins. Tie-break: primary → most recent → lowest id. If no candidate has `hasData` AND no `sourceFilename`, stop:
 
-> No usable base resume. Upload a PDF at <http://localhost:8000/resumes>, or fill in a resume's editor manually, then re-run.
+> No usable base resume. Upload a PDF at <http://localhost:8000/resumes>, or fill a resume's editor manually, then re-run.
 
 Let `BASE_ID` be the chosen id.
 
@@ -52,20 +61,29 @@ Skip this step when `hasData: true`.
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
-For each variant `v`, fetch `curl -fsS "$JOBPILOT_API/api/resumes/variants/$v.id"`. Compute keyword overlap between the JD's required tech and `v.content.skills` + project keywords + summary.
+For each variant, fetch `GET /api/resumes/variants/<id>` and compute `reuseScore` (0–100). Variants failing the role-family gate (different family AND not adjacent) score 0.
 
-**Reuse criteria** (ALL must hold):
+| Component             | Max | Calculation                                                                                          |
+| --------------------- | --- | ---------------------------------------------------------------------------------------------------- |
+| Keyword coverage      | 40  | `40 × matched/10` of `JD.keywords` across skills + project keywords + summary + bullets.             |
+| Title similarity      | 15  | `15 ×` Jaccard token overlap of `JD.title` vs `variant.label`, stripping `engineer/senior/the/at/—`. |
+| Responsibility cover  | 15  | `15 × matched/5` of `JD.responsibilityTerms` in summary + bullets.                                   |
+| Seniority alignment   | 15  | Exact 15; one step off (mid↔senior, senior↔staff) 8; further 0.                                      |
+| Domain match          | 5   | `JD.domain` appears in summary or any bullet.                                                        |
+| Recency               | 10  | ≤30d 10; ≤90d 7; ≤180d 4; else 0.                                                                    |
 
-- Same role family as the JD.
-- ≥70% of the JD's top-10 keywords appear in the variant's `content`.
-- Seniority hint (summary tone, bullet scope) matches.
+Pick the highest scorer:
 
-If any variant qualifies:
+- **≥75** → reuse.
+- **60–74** → reuse, echo a one-line caveat naming the weakest component.
+- **<60** or no variant passes the gate → Step 4.
 
-> Reusing variant {id}: {label}.
+On reuse:
+
+> Reusing variant {id}: {label} (score {n}/100).
 > http://localhost:8000/api/resumes/variants/{id}/pdf
 
-Stop. Do not create a new row.
+Stop.
 
 ## Step 4 — Create a New Variant
 

@@ -10,7 +10,7 @@ Job applications often span multiple pages. For each page:
    - Text inputs → `browser_type` (or `browser_fill_form` for batch)
    - Selects → `browser_select_option`
    - Checkboxes / radios → `browser_click`
-   - File uploads (resume) → `browser_file_upload` with the selected resume path (see Resume Selection in setup.md)
+   - File uploads (resume) → fetch the tailored variant from the caller's prior step: `curl -fsS "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/resume.pdf"`, then `browser_file_upload` that path.
    - Date fields → use the appropriate date format
 4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) that `form-fields.js` couldn't enumerate: narrowed `browser_snapshot` of just that widget's container to obtain a ref.
 

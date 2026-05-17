@@ -193,15 +193,31 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 Navigate to the job URL. Take **one** narrowed `browser_snapshot` (header/main) to locate the Apply button (extractors don't enumerate buttons). Match `"Apply"`, `"Apply Now"`, `"Quick Apply"`, `"Easy Apply"` etc. Click. After `browser_wait_for`, `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` and pass to `browser_evaluate` — **do not re-snapshot**. If a login page appears, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then return.
 
-### 4.3 Fill Forms
+### 4.3 Tailor Resume
 
-Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Use `autopilot.salaryExpectation` and `autopilot.defaultStartDate`.
+Invoke `<tailor-resume-command>` with the job URL or parsed JD. Capture the returned variant id + PDF URL for 4.4. If it stops (no usable base), PATCH job `failed`, `failReason:"No tailorable resume base"`.
 
-### 4.4 Submit
+### 4.4 Fill Forms
 
-Submit without per-job confirmation (user approved up front). `browser_wait_for`, then `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate`. `{ submitted: true }` = success; populated `error` = failure.
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Upload the 4.3 variant for resume fields. Use `autopilot.salaryExpectation` and `autopilot.defaultStartDate`.
 
-### 4.5 Record Result
+### 4.5 Pre-Submit Review (Single-Job Mode Only)
+
+Skip in batch mode. When `config.maxApplications === 1`, re-run `form-fields.js` and present:
+
+```
+## Ready to Submit: [Title] at [Company]
+| Name | Email | Phone | Resume | Salary | Start date | Cover letter | Custom Qs |
+<total> fields across <P> page(s). Submit? (yes / no / edit <field>)
+```
+
+`no` → PATCH `skipped`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → fix, re-extract, re-present.
+
+### 4.6 Submit
+
+Click submit, `browser_wait_for`, then `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate`. `{ submitted: true }` = success; populated `error` = failure.
+
+### 4.7 Record Result
 
 **Success:**
 
@@ -236,7 +252,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 Continue to next job either way.
 
-### 4.6 Update Summary
+### 4.8 Update Summary
 
 After every job:
 
@@ -248,7 +264,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
     '{summary:{totalFound:$found, qualified:$qualified, applied:$applied, failed:$failed, skipped:$skipped, remaining:$remaining}}')"
 ```
 
-### 4.7 Limit
+### 4.9 Limit
 
 If `applied >= config.maxApplications`, PATCH remaining `approved` jobs to `skipped` with `skipReason:"Max applications limit reached"` and end the loop.
 
@@ -265,7 +281,7 @@ Print a summary table and link to `http://localhost:8000/runs/<RUN_ID>`.
 
 ## Rules
 
-1. **Up-front confirmation is mandatory** (1A.1 fit review or Phase 3 table). No per-job confirmation after.
+1. **Up-front confirmation mandatory** (1A.1 or Phase 3). Single-URL adds a pre-submit review (4.5). Batch mode: no per-job confirmation after Phase 3.
 2. **Never create accounts** on any board.
 3. **Never process payments** — PATCH `failed` with `failReason:"Payment required"`.
 4. **CAPTCHAs / email verification** — pause and ask the user (see `auth.md`).

@@ -47,13 +47,9 @@ The response also includes:
 
 `data.resumes` is already in the profile response — no extra call needed. Full base structure at `GET /api/resumes/{id}`; variants at `GET /api/resumes/{id}/variants`.
 
-When applying to a specific role:
+**Apply / autopilot must invoke `<tailor-resume-command>` per job.** It owns base selection and reuse-vs-create, and returns the variant id + PDF URL. Do not reimplement that logic in callers.
 
-1. If a base's `label` matches the role family (e.g. `"Frontend"` for a Frontend Engineer posting), prefer it.
-2. Otherwise pick the primary (`isPrimary: true`).
-3. If a tailored variant under the chosen base already matches this job, reuse it (`GET /api/resumes/variants/{id}/pdf`). Use the `tailor-resume` skill to decide reuse vs create.
-
-Renderable PDFs:
+Renderable PDFs (direct use outside the apply flow):
 
 - Base: `GET /api/resumes/{id}/pdf` (renders from `content` if present, else streams the source).
 - Variant: `GET /api/resumes/variants/{id}/pdf`.

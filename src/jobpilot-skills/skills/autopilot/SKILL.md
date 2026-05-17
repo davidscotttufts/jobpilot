@@ -122,7 +122,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
     '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
 ```
 
-After scoring, PATCH the run summary so the viewer reflects progress (see 3.8 for the payload shape).
+After scoring, PATCH the run summary so the viewer reflects progress (see 3.9 for the payload shape).
 
 ## Phase 2: Confirmation
 
@@ -168,15 +168,19 @@ Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`.
 
 **On login failure for a domain:** PATCH this job AND every other approved job on the same domain to `failed` with `failReason:"Login failed for <domain>"`. Continue with other domains.
 
-### 3.4 Fill Forms
+### 3.4 Tailor Resume
 
-Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Use `autopilot.salaryExpectation` (or ask once on first encounter and remember for the run) and `autopilot.defaultStartDate`.
+Invoke `<tailor-resume-command>` with the job URL. Capture the returned variant id + PDF URL for 3.5. If no usable base, PATCH job `failed`, `failReason:"No tailorable resume base"`, continue.
 
-### 3.5 Submit
+### 3.5 Fill Forms
+
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Upload the 3.4 variant for resume fields. Use `autopilot.salaryExpectation` (ask once on first encounter, remember for the run) and `autopilot.defaultStartDate`.
+
+### 3.6 Submit
 
 Submit autonomously (Phase 2 approval covers it). `browser_wait_for`, then `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate`. `{ submitted: true }` = success; `error: "..."` from the page = failure with that message as `failReason`.
 
-### 3.6 Record Result
+### 3.7 Record Result
 
 **Success:**
 
@@ -208,11 +212,11 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 **Continue to next job either way.**
 
-### 3.7 Limit Check
+### 3.8 Limit Check
 
 If `summary.applied >= config.maxApplications`, PATCH remaining `approved` jobs to `skipped` (`"Max applications limit reached"`) and end the loop.
 
-### 3.8 Summary Updates
+### 3.9 Summary Updates
 
 After every state change, PATCH the run summary so the SSE viewer stays live:
 
