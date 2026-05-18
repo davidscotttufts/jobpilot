@@ -18,11 +18,12 @@ function formatApplicationStage(stage: string): string {
 }
 
 export function mapQueueEntry(entry: QueueEntry): PipelineJobDto {
+  const { hostname, path } = splitUrl(entry.url);
   return {
     id: `queue:${entry.id}`,
     stage: "queued",
-    role: entry.note ?? "Pending application",
-    company: "—",
+    role: hostname,
+    company: path,
     location: null,
     board: null,
     matchScore: null,
@@ -30,11 +31,22 @@ export function mapQueueEntry(entry: QueueEntry): PipelineJobDto {
     updatedAt: entry.createdAt.toISOString(),
     liveStep: null,
     liveMessage: null,
-    stageSummary: null,
+    stageSummary: entry.note,
     url: entry.url,
     runId: null,
     applicationId: null,
   };
+}
+
+function splitUrl(raw: string): { hostname: string; path: string } {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.replace(/^www\./, "");
+    const path = `${u.pathname}${u.search}`.replace(/\/$/, "") || "/";
+    return { hostname: host, path };
+  } catch {
+    return { hostname: raw, path: "" };
+  }
 }
 
 export function mapRunJob(job: RunJob): PipelineJobDto {

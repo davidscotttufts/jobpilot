@@ -86,16 +86,23 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
 
       {job.stageSummary && (
         <Box
-          sx={(theme) => ({
-            mt: 1,
-            padding: 0.75,
-            borderRadius: theme.radii.xs,
-            backgroundColor: `${theme.palette.stages.interviewing}1A`,
-            border: `1px solid ${theme.palette.stages.interviewing}33`,
-            color: theme.palette.stages.interviewing,
-            fontSize: "0.6875rem",
-            lineHeight: 1.45,
-          })}
+          sx={(theme) => {
+            const tint =
+              job.stage === "interviewing"
+                ? theme.palette.stages.interviewing
+                : theme.palette.text.secondary;
+
+            return {
+              mt: 1,
+              padding: 0.75,
+              borderRadius: theme.radii.xs,
+              backgroundColor: `${tint}1A`,
+              border: `1px solid ${tint}33`,
+              color: tint,
+              fontSize: "0.6875rem",
+              lineHeight: 1.45,
+            };
+          }}
         >
           {job.stageSummary}
         </Box>

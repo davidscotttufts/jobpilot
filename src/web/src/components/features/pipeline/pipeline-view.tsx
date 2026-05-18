@@ -18,6 +18,8 @@ export function PipelineView(): ReactElement {
           router.push(`/applications/${job.applicationId}` as Parameters<typeof router.push>[0]);
         } else if (job.runId !== null) {
           router.push(`/runs/${job.runId}` as Parameters<typeof router.push>[0]);
+        } else if (job.url) {
+          window.open(job.url, "_blank", "noopener,noreferrer");
         }
       }}
     />
