@@ -1,5 +1,6 @@
 import "server-only";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
+import type { NextRequest } from "next/server";
 
 interface ApiOk<T> {
   data: T;
@@ -11,36 +12,27 @@ interface ApiNotFound {
   status: 404;
 }
 
-/**
- * Resolve an absolute URL to a same-origin API route from inside an RSC.
- * Uses Next's request headers so it works in dev, prod, and behind proxies.
- */
-async function resolveApiUrl(path: string): Promise<string> {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto = h.get("x-forwarded-proto") ?? "http";
-  const origin = host ? `${proto}://${host}` : process.env.NEXT_PUBLIC_APP_URL;
-  if (!origin) {
-    throw new Error("Could not determine origin for server-side API fetch");
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:8000";
+
+async function readCookieHeader(request?: NextRequest): Promise<string> {
+  if (request) {
+    return request.headers.get("cookie") ?? "";
   }
-  return `${origin}${path}`;
-}
-
-/**
- * Server-side GET against the app's own API. Returns `{ data: null, status: 404 }`
- * when the API responds with 404 — callers should map that to `notFound()`.
- * Any other non-ok status throws.
- */
-export async function apiGet<T>(path: string): Promise<ApiOk<T> | ApiNotFound> {
-  const url = await resolveApiUrl(path);
   const jar = await cookies();
-
-  const cookie = jar
+  return jar
     .getAll()
     .map((c) => `${c.name}=${c.value}`)
     .join("; ");
+}
 
-  const res = await fetch(url, {
+/** Server-side GET against the app's own API. Pass `request` from `proxy.ts`; omit elsewhere. 404 returns `{ data: null }`; other errors throw. */
+export async function apiGet<T>(
+  path: string,
+  request?: NextRequest,
+): Promise<ApiOk<T> | ApiNotFound> {
+  const cookie = await readCookieHeader(request);
+
+  const res = await fetch(`${APP_URL}${path}`, {
     cache: "no-store",
     headers: cookie ? { cookie } : undefined,
   });

@@ -10,10 +10,7 @@ import type {
   ProfileListItemDto,
   SetActiveProfileResponse,
 } from "@/types/api";
-
-function isEmptyDraft(p: ProfileListItemDto): boolean {
-  return !p.firstName?.trim() && !p.lastName?.trim() && !p.email?.trim();
-}
+import { isProfileEmpty } from "@/utils/profile";
 
 interface DraftProfileState {
   ready: boolean;
@@ -54,7 +51,7 @@ export function useEnsureDraftProfile(): DraftProfileState {
       const previousActiveId = activeRes.data?.profileId ?? null;
 
       const list = await apiClient.get<ProfileListItemDto[]>("/api/profiles");
-      const reusable = list.data?.find(isEmptyDraft);
+      const reusable = list.data?.find(isProfileEmpty);
       const draftId = reusable ? reusable.id : (await createProfile.mutateAsync()).id;
 
       const prior =
