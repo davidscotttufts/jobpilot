@@ -5,17 +5,14 @@ import { Clear, Delete, Edit, Search } from "@mui/icons-material";
 import {
   Box,
   Button,
-  Chip,
   IconButton,
   InputAdornment,
   Pagination,
   Stack,
-  Switch,
   TextField,
   Typography,
 } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
-import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout/";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
@@ -26,19 +23,6 @@ import type { JobBoardPatch } from "@/lib/schemas/job-board";
 import type { JobBoardDto } from "@/types/api";
 import { BoardFormDialog } from "./board-form-dialog";
 
-type TypeFilter = "search" | "ats";
-type StatusFilter = "enabled" | "disabled";
-
-const TYPE_OPTIONS: ReadonlyArray<SelectFieldOption<TypeFilter>> = [
-  { value: "search", label: "Search" },
-  { value: "ats", label: "ATS" },
-];
-
-const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<StatusFilter>> = [
-  { value: "enabled", label: "Enabled" },
-  { value: "disabled", label: "Disabled" },
-];
-
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -46,8 +30,6 @@ export function BoardsContent(): ReactElement {
   const [editing, setEditing] = useState<JobBoardDto | null>(null);
   const [pendingDelete, setPendingDelete] = useState<JobBoardDto | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter | null>(null);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter | null>(null);
   const [page, setPage] = useState(1);
 
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
@@ -78,9 +60,6 @@ export function BoardsContent(): ReactElement {
   const needle = search.trim().toLowerCase();
 
   const filteredRows = allRows.filter((b) => {
-    if (typeFilter && b.type !== typeFilter) return false;
-    if (statusFilter === "enabled" && !b.enabled) return false;
-    if (statusFilter === "disabled" && b.enabled) return false;
     if (
       needle &&
       !b.name.toLowerCase().includes(needle) &&
@@ -92,15 +71,13 @@ export function BoardsContent(): ReactElement {
     return true;
   });
 
-  const isAnyFilterActive = needle.length > 0 || typeFilter !== null || statusFilter !== null;
+  const isAnyFilterActive = needle.length > 0;
   const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
   const pageRows = filteredRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleResetFilters = (): void => {
     setSearchDraft("");
-    setTypeFilter(null);
-    setStatusFilter(null);
     setPage(1);
   };
 
@@ -130,25 +107,6 @@ export function BoardsContent(): ReactElement {
               },
             }}
             sx={{ flex: 1, minWidth: 200 }}
-          />
-          <SelectField
-            label="Type"
-            value={typeFilter}
-            options={TYPE_OPTIONS}
-            emptyLabel="All types"
-            onChange={(v) => {
-              setTypeFilter(v);
-              setPage(1);
-            }}
-          />
-          <SelectField
-            label="Status"
-            value={statusFilter}
-            options={STATUS_OPTIONS}
-            onChange={(v) => {
-              setStatusFilter(v);
-              setPage(1);
-            }}
           />
           {isAnyFilterActive && (
             <Button
@@ -184,29 +142,14 @@ export function BoardsContent(): ReactElement {
                   p: 1.5,
                   borderRadius: t.radii.sm,
                   border: `1px solid ${t.palette.line.divider}`,
-                  opacity: b.enabled ? 1 : 0.55,
                 })}
               >
                 <Box sx={{ flex: 1 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {b.name}
-                    </Typography>
-                    <Chip
-                      size="small"
-                      label={b.type}
-                      color={b.type === "ats" ? "primary" : "default"}
-                      variant="outlined"
-                    />
-                  </Stack>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {b.name}
+                  </Typography>
                   <Typography variant="captionMuted">{b.domain}</Typography>
                 </Box>
-                <Switch
-                  checked={b.enabled}
-                  onChange={(e) =>
-                    update.mutate({ id: b.id, patch: { enabled: e.target.checked } })
-                  }
-                />
                 <IconButton onClick={() => setEditing(b)} aria-label="Edit board">
                   <Edit fontSize="md" />
                 </IconButton>
@@ -246,8 +189,6 @@ export function BoardsContent(): ReactElement {
                 name: editing.name,
                 domain: editing.domain,
                 searchUrl: editing.searchUrl ?? "",
-                type: editing.type,
-                enabled: editing.enabled,
                 email: editing.email ?? "",
                 password: editing.password ?? "",
                 sortOrder: editing.sortOrder,

@@ -1,5 +1,6 @@
 import {
   BusinessCenter,
+  History,
   Inbox,
   Insights,
   Settings,
@@ -24,6 +25,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Pipeline", href: "/", icon: ViewKanban },
       { label: "Overview", href: "/overview", icon: Insights },
+      { label: "Runs", href: "/runs", icon: History },
       { label: "Inbox", href: "/inbox", icon: Inbox },
       { label: "Resumes", href: "/resumes", icon: Storage },
       { label: "Boards", href: "/boards", icon: BusinessCenter },

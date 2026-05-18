@@ -3,13 +3,13 @@
 import type { ReactElement } from "react";
 import { ArrowDropDown, PlayArrow } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
+import { useRouter } from "next/navigation";
 import { DropdownMenu } from "@/components/ui/feedback";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
 import type { PipelineColumnPage } from "@/types/api";
-import { usePipelineActions } from "../actions-provider";
 
 function useQueuedTotal(): number {
   const query = useApiQuery<PipelineColumnPage>(queryKeys.pipeline.total("queued"), () =>
@@ -19,8 +19,8 @@ function useQueuedTotal(): number {
 }
 
 export function RunLauncherButton(): ReactElement {
+  const router = useRouter();
   const agent = useAgent();
-  const actions = usePipelineActions();
   const queued = useQueuedTotal();
 
   return (
@@ -40,9 +40,15 @@ export function RunLauncherButton(): ReactElement {
       items={[
         {
           kind: "item",
+          key: "new",
+          label: "New run…",
+          icon: <PlayArrow fontSize="sm" />,
+          onClick: () => router.push("/runs/new"),
+        },
+        {
+          kind: "item",
           key: "drain",
           label: "Drain queued",
-          icon: <PlayArrow fontSize="sm" />,
           trailing: (
             <Typography variant="captionMuted" sx={{ ml: 2 }}>
               {queued}
@@ -53,13 +59,6 @@ export function RunLauncherButton(): ReactElement {
             void agent.injectSkill("apply");
           },
         },
-        {
-          kind: "item",
-          key: "autopilot",
-          label: "Autopilot search…",
-          onClick: actions.openAutopilot,
-        },
-        { kind: "item", key: "search", label: "Search only…", onClick: actions.openSearch },
       ]}
     />
   );

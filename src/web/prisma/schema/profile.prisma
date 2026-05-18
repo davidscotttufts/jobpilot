@@ -52,12 +52,6 @@ model AutopilotSettings {
   profileId             Int     @unique
   profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   minMatchScore         Int     @default(70)
-  maxApplicationsPerRun Int     @default(20)
-  confirmMode           String  @default("batch")
-  skipCompanies         String  @default("[]")
-  skipTitleKeywords     String  @default("[]")
-  minSalary             Int     @default(0)
-  maxSalary             Int     @default(0)
-  salaryExpectation     String?
+  maxApplicationsPerRun Int?
   defaultStartDate      String  @default("2 weeks notice")
 }

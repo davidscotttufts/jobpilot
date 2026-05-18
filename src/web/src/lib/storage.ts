@@ -1,5 +1,6 @@
 import { mkdir, readdir, unlink } from "node:fs/promises";
 import path from "node:path";
+import { slugify } from "@/utils/slug";
 
 const STORAGE_ROOT = path.resolve(process.cwd(), "storage");
 const RESUMES_DIR = path.join(STORAGE_ROOT, "resumes");
@@ -102,21 +103,10 @@ export async function deleteAllResumeArtifacts(refs: ResumeArtifactRefs): Promis
 
 export function generateResumeFilename(originalName: string): string {
   const ext = path.extname(originalName) || ".pdf";
-  const slug =
-    path
-      .basename(originalName, ext)
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 60) || "resume";
+  const slug = slugify(path.basename(originalName, ext), { fallback: "resume" });
   return `${slug}-${Date.now()}${ext}`;
 }
 
 export function slugifyForDownload(label: string): string {
-  const slug = label
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
-  return slug || "resume";
+  return slugify(label, { fallback: "resume" });
 }

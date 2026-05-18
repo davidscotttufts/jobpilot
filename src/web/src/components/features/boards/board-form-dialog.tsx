@@ -3,12 +3,7 @@
 import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { useForm } from "@tanstack/react-form";
-import {
-  FormSelectField,
-  FormSwitchField,
-  FormTextField,
-  type AnyReactForm,
-} from "@/components/ui/form/tanstack";
+import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
 import { jobBoardSchema, type JobBoardInput } from "@/lib/schemas/job-board";
 
 interface BoardFormDialogProps {
@@ -20,17 +15,10 @@ interface BoardFormDialogProps {
   submitting?: boolean;
 }
 
-const TYPE_ITEMS = [
-  { value: "search", label: "Search board (LinkedIn, Indeed, …)" },
-  { value: "ats", label: "ATS (Greenhouse, Lever, Workday, …)" },
-];
-
 const EMPTY: JobBoardInput = {
   name: "",
   domain: "",
   searchUrl: "",
-  type: "search",
-  enabled: true,
   email: "",
   password: "",
   sortOrder: 100,
@@ -62,23 +50,17 @@ export function BoardFormDialog(props: BoardFormDialogProps): ReactElement {
               <FormTextField form={formApi} name="name" label="Display name" />
               <FormTextField form={formApi} name="domain" label="Domain (e.g. linkedin.com)" />
             </Stack>
-            <FormTextField
-              form={formApi}
-              name="searchUrl"
-              label="Search URL (search boards only)"
-            />
-            <FormSelectField form={formApi} name="type" label="Type" items={TYPE_ITEMS} />
+            <FormTextField form={formApi} name="searchUrl" label="Search URL" />
             <Stack direction="row" spacing={2}>
-              <FormTextField form={formApi} name="email" label="Email override (optional)" />
+              <FormTextField form={formApi} name="email" label="Email (for login)" />
               <FormTextField
                 form={formApi}
                 name="password"
-                label="Password override (optional)"
+                label="Password (for login)"
                 type="password"
               />
             </Stack>
             <FormTextField form={formApi} name="sortOrder" label="Sort order" type="number" />
-            <FormSwitchField form={formApi} name="enabled" label="Enabled" />
           </Stack>
         </DialogContent>
         <DialogActions>

@@ -39,13 +39,7 @@ export interface AutopilotSettingsDto {
   id: number;
   profileId: number;
   minMatchScore: number;
-  maxApplicationsPerRun: number;
-  confirmMode: "batch" | "auto";
-  skipCompanies: string[];
-  skipTitleKeywords: string[];
-  minSalary: number;
-  maxSalary: number;
-  salaryExpectation: string | null;
+  maxApplicationsPerRun: number | null;
   defaultStartDate: string;
 }
 

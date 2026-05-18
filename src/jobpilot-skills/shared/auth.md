@@ -7,11 +7,10 @@
 1. `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/login-state.js` and run via `browser_evaluate`. If `{ isLoggedIn: true }`, skip auth.
 2. If `{ isLoggedIn: false }`:
    - Take a `browser_snapshot` to locate the Sign in / Log in button. Click it.
-   - Look up credentials (see setup.md). If none, proceed without login (some boards allow it).
+   - Resolve credentials per the **Credential lookup** section below. If none, proceed without login (some boards allow it).
    - On the login page, run `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` to enumerate fields with refs. Fill, click sign-in.
-   - Wait, re-run `login-state.js` to confirm.
-   - On failure, proceed without auth and note it.
-3. Navigate back to the intended page if needed.
+   - Wait, then branch on the response per **Login outcomes** below.
+3. Navigate back to the intended page once logged in.
 
 ## Login Challenges
 
@@ -52,13 +51,51 @@ Cannot be solved programmatically.
 2. Wait for confirmation.
 3. Continue.
 
-## Registration (no account exists)
+## Credential lookup
 
-1. Find a Sign up / Create account link, click.
-2. Fill registration fields from profile data (name, email, phone, …).
-3. Use the credential's password.
-4. Submit.
-5. If email verification follows, use the flow above.
+Resolve credentials for the board domain in this order:
+
+1. `JobBoard.email` / `JobBoard.password` (per-board override).
+2. `Credential.scope === <board-domain>` (e.g., `"linkedin.com"`).
+3. `Credential.scope === "default"`.
+
+If none, report to the user and stop. Do not guess.
+
+## Login outcomes
+
+When you submit the login form, branch on the portal's response:
+
+### Branch A — Login accepted
+
+Proceed with the flow.
+
+### Branch B — "Account doesn't exist" / "no user found"
+
+1. Click Sign up / Create account.
+2. Fill registration fields from profile data (name, email, phone, …) and use the credential's password.
+3. Submit.
+4. If email verification follows, use the verification flow above (see `<get-code-command>`).
+5. Resume the original flow once logged in.
+
+### Branch C — "Wrong password" / invalid credentials
+
+The stored password has drifted from the portal. Recover it:
+
+1. Click "Forgot password" / "Reset password" on the login form.
+2. Fill the email field with the credential's `email`.
+3. Submit the reset request.
+4. Run `<get-code-command> "<board-domain>"` and parse the JSON:
+   - `link` present → navigate to it to land on the reset-password page.
+   - `code` present → enter it where the portal asks for a code.
+   - `{}` → fall back to asking the user to paste the link or code.
+5. On the reset-password page, set a new password. Persist it back so the next run works:
+   - Per-board override: `PATCH /api/job-boards/<id> { "password": "<new>" }`.
+   - Domain or default credential: `PATCH /api/credentials/<id> { "password": "<new>" }`.
+6. Retry the login flow once with the new password (Branch A).
+
+### Branch D — login form unresponsive / unknown state
+
+One-shot retry. If still unresponsive, proceed without auth and note it; the next phase may still work for public listings.
 
 ## OAuth / SSO
 

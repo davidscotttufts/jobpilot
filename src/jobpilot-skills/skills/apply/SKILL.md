@@ -26,10 +26,10 @@ Read `data.autopilot` for config (defaults applied per field):
 | Setting                 | Default          | Notes                                                                       |
 | ----------------------- | ---------------- | --------------------------------------------------------------------------- |
 | `minMatchScore`         | 70               | Batch-mode threshold (0–100). Ignored in single-job mode.                   |
-| `maxApplicationsPerRun` | 10               | Sent as `config.maxApplications`. Single-job mode forces `1`.               |
-| `confirmMode`           | `"batch"`        | `"auto"` skips Phase 3 only when ALL jobs ≥ threshold. Single-job: always.  |
-| `salaryExpectation`     | `""`             | Auto-fills salary fields.                                                   |
+| `maxApplicationsPerRun` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                |
+
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow registers a new account if needed and runs forgot-password if the stored password is stale.
 
 ## Phase 0: Dispatch
 

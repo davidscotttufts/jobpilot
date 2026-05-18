@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 export const RUN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const runStatusSchema = z.enum(RUN_STATUSES);
 
-export const RUN_SOURCES = ["autopilot", "apply"] as const;
+export const RUN_SOURCES = ["search", "autopilot", "apply"] as const;
 export const runSourceSchema = z.enum(RUN_SOURCES);
 
 export const RUN_JOB_STATUSES = [
@@ -17,9 +17,9 @@ export const RUN_JOB_STATUSES = [
 export const runJobStatusSchema = z.enum(RUN_JOB_STATUSES);
 
 export const runConfigSchema = z.object({
-  minMatchScore: z.number().int().min(0).max(100).optional(),
+  board: z.string().min(1),
+  minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
-  boards: z.array(z.string()).optional(),
 });
 
 export const runSummarySchema = z.object({

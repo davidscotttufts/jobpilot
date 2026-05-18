@@ -12,6 +12,8 @@ interface RunSummaryTilesProps {
 export function RunSummaryTiles(props: RunSummaryTilesProps): ReactElement {
   const { run } = props;
   const s = run.summary;
+  const showRemaining = typeof run.config.maxApplications === "number";
+
   return (
     <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", "& > *": { flex: "1 1 160px" } }}>
       <StatCard label="Found" value={s.totalFound} />
@@ -19,7 +21,7 @@ export function RunSummaryTiles(props: RunSummaryTilesProps): ReactElement {
       <StatCard label="Applied" value={s.applied} />
       <StatCard label="Failed" value={s.failed} />
       <StatCard label="Skipped" value={s.skipped} />
-      <StatCard label="Remaining" value={s.remaining} />
+      {showRemaining && <StatCard label="Remaining" value={s.remaining} />}
     </Stack>
   );
 }

@@ -5,6 +5,7 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/matching";
 import { logApplicationSchema } from "@/lib/schemas/application";
+import { publishPipelineEvent } from "@/lib/sse";
 
 export async function GET(req: Request) {
   const profileId = await getActiveProfileId();
@@ -72,6 +73,10 @@ export async function POST(req: Request) {
           create: { fromStage: null, toStage: "applied" },
         },
       },
+    });
+    publishPipelineEvent(profileId, {
+      type: "application.created",
+      runId: data.runId ?? null,
     });
     return ok(application, { status: 201 });
   } catch (e) {

@@ -51,13 +51,7 @@ export async function GET() {
       ...profile,
       preferredLocations: JSON.parse(profile.preferredLocations) as string[],
     },
-    autopilot: profile.autopilot
-      ? {
-          ...profile.autopilot,
-          skipCompanies: JSON.parse(profile.autopilot.skipCompanies) as string[],
-          skipTitleKeywords: JSON.parse(profile.autopilot.skipTitleKeywords) as string[],
-        }
-      : null,
+    autopilot: profile.autopilot,
     primaryResumeSourceAbsolutePath: profile.primaryResume?.sourceFilename
       ? resumePath(profile.primaryResume.sourceFilename)
       : null,
@@ -93,17 +87,8 @@ export async function PUT(req: Request) {
   if (autopilot) {
     await db.autopilotSettings.upsert({
       where: { profileId: id },
-      create: {
-        profileId: id,
-        ...autopilot,
-        skipCompanies: JSON.stringify(autopilot.skipCompanies),
-        skipTitleKeywords: JSON.stringify(autopilot.skipTitleKeywords),
-      },
-      update: {
-        ...autopilot,
-        skipCompanies: JSON.stringify(autopilot.skipCompanies),
-        skipTitleKeywords: JSON.stringify(autopilot.skipTitleKeywords),
-      },
+      create: { profileId: id, ...autopilot },
+      update: autopilot,
     });
   }
 

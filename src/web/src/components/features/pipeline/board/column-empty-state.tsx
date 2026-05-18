@@ -34,8 +34,8 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
             <Button size="small" variant="outlined" onClick={actions.openAddUrls}>
               Add URLs
             </Button>
-            <Button size="small" variant="contained" onClick={actions.openAutopilot}>
-              Autopilot…
+            <Button size="small" variant="contained" component={Link} href={"/runs/new" as Route}>
+              New run…
             </Button>
           </Stack>
         </>

@@ -80,13 +80,7 @@ export const profileSchema = z.object({
 
 export const autopilotSettingsSchema = z.object({
   minMatchScore: z.number().int().min(0).max(100),
-  maxApplicationsPerRun: z.number().int().min(1).max(500),
-  confirmMode: z.enum(["batch", "auto"]),
-  skipCompanies: z.array(z.string()),
-  skipTitleKeywords: z.array(z.string()),
-  minSalary: z.number().int().min(0),
-  maxSalary: z.number().int().min(0),
-  salaryExpectation: z.string().optional().nullable(),
+  maxApplicationsPerRun: z.number().int().min(1).max(500).optional().nullable(),
   defaultStartDate: z.string(),
 });
 
@@ -127,13 +121,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutopilotInput = {
   primaryResumeId: null,
   autopilot: {
     minMatchScore: 70,
-    maxApplicationsPerRun: 20,
-    confirmMode: "batch",
-    skipCompanies: [],
-    skipTitleKeywords: [],
-    minSalary: 0,
-    maxSalary: 0,
-    salaryExpectation: "",
+    maxApplicationsPerRun: null,
     defaultStartDate: "2 weeks notice",
   },
 };

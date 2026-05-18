@@ -1,9 +1,9 @@
 ﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { addRunJobSchema } from "@/lib/schemas/run";
-import { publishRunEvent } from "@/lib/sse";
+import { publishPipelineEventFromRun, publishRunEvent } from "@/lib/sse";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -51,6 +51,13 @@ export async function POST(req: Request, ctx: Params) {
       },
     });
     publishRunEvent(id, { type: "job-update", payload: { kind: "added", job } });
+
+    await publishPipelineEventFromRun(id, {
+      type: "runjob.created",
+      runId: id,
+      jobKey: job.jobKey,
+    });
+
     return ok(job, { status: 201 });
   } catch (e) {
     if ((e as { code?: string }).code === "P2002") {

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactElement } from "react";
 import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
@@ -7,17 +7,12 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { useRunEvents } from "@/hooks/use-run-events";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import type { RunStatus } from "@/lib/schemas/run";
 import type { RunDetailDto } from "@/types/api";
+import { formatRelativeTime } from "@/utils/format";
+import { RunActionsBar } from "./run-actions-bar";
 import { RunJobsTable } from "./run-jobs-table";
 import { RunSummaryTiles } from "./run-summary-tiles";
-
-const STATUS_COLOR: Record<RunStatus, "default" | "info" | "success" | "error"> = {
-  in_progress: "info",
-  paused: "default",
-  completed: "success",
-  failed: "error",
-};
+import { RUN_STATUS_COLOR, RUN_STATUS_LABEL } from "./run-ui";
 
 interface RunLiveViewerProps {
   runId: string;
@@ -37,17 +32,45 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   }
 
   const run = detail.data;
+  const cfg = run.config;
+  const isAutopilot = run.source === "autopilot";
 
   return (
     <Stack spacing={3}>
-      <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-        <Chip size="small" label={run.status} color={STATUS_COLOR[run.status]} variant="outlined" />
-        <Typography variant="body2Muted">
-          Source: {run.source} · Started {new Date(run.startedAt).toLocaleString()}
-        </Typography>
+      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
+        >
+          <Chip
+            size="small"
+            label={RUN_STATUS_LABEL[run.status]}
+            color={RUN_STATUS_COLOR[run.status]}
+            variant="outlined"
+          />
+          <Typography variant="body2Muted">
+            {run.source} · Started {formatRelativeTime(run.startedAt)} ago
+          </Typography>
+          {cfg.board && <Chip size="small" label={`Board: ${cfg.board}`} variant="outlined" />}
+          {isAutopilot && typeof cfg.minScore === "number" && (
+            <Chip size="small" label={`Min score: ${cfg.minScore}`} variant="outlined" />
+          )}
+          {isAutopilot && (
+            <Chip
+              size="small"
+              label={`Max apps: ${cfg.maxApplications ?? "∞"}`}
+              variant="outlined"
+            />
+          )}
+        </Stack>
+        <RunActionsBar run={run} />
       </Stack>
+      {run.status === "paused" && (
+        <Typography variant="body2Muted">Paused — click Resume to continue.</Typography>
+      )}
       <RunSummaryTiles run={run} />
-      <SectionCard title="Jobs" description="Updated live as the autopilot runs.">
+      <SectionCard title="Jobs" description="Updated live as the run progresses.">
         <RunJobsTable rows={run.jobs} />
       </SectionCard>
     </Stack>

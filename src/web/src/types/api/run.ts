@@ -13,9 +13,9 @@ export interface RunDto {
 }
 
 export interface RunConfigDto {
-  minMatchScore?: number;
+  board?: string;
+  minScore?: number;
   maxApplications?: number;
-  boards?: string[];
 }
 
 export interface RunSummaryDto {
@@ -58,4 +58,11 @@ export interface RunEventDto {
 
 export interface RunDetailDto extends RunDto {
   jobs: RunJobDto[];
+}
+
+export interface CreateRunRequest {
+  runId: string;
+  query: string;
+  source: RunSource;
+  config: RunConfigDto;
 }

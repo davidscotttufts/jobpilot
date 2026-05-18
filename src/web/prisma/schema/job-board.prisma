@@ -5,8 +5,6 @@ model JobBoard {
   name      String
   domain    String
   searchUrl String?
-  type      String
-  enabled   Boolean @default(true)
   email     String?
   password  String?
   sortOrder Int     @default(0)

@@ -1,34 +1,33 @@
 ---
 name: search
-description: Search enabled job boards via Playwright, rank results by fit against the user's resume, and present a ranked table with next-action commands.
-argument-hint: "<job_title_keywords_location>"
+description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and present a ranked table with next-action commands.
+argument-hint: "<job_title_keywords_location> --board <domain>"
 ---
 
 # Job Search
 
-Search enabled boards and rank results by qualification fit against the resume.
+Search a single board (picked by the user when launching the run) and rank results by qualification fit against the resume.
 
 ## Setup
 
 1. Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`.
-2. Fetch enabled search boards:
+2. Parse the argument. The `--board <domain>` flag is **required** — e.g. `--board linkedin.com`. The rest of the argument is the free-text query.
+3. Resolve the board:
 
    ```bash
    JOBPILOT_API=http://localhost:8000
-   curl -fsS "$JOBPILOT_API/api/job-boards"
+   curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.data[] | select(.domain == $d)'
    ```
 
-   Filter `data` where `enabled === true` and `type === "search"`. Boards with `type === "ats"` are apply-only — skip them here.
+   If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`."
 
 ## Step 1: Parse Query
 
 Extract title/role, keywords, location, other preferences (e.g. "no startups", "FAANG only", salary). If vague, ask before searching.
 
-## Step 2: Search Each Board
+## Step 2: Search the Board
 
-For each enabled search board:
-
-1. `browser_navigate` to `searchUrl`.
+1. `browser_navigate` to the resolved board's `searchUrl`.
 2. Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` to log in proactively.
 3. Fill the search fields and submit.
 4. `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/<board>-results.js` (`linkedin-results.js`, `indeed-results.js`, or `generic-results.js` as fallback) and pass to `browser_evaluate`. **Do not snapshot — the extractor JSON is far cheaper than a full a11y tree.**
@@ -75,10 +74,10 @@ Offer:
 
 ## Rules
 
-1. **Only enabled boards** — respect `/api/job-boards`.
-2. **Never create accounts.** Skip the board if no credentials.
+1. **Exactly one board per run** — the `--board` flag is required and the skill targets only that board.
+2. **Account handling** — follow `shared/auth.md`. If login fails because the account doesn't exist, the auth flow registers one with the stored credentials.
 3. **Handle rate limiting** — if blocked, note it and continue.
 4. **Be honest about scores.** 50/100 is a stretch — label it as such.
-5. **Deduplicate** across boards.
+5. **Deduplicate** within the board.
 
 Read `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md` for large pages, popups, and browser best practices.

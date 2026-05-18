@@ -57,15 +57,7 @@ export async function POST(req: Request) {
       eeoDisabilityStatus: profileFields.eeoDisabilityStatus ?? null,
       primaryResumeId: primaryResumeId ?? null,
       isActive: !hasActive,
-      autopilot: {
-        create: autopilot
-          ? {
-              ...autopilot,
-              skipCompanies: JSON.stringify(autopilot.skipCompanies),
-              skipTitleKeywords: JSON.stringify(autopilot.skipTitleKeywords),
-            }
-          : {},
-      },
+      autopilot: { create: autopilot ?? {} },
     },
   });
 

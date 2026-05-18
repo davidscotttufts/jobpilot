@@ -5,6 +5,7 @@ import { DocumentScanner } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { useAgent } from "@/providers/agent-provider";
+import { buildCliArgs } from "@/utils/cli-args";
 import type { ResumeDto } from "@/types/api";
 
 interface ExtractResumeButtonProps {
@@ -20,8 +21,10 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
   const hasData = resume.content !== null;
 
   const run = async (force: boolean) => {
-    const args = force ? `${resume.id} --force` : String(resume.id);
-    await agent.injectSkill("extract-resume", args);
+    await agent.injectSkill(
+      "extract-resume",
+      buildCliArgs({ positional: [resume.id], flags: { force } }),
+    );
   };
 
   const handleClick = () => {

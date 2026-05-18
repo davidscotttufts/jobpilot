@@ -3,18 +3,7 @@
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
-import {
-  FormCurrencyField,
-  FormMultiselectField,
-  FormSelectField,
-  FormTextField,
-  type AnyReactForm,
-} from "@/components/ui/form/tanstack";
-
-const CONFIRM_MODES = [
-  { value: "batch", label: "Confirm in batch (recommended)" },
-  { value: "auto", label: "Auto-apply (no confirm)" },
-];
+import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
 
 interface AutopilotSectionProps {
   form: AnyReactForm;
@@ -39,39 +28,13 @@ export function AutopilotSection(props: AutopilotSectionProps): ReactElement {
           name="autopilot.maxApplicationsPerRun"
           label="Max applications per run"
           type="number"
+          helperText="Leave empty for unlimited"
         />
       </Stack>
-      <FormSelectField
-        form={form}
-        name="autopilot.confirmMode"
-        label="Confirmation mode"
-        items={CONFIRM_MODES}
-      />
-      <Stack direction="row" spacing={2}>
-        <FormCurrencyField form={form} name="autopilot.minSalary" label="Min salary" />
-        <FormCurrencyField form={form} name="autopilot.maxSalary" label="Max salary" />
-      </Stack>
-      <FormTextField
-        form={form}
-        name="autopilot.salaryExpectation"
-        label="Salary expectation (free text)"
-      />
       <FormTextField
         form={form}
         name="autopilot.defaultStartDate"
         label="Default start date answer"
-      />
-      <FormMultiselectField
-        form={form}
-        name="autopilot.skipCompanies"
-        label="Skip companies"
-        placeholder="Add a company name"
-      />
-      <FormMultiselectField
-        form={form}
-        name="autopilot.skipTitleKeywords"
-        label="Skip title keywords"
-        placeholder="Add a keyword"
       />
     </FormSection>
   );

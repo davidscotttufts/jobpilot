@@ -3,7 +3,7 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { patchRunJobSchema } from "@/lib/schemas/run";
-import { publishRunEvent } from "@/lib/sse";
+import { publishPipelineEventFromRun, publishRunEvent } from "@/lib/sse";
 
 type Params = ApiRouteContext<{ id: string; jobKey: string }>;
 
@@ -39,5 +39,11 @@ export async function PATCH(req: Request, ctx: Params) {
   });
 
   publishRunEvent(id, { type: "job-update", payload: { kind: "updated", job } });
+  await publishPipelineEventFromRun(id, {
+    type: "runjob.updated",
+    runId: id,
+    jobKey,
+    status: parsed.data.status,
+  });
   return ok(job);
 }

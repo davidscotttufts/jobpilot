@@ -3,7 +3,7 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { updateRunSchema } from "@/lib/schemas/run";
-import { publishRunEvent } from "@/lib/sse";
+import { publishPipelineEventFromRun, publishRunEvent } from "@/lib/sse";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -61,6 +61,13 @@ export async function PATCH(req: Request, ctx: Params) {
 
   if (parsed.data.status) {
     publishRunEvent(id, { type: "status", payload: { status: parsed.data.status } });
+    const pipelineType = parsed.data.status === "completed" ? "run.completed" : "run.updated";
+    await publishPipelineEventFromRun(id, {
+      type: pipelineType,
+      runId: id,
+      status: parsed.data.status,
+      source: existing.source,
+    });
   }
   if (summaryNext) {
     publishRunEvent(id, { type: "progress", payload: summaryNext });
