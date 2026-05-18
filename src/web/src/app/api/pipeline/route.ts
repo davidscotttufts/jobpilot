@@ -1,12 +1,6 @@
 import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import {
-  emptyPage,
-  loadApplying,
-  loadInterviewing,
-  loadQueued,
-  loadSubmitted,
-} from "./_lib/loaders";
+import { loadApplying, loadInterviewing, loadQueued, loadSubmitted } from "./_lib/loaders";
 import { parsePipelineQuery } from "./_lib/params";
 
 export async function GET(req: Request) {
@@ -19,8 +13,6 @@ export async function GET(req: Request) {
   const { stage, cursor, limit, filters } = query;
 
   switch (stage) {
-    case "discovered":
-      return ok(emptyPage("discovered"));
     case "queued":
       return ok(await loadQueued(profileId, cursor, limit, filters));
     case "applying":

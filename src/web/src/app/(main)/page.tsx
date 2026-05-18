@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
-import { Add } from "@mui/icons-material";
-import { Box, Button, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import {
+  AddUrlsButton,
   OpenAgentButton,
   PipelineFilterBar,
   PipelineHeaderStats,
@@ -28,9 +28,7 @@ export default function PipelinePage(): ReactElement {
             <PipelineHeaderStats />
           </Box>
           <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-            <Button variant="outlined" size="small" startIcon={<Add fontSize="md" />}>
-              Add URLs
-            </Button>
+            <AddUrlsButton />
             <OpenAgentButton />
           </Stack>
         </Stack>

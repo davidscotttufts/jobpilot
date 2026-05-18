@@ -31,7 +31,6 @@ export const line = {
 } as const;
 
 export const stages = {
-  discovered: "#7A8B9E",
   queued: "#C9A876",
   applying: "#D9573A",
   submitted: "#8FA08F",
