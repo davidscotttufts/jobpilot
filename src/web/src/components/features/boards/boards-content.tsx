@@ -1,21 +1,56 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
-import { Delete, Edit } from "@mui/icons-material";
-import { Box, Chip, IconButton, Stack, Switch, Typography } from "@mui/material";
+import { Clear, Delete, Edit, Search } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  InputAdornment,
+  Pagination,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
+import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout/";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { JobBoardPatch } from "@/lib/schemas/job-board";
 import type { JobBoardDto } from "@/types/api";
 import { BoardFormDialog } from "./board-form-dialog";
 
+type TypeFilter = "search" | "ats";
+type StatusFilter = "enabled" | "disabled";
+
+const TYPE_OPTIONS: ReadonlyArray<SelectFieldOption<TypeFilter>> = [
+  { value: "search", label: "Search" },
+  { value: "ats", label: "ATS" },
+];
+
+const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<StatusFilter>> = [
+  { value: "enabled", label: "Enabled" },
+  { value: "disabled", label: "Disabled" },
+];
+
+const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 200;
+
 export function BoardsContent(): ReactElement {
   const [editing, setEditing] = useState<JobBoardDto | null>(null);
   const [pendingDelete, setPendingDelete] = useState<JobBoardDto | null>(null);
+  const [searchDraft, setSearchDraft] = useState("");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter | null>(null);
+  const [page, setPage] = useState(1);
+
+  const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
 
   const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
     apiClient.get<JobBoardDto[]>("/api/job-boards"),
@@ -39,20 +74,107 @@ export function BoardsContent(): ReactElement {
     },
   );
 
-  const rows = boards.data ?? [];
+  const allRows = boards.data ?? [];
+  const needle = search.trim().toLowerCase();
+
+  const filteredRows = allRows.filter((b) => {
+    if (typeFilter && b.type !== typeFilter) return false;
+    if (statusFilter === "enabled" && !b.enabled) return false;
+    if (statusFilter === "disabled" && b.enabled) return false;
+    if (
+      needle &&
+      !b.name.toLowerCase().includes(needle) &&
+      !b.domain.toLowerCase().includes(needle)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const isAnyFilterActive = needle.length > 0 || typeFilter !== null || statusFilter !== null;
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pageRows = filteredRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const handleResetFilters = (): void => {
+    setSearchDraft("");
+    setTypeFilter(null);
+    setStatusFilter(null);
+    setPage(1);
+  };
 
   return (
     <>
       <SectionCard>
-        {rows.length === 0 ? (
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={1.5}
+          sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
+        >
+          <TextField
+            size="small"
+            placeholder="Search name or domain"
+            value={searchDraft}
+            onChange={(e) => {
+              setSearchDraft(e.target.value);
+              setPage(1);
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="sm" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+            sx={{ flex: 1, minWidth: 200 }}
+          />
+          <SelectField
+            label="Type"
+            value={typeFilter}
+            options={TYPE_OPTIONS}
+            emptyLabel="All types"
+            onChange={(v) => {
+              setTypeFilter(v);
+              setPage(1);
+            }}
+          />
+          <SelectField
+            label="Status"
+            value={statusFilter}
+            options={STATUS_OPTIONS}
+            onChange={(v) => {
+              setStatusFilter(v);
+              setPage(1);
+            }}
+          />
+          {isAnyFilterActive && (
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<Clear fontSize="sm" />}
+              onClick={handleResetFilters}
+            >
+              Clear
+            </Button>
+          )}
+        </Stack>
+
+        {allRows.length === 0 ? (
           <Box sx={{ py: 3, textAlign: "center" }}>
             <Typography variant="body2Muted">
               No boards yet. Run <code>bun db:setup</code> to seed defaults.
             </Typography>
           </Box>
+        ) : filteredRows.length === 0 ? (
+          <Box sx={{ py: 3, textAlign: "center" }}>
+            <Typography variant="body2Muted">No boards match the current filters.</Typography>
+          </Box>
         ) : (
           <Stack spacing={1}>
-            {rows.map((b) => (
+            {pageRows.map((b) => (
               <Stack
                 key={b.id}
                 direction="row"
@@ -95,9 +217,28 @@ export function BoardsContent(): ReactElement {
             ))}
           </Stack>
         )}
+
+        {filteredRows.length > PAGE_SIZE && (
+          <Stack
+            direction="row"
+            sx={{ mt: 2, alignItems: "center", justifyContent: "space-between" }}
+          >
+            <Typography variant="captionMuted">
+              Showing {(safePage - 1) * PAGE_SIZE + 1}–
+              {Math.min(safePage * PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
+            </Typography>
+            <Pagination
+              size="small"
+              count={pageCount}
+              page={safePage}
+              onChange={(_, p) => setPage(p)}
+            />
+          </Stack>
+        )}
       </SectionCard>
 
       <BoardFormDialog
+        key={editing?.id ?? "new"}
         open={editing !== null}
         initial={
           editing

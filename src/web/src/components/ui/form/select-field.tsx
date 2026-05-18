@@ -3,27 +3,27 @@
 import type { ReactElement } from "react";
 import { MenuItem, TextField } from "@mui/material";
 
-export interface SelectFilterOption<TValue extends string = string> {
+export interface SelectFieldOption<TValue extends string = string> {
   value: TValue;
   label: string;
 }
 
-interface SelectFilterProps<TValue extends string = string> {
+interface SelectFieldProps<TValue extends string = string> {
   label: string;
-  value: TValue | undefined;
-  options: ReadonlyArray<SelectFilterOption<TValue>>;
+  value: TValue | null;
+  options: ReadonlyArray<SelectFieldOption<TValue>>;
   /** Label shown for the empty / "all" sentinel. Defaults to "All". */
   emptyLabel?: string;
   minWidth?: number;
-  onChange: (value: TValue | undefined) => void;
+  onChange: (value: TValue | null) => void;
 }
 
 /**
  * Compact non-form-bound select used inside a FilterBar. Empty value
- * means "no filter" — selecting the empty option calls onChange(undefined).
+ * means "no filter" — selecting the empty option calls onChange(null).
  */
-export function SelectFilter<TValue extends string = string>(
-  props: SelectFilterProps<TValue>,
+export function SelectField<TValue extends string = string>(
+  props: SelectFieldProps<TValue>,
 ): ReactElement {
   const { label, value, options, emptyLabel = "All", minWidth = 160, onChange } = props;
   return (
@@ -34,7 +34,7 @@ export function SelectFilter<TValue extends string = string>(
       value={value ?? ""}
       onChange={(e) => {
         const next = e.target.value;
-        onChange(next ? (next as TValue) : undefined);
+        onChange(next ? (next as TValue) : null);
       }}
       sx={{ minWidth }}
     >

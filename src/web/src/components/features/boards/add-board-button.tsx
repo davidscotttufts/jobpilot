@@ -28,6 +28,7 @@ export function AddBoardButton(): ReactElement {
         Add board
       </Button>
       <BoardFormDialog
+        key={open ? "open" : "closed"}
         open={open}
         title="Add job board"
         onClose={() => setOpen(false)}
