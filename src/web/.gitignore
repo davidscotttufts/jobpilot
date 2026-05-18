@@ -44,7 +44,7 @@ next-env.d.ts
 # jobpilot
 /storage/resumes/*
 !/storage/resumes/.gitkeep
-/prisma/dev.db
-/prisma/dev.db-journal
+/prisma/app.db
+/prisma/app.db-journal
 /src/generated/
 storage/

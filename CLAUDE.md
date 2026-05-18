@@ -7,7 +7,7 @@ Local AI job-application app. Uses Claude Code or Codex as the provider, a Next.
 - `src/jobpilot-skills/` — canonical, provider-neutral SKILL.md prompts and `shared/*.md`. **Edit here only.**
 - `scripts/sync-skills.ts` — generates per-provider skill trees. Run `bun run sync-skills` (auto-runs on `predev`/`prestart`).
 - `src/jobpilot-claude-plugin/` & `src/jobpilot-codex-plugin/` — plugin manifests + `.mcp.json`. Their `skills/` subtrees are **generated and gitignored**.
-- `src/web/` — Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. Owns all persistence (SQLite at `prisma/dev.db`, resumes at `storage/resumes/`).
+- `src/web/` — Bun + Next.js 16 + MUI 9 + Prisma 7 + TanStack Query/Form + Zod v4. Owns all persistence (SQLite at `prisma/app.db`, resumes at `storage/resumes/`).
 - `src/JobPilot.Terminal/` — .NET 10 minimal API hosting one provider PTY. Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`.
 
 ## Commands

@@ -43,7 +43,7 @@ git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
 bun install
 bun --cwd src/web install
-bun --cwd src/web run db:migrate:apply   # creates src/web/prisma/dev.db
+bun --cwd src/web run db:migrate:apply   # creates src/web/prisma/app.db
 bun --cwd src/web run db:seed            # seeds default job boards
 ```
 
@@ -154,7 +154,7 @@ the next chunk and PATCHes each entry to `consumed` when applied.
 
 Two paths hold all local state:
 
-- `src/web/prisma/dev.db` - the entire database.
+- `src/web/prisma/app.db` - the entire database.
 - `src/web/storage/resumes/` - uploaded PDFs.
 
 ## Resetting

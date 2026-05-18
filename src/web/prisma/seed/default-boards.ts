@@ -1,12 +1,4 @@
-import path from "node:path";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import { PrismaClient } from "../../src/generated/prisma/client";
-
-const dbPath = path.resolve(process.cwd(), "prisma", "dev.db");
-
-const db = new PrismaClient({
-  adapter: new PrismaLibSql({ url: `file:${dbPath}` }),
-});
+import { db } from "@/lib/db";
 
 interface BoardSeed {
   name: string;
@@ -53,7 +45,9 @@ const DEFAULT_BOARDS: BoardSeed[] = [
 async function main() {
   const profiles = await db.profile.findMany({ select: { id: true } });
   if (profiles.length === 0) {
-    console.log("No profiles found. Skipping job board seed (boards seed per profile after onboarding).");
+    console.log(
+      "No profiles found. Skipping job board seed (boards seed per profile after onboarding).",
+    );
     return;
   }
 

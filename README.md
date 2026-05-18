@@ -111,7 +111,7 @@ verification codes during login. Setup:
 
 The scope is `gmail.readonly` — JobPilot never sends or deletes mail. The
 account is stored as a singleton row in `EmailAccount` (refresh token kept
-locally in `src/web/prisma/dev.db`).
+locally in `src/web/prisma/app.db`).
 
 **Troubleshooting**
 

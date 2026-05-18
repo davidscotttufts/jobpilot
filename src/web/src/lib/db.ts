@@ -2,7 +2,7 @@ import path from "node:path";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { PrismaClient } from "@/generated/prisma/client";
 
-const dbPath = path.resolve(process.cwd(), "prisma", "dev.db");
+const dbPath = path.resolve(process.cwd(), "prisma", "app.db");
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { defineConfig } from "prisma/config";
 
-const dbPath = path.resolve(__dirname, "prisma", "dev.db");
+const dbPath = path.resolve(__dirname, "prisma", "app.db");
 const dbUrl = `file:${dbPath}`;
 
 export default defineConfig({
