@@ -16,8 +16,8 @@ import {
 import { formatSkillCommand, injectCommand, type TerminalProviderId } from "@/lib/terminal";
 import { useToast } from "@/providers/notification-provider";
 
-const TERMINAL_PROVIDER_KEY = "jobpilot.terminal.provider";
-const DOCK_WIDTH_KEY = "jobpilot.dock.width";
+const TERMINAL_PROVIDER_KEY = "jobpilot:terminal.provider";
+const DOCK_WIDTH_KEY = "jobpilot:dock.width";
 
 function getProvider(): TerminalProviderId {
   if (typeof window === "undefined") return "claude";
