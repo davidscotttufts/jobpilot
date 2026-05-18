@@ -18,28 +18,17 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
   const showInlineStageSummary = !isQueued && job.stageSummary;
 
   const body = (
-    <Box sx={{ padding: 1.5 }}>
-      <Stack direction="row" sx={{ alignItems: "flex-start", gap: 0.5 }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography
-            variant="body2"
-            sx={{ fontWeight: 500, letterSpacing: "-0.005em", lineHeight: 1.35, mb: 0.5 }}
-          >
-            {job.role}
-          </Typography>
-          <Typography variant="captionMuted" sx={{ display: "block" }}>
-            {job.company}
-            {job.location ? ` · ${job.location}` : ""}
-          </Typography>
-        </Box>
-        <Box
-          sx={{ flexShrink: 0, mt: -0.5, mr: -0.5 }}
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <PipelineCardMenu job={job} />
-        </Box>
-      </Stack>
+    <Box sx={{ padding: 1.5, paddingRight: 4.5 }}>
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: 500, letterSpacing: "-0.005em", lineHeight: 1.35, mb: 0.5 }}
+      >
+        {job.role}
+      </Typography>
+      <Typography variant="captionMuted" sx={{ display: "block" }}>
+        {job.company}
+        {job.location ? ` · ${job.location}` : ""}
+      </Typography>
 
       <Stack
         direction="row"
@@ -134,8 +123,15 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
     );
 
   return (
-    <Card variant={variant}>
+    <Card variant={variant} sx={{ position: "relative" }}>
       {onClick ? <CardActionArea onClick={() => onClick(job)}>{content}</CardActionArea> : content}
+      <Box
+        sx={{ position: "absolute", top: 4, right: 4, zIndex: 1 }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <PipelineCardMenu job={job} />
+      </Box>
     </Card>
   );
 }
