@@ -7,7 +7,6 @@ const MAX_LIMIT = 200;
 export interface PipelineFilters {
   search?: string | null;
   board?: string | null;
-  matchMin?: number | null;
 }
 
 export interface PipelineQuery {
@@ -18,14 +17,7 @@ export interface PipelineQuery {
 }
 
 export function parsePipelineQuery(req: Request): PipelineQuery | null {
-  const raw = parseQueryParams(req, [
-    "stage",
-    "cursor",
-    "limit",
-    "search",
-    "board",
-    "matchMin",
-  ] as const);
+  const raw = parseQueryParams(req, ["stage", "cursor", "limit", "search", "board"] as const);
 
   if (!isPipelineStage(raw.stage)) {
     return null;
@@ -38,7 +30,6 @@ export function parsePipelineQuery(req: Request): PipelineQuery | null {
     filters: {
       search: trimToUndefined(raw.search),
       board: trimToUndefined(raw.board),
-      matchMin: parseMatchMin(raw.matchMin),
     },
   };
 }
@@ -59,17 +50,6 @@ function parseLimit(value: string | null): number {
   const n = Number.parseInt(value ?? "", 10);
   const safe = Number.isFinite(n) && n > 0 ? n : DEFAULT_LIMIT;
   return Math.min(Math.max(safe, 1), MAX_LIMIT);
-}
-
-function parseMatchMin(value: string | null): number | null {
-  if (!value) {
-    return null;
-  }
-  const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) {
-    return null;
-  }
-  return Math.min(n, 100);
 }
 
 function trimToUndefined(value: string | null): string | null {

@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useState, type ChangeEvent, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { Clear, Search } from "@mui/icons-material";
 import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
 import type { JobBoard } from "@/generated/prisma/client";
@@ -8,13 +8,12 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { usePipelineFilters } from "./use-pipeline-filters";
+import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 
 const SEARCH_DEBOUNCE_MS = 250;
 
 export function PipelineFilterBar(): ReactElement {
-  const { search, setSearch, board, setBoard, matchMin, setMatchMin, isAnyActive, clearAll } =
-    usePipelineFilters();
+  const { search, setSearch, board, setBoard, isAnyActive, clearAll } = usePipelineFilters();
 
   const [searchDraft, setSearchDraft] = useState(search ?? "");
   const debouncedSearch = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
@@ -30,17 +29,6 @@ export function PipelineFilterBar(): ReactElement {
   const boards = useApiQuery<JobBoard[]>(queryKeys.jobBoards.list(), () =>
     apiClient.get<JobBoard[]>("/api/job-boards"),
   );
-
-  const handleMatchMinChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const raw = e.target.value;
-    if (raw === "") {
-      setMatchMin(null);
-      return;
-    }
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) return;
-    setMatchMin(Math.max(0, Math.min(100, parsed)));
-  };
 
   return (
     <Stack
@@ -80,21 +68,6 @@ export function PipelineFilterBar(): ReactElement {
           </MenuItem>
         ))}
       </TextField>
-
-      <TextField
-        size="small"
-        type="number"
-        label="Min match"
-        value={matchMin ?? ""}
-        onChange={handleMatchMinChange}
-        slotProps={{
-          htmlInput: { min: 0, max: 100, step: 5 },
-          input: {
-            endAdornment: <InputAdornment position="end">%</InputAdornment>,
-          },
-        }}
-        sx={{ width: 120 }}
-      />
 
       <Box sx={{ flexGrow: 0 }}>
         {isAnyActive && (

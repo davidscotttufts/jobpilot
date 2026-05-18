@@ -4,9 +4,11 @@ import { useRef, type ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
-import { PIPELINE_STAGE_LABEL, type PipelineJobDto, type PipelineStage } from "@/types/api";
-import { PipelineCard } from "./pipeline-card";
-import { usePipelineColumn, type PipelineColumnFilters } from "./use-pipeline-column";
+import { type PipelineJobDto, type PipelineStage } from "@/types/api";
+import { PipelineCard } from "../card/card";
+import { usePipelineColumn, type PipelineColumnFilters } from "../hooks/use-pipeline-column";
+import { ColumnEmptyState } from "./column-empty-state";
+import { ColumnHeader } from "./column-header";
 
 const CARD_HEIGHT = 108;
 const CARD_GAP = 10;
@@ -17,16 +19,28 @@ interface PipelineColumnProps {
   onJobClick?: (job: PipelineJobDto) => void;
 }
 
+/** When every visible card shares the same source note, surface it once on the column header. */
+function commonSourceNote(items: PipelineJobDto[]): string | null {
+  if (items.length < 2) {
+    return null;
+  }
+  const first = items[0]?.stageSummary;
+  if (!first) {
+    return null;
+  }
+  return items.every((item) => item.stageSummary === first) ? first : null;
+}
+
 export function PipelineColumn(props: PipelineColumnProps): ReactElement {
   const { stage, filters, onJobClick } = props;
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const isApplying = stage === "applying";
 
   const query = usePipelineColumn(stage, filters);
   const items: PipelineJobDto[] = query.data?.pages.flatMap((p) => p.items) ?? [];
   const head = query.data?.pages[0];
   const total = head?.total ?? 0;
   const todayCount = head?.todayCount ?? 0;
+  const sharedNote = stage === "queued" ? commonSourceNote(head?.items ?? []) : null;
 
   const virtualizer = useVirtualizer({
     count: items.length,
@@ -60,46 +74,12 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
         overflow: "hidden",
       })}
     >
-      <Stack
-        direction="row"
-        sx={(theme) => ({
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingInline: 1.5,
-          paddingBlock: 1,
-          borderBottom: `1px solid ${theme.palette.line.divider}`,
-        })}
-      >
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
-          <Box
-            sx={(theme) => ({
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              backgroundColor: theme.palette.stages[stage],
-              boxShadow: isApplying ? `0 0 0 3px ${theme.palette.stages.applying}33` : "none",
-              animation: isApplying ? "stage-dot-pulse 2.4s ease-in-out infinite" : "none",
-              "@keyframes stage-dot-pulse": {
-                "0%, 100%": { opacity: 1 },
-                "50%": { opacity: 0.45 },
-              },
-              flexShrink: 0,
-            })}
-          />
-          <Typography variant="h6" sx={{ fontSize: "0.8125rem", fontWeight: 500 }}>
-            {PIPELINE_STAGE_LABEL[stage]}
-          </Typography>
-        </Stack>
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: "baseline" }}>
-          <Typography
-            variant="captionMuted"
-            sx={(theme) => ({ color: theme.palette.text.secondary })}
-          >
-            {total}
-          </Typography>
-          {todayCount > 0 && <Typography variant="captionMuted">· {todayCount} today</Typography>}
-        </Stack>
-      </Stack>
+      <ColumnHeader
+        stage={stage}
+        total={total}
+        todayCount={todayCount}
+        sharedNote={sharedNote}
+      />
 
       <Box
         ref={scrollRef}
@@ -123,24 +103,9 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
             <Typography variant="captionMuted">Loading…</Typography>
           </Stack>
         ) : items.length === 0 ? (
-          <Stack
-            sx={(theme) => ({
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 120,
-              color: theme.palette.text.disabled,
-            })}
-          >
-            <Typography variant="captionMuted">No jobs here yet</Typography>
-          </Stack>
+          <ColumnEmptyState stage={stage} />
         ) : (
-          <Box
-            sx={{
-              position: "relative",
-              height: virtualizer.getTotalSize(),
-              width: "100%",
-            }}
-          >
+          <Box sx={{ position: "relative", height: virtualizer.getTotalSize(), width: "100%" }}>
             {virtualizer.getVirtualItems().map((row) => {
               const job = items[row.index];
               if (!job) return null;

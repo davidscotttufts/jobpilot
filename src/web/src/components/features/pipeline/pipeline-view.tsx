@@ -1,27 +1,46 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { type PipelineJobDto } from "@/types/api";
-import { PipelineBoard } from "./pipeline-board";
-import { usePipelineFilters } from "./use-pipeline-filters";
+import { PIPELINE_STAGES, type PipelineJobDto } from "@/types/api";
+import { PipelineColumn } from "./board/column";
+import { usePipelineFilters } from "./hooks/use-pipeline-filters";
 
 export function PipelineView(): ReactElement {
   const router = useRouter();
   const { filters } = usePipelineFilters();
 
+  const handleJobClick = (job: PipelineJobDto): void => {
+    if (job.applicationId !== null) {
+      router.push(`/applications/${job.applicationId}` as Parameters<typeof router.push>[0]);
+    } else if (job.runId !== null) {
+      router.push(`/runs/${job.runId}` as Parameters<typeof router.push>[0]);
+    } else if (job.url) {
+      window.open(job.url, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
-    <PipelineBoard
-      filters={filters}
-      onJobClick={(job: PipelineJobDto) => {
-        if (job.applicationId !== null) {
-          router.push(`/applications/${job.applicationId}` as Parameters<typeof router.push>[0]);
-        } else if (job.runId !== null) {
-          router.push(`/runs/${job.runId}` as Parameters<typeof router.push>[0]);
-        } else if (job.url) {
-          window.open(job.url, "_blank", "noopener,noreferrer");
-        }
+    <Stack
+      direction="row"
+      spacing={1.5}
+      sx={{
+        flex: 1,
+        minHeight: 0,
+        paddingInline: 2.5,
+        paddingBlock: 2,
+        overflowX: "auto",
       }}
-    />
+    >
+      {PIPELINE_STAGES.map((stage) => (
+        <PipelineColumn
+          key={stage}
+          stage={stage}
+          filters={filters}
+          onJobClick={handleJobClick}
+        />
+      ))}
+    </Stack>
   );
 }

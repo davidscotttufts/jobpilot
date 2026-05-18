@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/client";
@@ -9,12 +9,11 @@ import { buildUrl } from "@/utils/url";
 export interface PipelineColumnFilters {
   search: string | null;
   board: string | null;
-  matchMin: number | null;
 }
 
 const DEFAULT_LIMIT = 50;
 
-const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null, matchMin: null };
+const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null };
 
 export function usePipelineColumn(
   stage: PipelineStage,
@@ -37,7 +36,6 @@ export function usePipelineColumn(
           cursor: pageParam,
           search: filters.search,
           board: filters.board,
-          matchMin: filters.matchMin,
         }),
       );
       if (error || !data) {

@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Card, CardActionArea, Stack, Typography } from "@mui/material";
+import { Box, Card, CardActionArea, Stack, Tooltip, Typography } from "@mui/material";
 import type { PipelineJobDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
+import { PipelineCardMenu } from "./card-menu";
 
 interface PipelineCardProps {
   job: PipelineJobDto;
@@ -13,19 +14,32 @@ interface PipelineCardProps {
 export function PipelineCard(props: PipelineCardProps): ReactElement {
   const { job, onClick } = props;
   const variant = job.stage === "applying" ? "live" : onClick ? "interactive" : "outlined";
+  const isQueued = job.stage === "queued";
+  const showInlineStageSummary = !isQueued && job.stageSummary;
 
-  const content = (
+  const body = (
     <Box sx={{ padding: 1.5 }}>
-      <Typography
-        variant="body2"
-        sx={{ fontWeight: 500, letterSpacing: "-0.005em", lineHeight: 1.35, mb: 0.5 }}
-      >
-        {job.role}
-      </Typography>
-      <Typography variant="captionMuted" sx={{ display: "block" }}>
-        {job.company}
-        {job.location ? ` · ${job.location}` : ""}
-      </Typography>
+      <Stack direction="row" sx={{ alignItems: "flex-start", gap: 0.5 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 500, letterSpacing: "-0.005em", lineHeight: 1.35, mb: 0.5 }}
+          >
+            {job.role}
+          </Typography>
+          <Typography variant="captionMuted" sx={{ display: "block" }}>
+            {job.company}
+            {job.location ? ` · ${job.location}` : ""}
+          </Typography>
+        </Box>
+        <Box
+          sx={{ flexShrink: 0, mt: -0.5, mr: -0.5 }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <PipelineCardMenu job={job} />
+        </Box>
+      </Stack>
 
       <Stack
         direction="row"
@@ -84,7 +98,7 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
         </Typography>
       )}
 
-      {job.stageSummary && (
+      {showInlineStageSummary && (
         <Box
           sx={(theme) => {
             const tint =
@@ -109,6 +123,15 @@ export function PipelineCard(props: PipelineCardProps): ReactElement {
       )}
     </Box>
   );
+
+  const content =
+    isQueued && job.stageSummary ? (
+      <Tooltip title={job.stageSummary} placement="top" enterDelay={400}>
+        {body}
+      </Tooltip>
+    ) : (
+      body
+    );
 
   return (
     <Card variant={variant}>

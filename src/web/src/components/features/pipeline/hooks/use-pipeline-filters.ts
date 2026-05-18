@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParam, useSearchParamNumber } from "@/hooks/use-search-param";
+import { useSearchParam } from "@/hooks/use-search-param";
 import type { PipelineColumnFilters } from "./use-pipeline-column";
 
 export interface PipelineFiltersValue {
@@ -8,8 +8,6 @@ export interface PipelineFiltersValue {
   setSearch: (next: string | null) => void;
   board: string | null;
   setBoard: (next: string | null) => void;
-  matchMin: number | null;
-  setMatchMin: (next: number | null) => void;
   filters: PipelineColumnFilters;
   isAnyActive: boolean;
   clearAll: () => void;
@@ -18,15 +16,13 @@ export interface PipelineFiltersValue {
 export function usePipelineFilters(): PipelineFiltersValue {
   const [search, setSearch] = useSearchParam("search");
   const [board, setBoard] = useSearchParam("board");
-  const [matchMin, setMatchMin] = useSearchParamNumber("matchMin");
 
-  const filters: PipelineColumnFilters = { search, board, matchMin };
-  const isAnyActive = search !== null || board !== null || matchMin !== null;
+  const filters: PipelineColumnFilters = { search, board };
+  const isAnyActive = search !== null || board !== null;
 
   const clearAll = (): void => {
     setSearch(null);
     setBoard(null);
-    setMatchMin(null);
   };
 
   return {
@@ -34,8 +30,6 @@ export function usePipelineFilters(): PipelineFiltersValue {
     setSearch,
     board,
     setBoard,
-    matchMin,
-    setMatchMin,
     filters,
     isAnyActive,
     clearAll,

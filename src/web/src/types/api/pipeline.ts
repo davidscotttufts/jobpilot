@@ -41,7 +41,6 @@ export interface PipelineFilters {
   limit?: number;
   search?: string;
   board?: string;
-  matchMin?: number;
   dateFrom?: string;
   dateTo?: string;
 }

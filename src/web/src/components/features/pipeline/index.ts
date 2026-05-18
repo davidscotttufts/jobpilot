@@ -1,8 +1,6 @@
-export * from "./add-urls-button";
-export * from "./pipeline-board";
-export * from "./pipeline-card";
-export * from "./pipeline-column";
-export * from "./pipeline-filter-bar";
-export * from "./pipeline-header-stats";
-export * from "./open-agent-button";
-export * from "./pipeline-view";
+export { PipelineActionsProvider } from "./actions-provider";
+export { AddUrlsButton } from "./header/add-urls-button";
+export { PipelineFilterBar } from "./header/filter-bar";
+export { PipelineHeaderStats } from "./header/header-stats";
+export { RunLauncherButton } from "./header/run-launcher-button";
+export { PipelineView } from "./pipeline-view";

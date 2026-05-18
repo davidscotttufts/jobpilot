@@ -13,7 +13,7 @@ export async function loadQueued(
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
-  if (filters.board || filters.matchMin != null) {
+  if (filters.board) {
     return emptyPage("queued");
   }
 
@@ -47,7 +47,6 @@ export async function loadApplying(
     run: { status: "in_progress", profileId },
     status: { notIn: ["applied", "failed", "skipped"] },
     ...(filters.board ? { board: filters.board } : {}),
-    ...(filters.matchMin != null ? { matchScore: { gte: filters.matchMin } } : {}),
   };
   const searchWhere = filters.search
     ? {
@@ -113,7 +112,6 @@ async function loadApplicationStage(
     profileId,
     stage: stageFilter,
     ...(filters.board ? { board: filters.board } : {}),
-    ...(filters.matchMin != null ? { matchScore: { gte: filters.matchMin } } : {}),
   };
   const searchWhere = filters.search
     ? {
