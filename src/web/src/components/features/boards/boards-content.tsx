@@ -4,7 +4,7 @@ import { useState, type ReactElement } from "react";
 import { Delete, Edit } from "@mui/icons-material";
 import { Box, Chip, IconButton, Stack, Switch, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
-import { SectionCard } from "@/components/ui/layout/section-card";
+import { SectionCard } from "@/components/ui/layout/";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
@@ -47,7 +47,7 @@ export function BoardsContent(): ReactElement {
         {rows.length === 0 ? (
           <Box sx={{ py: 3, textAlign: "center" }}>
             <Typography variant="body2Muted">
-              No boards yet. Run <code>bun db:seed</code> to seed defaults.
+              No boards yet. Run <code>bun db:setup</code> to seed defaults.
             </Typography>
           </Box>
         ) : (

@@ -96,7 +96,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
 
   const handleInject = async (command: string) => {
     setExpanded(true);
-    await wait(1000);
+    await wait(1500);
 
     try {
       await injectCommand(command, provider);
@@ -107,7 +107,7 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
 
   const handleInjectSkill = async (skill: string, args?: string) => {
     setExpanded(true);
-    await wait(1000);
+    await wait(1500);
 
     try {
       await injectCommand(formatSkillCommand(provider, skill, args), provider);

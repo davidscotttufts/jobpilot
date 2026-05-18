@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
-import { Button, Chip, Stack } from "@mui/material";
+import { Button, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -58,17 +58,23 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
       >
         Scan pending
       </Button>
-      <Stack direction="row" spacing={0.5} sx={{ ml: "auto", flexWrap: "wrap" }}>
+      <ToggleButtonGroup
+        size="small"
+        exclusive
+        value={filter}
+        onChange={(_, next: InboxFilter | null) => {
+          if (next !== null) {
+            onFilterChange(next);
+          }
+        }}
+        sx={{ ml: "auto" }}
+      >
         {FILTERS.map((f) => (
-          <Chip
-            key={f.key}
-            label={f.label}
-            color={filter === f.key ? "primary" : "default"}
-            onClick={() => onFilterChange(f.key)}
-            variant={filter === f.key ? "filled" : "outlined"}
-          />
+          <ToggleButton key={f.key} value={f.key}>
+            {f.label}
+          </ToggleButton>
         ))}
-      </Stack>
+      </ToggleButtonGroup>
     </Stack>
   );
 }

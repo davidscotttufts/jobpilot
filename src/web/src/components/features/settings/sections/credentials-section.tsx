@@ -46,7 +46,12 @@ export function CredentialsSection(): ReactElement {
       title="Login credentials"
       description="Used by skills to log into job boards. Stored locally in plaintext on your machine."
       actions={
-        <Button startIcon={<Add />} variant="contained" onClick={() => setDialogOpen(true)}>
+        <Button
+          size="small"
+          startIcon={<Add />}
+          variant="contained"
+          onClick={() => setDialogOpen(true)}
+        >
           Add credential
         </Button>
       }

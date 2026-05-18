@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, type ReactElement } from "react";
-import { Button, LinearProgress } from "@mui/material";
+import { Button, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/data/empty-state";
@@ -64,7 +64,7 @@ export function InboxContent(): ReactElement {
   }
 
   return (
-    <>
+    <Stack spacing={2}>
       <InboxToolbar filter={filter} onFilterChange={setFilter} />
       {messages.isLoading ? (
         <LinearProgress />
@@ -80,6 +80,6 @@ export function InboxContent(): ReactElement {
         open={selectedId !== null}
         onClose={() => setSelectedId(null)}
       />
-    </>
+    </Stack>
   );
 }
