@@ -54,7 +54,7 @@ export function PipelineView(): ReactElement {
               Pipeline
             </Typography>
             <Typography variant="body2Muted" sx={{ mt: 0.5 }}>
-              {total} jobs Â· {submitted} submitted Â· {interviewing} interviewing
+              {total} jobs · {submitted} submitted · {interviewing} interviewing
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>

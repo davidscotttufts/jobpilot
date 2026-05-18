@@ -289,9 +289,9 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 **Before:**
 
-> ðŸš€ **Launch Phase:** The product launches in Q3
-> ðŸ’¡ **Key Insight:** Users prefer simplicity
-> âœ… **Next Steps:** Schedule follow-up meeting
+> **Launch Phase:** The product launches in Q3
+> **Key Insight:** Users prefer simplicity
+> **Next Steps:** Schedule follow-up meeting
 
 **After:**
 
@@ -355,14 +355,14 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 ### 22. Filler Phrases
 
-**Before â†’ After:**
+**Before After:**
 
-- "In order to achieve this goal" â†’ "To achieve this"
-- "Due to the fact that it was raining" â†’ "Because it was raining"
-- "At this point in time" â†’ "Now"
-- "In the event that you need help" â†’ "If you need help"
-- "The system has the ability to process" â†’ "The system can process"
-- "It is important to note that the data shows" â†’ "The data shows"
+- "In order to achieve this goal" "To achieve this"
+- "Due to the fact that it was raining" "Because it was raining"
+- "At this point in time" "Now"
+- "In the event that you need help" "If you need help"
+- "The system has the ability to process" "The system can process"
+- "It is important to note that the data shows" "The data shows"
 
 ### 23. Excessive Hedging
 
@@ -442,9 +442,9 @@ Provide:
 >
 > Industry observers have noted that adoption has accelerated from hobbyist experiments to enterprise-wide rollouts, from solo developers to cross-functional teams. The technology has been featured in The New York Times, Wired, and The Verge. Additionally, the ability to generate documentation, tests, and refactors showcases how AI can contribute to better outcomes, highlighting the intricate interplay between automation and human judgment.
 >
-> - ðŸ’¡ **Speed:** Code generation is significantly faster, reducing friction and empowering developers.
-> - ðŸš€ **Quality:** Output quality has been enhanced through improved training, contributing to higher standards.
-> - âœ… **Adoption:** Usage continues to grow, reflecting broader industry trends.
+> **Speed:** Code generation is significantly faster, reducing friction and empowering developers.
+> **Quality:** Output quality has been enhanced through improved training, contributing to higher standards.
+> **Adoption:** Usage continues to grow, reflecting broader industry trends.
 >
 > While specific details are limited based on available information, it could potentially be argued that these tools might have some positive effect. Despite challenges typical of emerging technologies”including hallucinations, bias, and accountability”the ecosystem continues to thrive. In order to fully realize this potential, teams must align with best practices.
 >

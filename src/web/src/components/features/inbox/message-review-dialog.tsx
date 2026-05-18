@@ -96,7 +96,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>{m?.subject ?? "Loadingâ€¦"}</DialogTitle>
+      <DialogTitle>{m?.subject ?? "Loading"}</DialogTitle>
       <DialogContent dividers>
         {m ? (
           <Stack spacing={2}>
@@ -123,7 +123,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
             <Autocomplete<ApplicationDto>
               size="small"
               options={appOptions.data ?? []}
-              getOptionLabel={(o) => `${o.title} â€” ${o.company}`}
+              getOptionLabel={(o) => `${o.title} ${o.company}`}
               value={matchedApp}
               onChange={(_, v) => {
                 setMatchedApp(v);
@@ -151,7 +151,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
             </Box>
           </Stack>
         ) : (
-          <Typography variant="body2Muted">Loadingâ€¦</Typography>
+          <Typography variant="body2Muted">Loading</Typography>
         )}
       </DialogContent>
       <DialogActions>
