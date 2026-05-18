@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
-import { Button, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { Button, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -41,23 +41,27 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
 
   return (
     <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", alignItems: "center" }}>
-      <Button
-        size="small"
-        variant="outlined"
-        startIcon={<CloudSync />}
-        onClick={() => sync.mutate(undefined as unknown as void)}
-        disabled={sync.isPending}
-      >
-        {sync.isPending ? "Syncing" : "Sync"}
-      </Button>
-      <Button
-        size="small"
-        variant="contained"
-        startIcon={<FormatListBulleted />}
-        onClick={handleScan}
-      >
-        Scan pending
-      </Button>
+      <Tooltip title="Fetch new mail from Gmail">
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<CloudSync />}
+          onClick={() => sync.mutate()}
+          disabled={sync.isPending}
+        >
+          {sync.isPending ? "Syncing" : "Sync"}
+        </Button>
+      </Tooltip>
+      <Tooltip title="Run the scan-inbox skill to classify pending messages">
+        <Button
+          size="small"
+          variant="contained"
+          startIcon={<FormatListBulleted />}
+          onClick={handleScan}
+        >
+          Scan pending
+        </Button>
+      </Tooltip>
       <ToggleButtonGroup
         size="small"
         exclusive
