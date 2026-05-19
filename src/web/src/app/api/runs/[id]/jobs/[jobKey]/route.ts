@@ -40,6 +40,17 @@ export async function PATCH(req: Request, ctx: Params) {
     },
   });
 
+  if (job.status === "applied" || job.status === "failed" || job.status === "skipped") {
+    const queueStatus = job.status === "skipped" ? "skipped" : "consumed";
+    await db.queueEntry.updateMany({
+      where: { profileId, url: job.url, status: "pending" },
+      data: {
+        status: queueStatus,
+        consumedAt: queueStatus === "consumed" ? new Date() : null,
+      },
+    });
+  }
+
   publish(runChannel, { runId: id }, {
     type: "job-update",
     payload: { kind: "updated", job },

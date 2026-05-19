@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
-import { StatCard } from "@/components/ui/display/stat-card";
+import { StatCard } from "@/components/ui/display";
 import type { RunDetailDto } from "@/types/api";
 
 interface RunSummaryTilesProps {

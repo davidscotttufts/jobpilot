@@ -52,6 +52,12 @@ export async function POST(req: Request, ctx: Params) {
         description: parsed.data.description ?? null,
       },
     });
+
+    await db.queueEntry.updateMany({
+      where: { profileId, url: job.url, status: "pending" },
+      data: { status: "consumed", consumedAt: new Date() },
+    });
+
     publish(runChannel, { runId: id }, {
       type: "job-update",
       payload: { kind: "added", job },
