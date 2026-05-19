@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement, type ReactNode } from "react";
 import { ChevronRight, Clear } from "@mui/icons-material";
-import { Box, Button, Chip, Pagination, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Pagination, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -47,6 +47,8 @@ export function RunsList(): ReactElement {
   );
 
   const allRows = runs.data ?? [];
+  const interruptedCount = allRows.filter((r) => r.status === "interrupted").length;
+
   const filteredRows = allRows.filter((r) => {
     if (statusFilter && r.status !== statusFilter) {
       return false;
@@ -74,6 +76,22 @@ export function RunsList(): ReactElement {
 
   return (
     <SectionCard>
+      {interruptedCount > 0 && (
+        <Alert
+          severity="warning"
+          variant="outlined"
+          sx={{ mb: 2, cursor: statusFilter === "interrupted" ? "default" : "pointer" }}
+          onClick={() => {
+            if (statusFilter !== "interrupted") {
+              setStatusFilter("interrupted");
+              setPage(1);
+            }
+          }}
+        >
+          {interruptedCount} {interruptedCount === 1 ? "run was" : "runs were"} interrupted. Open
+          one and click Resume to continue.
+        </Alert>
+      )}
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={1.5}

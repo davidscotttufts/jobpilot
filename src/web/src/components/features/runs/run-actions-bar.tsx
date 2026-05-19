@@ -30,13 +30,10 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
     },
   );
 
-  if (run.source !== "autopilot") {
-    return <></>;
-  }
-
   const failedCount = run.jobs.filter((j) => j.status === "failed").length;
   const isInProgress = run.status === "in_progress";
   const isPaused = run.status === "paused";
+  const isInterrupted = run.status === "interrupted";
 
   return (
     <Stack direction="row" spacing={1}>
@@ -51,18 +48,18 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
           Stop
         </Button>
       )}
-      {isPaused && (
+      {(isPaused || isInterrupted) && (
         <Button
           variant="contained"
           startIcon={<PlayArrow fontSize="sm" />}
           onClick={() => {
-            void agent.injectSkill("autopilot", "resume");
+            void agent.injectSkill("resume", run.runId);
           }}
         >
           Resume
         </Button>
       )}
-      {failedCount > 0 && (
+      {failedCount > 0 && run.source === "autopilot" && (
         <Button
           variant="outlined"
           startIcon={<Replay fontSize="sm" />}

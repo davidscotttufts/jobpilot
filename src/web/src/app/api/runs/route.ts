@@ -1,21 +1,27 @@
 ﻿import type { Prisma } from "@/generated/prisma/client";
 import { getActiveProfileId } from "@/lib/active-profile";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
+import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
+import { reconcileStaleRuns } from "@/lib/runs/reconcile";
 import { createRunSchema } from "@/lib/schemas/run";
 
 export async function GET(req: Request) {
   const profileId = await getActiveProfileId();
+  await reconcileStaleRuns(profileId);
+
   const { status, source } = parseQueryParams(req, ["status", "source"] as const);
   const where: Prisma.RunWhereInput = { profileId };
+
   if (status) where.status = status;
   if (source) where.source = source;
+
   const runs = await db.run.findMany({
     where,
     orderBy: { startedAt: "desc" },
     take: 200,
   });
+
   return ok(
     runs.map((r) => ({
       ...r,
