@@ -114,7 +114,7 @@ RUN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
 curl -fsS -X POST "$JOBPILOT_API/api/runs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg runId "$RUN_ID" \
-    '{runId:$runId, query:"apply queue", source:"apply", config:{minMatchScore:6, maxApplications:10}}')"
+    '{runId:$runId, query:"apply queue", source:"apply", config:{minScore:6, maxApplications:10}}')"
 ```
 
 ## Phase 2: Visit and Score (Batch Only)

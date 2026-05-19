@@ -17,7 +17,7 @@ export const RUN_JOB_STATUSES = [
 export const runJobStatusSchema = z.enum(RUN_JOB_STATUSES);
 
 export const runConfigSchema = z.object({
-  board: z.string().min(1),
+  board: z.string().min(1).optional(),
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
 });
