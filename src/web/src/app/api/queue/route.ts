@@ -4,7 +4,8 @@ import { parseQueryParams } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { addQueueSchema } from "@/lib/schemas/queue";
-import { publishPipelineEvent } from "@/lib/sse";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { publish } from "@/lib/sse/server";
 
 export async function GET(req: Request) {
   const profileId = await getActiveProfileId();
@@ -40,6 +41,6 @@ export async function POST(req: Request) {
       }),
     ),
   );
-  publishPipelineEvent(profileId, { type: "queue.updated" });
+  publish(pipelineChannel, { profileId }, { type: "queue.updated" });
   return ok({ inserted: created.length, items: created }, { status: 201 });
 }

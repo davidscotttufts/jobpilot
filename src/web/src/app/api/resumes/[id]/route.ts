@@ -5,7 +5,8 @@ import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { resumeDataSchema } from "@/lib/schemas/resume";
-import { publishResumeEvent } from "@/lib/sse";
+import { resumeChannel } from "@/lib/sse/channels/resume";
+import { publish } from "@/lib/sse/server";
 import {
   deleteAllResumeArtifacts,
   ensureResumeBackupsDir,
@@ -89,7 +90,7 @@ export async function PUT(req: Request, ctx: Params) {
       JSON.stringify(parsed.data.content, null, 2),
       "utf8",
     );
-    publishResumeEvent(updated.id, {
+    publish(resumeChannel, { resumeId: updated.id }, {
       type: "content.updated",
       resumeId: updated.id,
       version: updated.version,

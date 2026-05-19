@@ -2,7 +2,8 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { publishInboxEvent } from "@/lib/sse/inbox-events";
+import { inboxChannel } from "@/lib/sse/channels/inbox";
+import { publish } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -26,7 +27,7 @@ export async function POST(_req: Request, ctx: Params) {
     data: { reviewStatus: "denied" },
   });
 
-  publishInboxEvent({ type: "message.reviewed", id, status: "denied" });
+  publish(inboxChannel, undefined, { type: "message.reviewed", id, status: "denied" });
 
   return ok({ id, status: "denied" });
 }

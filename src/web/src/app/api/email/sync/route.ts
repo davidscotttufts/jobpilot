@@ -2,7 +2,8 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { getProvider } from "@/lib/email";
-import { publishInboxEvent } from "@/lib/sse/inbox-events";
+import { inboxChannel } from "@/lib/sse/channels/inbox";
+import { publish } from "@/lib/sse/server";
 
 export async function POST() {
   const profileId = await getActiveProfileId();
@@ -36,7 +37,7 @@ export async function POST() {
     }
   }
 
-  publishInboxEvent({ type: "sync.started" });
+  publish(inboxChannel, undefined, { type: "sync.started" });
 
   const result = await provider.syncMessages(active);
 
@@ -74,7 +75,11 @@ export async function POST() {
     },
   });
 
-  publishInboxEvent({ type: "sync.progress", fetched: result.fetched, new: inserted });
+  publish(inboxChannel, undefined, {
+    type: "sync.progress",
+    fetched: result.fetched,
+    new: inserted,
+  });
 
   return ok({ fetched: result.fetched, new: inserted });
 }

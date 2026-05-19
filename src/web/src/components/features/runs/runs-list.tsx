@@ -12,8 +12,8 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { RUN_SOURCES, type RunSource, type RunStatus } from "@/lib/schemas/run";
-import { PIPELINE_EVENTS_URL, type PipelineEvent } from "@/lib/sse/run-events";
-import { useEventSource } from "@/lib/sse/use-event-source";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { useSseChannel } from "@/lib/sse/client";
 import type { RunDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
 import { RUN_STATUS_COLOR, RUN_STATUS_LABEL, RUN_STATUS_OPTIONS } from "./run-ui";
@@ -32,11 +32,13 @@ export function RunsList(): ReactElement {
   const [sourceFilter, setSourceFilter] = useState<RunSource | null>(null);
   const [page, setPage] = useState(1);
 
-  useEventSource<PipelineEvent>(PIPELINE_EVENTS_URL, {
-    onMessage: (event) => {
-      if (event.type === "run.updated" || event.type === "run.completed") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
-      }
+  const invalidateRuns = (): void => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
+  };
+  useSseChannel(pipelineChannel, null, {
+    on: {
+      "run.updated": invalidateRuns,
+      "run.completed": invalidateRuns,
     },
   });
 

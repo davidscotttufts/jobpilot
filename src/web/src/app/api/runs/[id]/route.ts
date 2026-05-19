@@ -3,7 +3,9 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { updateRunSchema } from "@/lib/schemas/run";
-import { publishPipelineEventFromRun, publishRunEvent } from "@/lib/sse";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { runChannel } from "@/lib/sse/channels/run";
+import { publish } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -60,17 +62,25 @@ export async function PATCH(req: Request, ctx: Params) {
   });
 
   if (parsed.data.status) {
-    publishRunEvent(id, { type: "status", payload: { status: parsed.data.status } });
-    const pipelineType = parsed.data.status === "completed" ? "run.completed" : "run.updated";
-    await publishPipelineEventFromRun(id, {
-      type: pipelineType,
-      runId: id,
-      status: parsed.data.status,
-      source: existing.source,
+    publish(runChannel, { runId: id }, {
+      type: "status",
+      payload: { status: parsed.data.status },
     });
+    publish(
+      pipelineChannel,
+      { profileId },
+      parsed.data.status === "completed"
+        ? { type: "run.completed", runId: id }
+        : {
+            type: "run.updated",
+            runId: id,
+            status: parsed.data.status,
+            source: existing.source,
+          },
+    );
   }
   if (summaryNext) {
-    publishRunEvent(id, { type: "progress", payload: summaryNext });
+    publish(runChannel, { runId: id }, { type: "progress", payload: summaryNext });
   }
 
   return ok({

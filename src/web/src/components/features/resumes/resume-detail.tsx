@@ -7,8 +7,8 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { EMPTY_RESUME_DATA, type ResumeData } from "@/lib/schemas/resume";
-import type { ResumeEvent } from "@/lib/sse/resume-events.types";
-import { useEventSource } from "@/lib/sse/use-event-source";
+import { resumeChannel } from "@/lib/sse/channels/resume";
+import { useSseChannel } from "@/lib/sse/client";
 import type { ResumeDto } from "@/types/api";
 import { ResumeEditor } from "./resume-editor";
 import { ResumeHeaderBar } from "./resume-header-bar";
@@ -32,11 +32,11 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
     { errorMessage: "Failed to load resume" },
   );
 
-  useEventSource<ResumeEvent>(`/api/resumes/${resumeId}/events`, {
-    onMessage: (event) => {
-      if (event.type === "content.updated") {
+  useSseChannel(resumeChannel, { resumeId }, {
+    on: {
+      "content.updated": () => {
         void queryClient.invalidateQueries({ queryKey: queryKeys.resume.detail(resumeId) });
-      }
+      },
     },
   });
 

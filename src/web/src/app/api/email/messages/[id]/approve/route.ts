@@ -3,7 +3,8 @@ import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { approveSchema } from "@/lib/schemas/email";
-import { publishInboxEvent } from "@/lib/sse/inbox-events";
+import { inboxChannel } from "@/lib/sse/channels/inbox";
+import { publish } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -88,7 +89,7 @@ export async function POST(req: Request, ctx: Params) {
     }),
   ]);
 
-  publishInboxEvent({ type: "message.reviewed", id, status: "approved" });
+  publish(inboxChannel, undefined, { type: "message.reviewed", id, status: "approved" });
 
   return ok({ id, applicationId: app.id, stage: toStage });
 }

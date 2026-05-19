@@ -3,7 +3,9 @@ import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { addRunJobSchema } from "@/lib/schemas/run";
-import { publishPipelineEventFromRun, publishRunEvent } from "@/lib/sse";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { runChannel } from "@/lib/sse/channels/run";
+import { publish } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -50,9 +52,11 @@ export async function POST(req: Request, ctx: Params) {
         description: parsed.data.description ?? null,
       },
     });
-    publishRunEvent(id, { type: "job-update", payload: { kind: "added", job } });
-
-    await publishPipelineEventFromRun(id, {
+    publish(runChannel, { runId: id }, {
+      type: "job-update",
+      payload: { kind: "added", job },
+    });
+    publish(pipelineChannel, { profileId }, {
       type: "runjob.created",
       runId: id,
       jobKey: job.jobKey,

@@ -2,11 +2,13 @@
 
 import type { ReactElement } from "react";
 import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { useRunEvents } from "@/hooks/use-run-events";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
+import { runChannel } from "@/lib/sse/channels/run";
+import { useSseChannel } from "@/lib/sse/client";
 import type { RunDetailDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
 import { RunActionsBar } from "./run-actions-bar";
@@ -20,12 +22,17 @@ interface RunLiveViewerProps {
 
 export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   const { runId } = props;
+  const queryClient = useQueryClient();
 
   const detail = useApiQuery<RunDetailDto>(queryKeys.runs.detail(runId), () =>
     apiClient.get<RunDetailDto>(`/api/runs/${encodeURIComponent(runId)}`),
   );
 
-  useRunEvents(runId);
+  useSseChannel(runChannel, { runId }, {
+    onMessage: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs.detail(runId) });
+    },
+  });
 
   if (detail.isLoading || !detail.data) {
     return <LinearProgress />;

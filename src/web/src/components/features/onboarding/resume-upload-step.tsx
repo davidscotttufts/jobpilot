@@ -9,8 +9,8 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import type { ResumeEvent } from "@/lib/sse/resume-events.types";
-import { useEventSource } from "@/lib/sse/use-event-source";
+import { resumeChannel } from "@/lib/sse/channels/resume";
+import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import type { ResumeDto } from "@/types/api";
@@ -69,13 +69,15 @@ export function ResumeUploadStep(props: ResumeUploadStepProps): ReactElement {
     onContinue();
   };
 
-  useEventSource<ResumeEvent>(
-    resumeId !== null && state === "extracting" ? `/api/resumes/${resumeId}/events` : null,
+  useSseChannel(
+    resumeChannel,
+    { resumeId: resumeId ?? 0 },
     {
-      onMessage: (event) => {
-        if (event.type === "content.updated") {
+      enabled: resumeId !== null && state === "extracting",
+      on: {
+        "content.updated": (event) => {
           void applyExtractedBasics(event.resumeId);
-        }
+        },
       },
     },
   );

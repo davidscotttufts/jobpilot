@@ -5,8 +5,8 @@ import { Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { queryKeys } from "@/lib/api/query-keys";
-import { PIPELINE_EVENTS_URL, type PipelineEvent } from "@/lib/sse/run-events";
-import { useEventSource } from "@/lib/sse/use-event-source";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { useSseChannel } from "@/lib/sse/client";
 import { PIPELINE_STAGES, type PipelineJobDto } from "@/types/api";
 import { PipelineColumn } from "./board/column";
 import { usePipelineFilters } from "./hooks/use-pipeline-filters";
@@ -16,12 +16,16 @@ export function PipelineView(): ReactElement {
   const queryClient = useQueryClient();
   const { filters } = usePipelineFilters();
 
-  useEventSource<PipelineEvent>(PIPELINE_EVENTS_URL, {
-    onMessage: (event) => {
+  const invalidateRuns = (): void => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
+  };
+  useSseChannel(pipelineChannel, null, {
+    onMessage: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.pipeline.all });
-      if (event.type === "run.updated" || event.type === "run.completed") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
-      }
+    },
+    on: {
+      "run.updated": invalidateRuns,
+      "run.completed": invalidateRuns,
     },
   });
 

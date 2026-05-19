@@ -1,12 +1,6 @@
-import { subscribeToInbox } from "@/lib/sse/inbox-events";
+import { inboxChannel } from "@/lib/sse/channels/inbox";
+import { sseResponse, subscribe } from "@/lib/sse/server";
 
 export async function GET() {
-  const stream = subscribeToInbox();
-  return new Response(stream, {
-    headers: {
-      "content-type": "text/event-stream",
-      "cache-control": "no-cache, no-transform",
-      connection: "keep-alive",
-    },
-  });
+  return sseResponse(subscribe(inboxChannel, undefined));
 }

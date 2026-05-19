@@ -8,7 +8,8 @@ import { EmptyState } from "@/components/ui/data/empty-state";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
-import { useEventSource } from "@/lib/sse/use-event-source";
+import { inboxChannel } from "@/lib/sse/channels/inbox";
+import { useSseChannel } from "@/lib/sse/client";
 import type { EmailAccountStatus, EmailMessageDto } from "@/types/api";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
@@ -39,7 +40,8 @@ export function InboxContent(): ReactElement {
     { enabled: connected },
   );
 
-  useEventSource<unknown>(connected ? "/api/email/events" : undefined, {
+  useSseChannel(inboxChannel, null, {
+    enabled: connected,
     onMessage: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.email.all });
     },

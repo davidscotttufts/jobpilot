@@ -3,7 +3,9 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { patchRunJobSchema } from "@/lib/schemas/run";
-import { publishPipelineEventFromRun, publishRunEvent } from "@/lib/sse";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { runChannel } from "@/lib/sse/channels/run";
+import { publish } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string; jobKey: string }>;
 
@@ -38,8 +40,11 @@ export async function PATCH(req: Request, ctx: Params) {
     },
   });
 
-  publishRunEvent(id, { type: "job-update", payload: { kind: "updated", job } });
-  await publishPipelineEventFromRun(id, {
+  publish(runChannel, { runId: id }, {
+    type: "job-update",
+    payload: { kind: "updated", job },
+  });
+  publish(pipelineChannel, { profileId }, {
     type: "runjob.updated",
     runId: id,
     jobKey,

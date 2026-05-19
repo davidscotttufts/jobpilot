@@ -5,7 +5,8 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/matching";
 import { logApplicationSchema } from "@/lib/schemas/application";
-import { publishPipelineEvent } from "@/lib/sse";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { publish } from "@/lib/sse/server";
 
 export async function GET(req: Request) {
   const profileId = await getActiveProfileId();
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
         },
       },
     });
-    publishPipelineEvent(profileId, {
+    publish(pipelineChannel, { profileId }, {
       type: "application.created",
       runId: data.runId ?? null,
     });

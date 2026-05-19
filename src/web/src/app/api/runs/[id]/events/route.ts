@@ -3,7 +3,8 @@ import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { runEventSchema } from "@/lib/schemas/run";
-import { publishRunEvent, subscribeToRun } from "@/lib/sse";
+import { runChannel, type RunEvent } from "@/lib/sse/channels/run";
+import { publish, sseResponse, subscribe } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -19,14 +20,7 @@ export async function GET(_req: Request, ctx: Params) {
     return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
   }
 
-  const stream = subscribeToRun(id);
-  return new Response(stream, {
-    headers: {
-      "content-type": "text/event-stream",
-      "cache-control": "no-cache, no-transform",
-      connection: "keep-alive",
-    },
-  });
+  return sseResponse(subscribe(runChannel, { runId: id }));
 }
 
 export async function POST(req: Request, ctx: Params) {
@@ -55,10 +49,10 @@ export async function POST(req: Request, ctx: Params) {
     },
   });
 
-  publishRunEvent(id, {
+  publish(runChannel, { runId: id }, {
     type: parsed.data.type,
     payload: parsed.data.payload,
-  });
+  } as RunEvent);
 
   return ok({ id: event.id }, { status: 201 });
 }

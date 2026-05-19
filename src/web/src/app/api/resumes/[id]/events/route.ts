@@ -2,7 +2,8 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { subscribeToResume } from "@/lib/sse";
+import { resumeChannel } from "@/lib/sse/channels/resume";
+import { sseResponse, subscribe } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -21,12 +22,5 @@ export async function GET(_req: Request, ctx: Params) {
     return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
   }
 
-  const stream = subscribeToResume(id);
-  return new Response(stream, {
-    headers: {
-      "content-type": "text/event-stream",
-      "cache-control": "no-cache, no-transform",
-      connection: "keep-alive",
-    },
-  });
+  return sseResponse(subscribe(resumeChannel, { resumeId: id }));
 }

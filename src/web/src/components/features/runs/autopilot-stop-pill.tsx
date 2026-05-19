@@ -9,8 +9,8 @@ import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { RunSource, RunStatus } from "@/lib/schemas/run";
-import { PIPELINE_EVENTS_URL, type PipelineEvent } from "@/lib/sse/run-events";
-import { useEventSource } from "@/lib/sse/use-event-source";
+import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { useSseChannel } from "@/lib/sse/client";
 import type { RunDto } from "@/types/api";
 
 const FILTERS = {
@@ -23,11 +23,13 @@ const RUNS_URL = `/api/runs?status=${FILTERS.status}&source=${FILTERS.source}`;
 export function AutopilotStopPill(): ReactElement {
   const queryClient = useQueryClient();
 
-  useEventSource<PipelineEvent>(PIPELINE_EVENTS_URL, {
-    onMessage: (event) => {
-      if (event.type === "run.updated" || event.type === "run.completed") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
-      }
+  const invalidateRuns = (): void => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
+  };
+  useSseChannel(pipelineChannel, null, {
+    on: {
+      "run.updated": invalidateRuns,
+      "run.completed": invalidateRuns,
     },
   });
 
