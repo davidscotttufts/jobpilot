@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Stack } from "@mui/material";
+import { Grid } from "@mui/material";
 import { StatCard } from "@/components/ui/display/stat-card";
 import type { RunDetailDto } from "@/types/api";
 
@@ -13,15 +13,30 @@ export function RunSummaryTiles(props: RunSummaryTilesProps): ReactElement {
   const { run } = props;
   const s = run.summary;
   const showRemaining = typeof run.config.maxApplications === "number";
+  const tileSize = { xs: 6, sm: 4, md: 2 };
 
   return (
-    <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", "& > *": { flex: "1 1 160px" } }}>
-      <StatCard label="Found" value={s.totalFound} />
-      <StatCard label="Qualified" value={s.qualified} />
-      <StatCard label="Applied" value={s.applied} />
-      <StatCard label="Failed" value={s.failed} />
-      <StatCard label="Skipped" value={s.skipped} />
-      {showRemaining && <StatCard label="Remaining" value={s.remaining} />}
-    </Stack>
+    <Grid container spacing={2}>
+      <Grid size={tileSize}>
+        <StatCard label="Found" value={s.totalFound} />
+      </Grid>
+      <Grid size={tileSize}>
+        <StatCard label="Qualified" value={s.qualified} />
+      </Grid>
+      <Grid size={tileSize}>
+        <StatCard label="Applied" value={s.applied} />
+      </Grid>
+      <Grid size={tileSize}>
+        <StatCard label="Failed" value={s.failed} />
+      </Grid>
+      <Grid size={tileSize}>
+        <StatCard label="Skipped" value={s.skipped} />
+      </Grid>
+      {showRemaining && (
+        <Grid size={tileSize}>
+          <StatCard label="Remaining" value={s.remaining} />
+        </Grid>
+      )}
+    </Grid>
   );
 }
