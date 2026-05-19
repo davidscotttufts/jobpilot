@@ -2,8 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Button, Stack, Typography } from "@mui/material";
-import type { Route } from "next";
-import Link from "next/link";
+import { LinkButton } from "@/components/ui/buttons";
 import type { PipelineStage } from "@/types/api";
 import { usePipelineActions } from "../actions-provider";
 
@@ -34,9 +33,9 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
             <Button size="small" variant="outlined" onClick={actions.openAddUrls}>
               Add URLs
             </Button>
-            <Button size="small" variant="contained" component={Link} href={"/runs/new" as Route}>
+            <LinkButton size="small" variant="contained" href="/runs/new">
               New run…
-            </Button>
+            </LinkButton>
           </Stack>
         </>
       )}
@@ -48,9 +47,9 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
       {stage === "submitted" && (
         <>
           <Typography variant="captionMuted">Submitted applications will appear here.</Typography>
-          <Button size="small" variant="text" component={Link} href={"/runs" as Route}>
+          <LinkButton size="small" variant="text" href="/runs">
             View recent runs →
-          </Button>
+          </LinkButton>
         </>
       )}
       {stage === "interviewing" && (

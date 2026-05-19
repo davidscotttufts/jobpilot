@@ -1,10 +1,10 @@
 ﻿"use client";
 
 import { useState, type ReactElement } from "react";
-import { Button, LinearProgress, Stack } from "@mui/material";
+import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { EmptyState } from "@/components/ui/data/empty-state";
+import { LinkButton } from "@/components/ui/buttons";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -57,9 +57,9 @@ export function InboxContent(): ReactElement {
         title="No mailbox connected"
         description="JobPilot reads new mail to track recruiter replies and auto-fill verification codes. Connect Gmail to get started."
         action={
-          <Button component={Link} href="/profile?tab=email" variant="contained">
+          <LinkButton href="/profile?tab=email" variant="contained">
             Connect Gmail
-          </Button>
+          </LinkButton>
         }
       />
     );
