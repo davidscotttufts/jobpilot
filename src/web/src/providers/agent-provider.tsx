@@ -15,17 +15,20 @@ import {
 } from "@/components/layout/shell-config";
 import { formatSkillCommand, injectCommand, type TerminalProviderId } from "@/lib/terminal";
 import { useToast } from "@/providers/notification-provider";
+import { readLocalStorage, writeLocalStorage } from "@/utils/local-storage";
+import { clamp } from "@/utils/math";
 
-const TERMINAL_PROVIDER_KEY = "jobpilot:terminal.provider";
-const DOCK_WIDTH_KEY = "jobpilot:dock.width";
+const STORAGE_KEY = "jobpilot:agent";
 
-function getProvider(): TerminalProviderId {
-  if (typeof window === "undefined") return "claude";
-  return window.localStorage.getItem(TERMINAL_PROVIDER_KEY) === "codex" ? "codex" : "claude";
+interface AgentStorage {
+  provider: TerminalProviderId;
+  dockWidth: number;
+  dockExpanded: boolean;
 }
 
-function clampWidth(value: number): number {
-  return Math.max(DOCK_MIN_EXPANDED, Math.min(DOCK_MAX_EXPANDED, Math.round(value)));
+function patchAgentStorage(patch: Partial<AgentStorage>): void {
+  const current = readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY) ?? {};
+  writeLocalStorage(STORAGE_KEY, { ...current, ...patch });
 }
 
 async function wait(timeoutMs: number): Promise<void> {
@@ -66,32 +69,42 @@ function describeInjectError(error: unknown): string {
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const toast = useToast();
-  const [expanded, setExpanded] = useState(false);
-  const [provider, setProviderState] = useState<TerminalProviderId>(getProvider());
+  const [expanded, setExpandedState] = useState(false);
+  const [provider, setProviderState] = useState<TerminalProviderId>("claude");
   const [expandedWidth, setExpandedWidthState] = useState<number>(DOCK_EXPANDED);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(DOCK_WIDTH_KEY);
+    const stored = readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY);
     if (!stored) {
       return;
     }
-
-    const parsed = Number(stored);
-    if (!Number.isFinite(parsed)) {
-      return;
+    if (stored.provider === "codex" || stored.provider === "claude") {
+      setProviderState(stored.provider);
     }
-    setExpandedWidthState(clampWidth(parsed));
+    if (typeof stored.dockWidth === "number" && Number.isFinite(stored.dockWidth)) {
+      setExpandedWidthState(
+        clamp(Math.round(stored.dockWidth), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED),
+      );
+    }
+    if (stored.dockExpanded) {
+      setExpandedState(true);
+    }
   }, []);
+
+  const setExpanded = (next: boolean): void => {
+    setExpandedState(next);
+    patchAgentStorage({ dockExpanded: next });
+  };
 
   const setProvider = (next: TerminalProviderId): void => {
     setProviderState(next);
-    window.localStorage.setItem(TERMINAL_PROVIDER_KEY, next);
+    patchAgentStorage({ provider: next });
   };
 
   const setExpandedWidth = (px: number): void => {
-    const next = clampWidth(px);
+    const next = clamp(Math.round(px), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED);
     setExpandedWidthState(next);
-    window.localStorage.setItem(DOCK_WIDTH_KEY, String(next));
+    patchAgentStorage({ dockWidth: next });
   };
 
   const handleInject = async (command: string) => {
