@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Chip } from "@mui/material";
+import { Chip, Link } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { DataTable } from "@/components/ui/data/data-table";
 import type { RunJobStatus } from "@/lib/schemas/run";
@@ -41,7 +41,17 @@ export function RunJobsTable(props: RunJobsTableProps): ReactElement {
       ),
       sortable: false,
     },
-    { field: "title", headerName: "Title", flex: 1.4, minWidth: 200 },
+    {
+      field: "title",
+      headerName: "Title",
+      flex: 1.4,
+      minWidth: 200,
+      renderCell: (p) => (
+        <Link href={p.row.url} target="_blank" rel="noopener noreferrer" color="inherit">
+          {p.row.title}
+        </Link>
+      ),
+    },
     { field: "company", headerName: "Company", flex: 1, minWidth: 160 },
     { field: "board", headerName: "Board", width: 130 },
     {
