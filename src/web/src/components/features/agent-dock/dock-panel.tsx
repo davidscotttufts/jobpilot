@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { ChevronRight, RestartAlt, StopCircle } from "@mui/icons-material";
 import {
   IconButton,
@@ -13,28 +13,15 @@ import {
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
 import { PulseDot } from "@/components/ui/feedback";
-import { killSession } from "@/lib/terminal";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgentDock } from "@/providers/agent-provider";
 import { AgentOrb } from "./agent-orb";
 
 export function DockPanel(): ReactElement {
-  const { collapse, provider, setProvider } = useAgent();
-  const [reloadKey, setReloadKey] = useState(0);
+  const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
   const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
 
-  const handleRestart = async (): Promise<void> => {
-    await killSession();
-    setReloadKey((k) => k + 1);
-  };
-
-  const handleProviderChange = async (event: SelectChangeEvent<string>): Promise<void> => {
-    const next = event.target.value === "codex" ? "codex" : "claude";
-    if (next === provider) {
-      return;
-    }
-    await killSession();
-    setProvider(next);
-    setReloadKey((k) => k + 1);
+  const handleProviderChange = (event: SelectChangeEvent<string>): void => {
+    void switchProvider(event.target.value === "codex" ? "codex" : "claude");
   };
 
   return (
@@ -88,18 +75,18 @@ export function DockPanel(): ReactElement {
           <MenuItem value="codex">Codex</MenuItem>
         </Select>
         <Tooltip title={`Restart ${providerLabel}`}>
-          <IconButton size="small" onClick={handleRestart} aria-label="Restart">
+          <IconButton size="small" onClick={() => void restart()} aria-label="Restart">
             <RestartAlt fontSize="sm" />
           </IconButton>
         </Tooltip>
         <Tooltip title={`Stop ${providerLabel}`}>
-          <IconButton size="small" onClick={killSession} aria-label="Stop">
+          <IconButton size="small" onClick={() => void stop()} aria-label="Stop">
             <StopCircle fontSize="sm" />
           </IconButton>
         </Tooltip>
       </Stack>
 
-      <TerminalPanel key={`${provider}-${reloadKey}`} provider={provider} />
+      <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
     </Stack>
   );
 }

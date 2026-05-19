@@ -7,12 +7,16 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
+import { useAgentDock } from "@/providers/agent-provider";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 const STABLE_FRAMES = 3;
+const READY_IDLE_MS = 600;
+const CTRL_C_DOUBLE_MS = 800;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
-const SHIFT_ENTER_INPUT = "\x1b[13;2u";
+const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
+const CTRL_C_B64 = toBase64("\x03");
 
 interface TerminalPanelProps {
   provider: TerminalProviderId;
@@ -29,10 +33,32 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
   const { provider } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const theme = useTheme();
+  const { markTerminalReady, resetTerminalReady } = useAgentDock();
+
+  const markReadyRef = useRef(markTerminalReady);
+  const resetReadyRef = useRef(resetTerminalReady);
+  markReadyRef.current = markTerminalReady;
+  resetReadyRef.current = resetTerminalReady;
+
+  const background = theme.palette.surfaces.base;
+  const foreground = theme.palette.text.primary;
+  const cursor = theme.palette.primary.main;
+  const selection = `${theme.palette.primary.main}40`;
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container) {
+      return;
+    }
+
+    resetReadyRef.current();
+    let readyIdleTimer: ReturnType<typeof setTimeout> | null = null;
+    const bumpReadyIdle = (): void => {
+      if (readyIdleTimer) {
+        clearTimeout(readyIdleTimer);
+      }
+      readyIdleTimer = setTimeout(() => markReadyRef.current(), READY_IDLE_MS);
+    };
 
     const terminal = new Terminal({
       cursorBlink: true,
@@ -41,12 +67,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       scrollOnUserInput: true,
       smoothScrollDuration: 0,
       windowsPty: { backend: "winpty" },
-      theme: {
-        background: theme.palette.surfaces.base,
-        foreground: theme.palette.text.primary,
-        cursor: theme.palette.primary.main,
-        selectionBackground: `${theme.palette.primary.main}40`,
-      },
+      theme: { background, foreground, cursor, selectionBackground: selection },
     });
 
     const fit = new FitAddon();
@@ -55,6 +76,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
     let socket: WebSocketClient | null = null;
     let disposed = false;
+    let lastCtrlCAt = 0;
 
     const fitAndResize = (): void => {
       try {
@@ -65,17 +87,62 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       }
     };
 
+    terminal.attachCustomKeyEventHandler((event) => {
+      if (event.type !== "keydown") {
+        return true;
+      }
+
+      if (event.key === "Enter" && event.shiftKey) {
+        event.preventDefault();
+        socket?.sendJson({ type: "input", data: SHIFT_ENTER_B64 });
+        return false;
+      }
+      if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyC") {
+        if (terminal.hasSelection()) {
+          event.preventDefault();
+          void navigator.clipboard?.writeText(terminal.getSelection());
+          return false;
+        }
+
+        const now = Date.now();
+        if (now - lastCtrlCAt < CTRL_C_DOUBLE_MS) {
+          lastCtrlCAt = 0;
+          event.preventDefault();
+          socket?.sendJson({ type: "input", data: CTRL_C_B64 });
+          return false;
+        }
+
+        lastCtrlCAt = now;
+        event.preventDefault();
+        terminal.write("\r\n\x1b[33m[terminal] press Ctrl+C again to interrupt\x1b[0m\r\n");
+        return false;
+      }
+      return true;
+    });
+
+    terminal.onData((data) => {
+      socket?.sendJson({ type: "input", data: toBase64(data) });
+    });
+
+    // The dock's width transition reflows the container after mount; wait for the size
+    // to be stable across STABLE_FRAMES rAFs so the first PTY resize isn't mid-transition.
     const waitForStableSize = (): Promise<void> =>
       new Promise((resolve) => {
         let lastWidth = -1;
         let lastHeight = -1;
         let stableFrames = 0;
-        const tick = (): void => {
-          if (disposed) return resolve();
+
+        const tick = () => {
+          if (disposed) {
+            return resolve();
+          }
           const width = container.offsetWidth;
           const height = container.offsetHeight;
+
           if (width > 0 && height > 0 && width === lastWidth && height === lastHeight) {
-            if (++stableFrames >= STABLE_FRAMES) return resolve();
+            if (++stableFrames >= STABLE_FRAMES) {
+              return resolve();
+            }
           } else {
             stableFrames = 0;
             lastWidth = width;
@@ -83,12 +150,15 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
           }
           requestAnimationFrame(tick);
         };
+
         requestAnimationFrame(tick);
       });
 
     const start = async (): Promise<void> => {
       await waitForStableSize();
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
 
       try {
         fit.fit();
@@ -99,26 +169,24 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         );
         return;
       }
-      if (disposed) return;
+      if (disposed) {
+        return;
+      }
 
       socket = connectWebSocket(TERMINAL_WS_URL, {
         onOpen: () => fitAndResize(),
-        onBinary: (data) => terminal.write(data),
-        onText: (data) => terminal.write(data),
-        onClose: () => terminal.write("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n"),
-      });
-
-      terminal.attachCustomKeyEventHandler((event) => {
-        if (event.type === "keydown" && event.key === "Enter" && event.shiftKey) {
-          event.preventDefault();
-          socket?.sendJson({ type: "input", data: toBase64(SHIFT_ENTER_INPUT) });
-          return false;
-        }
-        return true;
-      });
-
-      terminal.onData((data) => {
-        socket?.sendJson({ type: "input", data: toBase64(data) });
+        onBinary: (data) => {
+          terminal.write(data);
+          bumpReadyIdle();
+        },
+        onText: (data) => {
+          terminal.write(data);
+          bumpReadyIdle();
+        },
+        onClose: () => {
+          terminal.write("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n");
+          resetReadyRef.current();
+        },
       });
     };
 
@@ -126,19 +194,27 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const observer = new ResizeObserver(() => {
-      if (resizeTimer) clearTimeout(resizeTimer);
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
       resizeTimer = setTimeout(fitAndResize, RESIZE_DEBOUNCE_MS);
     });
     observer.observe(container);
 
     return () => {
       disposed = true;
-      if (resizeTimer) clearTimeout(resizeTimer);
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+      if (readyIdleTimer) {
+        clearTimeout(readyIdleTimer);
+      }
       observer.disconnect();
       socket?.close(1000, "panel unmounted");
       terminal.dispose();
+      resetReadyRef.current();
     };
-  }, [provider, theme]);
+  }, [provider, background, foreground, cursor, selection]);
 
   return (
     <Box

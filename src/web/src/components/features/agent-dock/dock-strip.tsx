@@ -3,11 +3,11 @@
 import type { ReactElement } from "react";
 import { ChevronLeft, Terminal as TerminalIcon } from "@mui/icons-material";
 import { Box, IconButton, Stack, Tooltip } from "@mui/material";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgentDock } from "@/providers/agent-provider";
 import { AgentOrb } from "./agent-orb";
 
 export function DockStrip(): ReactElement {
-  const { expand } = useAgent();
+  const { expand } = useAgentDock();
 
   return (
     <Stack

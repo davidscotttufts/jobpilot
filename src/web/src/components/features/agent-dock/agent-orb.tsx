@@ -6,24 +6,16 @@ import { editorial } from "@/theme/palette";
 import { iconSizes, type IconSizeToken } from "@/theme/tokens";
 
 interface AgentOrbProps {
-  /** Either a px value or one of the shared {@link IconSizeToken}s. */
-  size?: number | IconSizeToken;
+  size?: IconSizeToken;
 }
 
-function resolveSize(size: AgentOrbProps["size"]): number {
-  if (size == null) {
-    return iconSizes["2xxl"];
-  }
-  return typeof size === "number" ? size : iconSizes[size];
-}
-
+/** A visual representation of an agent in the dock with a pulsing animation */
 export function AgentOrb(props: AgentOrbProps): ReactElement {
-  const { size } = props;
+  const { size = "2xxl" } = props;
 
-  const sizePx = resolveSize(size);
+  const sizePx = iconSizes[size];
   const ringInset = Math.max(2, Math.round(sizePx * 0.08));
   const coreInset = Math.max(4, Math.round(sizePx * 0.32));
-  const dotSize = Math.max(7, Math.round(sizePx * 0.28));
   const glow = Math.round(sizePx * 0.5);
 
   return (

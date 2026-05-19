@@ -4,21 +4,23 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type PropsWithChildren,
   type ReactElement,
 } from "react";
 import {
-  DOCK_EXPANDED,
-  DOCK_MAX_EXPANDED,
-  DOCK_MIN_EXPANDED,
-} from "@/components/layout/shell-config";
-import { formatSkillCommand, injectCommand, type TerminalProviderId } from "@/lib/terminal";
+  formatSkillCommand,
+  injectCommand,
+  killSession,
+  TerminalApiError,
+  type TerminalProviderId,
+} from "@/lib/terminal";
 import { useToast } from "@/providers/notification-provider";
 import { readLocalStorage, writeLocalStorage } from "@/utils/local-storage";
-import { clamp } from "@/utils/math";
 
 const STORAGE_KEY = "jobpilot:agent";
+const READY_TIMEOUT_MS = 15_000;
 
 interface AgentStorage {
   provider: TerminalProviderId;
@@ -26,43 +28,59 @@ interface AgentStorage {
   dockExpanded: boolean;
 }
 
-function patchAgentStorage(patch: Partial<AgentStorage>): void {
+export function patchAgentStorage(patch: Partial<AgentStorage>): void {
   const current = readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY) ?? {};
   writeLocalStorage(STORAGE_KEY, { ...current, ...patch });
 }
 
-async function wait(timeoutMs: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, timeoutMs));
+export function readAgentStorage(): Partial<AgentStorage> | null {
+  return readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY);
 }
 
 export interface AgentContextValue {
-  expanded: boolean;
-  expand: () => void;
-  collapse: () => void;
-
-  expandedWidth: number;
-  setExpandedWidth: (px: number) => void;
-
-  provider: TerminalProviderId;
-  setProvider: (provider: TerminalProviderId) => void;
-
   inject: (command: string) => Promise<void>;
   injectSkill: (skill: string, args?: string) => Promise<void>;
 }
 
+export interface AgentDockContextValue {
+  provider: TerminalProviderId;
+  switchProvider: (next: TerminalProviderId) => Promise<void>;
+  restart: () => Promise<void>;
+  stop: () => Promise<void>;
+  terminalRevision: number;
+  expanded: boolean;
+  expand: () => void;
+  collapse: () => void;
+  markTerminalReady: () => void;
+  resetTerminalReady: () => void;
+}
+
 const AgentContext = createContext<AgentContextValue | null>(null);
+const AgentDockContext = createContext<AgentDockContextValue | null>(null);
+
+class TerminalReadyTimeoutError extends Error {
+  constructor() {
+    super("Terminal did not become ready in time.");
+    this.name = "TerminalReadyTimeoutError";
+  }
+}
 
 function describeInjectError(error: unknown): string {
   if (error instanceof TypeError) {
     return "JobPilot Terminal isn't reachable. Start it (bun run dev) and open the Terminal tab in the dock.";
   }
+  if (error instanceof TerminalReadyTimeoutError) {
+    return "Terminal didn't finish starting up. Try again in a moment or restart the Terminal.";
+  }
+  if (error instanceof TerminalApiError) {
+    if (error.status === 404) {
+      return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
+    }
+    if (error.status === 409 || error.status === 500) {
+      return "No active terminal session. Open the Terminal tab in the dock and start one.";
+    }
+  }
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("-> 500") || message.includes("-> 409")) {
-    return "No active terminal session. Open the Terminal tab in the dock and start one.";
-  }
-  if (message.includes("-> 404")) {
-    return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
-  }
   return `Failed to send command to terminal: ${message}`;
 }
 
@@ -71,20 +89,18 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   const toast = useToast();
   const [expanded, setExpandedState] = useState(false);
   const [provider, setProviderState] = useState<TerminalProviderId>("claude");
-  const [expandedWidth, setExpandedWidthState] = useState<number>(DOCK_EXPANDED);
+  const [terminalRevision, setTerminalRevision] = useState(0);
+
+  const terminalReadyRef = useRef(false);
+  const readyWaitersRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
-    const stored = readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY);
+    const stored = readAgentStorage();
     if (!stored) {
       return;
     }
     if (stored.provider === "codex" || stored.provider === "claude") {
       setProviderState(stored.provider);
-    }
-    if (typeof stored.dockWidth === "number" && Number.isFinite(stored.dockWidth)) {
-      setExpandedWidthState(
-        clamp(Math.round(stored.dockWidth), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED),
-      );
     }
     if (stored.dockExpanded) {
       setExpandedState(true);
@@ -101,53 +117,108 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     patchAgentStorage({ provider: next });
   };
 
-  const setExpandedWidth = (px: number): void => {
-    const next = clamp(Math.round(px), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED);
-    setExpandedWidthState(next);
-    patchAgentStorage({ dockWidth: next });
+  const markTerminalReady = (): void => {
+    if (terminalReadyRef.current) {
+      return;
+    }
+    terminalReadyRef.current = true;
+    const waiters = readyWaitersRef.current;
+    readyWaitersRef.current = [];
+    waiters.forEach((resolve) => resolve());
   };
 
-  const handleInject = async (command: string) => {
-    setExpanded(true);
-    await wait(1500);
+  const resetTerminalReady = (): void => {
+    terminalReadyRef.current = false;
+  };
 
+  const waitForTerminalReady = (timeoutMs: number): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if (terminalReadyRef.current) {
+        return resolve();
+      }
+      let timerId: ReturnType<typeof setTimeout>;
+
+      const wrappedResolve = (): void => {
+        clearTimeout(timerId);
+        resolve();
+      };
+
+      readyWaitersRef.current.push(wrappedResolve);
+
+      timerId = setTimeout(() => {
+        readyWaitersRef.current = readyWaitersRef.current.filter((r) => r !== wrappedResolve);
+        reject(new TerminalReadyTimeoutError());
+      }, timeoutMs);
+    });
+
+  const restart = async (): Promise<void> => {
+    resetTerminalReady();
+    await killSession();
+    setTerminalRevision((n) => n + 1);
+  };
+
+  const stop = async (): Promise<void> => {
+    resetTerminalReady();
+    await killSession();
+  };
+
+  const switchProvider = async (next: TerminalProviderId): Promise<void> => {
+    if (next === provider) {
+      return;
+    }
+    resetTerminalReady();
+    await killSession();
+    setProvider(next);
+    setTerminalRevision((n) => n + 1);
+  };
+
+  const runInject = async (command: string): Promise<void> => {
+    setExpanded(true);
     try {
+      await waitForTerminalReady(READY_TIMEOUT_MS);
       await injectCommand(command, provider);
     } catch (error) {
       toast.error(describeInjectError(error));
     }
   };
 
-  const handleInjectSkill = async (skill: string, args?: string) => {
-    setExpanded(true);
-    await wait(1500);
-
-    try {
-      await injectCommand(formatSkillCommand(provider, skill, args), provider);
-    } catch (error) {
-      toast.error(describeInjectError(error));
-    }
+  const publicValue: AgentContextValue = {
+    inject: (command) => runInject(command),
+    injectSkill: (skill, args) => runInject(formatSkillCommand(provider, skill, args)),
   };
 
-  const value: AgentContextValue = {
+  const dockValue: AgentDockContextValue = {
+    provider,
+    switchProvider,
+    restart,
+    stop,
+    terminalRevision,
     expanded,
     expand: () => setExpanded(true),
     collapse: () => setExpanded(false),
-    expandedWidth,
-    setExpandedWidth,
-    provider,
-    setProvider,
-    inject: handleInject,
-    injectSkill: handleInjectSkill,
+    markTerminalReady,
+    resetTerminalReady,
   };
 
-  return <AgentContext.Provider value={value}>{children}</AgentContext.Provider>;
+  return (
+    <AgentContext.Provider value={publicValue}>
+      <AgentDockContext.Provider value={dockValue}>{children}</AgentDockContext.Provider>
+    </AgentContext.Provider>
+  );
 }
 
 export function useAgent(): AgentContextValue {
   const ctx = useContext(AgentContext);
   if (!ctx) {
     throw new Error("useAgent must be used within an AgentProvider");
+  }
+  return ctx;
+}
+
+export function useAgentDock(): AgentDockContextValue {
+  const ctx = useContext(AgentDockContext);
+  if (!ctx) {
+    throw new Error("useAgentDock must be used within an AgentProvider");
   }
   return ctx;
 }

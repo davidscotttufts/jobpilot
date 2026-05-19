@@ -16,6 +16,16 @@ export interface SessionStatus {
   providers: TerminalProviderInfo[];
 }
 
+export class TerminalApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "TerminalApiError";
+  }
+}
+
 async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${TERMINAL_HTTP_URL}${path}`, {
     method,
@@ -23,7 +33,10 @@ async function send<T>(method: string, path: string, body?: unknown): Promise<T>
     body: body != null ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
-    throw new Error(`JobPilot.Terminal ${method} ${path} -> ${response.status}`);
+    throw new TerminalApiError(
+      response.status,
+      `JobPilot.Terminal ${method} ${path} -> ${response.status}`,
+    );
   }
   if (response.headers.get("content-length") === "0") {
     return null as T;
@@ -60,6 +73,6 @@ export function formatSkillCommand(
   args?: string,
 ): string {
   const suffix = args?.trim();
-  const command = provider === "codex" ? `$jobpilot-${skill}` : `/jobpilot:${skill}`;
+  const command = provider === "codex" ? `$${skill}` : `/jobpilot:${skill}`;
   return suffix ? `${command} ${suffix}` : command;
 }
