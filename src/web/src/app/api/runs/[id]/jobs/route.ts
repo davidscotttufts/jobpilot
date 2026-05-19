@@ -50,6 +50,7 @@ export async function POST(req: Request, ctx: Params) {
         matchReason: parsed.data.matchReason ?? null,
         status: parsed.data.status ?? "pending",
         description: parsed.data.description ?? null,
+        jobDigest: parsed.data.jobDigest ?? null,
       },
     });
 

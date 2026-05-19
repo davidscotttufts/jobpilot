@@ -57,6 +57,7 @@ export const addRunJobSchema = z.object({
   matchReason: z.string().optional().nullable(),
   status: runJobStatusSchema.optional(),
   description: z.string().optional().nullable(),
+  jobDigest: z.string().optional().nullable(),
 });
 
 export const patchRunJobSchema = z.object({
@@ -67,7 +68,34 @@ export const patchRunJobSchema = z.object({
   skipReason: z.string().optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: z.string().optional().nullable(),
+  jobDigest: z.string().optional().nullable(),
 });
+
+export const RUN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
+export const runJobOutcomeSchema = z.enum(RUN_JOB_TERMINAL_OUTCOMES);
+
+export const runJobResultSchema = z
+  .object({
+    outcome: runJobOutcomeSchema,
+    appliedAt: z.iso.datetime().optional(),
+    failReason: z.string().min(1).optional(),
+    skipReason: z.string().min(1).optional(),
+    retryNotes: z.string().optional().nullable(),
+    matchScore: z.number().int().min(0).max(100).optional(),
+  })
+  .refine(
+    (v) =>
+      (v.outcome !== "applied" || !!v.appliedAt) &&
+      (v.outcome !== "failed" || !!v.failReason) &&
+      (v.outcome !== "skipped" || !!v.skipReason),
+    {
+      message:
+        "applied requires appliedAt; failed requires failReason; skipped requires skipReason.",
+    },
+  );
+
+export type RunJobOutcome = z.infer<typeof runJobOutcomeSchema>;
+export type RunJobResultInput = z.infer<typeof runJobResultSchema>;
 
 export const RUN_EVENT_TYPES = ["log", "progress", "status", "job-update"] as const;
 export const runEventTypeSchema = z.enum(RUN_EVENT_TYPES);

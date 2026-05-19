@@ -1,9 +1,10 @@
 /**
- * Job-application duplicate matching.
+ * Applied-job duplicate matching. Normalizes title + employer (strips seniority
+ * tokens and corporate suffixes), runs a Jaro-Winkler similarity, treats scores
+ * >= 90 as duplicates within a 30-day rolling window.
  *
- * Pattern lifted from job-ops applied-duplicate-matching.ts: normalize the
- * title and employer, run a Jaro-Winkler similarity, treat scores >= 90 as
- * duplicates within a 30-day rolling window.
+ * Sibling of `fit.ts` (tech-keyword overlap for job fit scoring) inside
+ * `lib/scoring/`. Different normalization rules and metric — kept separate.
  */
 
 const SENIORITY_TOKENS = new Set([
@@ -66,9 +67,6 @@ export function normalizeCompanyName(company: string): string {
 export const APPLIED_DUPLICATE_THRESHOLD = 90;
 export const APPLIED_DUPLICATE_WINDOW_DAYS = 30;
 
-/**
- * Jaro similarity, returning a score 0..1.
- */
 function jaro(a: string, b: string): number {
   if (a === b) {
     return 1;
@@ -130,7 +128,7 @@ function jaro(a: string, b: string): number {
  * prefix (up to 4 chars) — typical for job titles like "Senior Frontend Engineer"
  * matching "Frontend Engineer" once seniority is normalized away.
  */
-export function calculateSimilarity(a: string, b: string): number {
+function calculateSimilarity(a: string, b: string): number {
   if (a === b) {
     return 100;
   }

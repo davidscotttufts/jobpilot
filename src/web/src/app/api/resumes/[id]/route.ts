@@ -4,14 +4,11 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { resumeDataSchema } from "@/lib/schemas/resume";
+import { backfillResumeIds } from "@/lib/resume/backfill-ids";
+import { resumeDataSchema, type ResumeData } from "@/lib/schemas/resume";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { publish } from "@/lib/sse/server";
-import {
-  deleteAllResumeArtifacts,
-  ensureResumeBackupsDir,
-  resumeBackupPath,
-} from "@/lib/storage";
+import { deleteAllResumeArtifacts, ensureResumeBackupsDir, resumeBackupPath } from "@/lib/storage";
 import type { ResumeDto } from "@/types/api";
 
 type Params = ApiRouteContext<{ id: string }>;
@@ -32,11 +29,25 @@ export async function GET(_req: Request, ctx: Params) {
   });
   if (!resume) return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
 
+  let content: ResumeData | null = null;
+
+  if (resume.content) {
+    const parsed = JSON.parse(resume.content) as ResumeData;
+    const { content: backfilled, mutated } = backfillResumeIds(parsed);
+    content = backfilled;
+    if (mutated) {
+      await db.resume.update({
+        where: { id: resume.id },
+        data: { content: JSON.stringify(backfilled) },
+      });
+    }
+  }
+
   const dto: ResumeDto = {
     id: resume.id,
     profileId: resume.profileId,
     label: resume.label,
-    content: resume.content ? JSON.parse(resume.content) : null,
+    content,
     version: resume.version,
     sourceFilename: resume.sourceFilename,
     sourceMimeType: resume.sourceMimeType,
@@ -90,11 +101,15 @@ export async function PUT(req: Request, ctx: Params) {
       JSON.stringify(parsed.data.content, null, 2),
       "utf8",
     );
-    publish(resumeChannel, { resumeId: updated.id }, {
-      type: "content.updated",
-      resumeId: updated.id,
-      version: updated.version,
-    });
+    publish(
+      resumeChannel,
+      { resumeId: updated.id },
+      {
+        type: "content.updated",
+        resumeId: updated.id,
+        version: updated.version,
+      },
+    );
   }
 
   return ok({ id: updated.id, version: updated.version });

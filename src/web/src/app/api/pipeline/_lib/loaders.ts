@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { RUN_JOB_TERMINAL_OUTCOMES } from "@/lib/schemas/run";
 import type { PipelineColumnPage, PipelineJobDto, PipelineStage } from "@/types/api/pipeline";
 import { mapApplication, mapQueueEntry, mapRunJob } from "./mappers";
 import type { PipelineFilters } from "./params";
@@ -45,15 +46,12 @@ export async function loadApplying(
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
     run: { status: "in_progress", profileId },
-    status: { notIn: ["applied", "failed", "skipped"] },
+    status: { notIn: [...RUN_JOB_TERMINAL_OUTCOMES] },
     ...(filters.board ? { board: filters.board } : {}),
   };
   const searchWhere = filters.search
     ? {
-        OR: [
-          { title: { contains: filters.search } },
-          { company: { contains: filters.search } },
-        ],
+        OR: [{ title: { contains: filters.search } }, { company: { contains: filters.search } }],
       }
     : {};
 
@@ -106,7 +104,7 @@ async function loadApplicationStage(
   cursor: number | null,
   limit: number,
   filters: PipelineFilters,
-  opts: { extraSearchFields?: ("url")[] } = {},
+  opts: { extraSearchFields?: "url"[] } = {},
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
     profileId,

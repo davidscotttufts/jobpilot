@@ -6,7 +6,7 @@ import {
   APPLIED_DUPLICATE_THRESHOLD,
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
-} from "@/lib/matching";
+} from "@/lib/scoring/applied-duplicates";
 import type { DuplicateCheckResult } from "@/types/api";
 
 export async function GET(req: Request) {

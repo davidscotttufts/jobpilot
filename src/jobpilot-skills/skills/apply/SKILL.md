@@ -44,7 +44,7 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 ### 1A.1 Fit Review
 
-Source the review from the structured digest, not the raw page. URL input → `browser_navigate` to it, `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/job-details.js`, pass contents to `browser_evaluate`. Use the returned `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `salary`, `remote`, `location`, `descriptionExcerpt` to populate the review. **Do not `browser_snapshot` the listing — the digest is sufficient.** Pasted input → parse the same fields from the paste.
+URL input → `browser_navigate`, warm `window.__jp` per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then `() => window.__jp.jobDetails()`. Pasted input → parse the same fields manually. **No `browser_snapshot`.** Keep the digest in `DIGEST=...` for 1A.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -90,7 +90,8 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
   -d "$(jq -n --arg key "$JOB_KEY" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
     --arg matchReason "<one-line verdict>" --argjson score <0-100> \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved"}')"
+    --arg digest "$DIGEST" \
+    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved", jobDigest:$digest}')"
 ```
 
 Keep `$RUN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/runs/<RUN_ID>`. Jump to **Phase 4**.
@@ -133,11 +134,23 @@ If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped
 ### 2.2 Visit + Extract
 
 1. `browser_navigate` to the URL.
-2. `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/job-details.js`, pass to `browser_evaluate`. Use the digest for scoring — **do not snapshot the listing**.
-3. If login is needed, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` first, then re-extract.
+2. Warm `window.__jp` per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then `() => window.__jp.jobDetails()`. Keep the stringified digest as `DIGEST` for 2.3. **No snapshot.**
+3. If login is needed, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then re-extract.
 4. Re-run `/api/applied/check` with title+company for fuzzy match.
 
 ### 2.3 Score and Add
+
+Pre-score server-side; deliberate only on borderline cases.
+
+```bash
+FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson digest "$DIGEST" '{digest:$digest}')")
+SCORE=$(echo "$FIT" | jq -r '.data.score')
+CONF=$(echo "$FIT" | jq -r '.data.confidence')
+```
+
+If `CONF >= 0.7` and `SCORE` is at least 10 from threshold either side, use it directly. Otherwise rescore from the digest using `strongMatches`/`partialMatches`/`gaps` in `FIT`.
 
 ```bash
 curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
@@ -145,7 +158,8 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
   -d "$(jq -n --arg key "<entry-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
     --arg matchReason "<one line>" --argjson score <0-100> \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
+    --arg digest "$DIGEST" \
+    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending", jobDigest:$digest}')"
 ```
 
 If `score < minMatchScore`, immediately PATCH to `skipped` with `skipReason:"Below minimum match score (X < Y)"`.
@@ -191,11 +205,15 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 ### 4.2 Navigate + Find Apply
 
-Navigate to the job URL. Take **one** narrowed `browser_snapshot` (header/main) to locate the Apply button (extractors don't enumerate buttons). Match `"Apply"`, `"Apply Now"`, `"Quick Apply"`, `"Easy Apply"` etc. Click. After `browser_wait_for`, `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` and pass to `browser_evaluate` — **do not re-snapshot**. If a login page appears, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then return.
+Navigate to the job URL. Re-warm `window.__jp` (cross-origin) and call `() => window.__jp.applyButton()`. The result `{ ref, text }` gives a stable selector — `browser_click` it. **No `browser_snapshot` needed.** If `null` came back (rare — non-standard board), fall back to one narrowed `browser_snapshot` of the header. After `browser_wait_for`, call `() => window.__jp.formFields()` to enumerate the form. If a login page appears, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then return.
 
 ### 4.3 Tailor Resume
 
-Invoke `<tailor-resume-command>` with the job URL or parsed JD. Capture the returned variant id + PDF URL for 4.4. If it stops (no usable base), PATCH job `failed`, `failReason:"No tailorable resume base"`.
+```bash
+DIGEST=$(curl -fsS "$JOBPILOT_API/api/runs/$RUN_ID/jobs" | jq -r --arg key "<jobKey>" '.data[] | select(.jobKey == $key) | .jobDigest // empty')
+```
+
+Invoke `<tailor-resume-command> $DIGEST`. Empty `$DIGEST` (legacy row) → fall back to the job URL. Capture the variant id + PDF URL for 4.4. If no usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`.
 
 ### 4.4 Fill Forms
 
@@ -203,7 +221,7 @@ Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Upload the 4.3 variant 
 
 ### 4.5 Pre-Submit Review (Single-Job Mode Only)
 
-Skip in batch mode. When `config.maxApplications === 1`, re-run `form-fields.js` and present:
+Skip in batch mode. When `config.maxApplications === 1`, re-run `() => window.__jp.formFields()` and present:
 
 ```
 ## Ready to Submit: [Title] at [Company]
@@ -211,62 +229,31 @@ Skip in batch mode. When `config.maxApplications === 1`, re-run `form-fields.js`
 <total> fields across <P> page(s). Submit? (yes / no / edit <field>)
 ```
 
-`no` → PATCH `skipped`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → fix, re-extract, re-present.
+`no` → POST `/result` with `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → fix, re-extract, re-present.
 
 ### 4.6 Submit
 
-Click submit, `browser_wait_for`, then `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate`. `{ submitted: true }` = success; populated `error` = failure.
+Click submit, `browser_wait_for`, then call `() => window.__jp.submitConfirm()`. `{ submitted: true }` = success; populated `error` = failure.
 
 ### 4.7 Record Result
 
-**Success:**
+POST one of three outcomes to `/api/runs/$RUN_ID/jobs/<jobKey>/result`. The server atomically updates RunJob, creates Application (on `applied`), marks the queue, and recomputes summary.
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg t "$NOW" '{status:"applied", appliedAt:$t}')"
-
-curl -fsS -X POST "$JOBPILOT_API/api/applied" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg url "<job-url>" --arg title "<title>" --arg company "<company>" \
-    --arg board "<board>" --arg runId "$RUN_ID" --argjson matchScore <0-100> \
-    '{url:$url, title:$title, company:$company, board:$board, source:"apply", runId:$runId, matchScore:$matchScore}')"
+# applied
+jq -n --arg t "$NOW" --argjson score <0-100> '{outcome:"applied", appliedAt:$t, matchScore:$score}'
+# failed
+jq -n --arg r "<reason>" --arg notes "<actionable retry notes>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
+# skipped (e.g., user cancelled, max-apps cap)
+jq -n --arg r "<reason>" '{outcome:"skipped", skipReason:$r}'
 ```
 
-Batch mode only — mark queue entry consumed:
+Continue to next job after any outcome.
 
-```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/queue/<entry-id>" \
-  -H 'content-type: application/json' -d '{"status":"consumed"}'
-```
+### 4.8 Limit
 
-**Failure:**
-
-```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg r "<reason>" --arg notes "<actionable retry notes>" \
-    '{status:"failed", failReason:$r, retryNotes:$notes}')"
-```
-
-Continue to next job either way.
-
-### 4.8 Update Summary
-
-After every job:
-
-```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --argjson found <n> --argjson qualified <n> --argjson applied <n> \
-                 --argjson failed <n> --argjson skipped <n> --argjson remaining <n> \
-    '{summary:{totalFound:$found, qualified:$qualified, applied:$applied, failed:$failed, skipped:$skipped, remaining:$remaining}}')"
-```
-
-### 4.9 Limit
-
-If `applied >= config.maxApplications`, PATCH remaining `approved` jobs to `skipped` with `skipReason:"Max applications limit reached"` and end the loop.
+If `applied >= config.maxApplications`, POST `/result` for each remaining `approved` job with `outcome:"skipped"`, `skipReason:"Max applications limit reached"`, then end the loop.
 
 ## Phase 5: Summary
 
@@ -281,12 +268,10 @@ Print a summary table and link to `http://localhost:8000/runs/<RUN_ID>`.
 
 ## Rules
 
-1. **Up-front confirmation mandatory** (1A.1 or Phase 3). Single-URL adds a pre-submit review (4.5). Batch mode: no per-job confirmation after Phase 3.
+1. **Up-front confirmation mandatory** (1A.1 or Phase 3); single-job mode adds pre-submit review (4.5).
 2. **Never create accounts** on any board.
-3. **Never process payments** — PATCH `failed` with `failReason:"Payment required"`.
-4. **CAPTCHAs / email verification** — pause and ask the user (see `auth.md`).
-5. **Be honest about match scores.** Don't inflate.
+3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
+4. **CAPTCHAs / email verification** — pause and ask (see `auth.md`).
+5. **Be honest about match scores.**
 6. **Pace** 3–5s between submissions on the same domain.
-7. **The Run is the audit trail.** PATCH after every state change so the SSE viewer reflects reality.
-
-Read `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md` for large pages, popups, browser best practices.
+7. **The Run is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.

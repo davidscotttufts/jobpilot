@@ -4,7 +4,7 @@ Job applications often span multiple pages. For each page:
 
 ## Identify and Fill
 
-1. **Enumerate fields** — run `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate`. Returns each input / textarea / select / checkbox / radio / visible input with `label`, `name`, `type`, `required`, `options` (selects), and a stable `ref` usable by `browser_click` / `browser_type` / `browser_select_option`. **No `browser_snapshot` needed.**
+1. **Enumerate fields** — the apply runtime should already be warm (see `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`). Call `() => window.__jp.formFields()`. Returns each input / textarea / select / checkbox / radio / visible input with `label`, `name`, `type`, `required`, `options` (selects), and a stable `ref` usable by `browser_click` / `browser_type` / `browser_select_option`. **No `browser_snapshot` needed.**
 2. **Map fields** to profile/resume data using `label`, `placeholder`, `name`.
 3. **Fill** addressing each by `ref`:
    - Text inputs → `browser_type` (or `browser_fill_form` for batch)
@@ -12,7 +12,7 @@ Job applications often span multiple pages. For each page:
    - Checkboxes / radios → `browser_click`
    - File uploads (resume) → fetch the tailored variant from the caller's prior step: `curl -fsS "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/resume.pdf"`, then `browser_file_upload` that path.
    - Date fields → use the appropriate date format
-4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) that `form-fields.js` couldn't enumerate: narrowed `browser_snapshot` of just that widget's container to obtain a ref.
+4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) that `formFields()` couldn't enumerate: narrowed `browser_snapshot` of just that widget's container to obtain a ref.
 
 ## Special Fields
 
@@ -37,4 +37,4 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 
 1. After filling each page, find "Next" / "Continue" / "Save & Continue" and click.
 2. Repeat the fill process on each new page.
-3. **Re-run `form-fields.js`** on each page to verify values landed before clicking Next.
+3. **Re-call `() => window.__jp.formFields()`** on each page to verify values landed before clicking Next.

@@ -38,6 +38,7 @@ model RunJob {
   retryNotes  String?
   skipReason  String?
   description String?
+  jobDigest   String?
 
   @@unique([runId, jobKey])
   @@index([runId, status])

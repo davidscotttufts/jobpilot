@@ -15,6 +15,7 @@ export const resumeBasicsSchema = z.object({
 });
 
 export const resumeExperienceSchema = z.object({
+  id: z.string().optional(),
   company: z.string().min(1, "Required"),
   title: z.string().min(1, "Required"),
   location: z.string().optional(),
@@ -24,6 +25,7 @@ export const resumeExperienceSchema = z.object({
 });
 
 export const resumeProjectSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, "Required"),
   url: linkUrl,
   description: z.string().optional(),

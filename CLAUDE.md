@@ -39,7 +39,7 @@ Web (`bun --cwd=src/web run …`):
 - Credential lookup: board override → `Credential.scope === <domain>` → `Credential.scope === "default"`.
 - Log in proactively before searching/applying.
 - Dedupe applied jobs via `GET /api/applied/check` (exact URL + fuzzy title+company, 30-day window).
-- After applying, `POST /api/applied`. During runs, `PATCH /api/runs/[id]/jobs/[jobKey]` and `PATCH /api/runs/[id]` after every state change.
+- During runs, `PATCH /api/runs/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/runs/[id]/jobs/[jobKey]/result` — one call updates RunJob, creates the Application row (when applied), marks the queue entry, and recomputes the run summary.
 - Browser automation: use `browser_snapshot` (with `ref` for large pages), not screenshots.
 
 ## Frontend conventions (`src/web/src/`)

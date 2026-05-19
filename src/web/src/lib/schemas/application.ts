@@ -16,19 +16,6 @@ export const stageSchema = z.enum(STAGES);
 export const APPLICATION_SOURCES = ["apply", "autopilot", "manual"] as const;
 export const sourceSchema = z.enum(APPLICATION_SOURCES);
 
-export const logApplicationSchema = z.object({
-  url: z.url(),
-  title: z.string().min(1),
-  company: z.string().min(1),
-  location: z.string().optional().nullable(),
-  board: z.string().optional().nullable(),
-  source: sourceSchema,
-  runId: z.string().optional().nullable(),
-  matchScore: z.number().int().min(0).max(100).optional().nullable(),
-  matchReason: z.string().optional().nullable(),
-  failReason: z.string().optional().nullable(),
-});
-
 export const stageTransitionSchema = z.object({
   toStage: stageSchema,
   note: z.string().optional().nullable(),
@@ -36,5 +23,4 @@ export const stageTransitionSchema = z.object({
 
 export type Stage = z.infer<typeof stageSchema>;
 export type ApplicationSource = z.infer<typeof sourceSchema>;
-export type LogApplicationInput = z.infer<typeof logApplicationSchema>;
 export type StageTransitionInput = z.infer<typeof stageTransitionSchema>;

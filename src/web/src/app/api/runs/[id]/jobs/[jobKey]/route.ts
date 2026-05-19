@@ -37,6 +37,7 @@ export async function PATCH(req: Request, ctx: Params) {
       skipReason: parsed.data.skipReason,
       matchScore: parsed.data.matchScore,
       matchReason: parsed.data.matchReason,
+      jobDigest: parsed.data.jobDigest,
     },
   });
 

@@ -16,11 +16,11 @@ JOBPILOT_API=http://localhost:8000
 
 Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. Read `data.autopilot` (defaults applied per field):
 
-| Setting                 | Default            | Notes                                                                                                            |
-| ----------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 70                 | Qualification threshold (0–100). Inline `--min-score` overrides.                                                  |
-| `maxApplicationsPerRun` | `null` (unlimited) | Stop the apply loop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited.          |
-| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                                       |
+| Setting                 | Default            | Notes                                                                                                    |
+| ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `minMatchScore`         | 70                 | Qualification threshold (0–100). Inline `--min-score` overrides.                                         |
+| `maxApplicationsPerRun` | `null` (unlimited) | Stop the apply loop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited. |
+| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                               |
 
 Inline argument overrides take precedence. The `--board <domain>` flag is **required** unless the argument is `resume` or `retry-failed <run-id>`.
 
@@ -74,7 +74,7 @@ If no row matches, PATCH the run to `failed` with `failReason:"Board <domain> no
 1. `browser_navigate` to `searchUrl`.
 2. Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` (handles login, registration, and forgot-password if needed).
 3. Fill the search fields and submit.
-4. `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/<board>-results.js` (`linkedin-results.js`, `indeed-results.js`, or `generic-results.js` as fallback) and pass to `browser_evaluate`. Returns `[{ title, company, location, url, postedAt }]`. **Do not snapshot.**
+4. Warm the search runtime per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then call `() => window.__jp.results()`. Returns `[{ title, company, location, url, postedAt }]`. **Do not snapshot.**
 5. Add each result to the run as `pending` (see 1.4).
 
 ### 1.3 Dedupe + Previously-Applied Filter
@@ -92,28 +92,32 @@ If `data.applied`, add with `status:"skipped"`, `skipReason:"Already applied (<k
 
 ### 1.4 Score and Add
 
-For each surviving job, `browser_navigate` to its URL and `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/job-details.js`, pass to `browser_evaluate`. The digest has `title`, `company`, `location`, `salary`, `employmentType`, `remote`, `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `descriptionExcerpt`.
+`browser_navigate` to each surviving job. The apply runtime should already be warm (re-warm on cross-origin nav per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`). `() => window.__jp.jobDetails()` returns a digest with `title`, `company`, `location`, `salary`, `employmentType`, `remote`, `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `descriptionExcerpt`. **No snapshot.**
 
-**Score from the digest only — do NOT snapshot the listing or re-read the full description.** Score 0–100 based on tech overlap, years vs candidate, requirements vs skills, responsibilities vs domain/seniority, location/remote vs preferences.
-
-Skip rule (set `status:"skipped"` with `skipReason`):
-
-- Score < `minMatchScore` → `"Below minimum match score (X < Y)"`
-
-Otherwise `status:"pending"`.
-
-POST:
+Pre-score server-side; deliberate only on borderline cases.
 
 ```bash
+FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson digest "$DIGEST" '{digest:$digest}')")
+SCORE=$(echo "$FIT" | jq -r '.data.score')
+CONF=$(echo "$FIT" | jq -r '.data.confidence')
+```
+
+If `CONF >= 0.7` and `SCORE` is at least 10 from `minMatchScore` either side, use it directly. Otherwise rescore using `strongMatches`/`partialMatches`/`gaps` in `FIT`.
+
+Below `minMatchScore` → `status:"skipped"`, `skipReason:"Below minimum match score (X < Y)"`. Otherwise `status:"pending"`. Persist the digest:
+
+```bash
+DIGEST=<stringified digest from window.__jp.jobDetails()>
 curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<stable-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<url>" --arg board "<board>" \
     --arg matchReason "<one line>" --argjson score <0-100> \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
+    --arg digest "$DIGEST" \
+    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending", jobDigest:$digest}')"
 ```
-
-After scoring, PATCH the run summary so the viewer reflects progress (see 3.9 for the payload shape).
 
 ## Phase 2: Confirmation
 
@@ -149,17 +153,19 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 ### 3.2 Navigate + Find Apply
 
-`browser_navigate` to URL. One narrowed `browser_snapshot` (header/main) to locate the Apply button (extractors don't enumerate buttons). Click. After `browser_wait_for`, `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/form-fields.js` via `browser_evaluate`. **Do not re-snapshot.**
+`browser_navigate` to URL. Re-warm `window.__jp` (cross-origin) and call `() => window.__jp.applyButton()`. The returned `{ ref, text }` gives a stable selector — `browser_click` it. **No `browser_snapshot`.** If `null` came back (rare — non-standard board), fall back to one narrowed `browser_snapshot` of the header. After `browser_wait_for`, call `() => window.__jp.formFields()`.
 
 ### 3.3 Authentication
 
-Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`.
-
-**On login failure for a domain:** PATCH this job AND every other approved job on the same domain to `failed` with `failReason:"Login failed for <domain>"`. Continue with other domains.
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`. On login failure for a domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"` for this job AND every other approved job on the same domain. Continue with other domains.
 
 ### 3.4 Tailor Resume
 
-Invoke `<tailor-resume-command>` with the job URL. Capture the returned variant id + PDF URL for 3.5. If no usable base, PATCH job `failed`, `failReason:"No tailorable resume base"`, continue.
+```bash
+DIGEST=$(curl -fsS "$JOBPILOT_API/api/runs/$RUN_ID/jobs" | jq -r --arg key "<jobKey>" '.data[] | select(.jobKey == $key) | .jobDigest // empty')
+```
+
+Invoke `<tailor-resume-command> $DIGEST`. Empty `$DIGEST` → fall back to the job URL. Capture variant id + PDF URL for 3.5. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, continue.
 
 ### 3.5 Fill Forms
 
@@ -167,61 +173,31 @@ Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Upload the 3.4 variant 
 
 ### 3.6 Submit
 
-Submit autonomously (Phase 2 approval covers it). `browser_wait_for`, then `Read` `${JOBPILOT_SKILLS_ROOT}/shared/extractors/submit-confirmation.js` via `browser_evaluate`. `{ submitted: true }` = success; `error: "..."` from the page = failure with that message as `failReason`.
+Submit autonomously (Phase 2 approval covers it). `browser_wait_for`, then call `() => window.__jp.submitConfirm()`. `{ submitted: true }` = success; `error: "..."` from the page = failure with that message as `failReason`.
 
 ### 3.7 Record Result
 
-**Success:**
+POST to `/api/runs/$RUN_ID/jobs/<jobKey>/result`. Server atomically updates RunJob, creates Application (on `applied`), marks the queue, recomputes summary.
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg t "$NOW" '{status:"applied", appliedAt:$t}')"
-
-curl -fsS -X POST "$JOBPILOT_API/api/applied" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg url "<url>" --arg title "<title>" --arg company "<company>" \
-    --arg board "<board>" --arg runId "$RUN_ID" --argjson score <0-100> \
-    '{url:$url, title:$title, company:$company, board:$board, source:"autopilot", runId:$runId, matchScore:$score}')"
+# applied
+jq -n --arg t "$NOW" --argjson score <0-100> '{outcome:"applied", appliedAt:$t, matchScore:$score}'
+# failed (CAPTCHA mid-form, unexpected page, validation, crash)
+jq -n --arg r "<reason>" --arg notes "<actionable retry context>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
 ```
 
-**Failure** (CAPTCHA mid-form, unexpected page, validation, crash):
-
-```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg r "<reason>" --arg notes "<actionable retry context>" \
-    '{status:"failed", failReason:$r, retryNotes:$notes}')"
-```
-
-`retryNotes` should be actionable hints, e.g.:
-- `"Quick Apply opened a broken iframe. Try direct careers page: https://company.com/careers"`
-- `"Portfolio URL field required but not in profile. User should add it before retrying."`
-
-**Continue to next job either way.**
+`retryNotes` example: `"Portfolio URL field required but not in profile. User should add it before retrying."` Continue to next job either way.
 
 ### 3.8 Stop Conditions
 
 Between jobs, refetch the run (`GET /api/runs/<RUN_ID>`) and check:
 
-1. `run.status === "paused"` → user stopped from the UI. PATCH remaining `approved` jobs to `skipped` (`"Run paused by user"`) and exit cleanly.
-2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → PATCH remaining `approved` jobs to `skipped` (`"Max applications limit reached"`) and end the loop.
+1. `run.status === "paused"` → user stopped from the UI. POST `/result` `outcome:"skipped"`, `skipReason:"Run paused by user"` for each remaining `approved` job and exit cleanly.
+2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 3. No more `approved` jobs → fall through to Phase 4.
 
 If `config.maxApplications` is unset/null, the run is unlimited — only conditions 1 and 3 apply.
-
-### 3.9 Summary Updates
-
-After every state change, PATCH the run summary so the SSE viewer stays live:
-
-```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --argjson found <n> --argjson qualified <n> --argjson applied <n> \
-                 --argjson failed <n> --argjson skipped <n> --argjson remaining <n> \
-    '{summary:{totalFound:$found, qualified:$qualified, applied:$applied, failed:$failed, skipped:$skipped, remaining:$remaining}}')"
-```
 
 ## Phase 4: Summary
 
@@ -236,16 +212,13 @@ Print a summary table, link to `http://localhost:8000/runs/<RUN_ID>`, suggest `r
 
 ## Rules
 
-1. **Phase 2 cannot be skipped.** User must approve before any submission.
-2. **No per-job confirmation after approval.**
-3. **Account handling** — follow `shared/auth.md`. If the account doesn't exist, register it. If the password is wrong, run forgot-password via `<get-code-command>`.
-4. **Never process payments** — `failReason:"Payment required"`, continue.
-5. **CAPTCHAs / email codes** — pause and ask (see `auth.md`). One-time per board, not per-job failures.
-6. **Be honest about match scores.**
-7. **Deduplicate** within the board before Phase 2.
-8. **Pace** 3–5s between submissions on the same domain.
-9. **The Run is the audit trail.** PATCH after every state change.
-10. **Respect pause.** Between every job in Phase 3, re-read the run; if `status === "paused"`, exit cleanly.
-11. **Missing resume file** → PATCH run to `paused`, ask the user to re-upload.
-
-Read `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md` for large pages, popups, and browser best practices.
+1. **Phase 2 cannot be skipped.** No per-job confirmation after that gate.
+2. **Account handling** — follow `shared/auth.md`. Register if missing; run forgot-password via `<get-code-command>` if stale.
+3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
+4. **CAPTCHAs / email codes** — pause and ask (see `auth.md`). One-time per board, not per-job failures.
+5. **Be honest about match scores.**
+6. **Deduplicate** within the board before Phase 2.
+7. **Pace** 3–5s between submissions on the same domain.
+8. **Audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
+9. **Respect pause.** Re-read the run between jobs in Phase 3; `status === "paused"` → exit cleanly.
+10. **Missing resume file** → PATCH run to `paused`, ask the user to re-upload.

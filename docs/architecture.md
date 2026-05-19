@@ -117,8 +117,8 @@ sequenceDiagram
     API-->>S: { duplicate: false }
     S->>B: navigate / login / fill form
     B-->>S: snapshot, success page
-    S->>API: POST /api/applied
-    API-->>S: { id }
+    S->>API: POST /api/runs/[id]/jobs/[jobKey]/result
+    API-->>S: { runJob, application, summary }
     S-->>U: applied
 ```
 

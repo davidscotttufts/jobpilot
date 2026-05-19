@@ -74,21 +74,15 @@ same per-job flow as the apply skill's Phase 4** (see
 `${JOBPILOT_SKILLS_ROOT}/skills/apply/SKILL.md` sections 4.1 through 4.9):
 
 1. **4.1 Mark Applying** — PATCH job to `applying`.
-2. **4.2 Navigate + Find Apply** — `browser_navigate`, locate Apply button, click, read `shared/extractors/form-fields.js`.
-3. **4.3 Tailor Resume** — invoke `<tailor-resume-command>`; on failure PATCH `failed` with `failReason:"No tailorable resume base"`.
+2. **4.2 Navigate + Find Apply** — `browser_navigate`, then `() => window.__jp.applyButton()` and click its ref; `() => window.__jp.formFields()` to enumerate the form.
+3. **4.3 Tailor Resume** — read the cached `jobDigest` from the RunJob row, invoke `<tailor-resume-command>` with it. On failure POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`.
 4. **4.4 Fill Forms** — follow `shared/form-filling.md`; upload the tailored variant.
 5. **4.5 Pre-Submit Review** — skip unless `config.maxApplications === 1`.
-6. **4.6 Submit** — submit; read `shared/extractors/submit-confirmation.js`.
-7. **4.7 Record Result** — PATCH `applied`/`failed`; POST `/api/applied` on success.
-8. **4.8 Update Summary** — PATCH run summary counts after every job.
-9. **4.9 Limit** — if `MAX_APPS` set and `summary.applied >= MAX_APPS`, PATCH remaining `approved` jobs to `skipped` (`"Max applications limit reached"`) and end the loop.
+6. **4.6 Submit** — submit; call `() => window.__jp.submitConfirm()`.
+7. **4.7 Record Result** — POST `/api/runs/$RUN_ID/jobs/<jobKey>/result` with `outcome:"applied"`/`"failed"`/`"skipped"`. Atomic: updates RunJob, creates Application, marks queue consumed, recomputes summary.
+8. **4.9 Limit** — if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 
-When recording an application via `POST /api/applied`, use the run's original
-`source` field (preserve `"apply"` vs `"autopilot"` lineage):
-
-```bash
-SOURCE=$(echo "$RUN" | jq -r '.data.source')
-```
+The `/result` endpoint preserves the run's original `source` (`"apply"` vs `"autopilot"`) on the created Application row automatically — no separate source-passthrough needed.
 
 ### Between jobs: honor user Stop
 
@@ -97,7 +91,7 @@ Re-fetch the run between jobs and exit cleanly if the user stopped it:
 ```bash
 STATUS=$(curl -fsS "$JOBPILOT_API/api/runs/$RUN_ID" | jq -r '.data.status')
 if [ "$STATUS" = "paused" ]; then
-  # PATCH remaining approved jobs to skipped("Run paused by user") and stop
+  # POST /result outcome:"skipped" skipReason:"Run paused by user" for each remaining approved job, then stop
   exit 0
 fi
 ```
