@@ -15,12 +15,12 @@ import type { RunDto } from "@/types/api";
 
 const FILTERS = {
   status: "in_progress" satisfies RunStatus,
-  source: "autopilot" satisfies RunSource,
+  source: "auto-apply" satisfies RunSource,
 } as const;
 
 const RUNS_URL = `/api/runs?status=${FILTERS.status}&source=${FILTERS.source}`;
 
-export function AutopilotStopPill(): ReactElement {
+export function AutoApplyStopPill(): ReactElement {
   const queryClient = useQueryClient();
 
   const invalidateRuns = (): void => {
@@ -44,7 +44,7 @@ export function AutopilotStopPill(): ReactElement {
       if (!active) {
         return Promise.resolve({
           data: null,
-          error: { code: "NO_RUN", message: "No active autopilot run" },
+          error: { code: "NO_RUN", message: "No active auto-apply run" },
         });
       }
       return apiClient.patch<{ runId: string; status: RunStatus }>(
@@ -53,7 +53,7 @@ export function AutopilotStopPill(): ReactElement {
       );
     },
     {
-      successMessage: "Autopilot paused",
+      successMessage: "Auto-apply paused",
       invalidate: [queryKeys.runs.all, queryKeys.pipeline.all],
     },
   );
@@ -78,7 +78,7 @@ export function AutopilotStopPill(): ReactElement {
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Stack spacing={0}>
-          <Typography variant="captionMuted">Autopilot running</Typography>
+          <Typography variant="captionMuted">Auto-apply running</Typography>
           <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }} noWrap>
             {active.query}
           </Typography>

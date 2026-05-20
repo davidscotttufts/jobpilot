@@ -3,7 +3,7 @@ import { z } from "zod/v4";
 export const RUN_STATUSES = ["in_progress", "paused", "interrupted", "completed", "failed"] as const;
 export const runStatusSchema = z.enum(RUN_STATUSES);
 
-export const RUN_SOURCES = ["search", "autopilot", "apply"] as const;
+export const RUN_SOURCES = ["search", "auto-apply", "apply"] as const;
 export const runSourceSchema = z.enum(RUN_SOURCES);
 
 export const RUN_JOB_STATUSES = [

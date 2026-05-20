@@ -58,6 +58,7 @@ If `FORCE`, proceed and overwrite.
 {
   basics: {
     name:     string,           // required
+    headline?: string,          // professional title/headline if present
     email?:   string,
     phone?:   string,
     website?: string,

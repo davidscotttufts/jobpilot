@@ -11,7 +11,7 @@ export default function RunsPage(): ReactElement {
       <PageHeader
         eyebrow="History"
         title="Runs"
-        description="Search and autopilot runs, newest first."
+        description="Search and auto-apply runs, newest first."
         actions={
           <LinkButton variant="contained" startIcon={<Add fontSize="md" />} href="/runs/new">
             New run

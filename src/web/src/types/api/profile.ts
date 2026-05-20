@@ -35,7 +35,7 @@ export interface ProfileDto {
   updatedAt: string;
 }
 
-export interface AutopilotSettingsDto {
+export interface AutoApplySettingsDto {
   id: number;
   profileId: number;
   minMatchScore: number;
@@ -45,7 +45,7 @@ export interface AutopilotSettingsDto {
 
 export interface ProfileResponse {
   profile: ProfileDto | null;
-  autopilot: AutopilotSettingsDto | null;
+  autoApply: AutoApplySettingsDto | null;
   primaryResumeSourceAbsolutePath: string | null;
   resumes: ResumeListItem[];
 }

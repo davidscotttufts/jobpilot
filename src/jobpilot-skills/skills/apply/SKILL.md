@@ -21,7 +21,7 @@ Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md` to load profile, resume, creden
 JOBPILOT_API=http://localhost:8000
 ```
 
-Read `data.autopilot` for config (defaults applied per field):
+Read `data.autoApply` for config (defaults applied per field):
 
 | Setting                 | Default          | Notes                                                                       |
 | ----------------------- | ---------------- | --------------------------------------------------------------------------- |
@@ -29,7 +29,7 @@ Read `data.autopilot` for config (defaults applied per field):
 | `maxApplicationsPerRun` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                |
 
-For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow registers a new account if needed and runs forgot-password if the stored password is stale.
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow **registers a new account when none exists** (no asking) and runs forgot-password if the stored password is stale.
 
 ## Phase 0: Dispatch
 
@@ -44,7 +44,7 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 ### 1A.1 Fit Review
 
-URL input → `browser_navigate`, warm `window.__jp` per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then `() => window.__jp.jobDetails()`. Pasted input → parse the same fields manually. **No `browser_snapshot`.** Keep the digest in `DIGEST=...` for 1A.4.
+URL input → `browser_navigate`, then take a `browser_snapshot` narrowed to the posting body (per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`) and build the digest JSON (`title`, `company`, `location`, `salary`, `employmentType`, `remote`, `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `descriptionExcerpt`) from it. Pasted input → parse the same fields manually. Keep the digest in `DIGEST=...` for 1A.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -134,8 +134,8 @@ If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped
 ### 2.2 Visit + Extract
 
 1. `browser_navigate` to the URL.
-2. Warm `window.__jp` per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then `() => window.__jp.jobDetails()`. Keep the stringified digest as `DIGEST` for 2.3. **No snapshot.**
-3. If login is needed, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then re-extract.
+2. Take a `browser_snapshot` narrowed to the posting body (per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`) and build the digest JSON from it. Keep the stringified digest as `DIGEST` for 2.3.
+3. If login is needed, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then re-read the posting.
 4. Re-run `/api/applied/check` with title+company for fuzzy match.
 
 ### 2.3 Score and Add
@@ -205,7 +205,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
 
 ### 4.2 Navigate + Find Apply
 
-Navigate to the job URL. Re-warm `window.__jp` (cross-origin) and call `() => window.__jp.applyButton()`. The result `{ ref, text }` gives a stable selector — `browser_click` it. **No `browser_snapshot` needed.** If `null` came back (rare — non-standard board), fall back to one narrowed `browser_snapshot` of the header. After `browser_wait_for`, call `() => window.__jp.formFields()` to enumerate the form. If a login page appears, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then return.
+Navigate to the job URL. Take a `browser_snapshot` narrowed to the header to find the Apply / Easy Apply control and `browser_click` its `ref`. After `browser_wait_for`, `browser_snapshot` the form to enumerate fields and their refs. If a login page appears, follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md`, then return.
 
 ### 4.3 Tailor Resume
 
@@ -217,11 +217,11 @@ Invoke `<tailor-resume-command> $DIGEST`. Empty `$DIGEST` (legacy row) → fall 
 
 ### 4.4 Fill Forms
 
-Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Upload the 4.3 variant for resume fields. Use `autopilot.salaryExpectation` and `autopilot.defaultStartDate`.
+Follow `${JOBPILOT_SKILLS_ROOT}/shared/form-filling.md`. Upload the 4.3 variant for resume fields. Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
 
 ### 4.5 Pre-Submit Review (Single-Job Mode Only)
 
-Skip in batch mode. When `config.maxApplications === 1`, re-run `() => window.__jp.formFields()` and present:
+Skip in batch mode. When `config.maxApplications === 1`, re-snapshot the form and present:
 
 ```
 ## Ready to Submit: [Title] at [Company]
@@ -229,11 +229,11 @@ Skip in batch mode. When `config.maxApplications === 1`, re-run `() => window.__
 <total> fields across <P> page(s). Submit? (yes / no / edit <field>)
 ```
 
-`no` → POST `/result` with `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → fix, re-extract, re-present.
+`no` → POST `/result` with `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → fix, re-snapshot, re-present.
 
 ### 4.6 Submit
 
-Click submit, `browser_wait_for`, then call `() => window.__jp.submitConfirm()`. `{ submitted: true }` = success; populated `error` = failure.
+Click submit, `browser_wait_for`, then take a narrowed `browser_snapshot` for the result. A success confirmation = applied; a populated error message on the page = failure with that message as `failReason`.
 
 ### 4.7 Record Result
 
@@ -269,7 +269,7 @@ Print a summary table and link to `http://localhost:8000/runs/<RUN_ID>`.
 ## Rules
 
 1. **Up-front confirmation mandatory** (1A.1 or Phase 3); single-job mode adds pre-submit review (4.5).
-2. **Never create accounts** on any board.
+2. **Create accounts when needed** — follow `shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
 3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
 4. **CAPTCHAs / email verification** — pause and ask (see `auth.md`).
 5. **Be honest about match scores.**

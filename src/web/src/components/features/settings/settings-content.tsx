@@ -12,12 +12,12 @@ import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
-  profileWithAutopilotSchema,
-  type ProfileWithAutopilotInput,
+  profileWithAutoApplySchema,
+  type ProfileWithAutoApplyInput,
 } from "@/lib/schemas/profile";
 import type { ProfileResponse } from "@/types/api";
 import { AddressSection } from "./sections/address-section";
-import { AutopilotSection } from "./sections/autopilot-section";
+import { AutoApplySection } from "./sections/auto-apply-section";
 import { CredentialsSection } from "./sections/credentials-section";
 import { EeoSection } from "./sections/eeo-section";
 import { EmailSection } from "./sections/email-section";
@@ -29,7 +29,7 @@ const ANCHORS: SectionAnchor[] = [
   { id: "address", label: "Address" },
   { id: "work-auth", label: "Work auth" },
   { id: "eeo", label: "EEO" },
-  { id: "autopilot", label: "Autopilot" },
+  { id: "auto-apply", label: "Auto-apply" },
   { id: "email", label: "Email" },
   { id: "credentials", label: "Credentials" },
 ];
@@ -48,12 +48,12 @@ export function SettingsContent(): ReactElement {
   return <SettingsForm initialData={toFormValues(query.data)} />;
 }
 
-function toFormValues(data: ProfileResponse): ProfileWithAutopilotInput {
+function toFormValues(data: ProfileResponse): ProfileWithAutoApplyInput {
   if (!data.profile) {
     return PROFILE_DEFAULT_VALUES;
   }
   const p = data.profile;
-  const a = data.autopilot ?? PROFILE_DEFAULT_VALUES.autopilot!;
+  const a = data.autoApply ?? PROFILE_DEFAULT_VALUES.autoApply!;
   return {
     firstName: p.firstName,
     lastName: p.lastName,
@@ -81,19 +81,19 @@ function toFormValues(data: ProfileResponse): ProfileWithAutopilotInput {
     eeoVeteranStatus: p.eeoVeteranStatus ?? "",
     eeoDisabilityStatus: p.eeoDisabilityStatus ?? "",
     primaryResumeId: p.primaryResumeId,
-    autopilot: a,
+    autoApply: a,
   };
 }
 
 interface SettingsFormProps {
-  initialData: ProfileWithAutopilotInput;
+  initialData: ProfileWithAutoApplyInput;
 }
 
 function SettingsForm(props: SettingsFormProps): ReactElement {
   const { initialData } = props;
   const [, setDirty] = useState(false);
 
-  const save = useApiMutation<{ id: number }, ProfileWithAutopilotInput>(
+  const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
     (vars) => apiClient.put("/api/profile", vars),
     {
       successMessage: "Settings saved",
@@ -104,7 +104,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
 
   const form = useForm({
     defaultValues: initialData,
-    validators: { onSubmit: profileWithAutopilotSchema },
+    validators: { onSubmit: profileWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
@@ -144,8 +144,8 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
           <Box data-section-id="eeo">
             <EeoSection form={formApi} />
           </Box>
-          <Box data-section-id="autopilot">
-            <AutopilotSection form={formApi} />
+          <Box data-section-id="auto-apply">
+            <AutoApplySection form={formApi} />
           </Box>
           <Box data-section-id="email">
             <EmailSection />

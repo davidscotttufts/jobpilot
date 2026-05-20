@@ -40,7 +40,7 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
 
   const run = detail.data;
   const cfg = run.config;
-  const isAutopilot = run.source === "autopilot";
+  const isAutoApply = run.source === "auto-apply";
 
   return (
     <Stack spacing={3}>
@@ -60,10 +60,10 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
             {run.source} · Started {formatRelativeTime(run.startedAt)} ago
           </Typography>
           {cfg.board && <Chip size="small" label={`Board: ${cfg.board}`} variant="outlined" />}
-          {isAutopilot && typeof cfg.minScore === "number" && (
+          {isAutoApply && typeof cfg.minScore === "number" && (
             <Chip size="small" label={`Min score: ${cfg.minScore}`} variant="outlined" />
           )}
-          {isAutopilot && (
+          {isAutoApply && (
             <Chip
               size="small"
               label={`Max apps: ${cfg.maxApplications ?? "∞"}`}

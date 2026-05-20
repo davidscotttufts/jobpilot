@@ -9,7 +9,7 @@ export type PipelineEvent =
   | { type: "queue.updated" };
 
 /**
- * Profile-scoped feed for cross-run UI (kanban, autopilot pill). The client
+ * Profile-scoped feed for cross-run UI (kanban, auto-apply pill). The client
  * URL is parameter-free; the server resolves the profile from the session.
  */
 export const pipelineChannel = defineChannel<PipelineEvent, void, { profileId: number }>({

@@ -21,8 +21,4 @@ dist/
 src/jobpilot-claude-plugin/skills/
 src/jobpilot-codex-plugin/skills/
 
-# Auto-bundled runtimes (see scripts/sync-skills.ts bundleRuntimes()).
-src/jobpilot-skills/shared/extractors/apply-runtime.js
-src/jobpilot-skills/shared/extractors/search-runtime.js
-
 resume.json

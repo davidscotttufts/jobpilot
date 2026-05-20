@@ -6,6 +6,7 @@ const linkUrl = z.string().transform(normalizeLinkUrl).optional();
 
 export const resumeBasicsSchema = z.object({
   name: z.string().min(1, "Required"),
+  headline: z.string().optional(),
   email: z.union([z.email(), z.literal("")]).optional(),
   phone: optionalPhoneSchema,
   website: linkUrl,

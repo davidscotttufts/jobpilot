@@ -30,8 +30,8 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 1. `browser_navigate` to the resolved board's `searchUrl`.
 2. Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` to log in proactively.
 3. Fill the search fields and submit.
-4. Warm the search runtime per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then call `() => window.__jp.results()`. **Do not snapshot — the helper JSON is far cheaper than a full a11y tree.**
-5. Returns `[{ title, company, location, url, postedAt }]`. Take the first 10–15. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting, re-warm `window.__jp` (apply runtime — cross-origin nav), then call `() => window.__jp.jobDetails()`. Otherwise skip the per-job nav to save tokens.
+4. Take a `browser_snapshot` narrowed to the results list (per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row.
+5. Take the first 10–15. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting and `browser_snapshot` its body for the detail. Otherwise skip the per-job nav to save tokens.
 
 ## Step 3: Exclude Previously Applied
 

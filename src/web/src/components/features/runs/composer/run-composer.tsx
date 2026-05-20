@@ -26,7 +26,7 @@ import type { CreateRunRequest, JobBoardDto, ProfileResponse, RunDto } from "@/t
 import { buildCliArgs } from "@/utils/cli-args";
 import { slugify } from "@/utils/slug";
 
-type RunMode = Extract<RunSource, "search" | "autopilot">;
+type RunMode = Extract<RunSource, "search" | "auto-apply">;
 
 interface FormValues {
   mode: RunMode;
@@ -37,7 +37,7 @@ interface FormValues {
 }
 
 const formSchema = z.object({
-  mode: z.enum(["search", "autopilot"]),
+  mode: z.enum(["search", "auto-apply"]),
   query: z.string().trim().min(2, "Enter a search query"),
   board: z.string().min(1, "Pick a board"),
   minScore: z.number().int().min(0).max(100),
@@ -54,7 +54,7 @@ function hasMaxApps(values: FormValues): values is FormValues & { maxApps: numbe
 }
 
 function buildRunConfig(values: FormValues): CreateRunRequest["config"] {
-  if (values.mode !== "autopilot") {
+  if (values.mode !== "auto-apply") {
     return { board: values.board };
   }
   return {
@@ -69,8 +69,8 @@ function buildSkillArg(values: FormValues): string {
     positional: [values.query.trim()],
     flags: {
       board: values.board,
-      "min-score": values.mode === "autopilot" ? values.minScore : undefined,
-      "max-apps": values.mode === "autopilot" && hasMaxApps(values) ? values.maxApps : undefined,
+      "min-score": values.mode === "auto-apply" ? values.minScore : undefined,
+      "max-apps": values.mode === "auto-apply" && hasMaxApps(values) ? values.maxApps : undefined,
     },
   });
 }
@@ -99,16 +99,16 @@ export function RunComposer(): ReactElement {
     0,
     5,
   );
-  const autopilot = profileQuery.data?.autopilot;
+  const autoApply = profileQuery.data?.autoApply;
   const hasBoards = boards.length > 0;
 
   const form = useForm({
     defaultValues: {
-      mode: "autopilot" as RunMode,
+      mode: "auto-apply" as RunMode,
       query: "",
       board: boards[0]?.domain ?? "",
-      minScore: autopilot?.minMatchScore ?? 70,
-      maxApps: (autopilot?.maxApplicationsPerRun ?? "") as number | "",
+      minScore: autoApply?.minMatchScore ?? 70,
+      maxApps: (autoApply?.maxApplicationsPerRun ?? "") as number | "",
     },
     validators: { onSubmit: formSchema },
     onSubmit: async ({ value }) => {
@@ -149,7 +149,7 @@ export function RunComposer(): ReactElement {
                   onChange={(_, next: RunMode | null) => next && field.handleChange(next)}
                 >
                   <ToggleButton value="search">Search only</ToggleButton>
-                  <ToggleButton value="autopilot">Autopilot</ToggleButton>
+                  <ToggleButton value="auto-apply">Auto-apply</ToggleButton>
                 </ToggleButtonGroup>
               </Stack>
             )}
@@ -194,9 +194,9 @@ export function RunComposer(): ReactElement {
             </Typography>
           )}
 
-          <form.Subscribe selector={(s) => s.values.mode === "autopilot"}>
-            {(isAutopilot) =>
-              isAutopilot && (
+          <form.Subscribe selector={(s) => s.values.mode === "auto-apply"}>
+            {(isAutoApply) =>
+              isAutoApply && (
                 <Stack spacing={2}>
                   <form.Field name="minScore">
                     {(field) => (
@@ -238,7 +238,7 @@ export function RunComposer(): ReactElement {
                   variant="contained"
                   disabled={!hasBoards || !canSubmit || isSubmitting}
                 >
-                  {mode === "search" ? "Start search" : "Start autopilot"}
+                  {mode === "search" ? "Start search" : "Start auto-apply"}
                 </Button>
               )}
             </form.Subscribe>

@@ -25,7 +25,7 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
         { status: "paused" satisfies RunStatus },
       ),
     {
-      successMessage: "Autopilot paused",
+      successMessage: "Run paused",
       invalidate: [queryKeys.runs.all, queryKeys.pipeline.all],
     },
   );
@@ -59,12 +59,12 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
           Resume
         </Button>
       )}
-      {failedCount > 0 && run.source === "autopilot" && (
+      {failedCount > 0 && run.source === "auto-apply" && (
         <Button
           variant="outlined"
           startIcon={<Replay fontSize="sm" />}
           onClick={() => {
-            void agent.injectSkill("autopilot", `retry-failed ${run.runId}`);
+            void agent.injectSkill("auto-apply", `retry-failed ${run.runId}`);
           }}
         >
           Retry failed ({failedCount})

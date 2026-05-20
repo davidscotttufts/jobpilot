@@ -1,5 +1,5 @@
 export * from "./address-section";
-export * from "./autopilot-section";
+export * from "./auto-apply-section";
 export * from "./credentials-section";
 export * from "./eeo-section";
 export * from "./email-section";

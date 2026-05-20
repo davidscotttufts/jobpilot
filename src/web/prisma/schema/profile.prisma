@@ -34,7 +34,7 @@ model Profile {
   primaryResume   Resume?  @relation("PrimaryResume", fields: [primaryResumeId], references: [id], onDelete: SetNull)
   resumes         Resume[]
 
-  autopilot     AutopilotSettings?
+  autoApply     AutoApplySettings?
   applications  Application[]
   runs          Run[]
   credentials   Credential[]
@@ -47,7 +47,7 @@ model Profile {
   @@index([isActive])
 }
 
-model AutopilotSettings {
+model AutoApplySettings {
   id                    Int     @id @default(autoincrement())
   profileId             Int     @unique
   profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)

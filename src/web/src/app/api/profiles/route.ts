@@ -1,6 +1,6 @@
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { profileWithAutopilotSchema } from "@/lib/schemas/profile";
+import { profileWithAutoApplySchema } from "@/lib/schemas/profile";
 
 export async function GET() {
   const profiles = await db.profile.findMany({
@@ -19,13 +19,13 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const parsed = profileWithAutopilotSchema.partial().safeParse(body);
+  const parsed = profileWithAutoApplySchema.partial().safeParse(body);
 
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid profile payload", 422, parsed.error.issues);
   }
 
-  const { autopilot, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
+  const { autoApply, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
   const hasActive = await db.profile.findFirst({ where: { isActive: true }, select: { id: true } });
 
   const profile = await db.profile.create({
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       eeoDisabilityStatus: profileFields.eeoDisabilityStatus ?? null,
       primaryResumeId: primaryResumeId ?? null,
       isActive: !hasActive,
-      autopilot: { create: autopilot ?? {} },
+      autoApply: { create: autoApply ?? {} },
     },
   });
 

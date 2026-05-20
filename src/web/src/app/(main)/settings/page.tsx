@@ -9,7 +9,7 @@ export default function SettingsPage(): ReactElement {
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Profile, work auth, autopilot, email, and saved credentials."
+        description="Profile, work auth, auto-apply, email, and saved credentials."
       />
       <SettingsContent />
     </Container>

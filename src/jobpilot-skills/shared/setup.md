@@ -35,7 +35,7 @@ curl -fsS "$JOBPILOT_API/api/profile"
 ```
 
 - If `data.profile` is `null`: "Open http://localhost:8000/onboarding to set up your profile, then re-run this skill."
-- Otherwise read from `data.profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `data.autopilot` (minMatchScore, maxApplicationsPerRun, confirmMode, skipCompanies, skipTitleKeywords, salaryExpectation, defaultStartDate, …).
+- Otherwise read from `data.profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `data.autoApply` (minMatchScore, maxApplicationsPerRun, defaultStartDate).
 
 The response also includes:
 
@@ -47,7 +47,7 @@ The response also includes:
 
 `data.resumes` is already in the profile response — no extra call needed. Full base structure at `GET /api/resumes/{id}`; variants at `GET /api/resumes/{id}/variants`.
 
-**Apply / autopilot must invoke `<tailor-resume-command>` per job.** It owns base selection and reuse-vs-create, and returns the variant id + PDF URL. Do not reimplement that logic in callers.
+**Apply / auto-apply must invoke `<tailor-resume-command>` per job.** It owns base selection and reuse-vs-create, and returns the variant id + PDF URL. Do not reimplement that logic in callers.
 
 Renderable PDFs (direct use outside the apply flow):
 

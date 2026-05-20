@@ -27,6 +27,12 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     letterSpacing: 1,
   },
+  headline: {
+    fontSize: 12,
+    textAlign: "center",
+    color: "#444",
+    marginTop: 3,
+  },
   contactRow: {
     flexDirection: "row",
     justifyContent: "center",
@@ -72,6 +78,7 @@ const styles = StyleSheet.create({
   skillGroup: { fontFamily: "Helvetica-Bold", marginRight: 4 },
   skillItems: { flex: 1 },
   projectDescription: { marginTop: 2, fontStyle: "italic" },
+  projectKeywords: { marginTop: 1, fontSize: 9.5, color: "#333" },
   educationDetails: { marginTop: 2 },
 });
 
@@ -176,23 +183,19 @@ function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
   return (
     <View style={styles.entryBlock} wrap={false}>
       <View style={styles.entryHeaderRow}>
-        <Text style={styles.entryTitle}>
-          {entry.name}
-          {entry.keywords.length > 0 && (
-            <Text style={{ fontFamily: "Helvetica" }}> — {entry.keywords.join(", ")}</Text>
-          )}
-        </Text>
-        {entry.url ? (
+        <Text style={[styles.entryTitle, { flex: 1 }]}>{entry.name}</Text>
+        {entry.url && (
           <Link
             src={entry.url.startsWith("http") ? entry.url : `https://${entry.url}`}
-            style={styles.link}
+            style={[styles.link, { flexShrink: 0, marginLeft: 8 }]}
           >
             {entry.url.replace(/^https?:\/\//, "")}
           </Link>
-        ) : (
-          <Text> </Text>
         )}
       </View>
+      {entry.keywords.length > 0 && (
+        <Text style={styles.projectKeywords}>{entry.keywords.join(", ")}</Text>
+      )}
       {entry.description && <Text style={styles.projectDescription}>{entry.description}</Text>}
       <Bullets items={entry.bullets} />
     </View>
@@ -245,12 +248,31 @@ export function JakeTemplate(props: JakeTemplateProps): ReactElement {
     <Document title={data.basics.name || "Resume"}>
       <Page size="LETTER" style={styles.page}>
         <Text style={styles.name}>{data.basics.name || " "}</Text>
+        {data.basics.headline && data.basics.headline.trim().length > 0 && (
+          <Text style={styles.headline}>{data.basics.headline}</Text>
+        )}
         <ContactBar basics={data.basics} />
 
         {data.summary && data.summary.trim().length > 0 && (
           <>
             <Text style={styles.sectionHeader}>Summary</Text>
             <Text style={styles.summary}>{data.summary}</Text>
+          </>
+        )}
+
+        {data.skills.length > 0 && (
+          <>
+            <Text style={styles.sectionHeader}>Technical Skills</Text>
+            <SkillsList groups={data.skills} />
+          </>
+        )}
+
+        {data.education.length > 0 && (
+          <>
+            <Text style={styles.sectionHeader}>Education</Text>
+            {data.education.map((e, i) => (
+              <EducationEntry key={i} entry={e} />
+            ))}
           </>
         )}
 
@@ -268,22 +290,6 @@ export function JakeTemplate(props: JakeTemplateProps): ReactElement {
             <Text style={styles.sectionHeader}>Projects</Text>
             {data.projects.map((p, i) => (
               <ProjectEntry key={i} entry={p} />
-            ))}
-          </>
-        )}
-
-        {data.skills.length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Technical Skills</Text>
-            <SkillsList groups={data.skills} />
-          </>
-        )}
-
-        {data.education.length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Education</Text>
-            {data.education.map((e, i) => (
-              <EducationEntry key={i} entry={e} />
             ))}
           </>
         )}

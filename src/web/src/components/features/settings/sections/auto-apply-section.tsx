@@ -5,27 +5,24 @@ import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
 import { FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
 
-interface AutopilotSectionProps {
+interface AutoApplySectionProps {
   form: AnyReactForm;
 }
 
-export function AutopilotSection(props: AutopilotSectionProps): ReactElement {
+export function AutoApplySection(props: AutoApplySectionProps): ReactElement {
   const { form } = props;
   return (
-    <FormSection
-      title="Autopilot"
-      description="Defaults used by the autopilot and apply skills."
-    >
+    <FormSection title="Auto-apply" description="Defaults used by the auto-apply and apply skills.">
       <Stack direction="row" spacing={2}>
         <FormTextField
           form={form}
-          name="autopilot.minMatchScore"
+          name="autoApply.minMatchScore"
           label="Min match score (0-100)"
           type="number"
         />
         <FormTextField
           form={form}
-          name="autopilot.maxApplicationsPerRun"
+          name="autoApply.maxApplicationsPerRun"
           label="Max applications per run"
           type="number"
           helperText="Leave empty for unlimited"
@@ -33,7 +30,7 @@ export function AutopilotSection(props: AutopilotSectionProps): ReactElement {
       </Stack>
       <FormTextField
         form={form}
-        name="autopilot.defaultStartDate"
+        name="autoApply.defaultStartDate"
         label="Default start date answer"
       />
     </FormSection>

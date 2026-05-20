@@ -17,7 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   AddressSection,
-  AutopilotSection,
+  AutoApplySection,
   EeoSection,
   PersonalSection,
   WorkAuthSection,
@@ -29,8 +29,8 @@ import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
-  profileWithAutopilotSchema,
-  type ProfileWithAutopilotInput,
+  profileWithAutoApplySchema,
+  type ProfileWithAutoApplyInput,
 } from "@/lib/schemas/profile";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
@@ -45,7 +45,7 @@ const STEPS = [
   { key: "address", label: "Address" },
   { key: "work-auth", label: "Work auth" },
   { key: "eeo", label: "EEO" },
-  { key: "autopilot", label: "Autopilot" },
+  { key: "auto-apply", label: "Auto-apply" },
 ] as const;
 
 interface OnboardingWizardProps {
@@ -61,10 +61,9 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   const { ready, draftProfileId, previousActiveId } = useEnsureDraftProfile();
   const [step, setStep] = useState(0);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
-  const canCancel =
-    isNewProfile && previousActiveId !== null && draftProfileId !== null;
+  const canCancel = isNewProfile && previousActiveId !== null && draftProfileId !== null;
 
-  const save = useApiMutation<{ id: number }, ProfileWithAutopilotInput>(
+  const save = useApiMutation<{ id: number }, ProfileWithAutoApplyInput>(
     (vars) => apiClient.put("/api/profile", vars),
     {
       successMessage: isNewProfile ? "Profile created" : "Profile saved",
@@ -82,10 +81,9 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       if (previousActiveId === null || draftProfileId === null) {
         return { data: null, error: { code: "INVALID_STATE", message: "No draft to discard" } };
       }
-      const restored = await apiClient.post<SetActiveProfileResponse>(
-        "/api/profiles/active",
-        { profileId: previousActiveId },
-      );
+      const restored = await apiClient.post<SetActiveProfileResponse>("/api/profiles/active", {
+        profileId: previousActiveId,
+      });
       if (restored.error) {
         return { data: null, error: restored.error };
       }
@@ -105,8 +103,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
   const handleCancel = async () => {
     const confirmed = await confirm({
       title: "Discard new profile?",
-      description:
-        "Any data you've added — including uploaded resumes — will be deleted.",
+      description: "Any data you've added — including uploaded resumes — will be deleted.",
       confirmLabel: "Discard",
       destructive: true,
     });
@@ -117,7 +114,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
 
   const form = useForm({
     defaultValues: PROFILE_DEFAULT_VALUES,
-    validators: { onSubmit: profileWithAutopilotSchema },
+    validators: { onSubmit: profileWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
@@ -132,7 +129,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
       return;
     }
 
-    const result = profileWithAutopilotSchema.safeParse(form.state.values);
+    const result = profileWithAutoApplySchema.safeParse(form.state.values);
     if (!result.success) {
       const issues = describeIssues(result.error.issues);
       setShowValidationErrors(true);
@@ -185,7 +182,7 @@ export function OnboardingWizard(props: OnboardingWizardProps): ReactElement {
             {step === 2 && <AddressSection form={formApi} />}
             {step === 3 && <WorkAuthSection form={formApi} />}
             {step === 4 && <EeoSection form={formApi} />}
-            {step === 5 && <AutopilotSection form={formApi} />}
+            {step === 5 && <AutoApplySection form={formApi} />}
             {showValidationErrors && <ValidationSummary form={formApi} />}
             {step !== 0 && (
               <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
@@ -211,20 +208,20 @@ interface ValidationSummaryProps {
 function ValidationSummary(props: ValidationSummaryProps): ReactElement | null {
   const { form } = props;
   return (
-    <form.Subscribe selector={(s: { values: ProfileWithAutopilotInput }) => s.values}>
-      {(values: ProfileWithAutopilotInput) => {
-        const result = profileWithAutopilotSchema.safeParse(values);
+    <form.Subscribe selector={(s: { values: ProfileWithAutoApplyInput }) => s.values}>
+      {(values: ProfileWithAutoApplyInput) => {
+        const result = profileWithAutoApplySchema.safeParse(values);
         if (result.success) {
           return null;
         }
+
         const issues = describeIssues(result.error.issues);
         return (
           <Alert severity="error">
             <AlertTitle>Some fields need fixing</AlertTitle>
             <Stack spacing={0.5}>
               {issues.map((issue, i) => {
-                const stepLabel =
-                  issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
+                const stepLabel = issue.stepIndex !== null ? STEPS[issue.stepIndex]?.label : null;
                 return (
                   <Typography key={i} variant="body2">
                     <strong>{issue.path}</strong>

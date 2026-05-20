@@ -17,7 +17,7 @@ Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. The profile response includes 
 Detect the argument shape:
 
 - Starts with `{` → parse as digest JSON. **No navigation, no snapshot.**
-- Starts with `http` → `browser_navigate`, warm `window.__jp` per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`, then `() => window.__jp.jobDetails()`.
+- Starts with `http` → `browser_navigate`, then `browser_snapshot` the posting body (per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`) and build the digest from it.
 - Otherwise → pasted JD text; parse the same fields manually.
 
 From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`, `yearsExperience`, `descriptionExcerpt`), assemble:

@@ -1,6 +1,6 @@
 ---
 name: get-code
-description: Fetch the latest verification code or magic link from the connected mailbox for a given board domain. Called by apply / autopilot for 2FA and account-creation flows.
+description: Fetch the latest verification code or magic link from the connected mailbox for a given board domain. Called by apply / auto-apply for 2FA and account-creation flows.
 argument-hint: "<board-domain>"
 ---
 

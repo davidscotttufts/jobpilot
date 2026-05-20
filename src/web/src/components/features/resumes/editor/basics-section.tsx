@@ -11,7 +11,11 @@ interface BasicsSectionProps {
   onChange: (next: ResumeBasics) => void;
 }
 
-const TEXT_FIELDS: { key: Exclude<keyof ResumeBasics, "phone">; label: string; placeholder?: string }[] = [
+const TEXT_FIELDS: {
+  key: Exclude<keyof ResumeBasics, "phone">;
+  label: string;
+  placeholder?: string;
+}[] = [
   { key: "name", label: "Full name" },
   { key: "email", label: "Email" },
   { key: "location", label: "Location", placeholder: "City, ST" },
@@ -24,6 +28,15 @@ export function BasicsSection(props: BasicsSectionProps): ReactElement {
   const { value, onChange } = props;
   return (
     <Grid container spacing={2}>
+      <Grid size={{ xs: 12 }}>
+        <TextField
+          fullWidth
+          label="Headline"
+          placeholder="Senior Software Developer"
+          value={value.headline ?? ""}
+          onChange={(e) => onChange({ ...value, headline: e.target.value })}
+        />
+      </Grid>
       {TEXT_FIELDS.map((f) => (
         <Grid key={f.key} size={{ xs: 12, sm: 6 }}>
           <TextField

@@ -78,21 +78,21 @@ export const profileSchema = z.object({
   primaryResumeId: z.number().int().nullable().optional(),
 });
 
-export const autopilotSettingsSchema = z.object({
+export const autoApplySettingsSchema = z.object({
   minMatchScore: z.number().int().min(0).max(100),
   maxApplicationsPerRun: z.number().int().min(1).max(500).optional().nullable(),
   defaultStartDate: z.string(),
 });
 
-export const profileWithAutopilotSchema = profileSchema.extend({
-  autopilot: autopilotSettingsSchema.optional(),
+export const profileWithAutoApplySchema = profileSchema.extend({
+  autoApply: autoApplySettingsSchema.optional(),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
-export type AutopilotSettingsInput = z.infer<typeof autopilotSettingsSchema>;
-export type ProfileWithAutopilotInput = z.infer<typeof profileWithAutopilotSchema>;
+export type AutoApplySettingsInput = z.infer<typeof autoApplySettingsSchema>;
+export type ProfileWithAutoApplyInput = z.infer<typeof profileWithAutoApplySchema>;
 
-export const PROFILE_DEFAULT_VALUES: ProfileWithAutopilotInput = {
+export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   firstName: "",
   lastName: "",
   email: "",
@@ -119,7 +119,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutopilotInput = {
   eeoVeteranStatus: "Prefer not to disclose",
   eeoDisabilityStatus: "Prefer not to disclose",
   primaryResumeId: null,
-  autopilot: {
+  autoApply: {
     minMatchScore: 70,
     maxApplicationsPerRun: null,
     defaultStartDate: "2 weeks notice",

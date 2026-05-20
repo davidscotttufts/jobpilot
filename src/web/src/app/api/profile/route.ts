@@ -1,7 +1,7 @@
 import { getActiveProfileIdOrNull } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { profileWithAutopilotSchema } from "@/lib/schemas/profile";
+import { profileWithAutoApplySchema } from "@/lib/schemas/profile";
 import { resumePath } from "@/lib/storage";
 
 const PROFILE_SCALAR_SELECT = {
@@ -40,7 +40,7 @@ export async function GET() {
   if (id === null) {
     return ok({
       profile: null,
-      autopilot: null,
+      autoApply: null,
       primaryResumeSourceAbsolutePath: null,
       resumes: [],
     });
@@ -54,14 +54,14 @@ export async function GET() {
   if (!profile) {
     return ok({
       profile: null,
-      autopilot: null,
+      autoApply: null,
       primaryResumeSourceAbsolutePath: null,
       resumes: [],
     });
   }
 
-  const [autopilot, primarySource, resumeRows, withContent] = await Promise.all([
-    db.autopilotSettings.findUnique({ where: { profileId: id } }),
+  const [autoApply, primarySource, resumeRows, withContent] = await Promise.all([
+    db.autoApplySettings.findUnique({ where: { profileId: id } }),
     profile.primaryResumeId
       ? db.resume.findUnique({
           where: { id: profile.primaryResumeId },
@@ -102,7 +102,7 @@ export async function GET() {
       preferredLocations: JSON.parse(profile.preferredLocations) as string[],
       updatedAt: profile.updatedAt.toISOString(),
     },
-    autopilot,
+    autoApply,
     primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
       ? resumePath(primarySource.sourceFilename)
       : null,
@@ -121,13 +121,13 @@ export async function PUT(req: Request) {
   }
 
   const body = await req.json();
-  const parsed = profileWithAutopilotSchema.safeParse(body);
+  const parsed = profileWithAutoApplySchema.safeParse(body);
 
   if (!parsed.success) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid profile payload", 422, parsed.error.issues);
   }
 
-  const { autopilot, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
+  const { autoApply, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
   const preferredLocationsJson = JSON.stringify(preferredLocations);
 
   await db.profile.update({
@@ -139,11 +139,11 @@ export async function PUT(req: Request) {
     },
   });
 
-  if (autopilot) {
-    await db.autopilotSettings.upsert({
+  if (autoApply) {
+    await db.autoApplySettings.upsert({
       where: { profileId: id },
-      create: { profileId: id, ...autopilot },
-      update: autopilot,
+      create: { profileId: id, ...autoApply },
+      update: autoApply,
     });
   }
 

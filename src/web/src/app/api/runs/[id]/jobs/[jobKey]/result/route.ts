@@ -23,7 +23,7 @@ const EMPTY_SUMMARY: RunSummary = {
  * Terminal-outcome handoff for a RunJob. Atomically updates RunJob status,
  * upserts the Application row (when `applied`), marks the QueueEntry
  * consumed/skipped, and recomputes Run.summary from the post-update
- * RunJob aggregates. Replaces the apply/autopilot skills' multi-curl
+ * RunJob aggregates. Replaces the apply/auto-apply skills' multi-curl
  * dance with a single POST.
  */
 export async function POST(req: Request, ctx: Params) {
