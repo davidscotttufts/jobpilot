@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "playwright-jobpilot": {
+    "playwright": {
       "command": "npx",
       "args": [
         "@playwright/mcp@latest",

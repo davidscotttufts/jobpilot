@@ -4,7 +4,7 @@
       "Bash(curl:*)",
       "Bash(jq:*)",
       "Bash(date:*)",
-      "mcp__plugin_jobpilot_playwright-jobpilot__*",
+      "mcp__plugin_jobpilot_playwright__*",
       "Skill(humanizer)",
       "Skill(cover-letter)",
       "Skill(upwork-proposal)",
