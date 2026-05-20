@@ -31,7 +31,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       minWidth: 200,
       sortable: false,
       renderCell: (p) => (
-        <Stack spacing={0} sx={{ overflow: "hidden" }}>
+        <Stack spacing={0} sx={{ height: "100%", justifyContent: "center", overflow: "hidden" }}>
           <Typography variant="body2" noWrap sx={{ fontWeight: 600, lineHeight: 1.4 }}>
             {p.row.fromName || p.row.fromAddress}
           </Typography>
