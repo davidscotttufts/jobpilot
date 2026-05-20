@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactElement, type ReactNode } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 import {
   Button,
   Dialog,
@@ -41,9 +41,13 @@ export function ConfirmDialog(props: ConfirmDialogProps): ReactElement {
 
   const [typed, setTyped] = useState("");
 
-  useEffect(() => {
+  // Reset the typed confirmation when the dialog closes (adjust state during
+  // render rather than in an effect).
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (!open) setTyped("");
-  }, [open]);
+  }
 
   const requiresTyping = Boolean(confirmationText);
   const matches = !requiresTyping || typed.trim() === confirmationText;

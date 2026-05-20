@@ -132,7 +132,7 @@ export function RunsList(): ReactElement {
       </Stack>
 
       {allRows.length === 0 ? (
-        <EmptyMessage>No runs yet. Start one from "New run".</EmptyMessage>
+        <EmptyMessage>No runs yet. Start one from &ldquo;New run&rdquo;.</EmptyMessage>
       ) : filteredRows.length === 0 ? (
         <EmptyMessage>No runs match the current filters.</EmptyMessage>
       ) : (

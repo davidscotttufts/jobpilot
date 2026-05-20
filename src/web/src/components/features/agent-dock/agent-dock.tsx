@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
+import {
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type PointerEvent,
+  type ReactElement,
+} from "react";
 import { Box } from "@mui/material";
 import {
   DOCK_COLLAPSED,
@@ -8,28 +14,35 @@ import {
   DOCK_MAX_EXPANDED,
   DOCK_MIN_EXPANDED,
 } from "@/components/layout/shell-config";
-import { patchAgentStorage, readAgentStorage, useAgentDock } from "@/providers/agent-provider";
+import {
+  patchAgentStorage,
+  readAgentStorage,
+  subscribeAgentStorage,
+  useAgentDock,
+} from "@/providers/agent-provider";
 import { clamp } from "@/utils/math";
 import { DockPanel } from "./dock-panel";
 import { DockStrip } from "./dock-strip";
 
+function getStoredDockWidth(): number {
+  const w = readAgentStorage()?.dockWidth;
+  return typeof w === "number" && Number.isFinite(w)
+    ? clamp(Math.round(w), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED)
+    : DOCK_EXPANDED;
+}
+
+const getServerDockWidth = (): number => DOCK_EXPANDED;
+
 export function AgentDock(): ReactElement {
   const { expanded } = useAgentDock();
-  const [width, setWidth] = useState(DOCK_EXPANDED);
+  // Persisted dock width lives in localStorage (source of truth); reads stay
+  // SSR-safe via useSyncExternalStore's server snapshot.
+  const width = useSyncExternalStore(subscribeAgentStorage, getStoredDockWidth, getServerDockWidth);
   const [dragging, setDragging] = useState(false);
   const draggingRef = useRef(false);
 
-  useEffect(() => {
-    const stored = readAgentStorage();
-    if (stored && typeof stored.dockWidth === "number" && Number.isFinite(stored.dockWidth)) {
-      setWidth(clamp(Math.round(stored.dockWidth), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED));
-    }
-  }, []);
-
   const updateWidth = (px: number): void => {
-    const next = clamp(Math.round(px), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED);
-    setWidth(next);
-    patchAgentStorage({ dockWidth: next });
+    patchAgentStorage({ dockWidth: clamp(Math.round(px), DOCK_MIN_EXPANDED, DOCK_MAX_EXPANDED) });
   };
 
   const handlePointerDown = (e: PointerEvent<HTMLDivElement>): void => {

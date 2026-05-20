@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import {
   Autocomplete,
   Box,
@@ -44,7 +44,11 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
     { enabled: messageId !== null },
   );
 
-  useEffect(() => {
+  // Seed the editable match/search from the fetched message whenever it changes
+  const [prevData, setPrevData] = useState(message.data);
+
+  if (message.data !== prevData) {
+    setPrevData(message.data);
     if (message.data?.matchedApp) {
       setMatchedApp(message.data.matchedApp as ApplicationDto);
       setSearch(message.data.matchedApp.company ?? "");
@@ -52,7 +56,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
       setMatchedApp(null);
       setSearch("");
     }
-  }, [message.data]);
+  }
 
   const appOptions = useApiQuery<ApplicationDto[]>(
     [...queryKeys.applications.all, "search", search] as const,

@@ -59,8 +59,8 @@ export function CredentialsSection(): ReactElement {
       {rows.length === 0 ? (
         <Box sx={{ py: 3, textAlign: "center" }}>
           <Typography variant="body2Muted">
-            No credentials yet. Add a "default" credential, or one per board domain (e.g.{" "}
-            <code>linkedin.com</code>).
+            No credentials yet. Add a &ldquo;default&rdquo; credential, or one per board domain
+            (e.g. <code>linkedin.com</code>).
           </Typography>
         </Box>
       ) : (

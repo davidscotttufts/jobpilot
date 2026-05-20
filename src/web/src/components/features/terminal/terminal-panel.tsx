@@ -37,8 +37,10 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
   const markReadyRef = useRef(markTerminalReady);
   const resetReadyRef = useRef(resetTerminalReady);
-  markReadyRef.current = markTerminalReady;
-  resetReadyRef.current = resetTerminalReady;
+  useEffect(() => {
+    markReadyRef.current = markTerminalReady;
+    resetReadyRef.current = resetTerminalReady;
+  });
 
   const background = theme.palette.surfaces.base;
   const foreground = theme.palette.text.primary;

@@ -2,7 +2,6 @@ import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
 import type { Metadata } from "next";
 import { Fraunces, Geist, JetBrains_Mono } from "next/font/google";
-import { AppShell } from "@/components/layout/app-shell";
 import { AgentProvider } from "@/providers/agent-provider";
 import { ConfirmProvider } from "@/providers/confirm-provider";
 import { ToastProvider } from "@/providers/notification-provider";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactElement, type ReactNode } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 import {
   Box,
   InputAdornment,

@@ -47,8 +47,8 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
         <Skeleton variant="rounded" height={64} />
       ) : variants.length === 0 ? (
         <Typography variant="body2Muted">
-          No variants yet. Click "Tailor for job", paste a job description or URL, and the AI will
-          either reuse a close match (if you had previous variants) or create a new one.
+          No variants yet. Click &ldquo;Tailor for job&rdquo;, paste a job description or URL, and
+          the AI will either reuse a close match (if you had previous variants) or create a new one.
         </Typography>
       ) : (
         <Stack spacing={1}>

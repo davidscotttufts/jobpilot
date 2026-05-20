@@ -3,8 +3,6 @@
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
 import { AgentDock } from "@/components/features/agent-dock";
-import { AgentProvider } from "@/providers/agent-provider";
-import { ConfirmProvider } from "@/providers/confirm-provider";
 import { Rail } from "./rail";
 
 export function AppShell(props: PropsWithChildren): ReactElement {

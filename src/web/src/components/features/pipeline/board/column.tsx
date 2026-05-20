@@ -42,6 +42,9 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
   const todayCount = head?.todayCount ?? 0;
   const sharedNote = stage === "queued" ? commonSourceNote(head?.items ?? []) : null;
 
+  // @tanstack/react-virtual returns functions the React Compiler can't optimize;
+  // nothing to fix in our code.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollRef.current,
@@ -74,12 +77,7 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
         overflow: "hidden",
       })}
     >
-      <ColumnHeader
-        stage={stage}
-        total={total}
-        todayCount={todayCount}
-        sharedNote={sharedNote}
-      />
+      <ColumnHeader stage={stage} total={total} todayCount={todayCount} sharedNote={sharedNote} />
 
       <Box
         ref={scrollRef}

@@ -20,6 +20,18 @@ const eslintConfig = defineConfig([
       // prevents the plugin from trying to auto-detect it and failing.
       react: { version: "19" },
     },
+    rules: {
+      // Honor the leading-underscore convention for intentionally-unused
+      // bindings, type parameters, and inferred placeholders.
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
   },
 ]);
 

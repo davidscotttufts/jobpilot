@@ -65,7 +65,9 @@ export function useEnsureDraftProfile(): DraftProfileState {
     };
 
     void bootstrap();
-  }, []);
+    // Runs exactly once (guarded by ranRef); the mutation handles are stable
+    // for that single invocation.
+  }, [createProfile, setActive]);
 
   return state;
 }

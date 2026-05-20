@@ -3,9 +3,9 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type PropsWithChildren,
   type ReactElement,
 } from "react";
@@ -28,14 +28,57 @@ interface AgentStorage {
   dockExpanded: boolean;
 }
 
+const storageListeners = new Set<() => void>();
+
+function emitAgentStorageChange(): void {
+  for (const listener of storageListeners) {
+    listener();
+  }
+}
+
+let crossTabListenerAttached = false;
+function ensureCrossTabListener(): void {
+  if (crossTabListenerAttached || typeof window === "undefined") {
+    return;
+  }
+  crossTabListenerAttached = true;
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY) {
+      emitAgentStorageChange();
+    }
+  });
+}
+
 export function patchAgentStorage(patch: Partial<AgentStorage>): void {
   const current = readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY) ?? {};
   writeLocalStorage(STORAGE_KEY, { ...current, ...patch });
+  emitAgentStorageChange();
 }
 
 export function readAgentStorage(): Partial<AgentStorage> | null {
   return readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY);
 }
+
+/** Subscribe to agent-storage changes — same-tab patches and cross-tab writes. */
+export function subscribeAgentStorage(listener: () => void): () => void {
+  ensureCrossTabListener();
+  storageListeners.add(listener);
+  return () => {
+    storageListeners.delete(listener);
+  };
+}
+
+function getStoredProvider(): TerminalProviderId {
+  const p = readAgentStorage()?.provider;
+  return p === "codex" || p === "claude" ? p : "claude";
+}
+
+function getStoredExpanded(): boolean {
+  return readAgentStorage()?.dockExpanded ?? false;
+}
+
+const getServerProvider = (): TerminalProviderId => "claude";
+const getServerExpanded = (): boolean => false;
 
 export interface AgentContextValue {
   inject: (command: string) => Promise<void>;
@@ -87,33 +130,28 @@ function describeInjectError(error: unknown): string {
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const toast = useToast();
-  const [expanded, setExpandedState] = useState(false);
-  const [provider, setProviderState] = useState<TerminalProviderId>("claude");
+  // localStorage is the source of truth; useSyncExternalStore keeps render in
+  // sync (and SSR-safe via the server snapshots) without a hydration effect.
+  const provider = useSyncExternalStore(
+    subscribeAgentStorage,
+    getStoredProvider,
+    getServerProvider,
+  );
+  const expanded = useSyncExternalStore(
+    subscribeAgentStorage,
+    getStoredExpanded,
+    getServerExpanded,
+  );
   const [terminalRevision, setTerminalRevision] = useState(0);
 
   const terminalReadyRef = useRef(false);
   const readyWaitersRef = useRef<Array<() => void>>([]);
 
-  useEffect(() => {
-    const stored = readAgentStorage();
-    if (!stored) {
-      return;
-    }
-    if (stored.provider === "codex" || stored.provider === "claude") {
-      setProviderState(stored.provider);
-    }
-    if (stored.dockExpanded) {
-      setExpandedState(true);
-    }
-  }, []);
-
   const setExpanded = (next: boolean): void => {
-    setExpandedState(next);
     patchAgentStorage({ dockExpanded: next });
   };
 
   const setProvider = (next: TerminalProviderId): void => {
-    setProviderState(next);
     patchAgentStorage({ provider: next });
   };
 
@@ -136,19 +174,17 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
       if (terminalReadyRef.current) {
         return resolve();
       }
-      let timerId: ReturnType<typeof setTimeout>;
-
       const wrappedResolve = (): void => {
         clearTimeout(timerId);
         resolve();
       };
 
-      readyWaitersRef.current.push(wrappedResolve);
-
-      timerId = setTimeout(() => {
+      const timerId = setTimeout(() => {
         readyWaitersRef.current = readyWaitersRef.current.filter((r) => r !== wrappedResolve);
         reject(new TerminalReadyTimeoutError());
       }, timeoutMs);
+
+      readyWaitersRef.current.push(wrappedResolve);
     });
 
   const restart = async (): Promise<void> => {

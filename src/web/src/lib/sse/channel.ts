@@ -26,6 +26,7 @@ export function defineChannel<
 }
 
 /** Constraint for generic functions that accept any channel descriptor. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- intentional wildcard supertype
 export type AnyChannel = Channel<any, any, any>;
 /** Event union carried by a channel. */
 export type ChannelEvent<C> = C extends Channel<infer E, infer _U, infer _T> ? E : never;

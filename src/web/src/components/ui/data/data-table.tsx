@@ -4,6 +4,10 @@ import type { ReactElement } from "react";
 import { Box } from "@mui/material";
 import { DataGrid, type DataGridProps, type GridColDef } from "@mui/x-data-grid";
 
+// MUI's GridValidRowModel is Record<string, any>; interfaces (e.g. DTOs) without
+// an index signature don't satisfy a Record<string, unknown> constraint, so `any`
+// is required here for row models to be accepted.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface DataTableProps<T extends Record<string, any> = Record<string, any>> extends Omit<
   DataGridProps<T>,
   "rows" | "columns" | "loading"
@@ -14,6 +18,7 @@ export interface DataTableProps<T extends Record<string, any> = Record<string, a
   pageSize?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function DataTable<T extends Record<string, any>>(props: DataTableProps<T>): ReactElement {
   const { rows, columns, loading, pageSize = 25, ...rest } = props;
   return (
