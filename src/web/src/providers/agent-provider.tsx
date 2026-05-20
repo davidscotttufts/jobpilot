@@ -77,9 +77,6 @@ function getStoredExpanded(): boolean {
   return readAgentStorage()?.dockExpanded ?? false;
 }
 
-const getServerProvider = (): TerminalProviderId => "claude";
-const getServerExpanded = (): boolean => false;
-
 export interface AgentContextValue {
   inject: (command: string) => Promise<void>;
   injectSkill: (skill: string, args?: string) => Promise<void>;
@@ -130,30 +127,20 @@ function describeInjectError(error: unknown): string {
 export function AgentProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const toast = useToast();
+
   // localStorage is the source of truth; useSyncExternalStore keeps render in
-  // sync (and SSR-safe via the server snapshots) without a hydration effect.
+  // sync, SSR-safe and without a hydration effect.
   const provider = useSyncExternalStore(
     subscribeAgentStorage,
     getStoredProvider,
-    getServerProvider,
+    (): TerminalProviderId => "claude",
   );
-  const expanded = useSyncExternalStore(
-    subscribeAgentStorage,
-    getStoredExpanded,
-    getServerExpanded,
-  );
+
+  const expanded = useSyncExternalStore(subscribeAgentStorage, getStoredExpanded, () => false);
   const [terminalRevision, setTerminalRevision] = useState(0);
 
   const terminalReadyRef = useRef(false);
   const readyWaitersRef = useRef<Array<() => void>>([]);
-
-  const setExpanded = (next: boolean): void => {
-    patchAgentStorage({ dockExpanded: next });
-  };
-
-  const setProvider = (next: TerminalProviderId): void => {
-    patchAgentStorage({ provider: next });
-  };
 
   const markTerminalReady = (): void => {
     if (terminalReadyRef.current) {
@@ -204,12 +191,12 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     }
     resetTerminalReady();
     await killSession();
-    setProvider(next);
+    patchAgentStorage({ provider: next });
     setTerminalRevision((n) => n + 1);
   };
 
   const runInject = async (command: string): Promise<void> => {
-    setExpanded(true);
+    patchAgentStorage({ dockExpanded: true });
     try {
       await waitForTerminalReady(READY_TIMEOUT_MS);
       await injectCommand(command, provider);
@@ -230,8 +217,8 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
     stop,
     terminalRevision,
     expanded,
-    expand: () => setExpanded(true),
-    collapse: () => setExpanded(false),
+    expand: () => patchAgentStorage({ dockExpanded: true }),
+    collapse: () => patchAgentStorage({ dockExpanded: false }),
     markTerminalReady,
     resetTerminalReady,
   };
