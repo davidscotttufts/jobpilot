@@ -16,6 +16,7 @@ export interface RunConfigDto {
   board?: string;
   minScore?: number;
   maxApplications?: number;
+  maxJobs?: number;
 }
 
 export interface RunSummaryDto {

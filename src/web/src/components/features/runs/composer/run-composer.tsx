@@ -11,7 +11,7 @@ import {
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 import { FormSelectField, FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
@@ -26,23 +26,17 @@ import type { CreateRunRequest, JobBoardDto, ProfileResponse, RunDto } from "@/t
 import { buildCliArgs } from "@/utils/cli-args";
 import { slugify } from "@/utils/slug";
 
-type RunMode = Extract<RunSource, "search" | "auto-apply">;
-
-interface FormValues {
-  mode: RunMode;
-  query: string;
-  board: string;
-  minScore: number;
-  maxApps: number | "";
-}
-
 const formSchema = z.object({
   mode: z.enum(["search", "auto-apply"]),
   query: z.string().trim().min(2, "Enter a search query"),
   board: z.string().min(1, "Pick a board"),
   minScore: z.number().int().min(0).max(100),
   maxApps: z.union([z.literal(""), z.number().int().min(1).max(500)]),
+  maxJobs: z.number().int().min(1).max(100),
 });
+
+type RunMode = Extract<RunSource, "search" | "auto-apply">;
+type FormValues = z.infer<typeof formSchema>;
 
 function makeRunId(query: string): string {
   const ts = new Date().toISOString().replace(/[:.]/g, "-").replace(/Z$/, "");
@@ -55,7 +49,7 @@ function hasMaxApps(values: FormValues): values is FormValues & { maxApps: numbe
 
 function buildRunConfig(values: FormValues): CreateRunRequest["config"] {
   if (values.mode !== "auto-apply") {
-    return { board: values.board };
+    return { board: values.board, maxJobs: values.maxJobs };
   }
   return {
     board: values.board,
@@ -71,6 +65,7 @@ function buildSkillArg(values: FormValues): string {
       board: values.board,
       "min-score": values.mode === "auto-apply" ? values.minScore : undefined,
       "max-apps": values.mode === "auto-apply" && hasMaxApps(values) ? values.maxApps : undefined,
+      "max-jobs": values.mode === "search" ? values.maxJobs : undefined,
     },
   });
 }
@@ -109,6 +104,7 @@ export function RunComposer(): ReactElement {
       board: boards[0]?.domain ?? "",
       minScore: autoApply?.minMatchScore ?? 70,
       maxApps: (autoApply?.maxApplicationsPerRun ?? "") as number | "",
+      maxJobs: 15,
     },
     validators: { onSubmit: formSchema },
     onSubmit: async ({ value }) => {
@@ -123,7 +119,9 @@ export function RunComposer(): ReactElement {
       router.push(`/runs/${encodeURIComponent(runId)}`);
     },
   });
-  const formApi = form as unknown as AnyReactForm;
+
+  const isSearch = useStore(form.store, (s) => s.values.mode === "search");
+  const isAutoApply = useStore(form.store, (s) => s.values.mode === "auto-apply");
 
   if (boardsQuery.isLoading || profileQuery.isLoading) {
     return <LinearProgress />;
@@ -157,7 +155,7 @@ export function RunComposer(): ReactElement {
 
           <Stack spacing={0.75}>
             <FormTextField
-              form={formApi}
+              form={form}
               name="query"
               label="Query"
               placeholder="Senior React TypeScript remote"
@@ -183,7 +181,7 @@ export function RunComposer(): ReactElement {
 
           {hasBoards ? (
             <FormSelectField
-              form={formApi}
+              form={form}
               name="board"
               label="Board"
               items={boards.map((b) => ({ value: b.domain, label: b.name }))}
@@ -194,40 +192,47 @@ export function RunComposer(): ReactElement {
             </Typography>
           )}
 
-          <form.Subscribe selector={(s) => s.values.mode === "auto-apply"}>
-            {(isAutoApply) =>
-              isAutoApply && (
-                <Stack spacing={2}>
-                  <form.Field name="minScore">
-                    {(field) => (
-                      <Stack spacing={0.5}>
-                        <Typography variant="body2Muted">
-                          Min match score: {field.state.value}
-                        </Typography>
-                        <Slider
-                          value={field.state.value}
-                          min={0}
-                          max={100}
-                          step={5}
-                          marks
-                          valueLabelDisplay="auto"
-                          onChange={(_, v) => field.handleChange(v as number)}
-                        />
-                      </Stack>
-                    )}
-                  </form.Field>
-                  <FormTextField
-                    form={formApi}
-                    name="maxApps"
-                    label="Max applications"
-                    type="number"
-                    helperText="Leave empty for unlimited."
-                    slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
-                  />
-                </Stack>
-              )
-            }
-          </form.Subscribe>
+          {isSearch && (
+            <FormTextField
+              form={form}
+              name="maxJobs"
+              label="Jobs to search"
+              type="number"
+              helperText="How many results to rank (1–100)."
+              slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
+            />
+          )}
+
+          {isAutoApply && (
+            <Stack spacing={2}>
+              <form.Field name="minScore">
+                {(field) => (
+                  <Stack spacing={0.5}>
+                    <Typography variant="body2Muted">
+                      Min match score: {field.state.value}
+                    </Typography>
+                    <Slider
+                      value={field.state.value}
+                      min={0}
+                      max={100}
+                      step={5}
+                      marks
+                      valueLabelDisplay="auto"
+                      onChange={(_, v) => field.handleChange(v as number)}
+                    />
+                  </Stack>
+                )}
+              </form.Field>
+              <FormTextField
+                form={form}
+                name="maxApps"
+                label="Max applications"
+                type="number"
+                helperText="Leave empty for unlimited."
+                slotProps={{ htmlInput: { min: 1, max: 500, step: 1 } }}
+              />
+            </Stack>
+          )}
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
             <Button onClick={() => router.back()}>Cancel</Button>

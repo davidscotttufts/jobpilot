@@ -1,7 +1,7 @@
 ---
 name: search
 description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and present a ranked table with next-action commands.
-argument-hint: "<job_title_keywords_location> --board <domain>"
+argument-hint: "<job_title_keywords_location> --board <domain> [--max-jobs N]"
 ---
 
 # Job Search
@@ -11,7 +11,7 @@ Search a single board (picked by the user when launching the run) and rank resul
 ## Setup
 
 1. Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`.
-2. Parse the argument. The `--board <domain>` flag is **required** — e.g. `--board linkedin.com`. The rest of the argument is the free-text query.
+2. Parse the argument. The `--board <domain>` flag is **required** — e.g. `--board linkedin.com`. The optional `--max-jobs <N>` flag caps how many results to rank (default 15, max 100). The rest of the argument is the free-text query.
 3. Resolve the board:
 
    ```bash
@@ -31,7 +31,7 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 2. Follow `${JOBPILOT_SKILLS_ROOT}/shared/auth.md` to log in proactively.
 3. Fill the search fields and submit.
 4. Take a `browser_snapshot` narrowed to the results list (per `${JOBPILOT_SKILLS_ROOT}/shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row.
-5. Take the first 10–15. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting and `browser_snapshot` its body for the detail. Otherwise skip the per-job nav to save tokens.
+5. Take the first `--max-jobs` results (default 15). If fewer are available, take what's there. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting and `browser_snapshot` its body for the detail. Otherwise skip the per-job nav to save tokens.
 
 ## Step 3: Exclude Previously Applied
 
