@@ -39,13 +39,13 @@ If `data` is empty: **"Inbox is already triaged. Nothing new to classify."** and
 
 For each message, pick one classification:
 
-| Classification | When                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------- |
-| `interviewing` | Recruiter reply, interview invite, scheduling, take-home, next-round.                 |
-| `rejected`     | Explicit rejection / "moved forward with other candidates".                           |
-| `offer`        | Formal job offer (comp, start date, offer letter attached).                           |
-| `verification` | One-time code, magic link, "confirm your email", 2FA from a job board.                |
-| `irrelevant`   | Job alerts, marketing, calendar pings — anything not tied to an application.          |
+| Classification | When                                                                         |
+| -------------- | ---------------------------------------------------------------------------- |
+| `interviewing` | Recruiter reply, interview invite, scheduling, take-home, next-round.        |
+| `rejected`     | Explicit rejection / "moved forward with other candidates".                  |
+| `offer`        | Formal job offer (comp, start date, offer letter attached).                  |
+| `verification` | One-time code, magic link, "confirm your email", 2FA from a job board.       |
+| `irrelevant`   | Job alerts, marketing, calendar pings — anything not tied to an application. |
 
 Use `subject`, `fromAddress`, `fromDomain`, `snippet`, `rawBody` as evidence. Be conservative — prefer `irrelevant` if it could plausibly be marketing.
 
@@ -73,7 +73,7 @@ For matched non-verification messages, set `appliedStage`:
 | -------------- | ------------------ |
 | `interviewing` | `recruiter_screen` |
 | `rejected`     | `rejected`         |
-| `offer`         | `offer`            |
+| `offer`        | `offer`            |
 
 ## Phase 4: Write Back
 

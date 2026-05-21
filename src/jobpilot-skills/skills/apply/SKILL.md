@@ -23,11 +23,11 @@ JOBPILOT_API=http://localhost:8000
 
 Read `data.autoApply` for config (defaults applied per field):
 
-| Setting                 | Default          | Notes                                                                       |
-| ----------------------- | ---------------- | --------------------------------------------------------------------------- |
-| `minMatchScore`         | 70               | Batch-mode threshold (0–100). Ignored in single-job mode.                   |
+| Setting                 | Default            | Notes                                                                                            |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
+| `minMatchScore`         | 70                 | Batch-mode threshold (0–100). Ignored in single-job mode.                                        |
 | `maxApplicationsPerRun` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
-| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                |
+| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
 For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow **registers a new account when none exists** (no asking) and runs forgot-password if the stored password is stale.
 
@@ -182,6 +182,7 @@ Visited <total> jobs. <qualified> qualify (score >= minMatchScore/100).
 ```
 
 PATCH `RunJob.status` accordingly:
+
 - `go` → all qualified to `approved`
 - `go N,M` → selected to `approved`; rest to `skipped` (`"Not selected by user"`)
 - `remove N` → that job to `skipped` (`"Removed by user"`); re-present table

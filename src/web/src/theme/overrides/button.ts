@@ -17,8 +17,7 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
     contained: ({ theme }) => ({
       backgroundColor: theme.palette.accent.primary,
       color: "#ECE7DC",
-      boxShadow:
-        "inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 0 rgba(0,0,0,0.25)",
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 0 rgba(0,0,0,0.25)",
       "&:hover": {
         backgroundColor: theme.palette.accent.dark,
         transform: "translateY(-1px)",
@@ -27,8 +26,7 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
       },
       "&:active": {
         transform: "translateY(0)",
-        boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.3)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.3)",
       },
     }),
     outlined: ({ theme }) => ({

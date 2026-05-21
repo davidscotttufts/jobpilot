@@ -16,11 +16,11 @@ JOBPILOT_API=http://localhost:8000
 
 Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. Read `data.autoApply` (defaults applied per field):
 
-| Setting                 | Default            | Notes                                                                                                    |
-| ----------------------- | ------------------ | -------------------------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 70                 | Qualification threshold (0–100). Inline `--min-score` overrides.                                         |
-| `maxApplicationsPerRun` | `null` (unlimited) | Stop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited.                |
-| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                               |
+| Setting                 | Default            | Notes                                                                                     |
+| ----------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `minMatchScore`         | 70                 | Qualification threshold (0–100). Inline `--min-score` overrides.                          |
+| `maxApplicationsPerRun` | `null` (unlimited) | Stop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited. |
+| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                |
 
 Inline argument overrides take precedence. `--board <domain>` is **required** unless the argument is `resume` or `retry-failed <run-id>`.
 

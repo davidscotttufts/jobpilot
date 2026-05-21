@@ -5,8 +5,8 @@ import { DocumentScanner } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { useAgent } from "@/providers/agent-provider";
-import { buildCliArgs } from "@/utils/cli-args";
 import type { ResumeDto } from "@/types/api";
+import { buildCliArgs } from "@/utils/cli-args";
 
 interface ExtractResumeButtonProps {
   resume: ResumeDto;
@@ -37,12 +37,7 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
 
   return (
     <>
-      <Button
-        size={size}
-        variant="outlined"
-        startIcon={<DocumentScanner />}
-        onClick={handleClick}
-      >
+      <Button size={size} variant="outlined" startIcon={<DocumentScanner />} onClick={handleClick}>
         {hasData ? "Re-extract from PDF" : "Extract from PDF"}
       </Button>
       <ConfirmDialog

@@ -8,15 +8,15 @@ A full-page snapshot on a job board is large (50k–120k tokens). **Always narro
 
 ## Decision Tree
 
-| Goal | How |
-| --- | --- |
-| Extract job listings from a search results page | `browser_snapshot` narrowed to the results list; read `{ title, company, location, url, postedAt }` per row |
-| Read a single job posting (digest for scoring) | `browser_snapshot` narrowed to the posting body; build the digest JSON yourself |
-| Inventory fields in an application form | `browser_snapshot` narrowed to the form; each input/select/checkbox carries a `ref` |
-| Locate the Apply button | `browser_snapshot` narrowed to the header; grab the Apply/Easy Apply control's `ref` |
-| Check if logged in on a board | `browser_snapshot` narrowed to the header — a Sign in / Log in control (or a visible password field) means not logged in; an account/avatar menu means logged in |
-| Confirm an application was submitted | `browser_wait_for` the confirmation, then a narrowed `browser_snapshot` for the success or error text |
-| Act on an element whose `ref` you already have | use the ref directly — no new snapshot |
+| Goal                                            | How                                                                                                                                                              |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Extract job listings from a search results page | `browser_snapshot` narrowed to the results list; read `{ title, company, location, url, postedAt }` per row                                                      |
+| Read a single job posting (digest for scoring)  | `browser_snapshot` narrowed to the posting body; build the digest JSON yourself                                                                                  |
+| Inventory fields in an application form         | `browser_snapshot` narrowed to the form; each input/select/checkbox carries a `ref`                                                                              |
+| Locate the Apply button                         | `browser_snapshot` narrowed to the header; grab the Apply/Easy Apply control's `ref`                                                                             |
+| Check if logged in on a board                   | `browser_snapshot` narrowed to the header — a Sign in / Log in control (or a visible password field) means not logged in; an account/avatar menu means logged in |
+| Confirm an application was submitted            | `browser_wait_for` the confirmation, then a narrowed `browser_snapshot` for the success or error text                                                            |
+| Act on an element whose `ref` you already have  | use the ref directly — no new snapshot                                                                                                                           |
 
 ## Best Practices
 

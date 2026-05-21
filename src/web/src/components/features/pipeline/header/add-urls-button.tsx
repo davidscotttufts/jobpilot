@@ -8,12 +8,7 @@ import { usePipelineActions } from "../actions-provider";
 export function AddUrlsButton(): ReactElement {
   const { openAddUrls } = usePipelineActions();
   return (
-    <Button
-      variant="outlined"
-      size="small"
-      startIcon={<Add fontSize="md" />}
-      onClick={openAddUrls}
-    >
+    <Button variant="outlined" size="small" startIcon={<Add fontSize="md" />} onClick={openAddUrls}>
       Add URLs
     </Button>
   );

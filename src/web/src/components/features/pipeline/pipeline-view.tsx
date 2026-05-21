@@ -52,12 +52,7 @@ export function PipelineView(): ReactElement {
       }}
     >
       {PIPELINE_STAGES.map((stage) => (
-        <PipelineColumn
-          key={stage}
-          stage={stage}
-          filters={filters}
-          onJobClick={handleJobClick}
-        />
+        <PipelineColumn key={stage} stage={stage} filters={filters} onJobClick={handleJobClick} />
       ))}
     </Stack>
   );

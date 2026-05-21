@@ -28,11 +28,15 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
     apiClient.get<RunDetailDto>(`/api/runs/${encodeURIComponent(runId)}`),
   );
 
-  useSseChannel(runChannel, { runId }, {
-    onMessage: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.runs.detail(runId) });
+  useSseChannel(
+    runChannel,
+    { runId },
+    {
+      onMessage: () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.runs.detail(runId) });
+      },
     },
-  });
+  );
 
   if (detail.isLoading || !detail.data) {
     return <LinearProgress />;
@@ -45,11 +49,7 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   return (
     <Stack spacing={3}>
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
-        >
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
           <Chip
             size="small"
             label={RUN_STATUS_LABEL[run.status]}

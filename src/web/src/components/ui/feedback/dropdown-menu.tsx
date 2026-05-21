@@ -95,9 +95,7 @@ export function DropdownMenu(props: DropdownMenuProps): ReactElement {
             return [<Divider key={item.key} />];
           }
 
-          const linkProps = item.href
-            ? ({ component: Link, href: item.href } as const)
-            : undefined;
+          const linkProps = item.href ? ({ component: Link, href: item.href } as const) : undefined;
 
           return [
             <MenuItem

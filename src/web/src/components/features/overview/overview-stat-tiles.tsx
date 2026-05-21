@@ -29,10 +29,7 @@ function Tile(props: TileProps): ReactElement {
       })}
     >
       <Stack spacing={0.5}>
-        <Typography
-          variant="overlineMuted"
-          sx={{ fontSize: "0.625rem", letterSpacing: "0.08em" }}
-        >
+        <Typography variant="overlineMuted" sx={{ fontSize: "0.625rem", letterSpacing: "0.08em" }}>
           {label}
         </Typography>
         <Typography
@@ -54,10 +51,7 @@ function Tile(props: TileProps): ReactElement {
         >
           {value}
         </Typography>
-        <Typography
-          variant="captionMuted"
-          sx={{ fontSize: "0.6875rem", minHeight: "1em" }}
-        >
+        <Typography variant="captionMuted" sx={{ fontSize: "0.6875rem", minHeight: "1em" }}>
           {hint ?? ""}
         </Typography>
       </Stack>
@@ -75,11 +69,7 @@ export function OverviewStatTiles(props: OverviewStatTilesProps): ReactElement {
         <Tile label="Total" value={totals.applications} hint={`${totals.queueDepth} in queue`} />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <Tile
-          label="Submitted"
-          value={totals.submitted}
-          hint={`${thisWeek.submitted} this week`}
-        />
+        <Tile label="Submitted" value={totals.submitted} hint={`${thisWeek.submitted} this week`} />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
         <Tile

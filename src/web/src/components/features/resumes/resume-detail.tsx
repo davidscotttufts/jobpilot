@@ -32,24 +32,24 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
     { errorMessage: "Failed to load resume" },
   );
 
-  useSseChannel(resumeChannel, { resumeId }, {
-    on: {
-      "content.updated": () => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.resume.detail(resumeId) });
+  useSseChannel(
+    resumeChannel,
+    { resumeId },
+    {
+      on: {
+        "content.updated": () => {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.resume.detail(resumeId) });
+        },
       },
     },
-  });
+  );
 
   if (detail.isLoading || !detail.data) return <LinearProgress />;
   const resume = detail.data;
   const initialData: ResumeData = resume.content ?? EMPTY_RESUME_DATA;
 
   return (
-    <Stack
-      direction={isDesktop ? "row" : "column"}
-      spacing={3}
-      sx={{ alignItems: "flex-start" }}
-    >
+    <Stack direction={isDesktop ? "row" : "column"} spacing={3} sx={{ alignItems: "flex-start" }}>
       <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
         <ResumeHeaderBar resume={resume} />
         <SourceUploadCard resume={resume} />

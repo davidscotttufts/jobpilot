@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { JobDigest } from "./fit";
-import { scoreFit } from "./fit";
+import { scoreFit, type JobDigest } from "./fit";
 
 const emptyDigest: JobDigest = {
   title: "",

@@ -1,7 +1,7 @@
 ﻿import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { err, ErrorCodes } from "@/lib/api/response";
 import { parseQueryParams } from "@/lib/api/request";
+import { err, ErrorCodes } from "@/lib/api/response";
 import { getProvider } from "@/lib/email";
 
 export async function GET(req: Request) {

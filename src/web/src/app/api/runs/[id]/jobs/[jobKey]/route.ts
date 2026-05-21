@@ -1,6 +1,6 @@
 ﻿import { getActiveProfileId } from "@/lib/active-profile";
+import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { type ApiRouteContext, parsePathParams } from "@/lib/api/request";
 import { db } from "@/lib/db";
 import { patchRunJobSchema } from "@/lib/schemas/run";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
@@ -52,15 +52,23 @@ export async function PATCH(req: Request, ctx: Params) {
     });
   }
 
-  publish(runChannel, { runId: id }, {
-    type: "job-update",
-    payload: { kind: "updated", job },
-  });
-  publish(pipelineChannel, { profileId }, {
-    type: "runjob.updated",
-    runId: id,
-    jobKey,
-    status: parsed.data.status,
-  });
+  publish(
+    runChannel,
+    { runId: id },
+    {
+      type: "job-update",
+      payload: { kind: "updated", job },
+    },
+  );
+  publish(
+    pipelineChannel,
+    { profileId },
+    {
+      type: "runjob.updated",
+      runId: id,
+      jobKey,
+      status: parsed.data.status,
+    },
+  );
   return ok(job);
 }

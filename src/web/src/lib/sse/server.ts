@@ -1,11 +1,6 @@
 import "server-only";
-
 import { createSseBroker, type SseBroker } from "./broker";
-import type {
-  AnyChannel,
-  ChannelEvent,
-  ChannelTopicParams,
-} from "./channel";
+import type { AnyChannel, ChannelEvent, ChannelTopicParams } from "./channel";
 
 const buses = new Map<string, SseBroker<unknown>>();
 

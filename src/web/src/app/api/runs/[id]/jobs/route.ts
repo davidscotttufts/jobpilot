@@ -59,15 +59,23 @@ export async function POST(req: Request, ctx: Params) {
       data: { status: "consumed", consumedAt: new Date() },
     });
 
-    publish(runChannel, { runId: id }, {
-      type: "job-update",
-      payload: { kind: "added", job },
-    });
-    publish(pipelineChannel, { profileId }, {
-      type: "runjob.created",
-      runId: id,
-      jobKey: job.jobKey,
-    });
+    publish(
+      runChannel,
+      { runId: id },
+      {
+        type: "job-update",
+        payload: { kind: "added", job },
+      },
+    );
+    publish(
+      pipelineChannel,
+      { profileId },
+      {
+        type: "runjob.created",
+        runId: id,
+        jobKey: job.jobKey,
+      },
+    );
 
     return ok(job, { status: 201 });
   } catch (e) {

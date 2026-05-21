@@ -113,83 +113,73 @@ const makeCandidate = (id: number, title: string, company: string): FuzzyMatchCa
 
 describe("findFuzzyDuplicate", () => {
   test("exact title+company match returns the candidate", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Frontend Engineer", company: "Acme" },
-      [makeCandidate(1, "Frontend Engineer", "Acme")],
-    );
+    const result = findFuzzyDuplicate({ title: "Frontend Engineer", company: "Acme" }, [
+      makeCandidate(1, "Frontend Engineer", "Acme"),
+    ]);
     expect(result).not.toBeNull();
     expect(result!.candidate.id).toBe(1);
     expect(result!.score).toBe(100);
   });
 
   test("different seniority same role matches (seniority normalized away)", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Senior Frontend Engineer", company: "Acme" },
-      [makeCandidate(1, "Junior Frontend Engineer", "Acme")],
-    );
+    const result = findFuzzyDuplicate({ title: "Senior Frontend Engineer", company: "Acme" }, [
+      makeCandidate(1, "Junior Frontend Engineer", "Acme"),
+    ]);
     expect(result).not.toBeNull();
     expect(result!.score).toBe(100);
   });
 
   test("company with vs without suffix matches", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Software Engineer", company: "Stripe" },
-      [makeCandidate(1, "Software Engineer", "Stripe, Inc.")],
-    );
+    const result = findFuzzyDuplicate({ title: "Software Engineer", company: "Stripe" }, [
+      makeCandidate(1, "Software Engineer", "Stripe, Inc."),
+    ]);
     expect(result).not.toBeNull();
     expect(result!.score).toBe(100);
   });
 
   test("totally different titles return null", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Frontend Engineer", company: "Acme" },
-      [makeCandidate(1, "Data Scientist", "Acme")],
-    );
+    const result = findFuzzyDuplicate({ title: "Frontend Engineer", company: "Acme" }, [
+      makeCandidate(1, "Data Scientist", "Acme"),
+    ]);
     expect(result).toBeNull();
   });
 
   test("totally different companies return null", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Frontend Engineer", company: "Acme" },
-      [makeCandidate(1, "Frontend Engineer", "Microsoft")],
-    );
+    const result = findFuzzyDuplicate({ title: "Frontend Engineer", company: "Acme" }, [
+      makeCandidate(1, "Frontend Engineer", "Microsoft"),
+    ]);
     expect(result).toBeNull();
   });
 
   test("empty title input returns null", () => {
-    const result = findFuzzyDuplicate(
-      { title: "", company: "Acme" },
-      [makeCandidate(1, "Frontend Engineer", "Acme")],
-    );
+    const result = findFuzzyDuplicate({ title: "", company: "Acme" }, [
+      makeCandidate(1, "Frontend Engineer", "Acme"),
+    ]);
     expect(result).toBeNull();
   });
 
   test("empty company input returns null", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Frontend Engineer", company: "" },
-      [makeCandidate(1, "Frontend Engineer", "Acme")],
-    );
+    const result = findFuzzyDuplicate({ title: "Frontend Engineer", company: "" }, [
+      makeCandidate(1, "Frontend Engineer", "Acme"),
+    ]);
     expect(result).toBeNull();
   });
 
   test("candidate with empty normalized title is skipped", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Frontend Engineer", company: "Acme" },
-      [makeCandidate(1, "Senior", "Acme"), makeCandidate(2, "Frontend Engineer", "Acme")],
-    );
+    const result = findFuzzyDuplicate({ title: "Frontend Engineer", company: "Acme" }, [
+      makeCandidate(1, "Senior", "Acme"),
+      makeCandidate(2, "Frontend Engineer", "Acme"),
+    ]);
     expect(result).not.toBeNull();
     expect(result!.candidate.id).toBe(2);
   });
 
   test("returns highest-scoring candidate among multiple matches", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Senior Frontend Engineer", company: "Stripe" },
-      [
-        makeCandidate(1, "Frontend Developer", "Stripe"),
-        makeCandidate(2, "Senior Frontend Engineer", "Stripe"),
-        makeCandidate(3, "Backend Engineer", "Stripe"),
-      ],
-    );
+    const result = findFuzzyDuplicate({ title: "Senior Frontend Engineer", company: "Stripe" }, [
+      makeCandidate(1, "Frontend Developer", "Stripe"),
+      makeCandidate(2, "Senior Frontend Engineer", "Stripe"),
+      makeCandidate(3, "Backend Engineer", "Stripe"),
+    ]);
     expect(result).not.toBeNull();
     expect(result!.candidate.id).toBe(2);
     expect(result!.score).toBe(100);
@@ -197,10 +187,9 @@ describe("findFuzzyDuplicate", () => {
 
   test("respects custom threshold (lower threshold catches looser matches)", () => {
     const candidate = makeCandidate(1, "Data Engineer", "Stripe");
-    const strictResult = findFuzzyDuplicate(
-      { title: "Software Engineer", company: "Stripe" },
-      [candidate],
-    );
+    const strictResult = findFuzzyDuplicate({ title: "Software Engineer", company: "Stripe" }, [
+      candidate,
+    ]);
     expect(strictResult).toBeNull();
 
     const looseResult = findFuzzyDuplicate(
@@ -217,10 +206,9 @@ describe("findFuzzyDuplicate", () => {
   });
 
   test("title and company score weighted 60/40", () => {
-    const result = findFuzzyDuplicate(
-      { title: "Frontend Engineer", company: "Acme" },
-      [makeCandidate(1, "Frontend Engineer", "Acmey")],
-    );
+    const result = findFuzzyDuplicate({ title: "Frontend Engineer", company: "Acme" }, [
+      makeCandidate(1, "Frontend Engineer", "Acmey"),
+    ]);
     expect(result).not.toBeNull();
     expect(result!.score).toBeGreaterThan(APPLIED_DUPLICATE_THRESHOLD);
   });

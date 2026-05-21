@@ -38,9 +38,7 @@ export function NavItem(props: NavItemProps): ReactElement {
           transition: theme.motion.fast,
           "&:hover": {
             color: theme.palette.text.secondary,
-            backgroundColor: active
-              ? theme.palette.surfaces.elevated
-              : theme.palette.surfaces.card,
+            backgroundColor: active ? theme.palette.surfaces.elevated : theme.palette.surfaces.card,
           },
           "&::before": active
             ? {

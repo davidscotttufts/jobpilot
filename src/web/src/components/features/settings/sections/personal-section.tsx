@@ -3,11 +3,7 @@
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
-import {
-  FormPhoneField,
-  FormTextField,
-  type AnyReactForm,
-} from "@/components/ui/form/tanstack";
+import { FormPhoneField, FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
 
 interface PersonalSectionProps {
   form: AnyReactForm;

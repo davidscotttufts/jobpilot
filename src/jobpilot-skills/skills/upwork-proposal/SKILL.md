@@ -28,7 +28,7 @@ The argument is either a **proposal id** (an integer, when launched from the Job
 
 ## Step 1: Analyze the JD
 
-Identify: what the client needs built/fixed, required tech and skills, scope and timeline clues, pain points/challenges, and any specific questions the client asks. Pull out one concrete detail unique to *this* posting — you'll reference it in the hook so the client can tell the proposal isn't a mass send.
+Identify: what the client needs built/fixed, required tech and skills, scope and timeline clues, pain points/challenges, and any specific questions the client asks. Pull out one concrete detail unique to _this_ posting — you'll reference it in the hook so the client can tell the proposal isn't a mass send.
 
 ## Step 2: Select ONE Matching Case Study
 
@@ -38,7 +38,7 @@ Pick the SINGLE most relevant project from the resume — one that matches their
 
 Order it the way it gets read — them first, you second, never the reverse.
 
-**Hook (line 1, bolded):** Open with a bold line that names *their* problem or goal in their words. Upwork renders `**text**` as bold — use it on this line so it stands out instantly. This is the single most important line; if it reads like "Hello, I'm excited to apply," the proposal is deleted. No "Hi" / "Dear client" / "I'm excited to apply" / "I came across your posting."
+**Hook (line 1, bolded):** Open with a bold line that names _their_ problem or goal in their words. Upwork renders `**text**` as bold — use it on this line so it stands out instantly. This is the single most important line; if it reads like "Hello, I'm excited to apply," the proposal is deleted. No "Hi" / "Dear client" / "I'm excited to apply" / "I came across your posting."
 
 **Case study (1–2 lines):** One relevant project, stated specifically — what you built, the outcome with a real metric (users, perf gain, revenue), and a link if available. Tie it directly to what they need. Don't narrate your career; the client cares about their problem, not your journey.
 

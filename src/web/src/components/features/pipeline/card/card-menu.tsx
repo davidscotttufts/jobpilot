@@ -125,12 +125,7 @@ export function PipelineCardMenu(props: PipelineCardMenuProps): ReactElement {
       stopPropagation
       items={items}
       trigger={({ onOpen }) => (
-        <IconButton
-          size="small"
-          onClick={onOpen}
-          aria-label="Card actions"
-          sx={{ padding: 0.25 }}
-        >
+        <IconButton size="small" onClick={onOpen} aria-label="Card actions" sx={{ padding: 0.25 }}>
           <MoreVert fontSize="sm" />
         </IconButton>
       )}

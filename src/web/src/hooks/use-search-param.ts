@@ -45,7 +45,7 @@ export function useSearchParam(
   const router = useRouter();
   const searchParams = useSearchParams();
   const raw = searchParams.get(key);
-  const value = raw !== null ? raw : options.defaultValue ?? null;
+  const value = raw !== null ? raw : (options.defaultValue ?? null);
 
   const setValue: Setter<string> = (next) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -54,7 +54,9 @@ export function useSearchParam(
     } else {
       params.set(key, next);
     }
-    const href = buildHref(window.location.pathname, params) as Parameters<typeof router.replace>[0];
+    const href = buildHref(window.location.pathname, params) as Parameters<
+      typeof router.replace
+    >[0];
     router.replace(href, { scroll: false });
   };
 
@@ -85,7 +87,7 @@ export function useSearchParamNumber(
   let value: number | null = options.defaultValue ?? null;
   if (raw !== null) {
     const parsed = Number(raw);
-    value = Number.isFinite(parsed) ? parsed : options.defaultValue ?? null;
+    value = Number.isFinite(parsed) ? parsed : (options.defaultValue ?? null);
   }
 
   const setValue: Setter<number> = (next) => {
@@ -95,7 +97,9 @@ export function useSearchParamNumber(
     } else {
       params.set(key, String(next));
     }
-    const href = buildHref(window.location.pathname, params) as Parameters<typeof router.replace>[0];
+    const href = buildHref(window.location.pathname, params) as Parameters<
+      typeof router.replace
+    >[0];
     router.replace(href, { scroll: false });
   };
 
