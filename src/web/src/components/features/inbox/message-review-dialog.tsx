@@ -26,6 +26,11 @@ interface MessageReviewDialogProps {
   onClose: () => void;
 }
 
+// Classifications that map to an application stage transition (mirrors the
+// approve route's CLASSIFICATION_TO_STAGE). Only these can be approved;
+// "verification" / "irrelevant" have no stage and can never be approved.
+const STAGE_CLASSIFICATIONS = new Set(["interviewing", "rejected", "offer"]);
+
 export function MessageReviewDialog(props: MessageReviewDialogProps): ReactElement {
   const { messageId, open, onClose } = props;
   const [matchedApp, setMatchedApp] = useState<ApplicationDto | null>(null);
@@ -97,6 +102,12 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
   }
 
   const m = message.data;
+  const isClassified = Boolean(m?.classification);
+  const isReviewed = m?.reviewStatus === "approved" || m?.reviewStatus === "denied";
+
+  const canApprove = Boolean(
+    m && (STAGE_CLASSIFICATIONS.has(m.classification ?? "") || m.appliedStage),
+  );
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -122,6 +133,13 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
 
             {m.reasoning && (
               <Typography variant="captionMuted">Reasoning: {m.reasoning}</Typography>
+            )}
+
+            {!isClassified && (
+              <Typography variant="body2Muted">
+                This email hasn&apos;t been classified yet. Run &quot;Scan pending&quot; to analyze
+                it before approving or denying.
+              </Typography>
             )}
 
             <Autocomplete<ApplicationDto>
@@ -160,16 +178,20 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
-        <Button color="error" onClick={() => deny.mutate()} disabled={deny.isPending}>
-          Deny
-        </Button>
-        <Button
-          variant="contained"
-          onClick={() => approve.mutate()}
-          disabled={approve.isPending || !m?.matchedAppId}
-        >
-          Approve
-        </Button>
+        {isClassified && !isReviewed && (
+          <Button color="error" onClick={() => deny.mutate()} disabled={deny.isPending}>
+            Deny
+          </Button>
+        )}
+        {isClassified && !isReviewed && canApprove && (
+          <Button
+            variant="contained"
+            onClick={() => approve.mutate()}
+            disabled={approve.isPending || !m?.matchedAppId}
+          >
+            Approve
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
