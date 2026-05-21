@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import { useState, type ReactElement } from "react";
 import { ChevronRight, Clear } from "@mui/icons-material";
-import { Alert, Box, Button, Chip, Pagination, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
+import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiQuery } from "@/hooks/use-api-query";
+import { usePagination } from "@/hooks/use-pagination";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { RUN_SOURCES, type RunSource, type RunStatus } from "@/lib/schemas/run";
@@ -30,7 +32,6 @@ export function RunsList(): ReactElement {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<RunStatus | null>(null);
   const [sourceFilter, setSourceFilter] = useState<RunSource | null>(null);
-  const [page, setPage] = useState(1);
 
   const invalidateRuns = (): void => {
     queryClient.invalidateQueries({ queryKey: queryKeys.runs.all });
@@ -60,9 +61,7 @@ export function RunsList(): ReactElement {
   });
 
   const hasFilters = statusFilter !== null || sourceFilter !== null;
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount);
-  const pageRows = filteredRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const { page, setPage, pageCount, pageRows, total } = usePagination(filteredRows, PAGE_SIZE);
 
   const handleResetFilters = (): void => {
     setStatusFilter(null);
@@ -132,9 +131,9 @@ export function RunsList(): ReactElement {
       </Stack>
 
       {allRows.length === 0 ? (
-        <EmptyMessage>No runs yet. Start one from &ldquo;New run&rdquo;.</EmptyMessage>
+        <EmptyState variant="inline" title="No runs yet. Start one from “New run”." />
       ) : filteredRows.length === 0 ? (
-        <EmptyMessage>No runs match the current filters.</EmptyMessage>
+        <EmptyState variant="inline" title="No runs match the current filters." />
       ) : (
         <Stack spacing={1}>
           {pageRows.map((r) => (
@@ -187,31 +186,13 @@ export function RunsList(): ReactElement {
         </Stack>
       )}
 
-      {filteredRows.length > PAGE_SIZE && (
-        <Stack
-          direction="row"
-          sx={{ mt: 2, alignItems: "center", justifyContent: "space-between" }}
-        >
-          <Typography variant="captionMuted">
-            Showing {(safePage - 1) * PAGE_SIZE + 1}–
-            {Math.min(safePage * PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
-          </Typography>
-          <Pagination
-            size="small"
-            count={pageCount}
-            page={safePage}
-            onChange={(_, p) => setPage(p)}
-          />
-        </Stack>
-      )}
+      <PaginationFooter
+        page={page}
+        pageCount={pageCount}
+        pageSize={PAGE_SIZE}
+        total={total}
+        onChange={setPage}
+      />
     </SectionCard>
-  );
-}
-
-function EmptyMessage({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <Box sx={{ py: 3, textAlign: "center" }}>
-      <Typography variant="body2Muted">{children}</Typography>
-    </Box>
   );
 }

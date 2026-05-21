@@ -74,4 +74,11 @@ export const queryKeys = {
     all: ["overview"] as const,
     stats: () => [...queryKeys.overview.all, "stats"] as const,
   },
+
+  upworkProposals: {
+    all: ["upwork-proposals"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.upworkProposals.all, "list", filters] as const,
+    detail: (id: number) => [...queryKeys.upworkProposals.all, "detail", id] as const,
+  },
 } as const;

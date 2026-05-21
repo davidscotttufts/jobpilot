@@ -1,0 +1,24 @@
+model UpworkProposal {
+  id        Int     @id @default(autoincrement())
+  profileId Int
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  jobTitle       String
+  clientName     String?
+  jobUrl         String?
+  jobDescription String?
+
+  proposalText     String @default("")
+  screeningAnswers String @default("[]") // JSON: { question: string, answer: string }[]
+
+  status  String  @default("draft") // draft | submitted | closed
+  outcome String? // when closed: hired | declined | no_response
+  notes   String?
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  submittedAt DateTime?
+
+  @@index([profileId])
+  @@index([profileId, status])
+}

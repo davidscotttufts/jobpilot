@@ -1,5 +1,6 @@
 import {
   BusinessCenter,
+  Handshake,
   History,
   Inbox,
   Insights,
@@ -26,6 +27,7 @@ export const navGroups: NavGroup[] = [
       { label: "Pipeline", href: "/", icon: ViewKanban },
       { label: "Overview", href: "/overview", icon: Insights },
       { label: "Runs", href: "/runs", icon: History },
+      { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Inbox", href: "/inbox", icon: Inbox },
       { label: "Resumes", href: "/resumes", icon: Storage },
       { label: "Boards", href: "/boards", icon: BusinessCenter },

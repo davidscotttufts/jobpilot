@@ -1,7 +1,7 @@
 ---
 name: upwork-proposal
 description: Write a short, targeted Upwork proposal from a job description and the user's resume, humanized for natural tone.
-argument-hint: "<job_description>"
+argument-hint: "<proposal_id | job_description>"
 ---
 
 # Upwork Proposal Generator
@@ -11,6 +11,20 @@ Write a concise, winning Upwork proposal that directly addresses the client's ne
 ## Setup
 
 Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`. Then `Read` the resume at `data.primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
+
+## Resolve the input
+
+The argument is either a **proposal id** (an integer, when launched from the JobPilot UI) or a raw **job description** (manual use). Detect which:
+
+- **Integer id** → fetch the draft row and use its stored job details as the JD:
+
+  ```bash
+  curl -fsS "$JOBPILOT_API/api/upwork/proposals/$ARG"
+  ```
+
+  Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 6.
+
+- **Anything else** → treat the argument itself as the job description. There is no row yet; you will `POST` a new one in Step 6.
 
 ## Step 1: Analyze the JD
 
@@ -39,6 +53,30 @@ If the posting has screening questions, answer each one short, direct, and speci
 ## Step 5: Apply Humanizer
 
 Invoke `<humanizer-command>` on the full text.
+
+## Step 6: Persist to JobPilot
+
+Save the result so it appears on the Upwork page. `screeningAnswers` is a JSON array of `{ "question", "answer" }` objects (empty `[]` if the posting had none).
+
+- **Launched with an id** → `PATCH` the existing draft (status stays `draft`):
+
+  ```bash
+  curl -fsS -X PATCH "$JOBPILOT_API/api/upwork/proposals/$ARG" \
+    -H 'content-type: application/json' \
+    -d '{ "proposalText": "...", "screeningAnswers": [] }'
+  ```
+
+- **Launched with a raw job description** → `POST` a new row:
+
+  ```bash
+  curl -fsS -X POST "$JOBPILOT_API/api/upwork/proposals" \
+    -H 'content-type: application/json' \
+    -d '{ "jobTitle": "...", "clientName": "...", "jobUrl": "...", "jobDescription": "...", "proposalText": "...", "screeningAnswers": [] }'
+  ```
+
+  `jobTitle` is required; derive it from the posting. Include `clientName` / `jobUrl` when the posting provides them.
+
+Then print the proposal (and any screening answers, each labeled with its question) to the terminal so the user can paste it into Upwork.
 
 ## Rules
 

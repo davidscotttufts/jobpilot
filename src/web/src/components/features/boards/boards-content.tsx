@@ -7,16 +7,17 @@ import {
   Button,
   IconButton,
   InputAdornment,
-  Pagination,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
+import { PaginationFooter } from "@/components/ui/data";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { usePagination } from "@/hooks/use-pagination";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { JobBoardPatch } from "@/lib/schemas/job-board";
@@ -30,7 +31,6 @@ export function BoardsContent(): ReactElement {
   const [editing, setEditing] = useState<JobBoardDto | null>(null);
   const [pendingDelete, setPendingDelete] = useState<JobBoardDto | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
-  const [page, setPage] = useState(1);
 
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
 
@@ -72,9 +72,7 @@ export function BoardsContent(): ReactElement {
   });
 
   const isAnyFilterActive = needle.length > 0;
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount);
-  const pageRows = filteredRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const { page, setPage, pageCount, pageRows, total } = usePagination(filteredRows, PAGE_SIZE);
 
   const handleResetFilters = (): void => {
     setSearchDraft("");
@@ -161,23 +159,13 @@ export function BoardsContent(): ReactElement {
           </Stack>
         )}
 
-        {filteredRows.length > PAGE_SIZE && (
-          <Stack
-            direction="row"
-            sx={{ mt: 2, alignItems: "center", justifyContent: "space-between" }}
-          >
-            <Typography variant="captionMuted">
-              Showing {(safePage - 1) * PAGE_SIZE + 1}–
-              {Math.min(safePage * PAGE_SIZE, filteredRows.length)} of {filteredRows.length}
-            </Typography>
-            <Pagination
-              size="small"
-              count={pageCount}
-              page={safePage}
-              onChange={(_, p) => setPage(p)}
-            />
-          </Stack>
-        )}
+        <PaginationFooter
+          page={page}
+          pageCount={pageCount}
+          pageSize={PAGE_SIZE}
+          total={total}
+          onChange={setPage}
+        />
       </SectionCard>
 
       <BoardFormDialog

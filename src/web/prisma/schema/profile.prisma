@@ -41,6 +41,7 @@ model Profile {
   jobBoards     JobBoard[]
   queueEntries  QueueEntry[]
   emailAccount  EmailAccount?
+  upworkProposals UpworkProposal[]
 
   updatedAt DateTime @updatedAt
 
