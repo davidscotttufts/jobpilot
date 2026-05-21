@@ -13,7 +13,6 @@ import { toBase64 } from "@/utils/base64";
 const RESIZE_DEBOUNCE_MS = 220;
 const STABLE_FRAMES = 3;
 const READY_IDLE_MS = 600;
-const CTRL_C_DOUBLE_MS = 800;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
 const CTRL_C_B64 = toBase64("\x03");
@@ -78,7 +77,6 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
     let socket: WebSocketClient | null = null;
     let disposed = false;
-    let lastCtrlCAt = 0;
 
     const fitAndResize = (): void => {
       try {
@@ -100,23 +98,25 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         return false;
       }
       if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyC") {
+        // Copy when there's a selection, otherwise forward a single interrupt.
+        // Ctrl+C only interrupts the running process; the Stop button kills the session.
         if (terminal.hasSelection()) {
           event.preventDefault();
           void navigator.clipboard?.writeText(terminal.getSelection());
           return false;
         }
 
-        const now = Date.now();
-        if (now - lastCtrlCAt < CTRL_C_DOUBLE_MS) {
-          lastCtrlCAt = 0;
-          event.preventDefault();
-          socket?.sendJson({ type: "input", data: CTRL_C_B64 });
-          return false;
-        }
-
-        lastCtrlCAt = now;
         event.preventDefault();
-        terminal.write("\r\n\x1b[33m[terminal] press Ctrl+C again to interrupt\x1b[0m\r\n");
+        socket?.sendJson({ type: "input", data: CTRL_C_B64 });
+        return false;
+      }
+      if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyV") {
+        event.preventDefault();
+        void navigator.clipboard?.readText().then((text) => {
+          if (text && !disposed) {
+            socket?.sendJson({ type: "input", data: toBase64(text) });
+          }
+        });
         return false;
       }
       return true;
