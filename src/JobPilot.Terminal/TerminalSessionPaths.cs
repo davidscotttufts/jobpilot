@@ -82,7 +82,7 @@ public sealed record TerminalSessionPaths(
         var info = new TerminalProviderInfo(normalized, TerminalProviders.GetDisplayName(normalized));
         return normalized switch
         {
-            TerminalProviders.Claude => new TerminalLaunchSpec(info, "claude", ["--plugin-dir", ClaudePluginDir]),
+            TerminalProviders.Claude => new TerminalLaunchSpec(info, "claude", ["--dangerously-skip-permissions", "--plugin-dir", ClaudePluginDir]),
             TerminalProviders.Codex => new TerminalLaunchSpec(info, "codex", ["--no-alt-screen", "-C", workingDir]),
             _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, null)
         };
