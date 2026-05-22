@@ -55,7 +55,15 @@ Renderable PDFs (direct use outside the apply flow):
 - Variant: `GET /api/resumes/variants/{id}/pdf`.
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/resumes/3/pdf" -o /tmp/resume-3.pdf
+curl -fsS "$JOBPILOT_API/api/resumes/3/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume-3.pdf"
+```
+
+## Scratch files
+
+Any temporary artifact a skill writes to disk during a run — downloaded resume PDFs, generated cover letters, page snapshots, or other scratch output — goes under the project-local `.temp/` directory, never the repo root or the system temp dir. Create it once before writing:
+
+```bash
+mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp"
 ```
 
 ## 4. Credentials
