@@ -1,7 +1,7 @@
 ---
 name: search
-description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and present a ranked table with next-action commands.
-argument-hint: "<job_title_keywords_location> --board <domain> [--max-jobs N]"
+description: Search a chosen job board via Playwright, rank results by fit against the user's resume, and save them to the run so the user can review.
+argument-hint: "<job_title_keywords_location> --board <domain> [--max-jobs N] [--run <run-id>]"
 ---
 
 # Job Search
@@ -11,7 +11,10 @@ Search a single board (picked by the user when launching the run) and rank resul
 ## Setup
 
 1. Follow `${JOBPILOT_SKILLS_ROOT}/shared/setup.md`.
-2. Parse the argument. The `--board <domain>` flag is **required** — e.g. `--board linkedin.com`. The optional `--max-jobs <N>` flag caps how many results to rank (default 15, max 100). The rest of the argument is the free-text query.
+2. Parse and strip the flags; the rest is the free-text query.
+   - `--board <domain>` — **required** (e.g. `--board linkedin.com`).
+   - `--max-jobs <N>` — optional cap on results to rank (default 15, max 100).
+   - `--run <run-id>` — run to save results to (Step 5). The web UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` run on the query, else create one.
 3. Resolve the board:
 
    ```bash
@@ -19,7 +22,7 @@ Search a single board (picked by the user when launching the run) and rank resul
    curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.data[] | select(.domain == $d)'
    ```
 
-   If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`."
+   If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`." When a `--run` id was given, PATCH it to `failed` with `failReason:"Board <domain> not configured"` first.
 
 ## Step 1: Parse Query
 
@@ -42,35 +45,45 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` for exact, `fuzzy` with score for title+company) and exclude from "Apply to #N" suggestions.
+If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Step 5, not offered for apply.
 
 ## Step 4: Fit Review
 
 For each non-applied result, score 0–100 based on: tech stack overlap, years vs candidate, education match, domain/industry relevance, seniority alignment.
 
-## Step 5: Present Results
+## Step 5: Save Results to the Run
 
-```
-## Job Search Results: "[query]"
+Save every result as a `RunJob` on `<run-id>` so it appears on the runs detail page. **Don't offer apply/search-again commands** — the user applies from there. Use a stable, shell-safe `jobKey` per result (slug of `company-title` + rank, no spaces).
 
-| # | Score  | Title | Company | Location | Board |
-|---|--------|-------|---------|----------|-------|
-
-### Top Matches
-
-**#1: <Title> at <Company>** (90/100)
-- Why: [1-2 sentences]
-- Link: [URL]
+```bash
+curl -fsS -X POST "$JOBPILOT_API/api/runs/<run-id>/jobs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg key "<jobKey>" --arg title "<title>" --arg company "<company>" \
+    --arg location "<location>" --arg url "<job-url>" --arg board "<domain>" \
+    --arg matchReason "<one-line verdict>" --argjson score <0-100> \
+    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
 ```
 
-## Step 6: Next Actions
+Previously-applied results (Step 3) → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`. Then close the run:
 
-Offer:
+```bash
+NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/<run-id>" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson found <total> --argjson qualified <pending_count> --arg t "$NOW" \
+    '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"
+```
 
-- **"Apply to #N"** → chain `<apply-command>` with that URL
-- **"More details on #N"** → navigate to the listing and show full description
-- **"Search again"** → refine and re-search
-- **"Cover letter for #N"** → chain `<cover-letter-command>` with the JD
+## Step 6: Hand Off
+
+Print a compact ranked table, then link to the run — nothing else:
+
+```
+## Saved <N> jobs · "[query]" — review and apply at http://localhost:8000/runs/<run-id>
+
+| # | Score | Title | Company | Location |
+|---|-------|-------|---------|----------|
+```
 
 ## Rules
 

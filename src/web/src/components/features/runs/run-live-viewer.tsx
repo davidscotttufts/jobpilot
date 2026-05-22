@@ -9,7 +9,8 @@ import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { runChannel } from "@/lib/sse/channels/run";
 import { useSseChannel } from "@/lib/sse/client";
-import type { RunDetailDto } from "@/types/api";
+import { useAgent } from "@/providers/agent-provider";
+import type { RunDetailDto, RunJobDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
 import { RunActionsBar } from "./run-actions-bar";
 import { RunJobsTable } from "./run-jobs-table";
@@ -23,6 +24,7 @@ interface RunLiveViewerProps {
 export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   const { runId } = props;
   const queryClient = useQueryClient();
+  const agent = useAgent();
 
   const detail = useApiQuery<RunDetailDto>(queryKeys.runs.detail(runId), () =>
     apiClient.get<RunDetailDto>(`/api/runs/${encodeURIComponent(runId)}`),
@@ -46,6 +48,15 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
   const cfg = run.config;
   const isAutoApply = run.source === "auto-apply";
 
+  // Auto-apply runs apply on their own; on other runs (e.g. search results) the
+  // user dispatches a job to the single-job apply flow by its URL.
+  const applyJob = (job: RunJobDto): void => {
+    if (!isAutoApply) {
+      return;
+    }
+    void agent.injectSkill("apply", job.url);
+  };
+
   return (
     <Stack spacing={3}>
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
@@ -60,6 +71,9 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
             {run.source} · Started {formatRelativeTime(run.startedAt)} ago
           </Typography>
           {cfg.board && <Chip size="small" label={`Board: ${cfg.board}`} variant="outlined" />}
+          {!isAutoApply && typeof cfg.maxJobs === "number" && (
+            <Chip size="small" label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
+          )}
           {isAutoApply && typeof cfg.minScore === "number" && (
             <Chip size="small" label={`Min score: ${cfg.minScore}`} variant="outlined" />
           )}
@@ -78,7 +92,7 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
       )}
       <RunSummaryTiles run={run} />
       <SectionCard title="Jobs" description="Updated live as the run progresses.">
-        <RunJobsTable rows={run.jobs} />
+        <RunJobsTable rows={run.jobs} onApplyJob={applyJob} />
       </SectionCard>
     </Stack>
   );

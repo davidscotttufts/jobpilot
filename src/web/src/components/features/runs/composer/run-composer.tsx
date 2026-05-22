@@ -14,7 +14,7 @@ import {
 import { useForm, useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
-import { FormSelectField, FormTextField, type AnyReactForm } from "@/components/ui/form/tanstack";
+import { FormSelectField, FormTextField } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
@@ -58,7 +58,7 @@ function buildRunConfig(values: FormValues): CreateRunRequest["config"] {
   };
 }
 
-function buildSkillArg(values: FormValues): string {
+function buildSkillArg(values: FormValues, runId: string): string {
   return buildCliArgs({
     positional: [values.query.trim()],
     flags: {
@@ -66,6 +66,9 @@ function buildSkillArg(values: FormValues): string {
       "min-score": values.mode === "auto-apply" ? values.minScore : undefined,
       "max-apps": values.mode === "auto-apply" && hasMaxApps(values) ? values.maxApps : undefined,
       "max-jobs": values.mode === "search" ? values.maxJobs : undefined,
+      // Search saves results onto this run; pass the id the UI just created so
+      // the skill doesn't have to rediscover it.
+      run: values.mode === "search" ? runId : undefined,
     },
   });
 }
@@ -115,7 +118,7 @@ export function RunComposer(): ReactElement {
         source: value.mode,
         config: buildRunConfig(value),
       });
-      await agent.injectSkill(value.mode, buildSkillArg(value));
+      await agent.injectSkill(value.mode, buildSkillArg(value, runId));
       router.push(`/runs/${encodeURIComponent(runId)}`);
     },
   });
