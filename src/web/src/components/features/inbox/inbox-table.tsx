@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Chip, Stack, Typography } from "@mui/material";
+import { Button, Chip, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import { DataTable } from "@/components/ui/data/data-table";
 import type { EmailMessageDto } from "@/types/api";
@@ -10,6 +10,8 @@ interface InboxTableProps {
   rows: ReadonlyArray<EmailMessageDto>;
   loading?: boolean;
   onRowClick: (row: EmailMessageDto) => void;
+  /** When provided, each row gets a Scan/Rescan action that calls this. */
+  onScanMessage?: (row: EmailMessageDto) => void;
 }
 
 const CLASS_COLORS: Record<string, "default" | "primary" | "success" | "error" | "warning"> = {
@@ -21,7 +23,7 @@ const CLASS_COLORS: Record<string, "default" | "primary" | "success" | "error" |
 };
 
 export function InboxTable(props: InboxTableProps): ReactElement {
-  const { rows, loading, onRowClick } = props;
+  const { rows, loading, onRowClick, onScanMessage } = props;
 
   const columns: GridColDef<EmailMessageDto>[] = [
     {
@@ -87,13 +89,16 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         ).matchedApp;
         if (!matched) {
           return (
-            <Typography variant="captionMuted" sx={{ pl: 0.5 }}>
+            <Typography
+              variant="captionMuted"
+              sx={{ height: "100%", display: "flex", alignItems: "center", pl: 0.5 }}
+            >
               —
             </Typography>
           );
         }
         return (
-          <Stack spacing={0} sx={{ overflow: "hidden" }}>
+          <Stack spacing={0} sx={{ height: "100%", justifyContent: "center", overflow: "hidden" }}>
             <Typography variant="body2" noWrap sx={{ lineHeight: 1.4 }}>
               {matched.title}
             </Typography>
@@ -109,6 +114,28 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       headerName: "Received",
       width: 140,
       valueFormatter: (v) => (v ? new Date(v as string).toLocaleString() : ""),
+    },
+    {
+      field: "scan",
+      headerName: "",
+      width: 100,
+      sortable: false,
+      filterable: false,
+      align: "right",
+      headerAlign: "right",
+      renderCell: (p) => (
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={(e) => {
+            // Don't open the review dialog (row click) when scanning.
+            e.stopPropagation();
+            onScanMessage?.(p.row);
+          }}
+        >
+          {p.row.classification ? "Rescan" : "Scan"}
+        </Button>
+      ),
     },
   ];
 

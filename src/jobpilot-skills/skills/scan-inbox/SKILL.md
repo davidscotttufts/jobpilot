@@ -1,7 +1,7 @@
 ---
 name: scan-inbox
 description: Classify unscanned mailbox messages, fuzzy-match each to an existing application, and write the proposal back. The user approves in /inbox.
-argument-hint: "(none — pulls pending unscanned messages from /api/email/messages)"
+argument-hint: "[message-id] — omit to scan all pending unscanned; pass an id to (re)scan just that message"
 ---
 
 # Scan Inbox — Triage Pending Email
@@ -26,7 +26,15 @@ If `data.connected === false`, stop:
 
 > No email account is connected. Open `/profile` → **Email** and connect a Gmail account, then re-run `scan-inbox`.
 
-## Phase 2: Pull the Queue
+## Phase 2: Pick the Queue
+
+**One message** — an id was passed (a re-scan from the inbox table). Fetch just it and classify it again even if it's already classified or reviewed:
+
+```bash
+curl -fsS "$JOBPILOT_API/api/email/messages/<id>"
+```
+
+**All pending** — no argument. Sync, then pull the unscanned queue:
 
 ```bash
 curl -fsS -X POST "$JOBPILOT_API/api/email/sync"
@@ -34,6 +42,8 @@ curl -fsS "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=
 ```
 
 If `data` is empty: **"Inbox is already triaged. Nothing new to classify."** and exit.
+
+The rest of the skill runs over whatever you fetched. A re-scan overwrites the classification and resets `reviewStatus`, but never undoes an approved stage move.
 
 ## Phase 3: Classify
 
@@ -45,9 +55,11 @@ For each message, pick one classification:
 | `rejected`     | Explicit rejection / "moved forward with other candidates".                  |
 | `offer`        | Formal job offer (comp, start date, offer letter attached).                  |
 | `verification` | One-time code, magic link, "confirm your email", 2FA from a job board.       |
-| `irrelevant`   | Job alerts, marketing, calendar pings — anything not tied to an application. |
+| `irrelevant`   | Job alerts, digests, "jobs you may like", "you appeared in N searches", newsletters, "application received" auto-acknowledgements, marketing, calendar pings. |
 
-Use `subject`, `fromAddress`, `fromDomain`, `snippet`, `rawBody` as evidence. Be conservative — prefer `irrelevant` if it could plausibly be marketing.
+Use `subject`, `fromAddress`, `fromDomain`, `snippet`, `rawBody` as evidence.
+
+**Classify by purpose, not topic.** Mark `interviewing | rejected | offer` only for an individualized reply or decision about a specific application the user submitted. Naming an applied company doesn't make a message relevant — bulk/automated mail (job alerts, digests, "your profile was viewed", auto-acknowledgements) is `irrelevant`. When unsure, pick `irrelevant`.
 
 ### Match to Application (non-verification only)
 
@@ -61,7 +73,7 @@ For `interviewing | rejected | offer`:
    ```
 
 2. Score each against `fromName` / `fromDomain` / `subject`. Pick the best if score ≥ 0.7 (0–1).
-3. If nothing scores well enough, leave `matchedAppId` and `matchScore` as `null`.
+3. If nothing scores well enough — or the email only *mentions* the company rather than addressing the user's application — leave `matchedAppId` and `matchScore` as `null`.
 
 For `verification`: do NOT propose a match. `get-code` handles those.
 

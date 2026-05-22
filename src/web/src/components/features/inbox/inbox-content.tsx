@@ -10,6 +10,7 @@ import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { useSseChannel } from "@/lib/sse/client";
+import { useAgent } from "@/providers/agent-provider";
 import type { EmailAccountStatus, EmailMessageDto } from "@/types/api";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
@@ -23,9 +24,10 @@ function buildQuery(filter: InboxFilter): string {
 }
 
 export function InboxContent(): ReactElement {
-  const [filter, setFilter] = useState<InboxFilter>("pending");
+  const [filter, setFilter] = useState<InboxFilter>("all");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const { injectSkill } = useAgent();
 
   const account = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
     apiClient.get<EmailAccountStatus>("/api/email/account"),
@@ -75,6 +77,9 @@ export function InboxContent(): ReactElement {
           rows={messages.data ?? []}
           loading={messages.isFetching}
           onRowClick={(row) => setSelectedId(row.id)}
+          onScanMessage={(row) => {
+            void injectSkill("scan-inbox", String(row.id));
+          }}
         />
       )}
       <MessageReviewDialog
