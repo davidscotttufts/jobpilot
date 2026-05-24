@@ -103,6 +103,15 @@ The server does all structural rewriting (skill ordering, bullet ranking) determ
 - **`applicationId`** — when the JD URL matches an existing Application (`GET /api/applications?url=…`).
 - **`diffNotes`** — 1–3 sentences on what was emphasized and why.
 
+### Optional — reword recent bullets
+
+You may rephrase bullets on the **top 1–2 roles** to match the JD's wording. Omit when reordering alone suffices (the safe default).
+
+- **`bulletRewrites`** — `[{ entryIndex, bullets: [{ original, tailored }] }]`. Copy `original` verbatim from `experience[entryIndex].bullets`; rephrase `tailored` to lead with the JD-relevant outcome. Add **no** number, date, employer, tech, or scope not already in that bullet — it must hold up in an interview.
+- **`rewordTopN`** — optional, default `2`; allowed `entryIndex` is `0..rewordTopN-1`.
+
+Server-enforced: **422** on a new number, an unknown `original`, or out-of-window `entryIndex`; non-blocking **`flags`** for tech terms absent from the resume. On 422, read `details`, fix the text, resend — never drop the guardrail.
+
 ```bash
 curl -fsS -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
@@ -110,10 +119,13 @@ curl -fsS -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
                 --arg label "<Company> — <Title>" \
                 --arg jobUrl "<job-url-or-empty>" \
                 --argjson tech '["typescript","react","next.js","aws"]' \
-    '{label:$label, jobUrl:($jobUrl|select(length>0)), emphasizedTech:$tech, jobKeywords:$tech, summary:$summary, diffNotes:"Surfaced React/Next.js/TypeScript ahead of other tech; bullets ranked by JD overlap."}')"
+                --argjson rewrites '[{"entryIndex":0,"bullets":[{"original":"<verbatim base bullet>","tailored":"<rephrased to JD, no new facts>"}]}]' \
+    '{label:$label, jobUrl:($jobUrl|select(length>0)), emphasizedTech:$tech, jobKeywords:$tech, summary:$summary, bulletRewrites:$rewrites, diffNotes:"Surfaced React/Next.js ahead of other tech; reworded 1 recent bullet to the JD."}')"
 ```
 
-The response carries `{ id, pdfUrl }`. Echo:
+Response `{ id, pdfUrl, rewordedBullets, flags }`. Echo:
 
-> Created variant {id} from base {baseId}.
+> Created variant {id} from base {baseId} ({rewordedBullets} reworded).
 > http://localhost:8000{pdfUrl}
+
+If `flags` is non-empty, append: `⚠ verify — not elsewhere in your resume: {flags}`.

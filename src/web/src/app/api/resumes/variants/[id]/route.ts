@@ -35,6 +35,7 @@ export async function GET(_req: Request, ctx: Params) {
     applicationId: variant.applicationId,
     content: JSON.parse(variant.content),
     diffNotes: variant.diffNotes,
+    rewrites: variant.rewrites ? JSON.parse(variant.rewrites) : null,
     createdAt: variant.createdAt.toISOString(),
     updatedAt: variant.updatedAt.toISOString(),
   };

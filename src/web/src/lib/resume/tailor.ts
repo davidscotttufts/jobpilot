@@ -6,6 +6,13 @@ export interface TailorOptions {
   emphasizedTech?: string[];
   jobKeywords?: string[];
   maxBulletsPerEntry?: number;
+  /**
+   * Validated bullet rewrites, keyed `entryIndex → (trimmed original → tailored)`.
+   * Only applied to entries within `rewordTopN`. Produced by `validateRewrites`.
+   */
+  bulletRewrites?: Map<number, Map<string, string>>;
+  /** How many of the most-recent experience entries may be reworded. Default 2. */
+  rewordTopN?: number;
 }
 
 function matchesAny(text: string, terms: string[]): boolean {
@@ -83,10 +90,18 @@ export function tailorBase(base: ResumeData, opts: TailorOptions): ResumeData {
       .map((entry) => entry.bullet);
   };
 
-  const experience = (base.experience ?? []).map((entry) => ({
-    ...entry,
-    bullets: sortBullets(entry.bullets ?? []),
-  }));
+  const rewordTopN = Math.max(0, opts.rewordTopN ?? 2);
+
+  const experience = (base.experience ?? []).map((entry, index) => {
+    let bullets = entry.bullets ?? [];
+    const entryRewrites = index < rewordTopN ? opts.bulletRewrites?.get(index) : undefined;
+    if (entryRewrites) {
+      // Reword from the master set before ranking; only bullets whose original
+      // text matches a validated rewrite key are replaced, the rest pass through.
+      bullets = bullets.map((b) => entryRewrites.get(b.trim()) ?? b);
+    }
+    return { ...entry, bullets: sortBullets(bullets) };
+  });
 
   const projects = (base.projects ?? []).map((entry) => ({
     ...entry,

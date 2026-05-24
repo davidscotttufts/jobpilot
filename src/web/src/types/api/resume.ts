@@ -1,3 +1,4 @@
+import type { VariantRewriteAudit } from "@/lib/resume/rewrite";
 import type { ResumeData } from "@/lib/schemas/resume";
 
 export interface ResumeDto {
@@ -33,6 +34,8 @@ export interface ResumeVariantDto {
   applicationId: number | null;
   content: ResumeData;
   diffNotes: string | null;
+  /** Per-bullet rewrite audit, or null when the variant used reordering only. */
+  rewrites: VariantRewriteAudit | null;
   createdAt: string;
   updatedAt: string;
 }

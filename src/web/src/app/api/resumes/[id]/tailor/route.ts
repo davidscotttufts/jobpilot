@@ -4,6 +4,7 @@ import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { backfillResumeIds } from "@/lib/resume/backfill-ids";
+import { validateRewrites } from "@/lib/resume/rewrite";
 import { tailorBase } from "@/lib/resume/tailor";
 import type { ResumeData } from "@/lib/schemas/resume";
 
@@ -18,6 +19,17 @@ const tailorRequestSchema = z.object({
   jobKeywords: z.array(z.string()).optional(),
   diffNotes: z.string().optional().nullable(),
   maxBulletsPerEntry: z.number().int().min(1).max(20).optional(),
+  rewordTopN: z.number().int().min(0).max(3).optional(),
+  bulletRewrites: z
+    .array(
+      z.object({
+        entryIndex: z.number().int().min(0),
+        bullets: z
+          .array(z.object({ original: z.string().min(1), tailored: z.string().min(1) }))
+          .min(1),
+      }),
+    )
+    .optional(),
 });
 
 /**
@@ -64,12 +76,26 @@ export async function POST(req: Request, ctx: Params) {
   }
 
   const { content: baseContent } = backfillResumeIds(JSON.parse(base.content) as ResumeData);
+
+  const rewordTopN = parsed.data.rewordTopN ?? 2;
+  const rewrites = parsed.data.bulletRewrites ?? [];
+  const validation = validateRewrites(baseContent, rewrites, rewordTopN);
+
+  if (!validation.ok) {
+    return err(ErrorCodes.UNPROCESSABLE, "Rewrite validation failed", 422, validation.violations);
+  }
+
   const tailored = tailorBase(baseContent, {
     summary: parsed.data.summary,
     emphasizedTech: parsed.data.emphasizedTech,
     jobKeywords: parsed.data.jobKeywords,
     maxBulletsPerEntry: parsed.data.maxBulletsPerEntry,
+    bulletRewrites: validation.map,
+    rewordTopN,
   });
+
+  const rewordedBullets = validation.audit.reduce((n, e) => n + e.bullets.length, 0);
+  const flags = validation.audit.flatMap((e) => e.bullets.flatMap((b) => b.flags));
 
   const variant = await db.resumeVariant.create({
     data: {
@@ -79,6 +105,7 @@ export async function POST(req: Request, ctx: Params) {
       applicationId: parsed.data.applicationId ?? null,
       content: JSON.stringify(tailored),
       diffNotes: parsed.data.diffNotes ?? null,
+      rewrites: rewordedBullets > 0 ? JSON.stringify({ experience: validation.audit }) : null,
     },
   });
 
@@ -86,6 +113,8 @@ export async function POST(req: Request, ctx: Params) {
     {
       id: variant.id,
       pdfUrl: `/api/resumes/variants/${variant.id}/pdf`,
+      rewordedBullets,
+      flags,
     },
     { status: 201 },
   );
