@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { Children, type ReactElement, type ReactNode } from "react";
 import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type {
   ResumeBasics,
@@ -238,6 +238,24 @@ function EducationEntry(props: { entry: ResumeEducation }): ReactElement {
   );
 }
 
+/**
+ * A resume section: an uppercase header followed by its content. The header is
+ * grouped with the first child in a non-wrapping block so it never gets orphaned
+ * at the bottom of a page when its first entry overflows to the next one.
+ */
+function Section(props: { title: string; children: ReactNode }): ReactElement {
+  const [first, ...rest] = Children.toArray(props.children);
+  return (
+    <>
+      <View wrap={false}>
+        <Text style={styles.sectionHeader}>{props.title}</Text>
+        {first}
+      </View>
+      {rest}
+    </>
+  );
+}
+
 interface JakeTemplateProps {
   data: ResumeData;
 }
@@ -254,44 +272,39 @@ export function JakeTemplate(props: JakeTemplateProps): ReactElement {
         <ContactBar basics={data.basics} />
 
         {data.summary && data.summary.trim().length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Summary</Text>
+          <Section title="Summary">
             <Text style={styles.summary}>{data.summary}</Text>
-          </>
+          </Section>
         )}
 
         {data.skills.length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Technical Skills</Text>
+          <Section title="Technical Skills">
             <SkillsList groups={data.skills} />
-          </>
+          </Section>
         )}
 
         {data.education.length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Education</Text>
+          <Section title="Education">
             {data.education.map((e, i) => (
               <EducationEntry key={i} entry={e} />
             ))}
-          </>
+          </Section>
         )}
 
         {data.experience.length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Experience</Text>
+          <Section title="Experience">
             {data.experience.map((e, i) => (
               <ExperienceEntry key={i} entry={e} />
             ))}
-          </>
+          </Section>
         )}
 
         {data.projects.length > 0 && (
-          <>
-            <Text style={styles.sectionHeader}>Projects</Text>
+          <Section title="Projects">
             {data.projects.map((p, i) => (
               <ProjectEntry key={i} entry={p} />
             ))}
-          </>
+          </Section>
         )}
       </Page>
     </Document>
