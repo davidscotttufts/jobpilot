@@ -6,7 +6,7 @@ argument-hint: "<search_query --board <domain> [--min-score N] [--max-apps N]> O
 
 # Auto-apply — Search + Apply On Demand
 
-Keep the chosen board open in tab 1; for each result that qualifies, apply in a second tab, then close it and move to the next job. **No batch pre-discovery and no per-job approval — launching the run is the confirmation.** Pause only for true blockers (CAPTCHA / 2FA / payment). Live view at `http://localhost:8000/runs/<run-id>`.
+Keep the chosen board open in tab 1; for each result that qualifies, apply in a second tab, then close it and move to the next job. **No batch pre-discovery and no per-job approval — launching the run is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** — skip the job; the user finishes it later via the `apply` skill. Live view at `http://localhost:8000/runs/<run-id>`.
 
 ## Setup
 
@@ -121,9 +121,10 @@ Open a **second tab** with `browser_tabs` and `browser_navigate` it to the job U
 
 1. **Find Apply** — `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`.
 2. **Authentication** — if a login/registration wall appears, follow `plugin/skills/shared/auth.md`. On unrecoverable login failure for the domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"`, close tab 2, continue.
-3. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close tab 2, continue.
-4. **Fill Forms** — follow `plugin/skills/shared/form-filling.md`. Upload the tailored variant. Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the run.
-5. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error on the page = failure with that message as `failReason`.
+3. **CAPTCHA gate** — `browser_snapshot` the apply form *before* tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close tab 2, continue. Checking here avoids wasted tailoring/filling.
+4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close tab 2, continue.
+5. **Fill Forms** — follow `plugin/skills/shared/form-filling.md`. Upload the tailored variant. Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the run.
+6. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error = failure with that message as `failReason`. A CAPTCHA at this stage is a skip (2.4), not a failure.
 
 ### 2.4 Record + Close Tab
 
@@ -133,7 +134,9 @@ POST to `/api/runs/$RUN_ID/jobs/<jobKey>/result` (atomically updates RunJob, cre
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # applied
 jq -n --arg t "$NOW" --argjson score <0-100> '{outcome:"applied", appliedAt:$t, matchScore:$score}'
-# failed (CAPTCHA mid-form, unexpected page, validation, crash)
+# skipped (CAPTCHA appeared — leave for manual apply via the apply skill)
+jq -n '{outcome:"skipped", skipReason:"CAPTCHA — apply manually via the apply skill"}'
+# failed (unexpected page, validation, crash)
 jq -n --arg r "<reason>" --arg notes "<actionable retry context>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
 ```
 
@@ -163,7 +166,7 @@ Print a summary table, link to `http://localhost:8000/runs/<RUN_ID>`, suggest `r
 1. **Autonomous after launch.** No per-job or batch confirmation; the UI launch is the approval.
 2. **Account handling** — follow `plugin/skills/shared/auth.md`: register when missing (without asking), forgot-password via the `get-code` skill when stale.
 3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **Email codes** — fetch automatically via the `get-code` skill for `<board-domain>` (see `plugin/skills/shared/auth.md`); only ask the user when it returns nothing. **CAPTCHAs / 2FA** — pause and ask. One-time per board, not per-job failures.
+4. **Email codes** — fetch automatically via the `get-code` skill for `<board-domain>` (see `plugin/skills/shared/auth.md`); only ask the user when it returns nothing. **2FA** — pause and ask (one-time per board). **CAPTCHA** — never pause: skip the job (detect up front per step 2.3.3) for manual apply later.
 5. **One job per tab.** Board stays in tab 1; each application runs in tab 2, which is closed before the next job.
 6. **Deduplicate** within the board and against previously-applied before opening a tab.
 7. **Pace** 3–5s between submissions on the same domain.
