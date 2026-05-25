@@ -31,7 +31,7 @@ const formSchema = z.object({
   query: z.string().trim().min(2, "Enter a search query"),
   board: z.string().min(1, "Pick a board"),
   minScore: z.number().int().min(0).max(100),
-  maxApps: z.union([z.literal(""), z.number().int().min(1).max(500)]),
+  maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
   maxJobs: z.number().int().min(1).max(100),
 });
 
@@ -44,7 +44,7 @@ function makeRunId(query: string): string {
 }
 
 function hasMaxApps(values: FormValues): values is FormValues & { maxApps: number } {
-  return values.maxApps !== "" && Number.isFinite(values.maxApps);
+  return values.maxApps != null && Number.isFinite(values.maxApps);
 }
 
 function buildRunConfig(values: FormValues): CreateRunRequest["config"] {
@@ -106,7 +106,7 @@ export function RunComposer(): ReactElement {
       query: "",
       board: boards[0]?.domain ?? "",
       minScore: autoApply?.minMatchScore ?? 70,
-      maxApps: (autoApply?.maxApplicationsPerRun ?? "") as number | "",
+      maxApps: null as number | null | undefined,
       maxJobs: 15,
     },
     validators: { onSubmit: formSchema },

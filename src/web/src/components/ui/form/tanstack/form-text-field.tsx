@@ -55,7 +55,7 @@ export function FormTextField(props: FormTextFieldProps): ReactElement {
             onChange={(e) => {
               const next = e.target.value;
               if (isNumber) {
-                field.handleChange(next === "" ? undefined : Number(next));
+                field.handleChange(next === "" ? null : Number(next));
                 return;
               }
               field.handleChange(transform ? transform(next) : next);
