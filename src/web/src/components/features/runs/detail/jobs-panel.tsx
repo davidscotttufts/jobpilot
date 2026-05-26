@@ -13,7 +13,7 @@ import { RUN_JOB_STATUSES, type RunJobStatus } from "@/lib/schemas/run";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import type { RunDetailDto, RunJobDto } from "@/types/api";
-import { isReapplicable, RunJobsTable } from "./run-jobs-table";
+import { isReapplicable, RunJobsTable } from "./jobs-table";
 
 const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<RunJobStatus>> = RUN_JOB_STATUSES.map(
   (s) => ({

@@ -18,7 +18,7 @@ import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { useSseChannel } from "@/lib/sse/client";
 import type { RunDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
-import { RUN_STATUS_COLOR, RUN_STATUS_LABEL, RUN_STATUS_OPTIONS } from "./run-ui";
+import { RUN_STATUS_COLOR, RUN_STATUS_LABEL, RUN_STATUS_OPTIONS } from "./run-status";
 
 const PAGE_SIZE = 12;
 

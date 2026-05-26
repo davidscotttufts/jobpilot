@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
-import { RunLiveViewer } from "@/components/features/runs";
+import { RunDetail } from "@/components/features/runs";
 import { PageHeader } from "@/components/ui/layout";
 
 interface RunDetailPageProps {
@@ -12,7 +12,7 @@ export default async function RunDetailPage(props: RunDetailPageProps): Promise<
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
       <PageHeader eyebrow="Run" title={id} />
-      <RunLiveViewer runId={id} />
+      <RunDetail runId={id} />
     </Container>
   );
 }

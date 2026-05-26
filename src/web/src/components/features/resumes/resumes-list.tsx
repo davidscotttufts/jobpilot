@@ -17,7 +17,7 @@ import { useToast } from "@/providers/notification-provider";
 import type { ResumeListItem } from "@/types/api";
 import { NewResumeDialog } from "./new-resume-dialog";
 
-export function ResumeListViewer(): ReactElement {
+export function ResumesList(): ReactElement {
   const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
 

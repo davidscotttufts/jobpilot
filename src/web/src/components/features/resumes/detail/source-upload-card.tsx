@@ -11,7 +11,7 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useToast } from "@/providers/notification-provider";
 import type { ResumeDto } from "@/types/api";
-import { ExtractResumeButton } from "./extract-resume-button";
+import { ExtractResumeButton } from "../extract-resume-button";
 
 interface SourceUploadCardProps {
   resume: ResumeDto;

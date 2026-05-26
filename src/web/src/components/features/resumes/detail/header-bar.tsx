@@ -10,7 +10,7 @@ import { queryKeys } from "@/lib/api/query-keys";
 import { resumePdfUrl } from "@/lib/api/resume-urls";
 import { useConfirm } from "@/providers/confirm-provider";
 import type { ResumeDto } from "@/types/api";
-import { TailorForJobButton } from "./tailor-for-job-button";
+import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface ResumeHeaderBarProps {
   resume: ResumeDto;

@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
-import { RunComposer } from "@/components/features/runs/composer";
+import { RunComposer } from "@/components/features/runs";
 import { PageHeader } from "@/components/ui/layout";
 
 export default function NewRunPage(): ReactElement {

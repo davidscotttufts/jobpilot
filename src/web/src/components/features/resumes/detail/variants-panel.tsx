@@ -11,7 +11,7 @@ import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import { variantPdfUrl } from "@/lib/api/resume-urls";
 import type { ResumeVariantListItem } from "@/types/api";
-import { TailorForJobButton } from "./tailor-for-job-button";
+import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface VariantsPanelProps {
   resumeId: number;

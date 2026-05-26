@@ -13,12 +13,12 @@ import {
 } from "@mui/material";
 import { useAgent } from "@/providers/agent-provider";
 
-interface JdInputDialogProps {
+interface JobDescriptionDialogProps {
   open: boolean;
   onClose: () => void;
 }
 
-export function JdInputDialog(props: JdInputDialogProps): ReactElement {
+export function JobDescriptionDialog(props: JobDescriptionDialogProps): ReactElement {
   const { open, onClose } = props;
   const [jd, setJd] = useState("");
   const agent = useAgent();

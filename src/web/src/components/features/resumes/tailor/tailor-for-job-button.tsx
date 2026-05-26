@@ -3,7 +3,7 @@
 import { useState, type ReactElement } from "react";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { JdInputDialog } from "./jd-input-dialog";
+import { JobDescriptionDialog } from "./job-description-dialog";
 
 interface TailorForJobButtonProps {
   size?: "small" | "medium";
@@ -22,7 +22,7 @@ export function TailorForJobButton(props: TailorForJobButtonProps): ReactElement
       >
         Tailor for job
       </Button>
-      <JdInputDialog open={open} onClose={() => setOpen(false)} />
+      <JobDescriptionDialog open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

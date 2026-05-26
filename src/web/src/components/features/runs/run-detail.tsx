@@ -11,18 +11,18 @@ import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import type { RunDetailDto, RunJobDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
-import { RunActionsBar } from "./run-actions-bar";
-import { RunIdentityBanner } from "./run-identity-banner";
-import { RunJobsPanel } from "./run-jobs-panel";
-import { RunReasonBreakdown } from "./run-reason-breakdown";
-import { RunSummaryTiles } from "./run-summary-tiles";
-import { RUN_STATUS_COLOR, RUN_STATUS_LABEL } from "./run-ui";
+import { RunActionsBar } from "./detail/actions-bar";
+import { RunIdentityBanner } from "./detail/identity-banner";
+import { RunJobsPanel } from "./detail/jobs-panel";
+import { RunReasonBreakdown } from "./detail/reason-breakdown";
+import { RunSummaryTiles } from "./detail/summary-tiles";
+import { RUN_STATUS_COLOR, RUN_STATUS_LABEL } from "./run-status";
 
-interface RunLiveViewerProps {
+interface RunDetailProps {
   runId: string;
 }
 
-export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
+export function RunDetail(props: RunDetailProps): ReactElement {
   const { runId } = props;
   const queryClient = useQueryClient();
   const agent = useAgent();

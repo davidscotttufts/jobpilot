@@ -17,12 +17,12 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
 import type { ResumeData } from "@/lib/schemas/resume";
-import { BasicsSection } from "./editor/basics-section";
-import { EducationSection } from "./editor/education-section";
-import { ExperienceSection } from "./editor/experience-section";
-import { ProjectsSection } from "./editor/projects-section";
-import { SkillsSection } from "./editor/skills-section";
-import { SummarySection } from "./editor/summary-section";
+import { BasicsSection } from "./basics-section";
+import { EducationSection } from "./education-section";
+import { ExperienceSection } from "./experience-section";
+import { ProjectsSection } from "./projects-section";
+import { SkillsSection } from "./skills-section";
+import { SummarySection } from "./summary-section";
 
 interface ResumeEditorProps {
   resumeId: number;
