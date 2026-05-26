@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement, type ReactNode } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
 import type { RunJobStatus } from "@/lib/schemas/run";
 import type { RunDetailDto, RunJobDto } from "@/types/api";
@@ -40,19 +40,23 @@ function ReasonList(props: { title: string; reasons: ReasonCount[] }): ReactElem
       {reasons.length === 0 ? (
         <Typography variant="captionMuted">None</Typography>
       ) : (
-        reasons.map((r) => (
-          <Stack
-            key={r.reason}
-            direction="row"
-            spacing={1}
-            sx={{ alignItems: "center", justifyContent: "space-between" }}
-          >
-            <Typography variant="body2" sx={{ minWidth: 0, wordBreak: "break-word" }}>
-              {r.reason}
-            </Typography>
-            <Chip size="small" label={r.count} variant="outlined" />
+        <Box sx={{ maxHeight: { xs: 320, sm: 420 }, overflowY: "auto", pr: 1 }}>
+          <Stack spacing={1}>
+            {reasons.map((r) => (
+              <Stack
+                key={r.reason}
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: "center", justifyContent: "space-between" }}
+              >
+                <Typography variant="body2" sx={{ minWidth: 0, wordBreak: "break-word" }}>
+                  {r.reason}
+                </Typography>
+                <Chip size="small" label={r.count} variant="outlined" />
+              </Stack>
+            ))}
           </Stack>
-        ))
+        </Box>
       )}
     </Stack>
   );

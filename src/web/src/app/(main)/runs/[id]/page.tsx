@@ -11,7 +11,7 @@ export default async function RunDetailPage(props: RunDetailPageProps): Promise<
   const { id } = await props.params;
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
-      <PageHeader eyebrow="Run" title={id} />
+      <PageHeader eyebrow="Run" title={id} backHref="/runs" backLabel="Runs" />
       <RunDetail runId={id} />
     </Container>
   );

@@ -1,4 +1,5 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
+﻿import type { Prisma } from "@/generated/prisma/client";
+import { getActiveProfileId } from "@/lib/active-profile";
 import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
@@ -7,6 +8,7 @@ import { updateRunSchema } from "@/lib/schemas/run";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
 import { publish } from "@/lib/sse/server";
+import { cleanReplacementCharsNullable } from "@/utils/text";
 
 type Params = ApiRouteContext<{ id: string }>;
 
@@ -27,6 +29,15 @@ export async function GET(_req: Request, ctx: Params) {
 
   return ok({
     ...run,
+    // Clean replacement-char artifacts in historical rows written before the
+    // schema-level sanitizer landed, so the UI never shows mojibake.
+    jobs: run.jobs.map((job) => ({
+      ...job,
+      skipReason: cleanReplacementCharsNullable(job.skipReason),
+      failReason: cleanReplacementCharsNullable(job.failReason),
+      matchReason: cleanReplacementCharsNullable(job.matchReason),
+      retryNotes: cleanReplacementCharsNullable(job.retryNotes),
+    })),
     config: JSON.parse(run.config) as Record<string, unknown>,
     summary: JSON.parse(run.summary) as Record<string, unknown>,
   });
@@ -48,26 +59,20 @@ export async function PATCH(req: Request, ctx: Params) {
     return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
   }
 
-  const summaryNext = parsed.data.summary
-    ? {
-        ...(JSON.parse(existing.summary) as Record<string, unknown>),
-        ...parsed.data.summary,
-      }
-    : undefined;
+  const data = parsed.data;
+  const update: Prisma.RunUpdateInput = { status: data.status };
 
-  const run = await db.run.update({
-    where: { runId: id },
-    data: {
-      status: parsed.data.status,
-      completedAt:
-        parsed.data.completedAt === undefined
-          ? undefined
-          : parsed.data.completedAt
-            ? new Date(parsed.data.completedAt)
-            : null,
-      summary: summaryNext === undefined ? undefined : JSON.stringify(summaryNext),
-    },
-  });
+  if (data.summary) {
+    update.summary = JSON.stringify({ ...JSON.parse(existing.summary), ...data.summary });
+  }
+  if (data.config) {
+    update.config = JSON.stringify({ ...JSON.parse(existing.config), ...data.config });
+  }
+  if (data.completedAt !== undefined) {
+    update.completedAt = data.completedAt ? new Date(data.completedAt) : null;
+  }
+
+  const run = await db.run.update({ where: { runId: id }, data: update });
 
   if (parsed.data.status) {
     publish(
@@ -91,8 +96,8 @@ export async function PATCH(req: Request, ctx: Params) {
           },
     );
   }
-  if (summaryNext) {
-    publish(runChannel, { runId: id }, { type: "progress", payload: summaryNext });
+  if (data.summary) {
+    publish(runChannel, { runId: id }, { type: "progress", payload: JSON.parse(run.summary) });
   }
 
   return ok({

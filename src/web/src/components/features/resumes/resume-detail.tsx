@@ -10,11 +10,11 @@ import { EMPTY_RESUME_DATA, type ResumeData } from "@/lib/schemas/resume";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import type { ResumeDto } from "@/types/api";
-import { ResumeEditor } from "./editor/resume-editor";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";
 import { SourceUploadCard } from "./detail/source-upload-card";
 import { VariantsPanel } from "./detail/variants-panel";
+import { ResumeEditor } from "./editor/resume-editor";
 
 interface ResumeDetailProps {
   resumeId: number;

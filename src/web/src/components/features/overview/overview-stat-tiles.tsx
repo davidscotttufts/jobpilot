@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Grid, Stack, Typography } from "@mui/material";
+import { Card, CardContent, Grid, Stack, Typography } from "@mui/material";
 import type { OverviewStatsDto } from "@/types/api";
 
 interface OverviewStatTilesProps {
@@ -18,44 +18,40 @@ interface TileProps {
 function Tile(props: TileProps): ReactElement {
   const { label, value, hint, accent = "default" } = props;
   return (
-    <Box
-      sx={(t) => ({
-        p: 1.75,
-        height: "100%",
-        border: `1px solid ${t.palette.line.divider}`,
-        borderRadius: t.radii.md,
-        backgroundColor: t.palette.surfaces.card,
-        boxShadow: t.shadows_custom.sm,
-      })}
-    >
-      <Stack spacing={0.5}>
-        <Typography variant="overlineMuted" sx={{ fontSize: "0.625rem", letterSpacing: "0.08em" }}>
-          {label}
-        </Typography>
-        <Typography
-          sx={(t) => ({
-            fontSize: "1.5rem",
-            fontFamily: "var(--font-fraunces), serif",
-            fontWeight: 400,
-            lineHeight: 1.1,
-            letterSpacing: "-0.01em",
-            color:
-              accent === "success"
-                ? t.palette.success.main
-                : accent === "danger"
-                  ? t.palette.error.main
-                  : accent === "warning"
-                    ? t.palette.warning.main
-                    : t.palette.text.primary,
-          })}
-        >
-          {value}
-        </Typography>
-        <Typography variant="captionMuted" sx={{ fontSize: "0.6875rem", minHeight: "1em" }}>
-          {hint ?? ""}
-        </Typography>
-      </Stack>
-    </Box>
+    <Card sx={{ height: "100%" }}>
+      <CardContent>
+        <Stack spacing={0.5}>
+          <Typography
+            variant="overlineMuted"
+            sx={{ fontSize: "0.625rem", letterSpacing: "0.08em" }}
+          >
+            {label}
+          </Typography>
+          <Typography
+            sx={(t) => ({
+              fontSize: "1.5rem",
+              fontFamily: "var(--font-fraunces), serif",
+              fontWeight: 400,
+              lineHeight: 1.1,
+              letterSpacing: "-0.01em",
+              color:
+                accent === "success"
+                  ? t.palette.success.main
+                  : accent === "danger"
+                    ? t.palette.error.main
+                    : accent === "warning"
+                      ? t.palette.warning.main
+                      : t.palette.text.primary,
+            })}
+          >
+            {value}
+          </Typography>
+          <Typography variant="captionMuted" sx={{ fontSize: "0.6875rem", minHeight: "1em" }}>
+            {hint ?? ""}
+          </Typography>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }
 

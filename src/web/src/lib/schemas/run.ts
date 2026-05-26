@@ -1,4 +1,8 @@
 import { z } from "zod/v4";
+import { cleanReplacementChars } from "@/utils/text";
+
+/** A free-text string with mangled replacement-char artifacts cleaned on write. */
+const reasonText = z.string().transform(cleanReplacementChars);
 
 export const RUN_STATUSES = [
   "in_progress",
@@ -48,6 +52,7 @@ export const createRunSchema = z.object({
 export const updateRunSchema = z.object({
   status: runStatusSchema.optional(),
   summary: runSummarySchema.partial().optional(),
+  config: runConfigSchema.partial().optional(),
   completedAt: z.iso.datetime().optional().nullable(),
 });
 
@@ -61,7 +66,7 @@ export const addRunJobSchema = z.object({
   url: z.url(),
   board: z.string().optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
-  matchReason: z.string().optional().nullable(),
+  matchReason: reasonText.optional().nullable(),
   status: runJobStatusSchema.optional(),
   description: z.string().optional().nullable(),
   jobDigest: z.string().optional().nullable(),
@@ -70,11 +75,11 @@ export const addRunJobSchema = z.object({
 export const patchRunJobSchema = z.object({
   status: runJobStatusSchema.optional(),
   appliedAt: z.iso.datetime().optional().nullable(),
-  failReason: z.string().optional().nullable(),
-  retryNotes: z.string().optional().nullable(),
-  skipReason: z.string().optional().nullable(),
+  failReason: reasonText.optional().nullable(),
+  retryNotes: reasonText.optional().nullable(),
+  skipReason: reasonText.optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
-  matchReason: z.string().optional().nullable(),
+  matchReason: reasonText.optional().nullable(),
   jobDigest: z.string().optional().nullable(),
 });
 
@@ -85,9 +90,9 @@ export const runJobResultSchema = z
   .object({
     outcome: runJobOutcomeSchema,
     appliedAt: z.iso.datetime().optional(),
-    failReason: z.string().min(1).optional(),
-    skipReason: z.string().min(1).optional(),
-    retryNotes: z.string().optional().nullable(),
+    failReason: z.string().min(1).transform(cleanReplacementChars).optional(),
+    skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
+    retryNotes: reasonText.optional().nullable(),
     matchScore: z.number().int().min(0).max(100).optional(),
   })
   .refine(

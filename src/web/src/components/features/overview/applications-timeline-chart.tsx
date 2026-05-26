@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import type { OverviewPerDayEntry } from "@/types/api";
 
@@ -26,70 +26,61 @@ export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps)
   const yMax = Math.max(...yData, 1);
 
   return (
-    <Box
-      sx={(t) => ({
-        p: 2.5,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        border: `1px solid ${t.palette.line.divider}`,
-        borderRadius: t.radii.md,
-        backgroundColor: t.palette.surfaces.card,
-        boxShadow: t.shadows_custom.sm,
-      })}
-    >
-      <Typography variant="overlineMuted">Applications over time</Typography>
-      <Typography variant="h6" sx={{ mt: 0.5, fontSize: "0.9375rem", fontWeight: 500 }}>
-        {total} submitted in the last 30 days
-      </Typography>
+    <Card sx={{ height: "100%" }}>
+      <CardContent>
+        <Typography variant="overlineMuted">Applications over time</Typography>
+        <Typography variant="h6" sx={{ mt: 0.5, fontSize: "0.9375rem", fontWeight: 500 }}>
+          {total} submitted in the last 30 days
+        </Typography>
 
-      {total === 0 ? (
-        <Stack
-          sx={(t) => ({
-            mt: 2,
-            flex: 1,
-            minHeight: CHART_HEIGHT,
-            alignItems: "center",
-            justifyContent: "center",
-            color: t.palette.text.disabled,
-          })}
-        >
-          <Typography variant="captionMuted">No applications submitted yet.</Typography>
-        </Stack>
-      ) : (
-        <Box sx={{ mt: 1, flex: 1 }}>
-          <LineChart
-            xAxis={[
-              {
-                data: xData,
-                scaleType: "point",
-                valueFormatter: formatTick,
-                tickLabelStyle: { fontSize: 10 },
-              },
-            ]}
-            yAxis={[
-              {
-                min: 0,
-                max: yMax,
-                tickMinStep: 1,
-                tickLabelStyle: { fontSize: 10 },
-              },
-            ]}
-            series={[
-              {
-                data: yData,
-                color: theme.palette.accent.primary,
-                area: true,
-                showMark: false,
-                curve: "monotoneX",
-              },
-            ]}
-            height={CHART_HEIGHT}
-            margin={{ left: 28, right: 12, top: 12, bottom: 28 }}
-            grid={{ horizontal: true }}
-          />
-        </Box>
-      )}
-    </Box>
+        {total === 0 ? (
+          <Stack
+            sx={(t) => ({
+              mt: 2,
+              flex: 1,
+              minHeight: CHART_HEIGHT,
+              alignItems: "center",
+              justifyContent: "center",
+              color: t.palette.text.disabled,
+            })}
+          >
+            <Typography variant="captionMuted">No applications submitted yet.</Typography>
+          </Stack>
+        ) : (
+          <Box sx={{ mt: 1, flex: 1 }}>
+            <LineChart
+              xAxis={[
+                {
+                  data: xData,
+                  scaleType: "point",
+                  valueFormatter: formatTick,
+                  tickLabelStyle: { fontSize: 10 },
+                },
+              ]}
+              yAxis={[
+                {
+                  min: 0,
+                  max: yMax,
+                  tickMinStep: 1,
+                  tickLabelStyle: { fontSize: 10 },
+                },
+              ]}
+              series={[
+                {
+                  data: yData,
+                  color: theme.palette.accent.primary,
+                  area: true,
+                  showMark: false,
+                  curve: "monotoneX",
+                },
+              ]}
+              height={CHART_HEIGHT}
+              margin={{ left: 28, right: 12, top: 12, bottom: 28 }}
+              grid={{ horizontal: true }}
+            />
+          </Box>
+        )}
+      </CardContent>
+    </Card>
   );
 }

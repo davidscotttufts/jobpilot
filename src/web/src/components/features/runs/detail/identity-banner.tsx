@@ -9,8 +9,9 @@ import { queryKeys } from "@/lib/api/query-keys";
 import type { ProfileResponse } from "@/types/api";
 
 /**
- * Shows the active profile's name + email next to a run so a wrong-identity
- * issue (e.g. the agent filling the wrong email) is obvious at a glance.
+ * Compact inline identity line for the run header — the active profile's name +
+ * email, so a wrong-identity issue (e.g. the agent filling the wrong email) is
+ * obvious at a glance.
  */
 export function RunIdentityBanner(): ReactNode {
   const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () =>
@@ -27,15 +28,8 @@ export function RunIdentityBanner(): ReactNode {
   return (
     <Stack
       direction="row"
-      spacing={1}
-      sx={(t) => ({
-        alignItems: "center",
-        px: 1.5,
-        py: 1,
-        borderRadius: t.radii.sm,
-        border: `1px solid ${t.palette.line.divider}`,
-        backgroundColor: t.palette.surfaces.elevated,
-      })}
+      spacing={0.75}
+      sx={{ alignItems: "center", flexWrap: "wrap", gap: 0.75 }}
     >
       <PersonOutlined fontSize="sm" color="action" />
       <Typography variant="body2" sx={{ fontWeight: 600 }}>

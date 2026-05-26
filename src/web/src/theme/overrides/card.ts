@@ -41,8 +41,8 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
 export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
   styleOverrides: {
     root: { paddingInline: 20, paddingTop: 16, paddingBottom: 8 },
-    title: { fontSize: "0.9375rem", fontWeight: 600 },
-    subheader: { fontSize: "0.8125rem" },
+    title: { fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.3 },
+    subheader: { fontSize: "0.8125rem", marginTop: 2 },
   },
 };
 

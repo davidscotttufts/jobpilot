@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Stack, Typography, useTheme } from "@mui/material";
+import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import type { OverviewStageBreakdownEntry } from "@/types/api";
 
@@ -51,58 +51,49 @@ export function StageBreakdownChart(props: StageBreakdownChartProps): ReactEleme
   const total = series.reduce((sum, s) => sum + s.value, 0);
 
   return (
-    <Box
-      sx={(t) => ({
-        p: 2.5,
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-        border: `1px solid ${t.palette.line.divider}`,
-        borderRadius: t.radii.md,
-        backgroundColor: t.palette.surfaces.card,
-        boxShadow: t.shadows_custom.sm,
-      })}
-    >
-      <Typography variant="overlineMuted">Stage breakdown</Typography>
-      <Typography variant="h6" sx={{ mt: 0.5, fontSize: "0.9375rem", fontWeight: 500 }}>
-        {total} applications by stage
-      </Typography>
+    <Card sx={{ height: "100%" }}>
+      <CardContent>
+        <Typography variant="overlineMuted">Stage breakdown</Typography>
+        <Typography variant="h6" sx={{ mt: 0.5, fontSize: "0.9375rem", fontWeight: 500 }}>
+          {total} applications by stage
+        </Typography>
 
-      {series.length === 0 ? (
-        <Stack
-          sx={(t) => ({
-            mt: 2,
-            flex: 1,
-            minHeight: CHART_HEIGHT,
-            alignItems: "center",
-            justifyContent: "center",
-            color: t.palette.text.disabled,
-          })}
-        >
-          <Typography variant="captionMuted">No applications yet.</Typography>
-        </Stack>
-      ) : (
-        <Box sx={{ mt: 1, flex: 1 }}>
-          <PieChart
-            series={[
-              {
-                data: series,
-                innerRadius: 48,
-                paddingAngle: 1.5,
-                cornerRadius: 2,
-                highlightScope: { fade: "global", highlight: "item" },
-              },
-            ]}
-            height={CHART_HEIGHT}
-            slotProps={{
-              legend: {
-                direction: "vertical",
-                position: { vertical: "middle", horizontal: "end" },
-              },
-            }}
-          />
-        </Box>
-      )}
-    </Box>
+        {series.length === 0 ? (
+          <Stack
+            sx={(t) => ({
+              mt: 2,
+              flex: 1,
+              minHeight: CHART_HEIGHT,
+              alignItems: "center",
+              justifyContent: "center",
+              color: t.palette.text.disabled,
+            })}
+          >
+            <Typography variant="captionMuted">No applications yet.</Typography>
+          </Stack>
+        ) : (
+          <Box sx={{ mt: 1, flex: 1 }}>
+            <PieChart
+              series={[
+                {
+                  data: series,
+                  innerRadius: 48,
+                  paddingAngle: 1.5,
+                  cornerRadius: 2,
+                  highlightScope: { fade: "global", highlight: "item" },
+                },
+              ]}
+              height={CHART_HEIGHT}
+              slotProps={{
+                legend: {
+                  direction: "vertical",
+                  position: { vertical: "middle", horizontal: "end" },
+                },
+              }}
+            />
+          </Box>
+        )}
+      </CardContent>
+    </Card>
   );
 }
