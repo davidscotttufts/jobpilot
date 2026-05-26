@@ -33,7 +33,8 @@ For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a dom
 
 ## Phase 0: Dispatch
 
-- Argument present → **Phase 1A** (single-job).
+- Argument is `run <run-id>` → **re-apply mode**: set `RUN_ID=<run-id>`, skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The run viewer re-opens the user's chosen skipped/failed jobs to `approved` before injecting this.)
+- Any other argument present → **Phase 1A** (single-job).
 - No argument → **Phase 1B** (batch).
 
 ---
@@ -163,6 +164,8 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
 ```
 
 If `score < minMatchScore`, immediately PATCH to `skipped` with `skipReason:"Below minimum match score (X < Y)"`.
+
+**Eligibility** (same as `auto-apply` 2.2a): never skip for onsite/other-city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"`, for a thin JD (read and rescore first), or for 1099/defense/federal work — only a JD-stated citizenship/clearance requirement disqualifies.
 
 ## Phase 3: Batch Confirmation (Batch Only)
 

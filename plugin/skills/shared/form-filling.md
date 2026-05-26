@@ -18,6 +18,8 @@ Job applications often span multiple pages. For each page:
 
 All paths refer to `GET /api/profile` (already loaded by setup.md).
 
+- **Name** → `data.profile.{firstName, lastName}`.
+- **Email** → `data.profile.email`. **Always use this profile email — never your own account/assistant email, the credential login email, or any address seen elsewhere in the conversation.** When in doubt, re-read `data.profile.email` and use it verbatim.
 - **Address** → `data.profile.{street,aptUnit,city,state,zipCode,country}`
 - **Phone** → `data.profile.phone`
 - **LinkedIn / GitHub / Website** → `data.profile.{linkedin,github,website}`

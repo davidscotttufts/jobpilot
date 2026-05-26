@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Pause, PlayArrow, Replay } from "@mui/icons-material";
+import { Autorenew, Pause, PlayArrow, Replay } from "@mui/icons-material";
 import { Button, Stack } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
@@ -31,9 +31,11 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
   );
 
   const failedCount = run.jobs.filter((j) => j.status === "failed").length;
+  const skippedCount = run.summary.skipped;
   const isInProgress = run.status === "in_progress";
   const isPaused = run.status === "paused";
   const isInterrupted = run.status === "interrupted";
+  const isAutoApply = run.source === "auto-apply";
 
   return (
     <Stack direction="row" spacing={1}>
@@ -59,7 +61,7 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
           Resume
         </Button>
       )}
-      {failedCount > 0 && run.source === "auto-apply" && (
+      {failedCount > 0 && isAutoApply && (
         <Button
           variant="outlined"
           startIcon={<Replay fontSize="sm" />}
@@ -68,6 +70,17 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
           }}
         >
           Retry failed ({failedCount})
+        </Button>
+      )}
+      {!isInProgress && isAutoApply && skippedCount > 0 && (
+        <Button
+          variant="outlined"
+          startIcon={<Autorenew fontSize="sm" />}
+          onClick={() => {
+            void agent.injectSkill("auto-apply", `rescan-skipped ${run.runId}`);
+          }}
+        >
+          Rescan skipped ({skippedCount})
         </Button>
       )}
     </Stack>

@@ -2,14 +2,23 @@
 
 import type { ReactElement } from "react";
 import { Button, Chip, Link } from "@mui/material";
-import type { GridColDef } from "@mui/x-data-grid";
-import { DataTable } from "@/components/ui/data/data-table";
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRowSelectionModel,
+  type GridRowsProp,
+} from "@mui/x-data-grid";
 import type { RunJobStatus } from "@/lib/schemas/run";
 import type { RunJobDto } from "@/types/api";
 
 /** Statuses that can still be applied to from the runs detail page. */
 export function isApplicable(status: RunJobStatus): boolean {
   return status === "pending" || status === "approved";
+}
+
+/** Statuses eligible for selection + bulk re-apply on a stopped run. */
+export function isReapplicable(status: RunJobStatus): boolean {
+  return status !== "applied" && status !== "applying";
 }
 
 const STATUS_COLOR: Record<
@@ -29,10 +38,21 @@ interface RunJobsTableProps {
   loading?: boolean;
   /** When provided, applicable rows get an "Apply" action that calls this. */
   onApplyJob?: (job: RunJobDto) => void;
+  /** Enables checkbox selection (reapplicable rows only). */
+  checkboxSelection?: boolean;
+  rowSelectionModel?: GridRowSelectionModel;
+  onRowSelectionModelChange?: (model: GridRowSelectionModel) => void;
 }
 
 export function RunJobsTable(props: RunJobsTableProps): ReactElement {
-  const { rows, loading, onApplyJob } = props;
+  const {
+    rows,
+    loading,
+    onApplyJob,
+    checkboxSelection,
+    rowSelectionModel,
+    onRowSelectionModelChange,
+  } = props;
   const columns: GridColDef<RunJobDto>[] = [
     {
       field: "status",
@@ -96,12 +116,20 @@ export function RunJobsTable(props: RunJobsTableProps): ReactElement {
     });
   }
 
+  // Our DTOs are interfaces without an index signature, so they don't satisfy
+  // DataGrid's GridValidRowModel constraint. Author columns against RunJobDto
+  // for type safety, then widen rows/columns at the grid boundary.
   return (
-    <DataTable<RunJobDto>
-      rows={rows}
-      columns={columns}
+    <DataGrid
+      rows={rows as GridRowsProp}
+      columns={columns as GridColDef[]}
       loading={loading}
-      getRowId={(row) => row.id}
+      getRowId={(row) => (row as RunJobDto).id}
+      checkboxSelection={checkboxSelection}
+      rowSelectionModel={rowSelectionModel}
+      onRowSelectionModelChange={onRowSelectionModelChange}
+      isRowSelectable={(p) => isReapplicable((p.row as RunJobDto).status)}
+      keepNonExistentRowsSelected
     />
   );
 }

@@ -24,6 +24,9 @@ public enum SessionState
 /// </summary>
 public sealed class SessionManager : IDisposable
 {
+    private static readonly string[] PlaywrightScratchExtensions =
+        [".log", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".md"];
+
     private readonly PtyService pty;
     private readonly ILogger<SessionManager> logger;
     private readonly TerminalSessionPaths paths;
@@ -94,6 +97,7 @@ public sealed class SessionManager : IDisposable
             }
 
             var workingDir = paths.ResolveWorkingDir(requestedWorkingDir);
+            CleanPlaywrightScratch(workingDir);
             var spec = paths.GetLaunchSpec(normalizedProvider, workingDir);
 
             logger.LogInformation(
@@ -124,6 +128,45 @@ public sealed class SessionManager : IDisposable
 
             activeProvider = normalizedProvider;
             state = SessionState.Running;
+        }
+    }
+
+    /// <summary>
+    /// Best-effort removal of scratch files (page snapshots, screenshots, downloaded PDFs, console
+    /// logs) left by Playwright MCP in the previous session. Only top-level files with a known
+    /// scratch extension are deleted; the browser profile (Default/, caches, Local State, …) is
+    /// never touched. Failures (e.g. a file still locked by a closing browser) are ignored.
+    /// </summary>
+    private void CleanPlaywrightScratch(string workingDir)
+    {
+        var dir = Path.Combine(workingDir, ".playwright-mcp");
+        if (!Directory.Exists(dir))
+        {
+            return;
+        }
+
+        var removed = 0;
+        foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.TopDirectoryOnly))
+        {
+            if (!PlaywrightScratchExtensions.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            try
+            {
+                File.Delete(file);
+                removed++;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                logger.LogDebug(ex, "Could not delete Playwright scratch file {File}.", file);
+            }
+        }
+
+        if (removed > 0)
+        {
+            logger.LogInformation("Cleaned {Count} Playwright scratch file(s) from {Dir}.", removed, dir);
         }
     }
 

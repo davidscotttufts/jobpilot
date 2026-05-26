@@ -79,7 +79,12 @@ describe("validateRewrites — hard guards", () => {
   test("introducing a new number is rejected", () => {
     const v = validateRewrites(
       base,
-      [{ entryIndex: 0, bullets: [{ original: "Cut onboarding time 40%.", tailored: "Cut onboarding time 60%." }] }],
+      [
+        {
+          entryIndex: 0,
+          bullets: [{ original: "Cut onboarding time 40%.", tailored: "Cut onboarding time 60%." }],
+        },
+      ],
       2,
     );
     expect(v.ok).toBe(false);
@@ -89,7 +94,12 @@ describe("validateRewrites — hard guards", () => {
   test("original not found in the base resume is rejected", () => {
     const v = validateRewrites(
       base,
-      [{ entryIndex: 0, bullets: [{ original: "A bullet that does not exist.", tailored: "Anything." }] }],
+      [
+        {
+          entryIndex: 0,
+          bullets: [{ original: "A bullet that does not exist.", tailored: "Anything." }],
+        },
+      ],
       2,
     );
     expect(v.ok).toBe(false);
@@ -99,7 +109,12 @@ describe("validateRewrites — hard guards", () => {
   test("entry outside the reword window is rejected", () => {
     const v = validateRewrites(
       base,
-      [{ entryIndex: 2, bullets: [{ original: "Wrote internal tooling.", tailored: "Wrote internal tooling." }] }],
+      [
+        {
+          entryIndex: 2,
+          bullets: [{ original: "Wrote internal tooling.", tailored: "Wrote internal tooling." }],
+        },
+      ],
       2,
     );
     expect(v.ok).toBe(false);
@@ -133,7 +148,10 @@ describe("validateRewrites — soft drift flags", () => {
         {
           entryIndex: 0,
           bullets: [
-            { original: "Shipped React UI for billing.", tailored: "Shipped React and GraphQL UI for billing." },
+            {
+              original: "Shipped React UI for billing.",
+              tailored: "Shipped React and GraphQL UI for billing.",
+            },
           ],
         },
       ],
@@ -147,7 +165,10 @@ describe("validateRewrites — soft drift flags", () => {
 describe("tailorBase — applying rewrites", () => {
   test("replaces the matched bullet for in-window entries", () => {
     const map = new Map([
-      [0, new Map([["Shipped React UI for billing.", "Shipped React billing UI aligned to the JD."]])],
+      [
+        0,
+        new Map([["Shipped React UI for billing.", "Shipped React billing UI aligned to the JD."]]),
+      ],
     ]);
     const out = tailorBase(base, { bulletRewrites: map, rewordTopN: 2 });
     expect(out.experience[0].bullets).toContain("Shipped React billing UI aligned to the JD.");

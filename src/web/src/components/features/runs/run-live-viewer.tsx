@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { SectionCard } from "@/components/ui/layout";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/api/client";
 import { queryKeys } from "@/lib/api/query-keys";
@@ -13,7 +12,9 @@ import { useAgent } from "@/providers/agent-provider";
 import type { RunDetailDto, RunJobDto } from "@/types/api";
 import { formatRelativeTime } from "@/utils/format";
 import { RunActionsBar } from "./run-actions-bar";
-import { RunJobsTable } from "./run-jobs-table";
+import { RunIdentityBanner } from "./run-identity-banner";
+import { RunJobsPanel } from "./run-jobs-panel";
+import { RunReasonBreakdown } from "./run-reason-breakdown";
 import { RunSummaryTiles } from "./run-summary-tiles";
 import { RUN_STATUS_COLOR, RUN_STATUS_LABEL } from "./run-ui";
 
@@ -87,13 +88,13 @@ export function RunLiveViewer(props: RunLiveViewerProps): ReactElement {
         </Stack>
         <RunActionsBar run={run} />
       </Stack>
+      <RunIdentityBanner />
       {run.status === "paused" && (
         <Typography variant="body2Muted">Paused — click Resume to continue.</Typography>
       )}
       <RunSummaryTiles run={run} />
-      <SectionCard title="Jobs" description="Updated live as the run progresses.">
-        <RunJobsTable rows={run.jobs} onApplyJob={applyJob} />
-      </SectionCard>
+      <RunReasonBreakdown run={run} />
+      <RunJobsPanel run={run} onApplyJob={applyJob} />
     </Stack>
   );
 }

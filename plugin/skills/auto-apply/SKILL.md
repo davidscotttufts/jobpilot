@@ -28,6 +28,7 @@ Inline argument overrides take precedence. `--board <domain>` is **required** un
 
 - `"resume"` → list incomplete runs (`GET /api/runs?status=in_progress`), ask which to resume, replay the apply loop on remaining `applying`/`approved`/`pending` jobs.
 - `"retry-failed <run-id>"` → fetch the run; for every `failed` job, PATCH back to `approved`, read `retryNotes`, then replay the apply loop on them.
+- `"rescan-skipped <run-id>"` → re-evaluate `skipped` jobs under the current eligibility rules (2.2a), for ones wrongly dropped for onsite/location or a thin JD. Fetch the run; skip the permanently-disqualified (skipReason `Already applied …`, `CAPTCHA …`, or a JD-stated citizenship/clearance requirement), and for the rest reuse `jobDigest` (re-read the posting if empty) and rescore via `/api/score-fit`. Now qualifies → PATCH to `approved` and apply (2.3); still below → leave `skipped` with an updated `skipReason`. Optional `--jobs <key1,key2,…>` restricts to those keys (UI selective rescan).
 - Otherwise → search query → Phase 0.
 
 ## Phase 0: Existing Run Check + Create
@@ -103,7 +104,7 @@ SCORE=$(echo "$FIT" | jq -r '.data.score')
 CONF=$(echo "$FIT" | jq -r '.data.confidence')
 ```
 
-If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. Below `minMatchScore` → add with `status:"skipped"`, `skipReason:"Below minimum match score (X < Y)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
+If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip — read the full posting (tab-1 detail or briefly in tab 2), rebuild the digest, and rescore first. Below `minMatchScore` after a fair read → add with `status:"skipped"`, `skipReason:"Below minimum match score (X < Y)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
 
 ```bash
 DIGEST=<stringified digest>
@@ -114,6 +115,17 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
     --arg matchReason "<one line>" --argjson score <0-100> --arg digest "$DIGEST" \
     '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"applying", jobDigest:$digest}')"
 ```
+
+### 2.2a Eligibility — what is (and isn't) a skip
+
+**Valid skip reasons (exact phrasing):**
+
+- `Already applied (<kind>)` — dedupe (2.1).
+- `Below minimum match score (X < Y)` — only after reading the actual posting.
+- A hard requirement **the JD itself states** the user can't meet, e.g. `US citizenship required`, `Active security clearance required`. Never infer from industry or company name.
+- `CAPTCHA — apply manually via the apply skill` / `Payment required` (surface during apply, not scoring).
+
+**Never skip for:** onsite/hybrid/other city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"` (score on fit, not geography); a sparse JD (read and rescore first); 1099/contractor work; defense/federal industry absent a JD-stated citizenship/clearance requirement.
 
 ### 2.3 Apply (tab 2)
 
@@ -173,3 +185,4 @@ Print a summary table, link to `http://localhost:8000/runs/<RUN_ID>`, suggest `r
 8. **Audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
 9. **Respect pause.** Re-read the run between jobs; `status === "paused"` → exit cleanly.
 10. **Missing resume file** → PATCH run to `paused`, ask the user to re-upload.
+11. **Eligibility** — follow 2.2a. Location/onsite, thin JDs, and 1099 work are never skip reasons; only a JD-stated citizenship/clearance requirement disqualifies.
