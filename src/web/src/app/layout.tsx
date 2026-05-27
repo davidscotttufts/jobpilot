@@ -31,6 +31,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "JobPilot",
   description: "Local control center for AI-driven job applications",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout(props: PropsWithChildren): ReactElement {
