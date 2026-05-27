@@ -32,7 +32,7 @@ export async function reconcileStaleRuns(profileId: number): Promise<number> {
       where: { runId: { in: stale.map((r) => r.runId) } },
       data: { status: "interrupted" },
     }),
-    db.runJob.updateMany({
+    db.job.updateMany({
       where: { runId: { in: stale.map((r) => r.runId) }, status: "applying" },
       data: { status: "approved" },
     }),

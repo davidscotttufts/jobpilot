@@ -77,7 +77,7 @@ export function RunJobsPanel(props: RunJobsPanelProps): ReactElement {
     const results = await Promise.all(
       selectedTargets.map((job) =>
         apiClient.patch<RunJobDto>(
-          `/api/runs/${encodeURIComponent(run.runId)}/jobs/${encodeURIComponent(job.jobKey)}`,
+          `/api/runs/${encodeURIComponent(run.runId)}/jobs/${encodeURIComponent(job.key)}`,
           { status: "approved" },
         ),
       ),

@@ -3,8 +3,8 @@ import { defineChannel } from "../channel";
 export type PipelineEvent =
   | { type: "run.updated"; runId: string; status?: string; source?: string }
   | { type: "run.completed"; runId: string }
-  | { type: "runjob.created"; runId: string; jobKey: string }
-  | { type: "runjob.updated"; runId: string; jobKey: string; status?: string }
+  | { type: "runjob.created"; runId: string; key: string }
+  | { type: "runjob.updated"; runId: string; key: string; status?: string }
   | { type: "application.created"; runId: string | null }
   | { type: "queue.updated" };
 

@@ -56,13 +56,13 @@ export async function loadApplying(
     : {};
 
   const [items, total, todayCount] = await Promise.all([
-    db.runJob.findMany({
+    db.job.findMany({
       where: { ...baseWhere, ...withCursor(cursor), ...searchWhere },
       orderBy: { id: "desc" },
       take: limit + 1,
     }),
-    db.runJob.count({ where: baseWhere }),
-    db.runJob.count({ where: { ...baseWhere, appliedAt: { gte: startOfToday() } } }),
+    db.job.count({ where: baseWhere }),
+    db.job.count({ where: { ...baseWhere, appliedAt: { gte: startOfToday() } } }),
   ]);
 
   return finalize("applying", items, total, todayCount, limit, mapRunJob);

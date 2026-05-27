@@ -8,7 +8,7 @@ import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
 import { publish } from "@/lib/sse/server";
 
-type Params = ApiRouteContext<{ id: string; jobKey: string }>;
+type Params = ApiRouteContext<{ id: string; key: string }>;
 
 const EMPTY_SUMMARY: RunSummary = {
   totalFound: 0,
@@ -20,14 +20,14 @@ const EMPTY_SUMMARY: RunSummary = {
 };
 
 /**
- * Terminal-outcome handoff for a RunJob. Atomically updates RunJob status,
+ * Terminal-outcome handoff for a Job. Atomically updates Job status,
  * upserts the Application row (when `applied`), marks the QueueEntry
  * consumed/skipped, and recomputes Run.summary from the post-update
- * RunJob aggregates. Replaces the apply/auto-apply skills' multi-curl
+ * Job aggregates. Replaces the apply/auto-apply skills' multi-curl
  * dance with a single POST.
  */
 export async function POST(req: Request, ctx: Params) {
-  const { id: runId, jobKey } = await parsePathParams(ctx);
+  const { id: runId, key } = await parsePathParams(ctx);
   const body = await req.json();
   const parsed = runJobResultSchema.safeParse(body);
 
@@ -41,8 +41,8 @@ export async function POST(req: Request, ctx: Params) {
   }
 
   const profileId = await getActiveProfileId();
-  const existing = await db.runJob.findFirst({
-    where: { runId, jobKey, run: { profileId } },
+  const existing = await db.job.findFirst({
+    where: { runId, key, run: { profileId } },
     include: { run: { select: { source: true, summary: true } } },
   });
 
@@ -54,8 +54,8 @@ export async function POST(req: Request, ctx: Params) {
   const appliedAt = data.outcome === "applied" ? new Date(data.appliedAt as string) : null;
 
   const result = await db.$transaction(async (tx) => {
-    const job = await tx.runJob.update({
-      where: { runId_jobKey: { runId, jobKey } },
+    const job = await tx.job.update({
+      where: { runId_key: { runId, key } },
       data: {
         status: data.outcome,
         appliedAt: data.outcome === "applied" ? appliedAt : null,
@@ -108,7 +108,7 @@ export async function POST(req: Request, ctx: Params) {
       },
     });
 
-    const counts = await tx.runJob.groupBy({
+    const counts = await tx.job.groupBy({
       by: ["status"],
       where: { runId },
       _count: { _all: true },
@@ -169,7 +169,7 @@ export async function POST(req: Request, ctx: Params) {
     {
       type: "runjob.updated",
       runId,
-      jobKey,
+      key,
       status: data.outcome,
     },
   );

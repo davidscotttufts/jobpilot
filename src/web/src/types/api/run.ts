@@ -31,7 +31,7 @@ export interface RunSummaryDto {
 export interface RunJobDto {
   id: number;
   runId: string;
-  jobKey: string;
+  key: string;
   title: string;
   company: string;
   location: string | null;

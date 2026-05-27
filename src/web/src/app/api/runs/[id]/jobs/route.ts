@@ -12,7 +12,7 @@ type Params = ApiRouteContext<{ id: string }>;
 export async function GET(_req: Request, ctx: Params) {
   const { id } = await parsePathParams(ctx);
   const profileId = await getActiveProfileId();
-  const jobs = await db.runJob.findMany({
+  const jobs = await db.job.findMany({
     where: { runId: id, run: { profileId } },
     orderBy: { id: "asc" },
   });
@@ -35,10 +35,10 @@ export async function POST(req: Request, ctx: Params) {
   }
 
   try {
-    const job = await db.runJob.create({
+    const job = await db.job.create({
       data: {
         runId: id,
-        jobKey: parsed.data.jobKey,
+        key: parsed.data.key,
         title: parsed.data.title,
         company: parsed.data.company,
         location: parsed.data.location ?? null,
@@ -50,7 +50,7 @@ export async function POST(req: Request, ctx: Params) {
         matchReason: parsed.data.matchReason ?? null,
         status: parsed.data.status ?? "pending",
         description: parsed.data.description ?? null,
-        jobDigest: parsed.data.jobDigest ?? null,
+        digest: parsed.data.digest ?? null,
       },
     });
 
@@ -73,7 +73,7 @@ export async function POST(req: Request, ctx: Params) {
       {
         type: "runjob.created",
         runId: id,
-        jobKey: job.jobKey,
+        key: job.key,
       },
     );
 

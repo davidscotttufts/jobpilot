@@ -7,10 +7,10 @@ import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
 import { publish } from "@/lib/sse/server";
 
-type Params = ApiRouteContext<{ id: string; jobKey: string }>;
+type Params = ApiRouteContext<{ id: string; key: string }>;
 
 export async function PATCH(req: Request, ctx: Params) {
-  const { id, jobKey } = await parsePathParams(ctx);
+  const { id, key } = await parsePathParams(ctx);
   const body = await req.json();
   const parsed = patchRunJobSchema.safeParse(body);
 
@@ -19,16 +19,16 @@ export async function PATCH(req: Request, ctx: Params) {
   }
 
   const profileId = await getActiveProfileId();
-  const existing = await db.runJob.findFirst({
-    where: { runId: id, jobKey, run: { profileId } },
+  const existing = await db.job.findFirst({
+    where: { runId: id, key, run: { profileId } },
   });
 
   if (!existing) {
     return err(ErrorCodes.NOT_FOUND, "Run job not found", 404);
   }
 
-  const job = await db.runJob.update({
-    where: { runId_jobKey: { runId: id, jobKey } },
+  const job = await db.job.update({
+    where: { runId_key: { runId: id, key } },
     data: {
       status: parsed.data.status,
       appliedAt: parsed.data.appliedAt ? new Date(parsed.data.appliedAt) : null,
@@ -37,7 +37,8 @@ export async function PATCH(req: Request, ctx: Params) {
       skipReason: parsed.data.skipReason,
       matchScore: parsed.data.matchScore,
       matchReason: parsed.data.matchReason,
-      jobDigest: parsed.data.jobDigest,
+      description: parsed.data.description,
+      digest: parsed.data.digest,
     },
   });
 
@@ -66,7 +67,7 @@ export async function PATCH(req: Request, ctx: Params) {
     {
       type: "runjob.updated",
       runId: id,
-      jobKey,
+      key,
       status: parsed.data.status,
     },
   );

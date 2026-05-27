@@ -11,37 +11,11 @@ model Run {
   config      String
   summary     String    @default("{}")
 
-  jobs         RunJob[]
+  jobs         Job[]
   events       RunEvent[]
   applications Application[]
 
   @@index([profileId])
-}
-
-model RunJob {
-  id          Int       @id @default(autoincrement())
-  runId       String
-  run         Run       @relation(fields: [runId], references: [runId], onDelete: Cascade)
-  jobKey      String
-  title       String
-  company     String
-  location    String?
-  salary      String?
-  type        String?
-  url         String
-  board       String?
-  matchScore  Int?
-  matchReason String?
-  status      String    @default("pending")
-  appliedAt   DateTime?
-  failReason  String?
-  retryNotes  String?
-  skipReason  String?
-  description String?
-  jobDigest   String?
-
-  @@unique([runId, jobKey])
-  @@index([runId, status])
 }
 
 model RunEvent {

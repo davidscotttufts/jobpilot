@@ -1,4 +1,4 @@
-import type { Application, QueueEntry, RunJob } from "@/generated/prisma/client";
+import type { Application, Job, QueueEntry } from "@/generated/prisma/client";
 import type { PipelineJobDto, PipelineStage } from "@/types/api/pipeline";
 
 const APPLICATION_STAGE_LABEL: Record<string, string> = {
@@ -49,9 +49,9 @@ function splitUrl(raw: string): { hostname: string; path: string } {
   }
 }
 
-export function mapRunJob(job: RunJob): PipelineJobDto {
+export function mapRunJob(job: Job): PipelineJobDto {
   return {
-    id: `run:${job.runId}:${job.jobKey}`,
+    id: `run:${job.runId}:${job.key}`,
     stage: "applying",
     role: job.title,
     company: job.company,

@@ -57,7 +57,7 @@ export const updateRunSchema = z.object({
 });
 
 export const addRunJobSchema = z.object({
-  jobKey: z.string().min(1),
+  key: z.string().min(1),
   title: z.string().min(1),
   company: z.string().min(1),
   location: z.string().optional().nullable(),
@@ -69,7 +69,7 @@ export const addRunJobSchema = z.object({
   matchReason: reasonText.optional().nullable(),
   status: runJobStatusSchema.optional(),
   description: z.string().optional().nullable(),
-  jobDigest: z.string().optional().nullable(),
+  digest: z.string().optional().nullable(),
 });
 
 export const patchRunJobSchema = z.object({
@@ -80,7 +80,8 @@ export const patchRunJobSchema = z.object({
   skipReason: reasonText.optional().nullable(),
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: reasonText.optional().nullable(),
-  jobDigest: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
+  digest: z.string().optional().nullable(),
 });
 
 export const RUN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;

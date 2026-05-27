@@ -91,7 +91,7 @@ export async function GET() {
       orderBy: { _count: { id: "desc" } },
       take: 5,
     }),
-    db.runJob.groupBy({
+    db.job.groupBy({
       by: ["failReason"],
       where: { failReason: { not: null }, run: { profileId } },
       _count: { _all: true },

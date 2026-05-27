@@ -53,15 +53,15 @@ For each non-applied result, score 0–100 based on: tech stack overlap, years v
 
 ## Step 5: Save Results to the Run
 
-Save every result as a `RunJob` on `<run-id>` so it appears on the runs detail page. **Don't offer apply/search-again commands** — the user applies from there. Use a stable, shell-safe `jobKey` per result (slug of `company-title` + rank, no spaces).
+Save every result as a `Job` on `<run-id>` so it appears on the runs detail page. **Don't offer apply/search-again commands** — the user applies from there. Use a stable, shell-safe `key` per result (slug of `company-title` + rank, no spaces).
 
 ```bash
 curl -fsS -X POST "$JOBPILOT_API/api/runs/<run-id>/jobs" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg key "<jobKey>" --arg title "<title>" --arg company "<company>" \
+  -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<domain>" \
     --arg matchReason "<one-line verdict>" --argjson score <0-100> \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
+    '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
 ```
 
 Previously-applied results (Step 3) → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`. Then close the run:

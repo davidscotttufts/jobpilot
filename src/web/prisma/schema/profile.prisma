@@ -42,10 +42,25 @@ model Profile {
   queueEntries  QueueEntry[]
   emailAccount  EmailAccount?
   upworkProposals UpworkProposal[]
+  references    Reference[]
 
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
+}
+
+model Reference {
+  id           Int     @id @default(autoincrement())
+  profileId    Int
+  profile      Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name         String
+  relationship String?
+  company      String?
+  email        String?
+  phone        String?
+  position     Int     @default(0)
+
+  @@index([profileId])
 }
 
 model AutoApplySettings {
