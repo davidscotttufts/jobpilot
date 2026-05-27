@@ -78,7 +78,7 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
 
   const handleRescanConfirm = async (): Promise<void> => {
     await rescan.mutateAsync();
-    void agent.injectSkill("auto-apply", `rescan-skipped ${run.runId}`);
+    void agent.injectSkill("rescan-skipped", run.runId);
     setRescanOpen(false);
   };
 
@@ -105,7 +105,7 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
       key: "rescan",
       label: `Rescan skipped (${skippedCount})…`,
       icon: <Autorenew fontSize="sm" />,
-      show: isAutoApply && !isInProgress && skippedCount > 0,
+      show: !isInProgress && skippedCount > 0,
       onClick: () => setRescanOpen(true),
     },
   ];
@@ -151,7 +151,9 @@ export function RunActionsBar(props: RunActionsBarProps): ReactElement {
           <Stack spacing={1} sx={{ pt: 1 }}>
             <Typography variant="body2Muted">
               Re-scores the {skippedCount} skipped {skippedCount === 1 ? "job" : "jobs"} against a
-              new threshold. Lower it to recover jobs dropped for being just below the cutoff.
+              new threshold and sets eligible ones to <strong>approved</strong> — apply them from the
+              jobs list or with Re-apply selected. Lower the threshold to recover jobs dropped just
+              below the cutoff.
             </Typography>
             <Typography variant="body2">Min match score: {minScore}</Typography>
             <Slider

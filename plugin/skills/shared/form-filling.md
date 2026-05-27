@@ -25,9 +25,9 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 - **LinkedIn / GitHub / Website** → `data.profile.{linkedin,github,website}`
 - **Salary expectations** → ask the user the first time it's needed and remember the answer for the rest of the run. For radios/dropdowns, pick the closest match.
 - **Start date** → "Immediately" or "2 weeks notice" unless `data.autoApply.defaultStartDate` overrides.
-- **Cover letter** → generate via the `cover-letter` skill (already humanized). Then:
+- **Cover letter** (a textarea or a file-upload field labelled "cover letter") → generate via the `cover-letter` skill (already humanized). Then:
   - Text area → paste the text directly.
-  - File-upload only → `Write` to `${JOBPILOT_WORKSPACE_ROOT}/.temp/cover-letter.txt` and `browser_file_upload`. Reuse the same path each time (overwritten).
+  - File upload → render the text to PDF and upload it: `curl -fsS -X POST "$JOBPILOT_API/api/cover-letters/pdf" -H 'content-type: application/json' -d "$(jq -n --arg t "<letter text>" '{text:$t}')" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/cover-letter.pdf"`, then `browser_file_upload` that path (overwritten each time).
 - **"How did you hear about us?"** → "Job board" or "Company website".
 - **Years of experience** → calculate from earliest work experience date.
 - **Custom questions** → best judgment from the resume. Genuinely uncertain → ask (loop skills: make a reasonable attempt and log in notes).

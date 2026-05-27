@@ -1,6 +1,6 @@
 ---
 name: apply
-description: Apply to a single job (URL/pasted page argument with fit review) or drain the JobPilot pending queue when no argument is given.
+description: Apply to a single job (URL or pasted page) with fit review, or drain the pending queue when no argument is given.
 argument-hint: "[job_url_or_pasted_job_page] (omit to drain the queue)"
 ---
 
@@ -33,7 +33,7 @@ For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a dom
 
 ## Phase 0: Dispatch
 
-- Argument is `run <run-id>` → **re-apply mode**: set `RUN_ID=<run-id>`, skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The run viewer re-opens the user's chosen skipped/failed jobs to `approved` before injecting this.)
+- Argument is `run <run-id>` → **re-apply mode**: set `RUN_ID=<run-id>`, skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The run viewer — or the `rescan-skipped` skill — promotes the chosen skipped/failed jobs to `approved` before injecting this.)
 - Any other argument present → **Phase 1A** (single-job).
 - No argument → **Phase 1B** (batch).
 
@@ -82,7 +82,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs" \
     '{runId:$runId, query:$query, source:"apply", config:{maxApplications:1}}')"
 ```
 
-### 1A.4 Add the RunJob
+### 1A.4 Add the Job
 
 ```bash
 JOB_KEY=$(date -u +%s)-single
@@ -91,8 +91,8 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
   -d "$(jq -n --arg key "$JOB_KEY" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
     --arg matchReason "<one-line verdict>" --argjson score <0-100> \
-    --arg digest "$DIGEST" \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved", jobDigest:$digest}')"
+    --arg digest "$DIGEST" --arg desc "<posting text>" \
+    '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved", digest:$digest, description:$desc}')"
 ```
 
 Keep `$RUN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/runs/<RUN_ID>`. Jump to **Phase 4**.
@@ -130,7 +130,7 @@ URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
 ```
 
-If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped RunJob, then continue.
+If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job, then continue.
 
 ### 2.2 Visit + Extract
 
@@ -159,13 +159,13 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
   -d "$(jq -n --arg key "<entry-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
     --arg matchReason "<one line>" --argjson score <0-100> \
-    --arg digest "$DIGEST" \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending", jobDigest:$digest}')"
+    --arg digest "$DIGEST" --arg desc "<posting text>" \
+    '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending", digest:$digest, description:$desc}')"
 ```
 
 If `score < minMatchScore`, immediately PATCH to `skipped` with `skipReason:"Below minimum match score (X < Y)"`.
 
-**Eligibility** (same as `auto-apply` 2.2a): never skip for onsite/other-city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"`, for a thin JD (read and rescore first), or for 1099/defense/federal work — only a JD-stated citizenship/clearance requirement disqualifies.
+**Eligibility** (same as `auto-apply` 2.2a): never skip for onsite/other-city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"`, for a thin JD (read and rescore first), for 1099/defense/federal work, or for a role below your level/seniority (over-qualification scores full marks on experience) — only a JD-stated citizenship/clearance requirement disqualifies.
 
 ## Phase 3: Batch Confirmation (Batch Only)
 
@@ -184,7 +184,7 @@ Visited <total> jobs. <qualified> qualify (score >= minMatchScore/100).
 **Commands:** "go" | "go 1,3,5" | "remove 3" | "details 2" | "stop"
 ```
 
-PATCH `RunJob.status` accordingly:
+PATCH `Job.status` accordingly:
 
 - `go` → all qualified to `approved`
 - `go N,M` → selected to `approved`; rest to `skipped` (`"Not selected by user"`)
@@ -192,7 +192,7 @@ PATCH `RunJob.status` accordingly:
 - `stop` → PATCH run `status:"paused"` and stop
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"approved"}'
 ```
 
@@ -203,7 +203,7 @@ For each `approved` job, score-descending:
 ### 4.1 Mark Applying
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<jobKey>" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
@@ -214,14 +214,14 @@ Navigate to the job URL. Take a `browser_snapshot` narrowed to the header to fin
 ### 4.3 Tailor Resume
 
 ```bash
-DIGEST=$(curl -fsS "$JOBPILOT_API/api/runs/$RUN_ID/jobs" | jq -r --arg key "<jobKey>" '.data[] | select(.jobKey == $key) | .jobDigest // empty')
+DIGEST=$(curl -fsS "$JOBPILOT_API/api/runs/$RUN_ID/jobs" | jq -r --arg key "<key>" '.data[] | select(.key == $key) | .digest // empty')
 ```
 
 Invoke the `tailor-resume` skill with `$DIGEST`. Empty `$DIGEST` (legacy row) → fall back to the job URL. Capture the variant id + PDF URL for 4.4. If no usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`.
 
 ### 4.4 Fill Forms
 
-Follow `plugin/skills/shared/form-filling.md`. Upload the 4.3 variant for resume fields. Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
+Follow `plugin/skills/shared/form-filling.md`. Upload the 4.3 variant for resume fields. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
 
 ### 4.5 Pre-Submit Review (Single-Job Mode Only)
 
@@ -241,7 +241,7 @@ Click submit, `browser_wait_for`, then take a narrowed `browser_snapshot` for th
 
 ### 4.7 Record Result
 
-POST one of three outcomes to `/api/runs/$RUN_ID/jobs/<jobKey>/result`. The server atomically updates RunJob, creates Application (on `applied`), marks the queue, and recomputes summary.
+POST one of three outcomes to `/api/runs/$RUN_ID/jobs/<key>/result`. The server atomically updates the Job, creates Application (on `applied`), marks the queue, and recomputes summary.
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)

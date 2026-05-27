@@ -1,6 +1,6 @@
 ---
 name: auto-apply
-description: Search a chosen job board and apply to matching jobs on demand — score each result as it's found and apply to qualifying ones one at a time, the board kept open in one tab and each application run in a second tab. Autonomous after launch; runs until the user pauses, the board exhausts, or the optional max-applications cap is hit.
+description: Search a job board and autonomously apply to matching jobs one at a time, until paused, exhausted, or the max-applications cap is hit.
 argument-hint: "<search_query --board <domain> [--min-score N] [--max-apps N]> OR 'resume' OR 'retry-failed <run-id>'"
 ---
 
@@ -28,8 +28,9 @@ Inline argument overrides take precedence. `--board <domain>` is **required** un
 
 - `"resume"` → list incomplete runs (`GET /api/runs?status=in_progress`), ask which to resume, replay the apply loop on remaining `applying`/`approved`/`pending` jobs.
 - `"retry-failed <run-id>"` → fetch the run; for every `failed` job, PATCH back to `approved`, read `retryNotes`, then replay the apply loop on them.
-- `"rescan-skipped <run-id>"` → re-evaluate `skipped` jobs under the current eligibility rules (2.2a), for ones wrongly dropped for onsite/location or a thin JD. Fetch the run; use its `config.minScore` as the threshold. Skip the permanently-disqualified (skipReason `Already applied …`, `CAPTCHA …`, or a JD-stated citizenship/clearance requirement), and for the rest reuse `jobDigest` (re-read the posting if empty) and rescore via `/api/score-fit`. Now ≥ `config.minScore` → PATCH to `approved` and apply (2.3); still below → leave `skipped` with an updated `skipReason`. Optional `--jobs <key1,key2,…>` restricts to those keys.
 - Otherwise → search query → Phase 0.
+
+To recover wrongly-`skipped` jobs, use the dedicated `rescan-skipped` skill (it re-scores and promotes to `approved`; apply them afterward).
 
 ## Phase 0: Existing Run Check + Create
 
@@ -112,8 +113,8 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<stable-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<url>" --arg board "<board>" \
-    --arg matchReason "<one line>" --argjson score <0-100> --arg digest "$DIGEST" \
-    '{jobKey:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"applying", jobDigest:$digest}')"
+    --arg matchReason "<one line>" --argjson score <0-100> --arg digest "$DIGEST" --arg desc "<posting text, when read>" \
+    '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"applying", digest:$digest, description:$desc}')"
 ```
 
 ### 2.2a Eligibility — what is (and isn't) a skip
@@ -125,7 +126,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
 - A hard requirement **the JD itself states** the user can't meet, e.g. `US citizenship required`, `Active security clearance required`. Never infer from industry or company name.
 - `CAPTCHA — apply manually via the apply skill` / `Payment required` (surface during apply, not scoring).
 
-**Never skip for:** onsite/hybrid/other city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"` (score on fit, not geography); a sparse JD (read and rescore first); 1099/contractor work; defense/federal industry absent a JD-stated citizenship/clearance requirement.
+**Never skip for:** onsite/hybrid/other city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"` (score on fit, not geography); a sparse JD (read and rescore first); 1099/contractor work; defense/federal industry absent a JD-stated citizenship/clearance requirement; **a role below your level** (Junior/Mid when your résumé is Senior) or one asking fewer years than you have — over-qualification is full marks on experience; judge on tech-stack fit.
 
 ### 2.3 Apply (tab 2)
 
@@ -135,12 +136,12 @@ Open a **second tab** with `browser_tabs` and `browser_navigate` it to the job U
 2. **Authentication** — if a login/registration wall appears, follow `plugin/skills/shared/auth.md`. On unrecoverable login failure for the domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"`, close tab 2, continue.
 3. **CAPTCHA gate** — `browser_snapshot` the apply form _before_ tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close tab 2, continue. Checking here avoids wasted tailoring/filling.
 4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close tab 2, continue.
-5. **Fill Forms** — follow `plugin/skills/shared/form-filling.md`. Upload the tailored variant. Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the run.
+5. **Fill Forms** — follow `plugin/skills/shared/form-filling.md`. Upload the tailored variant. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the run.
 6. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error = failure with that message as `failReason`. A CAPTCHA at this stage is a skip (2.4), not a failure.
 
 ### 2.4 Record + Close Tab
 
-POST to `/api/runs/$RUN_ID/jobs/<jobKey>/result` (atomically updates RunJob, creates Application on `applied`, marks the queue, recomputes summary):
+POST to `/api/runs/$RUN_ID/jobs/<key>/result` (atomically updates the Job, creates Application on `applied`, marks the queue, recomputes summary):
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -171,7 +172,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table, link to `http://localhost:8000/runs/<RUN_ID>`, suggest `retry-failed <RUN_ID>` or a new search.
+Print a summary table, link to `http://localhost:8000/runs/<RUN_ID>`, suggest `retry-failed <RUN_ID>`, the `rescan-skipped` skill on `<RUN_ID>` to recover dropped jobs, or a new search.
 
 ## Rules
 
@@ -185,4 +186,4 @@ Print a summary table, link to `http://localhost:8000/runs/<RUN_ID>`, suggest `r
 8. **Audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
 9. **Respect pause.** Re-read the run between jobs; `status === "paused"` → exit cleanly.
 10. **Missing resume file** → PATCH run to `paused`, ask the user to re-upload.
-11. **Eligibility** — follow 2.2a. Location/onsite, thin JDs, and 1099 work are never skip reasons; only a JD-stated citizenship/clearance requirement disqualifies.
+11. **Eligibility** — follow 2.2a. Location/onsite, thin JDs, 1099 work, and below-your-level/seniority are never skip reasons; only a JD-stated citizenship/clearance requirement disqualifies.
