@@ -59,6 +59,10 @@ export function startSession(options: StartOptions): Promise<SessionStatus> {
   return send<SessionStatus>("POST", "/sessions/start", options);
 }
 
+/**
+ * Inject a command into the active session. Pass a bare command line with no
+ * trailing newline — the terminal host submits it with a separate Enter keystroke.
+ */
 export function injectCommand(command: string, provider?: TerminalProviderId): Promise<void> {
   return send<void>("POST", "/sessions/inject", { command, provider });
 }

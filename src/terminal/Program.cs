@@ -19,60 +19,62 @@ app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSecond
 
 app.Lifetime.ApplicationStopping.Register(() =>
 {
-  var session = app.Services.GetRequiredService<SessionManager>();
-  session.Stop();
+    var session = app.Services.GetRequiredService<SessionManager>();
+    session.Stop();
 });
 
 app.MapGet("/healthz", (SessionManager session) =>
 {
-  var sessionState = session.State == SessionState.Running ? "running" : "stopped";
-  return TypedResults.Ok(new SessionStatus("ok", sessionState, session.ActiveProvider, SessionManager.Providers));
+    var sessionState = session.State == SessionState.Running ? "running" : "stopped";
+    return TypedResults.Ok(new SessionStatus("ok", sessionState, session.ActiveProvider, SessionManager.Providers));
 });
 
 app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session) =>
 {
-  try
-  {
-    session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows);
-  }
-  catch (PtyStartException ex)
-  {
-    return TypedResults.Problem(
-      title: "Failed to start terminal session",
-      detail: ex.Message,
-      statusCode: StatusCodes.Status500InternalServerError);
-  }
-  return TypedResults.Ok(new SessionStatus("ok", "running", session.ActiveProvider, SessionManager.Providers));
+    try
+    {
+        session.Start(request.Provider, request.WorkingDir, request.Cols, request.Rows);
+    }
+    catch (PtyStartException ex)
+    {
+        return TypedResults.Problem(
+          title: "Failed to start terminal session",
+          detail: ex.Message,
+          statusCode: StatusCodes.Status500InternalServerError);
+    }
+    return TypedResults.Ok(new SessionStatus("ok", "running", session.ActiveProvider, SessionManager.Providers));
 });
 
-app.MapPost("/sessions/inject", Results<Ok, ProblemHttpResult> (InjectRequest request, SessionManager session) =>
+app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (InjectRequest request, SessionManager session) =>
 {
-  if (!session.Inject(request.Command, request.Provider))
-  {
-    return TypedResults.Problem(
-      title: "Inject rejected",
-      detail: "The session is not running or the active provider does not match the requested provider.",
-      statusCode: StatusCodes.Status409Conflict);
-  }
-  return TypedResults.Ok();
+    var injected = await session.Inject(request.Command, request.Provider);
+
+    if (!injected)
+    {
+        return TypedResults.Problem(
+          title: "Inject rejected",
+          detail: "The session is not running or the active provider does not match the requested provider.",
+          statusCode: StatusCodes.Status409Conflict);
+    }
+    return TypedResults.Ok();
 });
 
 app.MapDelete("/sessions/current", (SessionManager session) =>
 {
-  session.Stop();
-  return TypedResults.Ok(new SessionStatus("ok", "stopped", session.ActiveProvider, SessionManager.Providers));
+    session.Stop();
+    return TypedResults.Ok(new SessionStatus("ok", "stopped", session.ActiveProvider, SessionManager.Providers));
 });
 
 app.Map("/ws", async (HttpContext ctx, TerminalHub hub) =>
 {
-  if (!ctx.WebSockets.IsWebSocketRequest)
-  {
-    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
-    return;
-  }
+    if (!ctx.WebSockets.IsWebSocketRequest)
+    {
+        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+        return;
+    }
 
-  using var socket = await ctx.WebSockets.AcceptWebSocketAsync();
-  await hub.HandleAsync(socket, ctx.RequestAborted);
+    using var socket = await ctx.WebSockets.AcceptWebSocketAsync();
+    await hub.HandleAsync(socket, ctx.RequestAborted);
 });
 
 app.Run();

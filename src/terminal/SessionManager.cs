@@ -27,6 +27,13 @@ public sealed class SessionManager : IDisposable
     private static readonly string[] PlaywrightScratchExtensions =
         [".log", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".md"];
 
+    /// <summary>Carriage return sent on its own to submit an injected command.</summary>
+    private static readonly byte[] EnterKey = "\r"u8.ToArray();
+
+    /// <summary>Pause between writing an injected command's text and its Enter keystroke, so the
+    /// provider TUI reads the submit key separately instead of folding it into a paste.</summary>
+    private static readonly TimeSpan SubmitKeyDelay = TimeSpan.FromMilliseconds(75);
+
     private readonly PtyService pty;
     private readonly ILogger<SessionManager> logger;
     private readonly TerminalSessionPaths paths;
@@ -171,14 +178,14 @@ public sealed class SessionManager : IDisposable
     }
 
     /// <summary>
-    /// Sends a full command line to the running session, appending carriage return when needed.
+    /// Injects a command line into the running session, then submits it with a separate Enter keystroke.
     /// </summary>
-    /// <param name="command">Command text to inject into the PTY.</param>
+    /// <param name="command">Bare command line — no trailing newline; the submit key is sent by this method.</param>
     /// <param name="expectedProvider">Optional provider id the caller believes is active. When set,
     /// the inject is rejected if it does not match the active provider.</param>
     /// <returns>True if the command was written to the PTY; false when the session is stopped or the
     /// expected provider does not match.</returns>
-    public bool Inject(string command, string? expectedProvider = null)
+    public async Task<bool> Inject(string command, string? expectedProvider = null)
     {
         if (string.IsNullOrEmpty(command)) return false;
 
@@ -198,10 +205,17 @@ public sealed class SessionManager : IDisposable
                 }
             }
 
-            var line = command.EndsWith('\r') ? command : command + "\r";
-            pty.Write(Encoding.UTF8.GetBytes(line));
-            return true;
+            // Write the command text without the submit key so the provider's TUI renders it as input.
+            pty.Write(Encoding.UTF8.GetBytes(command));
         }
+
+        // Send Enter separately: bundled with the text, providers treat the burst as a paste and the CR
+        // becomes a literal newline. The delay lands it in its own PTY read so it submits.
+        await Task.Delay(SubmitKeyDelay);
+
+        if (state != SessionState.Running) return false;
+        pty.Write(EnterKey);
+        return true;
     }
 
     /// <summary>
