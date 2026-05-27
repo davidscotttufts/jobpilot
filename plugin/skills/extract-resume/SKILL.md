@@ -78,9 +78,9 @@ If `FORCE`, proceed and overwrite.
   projects: Array<{
     name:        string,
     url?:        string,
-    description?: string,
+    description?: string,        // one prose line; omit if there's only a tech-stack line
     bullets:     string[],
-    keywords:    string[],
+    keywords:    string[],       // the tech-stack line (e.g. "Next.js, Prisma, Docker")
   }>,
   skills: Array<{
     group: string,              // e.g. "Languages"
@@ -104,6 +104,7 @@ Hard rules:
 - Current role → `end: "Present"` (or omit).
 - Skills: keep the PDF's grouping if present; flat list → single group `"Skills"`.
 - Strip leading bullet glyphs (•, ▪, –) from bullet text; keep the rest unchanged.
+- A project's tech-stack line goes in `keywords` only — never copy it into `description`.
 - For long PDFs, use `Read` with `pages` to ingest all pages — don't silently drop later-page entries.
 
 ## Step 5 — Save

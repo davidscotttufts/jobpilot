@@ -178,8 +178,20 @@ function ExperienceEntry(props: { entry: ResumeExperience }): ReactElement {
   );
 }
 
+/** Lowercased, whitespace-collapsed form for comparing two text fragments. */
+function normalizeText(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
   const { entry } = props;
+
+  const keywordsLine = entry.keywords.join(", ");
+  // Extraction sometimes lands the project's tech-stack line in both `keywords`
+  // and `description`; only show the description when it adds something new.
+  const showDescription =
+    !!entry.description && normalizeText(entry.description) !== normalizeText(keywordsLine);
+
   return (
     <View style={styles.entryBlock} wrap={false}>
       <View style={styles.entryHeaderRow}>
@@ -193,10 +205,8 @@ function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
           </Link>
         )}
       </View>
-      {entry.keywords.length > 0 && (
-        <Text style={styles.projectKeywords}>{entry.keywords.join(", ")}</Text>
-      )}
-      {entry.description && <Text style={styles.projectDescription}>{entry.description}</Text>}
+      {entry.keywords.length > 0 && <Text style={styles.projectKeywords}>{keywordsLine}</Text>}
+      {showDescription && <Text style={styles.projectDescription}>{entry.description}</Text>}
       <Bullets items={entry.bullets} />
     </View>
   );
