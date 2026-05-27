@@ -45,6 +45,18 @@ const optionalGithubUrl = z
   .optional()
   .nullable();
 
+const optionalEmail = z.union([z.literal(""), z.email()]).optional().nullable();
+
+export const referenceSchema = z.object({
+  name: z.string().min(1, "Required"),
+  relationship: z.string().optional().nullable(),
+  company: z.string().optional().nullable(),
+  email: optionalEmail,
+  phone: optionalPhoneSchema,
+});
+
+export type ReferenceInput = z.infer<typeof referenceSchema>;
+
 export const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
@@ -67,6 +79,7 @@ export const profileSchema = z.object({
   optExtension: z.string().optional().nullable(),
   willingToRelocate: z.boolean(),
   preferredLocations: z.array(z.string()),
+  references: z.array(referenceSchema).max(3),
 
   eeoGender: z.string().optional().nullable(),
   eeoRace: z.string().optional().nullable(),
@@ -112,6 +125,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   optExtension: "",
   willingToRelocate: false,
   preferredLocations: [],
+  references: [],
   eeoGender: "Prefer not to disclose",
   eeoRace: "Prefer not to disclose",
   eeoEthnicity: "Prefer not to disclose",

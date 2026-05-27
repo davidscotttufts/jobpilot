@@ -34,6 +34,7 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 - **Relocation** → `data.profile.willingToRelocate`. For preferred/target locations, use `data.profile.preferredLocations`. Empty `[]` or contains `"Anywhere"` → user is open, answer accordingly without asking.
 - **Work auth / visa** → `data.profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map to form questions; for dropdowns, pick the closest option.
 - **EEO / Diversity** → `data.profile.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. Null → "Prefer not to disclose".
+- **References** → `data.profile.references[]`, each `{name, relationship, company, email, phone}`. Fill reference rows in order. If the form requires references and the array is empty, fill what you can and note the gap — never invent one.
 
 ## Multi-Page Navigation
 

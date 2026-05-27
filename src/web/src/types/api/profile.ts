@@ -1,5 +1,14 @@
 import type { ResumeListItem } from "./resume";
 
+export interface ReferenceDto {
+  id: number;
+  name: string;
+  relationship: string | null;
+  company: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
 export interface ProfileDto {
   id: number;
   firstName: string;
@@ -23,6 +32,7 @@ export interface ProfileDto {
   optExtension: string | null;
   willingToRelocate: boolean;
   preferredLocations: string[];
+  references: ReferenceDto[];
 
   eeoGender: string | null;
   eeoRace: string | null;

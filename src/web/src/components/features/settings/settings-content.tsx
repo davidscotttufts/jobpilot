@@ -22,12 +22,14 @@ import { CredentialsSection } from "./sections/credentials-section";
 import { EeoSection } from "./sections/eeo-section";
 import { EmailSection } from "./sections/email-section";
 import { PersonalSection } from "./sections/personal-section";
+import { ReferencesSection } from "./sections/references-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
 const ANCHORS: SectionAnchor[] = [
   { id: "personal", label: "Personal" },
   { id: "address", label: "Address" },
   { id: "work-auth", label: "Work auth" },
+  { id: "references", label: "References" },
   { id: "eeo", label: "EEO" },
   { id: "auto-apply", label: "Auto-apply" },
   { id: "email", label: "Email" },
@@ -74,6 +76,13 @@ function toFormValues(data: ProfileResponse): ProfileWithAutoApplyInput {
     optExtension: p.optExtension ?? "",
     willingToRelocate: p.willingToRelocate,
     preferredLocations: p.preferredLocations,
+    references: p.references.map((r) => ({
+      name: r.name,
+      relationship: r.relationship ?? "",
+      company: r.company ?? "",
+      email: r.email ?? "",
+      phone: r.phone ?? "",
+    })),
     eeoGender: p.eeoGender ?? "",
     eeoRace: p.eeoRace ?? "",
     eeoEthnicity: p.eeoEthnicity ?? "",
@@ -140,6 +149,9 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
           </Box>
           <Box data-section-id="work-auth">
             <WorkAuthSection form={formApi} />
+          </Box>
+          <Box data-section-id="references">
+            <ReferencesSection form={formApi} />
           </Box>
           <Box data-section-id="eeo">
             <EeoSection form={formApi} />

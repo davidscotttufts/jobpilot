@@ -60,7 +60,7 @@ export async function GET() {
     });
   }
 
-  const [autoApply, primarySource, resumeRows, withContent] = await Promise.all([
+  const [autoApply, primarySource, resumeRows, withContent, references] = await Promise.all([
     db.autoApplySettings.findUnique({ where: { profileId: id } }),
     profile.primaryResumeId
       ? db.resume.findUnique({
@@ -83,6 +83,11 @@ export async function GET() {
       where: { profileId: id, content: { not: null } },
       select: { id: true },
     }),
+    db.reference.findMany({
+      where: { profileId: id },
+      orderBy: { position: "asc" },
+      select: { id: true, name: true, relationship: true, company: true, email: true, phone: true },
+    }),
   ]);
 
   const hasContentIds = new Set(withContent.map((r) => r.id));
@@ -100,6 +105,7 @@ export async function GET() {
     profile: {
       ...profile,
       preferredLocations: JSON.parse(profile.preferredLocations) as string[],
+      references,
       updatedAt: profile.updatedAt.toISOString(),
     },
     autoApply,
@@ -127,7 +133,8 @@ export async function PUT(req: Request) {
     return err(ErrorCodes.UNPROCESSABLE, "Invalid profile payload", 422, parsed.error.issues);
   }
 
-  const { autoApply, preferredLocations, primaryResumeId, ...profileFields } = parsed.data;
+  const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } =
+    parsed.data;
   const preferredLocationsJson = JSON.stringify(preferredLocations);
 
   await db.profile.update({
@@ -138,6 +145,22 @@ export async function PUT(req: Request) {
       primaryResumeId: primaryResumeId ?? null,
     },
   });
+
+  // Replace the reference set wholesale — the settings form submits the full list.
+  await db.$transaction([
+    db.reference.deleteMany({ where: { profileId: id } }),
+    db.reference.createMany({
+      data: references.map((r, i) => ({
+        profileId: id,
+        name: r.name,
+        relationship: r.relationship ?? null,
+        company: r.company ?? null,
+        email: r.email ?? null,
+        phone: r.phone ?? null,
+        position: i,
+      })),
+    }),
+  ]);
 
   if (autoApply) {
     await db.autoApplySettings.upsert({
