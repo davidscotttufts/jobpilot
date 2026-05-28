@@ -2,22 +2,14 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
-import { runJobResultSchema, type RunSummary } from "@/lib/schemas/run";
+import { recomputeRunSummary } from "@/lib/runs/summary";
+import { runJobResultSchema } from "@/lib/schemas/run";
 import { normalizeCompanyName, normalizeJobTitle } from "@/lib/scoring/applied-duplicates";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
 import { publish } from "@/lib/sse/server";
 
 type Params = ApiRouteContext<{ id: string; key: string }>;
-
-const EMPTY_SUMMARY: RunSummary = {
-  totalFound: 0,
-  qualified: 0,
-  applied: 0,
-  failed: 0,
-  skipped: 0,
-  remaining: 0,
-};
 
 /**
  * Terminal-outcome handoff for a Job. Atomically updates Job status,
@@ -108,41 +100,7 @@ export async function POST(req: Request, ctx: Params) {
       },
     });
 
-    const counts = await tx.job.groupBy({
-      by: ["status"],
-      where: { runId },
-      _count: { _all: true },
-    });
-
-    const summary: RunSummary = { ...EMPTY_SUMMARY };
-    let qualified = 0;
-    let remaining = 0;
-
-    for (const row of counts) {
-      const n = row._count._all;
-      summary.totalFound += n;
-
-      if (row.status !== "skipped") {
-        qualified += n;
-      }
-      if (row.status === "applied") {
-        summary.applied = n;
-      } else if (row.status === "failed") {
-        summary.failed = n;
-      } else if (row.status === "skipped") {
-        summary.skipped = n;
-      } else if (row.status === "approved" || row.status === "applying") {
-        remaining += n;
-      }
-    }
-
-    summary.qualified = qualified;
-    summary.remaining = remaining;
-
-    await tx.run.update({
-      where: { runId },
-      data: { summary: JSON.stringify(summary) },
-    });
+    const summary = await recomputeRunSummary(tx, runId);
 
     return { job, application, applicationCreated, summary };
   });

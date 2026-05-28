@@ -2,6 +2,7 @@
 import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
+import { recomputeRunSummary } from "@/lib/runs/summary";
 import { patchRunJobSchema } from "@/lib/schemas/run";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
@@ -61,6 +62,12 @@ export async function PATCH(req: Request, ctx: Params) {
       payload: { kind: "updated", job },
     },
   );
+
+  if (parsed.data.status) {
+    const summary = await recomputeRunSummary(db, id);
+    publish(runChannel, { runId: id }, { type: "progress", payload: summary });
+  }
+
   publish(
     pipelineChannel,
     { profileId },

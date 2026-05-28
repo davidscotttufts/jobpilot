@@ -4,6 +4,7 @@ import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { reconcileStaleRuns } from "@/lib/runs/reconcile";
+import { summarizeJobs } from "@/lib/runs/summary";
 import { updateRunSchema } from "@/lib/schemas/run";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
@@ -39,7 +40,9 @@ export async function GET(_req: Request, ctx: Params) {
       retryNotes: cleanReplacementCharsNullable(job.retryNotes),
     })),
     config: JSON.parse(run.config) as Record<string, unknown>,
-    summary: JSON.parse(run.summary) as Record<string, unknown>,
+    // Derive from the loaded jobs so the tiles always match the rows, even if a
+    // mutation left the denormalized `Run.summary` stale (e.g. rescan promotions).
+    summary: summarizeJobs(run.jobs),
   });
 }
 
