@@ -18,11 +18,13 @@ Follow `plugin/skills/shared/setup.md`. Fetch the run: `curl -fsS "$JOBPILOT_API
 
 ## Select Targets
 
-Targets are `status:"skipped"` jobs; with `--jobs key1,key2,…`, restrict to those `key`s.
+Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restrict to those `key`s.
 
-- **Always leave (permanent):** `skipReason` starting `Already applied`, `CAPTCHA`, or `Payment required`, or one stating a JD citizenship/clearance requirement.
+- **Always leave (permanent) — only these:** `skipReason` starting `Already applied`, `CAPTCHA`, or `Payment required`, or one stating a JD-cited citizenship/clearance requirement.
 - **Whole-run mode (no `--jobs`):** also leave deliberate user choices — `Removed by user`, `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Run paused by user`.
 - **`--jobs` mode:** reconsider every named target except the permanent ones.
+
+Count the full target list up front and process every one. **Below-threshold, zero-score, and no-`skipReason` jobs are all targets** — the stored score came from the run that wrongly skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already at/above threshold.
 
 ## Per Job
 
@@ -35,7 +37,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/<run-id>/jobs/<key>" \
   -d "$(jq -n --arg digest "$DIGEST" --arg desc "<posting text>" '{digest:$digest, description:$desc}')"
 ```
 
-3. **Re-score** — `POST /api/score-fit` with `{digest}`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`.
+3. **Re-score** — every target gets a fresh `POST /api/score-fit` with `{digest}`; never reuse the stored `matchScore`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier — only a JD-stated citizenship/clearance bar is (never infer from industry).
 4. **Decide:**
    - Eligible and `score >= threshold` → promote (no apply):
 
@@ -54,4 +56,6 @@ Same rules as `auto-apply` 2.2a. **Seniority is never a skip** — never drop a 
 
 ## Finish
 
-Print a short table — jobs promoted to `approved` vs left `skipped` (with reasons) — then point the user to `apply run <run-id>` (or the run page's Apply / Re-apply selected) to apply the promoted ones. Don't apply; don't change run status.
+Process every target before finishing — `promoted + left-skipped + permanent` must equal the target count. If any are unprocessed, keep going; don't report a partial pass as complete.
+
+Print a short table (promoted vs left `skipped`, with reasons) plus the reconciliation (e.g. "228 skipped → 226 targets; 19 promoted, 207 left skipped"). Then point the user to `apply run <run-id>` (or the run page's Apply selected). Don't apply; don't change run status.
