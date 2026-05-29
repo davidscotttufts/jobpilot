@@ -25,7 +25,7 @@ public enum SessionState
 public sealed class SessionManager : IDisposable
 {
     private static readonly string[] PlaywrightScratchExtensions =
-        [".log", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".md"];
+        [".log", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".md", ".json", ".yml", ".yaml"];
 
     /// <summary>Carriage return sent on its own to submit an injected command.</summary>
     private static readonly byte[] EnterKey = "\r"u8.ToArray();
