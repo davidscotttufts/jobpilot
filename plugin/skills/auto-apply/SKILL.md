@@ -130,12 +130,12 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
 
 ### 2.3 Apply (tab 2)
 
-Open a **second tab** with `browser_tabs` and `browser_navigate` it to the job URL. Tab 1 stays on the results.
+Open a second tab: `browser_tabs(action:"new")`, then `browser_navigate` it to the job URL. Tab 1 stays on the results.
 
-1. **Find Apply** — `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`.
-2. **Authentication** — if a login/registration wall appears, follow `plugin/skills/shared/auth.md`. On unrecoverable login failure for the domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"`, close tab 2, continue.
-3. **CAPTCHA gate** — `browser_snapshot` the apply form _before_ tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close tab 2, continue. Checking here avoids wasted tailoring/filling.
-4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close tab 2, continue.
+1. **Find Apply** — `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`.
+2. **Authentication** — if a login/registration wall appears, follow `plugin/skills/shared/auth.md`. On unrecoverable login failure for the domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"`, close apply tab(s), continue.
+3. **CAPTCHA gate** — `browser_snapshot` the apply form _before_ tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close apply tab(s), continue. Checking here avoids wasted tailoring/filling.
+4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close apply tab(s), continue.
 5. **Fill Forms** — follow `plugin/skills/shared/form-filling.md`. Upload the tailored variant. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the run.
 6. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error = failure with that message as `failReason`. A CAPTCHA at this stage is a skip (2.4), not a failure.
 
@@ -153,7 +153,7 @@ jq -n '{outcome:"skipped", skipReason:"CAPTCHA — apply manually via the apply 
 jq -n --arg r "<reason>" --arg notes "<actionable retry context>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
 ```
 
-Then **close tab 2** with `browser_tabs` and select tab 1. Pace 3–5s before the next job.
+Close all tabs with index ≥ 1: `browser_tabs(action:"close", index:<i>)` descending, then `browser_tabs(action:"select", index:0)`. Pace 3–5s before the next job.
 
 ### 2.5 Stop Conditions
 

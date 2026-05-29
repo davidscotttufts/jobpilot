@@ -209,7 +209,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<key>" \
 
 ### 4.2 Navigate + Find Apply
 
-Navigate to the job URL. Take a `browser_snapshot` narrowed to the header to find the Apply / Easy Apply control and `browser_click` its `ref`. After `browser_wait_for`, `browser_snapshot` the form to enumerate fields and their refs. If a login page appears, follow `plugin/skills/shared/auth.md`, then return.
+Navigate to the job URL. `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`. `browser_snapshot` the form to enumerate fields and refs. If a login page appears, follow `plugin/skills/shared/auth.md`.
 
 ### 4.3 Tailor Resume
 
@@ -253,7 +253,7 @@ jq -n --arg r "<reason>" --arg notes "<actionable retry notes>" '{outcome:"faile
 jq -n --arg r "<reason>" '{outcome:"skipped", skipReason:$r}'
 ```
 
-Continue to next job after any outcome.
+Close any tabs with index ≥ 1: `browser_tabs(action:"close", index:<i>)` descending, then `browser_tabs(action:"select", index:0)`. Continue to next job.
 
 ### 4.8 Limit
 
