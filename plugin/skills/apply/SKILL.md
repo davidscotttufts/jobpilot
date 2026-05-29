@@ -33,7 +33,7 @@ For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a dom
 
 ## Phase 0: Dispatch
 
-- Argument is `run <run-id>` → **re-apply mode**: set `RUN_ID=<run-id>`, skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The run viewer — or the `rescan-skipped` skill — promotes the chosen skipped/failed jobs to `approved` before injecting this.)
+- Argument is `run <run-id>` → **re-apply mode**: set `RUN_ID=<run-id>`, set `config.maxApplications = null` (unlimited — the user hand-selected these jobs), skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The run viewer — or the `rescan-skipped` skill — promotes the chosen skipped/failed jobs to `approved` before injecting this.)
 - Any other argument present → **Phase 1A** (single-job).
 - No argument → **Phase 1B** (batch).
 
@@ -257,7 +257,7 @@ Close any tabs with index ≥ 1: `browser_tabs(action:"close", index:<i>)` desce
 
 ### 4.8 Limit
 
-If `applied >= config.maxApplications`, POST `/result` for each remaining `approved` job with `outcome:"skipped"`, `skipReason:"Max applications limit reached"`, then end the loop.
+If `config.maxApplications` is set and `applied >= config.maxApplications`, stop the loop. Leave remaining `approved` jobs as-is.
 
 ## Phase 5: Summary
 
