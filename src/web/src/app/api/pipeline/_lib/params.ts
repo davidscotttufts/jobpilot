@@ -7,6 +7,7 @@ const MAX_LIMIT = 200;
 export interface PipelineFilters {
   search?: string | null;
   board?: string | null;
+  runId?: string | null;
 }
 
 export interface PipelineQuery {
@@ -17,7 +18,10 @@ export interface PipelineQuery {
 }
 
 export function parsePipelineQuery(req: Request): PipelineQuery | null {
-  const raw = parseQueryParams(req, ["stage", "cursor", "limit", "search", "board"] as const);
+  const raw = parseQueryParams(
+    req,
+    ["stage", "cursor", "limit", "search", "board", "runId"] as const,
+  );
 
   if (!isPipelineStage(raw.stage)) {
     return null;
@@ -30,6 +34,7 @@ export function parsePipelineQuery(req: Request): PipelineQuery | null {
     filters: {
       search: trimToUndefined(raw.search),
       board: trimToUndefined(raw.board),
+      runId: trimToUndefined(raw.runId),
     },
   };
 }

@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Add, Delete } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -66,27 +66,21 @@ export function CredentialsSection(): ReactElement {
       ) : (
         <Stack spacing={1}>
           {rows.map((c) => (
-            <Stack
-              key={c.id}
-              direction="row"
-              spacing={2}
-              sx={(t) => ({
-                alignItems: "center",
-                p: 1.5,
-                borderRadius: t.radii.sm,
-                border: `1px solid ${t.palette.line.divider}`,
-              })}
-            >
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {c.scope}
-                </Typography>
-                <Typography variant="captionMuted">{c.email}</Typography>
-              </Box>
-              <IconButton onClick={() => setPendingDelete(c)} aria-label="Delete credential">
-                <Delete fontSize="md" />
-              </IconButton>
-            </Stack>
+            <Card key={c.id}>
+              <CardContent>
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {c.scope}
+                    </Typography>
+                    <Typography variant="captionMuted">{c.email}</Typography>
+                  </Box>
+                  <IconButton onClick={() => setPendingDelete(c)} aria-label="Delete credential">
+                    <Delete fontSize="md" />
+                  </IconButton>
+                </Stack>
+              </CardContent>
+            </Card>
           ))}
         </Stack>
       )}

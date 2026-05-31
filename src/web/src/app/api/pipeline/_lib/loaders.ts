@@ -14,7 +14,9 @@ export async function loadQueued(
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
-  if (filters.board) {
+  // Queued entries live in QueueEntry, which has no runId — a run scope can
+  // never match them, so short-circuit (mirrors the board handling).
+  if (filters.board || filters.runId) {
     return emptyPage("queued");
   }
 
@@ -48,6 +50,7 @@ export async function loadApplying(
     run: { status: "in_progress", profileId },
     status: { notIn: [...RUN_JOB_TERMINAL_OUTCOMES] },
     ...(filters.board ? { board: filters.board } : {}),
+    ...(filters.runId ? { runId: filters.runId } : {}),
   };
   const searchWhere = filters.search
     ? {
@@ -110,6 +113,7 @@ async function loadApplicationStage(
     profileId,
     stage: stageFilter,
     ...(filters.board ? { board: filters.board } : {}),
+    ...(filters.runId ? { runId: filters.runId } : {}),
   };
   const searchWhere = filters.search
     ? {

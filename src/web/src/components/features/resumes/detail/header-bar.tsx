@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
-import { Button, IconButton, Stack, TextField, Typography } from "@mui/material";
+import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/api/client";
@@ -61,58 +61,56 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   };
 
   return (
-    <Stack
-      direction="row"
-      spacing={1.5}
-      sx={(t) => ({
-        alignItems: "center",
-        p: 1.5,
-        border: `1px solid ${t.palette.line.divider}`,
-        borderRadius: t.radii.md,
-      })}
-    >
-      <TextField
-        size="small"
-        value={editingLabel}
-        onChange={(e) => setEditingLabel(e.target.value)}
-        onBlur={() => {
-          const next = editingLabel.trim();
-          if (next && next !== resume.label) {
-            renameLabel.mutate({ label: next });
-          } else if (!next) {
-            setEditingLabel(resume.label);
-          }
-        }}
-        sx={{ flex: 1, maxWidth: 320 }}
-      />
-      {resume.isPrimary ? (
-        <Typography variant="captionMuted" sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Star fontSize="md" color="primary" />
-          Primary
-        </Typography>
-      ) : (
-        <Button
-          size="small"
-          startIcon={<StarBorder />}
-          onClick={() => setPrimary.mutate()}
-          disabled={setPrimary.isPending}
-        >
-          Set primary
-        </Button>
-      )}
-      <TailorForJobButton />
-      <IconButton
-        component="a"
-        href={resumePdfUrl(resume.id, resume.updatedAt)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Open PDF"
-      >
-        <PictureAsPdf fontSize="md" />
-      </IconButton>
-      <IconButton onClick={handleDelete} aria-label="Delete resume">
-        <Delete fontSize="md" />
-      </IconButton>
-    </Stack>
+    <Card>
+      <CardContent>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+          <TextField
+            size="small"
+            value={editingLabel}
+            onChange={(e) => setEditingLabel(e.target.value)}
+            onBlur={() => {
+              const next = editingLabel.trim();
+              if (next && next !== resume.label) {
+                renameLabel.mutate({ label: next });
+              } else if (!next) {
+                setEditingLabel(resume.label);
+              }
+            }}
+            sx={{ flex: 1, maxWidth: 320 }}
+          />
+          {resume.isPrimary ? (
+            <Typography
+              variant="captionMuted"
+              sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+            >
+              <Star fontSize="md" color="primary" />
+              Primary
+            </Typography>
+          ) : (
+            <Button
+              size="small"
+              startIcon={<StarBorder />}
+              onClick={() => setPrimary.mutate()}
+              disabled={setPrimary.isPending}
+            >
+              Set primary
+            </Button>
+          )}
+          <TailorForJobButton />
+          <IconButton
+            component="a"
+            href={resumePdfUrl(resume.id, resume.updatedAt)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open PDF"
+          >
+            <PictureAsPdf fontSize="md" />
+          </IconButton>
+          <IconButton onClick={handleDelete} aria-label="Delete resume">
+            <Delete fontSize="md" />
+          </IconButton>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }

@@ -9,15 +9,17 @@ import { buildUrl } from "@/utils/url";
 export interface PipelineColumnFilters {
   search: string | null;
   board: string | null;
+  runId: string | null;
 }
 
 const DEFAULT_LIMIT = 50;
 
-const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null };
+const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null, runId: null };
 
 export function usePipelineColumn(
   stage: PipelineStage,
   filters: PipelineColumnFilters = EMPTY_FILTERS,
+  options: { enabled?: boolean } = {},
 ) {
   return useInfiniteQuery<
     PipelineColumnPage,
@@ -26,7 +28,8 @@ export function usePipelineColumn(
     ReturnType<typeof queryKeys.pipeline.column>,
     string | null
   >({
-    queryKey: queryKeys.pipeline.column(stage, filters as unknown as Record<string, unknown>),
+    enabled: options.enabled ?? true,
+    queryKey: queryKeys.pipeline.column(stage, filters),
     initialPageParam: null,
     queryFn: async ({ pageParam }) => {
       const { data, error } = await apiClient.get<PipelineColumnPage>(
@@ -34,8 +37,7 @@ export function usePipelineColumn(
           stage,
           limit: DEFAULT_LIMIT,
           cursor: pageParam,
-          search: filters.search,
-          board: filters.board,
+          ...filters,
         }),
       );
       if (error || !data) {

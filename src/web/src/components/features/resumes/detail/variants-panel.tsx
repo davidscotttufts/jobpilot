@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { Delete, OpenInNew } from "@mui/icons-material";
-import { Box, Chip, IconButton, Skeleton, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, Chip, IconButton, Skeleton, Stack, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -53,48 +53,42 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
       ) : (
         <Stack spacing={1}>
           {variants.map((v) => (
-            <Stack
-              key={v.id}
-              direction="row"
-              spacing={1.5}
-              sx={(t) => ({
-                alignItems: "center",
-                p: 1.5,
-                border: `1px solid ${t.palette.line.divider}`,
-                borderRadius: t.radii.sm,
-              })}
-            >
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {v.label}
-                  </Typography>
-                  {v.applicationId && (
-                    <Chip
-                      label={`Application #${v.applicationId}`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  )}
+            <Card key={v.id}>
+              <CardContent>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {v.label}
+                      </Typography>
+                      {v.applicationId && (
+                        <Chip
+                          label={`Application #${v.applicationId}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Stack>
+                    <Typography variant="captionMuted">
+                      {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
+                      {new Date(v.createdAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    component="a"
+                    href={variantPdfUrl(v.id, v.updatedAt)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open variant PDF"
+                  >
+                    <OpenInNew fontSize="md" />
+                  </IconButton>
+                  <IconButton onClick={() => setConfirmDelete(v)} aria-label="Delete variant">
+                    <Delete fontSize="md" />
+                  </IconButton>
                 </Stack>
-                <Typography variant="captionMuted">
-                  {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
-                  {new Date(v.createdAt).toLocaleDateString()}
-                </Typography>
-              </Box>
-              <IconButton
-                component="a"
-                href={variantPdfUrl(v.id, v.updatedAt)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open variant PDF"
-              >
-                <OpenInNew fontSize="md" />
-              </IconButton>
-              <IconButton onClick={() => setConfirmDelete(v)} aria-label="Delete variant">
-                <Delete fontSize="md" />
-              </IconButton>
-            </Stack>
+              </CardContent>
+            </Card>
           ))}
         </Stack>
       )}

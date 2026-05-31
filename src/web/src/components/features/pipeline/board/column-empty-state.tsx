@@ -45,12 +45,7 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
         </Typography>
       )}
       {stage === "submitted" && (
-        <>
-          <Typography variant="captionMuted">Submitted applications will appear here.</Typography>
-          <LinkButton size="small" variant="text" href="/runs">
-            View recent runs →
-          </LinkButton>
-        </>
+        <Typography variant="captionMuted">Submitted applications will appear here.</Typography>
       )}
       {stage === "interviewing" && (
         <Typography variant="captionMuted">

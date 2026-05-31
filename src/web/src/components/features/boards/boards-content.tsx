@@ -5,6 +5,8 @@ import { Clear, Delete, Edit, Search } from "@mui/icons-material";
 import {
   Box,
   Button,
+  Card,
+  CardContent,
   IconButton,
   InputAdornment,
   Stack,
@@ -13,7 +15,7 @@ import {
 } from "@mui/material";
 import { PaginationFooter } from "@/components/ui/data";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
-import { SectionCard } from "@/components/ui/layout/";
+import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -131,30 +133,24 @@ export function BoardsContent(): ReactElement {
         ) : (
           <Stack spacing={1}>
             {pageRows.map((b) => (
-              <Stack
-                key={b.id}
-                direction="row"
-                spacing={2}
-                sx={(t) => ({
-                  alignItems: "center",
-                  p: 1.5,
-                  borderRadius: t.radii.sm,
-                  border: `1px solid ${t.palette.line.divider}`,
-                })}
-              >
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {b.name}
-                  </Typography>
-                  <Typography variant="captionMuted">{b.domain}</Typography>
-                </Box>
-                <IconButton onClick={() => setEditing(b)} aria-label="Edit board">
-                  <Edit fontSize="md" />
-                </IconButton>
-                <IconButton onClick={() => setPendingDelete(b)} aria-label="Delete board">
-                  <Delete fontSize="md" />
-                </IconButton>
-              </Stack>
+              <Card key={b.id}>
+                <CardContent>
+                  <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {b.name}
+                      </Typography>
+                      <Typography variant="captionMuted">{b.domain}</Typography>
+                    </Box>
+                    <IconButton onClick={() => setEditing(b)} aria-label="Edit board">
+                      <Edit fontSize="md" />
+                    </IconButton>
+                    <IconButton onClick={() => setPendingDelete(b)} aria-label="Delete board">
+                      <Delete fontSize="md" />
+                    </IconButton>
+                  </Stack>
+                </CardContent>
+              </Card>
             ))}
           </Stack>
         )}

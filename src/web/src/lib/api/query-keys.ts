@@ -65,7 +65,7 @@ export const queryKeys = {
 
   pipeline: {
     all: ["pipeline"] as const,
-    column: (stage: string, filters: Record<string, unknown> = {}) =>
+    column: (stage: string, filters: object = {}) =>
       [...queryKeys.pipeline.all, "column", stage, filters] as const,
     total: (stage: string) => [...queryKeys.pipeline.all, "total", stage] as const,
   },

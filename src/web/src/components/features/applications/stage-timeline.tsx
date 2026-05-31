@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { StageChip } from "@/components/ui/display/stage-chip";
 import type { StageEventDto } from "@/types/api";
 
@@ -17,33 +17,27 @@ export function StageTimeline(props: StageTimelineProps): ReactElement {
   return (
     <Stack spacing={1.25}>
       {events.map((e) => (
-        <Stack
-          key={e.id}
-          direction="row"
-          spacing={2}
-          sx={(t) => ({
-            alignItems: "flex-start",
-            p: 1.25,
-            borderRadius: t.radii.sm,
-            border: `1px solid ${t.palette.line.divider}`,
-          })}
-        >
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            {e.fromStage && (
-              <>
-                <StageChip stage={e.fromStage} />
-                <Typography variant="captionMuted">→</Typography>
-              </>
-            )}
-            <StageChip stage={e.toStage} />
-          </Stack>
-          <Box sx={{ flex: 1 }}>
-            {e.note && <Typography variant="body2">{e.note}</Typography>}
-            <Typography variant="captionMuted">
-              {new Date(e.occurredAt).toLocaleString()}
-            </Typography>
-          </Box>
-        </Stack>
+        <Card key={e.id}>
+          <CardContent>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                {e.fromStage && (
+                  <>
+                    <StageChip stage={e.fromStage} />
+                    <Typography variant="captionMuted">→</Typography>
+                  </>
+                )}
+                <StageChip stage={e.toStage} />
+              </Stack>
+              <Box sx={{ flex: 1 }}>
+                {e.note && <Typography variant="body2">{e.note}</Typography>}
+                <Typography variant="captionMuted">
+                  {new Date(e.occurredAt).toLocaleString()}
+                </Typography>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
       ))}
     </Stack>
   );

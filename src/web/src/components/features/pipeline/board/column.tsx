@@ -17,6 +17,8 @@ interface PipelineColumnProps {
   stage: PipelineStage;
   filters?: PipelineColumnFilters;
   onJobClick?: (job: PipelineJobDto) => void;
+  /** Stage can't be scoped to the active run (e.g. queued) — dim and skip the query. */
+  scopedOut?: boolean;
 }
 
 /** When every visible card shares the same source note, surface it once on the column header. */
@@ -32,10 +34,10 @@ function commonSourceNote(items: PipelineJobDto[]): string | null {
 }
 
 export function PipelineColumn(props: PipelineColumnProps): ReactElement {
-  const { stage, filters, onJobClick } = props;
+  const { stage, filters, onJobClick, scopedOut = false } = props;
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  const query = usePipelineColumn(stage, filters);
+  const query = usePipelineColumn(stage, filters, { enabled: !scopedOut });
   const items: PipelineJobDto[] = query.data?.pages.flatMap((p) => p.items) ?? [];
   const head = query.data?.pages[0];
   const total = head?.total ?? 0;
@@ -75,6 +77,7 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
         border: `1px solid ${theme.palette.line.divider}`,
         borderRadius: theme.radii.md,
         overflow: "hidden",
+        opacity: scopedOut ? 0.55 : 1,
       })}
     >
       <ColumnHeader stage={stage} total={total} todayCount={todayCount} sharedNote={sharedNote} />
@@ -89,7 +92,20 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
           "&::-webkit-scrollbar-thumb": { backgroundColor: theme.palette.line.divider },
         })}
       >
-        {query.isPending ? (
+        {scopedOut ? (
+          <Stack
+            sx={(theme) => ({
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 120,
+              paddingInline: 2,
+              textAlign: "center",
+              color: theme.palette.text.disabled,
+            })}
+          >
+            <Typography variant="captionMuted">Not tied to a run</Typography>
+          </Stack>
+        ) : query.isPending ? (
           <Stack
             sx={(theme) => ({
               alignItems: "center",

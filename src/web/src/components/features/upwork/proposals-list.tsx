@@ -2,7 +2,7 @@
 
 import { useState, type ReactElement } from "react";
 import { ChevronRight, Clear } from "@mui/icons-material";
-import { Box, Button, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -94,48 +94,37 @@ export function ProposalsList(): ReactElement {
       ) : (
         <Stack spacing={1}>
           {pageRows.map((p) => (
-            <Stack
-              key={p.id}
-              direction="row"
-              spacing={2}
-              role="button"
-              tabIndex={0}
-              onClick={() => handleNavigate(p.id)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  handleNavigate(p.id);
-                }
-              }}
-              sx={(t) => ({
-                alignItems: "center",
-                p: 1.5,
-                borderRadius: t.radii.sm,
-                border: `1px solid ${t.palette.line.divider}`,
-                cursor: "pointer",
-                "&:hover": { backgroundColor: t.palette.action.hover },
-              })}
-            >
-              <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-                  <Chip
-                    size="small"
-                    label={STATUS_LABEL[p.status]}
-                    color={STATUS_COLOR[p.status]}
-                    variant="outlined"
-                  />
-                  {p.clientName && <Chip size="small" label={p.clientName} variant="outlined" />}
+            <Card key={p.id} variant="interactive">
+              <CardActionArea onClick={() => handleNavigate(p.id)} sx={{ padding: 1.5 }}>
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                  <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ alignItems: "center", flexWrap: "wrap" }}
+                    >
+                      <Chip
+                        size="small"
+                        label={STATUS_LABEL[p.status]}
+                        color={STATUS_COLOR[p.status]}
+                        variant="outlined"
+                      />
+                      {p.clientName && (
+                        <Chip size="small" label={p.clientName} variant="outlined" />
+                      )}
+                    </Stack>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {p.jobTitle}
+                    </Typography>
+                    <Typography variant="captionMuted">
+                      Updated {formatRelativeTime(p.updatedAt)}
+                      {p.proposalText ? "" : " · not generated yet"}
+                    </Typography>
+                  </Stack>
+                  <ChevronRight fontSize="md" />
                 </Stack>
-                <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                  {p.jobTitle}
-                </Typography>
-                <Typography variant="captionMuted">
-                  Updated {formatRelativeTime(p.updatedAt)}
-                  {p.proposalText ? "" : " · not generated yet"}
-                </Typography>
-              </Stack>
-              <ChevronRight fontSize="md" />
-            </Stack>
+              </CardActionArea>
+            </Card>
           ))}
         </Stack>
       )}

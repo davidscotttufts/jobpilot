@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Button, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
 
 interface EntryListProps<T> {
@@ -28,30 +28,29 @@ export function EntryList<T>(props: EntryListProps<T>): ReactElement {
         <Typography variant="body2Muted">{emptyLabel}</Typography>
       )}
       {value.map((entry, i) => (
-        <Box
-          key={i}
-          sx={(t) => ({
-            border: `1px solid ${t.palette.line.divider}`,
-            borderRadius: t.radii.sm,
-            p: 2,
-          })}
-        >
-          <Stack direction="row" sx={{ mb: 1, alignItems: "center" }} spacing={0.5}>
-            <Typography variant="overlineMuted" sx={{ flex: 1 }}>
-              {renderTitle(entry, i)}
-            </Typography>
-            <IconButton size="small" onClick={() => move(i, -1)} disabled={i === 0}>
-              <ArrowUpward fontSize="sm" />
-            </IconButton>
-            <IconButton size="small" onClick={() => move(i, 1)} disabled={i === value.length - 1}>
-              <ArrowDownward fontSize="sm" />
-            </IconButton>
-            <IconButton size="small" onClick={() => remove(i)} aria-label="Remove entry">
-              <Delete fontSize="sm" />
-            </IconButton>
-          </Stack>
-          {renderEntry(entry, (next) => update(i, next))}
-        </Box>
+        <Card key={i}>
+          <CardHeader
+            title={<Typography variant="overlineMuted">{renderTitle(entry, i)}</Typography>}
+            action={
+              <Stack direction="row" spacing={0.5}>
+                <IconButton size="small" onClick={() => move(i, -1)} disabled={i === 0}>
+                  <ArrowUpward fontSize="sm" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => move(i, 1)}
+                  disabled={i === value.length - 1}
+                >
+                  <ArrowDownward fontSize="sm" />
+                </IconButton>
+                <IconButton size="small" onClick={() => remove(i)} aria-label="Remove entry">
+                  <Delete fontSize="sm" />
+                </IconButton>
+              </Stack>
+            }
+          />
+          <CardContent>{renderEntry(entry, (next) => update(i, next))}</CardContent>
+        </Card>
       ))}
       <Button
         startIcon={<Add />}

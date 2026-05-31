@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
+import type { Route } from "next";
 import { RunDetail } from "@/components/features/runs";
 import { PageHeader } from "@/components/ui/layout";
 
@@ -11,7 +12,12 @@ export default async function RunDetailPage(props: RunDetailPageProps): Promise<
   const { id } = await props.params;
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
-      <PageHeader eyebrow="Run" title={id} backHref="/runs" backLabel="Runs" />
+      <PageHeader
+        eyebrow="Run"
+        title={id}
+        backHref={`/?runId=${encodeURIComponent(id)}` as Route}
+        backLabel="Pipeline"
+      />
       <RunDetail runId={id} />
     </Container>
   );

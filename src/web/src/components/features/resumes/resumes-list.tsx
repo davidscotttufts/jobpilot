@@ -2,7 +2,17 @@
 
 import { useState, type ReactElement } from "react";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
-import { Box, Button, Chip, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  IconButton,
+  LinearProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { Route } from "next";
 import Link from "next/link";
 import { FileUpload } from "@/components/ui/form";
@@ -98,60 +108,56 @@ export function ResumesList(): ReactElement {
       ) : (
         <Stack spacing={1}>
           {rows.map((r) => (
-            <Stack
+            <Card
               key={r.id}
-              direction="row"
-              spacing={2}
-              sx={(t) => ({
-                alignItems: "center",
-                p: 1.75,
-                borderRadius: t.radii.md,
-                border: `1px solid ${t.palette.line.divider}`,
-                bgcolor: r.isPrimary ? t.palette.action.selected : "transparent",
-              })}
+              sx={{ backgroundColor: r.isPrimary ? "action.selected" : undefined }}
             >
-              <Description fontSize="lg" sx={{ color: "text.secondary" }} />
-              <Box
-                component={Link}
-                href={`/resumes/${r.id}` as Route}
-                sx={{ flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }}
-              >
-                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                  <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                    {r.label}
-                  </Typography>
-                  {r.isPrimary && <Chip label="Primary" size="small" color="primary" />}
-                  {!r.hasData && <Chip label="No structure" size="small" variant="outlined" />}
-                  {r.variantCount > 0 && (
-                    <Chip
-                      label={`${r.variantCount} variant${r.variantCount === 1 ? "" : "s"}`}
-                      size="small"
-                      variant="outlined"
-                    />
-                  )}
+              <CardContent>
+                <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+                  <Description fontSize="lg" sx={{ color: "text.secondary" }} />
+                  <Box
+                    component={Link}
+                    href={`/resumes/${r.id}` as Route}
+                    sx={{ flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }}
+                  >
+                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                      <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                        {r.label}
+                      </Typography>
+                      {r.isPrimary && <Chip label="Primary" size="small" color="primary" />}
+                      {!r.hasData && <Chip label="No structure" size="small" variant="outlined" />}
+                      {r.variantCount > 0 && (
+                        <Chip
+                          label={`${r.variantCount} variant${r.variantCount === 1 ? "" : "s"}`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      )}
+                    </Stack>
+                    <Typography variant="captionMuted">
+                      {r.sourceFilename ?? "no source PDF"} · updated{" "}
+                      {new Date(r.updatedAt).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                  <IconButton
+                    onClick={() => setPrimary.mutate(r.id)}
+                    aria-label={r.isPrimary ? "Primary resume" : "Set as primary"}
+                    disabled={setPrimary.isPending}
+                  >
+                    {r.isPrimary ? <Star fontSize="md" /> : <StarBorder fontSize="md" />}
+                  </IconButton>
+                  <IconButton
+                    component="a"
+                    href={resumePdfUrl(r.id, r.updatedAt)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open PDF"
+                  >
+                    <PictureAsPdf fontSize="md" />
+                  </IconButton>
                 </Stack>
-                <Typography variant="captionMuted">
-                  {r.sourceFilename ?? "no source PDF"} · updated{" "}
-                  {new Date(r.updatedAt).toLocaleDateString()}
-                </Typography>
-              </Box>
-              <IconButton
-                onClick={() => setPrimary.mutate(r.id)}
-                aria-label={r.isPrimary ? "Primary resume" : "Set as primary"}
-                disabled={setPrimary.isPending}
-              >
-                {r.isPrimary ? <Star fontSize="md" /> : <StarBorder fontSize="md" />}
-              </IconButton>
-              <IconButton
-                component="a"
-                href={resumePdfUrl(r.id, r.updatedAt)}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Open PDF"
-              >
-                <PictureAsPdf fontSize="md" />
-              </IconButton>
-            </Stack>
+              </CardContent>
+            </Card>
           ))}
         </Stack>
       )}

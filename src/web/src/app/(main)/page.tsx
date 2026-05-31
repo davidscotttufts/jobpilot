@@ -5,7 +5,7 @@ import {
   PipelineActionsProvider,
   PipelineFilterBar,
   PipelineHeaderStats,
-  PipelineView,
+  PipelineWorkspace,
   RunLauncherButton,
 } from "@/components/features/pipeline";
 import { PageHeader } from "@/components/ui/layout";
@@ -29,7 +29,7 @@ export default function PipelinePage(): ReactElement {
           <PipelineFilterBar />
         </Stack>
 
-        <PipelineView />
+        <PipelineWorkspace />
       </Stack>
     </PipelineActionsProvider>
   );

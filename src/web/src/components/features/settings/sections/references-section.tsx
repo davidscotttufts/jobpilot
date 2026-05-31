@@ -1,7 +1,7 @@
 "use client";
 
 import { Add, Delete } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { PROFILE_DEFAULT_VALUES, type ReferenceInput } from "@/lib/schemas/profile";
@@ -28,42 +28,43 @@ export const ReferencesSection = withForm({
             return (
               <Stack spacing={2}>
                 {refs.map((_, i) => (
-                  <Box key={i} sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 1 }}>
-                    <Stack
-                      direction="row"
-                      sx={{ alignItems: "center", justifyContent: "space-between", mb: 1 }}
-                    >
-                      <Typography variant="subtitle2">Reference {i + 1}</Typography>
-                      <IconButton
-                        aria-label={`Remove reference ${i + 1}`}
-                        size="small"
-                        onClick={() => field.removeValue(i)}
-                      >
-                        <Delete fontSize="sm" />
-                      </IconButton>
-                    </Stack>
-                    <Stack spacing={2}>
-                      <Stack direction="row" spacing={2}>
-                        <form.AppField name={`references[${i}].name`}>
-                          {(sub) => <sub.TextField label="Name" />}
+                  <Card key={i}>
+                    <CardHeader
+                      title={<Typography variant="subtitle2">Reference {i + 1}</Typography>}
+                      action={
+                        <IconButton
+                          aria-label={`Remove reference ${i + 1}`}
+                          size="small"
+                          onClick={() => field.removeValue(i)}
+                        >
+                          <Delete fontSize="sm" />
+                        </IconButton>
+                      }
+                    />
+                    <CardContent>
+                      <Stack spacing={2}>
+                        <Stack direction="row" spacing={2}>
+                          <form.AppField name={`references[${i}].name`}>
+                            {(sub) => <sub.TextField label="Name" />}
+                          </form.AppField>
+                          <form.AppField name={`references[${i}].relationship`}>
+                            {(sub) => <sub.TextField label="Relationship" />}
+                          </form.AppField>
+                        </Stack>
+                        <form.AppField name={`references[${i}].company`}>
+                          {(sub) => <sub.TextField label="Company" />}
                         </form.AppField>
-                        <form.AppField name={`references[${i}].relationship`}>
-                          {(sub) => <sub.TextField label="Relationship" />}
-                        </form.AppField>
+                        <Stack direction="row" spacing={2}>
+                          <form.AppField name={`references[${i}].email`}>
+                            {(sub) => <sub.TextField label="Email" type="email" />}
+                          </form.AppField>
+                          <form.AppField name={`references[${i}].phone`}>
+                            {(sub) => <sub.Phone label="Phone" />}
+                          </form.AppField>
+                        </Stack>
                       </Stack>
-                      <form.AppField name={`references[${i}].company`}>
-                        {(sub) => <sub.TextField label="Company" />}
-                      </form.AppField>
-                      <Stack direction="row" spacing={2}>
-                        <form.AppField name={`references[${i}].email`}>
-                          {(sub) => <sub.TextField label="Email" type="email" />}
-                        </form.AppField>
-                        <form.AppField name={`references[${i}].phone`}>
-                          {(sub) => <sub.Phone label="Phone" />}
-                        </form.AppField>
-                      </Stack>
-                    </Stack>
-                  </Box>
+                    </CardContent>
+                  </Card>
                 ))}
                 {refs.length < 3 && (
                   <Box>
