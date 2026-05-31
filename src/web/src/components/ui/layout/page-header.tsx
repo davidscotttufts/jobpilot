@@ -7,7 +7,7 @@ import { LinkButton } from "@/components/ui/buttons";
 interface PageHeaderProps {
   eyebrow?: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
   /** When set, renders a back link above the eyebrow. */
   backHref?: Route;
@@ -35,11 +35,14 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
           <Typography variant="h1" sx={{ fontSize: "1.75rem", mt: eyebrow ? 0.5 : 0 }}>
             {title}
           </Typography>
-          {description && (
-            <Typography variant="body1Muted" sx={{ mt: 0.5 }}>
-              {description}
-            </Typography>
-          )}
+          {description &&
+            (typeof description === "string" ? (
+              <Typography variant="body1Muted" sx={{ mt: 0.5 }}>
+                {description}
+              </Typography>
+            ) : (
+              <Box sx={{ mt: 0.5 }}>{description}</Box>
+            ))}
         </Box>
         {actions && (
           <Stack direction="row" spacing={1}>

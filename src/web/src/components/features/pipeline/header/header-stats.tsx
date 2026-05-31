@@ -23,7 +23,7 @@ export function PipelineHeaderStats(): ReactElement {
   const total = queued + applying + submitted + interviewing;
 
   return (
-    <Typography variant="body2Muted" sx={{ mt: 0.5 }}>
+    <Typography variant="body2Muted">
       {total} jobs · {submitted} submitted · {interviewing} interviewing
     </Typography>
   );

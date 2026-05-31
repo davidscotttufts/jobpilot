@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
 import {
   AddUrlsButton,
   PipelineActionsProvider,
@@ -8,33 +8,24 @@ import {
   PipelineView,
   RunLauncherButton,
 } from "@/components/features/pipeline";
+import { PageHeader } from "@/components/ui/layout";
 
 export default function PipelinePage(): ReactElement {
   return (
     <PipelineActionsProvider>
       <Stack sx={{ height: "100%", minHeight: 0 }}>
-        <Stack spacing={2} sx={{ paddingInline: 2.5 }}>
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ alignItems: "flex-end", justifyContent: "space-between" }}
-          >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="overlineMuted">Workspace</Typography>
-              <Typography
-                variant="h1"
-                sx={{ fontSize: "1.5rem", mt: 0.5, letterSpacing: "-0.015em" }}
-              >
-                Pipeline
-              </Typography>
-              <PipelineHeaderStats />
-            </Box>
-            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
-              <AddUrlsButton />
-              <RunLauncherButton />
-            </Stack>
-          </Stack>
-
+        <Stack sx={{ paddingInline: 2.5 }}>
+          <PageHeader
+            eyebrow="Workspace"
+            title="Pipeline"
+            description={<PipelineHeaderStats />}
+            actions={
+              <>
+                <AddUrlsButton />
+                <RunLauncherButton />
+              </>
+            }
+          />
           <PipelineFilterBar />
         </Stack>
 
