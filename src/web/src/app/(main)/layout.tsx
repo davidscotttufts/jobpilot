@@ -7,7 +7,9 @@ export default function MainLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
     <AppShell>
-      <Box sx={{ py: 3 }}>{children}</Box>
+      <Box sx={{ height: "100%", display: "flex", flexDirection: "column", minHeight: 0, py: 3 }}>
+        {children}
+      </Box>
       <AutoApplyStopPill />
     </AppShell>
   );
