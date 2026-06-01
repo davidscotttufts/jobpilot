@@ -6,7 +6,7 @@ import { publish } from "@/lib/sse/server";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 
-export const GET = api.profileRoute(
+export const GET = api.route(
   { query: z.object({ status: z.string().trim().min(1).optional() }) },
   ({ query, profileId }) => {
     const where: Prisma.QueueEntryWhereInput = { profileId };
@@ -17,7 +17,7 @@ export const GET = api.profileRoute(
   },
 );
 
-export const POST = api.profileRoute({ body: addQueueSchema }, async ({ body, profileId }) => {
+export const POST = api.route({ body: addQueueSchema }, async ({ body, profileId }) => {
   const created = await db.$transaction(
     body.urls.map((u) =>
       db.queueEntry.upsert({

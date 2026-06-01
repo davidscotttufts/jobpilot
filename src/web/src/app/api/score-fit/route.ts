@@ -8,6 +8,6 @@ const requestSchema = z.object({
   profile: fitProfileSchema.partial().optional(),
 });
 
-export const POST = api.profileRoute({ body: requestSchema }, ({ body, profileId }) =>
+export const POST = api.route({ body: requestSchema }, ({ body, profileId }) =>
   scoreJobFit({ profileId, digest: body.digest, profile: body.profile }),
 );

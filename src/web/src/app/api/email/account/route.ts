@@ -2,7 +2,7 @@ import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 import { accountCanSend } from "@/server/email";
 
-export const GET = api.profileRoute({}, async ({ profileId }) => {
+export const GET = api.route({}, async ({ profileId }) => {
   const account = await db.emailAccount.findUnique({ where: { profileId } });
 
   if (!account) {
@@ -18,7 +18,7 @@ export const GET = api.profileRoute({}, async ({ profileId }) => {
   };
 });
 
-export const DELETE = api.profileRoute({}, async ({ profileId }) => {
+export const DELETE = api.route({}, async ({ profileId }) => {
   await db.emailAccount.deleteMany({ where: { profileId } });
   return { disconnected: true };
 });

@@ -5,7 +5,7 @@ import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 
-export const GET = api.profileRoute({ params: idParam }, ({ params, profileId }) =>
+export const GET = api.route({ params: idParam }, ({ params, profileId }) =>
   findOwned(
     (where) =>
       db.contact.findFirst({
@@ -17,7 +17,7 @@ export const GET = api.profileRoute({ params: idParam }, ({ params, profileId })
   ),
 );
 
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: idParam, body: patchContactSchema },
   async ({ params, body, profileId }) => {
     await findOwned(
@@ -29,7 +29,7 @@ export const PATCH = api.profileRoute(
   },
 );
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   const d = await db.contact.deleteMany({ where: { id: params.id, profileId } });
   if (d.count === 0) {
     throw notFound("Contact not found");

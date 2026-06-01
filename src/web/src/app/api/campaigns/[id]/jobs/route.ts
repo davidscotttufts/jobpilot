@@ -9,14 +9,14 @@ import { db } from "@/server/db";
 
 const campaignParams = z.object({ id: z.string() });
 
-export const GET = api.profileRoute({ params: campaignParams }, ({ params, profileId }) =>
+export const GET = api.route({ params: campaignParams }, ({ params, profileId }) =>
   db.job.findMany({
     where: { campaignId: params.id, campaign: { profileId } },
     orderBy: { id: "asc" },
   }),
 );
 
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params: campaignParams, body: addCampaignJobSchema },
   async ({ params, body, profileId }) => {
     const { id } = params;

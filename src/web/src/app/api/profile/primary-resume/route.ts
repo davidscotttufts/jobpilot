@@ -7,7 +7,7 @@ const bodySchema = z.object({
   resumeId: z.number().int().positive().nullable(),
 });
 
-export const POST = api.profileRoute({ body: bodySchema }, async ({ body, profileId }) => {
+export const POST = api.route({ body: bodySchema }, async ({ body, profileId }) => {
   if (body.resumeId !== null) {
     await findOwned(
       (where) => db.resume.findFirst({ where, select: { id: true } }),

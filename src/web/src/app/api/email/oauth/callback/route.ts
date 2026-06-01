@@ -13,7 +13,7 @@ const callbackQuery = z.object({
   error: z.string().optional(),
 });
 
-export const GET = api.publicRoute({ query: callbackQuery }, async ({ req, query }) => {
+export const GET = api.route({ public: true, query: callbackQuery }, async ({ req, query }) => {
   if (query.error) {
     throw new HttpError(ErrorCodes.UNPROCESSABLE, `OAuth error: ${query.error}`, 400);
   }

@@ -2,7 +2,7 @@ import { profileWithAutoApplySchema } from "@/lib/contracts/profile";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 
-export const GET = api.publicRoute({}, () =>
+export const GET = api.route({ public: true }, () =>
   db.profile.findMany({
     orderBy: { id: "asc" },
     select: {
@@ -15,8 +15,8 @@ export const GET = api.publicRoute({}, () =>
   }),
 );
 
-export const POST = api.publicRoute(
-  { body: profileWithAutoApplySchema.partial() },
+export const POST = api.route(
+  { public: true, body: profileWithAutoApplySchema.partial() },
   async ({ body }) => {
     const { autoApply, preferredLocations, primaryResumeId, ...profileFields } = body;
     const hasActive = await db.profile.findFirst({

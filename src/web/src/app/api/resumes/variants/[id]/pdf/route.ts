@@ -8,7 +8,7 @@ import { db } from "@/server/db";
 import { renderResumePdf } from "@/server/pdf/render";
 import { ensureGeneratedDir, generatedVariantPath, slugifyForDownload } from "@/server/storage";
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const variant = await findOwned(
     (where) => db.resumeVariant.findFirst({ where }),
     { id: params.id, resume: { profileId } },

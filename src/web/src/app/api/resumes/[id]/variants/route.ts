@@ -6,7 +6,7 @@ import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 import type { ResumeVariantListItem } from "@/types/api";
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   await findOwned(
     (where) => db.resume.findFirst({ where, select: { id: true } }),
     { id: params.id, profileId },
@@ -30,7 +30,7 @@ export const GET = api.profileRoute({ params: idParam }, async ({ params, profil
   return items;
 });
 
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params: idParam, body: resumeVariantCreateSchema },
   async ({ params, body, profileId }) => {
     await findOwned(

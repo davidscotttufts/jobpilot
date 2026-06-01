@@ -44,7 +44,7 @@ const EMPTY_PROFILE = {
   resumes: [],
 };
 
-export const GET = api.publicRoute({}, async () => {
+export const GET = api.route({ public: true }, async () => {
   const id = await getActiveProfileIdOrNull();
   if (id === null) {
     return EMPTY_PROFILE;
@@ -115,7 +115,7 @@ export const GET = api.publicRoute({}, async () => {
   };
 });
 
-export const PUT = api.publicRoute({ body: profileWithAutoApplySchema }, async ({ body }) => {
+export const PUT = api.route({ public: true, body: profileWithAutoApplySchema }, async ({ body }) => {
   const id = await getActiveProfileIdOrNull();
   if (id === null) {
     throw new HttpError(

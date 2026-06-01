@@ -3,7 +3,7 @@ import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 
-export const GET = api.profileRoute({ params: idParam }, ({ params, profileId }) =>
+export const GET = api.route({ params: idParam }, ({ params, profileId }) =>
   findOwned(
     (where) =>
       db.application.findFirst({
@@ -17,7 +17,7 @@ export const GET = api.profileRoute({ params: idParam }, ({ params, profileId })
   ),
 );
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   await findOwned(
     (where) => db.application.findFirst({ where, select: { id: true } }),
     { id: params.id, profileId },

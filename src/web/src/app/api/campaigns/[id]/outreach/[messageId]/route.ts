@@ -15,7 +15,7 @@ const outreachMessageParams = z.object({
  * `draft → approved`, and (via `contactLinkedinConnection`) the parent
  * contact's connection state. Terminal outcomes go through `/result`.
  */
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: outreachMessageParams, body: patchOutreachMessageSchema },
   async ({ params, body, profileId }) => {
     const { id: campaignId, messageId } = params;

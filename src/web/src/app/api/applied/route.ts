@@ -10,7 +10,7 @@ const querySchema = z.object({
   search: z.string().trim().min(1).optional(),
 });
 
-export const GET = api.profileRoute({ query: querySchema }, ({ query, profileId }) => {
+export const GET = api.route({ query: querySchema }, ({ query, profileId }) => {
   const { stage, board, source, search } = query;
 
   const where: Prisma.ApplicationWhereInput = { profileId };

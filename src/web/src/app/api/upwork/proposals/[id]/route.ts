@@ -1,24 +1,26 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { idParam } from "@/lib/contracts/shared";
-import { patchUpworkProposalSchema } from "@/lib/contracts/upwork";
+import { patchUpworkProposalSchema, ScreeningAnswer } from "@/lib/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
-import { serializeProposal } from "@/utils/upwork";
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const proposal = await findOwned(
     (where) => db.upworkProposal.findFirst({ where }),
     { id: params.id, profileId },
     "Proposal",
   );
 
-  return serializeProposal(proposal);
+  return {
+    ...proposal,
+    screeningAnswers: JSON.parse(proposal.screeningAnswers) as ScreeningAnswer[],
+  };
 });
 
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: idParam, body: patchUpworkProposalSchema },
   async ({ params, body, profileId }) => {
     const { id } = params;
@@ -53,11 +55,14 @@ export const PATCH = api.profileRoute(
 
     publish(upworkChannel, { profileId }, { type: "proposal.updated", id });
 
-    return serializeProposal(proposal);
+    return {
+      ...proposal,
+      screeningAnswers: JSON.parse(proposal.screeningAnswers) as ScreeningAnswer[],
+    };
   },
 );
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   const { id } = params;
   await findOwned(
     (where) => db.upworkProposal.findFirst({ where, select: { id: true } }),

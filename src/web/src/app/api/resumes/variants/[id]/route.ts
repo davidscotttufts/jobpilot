@@ -16,7 +16,7 @@ const findVariant = (id: number, profileId: number) =>
     "Variant",
   );
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const variant = await findVariant(params.id, profileId);
 
   const dto: ResumeVariantDto = {
@@ -35,7 +35,7 @@ export const GET = api.profileRoute({ params: idParam }, async ({ params, profil
   return dto;
 });
 
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: idParam, body: resumeVariantPatchSchema },
   async ({ params, body, profileId }) => {
     await findVariant(params.id, profileId);
@@ -54,7 +54,7 @@ export const PATCH = api.profileRoute(
   },
 );
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   await findVariant(params.id, profileId);
 
   await db.resumeVariant.delete({ where: { id: params.id } });

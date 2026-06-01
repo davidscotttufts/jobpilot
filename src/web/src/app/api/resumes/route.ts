@@ -9,7 +9,7 @@ import { db } from "@/server/db";
 import { ensureResumesDir, generateResumeFilename } from "@/server/storage";
 import type { ResumeListItem } from "@/types/api";
 
-export const GET = api.profileRoute({}, async ({ profileId }) => {
+export const GET = api.route({}, async ({ profileId }) => {
   const profile = await db.profile.findUnique({
     where: { id: profileId },
     select: { primaryResumeId: true },
@@ -42,7 +42,7 @@ const jsonCreateSchema = z.object({
   content: resumeDataSchema.optional(),
 });
 
-export const POST = api.profileRoute({}, async ({ req, profileId }) => {
+export const POST = api.route({}, async ({ req, profileId }) => {
   const contentType = req.headers.get("content-type") ?? "";
 
   if (contentType.includes("multipart/form-data")) {

@@ -11,7 +11,7 @@ import { loadFreshAccount } from "@/server/email/account";
  * an expired token first and 400s with an actionable message when the account
  * lacks send scope (needs reconnecting).
  */
-export const POST = api.profileRoute({ body: sendEmailSchema }, async ({ body, profileId }) => {
+export const POST = api.route({ body: sendEmailSchema }, async ({ body, profileId }) => {
   const account = await loadFreshAccount(profileId);
   if (!account) {
     throw new HttpError(ErrorCodes.NOT_FOUND, "No email account connected", 404);

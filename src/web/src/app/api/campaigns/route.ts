@@ -10,7 +10,7 @@ const campaignsQuery = z.object({
   source: z.string().optional(),
 });
 
-export const GET = api.profileRoute({ query: campaignsQuery }, async ({ query, profileId }) => {
+export const GET = api.route({ query: campaignsQuery }, async ({ query, profileId }) => {
   await reconcileStaleCampaigns(profileId);
 
   const where: Prisma.CampaignWhereInput = { profileId };
@@ -31,7 +31,7 @@ export const GET = api.profileRoute({ query: campaignsQuery }, async ({ query, p
   }));
 });
 
-export const POST = api.profileRoute({ body: createCampaignSchema }, ({ body, profileId }) =>
+export const POST = api.route({ body: createCampaignSchema }, ({ body, profileId }) =>
   db.campaign.create({
     data: {
       campaignId: body.campaignId,

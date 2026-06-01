@@ -17,7 +17,7 @@ import {
 const findResume = (id: number, profileId: number) =>
   findOwned((where) => db.resume.findFirst({ where }), { id, profileId }, "Resume");
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const resume = await findResume(params.id, profileId);
   if (!resume.sourceFilename) {
     throw notFound("No source PDF uploaded");
@@ -39,7 +39,7 @@ export const GET = api.profileRoute({ params: idParam }, async ({ params, profil
   }
 });
 
-export const POST = api.profileRoute({ params: idParam }, async ({ req, params, profileId }) => {
+export const POST = api.route({ params: idParam }, async ({ req, params, profileId }) => {
   const resume = await findResume(params.id, profileId);
 
   const form = await req.formData();
@@ -72,7 +72,7 @@ export const POST = api.profileRoute({ params: idParam }, async ({ req, params, 
   return { id: params.id, sourceFilename: filename };
 });
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   const resume = await findResume(params.id, profileId);
 
   if (resume.sourceFilename) {

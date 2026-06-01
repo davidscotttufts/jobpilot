@@ -5,7 +5,7 @@ import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 
-export const POST = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const POST = api.route({ params: idParam }, async ({ params, profileId }) => {
   await findOwned(
     (where) => db.emailMessage.findFirst({ where, select: { id: true } }),
     { id: params.id, account: { profileId } },

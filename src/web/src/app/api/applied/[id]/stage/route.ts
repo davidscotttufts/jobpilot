@@ -13,7 +13,7 @@ const POSITIVE_STAGES = new Set([
   "offer",
 ]);
 
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params: idParam, body: stageTransitionSchema },
   async ({ params, body, profileId }) => {
     const { id } = params;

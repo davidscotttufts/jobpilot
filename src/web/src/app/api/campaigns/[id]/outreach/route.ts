@@ -10,7 +10,7 @@ import { createContactPayload } from "@/server/outreach/contact";
 const campaignParams = z.object({ id: z.string() });
 
 /** List the campaign's outreach messages (with their contacts) for the board. */
-export const GET = api.profileRoute({ params: campaignParams }, ({ params, profileId }) =>
+export const GET = api.route({ params: campaignParams }, ({ params, profileId }) =>
   db.outreachMessage.findMany({
     where: { campaignId: params.id, profileId },
     include: { contact: true },
@@ -23,7 +23,7 @@ export const GET = api.profileRoute({ params: campaignParams }, ({ params, profi
  * initial draft message to the campaign, then recompute the campaign summary.
  * Mirrors the campaigns/[id]/jobs create shape.
  */
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params: campaignParams, body: addCampaignOutreachSchema },
   async ({ params, body, profileId }) => {
     const { id } = params;

@@ -11,7 +11,7 @@ const querySchema = z.object({
   verificationDomain: z.string().optional(),
 });
 
-export const GET = api.profileRoute({ query: querySchema }, ({ query, profileId }) => {
+export const GET = api.route({ query: querySchema }, ({ query, profileId }) => {
   const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
   const where: Prisma.EmailMessageWhereInput = { account: { profileId } };

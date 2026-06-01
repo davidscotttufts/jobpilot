@@ -19,6 +19,18 @@ interface RouteConfig<P, Q, B> {
   status?: number;
 }
 
+type ProfileRouteConfig<P, Q, B> = RouteConfig<P, Q, B> & {
+  public?: false;
+};
+
+type PublicRouteConfig<P, Q, B> = RouteConfig<P, Q, B> & {
+  public: true;
+};
+
+type AnyRouteConfig<P, Q, B> = RouteConfig<P, Q, B> & {
+  public?: boolean;
+};
+
 interface BaseCtx<P, Q, B> {
   req: NextRequest;
   params: P;
@@ -32,6 +44,27 @@ interface ProfileCtx<P, Q, B> extends BaseCtx<P, Q, B> {
 
 type Handler<Ctx> = (ctx: Ctx) => Promise<unknown> | unknown;
 type RouteHandler = (req: NextRequest, ctx: RouteContext) => Promise<Response>;
+
+function route<P = undefined, Q = undefined, B = undefined>(
+  config: PublicRouteConfig<P, Q, B>,
+  handler: Handler<BaseCtx<P, Q, B>>,
+): RouteHandler;
+
+function route<P = undefined, Q = undefined, B = undefined>(
+  config: ProfileRouteConfig<P, Q, B>,
+  handler: Handler<ProfileCtx<P, Q, B>>,
+): RouteHandler;
+
+function route<P, Q, B>(
+  config: AnyRouteConfig<P, Q, B>,
+  handler: Handler<BaseCtx<P, Q, B>> | Handler<ProfileCtx<P, Q, B>>,
+): RouteHandler {
+  return createRoute(
+    config,
+    handler as Handler<BaseCtx<P, Q, B> & { profileId?: number }>,
+    config.public !== true,
+  );
+}
 
 function createRoute<P, Q, B>(
   config: RouteConfig<P, Q, B>,
@@ -91,19 +124,5 @@ function toErrorResponse(e: unknown): Response {
  * the escape hatch for SSE streams, file downloads, redirects, cookies).
  */
 export const api = {
-  /** Route scoped to the active profile; injects `profileId`. */
-  profileRoute<P = undefined, Q = undefined, B = undefined>(
-    config: RouteConfig<P, Q, B>,
-    handler: Handler<ProfileCtx<P, Q, B>>,
-  ): RouteHandler {
-    return createRoute(config, handler as Handler<BaseCtx<P, Q, B> & { profileId?: number }>, true);
-  },
-
-  /** Route with no profile injection (health, OAuth, resource-scoped SSE). */
-  publicRoute<P = undefined, Q = undefined, B = undefined>(
-    config: RouteConfig<P, Q, B>,
-    handler: Handler<BaseCtx<P, Q, B>>,
-  ): RouteHandler {
-    return createRoute(config, handler, false);
-  },
+  route,
 };

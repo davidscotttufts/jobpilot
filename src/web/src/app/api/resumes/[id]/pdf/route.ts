@@ -26,7 +26,7 @@ async function streamFile(filePath: string, mime: string, downloadName: string):
   });
 }
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const resume = await findOwned(
     (where) => db.resume.findFirst({ where }),
     { id: params.id, profileId },

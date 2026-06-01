@@ -13,7 +13,7 @@ import { cleanReplacementCharsNullable } from "@/utils/text";
 
 const campaignParams = z.object({ id: z.string() });
 
-export const GET = api.profileRoute({ params: campaignParams }, async ({ params, profileId }) => {
+export const GET = api.route({ params: campaignParams }, async ({ params, profileId }) => {
   const { id } = params;
   await reconcileStaleCampaigns(profileId);
 
@@ -45,7 +45,7 @@ export const GET = api.profileRoute({ params: campaignParams }, async ({ params,
   };
 });
 
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: campaignParams, body: updateCampaignSchema },
   async ({ params, body, profileId }) => {
     const { id } = params;

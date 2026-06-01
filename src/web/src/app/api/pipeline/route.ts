@@ -24,7 +24,7 @@ const pipelineQuery = z.object({
   campaignId: filter,
 });
 
-export const GET = api.profileRoute({ query: pipelineQuery }, ({ query, profileId }) => {
+export const GET = api.route({ query: pipelineQuery }, ({ query, profileId }) => {
   const { stage, limit } = query;
   const cursor = query.cursor ?? null;
   const filters = {

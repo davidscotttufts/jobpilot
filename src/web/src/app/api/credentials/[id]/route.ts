@@ -11,7 +11,7 @@ const findCredential = (id: number, profileId: number) =>
     "Credential",
   );
 
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: idParam, body: credentialPatchSchema },
   async ({ params, body, profileId }) => {
     await findCredential(params.id, profileId);
@@ -19,7 +19,7 @@ export const PATCH = api.profileRoute(
   },
 );
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   await findCredential(params.id, profileId);
   await db.credential.delete({ where: { id: params.id } });
   return { deleted: params.id };

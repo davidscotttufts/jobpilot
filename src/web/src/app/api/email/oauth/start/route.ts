@@ -5,7 +5,7 @@ import { buildAuthorizeUrl } from "@/server/email/oauth";
 
 const startQuery = z.object({ provider: z.string().optional() });
 
-export const GET = api.publicRoute({ query: startQuery }, ({ query }) => {
+export const GET = api.route({ public: true, query: startQuery }, ({ query }) => {
   const providerName = query.provider ?? "gmail";
 
   const { authorizeUrl, state } = buildAuthorizeUrl(providerName);

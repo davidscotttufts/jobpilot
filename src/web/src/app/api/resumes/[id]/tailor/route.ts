@@ -25,7 +25,7 @@ const tailorRequestSchema = z.object({
     .optional(),
 });
 
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params: idParam, body: tailorRequestSchema },
   ({ params: { id: resumeId }, body, profileId }) =>
     createTailoredVariant({ resumeId, profileId, body }),

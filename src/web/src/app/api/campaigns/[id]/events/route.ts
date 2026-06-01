@@ -9,7 +9,7 @@ import { db } from "@/server/db";
 
 const campaignParams = z.object({ id: z.string() });
 
-export const GET = api.profileRoute({ params: campaignParams }, async ({ params, profileId }) => {
+export const GET = api.route({ params: campaignParams }, async ({ params, profileId }) => {
   await findOwned(
     (where) => db.campaign.findFirst({ where, select: { campaignId: true } }),
     { campaignId: params.id, profileId },
@@ -18,7 +18,7 @@ export const GET = api.profileRoute({ params: campaignParams }, async ({ params,
   return sseResponse(subscribe(campaignChannel, { campaignId: params.id }));
 });
 
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params: campaignParams, body: campaignEventSchema },
   ({ params, body, profileId }) =>
     recordCampaignEvent({ campaignId: params.id, profileId, event: body }),

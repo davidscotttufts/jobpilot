@@ -6,7 +6,7 @@ import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 
-export const GET = api.profileRoute({ params: idParam }, ({ params, profileId }) =>
+export const GET = api.route({ params: idParam }, ({ params, profileId }) =>
   findOwned(
     (where) =>
       db.emailMessage.findFirst({
@@ -20,7 +20,7 @@ export const GET = api.profileRoute({ params: idParam }, ({ params, profileId })
   ),
 );
 
-export const PATCH = api.profileRoute(
+export const PATCH = api.route(
   { params: idParam, body: scanMessageSchema },
   async ({ params, body, profileId }) => {
     await findOwned(

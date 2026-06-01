@@ -13,7 +13,7 @@ import { deleteAllResumeArtifacts } from "@/server/storage";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-export const DELETE = api.publicRoute({ params: idParam }, async ({ params }) => {
+export const DELETE = api.route({ public: true, params: idParam }, async ({ params }) => {
   const { id } = params;
 
   const profile = await db.profile.findUnique({

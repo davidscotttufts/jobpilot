@@ -11,13 +11,13 @@ import { db } from "@/server/db";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-export const GET = api.publicRoute({}, async () => ({
+export const GET = api.route({ public: true }, async () => ({
   profileId: await getActiveProfileIdOrNull(),
 }));
 
 const bodySchema = z.object({ profileId: z.number().int().positive() });
 
-export const POST = api.publicRoute({ body: bodySchema }, async ({ body }) => {
+export const POST = api.route({ public: true, body: bodySchema }, async ({ body }) => {
   const { profileId } = body;
   const exists = await db.profile.findUnique({ where: { id: profileId }, select: { id: true } });
   if (!exists) {

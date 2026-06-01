@@ -16,7 +16,7 @@ import {
 } from "@/server/storage";
 import type { ResumeDto } from "@/types/api";
 
-export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const profile = await db.profile.findUnique({
     where: { id: profileId },
     select: { primaryResumeId: true },
@@ -62,7 +62,7 @@ const putSchema = z.object({
   content: resumeDataSchema.optional(),
 });
 
-export const PUT = api.profileRoute(
+export const PUT = api.route(
   { params: idParam, body: putSchema },
   async ({ params, body, profileId }) => {
     if (body.label === undefined && body.content === undefined) {
@@ -106,7 +106,7 @@ export const PUT = api.profileRoute(
   },
 );
 
-export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+export const DELETE = api.route({ params: idParam }, async ({ params, profileId }) => {
   const existing = await findOwned(
     (where) =>
       db.resume.findFirst({

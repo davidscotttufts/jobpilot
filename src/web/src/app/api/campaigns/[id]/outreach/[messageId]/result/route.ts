@@ -8,7 +8,7 @@ const params = z.object({
   messageId: z.coerce.number().int().positive(),
 });
 
-export const POST = api.profileRoute(
+export const POST = api.route(
   { params, body: outreachMessageResultSchema },
   ({ params, body, profileId }) =>
     recordOutreachResult({

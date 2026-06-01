@@ -1,4 +1,4 @@
-﻿import { z } from "zod/v4";
+import { z } from "zod/v4";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 import {
@@ -14,7 +14,7 @@ const querySchema = z.object({
   company: z.string().trim().min(1).optional(),
 });
 
-export const GET = api.profileRoute({ query: querySchema }, async ({ query, profileId }) => {
+export const GET = api.route({ query: querySchema }, async ({ query, profileId }) => {
   const targetUrl = query.url;
   const title = query.title;
   const company = query.company;
