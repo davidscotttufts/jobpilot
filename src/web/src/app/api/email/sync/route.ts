@@ -2,46 +2,32 @@ import { getActiveProfileId } from "@/lib/active-profile";
 import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { db } from "@/lib/db";
 import { getProvider } from "@/lib/email";
+import { loadFreshAccount } from "@/lib/email/account";
+import { linkOutreachReplies, type InboundForLinking } from "@/lib/email/reply-linker";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { publish } from "@/lib/sse/server";
 
 export async function POST() {
   const profileId = await getActiveProfileId();
-  const account = await db.emailAccount.findUnique({ where: { profileId } });
-  if (!account) {
+
+  let active;
+  try {
+    active = await loadFreshAccount(profileId);
+  } catch (e) {
+    return err(ErrorCodes.UNPROCESSABLE, e instanceof Error ? e.message : "Token refresh failed", 401);
+  }
+  if (!active) {
     return err(ErrorCodes.NOT_FOUND, "No email account connected", 404);
   }
 
-  const provider = getProvider(account.provider);
-
-  let active = account;
-  const now = new Date();
-  if (active.refreshToken && active.tokenExpiresAt && active.tokenExpiresAt <= now) {
-    try {
-      const refreshed = await provider.refresh(active.refreshToken);
-      active = await db.emailAccount.update({
-        where: { id: active.id },
-        data: {
-          accessToken: refreshed.accessToken,
-          refreshToken: refreshed.refreshToken ?? active.refreshToken,
-          tokenExpiresAt: refreshed.expiresAt ?? null,
-          scope: refreshed.scope ?? active.scope,
-        },
-      });
-    } catch (e) {
-      return err(
-        ErrorCodes.UNPROCESSABLE,
-        e instanceof Error ? e.message : "Token refresh failed",
-        401,
-      );
-    }
-  }
+  const provider = getProvider(active.provider);
 
   publish(inboxChannel, undefined, { type: "sync.started" });
 
   const result = await provider.syncMessages(active);
 
   let inserted = 0;
+  const insertedForLinking: InboundForLinking[] = [];
   for (const m of result.newMessages) {
     try {
       await db.emailMessage.create({
@@ -59,6 +45,11 @@ export async function POST() {
         },
       });
       inserted += 1;
+      insertedForLinking.push({
+        threadId: m.threadId,
+        fromAddress: m.fromAddress,
+        receivedAt: m.receivedAt,
+      });
     } catch (e) {
       if ((e as { code?: string }).code === "P2002") {
         continue;
@@ -66,6 +57,9 @@ export async function POST() {
       throw e;
     }
   }
+
+  // Flip any sent outreach messages to "replied" when their reply just arrived.
+  await linkOutreachReplies(profileId, insertedForLinking);
 
   await db.emailAccount.update({
     where: { id: active.id },

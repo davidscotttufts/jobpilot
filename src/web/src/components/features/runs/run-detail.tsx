@@ -10,6 +10,7 @@ import { runChannel } from "@/lib/sse/channels/run";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import type { RunDetailDto, RunJobDto } from "@/types/api";
+import { OutreachBoard } from "@/components/features/outreach";
 import { RunHeaderCard } from "./detail/header-card";
 import { RunJobsPanel } from "./detail/jobs-panel";
 import { RunReasonBreakdown } from "./detail/reason-breakdown";
@@ -44,6 +45,15 @@ export function RunDetail(props: RunDetailProps): ReactElement {
 
   const run = detail.data;
   const isAutoApply = run.source === "auto-apply";
+
+  if (run.source === "outreach") {
+    return (
+      <Stack spacing={3}>
+        <RunHeaderCard run={run} />
+        <OutreachBoard runId={runId} summary={run.summary} config={run.config.outreach} />
+      </Stack>
+    );
+  }
 
   // Auto-apply runs apply on their own; on other runs (e.g. search results) the
   // user dispatches a job to the single-job apply flow by its URL.

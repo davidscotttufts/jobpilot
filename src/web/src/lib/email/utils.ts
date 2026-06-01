@@ -44,6 +44,77 @@ export function decodeBase64Url(data: string): string {
   return Buffer.from(normalized, "base64").toString("utf-8");
 }
 
+/** Encode a UTF-8 string as base64url (no padding) — Gmail's `raw` format. */
+export function encodeBase64Url(data: string | Buffer): string {
+  const buf = typeof data === "string" ? Buffer.from(data, "utf-8") : data;
+  return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** RFC 2047 encode a header value when it contains non-ASCII characters. */
+function encodeHeaderValue(value: string): string {
+  if (/^[\x00-\x7F]*$/.test(value)) return value;
+  return `=?UTF-8?B?${Buffer.from(value, "utf-8").toString("base64")}?=`;
+}
+
+/** A single file part for {@link buildMimeMessage}. `contentBase64` is std base64. */
+export interface MimeAttachment {
+  filename: string;
+  mimeType: string;
+  contentBase64: string;
+}
+
+/**
+ * Build a complete RFC822 message string (headers + body). With no
+ * attachments it is a single `text/plain` part; with attachments it is a
+ * `multipart/mixed` envelope. The `From` is left to the provider (Gmail fills
+ * it from the authenticated account). Pass the result through
+ * {@link encodeBase64Url} for Gmail's `raw` field.
+ */
+export function buildMimeMessage(input: {
+  to: string;
+  subject: string;
+  body: string;
+  inReplyTo?: string;
+  attachments?: MimeAttachment[];
+}): string {
+  const headers: string[] = [
+    `To: ${input.to}`,
+    `Subject: ${encodeHeaderValue(input.subject)}`,
+    "MIME-Version: 1.0",
+  ];
+  if (input.inReplyTo) {
+    headers.push(`In-Reply-To: ${input.inReplyTo}`, `References: ${input.inReplyTo}`);
+  }
+
+  if (!input.attachments || input.attachments.length === 0) {
+    headers.push('Content-Type: text/plain; charset="UTF-8"');
+    return `${headers.join("\r\n")}\r\n\r\n${input.body}`;
+  }
+
+  const boundary = `jobpilot_${input.to.replace(/[^a-z0-9]/gi, "")}_boundary`;
+  headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+
+  const parts: string[] = [
+    `--${boundary}`,
+    'Content-Type: text/plain; charset="UTF-8"',
+    "",
+    input.body,
+  ];
+  for (const att of input.attachments) {
+    parts.push(
+      `--${boundary}`,
+      `Content-Type: ${att.mimeType}; name="${att.filename}"`,
+      "Content-Transfer-Encoding: base64",
+      `Content-Disposition: attachment; filename="${att.filename}"`,
+      "",
+      att.contentBase64.replace(/(.{76})/g, "$1\r\n"),
+    );
+  }
+  parts.push(`--${boundary}--`);
+
+  return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
+}
+
 /**
  * Walk a Gmail message payload tree and return the best text representation.
  *

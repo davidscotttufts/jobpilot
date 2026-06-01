@@ -11,9 +11,10 @@ model Run {
   config      String
   summary     String    @default("{}")
 
-  jobs         Job[]
-  events       RunEvent[]
-  applications Application[]
+  jobs             Job[]
+  events           RunEvent[]
+  applications     Application[]
+  outreachMessages OutreachMessage[]
 
   @@index([profileId])
 }

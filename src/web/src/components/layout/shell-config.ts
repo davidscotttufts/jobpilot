@@ -6,6 +6,7 @@ import {
   Settings,
   Storage,
   ViewKanban,
+  Forum,
   type SvgIconComponent,
 } from "@mui/icons-material";
 
@@ -26,6 +27,7 @@ export const navGroups: NavGroup[] = [
       { label: "Pipeline", href: "/", icon: ViewKanban },
       { label: "Overview", href: "/overview", icon: Insights },
       { label: "Upwork", href: "/upwork", icon: Handshake },
+      { label: "Outreach", href: "/outreach", icon: Forum },
       { label: "Inbox", href: "/inbox", icon: Inbox },
       { label: "Resumes", href: "/resumes", icon: Storage },
       { label: "Boards", href: "/boards", icon: BusinessCenter },

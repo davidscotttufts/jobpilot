@@ -44,6 +44,33 @@ export interface NormalizedMessage {
   receivedAt: Date;
 }
 
+/** A file attached to an outbound message. `contentBase64` is standard base64. */
+export interface OutboundAttachment {
+  filename: string;
+  mimeType: string;
+  contentBase64: string;
+}
+
+/**
+ * An outbound message to send. `threadId` keeps a reply in the same thread;
+ * `inReplyTo` is the RFC822 Message-Id being answered. `attachments` is only
+ * populated on the warm reply/second touch — never on a cold first touch.
+ */
+export interface SendMessageInput {
+  to: string;
+  subject: string;
+  body: string;
+  threadId?: string;
+  inReplyTo?: string;
+  attachments?: OutboundAttachment[];
+}
+
+/** Identifiers of a message the provider accepted for delivery. */
+export interface SentMessage {
+  providerId: string;
+  threadId: string;
+}
+
 /**
  * Result of one `syncMessages` call. `newMessages` are messages the caller
  * has not yet seen; `historyId` is a provider-specific cursor the caller
@@ -85,6 +112,14 @@ export interface EmailProvider {
    * the sync route when `tokenExpiresAt` has passed.
    */
   refresh(refreshToken: string): Promise<TokenSet>;
+
+  /**
+   * Send an outbound message from the connected mailbox. Returns the
+   * provider's message + thread ids so callers can track replies. Throws a
+   * descriptive error when the granted scope does not permit sending (the
+   * account must be reconnected with send access).
+   */
+  sendMessage(account: EmailAccount, input: SendMessageInput): Promise<SentMessage>;
 
   /**
    * Pull new messages from the mailbox. Implementations should:

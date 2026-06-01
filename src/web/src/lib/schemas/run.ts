@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { cleanReplacementChars } from "@/utils/text";
+import { outreachConfigSchema } from "./outreach";
 
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
@@ -13,7 +14,7 @@ export const RUN_STATUSES = [
 ] as const;
 export const runStatusSchema = z.enum(RUN_STATUSES);
 
-export const RUN_SOURCES = ["search", "auto-apply", "apply"] as const;
+export const RUN_SOURCES = ["search", "auto-apply", "apply", "outreach"] as const;
 export const runSourceSchema = z.enum(RUN_SOURCES);
 
 export const RUN_JOB_STATUSES = [
@@ -31,6 +32,7 @@ export const runConfigSchema = z.object({
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
   maxJobs: z.number().int().min(1).max(100).optional(),
+  outreach: outreachConfigSchema.optional(),
 });
 
 export const runSummarySchema = z.object({
@@ -40,6 +42,12 @@ export const runSummarySchema = z.object({
   failed: z.number().int().min(0).default(0),
   skipped: z.number().int().min(0).default(0),
   remaining: z.number().int().min(0).default(0),
+  // Outreach campaigns (source === "outreach") fold their own counts here.
+  discovered: z.number().int().min(0).default(0),
+  drafted: z.number().int().min(0).default(0),
+  sent: z.number().int().min(0).default(0),
+  replied: z.number().int().min(0).default(0),
+  bounced: z.number().int().min(0).default(0),
 });
 
 export const createRunSchema = z.object({

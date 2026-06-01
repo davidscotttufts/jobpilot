@@ -1,4 +1,5 @@
 import type { RunEventType, RunJobStatus, RunSource, RunStatus } from "@/lib/schemas/run";
+import type { OutreachConfigDto } from "./outreach";
 
 export interface RunDto {
   runId: string;
@@ -17,6 +18,7 @@ export interface RunConfigDto {
   minScore?: number;
   maxApplications?: number;
   maxJobs?: number;
+  outreach?: OutreachConfigDto;
 }
 
 export interface RunSummaryDto {
@@ -26,6 +28,12 @@ export interface RunSummaryDto {
   failed: number;
   skipped: number;
   remaining: number;
+  // Outreach campaigns fold their own counts here.
+  discovered: number;
+  drafted: number;
+  sent: number;
+  replied: number;
+  bounced: number;
 }
 
 export interface RunJobDto {

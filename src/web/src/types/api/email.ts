@@ -1,5 +1,7 @@
 export interface EmailAccountStatus {
   connected: boolean;
+  /** Whether the granted scope permits sending (false until reconnected). */
+  canSend: boolean;
   provider?: string;
   email?: string;
   lastSyncAt?: string | null;

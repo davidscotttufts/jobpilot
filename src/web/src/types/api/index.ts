@@ -9,3 +9,4 @@ export * from "./email";
 export * from "./pipeline";
 export * from "./overview";
 export * from "./upwork";
+export * from "./outreach";

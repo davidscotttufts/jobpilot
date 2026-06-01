@@ -2,9 +2,18 @@ import "server-only";
 import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import type { EmailAccount } from "@/generated/prisma/client";
-import type { EmailProvider, NormalizedMessage, SyncResult, TokenSet } from "./provider";
+import type {
+  EmailProvider,
+  NormalizedMessage,
+  SendMessageInput,
+  SentMessage,
+  SyncResult,
+  TokenSet,
+} from "./provider";
 import {
+  buildMimeMessage,
   domainOf,
+  encodeBase64Url,
   extractPlainText,
   headerValue,
   parseAddress,
@@ -12,7 +21,20 @@ import {
   type EmailHeader,
 } from "./utils";
 
-const GMAIL_SCOPES = ["https://www.googleapis.com/auth/gmail.readonly", "openid", "email"];
+/** Scope that grants outbound send. Absent ⇒ the account must be reconnected. */
+export const GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
+
+const GMAIL_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  GMAIL_SEND_SCOPE,
+  "openid",
+  "email",
+];
+
+/** Whether a stored, space-separated `scope` string grants send access. */
+export function scopeCanSend(scope: string | null | undefined): boolean {
+  return !!scope && scope.split(/\s+/).includes(GMAIL_SEND_SCOPE);
+}
 
 interface GoogleEnv {
   clientId: string;
@@ -60,14 +82,20 @@ export class GmailProvider implements EmailProvider {
   async exchangeCode(code: string): Promise<{ tokens: TokenSet; email: string }> {
     const client = this.makeOAuthClient();
     const { tokens } = await client.getToken(code);
+
     if (!tokens.access_token) {
       throw new Error("Google did not return an access token");
     }
+
     client.setCredentials(tokens);
     const oauth2 = google.oauth2({ version: "v2", auth: client });
     const me = await oauth2.userinfo.get();
     const email = me.data.email;
-    if (!email) throw new Error("Could not resolve Google account email");
+
+    if (!email) {
+      throw new Error("Could not resolve Google account email");
+    }
+
     return {
       email,
       tokens: {
@@ -83,14 +111,45 @@ export class GmailProvider implements EmailProvider {
     const client = this.makeOAuthClient();
     client.setCredentials({ refresh_token: refreshToken });
     const { credentials } = await client.refreshAccessToken();
+
     if (!credentials.access_token) {
       throw new Error("Failed to refresh Google access token");
     }
+
     return {
       accessToken: credentials.access_token,
       refreshToken: credentials.refresh_token ?? refreshToken,
       expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : null,
       scope: credentials.scope ?? null,
+    };
+  }
+
+  async sendMessage(account: EmailAccount, input: SendMessageInput): Promise<SentMessage> {
+    if (!scopeCanSend(account.scope)) {
+      throw new Error("Connected Gmail account lacks send access. Reconnect it to enable sending.");
+    }
+
+    const auth = this.clientForAccount(account);
+    const gmail = google.gmail({ version: "v1", auth });
+
+    const raw = encodeBase64Url(
+      buildMimeMessage({
+        to: input.to,
+        subject: input.subject,
+        body: input.body,
+        inReplyTo: input.inReplyTo,
+        attachments: input.attachments,
+      }),
+    );
+
+    const res = await gmail.users.messages.send({
+      userId: "me",
+      requestBody: { raw, threadId: input.threadId },
+    });
+
+    return {
+      providerId: res.data.id ?? "",
+      threadId: res.data.threadId ?? input.threadId ?? "",
     };
   }
 

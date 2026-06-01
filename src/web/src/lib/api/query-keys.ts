@@ -47,7 +47,14 @@ export const queryKeys = {
     list: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.runs.all, "list", filters] as const,
     detail: (runId: string) => [...queryKeys.runs.all, "detail", runId] as const,
+    outreach: (runId: string) => [...queryKeys.runs.all, "outreach", runId] as const,
     stats: () => [...queryKeys.runs.all, "stats"] as const,
+  },
+
+  contacts: {
+    all: ["contacts"] as const,
+    list: () => [...queryKeys.contacts.all, "list"] as const,
+    detail: (id: number) => [...queryKeys.contacts.all, "detail", id] as const,
   },
 
   queue: {

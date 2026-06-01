@@ -40,9 +40,13 @@ export async function GET(_req: Request, ctx: Params) {
       retryNotes: cleanReplacementCharsNullable(job.retryNotes),
     })),
     config: JSON.parse(run.config) as Record<string, unknown>,
-    // Derive from the loaded jobs so the tiles always match the rows, even if a
-    // mutation left the denormalized `Run.summary` stale (e.g. rescan promotions).
-    summary: summarizeJobs(run.jobs),
+    // Job-based runs derive the summary from their loaded jobs so the tiles
+    // always match the rows; outreach campaigns have no jobs, so their
+    // recomputed `Run.summary` (OutreachMessage aggregates) is authoritative.
+    summary:
+      run.source === "outreach"
+        ? (JSON.parse(run.summary) as Record<string, unknown>)
+        : summarizeJobs(run.jobs),
   });
 }
 

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, type ReactElement } from "react";
-import { Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useApiMutation } from "@/hooks/use-api-mutation";
@@ -53,7 +53,21 @@ export function EmailSection(): ReactElement {
               {data.provider} · last synced {last}
             </Typography>
           </Box>
+          {!data.canSend && (
+            <Alert severity="info">
+              This mailbox is read-only. Reconnect to grant send access so JobPilot can send
+              outreach emails on your behalf.
+            </Alert>
+          )}
           <Stack direction="row" spacing={1.5}>
+            <Button
+              variant={data.canSend ? "outlined" : "contained"}
+              onClick={() => {
+                window.location.href = `/api/email/oauth/start?provider=${data.provider ?? "gmail"}`;
+              }}
+            >
+              {data.canSend ? "Reconnect" : "Reconnect to enable sending"}
+            </Button>
             <Button variant="outlined" color="error" onClick={() => setPendingDisconnect(true)}>
               Disconnect
             </Button>

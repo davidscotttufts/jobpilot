@@ -24,6 +24,7 @@ model Application {
   stageEvents    StageEvent[]
   emailMessages  EmailMessage[]
   resumeVariants ResumeVariant[]
+  contacts       Contact[]
 
 
   normalizedTitle   String

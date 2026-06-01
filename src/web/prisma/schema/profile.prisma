@@ -43,6 +43,8 @@ model Profile {
   emailAccount  EmailAccount?
   upworkProposals UpworkProposal[]
   references    Reference[]
+  contacts        Contact[]
+  outreachMessages OutreachMessage[]
 
   updatedAt DateTime @updatedAt
 
