@@ -1,55 +1,38 @@
-﻿import { cookies } from "next/headers";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseQueryParams } from "@/lib/api/request";
-import { err, ErrorCodes } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { getProvider } from "@/lib/email";
+import { z } from "zod/v4";
+import { getActiveProfileId } from "@/server/active-profile";
+import { ErrorCodes } from "@/server/api/response";
+import { badRequest, HttpError } from "@/server/api/errors";
+import { api } from "@/server/api/route";
+import { completeEmailOAuth } from "@/server/email/oauth";
 
-export async function GET(req: Request) {
-  const { code, state, error } = parseQueryParams(req, ["code", "state", "error"] as const);
+const callbackQuery = z.object({
+  code: z.string().optional(),
+  state: z.string().optional(),
+  error: z.string().optional(),
+});
 
-  if (error) {
-    return err(ErrorCodes.UNPROCESSABLE, `OAuth error: ${error}`, 400);
+export const GET = api.publicRoute({ query: callbackQuery }, async ({ req, query }) => {
+  if (query.error) {
+    throw new HttpError(ErrorCodes.UNPROCESSABLE, `OAuth error: ${query.error}`, 400);
   }
-  if (!code || !state) {
-    return err(ErrorCodes.INVALID_REQUEST, "Missing code or state", 400);
+  if (!query.code || !query.state) {
+    throw badRequest("Missing code or state");
   }
 
   const jar = await cookies();
   const expectedState = jar.get("email_oauth_state")?.value;
   const providerName = jar.get("email_oauth_provider")?.value ?? "gmail";
-  if (!expectedState || expectedState !== state) {
-    return err(ErrorCodes.INVALID_REQUEST, "OAuth state mismatch", 400);
+  if (!expectedState || expectedState !== query.state) {
+    throw badRequest("OAuth state mismatch");
   }
 
-  const provider = getProvider(providerName);
-  const { tokens, email } = await provider.exchangeCode(code);
   const profileId = await getActiveProfileId();
-
-  await db.emailAccount.upsert({
-    where: { profileId },
-    create: {
-      profileId,
-      provider: providerName,
-      email,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken ?? null,
-      tokenExpiresAt: tokens.expiresAt ?? null,
-      scope: tokens.scope ?? null,
-    },
-    update: {
-      provider: providerName,
-      email,
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken ?? null,
-      tokenExpiresAt: tokens.expiresAt ?? null,
-      scope: tokens.scope ?? null,
-    },
-  });
+  await completeEmailOAuth({ providerName, code: query.code, profileId });
 
   const res = NextResponse.redirect(new URL("/inbox", req.url));
   res.cookies.delete("email_oauth_state");
   res.cookies.delete("email_oauth_provider");
   return res;
-}
+});

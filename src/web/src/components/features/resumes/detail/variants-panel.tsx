@@ -18,9 +18,9 @@ import { ConfirmDialog } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import { variantPdfUrl } from "@/lib/api/resume-urls";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import { variantPdfUrl } from "@/lib/client/resume-urls";
 import type { ResumeVariantListItem } from "@/types/api";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 

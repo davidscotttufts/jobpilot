@@ -1,20 +1,23 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
-import { parseQueryParams } from "@/lib/api/request";
-import { ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+﻿import { z } from "zod/v4";
+import { db } from "@/server/db";
 import {
   APPLIED_DUPLICATE_THRESHOLD,
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
-} from "@/lib/scoring/applied-duplicates";
+} from "@/server/scoring/applied-duplicates";
+import { api } from "@/server/api/route";
 import type { DuplicateCheckResult } from "@/types/api";
 
-export async function GET(req: Request) {
-  const profileId = await getActiveProfileId();
-  const query = parseQueryParams(req, ["url", "title", "company"] as const);
-  const targetUrl = query.url?.trim();
-  const title = query.title?.trim();
-  const company = query.company?.trim();
+const querySchema = z.object({
+  url: z.string().trim().min(1).optional(),
+  title: z.string().trim().min(1).optional(),
+  company: z.string().trim().min(1).optional(),
+});
+
+export const GET = api.profileRoute({ query: querySchema }, async ({ query, profileId }) => {
+  const targetUrl = query.url;
+  const title = query.title;
+  const company = query.company;
 
   if (targetUrl) {
     const exact = await db.application.findUnique({
@@ -39,7 +42,7 @@ export async function GET(req: Request) {
           },
         },
       };
-      return ok(result);
+      return result;
     }
   }
 
@@ -91,10 +94,10 @@ export async function GET(req: Request) {
           },
         },
       };
-      return ok(result);
+      return result;
     }
   }
 
   const empty: DuplicateCheckResult = { applied: false, match: null };
-  return ok(empty);
-}
+  return empty;
+});

@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import { PhoneField } from "@/components/ui/form";
-import type { ResumeBasics } from "@/lib/schemas/resume";
+import type { ResumeBasics } from "@/lib/contracts/resume";
 
 interface BasicsSectionProps {
   value: ResumeBasics;

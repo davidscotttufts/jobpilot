@@ -17,8 +17,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import { useConfirm } from "@/providers/confirm-provider";
 import type {
   DeleteProfileResponse,

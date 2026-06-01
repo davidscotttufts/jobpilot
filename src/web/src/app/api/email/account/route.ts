@@ -1,27 +1,24 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { accountCanSend } from "@/lib/email";
+import { db } from "@/server/db";
+import { accountCanSend } from "@/server/email";
+import { api } from "@/server/api/route";
 
-export async function GET() {
-  const profileId = await getActiveProfileId();
+export const GET = api.profileRoute({}, async ({ profileId }) => {
   const account = await db.emailAccount.findUnique({ where: { profileId } });
 
   if (!account) {
-    return ok({ connected: false, canSend: false });
+    return { connected: false, canSend: false };
   }
 
-  return ok({
+  return {
     connected: true,
     provider: account.provider,
     email: account.email,
     lastSyncAt: account.lastSyncAt,
     canSend: accountCanSend(account),
-  });
-}
+  };
+});
 
-export async function DELETE() {
-  const profileId = await getActiveProfileId();
+export const DELETE = api.profileRoute({}, async ({ profileId }) => {
   await db.emailAccount.deleteMany({ where: { profileId } });
-  return ok({ disconnected: true });
-}
+  return { disconnected: true };
+});

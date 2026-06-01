@@ -6,9 +6,9 @@ import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import { StatCard } from "@/components/ui/display";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { OutreachMessageStatus } from "@/lib/schemas/outreach";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import type { OutreachMessageStatus } from "@/lib/contracts/outreach";
 import { useAgent } from "@/providers/agent-provider";
 import type {
   EmailAccountStatus,

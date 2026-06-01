@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
 
 interface BoardSeed {
   name: string;
@@ -29,7 +29,7 @@ const DEFAULT_BOARDS: BoardSeed[] = [
   {
     name: "Hiring Cafe",
     domain: "hiring.cafe",
-    searchUrl: "https://hiring.cafe/jobs",
+    searchUrl: "https://hiring.cafe",
     sortOrder: 4,
   },
   {

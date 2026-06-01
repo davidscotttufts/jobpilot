@@ -1,8 +1,10 @@
-import { getActiveProfileIdOrNull } from "@/lib/active-profile";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { profileWithAutoApplySchema } from "@/lib/schemas/profile";
-import { resumePath } from "@/lib/storage";
+import { getActiveProfileIdOrNull } from "@/server/active-profile";
+import { ErrorCodes } from "@/server/api/response";
+import { db } from "@/server/db";
+import { profileWithAutoApplySchema } from "@/lib/contracts/profile";
+import { resumePath } from "@/server/storage";
+import { HttpError } from "@/server/api/errors";
+import { api } from "@/server/api/route";
 
 const PROFILE_SCALAR_SELECT = {
   id: true,
@@ -35,15 +37,17 @@ const PROFILE_SCALAR_SELECT = {
   updatedAt: true,
 } as const;
 
-export async function GET() {
+const EMPTY_PROFILE = {
+  profile: null,
+  autoApply: null,
+  primaryResumeSourceAbsolutePath: null,
+  resumes: [],
+};
+
+export const GET = api.publicRoute({}, async () => {
   const id = await getActiveProfileIdOrNull();
   if (id === null) {
-    return ok({
-      profile: null,
-      autoApply: null,
-      primaryResumeSourceAbsolutePath: null,
-      resumes: [],
-    });
+    return EMPTY_PROFILE;
   }
 
   const profile = await db.profile.findUnique({
@@ -52,12 +56,7 @@ export async function GET() {
   });
 
   if (!profile) {
-    return ok({
-      profile: null,
-      autoApply: null,
-      primaryResumeSourceAbsolutePath: null,
-      resumes: [],
-    });
+    return EMPTY_PROFILE;
   }
 
   const [autoApply, primarySource, resumeRows, withContent, references] = await Promise.all([
@@ -101,7 +100,7 @@ export async function GET() {
     updatedAt: r.updatedAt.toISOString(),
   }));
 
-  return ok({
+  return {
     profile: {
       ...profile,
       preferredLocations: JSON.parse(profile.preferredLocations) as string[],
@@ -113,28 +112,20 @@ export async function GET() {
       ? resumePath(primarySource.sourceFilename)
       : null,
     resumes,
-  });
-}
+  };
+});
 
-export async function PUT(req: Request) {
+export const PUT = api.publicRoute({ body: profileWithAutoApplySchema }, async ({ body }) => {
   const id = await getActiveProfileIdOrNull();
   if (id === null) {
-    return err(
+    throw new HttpError(
       ErrorCodes.UNPROCESSABLE,
       "No active profile. Create one via POST /api/profiles.",
       422,
     );
   }
 
-  const body = await req.json();
-  const parsed = profileWithAutoApplySchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid profile payload", 422, parsed.error.issues);
-  }
-
-  const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } =
-    parsed.data;
+  const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } = body;
   const preferredLocationsJson = JSON.stringify(preferredLocations);
 
   await db.profile.update({
@@ -170,5 +161,5 @@ export async function PUT(req: Request) {
     });
   }
 
-  return ok({ id });
-}
+  return { id };
+});

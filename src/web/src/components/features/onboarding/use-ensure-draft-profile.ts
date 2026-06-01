@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import type {
   ActiveProfileResponse,
   CreateProfileResponse,

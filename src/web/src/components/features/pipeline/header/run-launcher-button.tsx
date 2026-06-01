@@ -6,8 +6,8 @@ import { Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { DropdownMenu } from "@/components/ui/feedback";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import { useAgent } from "@/providers/agent-provider";
 import type { PipelineColumnPage } from "@/types/api";
 

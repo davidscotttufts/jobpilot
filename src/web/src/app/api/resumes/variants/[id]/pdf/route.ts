@@ -1,28 +1,19 @@
 import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { renderResumePdf } from "@/lib/pdf/render";
-import type { ResumeData } from "@/lib/schemas/resume";
-import { ensureGeneratedDir, generatedVariantPath, slugifyForDownload } from "@/lib/storage";
+import { db } from "@/server/db";
+import { renderResumePdf } from "@/server/pdf/render";
+import type { ResumeData } from "@/lib/contracts/resume";
+import { idParam } from "@/lib/contracts/shared";
+import { ensureGeneratedDir, generatedVariantPath, slugifyForDownload } from "@/server/storage";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
-
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const variant = await db.resumeVariant.findFirst({
-    where: { id, resume: { profileId } },
-  });
-  if (!variant) {
-    return err(ErrorCodes.NOT_FOUND, "Variant not found", 404);
-  }
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const variant = await findOwned(
+    (where) => db.resumeVariant.findFirst({ where }),
+    { id: params.id, resume: { profileId } },
+    "Variant",
+  );
 
   await ensureGeneratedDir();
   const cachePath = generatedVariantPath(variant.id, variant.updatedAt.getTime());
@@ -42,4 +33,4 @@ export async function GET(_req: Request, ctx: Params) {
       "content-disposition": `inline; filename="${slugifyForDownload(variant.label)}.pdf"`,
     },
   });
-}
+});

@@ -12,8 +12,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api/client";
-import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@/lib/schemas/outreach";
+import { apiClient } from "@/lib/client/api";
+import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@/lib/contracts/outreach";
 import type { OutreachMessageDto } from "@/types/api";
 
 interface OutreachMessageDialogProps {

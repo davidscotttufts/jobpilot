@@ -1,64 +1,38 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { patchContactSchema } from "@/lib/schemas/outreach";
+import { db } from "@/server/db";
+import { patchContactSchema } from "@/lib/contracts/outreach";
+import { idParam } from "@/lib/contracts/shared";
+import { notFound } from "@/server/api/errors";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
+export const GET = api.profileRoute({ params: idParam }, ({ params, profileId }) =>
+  findOwned(
+    (where) =>
+      db.contact.findFirst({
+        where,
+        include: { messages: { orderBy: { id: "asc" } } },
+      }),
+    { id: params.id, profileId },
+    "Contact",
+  ),
+);
 
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
+export const PATCH = api.profileRoute(
+  { params: idParam, body: patchContactSchema },
+  async ({ params, body, profileId }) => {
+    await findOwned(
+      (where) => db.contact.findFirst({ where, select: { id: true } }),
+      { id: params.id, profileId },
+      "Contact",
+    );
+    return db.contact.update({ where: { id: params.id }, data: body });
+  },
+);
+
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const d = await db.contact.deleteMany({ where: { id: params.id, profileId } });
+  if (d.count === 0) {
+    throw notFound("Contact not found");
   }
-
-  const profileId = await getActiveProfileId();
-  const contact = await db.contact.findFirst({
-    where: { id, profileId },
-    include: { messages: { orderBy: { id: "asc" } } },
-  });
-
-  if (!contact) {
-    return err(ErrorCodes.NOT_FOUND, "Contact not found", 404);
-  }
-  return ok(contact);
-}
-
-export async function PATCH(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const body = await req.json();
-  const parsed = patchContactSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid contact payload", 422, parsed.error.issues);
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.contact.findFirst({ where: { id, profileId }, select: { id: true } });
-
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Contact not found", 404);
-  }
-
-  const contact = await db.contact.update({ where: { id }, data: parsed.data });
-  return ok(contact);
-}
-
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const deleted = await db.contact.deleteMany({ where: { id, profileId } });
-
-  if (deleted.count === 0) {
-    return err(ErrorCodes.NOT_FOUND, "Contact not found", 404);
-  }
-  return ok({ deleted: true });
-}
+  return { deleted: true };
+});

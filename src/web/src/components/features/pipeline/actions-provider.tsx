@@ -8,9 +8,9 @@ import {
   type ReactElement,
 } from "react";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { AddQueueEntry } from "@/lib/schemas/queue";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import type { AddQueueEntry } from "@/lib/contracts/queue";
 import { AddUrlsDialog } from "./dialogs/add-urls-dialog";
 
 interface AddUrlsResponse {

@@ -1,33 +1,23 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { idParam } from "@/lib/contracts/shared";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { publish } from "@/lib/sse/server";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
-
-export async function POST(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const owned = await db.emailMessage.findFirst({
-    where: { id, account: { profileId } },
-    select: { id: true },
-  });
-  if (!owned) {
-    return err(ErrorCodes.NOT_FOUND, "Message not found", 404);
-  }
+export const POST = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findOwned(
+    (where) => db.emailMessage.findFirst({ where, select: { id: true } }),
+    { id: params.id, account: { profileId } },
+    "Message",
+  );
 
   await db.emailMessage.update({
-    where: { id },
+    where: { id: params.id },
     data: { reviewStatus: "denied" },
   });
 
-  publish(inboxChannel, undefined, { type: "message.reviewed", id, status: "denied" });
+  publish(inboxChannel, undefined, { type: "message.reviewed", id: params.id, status: "denied" });
 
-  return ok({ id, status: "denied" });
-}
+  return { id: params.id, status: "denied" };
+});

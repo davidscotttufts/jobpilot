@@ -1,36 +1,26 @@
 import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { idParam } from "@/lib/contracts/shared";
 import {
   deleteResumeFile,
   ensureResumesDir,
   generateResumeFilename,
   resumePath,
-} from "@/lib/storage";
+} from "@/server/storage";
+import { badRequest, notFound } from "@/server/api/errors";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
+const findResume = (id: number, profileId: number) =>
+  findOwned((where) => db.resume.findFirst({ where }), { id, profileId }, "Resume");
 
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id, profileId },
-  });
-
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const resume = await findResume(params.id, profileId);
   if (!resume.sourceFilename) {
-    return err(ErrorCodes.NOT_FOUND, "No source PDF uploaded", 404);
+    throw notFound("No source PDF uploaded");
   }
 
   const filePath = resumePath(resume.sourceFilename);
@@ -45,31 +35,20 @@ export async function GET(_req: Request, ctx: Params) {
       },
     });
   } catch {
-    return err(ErrorCodes.NOT_FOUND, "Source file missing on disk", 404);
+    throw notFound("Source file missing on disk");
   }
-}
+});
 
-export async function POST(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id, profileId },
-  });
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
+export const POST = api.profileRoute({ params: idParam }, async ({ req, params, profileId }) => {
+  const resume = await findResume(params.id, profileId);
 
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return err(ErrorCodes.INVALID_REQUEST, "file field is required", 400);
+    throw badRequest("file field is required");
   }
   if (file.size > MAX_RESUME_BYTES) {
-    return err(ErrorCodes.INVALID_REQUEST, "Resume must be 5 MB or less", 400);
+    throw badRequest("Resume must be 5 MB or less");
   }
 
   const dir = await ensureResumesDir();
@@ -82,7 +61,7 @@ export async function POST(req: Request, ctx: Params) {
   }
 
   await db.resume.update({
-    where: { id },
+    where: { id: params.id },
     data: {
       sourceFilename: filename,
       sourceMimeType: file.type || "application/pdf",
@@ -90,31 +69,20 @@ export async function POST(req: Request, ctx: Params) {
     },
   });
 
-  return ok({ id, sourceFilename: filename });
-}
+  return { id: params.id, sourceFilename: filename };
+});
 
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id, profileId },
-  });
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const resume = await findResume(params.id, profileId);
 
   if (resume.sourceFilename) {
     await deleteResumeFile(resume.sourceFilename);
   }
 
   await db.resume.update({
-    where: { id },
+    where: { id: params.id },
     data: { sourceFilename: null, sourceMimeType: null, sourceSizeBytes: null },
   });
 
-  return ok({ id });
-}
+  return { id: params.id };
+});

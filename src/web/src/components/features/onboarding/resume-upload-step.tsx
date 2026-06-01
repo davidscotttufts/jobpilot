@@ -6,10 +6,10 @@ import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/materia
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { PROFILE_DEFAULT_VALUES } from "@/lib/schemas/profile";
+import { PROFILE_DEFAULT_VALUES } from "@/lib/contracts/profile";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";

@@ -1,30 +1,23 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { resumeVariantPatchSchema } from "@/lib/schemas/resume";
+import { db } from "@/server/db";
+import { resumeVariantPatchSchema } from "@/lib/contracts/resume";
+import { idParam } from "@/lib/contracts/shared";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 import type { ResumeVariantDto } from "@/types/api";
 
-type Params = ApiRouteContext<{ id: string }>;
+const findVariant = (id: number, profileId: number) =>
+  findOwned(
+    (where) =>
+      db.resumeVariant.findFirst({
+        where,
+        include: { resume: { select: { label: true } } },
+      }),
+    { id, resume: { profileId } },
+    "Variant",
+  );
 
-async function loadOwned(id: number) {
-  const profileId = await getActiveProfileId();
-  return db.resumeVariant.findFirst({
-    where: { id, resume: { profileId } },
-    include: { resume: { select: { label: true } } },
-  });
-}
-
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const variant = await loadOwned(id);
-  if (!variant) {
-    return err(ErrorCodes.NOT_FOUND, "Variant not found", 404);
-  }
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const variant = await findVariant(params.id, profileId);
 
   const dto: ResumeVariantDto = {
     id: variant.id,
@@ -39,47 +32,31 @@ export async function GET(_req: Request, ctx: Params) {
     createdAt: variant.createdAt.toISOString(),
     updatedAt: variant.updatedAt.toISOString(),
   };
-  return ok(dto);
-}
+  return dto;
+});
 
-export async function PATCH(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) return error;
+export const PATCH = api.profileRoute(
+  { params: idParam, body: resumeVariantPatchSchema },
+  async ({ params, body, profileId }) => {
+    await findVariant(params.id, profileId);
 
-  const variant = await loadOwned(id);
-  if (!variant) {
-    return err(ErrorCodes.NOT_FOUND, "Variant not found", 404);
-  }
+    const updated = await db.resumeVariant.update({
+      where: { id: params.id },
+      data: {
+        label: body.label ?? undefined,
+        jobUrl: body.jobUrl === undefined ? undefined : body.jobUrl,
+        applicationId: body.applicationId === undefined ? undefined : body.applicationId,
+        content: body.content ? JSON.stringify(body.content) : undefined,
+        diffNotes: body.diffNotes === undefined ? undefined : body.diffNotes,
+      },
+    });
+    return { id: updated.id };
+  },
+);
 
-  const body = await req.json();
-  const parsed = resumeVariantPatchSchema.safeParse(body);
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid body", 422, parsed.error.issues);
-  }
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findVariant(params.id, profileId);
 
-  const updated = await db.resumeVariant.update({
-    where: { id },
-    data: {
-      label: parsed.data.label ?? undefined,
-      jobUrl: parsed.data.jobUrl === undefined ? undefined : parsed.data.jobUrl,
-      applicationId:
-        parsed.data.applicationId === undefined ? undefined : parsed.data.applicationId,
-      content: parsed.data.content ? JSON.stringify(parsed.data.content) : undefined,
-      diffNotes: parsed.data.diffNotes === undefined ? undefined : parsed.data.diffNotes,
-    },
-  });
-  return ok({ id: updated.id });
-}
-
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) return error;
-
-  const variant = await loadOwned(id);
-  if (!variant) {
-    return err(ErrorCodes.NOT_FOUND, "Variant not found", 404);
-  }
-
-  await db.resumeVariant.delete({ where: { id } });
-  return ok({ deleted: id });
-}
+  await db.resumeVariant.delete({ where: { id: params.id } });
+  return { deleted: params.id };
+});

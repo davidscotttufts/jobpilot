@@ -1,4 +1,4 @@
-import { RUN_STATUSES, type RunStatus } from "@/lib/schemas/run";
+import { RUN_STATUSES, type RunStatus } from "@/lib/contracts/run";
 
 export const RUN_STATUS_COLOR: Record<
   RunStatus,

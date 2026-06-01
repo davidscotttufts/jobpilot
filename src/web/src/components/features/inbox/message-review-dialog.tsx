@@ -16,8 +16,8 @@ import {
 } from "@mui/material";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import type { ApplicationDto, EmailMessageDto } from "@/types/api";
 
 interface MessageReviewDialogProps {

@@ -20,7 +20,7 @@ import { RUN_STATUS_OPTIONS } from "@/components/features/runs/run-status";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { usePersistedBoolean } from "@/hooks/use-persisted-boolean";
-import { RUN_SOURCES, type RunSource } from "@/lib/schemas/run";
+import { RUN_SOURCES, type RunSource } from "@/lib/contracts/run";
 import type { RunDto } from "@/types/api";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 

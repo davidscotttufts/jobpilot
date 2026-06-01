@@ -2,7 +2,7 @@ import type {
   ScreeningAnswer,
   UpworkProposalOutcome,
   UpworkProposalStatus,
-} from "@/lib/schemas/upwork";
+} from "@/lib/contracts/upwork";
 
 export interface UpworkProposalDto {
   id: number;

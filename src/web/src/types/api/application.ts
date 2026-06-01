@@ -1,4 +1,4 @@
-import type { ApplicationSource, Stage } from "@/lib/schemas/application";
+import type { ApplicationSource, Stage } from "@/lib/contracts/application";
 
 export interface ApplicationDto {
   id: number;

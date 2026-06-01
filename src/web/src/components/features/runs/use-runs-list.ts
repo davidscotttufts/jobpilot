@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { usePagination, type Pagination } from "@/hooks/use-pagination";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { RunSource, RunStatus } from "@/lib/schemas/run";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import type { RunSource, RunStatus } from "@/lib/contracts/run";
 import type { RunDto } from "@/types/api";
 
 export interface UseRunsListResult {

@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Stack, TextField } from "@mui/material";
-import type { ResumeSkillGroup } from "@/lib/schemas/resume";
+import type { ResumeSkillGroup } from "@/lib/contracts/resume";
 import { EntryList } from "./entry-list";
 
 interface SkillsSectionProps {

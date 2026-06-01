@@ -1,16 +1,15 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod/v4";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { db } from "@/lib/db";
-import { resumeDataSchema } from "@/lib/schemas/resume";
-import { ensureResumesDir, generateResumeFilename } from "@/lib/storage";
+import { db } from "@/server/db";
+import { resumeDataSchema } from "@/lib/contracts/resume";
+import { ensureResumesDir, generateResumeFilename } from "@/server/storage";
+import { badRequest } from "@/server/api/errors";
+import { api } from "@/server/api/route";
 import type { ResumeListItem } from "@/types/api";
 
-export async function GET() {
-  const profileId = await getActiveProfileId();
+export const GET = api.profileRoute({}, async ({ profileId }) => {
   const profile = await db.profile.findUnique({
     where: { id: profileId },
     select: { primaryResumeId: true },
@@ -35,16 +34,15 @@ export async function GET() {
     }))
     .sort((a, b) => (a.isPrimary === b.isPrimary ? 0 : a.isPrimary ? -1 : 1));
 
-  return ok(items);
-}
+  return items;
+});
 
 const jsonCreateSchema = z.object({
   label: z.string().min(1),
   content: resumeDataSchema.optional(),
 });
 
-export async function POST(req: Request) {
-  const profileId = await getActiveProfileId();
+export const POST = api.profileRoute({}, async ({ req, profileId }) => {
   const contentType = req.headers.get("content-type") ?? "";
 
   if (contentType.includes("multipart/form-data")) {
@@ -53,10 +51,10 @@ export async function POST(req: Request) {
     const labelRaw = form.get("label");
 
     if (!(file instanceof File)) {
-      return err(ErrorCodes.INVALID_REQUEST, "file field is required", 400);
+      throw badRequest("file field is required");
     }
     if (file.size > MAX_RESUME_BYTES) {
-      return err(ErrorCodes.INVALID_REQUEST, "Resume must be 5 MB or less", 400);
+      throw badRequest("Resume must be 5 MB or less");
     }
     const label =
       typeof labelRaw === "string" && labelRaw.trim()
@@ -86,22 +84,18 @@ export async function POST(req: Request) {
       });
     }
 
-    return ok({ id: resume.id }, { status: 201 });
+    return { id: resume.id };
   }
 
-  const body = await req.json();
-  const parsed = jsonCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid body", 422, parsed.error.issues);
-  }
+  const data = jsonCreateSchema.parse(await req.json());
 
   const resume = await db.resume.create({
     data: {
       profileId,
-      label: parsed.data.label,
-      content: parsed.data.content ? JSON.stringify(parsed.data.content) : null,
+      label: data.label,
+      content: data.content ? JSON.stringify(data.content) : null,
     },
   });
 
-  return ok({ id: resume.id }, { status: 201 });
-}
+  return { id: resume.id };
+});

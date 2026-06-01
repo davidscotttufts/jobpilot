@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { apiGet } from "@/lib/api/server";
+import { apiGet } from "@/server/api/fetch";
 import type { ProfileResponse } from "@/types/api";
 import { isProfileEmpty } from "@/utils/profile";
 

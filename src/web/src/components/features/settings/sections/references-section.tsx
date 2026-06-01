@@ -4,7 +4,7 @@ import { Add, Delete } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { PROFILE_DEFAULT_VALUES, type ReferenceInput } from "@/lib/schemas/profile";
+import { PROFILE_DEFAULT_VALUES, type ReferenceInput } from "@/lib/contracts/profile";
 
 const EMPTY_REFERENCE: ReferenceInput = {
   name: "",

@@ -1,4 +1,4 @@
-import type { RunEventType, RunJobStatus, RunSource, RunStatus } from "@/lib/schemas/run";
+import type { RunEventType, RunJobStatus, RunSource, RunStatus } from "@/lib/contracts/run";
 import type { OutreachConfigDto } from "./outreach";
 
 export interface RunDto {

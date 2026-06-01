@@ -4,35 +4,29 @@ import {
   ACTIVE_PROFILE_COOKIE,
   getActiveProfileIdOrNull,
   setActiveProfileId,
-} from "@/lib/active-profile";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+} from "@/server/active-profile";
+import { db } from "@/server/db";
+import { notFound } from "@/server/api/errors";
+import { api } from "@/server/api/route";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-export async function GET() {
-  const profileId = await getActiveProfileIdOrNull();
-  return ok({ profileId });
-}
+export const GET = api.publicRoute({}, async () => ({
+  profileId: await getActiveProfileIdOrNull(),
+}));
 
 const bodySchema = z.object({ profileId: z.number().int().positive() });
 
-export async function POST(req: Request) {
-  const body = await req.json();
-  const parsed = bodySchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid body", 422, parsed.error.issues);
-  }
-
-  const { profileId } = parsed.data;
+export const POST = api.publicRoute({ body: bodySchema }, async ({ body }) => {
+  const { profileId } = body;
   const exists = await db.profile.findUnique({ where: { id: profileId }, select: { id: true } });
   if (!exists) {
-    return err(ErrorCodes.NOT_FOUND, "Profile not found", 404);
+    throw notFound("Profile not found");
   }
 
   await setActiveProfileId(profileId);
 
+  // Raw response so we can attach the active-profile cookie (escape hatch).
   const res = NextResponse.json({ ok: true, data: { profileId } });
   res.cookies.set(ACTIVE_PROFILE_COOKIE, String(profileId), {
     httpOnly: true,
@@ -42,4 +36,4 @@ export async function POST(req: Request) {
     maxAge: ONE_YEAR_SECONDS,
   });
   return res;
-}
+});

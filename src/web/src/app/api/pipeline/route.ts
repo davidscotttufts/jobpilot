@@ -1,25 +1,41 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { loadApplying, loadInterviewing, loadQueued, loadSubmitted } from "./_lib/loaders";
-import { parsePipelineQuery } from "./_lib/params";
+import { z } from "zod/v4";
+import { PIPELINE_STAGES } from "@/types/api/pipeline";
+import { api } from "@/server/api/route";
+import { loadApplying, loadInterviewing, loadQueued, loadSubmitted } from "@/server/pipeline/loaders";
 
-export async function GET(req: Request) {
-  const query = parsePipelineQuery(req);
-  if (!query) {
-    return err(ErrorCodes.INVALID_REQUEST, "Invalid or missing 'stage' parameter", 400);
-  }
+const filter = z.string().trim().min(1).nullish().catch(null);
 
-  const profileId = await getActiveProfileId();
-  const { stage, cursor, limit, filters } = query;
+const pipelineQuery = z.object({
+  stage: z.enum(PIPELINE_STAGES),
+  cursor: z.coerce.number().int().positive().nullish().catch(null),
+  limit: z.coerce
+    .number()
+    .int()
+    .positive()
+    .catch(50)
+    .transform((n) => Math.min(n, 200)),
+  search: filter,
+  board: filter,
+  runId: filter,
+});
+
+export const GET = api.profileRoute({ query: pipelineQuery }, ({ query, profileId }) => {
+  const { stage, limit } = query;
+  const cursor = query.cursor ?? null;
+  const filters = {
+    search: query.search ?? null,
+    board: query.board ?? null,
+    runId: query.runId ?? null,
+  };
 
   switch (stage) {
     case "queued":
-      return ok(await loadQueued(profileId, cursor, limit, filters));
+      return loadQueued(profileId, cursor, limit, filters);
     case "applying":
-      return ok(await loadApplying(profileId, cursor, limit, filters));
+      return loadApplying(profileId, cursor, limit, filters);
     case "submitted":
-      return ok(await loadSubmitted(profileId, cursor, limit, filters));
+      return loadSubmitted(profileId, cursor, limit, filters);
     case "interviewing":
-      return ok(await loadInterviewing(profileId, cursor, limit, filters));
+      return loadInterviewing(profileId, cursor, limit, filters);
   }
-}
+});

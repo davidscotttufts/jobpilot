@@ -1,17 +1,17 @@
+import { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseQueryParams } from "@/lib/api/request";
-import { ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { api } from "@/server/api/route";
 
-export async function GET(req: Request) {
-  const profileId = await getActiveProfileId();
-  const { stage, board, source, search } = parseQueryParams(req, [
-    "stage",
-    "board",
-    "source",
-    "search",
-  ] as const);
+const querySchema = z.object({
+  stage: z.string().trim().min(1).optional(),
+  board: z.string().trim().min(1).optional(),
+  source: z.string().trim().min(1).optional(),
+  search: z.string().trim().min(1).optional(),
+});
+
+export const GET = api.profileRoute({ query: querySchema }, ({ query, profileId }) => {
+  const { stage, board, source, search } = query;
 
   const where: Prisma.ApplicationWhereInput = { profileId };
 
@@ -32,10 +32,9 @@ export async function GET(req: Request) {
     ];
   }
 
-  const applications = await db.application.findMany({
+  return db.application.findMany({
     where,
     orderBy: { appliedAt: "desc" },
     take: 500,
   });
-  return ok(applications);
-}
+});

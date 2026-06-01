@@ -38,6 +38,16 @@ Web (`bun --cwd=src/web run …`):
 - During runs, `PATCH /api/runs/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/runs/[id]/jobs/[jobKey]/result` — one call updates RunJob, creates the Application row (when applied), marks the queue entry, and recomputes the run summary.
 - Browser automation: use `browser_snapshot` (with `ref` for large pages), not screenshots.
 
+## API & module layout (`src/web/src/`)
+
+- **`app/api/**/route.ts` are thin adapters only** — no business logic, no manual parsing/envelope/try-catch. Each handler declares Zod contracts and delegates to a `server/<domain>` service.
+- **Route kernel** (`server/api/route.ts`): wrap handlers in `api.profileRoute(config, handler)` (injects `profileId`) or `api.publicRoute(...)` (no profile). `config: { params?, query?, body?: ZodType, status? }`. Handlers receive `{ req, params, query, body, profileId }` and **return plain data** (auto-wrapped in the `ok` envelope) or a raw `Response` (escape hatch for SSE/file streams/redirects/cookies). The kernel maps errors: `HttpError`→its status, `ZodError`→422, Prisma `P2002`→409, unknown→logged 500 (never rethrown — preserves the JSON envelope contract).
+- **Errors**: `throw notFound(msg)` / `conflict(msg)` / `badRequest(msg)` or `new HttpError(code, msg, status)` from `server/api/errors`. Ownership-or-404: `findOwned((where) => db.X.findFirst({ where }), { id, profileId }, "Label")` from `server/api/owned`.
+- **Params/query parsing is Zod**, not hand-rolled utils: numeric id via `idParam` (`lib/contracts/shared`); query filters as an inline `z.object({...})` with `z.coerce`/`.trim()`/`.catch()`. Success status defaults to **200** (no 201).
+- **`src/server/**` = server-only** (db, fs, secrets, domain services) — guarded by `import "server-only"`; never imported by client code. Domains: `server/{runs,resumes,email,scoring,pdf,outreach,overview,pipeline}`, plus `server/{db,active-profile,storage}` and the `server/api` kernel.
+- **`src/lib/contracts/`** = Zod schemas shared by routes **and** client forms (the only schemas both sides import). **`src/lib/client/`** = `"use client"` helpers (`api.ts` fetch wrapper, `query-keys.ts`, `resume-urls.ts`). **`src/lib/api/envelope.ts`** = neutral envelope types both sides import. `src/lib/sse/` stays put (directive-split server/client/types).
+- Adding a route: add/reuse a schema in `lib/contracts`, write `export const GET = api.profileRoute({...}, …)`, put non-trivial logic in `server/<domain>`.
+
 ## Frontend conventions (`src/web/src/`)
 
 - **Files**: kebab-case (`auth-card.tsx`, `use-auth.ts`). No PascalCase filenames.

@@ -1,10 +1,8 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { stageTransitionSchema } from "@/lib/schemas/application";
-
-type Params = ApiRouteContext<{ id: string }>;
+import { db } from "@/server/db";
+import { stageTransitionSchema } from "@/lib/contracts/application";
+import { idParam } from "@/lib/contracts/shared";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
 const POSITIVE_STAGES = new Set([
   "recruiter_screen",
@@ -15,51 +13,42 @@ const POSITIVE_STAGES = new Set([
   "offer",
 ]);
 
-export async function POST(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+export const POST = api.profileRoute(
+  { params: idParam, body: stageTransitionSchema },
+  async ({ params, body, profileId }) => {
+    const { id } = params;
+    const existing = await findOwned(
+      (where) => db.application.findFirst({ where }),
+      { id, profileId },
+      "Application",
+    );
 
-  const body = await req.json();
-  const parsed = stageTransitionSchema.safeParse(body);
+    const fromStage = existing.stage;
+    const toStage = body.toStage;
 
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid stage transition", 422, parsed.error.issues);
-  }
+    if (fromStage === toStage) {
+      return { id, stage: toStage, unchanged: true };
+    }
 
-  const profileId = await getActiveProfileId();
-  const existing = await db.application.findFirst({ where: { id, profileId } });
+    const outcome =
+      toStage === "rejected" ? "negative" : POSITIVE_STAGES.has(toStage) ? "positive" : null;
+    const rejectedAt = toStage === "rejected" ? new Date() : null;
 
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
-  }
+    await db.$transaction([
+      db.application.update({
+        where: { id },
+        data: { stage: toStage, outcome, rejectedAt },
+      }),
+      db.stageEvent.create({
+        data: {
+          applicationId: id,
+          fromStage,
+          toStage,
+          note: body.note ?? null,
+        },
+      }),
+    ]);
 
-  const fromStage = existing.stage;
-  const toStage = parsed.data.toStage;
-
-  if (fromStage === toStage) {
-    return ok({ id, stage: toStage, unchanged: true });
-  }
-
-  const outcome =
-    toStage === "rejected" ? "negative" : POSITIVE_STAGES.has(toStage) ? "positive" : null;
-  const rejectedAt = toStage === "rejected" ? new Date() : null;
-
-  await db.$transaction([
-    db.application.update({
-      where: { id },
-      data: { stage: toStage, outcome, rejectedAt },
-    }),
-    db.stageEvent.create({
-      data: {
-        applicationId: id,
-        fromStage,
-        toStage,
-        note: parsed.data.note ?? null,
-      },
-    }),
-  ]);
-
-  return ok({ id, stage: toStage });
-}
+    return { id, stage: toStage };
+  },
+);

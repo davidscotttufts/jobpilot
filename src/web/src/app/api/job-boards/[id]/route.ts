@@ -1,55 +1,26 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { jobBoardPatchSchema } from "@/lib/schemas/job-board";
+import { db } from "@/server/db";
+import { jobBoardPatchSchema } from "@/lib/contracts/job-board";
+import { idParam } from "@/lib/contracts/shared";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
+const findBoard = (id: number, profileId: number) =>
+  findOwned(
+    (where) => db.jobBoard.findFirst({ where, select: { id: true } }),
+    { id, profileId },
+    "Board",
+  );
 
-export async function PATCH(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+export const PATCH = api.profileRoute(
+  { params: idParam, body: jobBoardPatchSchema },
+  async ({ params, body, profileId }) => {
+    await findBoard(params.id, profileId);
+    return db.jobBoard.update({ where: { id: params.id }, data: body });
+  },
+);
 
-  const body = await req.json();
-  const parsed = jobBoardPatchSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid patch", 422, parsed.error.issues);
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.jobBoard.findFirst({
-    where: { id, profileId },
-    select: { id: true },
-  });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Board not found", 404);
-  }
-
-  const board = await db.jobBoard.update({
-    where: { id },
-    data: parsed.data,
-  });
-  return ok(board);
-}
-
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.jobBoard.findFirst({
-    where: { id, profileId },
-    select: { id: true },
-  });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Board not found", 404);
-  }
-
-  await db.jobBoard.delete({ where: { id } });
-  return ok({ deleted: id });
-}
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findBoard(params.id, profileId);
+  await db.jobBoard.delete({ where: { id: params.id } });
+  return { deleted: params.id };
+});

@@ -1,19 +1,18 @@
-﻿import { createReadStream } from "node:fs";
+import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { renderResumePdf } from "@/lib/pdf/render";
-import type { ResumeData } from "@/lib/schemas/resume";
+import { db } from "@/server/db";
+import { renderResumePdf } from "@/server/pdf/render";
+import type { ResumeData } from "@/lib/contracts/resume";
+import { idParam } from "@/lib/contracts/shared";
 import {
   ensureGeneratedDir,
   generatedResumePath,
   resumePath,
   slugifyForDownload,
-} from "@/lib/storage";
-
-type Params = ApiRouteContext<{ id: string }>;
+} from "@/server/storage";
+import { notFound } from "@/server/api/errors";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
 async function streamFile(filePath: string, mime: string, downloadName: string): Promise<Response> {
   const stats = await stat(filePath);
@@ -27,19 +26,12 @@ async function streamFile(filePath: string, mime: string, downloadName: string):
   });
 }
 
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id, profileId },
-  });
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const resume = await findOwned(
+    (where) => db.resume.findFirst({ where }),
+    { id: params.id, profileId },
+    "Resume",
+  );
 
   const slug = slugifyForDownload(resume.label);
 
@@ -63,9 +55,9 @@ export async function GET(_req: Request, ctx: Params) {
         resume.sourceFilename,
       );
     } catch {
-      return err(ErrorCodes.NOT_FOUND, "Source file missing on disk", 404);
+      throw notFound("Source file missing on disk");
     }
   }
 
-  return err(ErrorCodes.NOT_FOUND, "Resume has no data or source PDF", 404);
-}
+  throw notFound("Resume has no data or source PDF");
+});

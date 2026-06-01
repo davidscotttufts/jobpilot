@@ -1,8 +1,7 @@
-import { getActiveProfileId } from "@/lib/active-profile";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { sseResponse, subscribe } from "@/lib/sse/server";
+import { api } from "@/server/api/route";
 
-export async function GET() {
-  const profileId = await getActiveProfileId();
-  return sseResponse(subscribe(pipelineChannel, { profileId }));
-}
+export const GET = api.profileRoute({}, ({ profileId }) =>
+  sseResponse(subscribe(pipelineChannel, { profileId })),
+);

@@ -7,13 +7,13 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
-} from "@/lib/schemas/profile";
+} from "@/lib/contracts/profile";
 import type { ProfileResponse } from "@/types/api";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";

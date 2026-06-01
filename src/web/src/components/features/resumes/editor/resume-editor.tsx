@@ -14,9 +14,9 @@ import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material
 import { SectionCard } from "@/components/ui/layout";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { ResumeData } from "@/lib/schemas/resume";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import type { ResumeData } from "@/lib/contracts/resume";
 import { BasicsSection } from "./basics-section";
 import { EducationSection } from "./education-section";
 import { ExperienceSection } from "./experience-section";

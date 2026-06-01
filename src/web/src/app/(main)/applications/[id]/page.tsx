@@ -1,7 +1,7 @@
 ﻿import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
 import { ApplicationDetail } from "@/components/features/applications";
-import { apiGet } from "@/lib/api/server";
+import { apiGet } from "@/server/api/fetch";
 import type { ApplicationDetailDto } from "@/types/api";
 
 interface PageProps {

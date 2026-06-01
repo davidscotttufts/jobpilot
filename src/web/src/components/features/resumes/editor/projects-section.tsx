@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Stack, TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import type { ResumeProject } from "@/lib/schemas/resume";
+import type { ResumeProject } from "@/lib/contracts/resume";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
 

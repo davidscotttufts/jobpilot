@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { PersonOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import type { ProfileResponse } from "@/types/api";
 
 /**

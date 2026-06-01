@@ -4,7 +4,7 @@ import { useState, type ReactElement, type ReactNode } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
-import type { RunJobStatus } from "@/lib/schemas/run";
+import type { RunJobStatus } from "@/lib/contracts/run";
 import type { RunDetailDto, RunJobDto } from "@/types/api";
 
 interface ReasonCount {

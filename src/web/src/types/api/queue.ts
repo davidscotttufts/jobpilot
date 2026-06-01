@@ -1,4 +1,4 @@
-import type { QueueStatus } from "@/lib/schemas/queue";
+import type { QueueStatus } from "@/lib/contracts/queue";
 
 export interface QueueEntryDto {
   id: number;

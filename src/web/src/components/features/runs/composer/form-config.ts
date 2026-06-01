@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import type { RunSource } from "@/lib/schemas/run";
+import type { RunSource } from "@/lib/contracts/run";
 import type { CreateRunRequest } from "@/types/api";
 import { buildCliArgs } from "@/utils/cli-args";
 import { slugify } from "@/utils/slug";

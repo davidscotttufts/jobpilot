@@ -1,12 +1,9 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
-import { ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { api } from "@/server/api/route";
 
-export async function GET() {
-  const profileId = await getActiveProfileId();
-  const items = await db.queueEntry.findMany({
+export const GET = api.profileRoute({}, ({ profileId }) =>
+  db.queueEntry.findMany({
     where: { profileId, status: "pending" },
     orderBy: { createdAt: "asc" },
-  });
-  return ok(items);
-}
+  }),
+);

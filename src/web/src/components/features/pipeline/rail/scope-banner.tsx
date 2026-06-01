@@ -7,8 +7,8 @@ import type { Route } from "next";
 import { RUN_STATUS_COLOR, RUN_STATUS_LABEL } from "@/components/features/runs/run-status";
 import { LinkButton } from "@/components/ui/buttons";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import type { RunDto } from "@/types/api";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 

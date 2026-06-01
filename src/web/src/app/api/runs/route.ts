@@ -1,20 +1,22 @@
-﻿import type { Prisma } from "@/generated/prisma/client";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseQueryParams } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { reconcileStaleRuns } from "@/lib/runs/reconcile";
-import { createRunSchema } from "@/lib/schemas/run";
+import { z } from "zod/v4";
+import type { Prisma } from "@/generated/prisma/client";
+import { db } from "@/server/db";
+import { reconcileStaleRuns } from "@/server/runs/reconcile";
+import { createRunSchema } from "@/lib/contracts/run";
+import { api } from "@/server/api/route";
 
-export async function GET(req: Request) {
-  const profileId = await getActiveProfileId();
+const runsQuery = z.object({
+  status: z.string().optional(),
+  source: z.string().optional(),
+});
+
+export const GET = api.profileRoute({ query: runsQuery }, async ({ query, profileId }) => {
   await reconcileStaleRuns(profileId);
 
-  const { status, source } = parseQueryParams(req, ["status", "source"] as const);
   const where: Prisma.RunWhereInput = { profileId };
 
-  if (status) where.status = status;
-  if (source) where.source = source;
+  if (query.status) where.status = query.status;
+  if (query.source) where.source = query.source;
 
   const runs = await db.run.findMany({
     where,
@@ -22,41 +24,23 @@ export async function GET(req: Request) {
     take: 200,
   });
 
-  return ok(
-    runs.map((r) => ({
-      ...r,
-      config: JSON.parse(r.config) as Record<string, unknown>,
-      summary: JSON.parse(r.summary) as Record<string, unknown>,
-    })),
-  );
-}
+  return runs.map((r) => ({
+    ...r,
+    config: JSON.parse(r.config) as Record<string, unknown>,
+    summary: JSON.parse(r.summary) as Record<string, unknown>,
+  }));
+});
 
-export async function POST(req: Request) {
-  const profileId = await getActiveProfileId();
-  const body = await req.json();
-  const parsed = createRunSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid run payload", 422, parsed.error.issues);
-  }
-
-  const data = parsed.data;
-
-  try {
-    const run = await db.run.create({
+export const POST = api.profileRoute(
+  { body: createRunSchema },
+  ({ body, profileId }) =>
+    db.run.create({
       data: {
-        runId: data.runId,
+        runId: body.runId,
         profileId,
-        query: data.query,
-        source: data.source,
-        config: JSON.stringify(data.config ?? {}),
+        query: body.query,
+        source: body.source,
+        config: JSON.stringify(body.config ?? {}),
       },
-    });
-    return ok(run, { status: 201 });
-  } catch (e) {
-    if ((e as { code?: string }).code === "P2002") {
-      return err(ErrorCodes.CONFLICT, "Run with this id already exists", 409);
-    }
-    throw e;
-  }
-}
+    }),
+);

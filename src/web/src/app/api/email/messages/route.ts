@@ -1,15 +1,18 @@
-﻿import type { Prisma } from "@/generated/prisma/client";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseQueryParams } from "@/lib/api/request";
-import { ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { z } from "zod/v4";
+import type { Prisma } from "@/generated/prisma/client";
+import { db } from "@/server/db";
+import { api } from "@/server/api/route";
 
-export async function GET(req: Request) {
-  const profileId = await getActiveProfileId();
-  const { reviewStatus, classification, since, domainHint, verificationDomain } = parseQueryParams(
-    req,
-    ["reviewStatus", "classification", "since", "domainHint", "verificationDomain"] as const,
-  );
+const querySchema = z.object({
+  reviewStatus: z.string().optional(),
+  classification: z.string().optional(),
+  since: z.string().optional(),
+  domainHint: z.string().optional(),
+  verificationDomain: z.string().optional(),
+});
+
+export const GET = api.profileRoute({ query: querySchema }, ({ query, profileId }) => {
+  const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
   const where: Prisma.EmailMessageWhereInput = { account: { profileId } };
 
@@ -36,7 +39,7 @@ export async function GET(req: Request) {
     ];
   }
 
-  const messages = await db.emailMessage.findMany({
+  return db.emailMessage.findMany({
     where,
     orderBy: { receivedAt: "desc" },
     take: 200,
@@ -44,6 +47,4 @@ export async function GET(req: Request) {
       matchedApp: { select: { id: true, title: true, company: true, stage: true } },
     },
   });
-
-  return ok(messages);
-}
+});

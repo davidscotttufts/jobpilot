@@ -1,4 +1,4 @@
-import type { ResumeBasics } from "@/lib/schemas/resume";
+import type { ResumeBasics } from "@/lib/contracts/resume";
 import { normalizeLinkUrl } from "@/utils/url";
 
 type ProfileTextFieldName =

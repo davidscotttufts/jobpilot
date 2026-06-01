@@ -6,8 +6,8 @@ import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/ma
 import type { JobBoard } from "@/generated/prisma/client";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 
 const SEARCH_DEBOUNCE_MS = 250;

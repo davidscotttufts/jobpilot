@@ -1,56 +1,47 @@
-﻿import { getActiveProfileId } from "@/lib/active-profile";
-import { parsePathParams, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { addRunJobSchema } from "@/lib/schemas/run";
+import { z } from "zod/v4";
+import { db } from "@/server/db";
+import { addRunJobSchema } from "@/lib/contracts/run";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { runChannel } from "@/lib/sse/channels/run";
 import { publish } from "@/lib/sse/server";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
+const runParams = z.object({ id: z.string() });
 
-export async function GET(_req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const profileId = await getActiveProfileId();
-  const jobs = await db.job.findMany({
-    where: { runId: id, run: { profileId } },
+export const GET = api.profileRoute({ params: runParams }, ({ params, profileId }) =>
+  db.job.findMany({
+    where: { runId: params.id, run: { profileId } },
     orderBy: { id: "asc" },
-  });
-  return ok(jobs);
-}
+  }),
+);
 
-export async function POST(req: Request, ctx: Params) {
-  const { id } = await parsePathParams(ctx);
-  const body = await req.json();
-  const parsed = addRunJobSchema.safeParse(body);
+export const POST = api.profileRoute(
+  { params: runParams, body: addRunJobSchema },
+  async ({ params, body, profileId }) => {
+    const { id } = params;
+    await findOwned(
+      (where) => db.run.findFirst({ where, select: { runId: true } }),
+      { runId: id, profileId },
+      "Run",
+    );
 
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid run job payload", 422, parsed.error.issues);
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.run.findFirst({ where: { runId: id, profileId } });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Run not found", 404);
-  }
-
-  try {
     const job = await db.job.create({
       data: {
         runId: id,
-        key: parsed.data.key,
-        title: parsed.data.title,
-        company: parsed.data.company,
-        location: parsed.data.location ?? null,
-        salary: parsed.data.salary ?? null,
-        type: parsed.data.type ?? null,
-        url: parsed.data.url,
-        board: parsed.data.board ?? null,
-        matchScore: parsed.data.matchScore ?? null,
-        matchReason: parsed.data.matchReason ?? null,
-        status: parsed.data.status ?? "pending",
-        description: parsed.data.description ?? null,
-        digest: parsed.data.digest ?? null,
+        key: body.key,
+        title: body.title,
+        company: body.company,
+        location: body.location ?? null,
+        salary: body.salary ?? null,
+        type: body.type ?? null,
+        url: body.url,
+        board: body.board ?? null,
+        matchScore: body.matchScore ?? null,
+        matchReason: body.matchReason ?? null,
+        status: body.status ?? "pending",
+        description: body.description ?? null,
+        digest: body.digest ?? null,
       },
     });
 
@@ -77,11 +68,6 @@ export async function POST(req: Request, ctx: Params) {
       },
     );
 
-    return ok(job, { status: 201 });
-  } catch (e) {
-    if ((e as { code?: string }).code === "P2002") {
-      return err(ErrorCodes.CONFLICT, "Job with this jobKey already exists in run", 409);
-    }
-    throw e;
-  }
-}
+    return job;
+  },
+);

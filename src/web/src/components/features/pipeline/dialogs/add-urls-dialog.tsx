@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { z } from "zod/v4";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import type { AddQueueEntry } from "@/lib/schemas/queue";
+import type { AddQueueEntry } from "@/lib/contracts/queue";
 
 interface AddUrlsDialogProps {
   open: boolean;

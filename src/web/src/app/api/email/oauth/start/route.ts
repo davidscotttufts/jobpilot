@@ -1,28 +1,14 @@
-﻿import { randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { parseQueryParams } from "@/lib/api/request";
-import { err, ErrorCodes } from "@/lib/api/response";
-import { getProvider } from "@/lib/email";
+import { z } from "zod/v4";
+import { api } from "@/server/api/route";
+import { buildAuthorizeUrl } from "@/server/email/oauth";
 
-export async function GET(req: Request) {
-  const { provider } = parseQueryParams(req, ["provider"] as const);
-  const providerName = provider ?? "gmail";
+const startQuery = z.object({ provider: z.string().optional() });
 
-  if (providerName !== "gmail") {
-    return err(ErrorCodes.INVALID_REQUEST, `Unsupported provider: ${providerName}`, 400);
-  }
+export const GET = api.publicRoute({ query: startQuery }, ({ query }) => {
+  const providerName = query.provider ?? "gmail";
 
-  let authorizeUrl: string;
-  const state = randomBytes(16).toString("hex");
-  try {
-    authorizeUrl = getProvider(providerName).getAuthorizeUrl(state);
-  } catch (e) {
-    return err(
-      ErrorCodes.UNPROCESSABLE,
-      e instanceof Error ? e.message : "Email provider unavailable",
-      400,
-    );
-  }
+  const { authorizeUrl, state } = buildAuthorizeUrl(providerName);
 
   const res = NextResponse.redirect(authorizeUrl);
   res.cookies.set("email_oauth_state", state, {
@@ -38,4 +24,4 @@ export async function GET(req: Request) {
     maxAge: 600,
   });
   return res;
-}
+});

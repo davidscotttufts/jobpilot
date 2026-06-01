@@ -1,36 +1,25 @@
 import { z } from "zod/v4";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
 const bodySchema = z.object({
   resumeId: z.number().int().positive().nullable(),
 });
 
-export async function POST(req: Request) {
-  const profileId = await getActiveProfileId();
-  const body = await req.json();
-  const parsed = bodySchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid body", 422, parsed.error.issues);
-  }
-
-  if (parsed.data.resumeId !== null) {
-    const resume = await db.resume.findFirst({
-      where: { id: parsed.data.resumeId, profileId },
-      select: { id: true },
-    });
-
-    if (!resume) {
-      return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-    }
+export const POST = api.profileRoute({ body: bodySchema }, async ({ body, profileId }) => {
+  if (body.resumeId !== null) {
+    await findOwned(
+      (where) => db.resume.findFirst({ where, select: { id: true } }),
+      { id: body.resumeId, profileId },
+      "Resume",
+    );
   }
 
   await db.profile.update({
     where: { id: profileId },
-    data: { primaryResumeId: parsed.data.resumeId },
+    data: { primaryResumeId: body.resumeId },
   });
 
-  return ok({ primaryResumeId: parsed.data.resumeId });
-}
+  return { primaryResumeId: body.resumeId };
+});

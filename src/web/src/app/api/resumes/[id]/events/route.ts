@@ -1,26 +1,15 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { idParam } from "@/lib/contracts/shared";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { sseResponse, subscribe } from "@/lib/sse/server";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
-
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id, profileId },
-    select: { id: true },
-  });
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
-
-  return sseResponse(subscribe(resumeChannel, { resumeId: id }));
-}
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findOwned(
+    (where) => db.resume.findFirst({ where, select: { id: true } }),
+    { id: params.id, profileId },
+    "Resume",
+  );
+  return sseResponse(subscribe(resumeChannel, { resumeId: params.id }));
+});

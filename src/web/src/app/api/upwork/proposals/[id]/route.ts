@@ -1,93 +1,73 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { patchUpworkProposalSchema } from "@/lib/schemas/upwork";
+import { db } from "@/server/db";
+import { idParam } from "@/lib/contracts/shared";
+import { patchUpworkProposalSchema } from "@/lib/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 import { serializeProposal } from "@/utils/upwork";
 
-type Params = ApiRouteContext<{ id: string }>;
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const proposal = await findOwned(
+    (where) => db.upworkProposal.findFirst({ where }),
+    { id: params.id, profileId },
+    "Proposal",
+  );
 
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+  return serializeProposal(proposal);
+});
 
-  const profileId = await getActiveProfileId();
-  const proposal = await db.upworkProposal.findFirst({ where: { id, profileId } });
+export const PATCH = api.profileRoute(
+  { params: idParam, body: patchUpworkProposalSchema },
+  async ({ params, body, profileId }) => {
+    const { id } = params;
+    const existing = await findOwned(
+      (where) => db.upworkProposal.findFirst({ where }),
+      { id, profileId },
+      "Proposal",
+    );
 
-  if (!proposal) {
-    return err(ErrorCodes.NOT_FOUND, "Proposal not found", 404);
-  }
+    const update: Prisma.UpworkProposalUpdateInput = {
+      jobTitle: body.jobTitle,
+      clientName: body.clientName,
+      jobUrl: body.jobUrl,
+      jobDescription: body.jobDescription,
+      proposalText: body.proposalText,
+      status: body.status,
+      outcome: body.outcome,
+      notes: body.notes,
+    };
 
-  return ok(serializeProposal(proposal));
-}
+    if (body.screeningAnswers !== undefined) {
+      update.screeningAnswers = JSON.stringify(body.screeningAnswers);
+    }
 
-export async function PATCH(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+    if (body.submittedAt !== undefined) {
+      update.submittedAt = body.submittedAt ? new Date(body.submittedAt) : null;
+    } else if (body.status === "submitted" && !existing.submittedAt) {
+      update.submittedAt = new Date();
+    }
 
-  const body = await req.json();
-  const parsed = patchUpworkProposalSchema.safeParse(body);
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid proposal patch", 422, parsed.error.issues);
-  }
+    const proposal = await db.upworkProposal.update({ where: { id }, data: update });
 
-  const profileId = await getActiveProfileId();
-  const existing = await db.upworkProposal.findFirst({ where: { id, profileId } });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Proposal not found", 404);
-  }
+    publish(upworkChannel, { profileId }, { type: "proposal.updated", id });
 
-  const data = parsed.data;
-  const update: Prisma.UpworkProposalUpdateInput = {
-    jobTitle: data.jobTitle,
-    clientName: data.clientName,
-    jobUrl: data.jobUrl,
-    jobDescription: data.jobDescription,
-    proposalText: data.proposalText,
-    status: data.status,
-    outcome: data.outcome,
-    notes: data.notes,
-  };
+    return serializeProposal(proposal);
+  },
+);
 
-  if (data.screeningAnswers !== undefined) {
-    update.screeningAnswers = JSON.stringify(data.screeningAnswers);
-  }
-
-  if (data.submittedAt !== undefined) {
-    update.submittedAt = data.submittedAt ? new Date(data.submittedAt) : null;
-  } else if (data.status === "submitted" && !existing.submittedAt) {
-    update.submittedAt = new Date();
-  }
-
-  const proposal = await db.upworkProposal.update({ where: { id }, data: update });
-
-  publish(upworkChannel, { profileId }, { type: "proposal.updated", id });
-
-  return ok(serializeProposal(proposal));
-}
-
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.upworkProposal.findFirst({ where: { id, profileId } });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Proposal not found", 404);
-  }
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  const { id } = params;
+  await findOwned(
+    (where) => db.upworkProposal.findFirst({ where, select: { id: true } }),
+    { id, profileId },
+    "Proposal",
+  );
 
   await db.upworkProposal.delete({ where: { id } });
 
   publish(upworkChannel, { profileId }, { type: "proposal.deleted", id });
 
-  return ok({ id });
-}
+  return { id };
+});

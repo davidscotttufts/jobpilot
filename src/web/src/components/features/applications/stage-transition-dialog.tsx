@@ -11,7 +11,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { STAGES, type Stage } from "@/lib/schemas/application";
+import { STAGES, type Stage } from "@/lib/contracts/application";
 
 const STAGE_LABEL: Record<Stage, string> = {
   applied: "Applied",

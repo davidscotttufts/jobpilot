@@ -1,44 +1,28 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
+import { db } from "@/server/db";
+import { idParam } from "@/lib/contracts/shared";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
+export const GET = api.profileRoute({ params: idParam }, ({ params, profileId }) =>
+  findOwned(
+    (where) =>
+      db.application.findFirst({
+        where,
+        include: {
+          stageEvents: { orderBy: { occurredAt: "asc" } },
+        },
+      }),
+    { id: params.id, profileId },
+    "Application",
+  ),
+);
 
-export async function GET(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const application = await db.application.findFirst({
-    where: { id, profileId },
-    include: {
-      stageEvents: { orderBy: { occurredAt: "asc" } },
-    },
-  });
-  if (!application) {
-    return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
-  }
-  return ok(application);
-}
-
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.application.findFirst({
-    where: { id, profileId },
-    select: { id: true },
-  });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
-  }
-
-  await db.application.delete({ where: { id } });
-  return ok({ deleted: id });
-}
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findOwned(
+    (where) => db.application.findFirst({ where, select: { id: true } }),
+    { id: params.id, profileId },
+    "Application",
+  );
+  await db.application.delete({ where: { id: params.id } });
+  return { deleted: params.id };
+});

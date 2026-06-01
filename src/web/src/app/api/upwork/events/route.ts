@@ -1,4 +1,4 @@
-import { getActiveProfileId } from "@/lib/active-profile";
+import { getActiveProfileId } from "@/server/active-profile";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { sseResponse, subscribe } from "@/lib/sse/server";
 

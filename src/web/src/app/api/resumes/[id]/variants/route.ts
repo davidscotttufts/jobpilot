@@ -1,29 +1,20 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { resumeVariantCreateSchema } from "@/lib/schemas/resume";
+import { db } from "@/server/db";
+import { resumeVariantCreateSchema } from "@/lib/contracts/resume";
+import { idParam } from "@/lib/contracts/shared";
+import { notFound } from "@/server/api/errors";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 import type { ResumeVariantListItem } from "@/types/api";
 
-type Params = ApiRouteContext<{ id: string }>;
-
-export async function GET(_req: Request, ctx: Params) {
-  const { id: resumeId, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id: resumeId, profileId },
-    select: { id: true },
-  });
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
+export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findOwned(
+    (where) => db.resume.findFirst({ where, select: { id: true } }),
+    { id: params.id, profileId },
+    "Resume",
+  );
 
   const variants = await db.resumeVariant.findMany({
-    where: { resumeId },
+    where: { resumeId: params.id },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -36,48 +27,39 @@ export async function GET(_req: Request, ctx: Params) {
     createdAt: v.createdAt.toISOString(),
     updatedAt: v.updatedAt.toISOString(),
   }));
-  return ok(items);
-}
+  return items;
+});
 
-export async function POST(req: Request, ctx: Params) {
-  const { id: resumeId, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+export const POST = api.profileRoute(
+  { params: idParam, body: resumeVariantCreateSchema },
+  async ({ params, body, profileId }) => {
+    await findOwned(
+      (where) => db.resume.findFirst({ where, select: { id: true } }),
+      { id: params.id, profileId },
+      "Resume",
+    );
 
-  const profileId = await getActiveProfileId();
-  const resume = await db.resume.findFirst({
-    where: { id: resumeId, profileId },
-    select: { id: true },
-  });
-  if (!resume) {
-    return err(ErrorCodes.NOT_FOUND, "Resume not found", 404);
-  }
+    if (body.applicationId) {
+      const app = await db.application.findUnique({
+        where: { id: body.applicationId },
+        select: { id: true },
+      });
+      if (!app) {
+        throw notFound("Application not found");
+      }
+    }
 
-  const body = await req.json();
-  const parsed = resumeVariantCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid body", 422, parsed.error.issues);
-  }
-
-  if (parsed.data.applicationId) {
-    const app = await db.application.findUnique({
-      where: { id: parsed.data.applicationId },
-      select: { id: true },
+    const variant = await db.resumeVariant.create({
+      data: {
+        resumeId: params.id,
+        label: body.label,
+        jobUrl: body.jobUrl ?? null,
+        applicationId: body.applicationId ?? null,
+        content: JSON.stringify(body.content),
+        diffNotes: body.diffNotes ?? null,
+      },
     });
-    if (!app) return err(ErrorCodes.NOT_FOUND, "Application not found", 404);
-  }
 
-  const variant = await db.resumeVariant.create({
-    data: {
-      resumeId,
-      label: parsed.data.label,
-      jobUrl: parsed.data.jobUrl ?? null,
-      applicationId: parsed.data.applicationId ?? null,
-      content: JSON.stringify(parsed.data.content),
-      diffNotes: parsed.data.diffNotes ?? null,
-    },
-  });
-
-  return ok({ id: variant.id }, { status: 201 });
-}
+    return { id: variant.id };
+  },
+);

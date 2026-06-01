@@ -20,9 +20,9 @@ import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePagination } from "@/hooks/use-pagination";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { JobBoardPatch } from "@/lib/schemas/job-board";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import type { JobBoardPatch } from "@/lib/contracts/job-board";
 import type { JobBoardDto } from "@/types/api";
 import { BoardFormDialog } from "./board-form-dialog";
 

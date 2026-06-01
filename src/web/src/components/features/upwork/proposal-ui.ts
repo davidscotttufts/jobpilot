@@ -3,7 +3,7 @@ import {
   UPWORK_PROPOSAL_STATUSES,
   type UpworkProposalOutcome,
   type UpworkProposalStatus,
-} from "@/lib/schemas/upwork";
+} from "@/lib/contracts/upwork";
 
 export const STATUS_COLOR: Record<
   UpworkProposalStatus,

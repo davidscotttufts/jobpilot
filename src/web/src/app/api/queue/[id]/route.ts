@@ -1,58 +1,32 @@
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { patchQueueSchema } from "@/lib/schemas/queue";
+import { db } from "@/server/db";
+import { patchQueueSchema } from "@/lib/contracts/queue";
+import { idParam } from "@/lib/contracts/shared";
+import { findOwned } from "@/server/api/owned";
+import { api } from "@/server/api/route";
 
-type Params = ApiRouteContext<{ id: string }>;
+const findEntry = (id: number, profileId: number) =>
+  findOwned(
+    (where) => db.queueEntry.findFirst({ where, select: { id: true } }),
+    { id, profileId },
+    "Queue entry",
+  );
 
-export async function PATCH(req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+export const PATCH = api.profileRoute(
+  { params: idParam, body: patchQueueSchema },
+  async ({ params, body, profileId }) => {
+    await findEntry(params.id, profileId);
+    return db.queueEntry.update({
+      where: { id: params.id },
+      data: {
+        status: body.status,
+        consumedAt: body.status === "consumed" ? new Date() : null,
+      },
+    });
+  },
+);
 
-  const body = await req.json();
-  const parsed = patchQueueSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid patch", 422, parsed.error.issues);
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.queueEntry.findFirst({
-    where: { id, profileId },
-    select: { id: true },
-  });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Queue entry not found", 404);
-  }
-
-  const item = await db.queueEntry.update({
-    where: { id },
-    data: {
-      status: parsed.data.status,
-      consumedAt: parsed.data.status === "consumed" ? new Date() : null,
-    },
-  });
-  return ok(item);
-}
-
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
-
-  const profileId = await getActiveProfileId();
-  const existing = await db.queueEntry.findFirst({
-    where: { id, profileId },
-    select: { id: true },
-  });
-  if (!existing) {
-    return err(ErrorCodes.NOT_FOUND, "Queue entry not found", 404);
-  }
-
-  await db.queueEntry.delete({ where: { id } });
-  return ok({ deleted: id });
-}
+export const DELETE = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
+  await findEntry(params.id, profileId);
+  await db.queueEntry.delete({ where: { id: params.id } });
+  return { deleted: params.id };
+});

@@ -1,7 +1,5 @@
-﻿import { ok } from "@/lib/api/response";
+import { api } from "@/server/api/route";
 
 const VERSION = "2.0.0";
 
-export async function GET() {
-  return ok({ version: VERSION, time: new Date().toISOString() });
-}
+export const GET = api.publicRoute({}, () => ({ version: VERSION, time: new Date().toISOString() }));

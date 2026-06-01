@@ -8,7 +8,7 @@ import {
   type GridRowSelectionModel,
   type GridRowsProp,
 } from "@mui/x-data-grid";
-import type { RunJobStatus } from "@/lib/schemas/run";
+import type { RunJobStatus } from "@/lib/contracts/run";
 import type { RunJobDto } from "@/types/api";
 
 /** Statuses that can still be applied to from the runs detail page. */

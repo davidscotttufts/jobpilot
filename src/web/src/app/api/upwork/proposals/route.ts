@@ -1,16 +1,19 @@
+import { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
-import { getActiveProfileId } from "@/lib/active-profile";
-import { parseQueryParams } from "@/lib/api/request";
-import { err, ErrorCodes, ok } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { createUpworkProposalSchema } from "@/lib/schemas/upwork";
+import { db } from "@/server/db";
+import { createUpworkProposalSchema } from "@/lib/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
+import { api } from "@/server/api/route";
 import { serializeProposal } from "@/utils/upwork";
 
-export async function GET(req: Request) {
-  const profileId = await getActiveProfileId();
-  const { status, search } = parseQueryParams(req, ["status", "search"] as const);
+const querySchema = z.object({
+  status: z.string().trim().min(1).optional(),
+  search: z.string().trim().min(1).optional(),
+});
+
+export const GET = api.profileRoute({ query: querySchema }, async ({ query, profileId }) => {
+  const { status, search } = query;
 
   const where: Prisma.UpworkProposalWhereInput = { profileId };
   if (status) {
@@ -26,34 +29,28 @@ export async function GET(req: Request) {
     take: 500,
   });
 
-  return ok(proposals.map(serializeProposal));
-}
+  return proposals.map(serializeProposal);
+});
 
-export async function POST(req: Request) {
-  const profileId = await getActiveProfileId();
-  const body = await req.json();
-  const parsed = createUpworkProposalSchema.safeParse(body);
+export const POST = api.profileRoute(
+  { body: createUpworkProposalSchema },
+  async ({ body, profileId }) => {
+    const proposal = await db.upworkProposal.create({
+      data: {
+        profileId,
+        jobTitle: body.jobTitle,
+        clientName: body.clientName ?? null,
+        jobUrl: body.jobUrl ?? null,
+        jobDescription: body.jobDescription ?? null,
+        proposalText: body.proposalText ?? "",
+        screeningAnswers: JSON.stringify(body.screeningAnswers ?? []),
+        status: body.status ?? "draft",
+        notes: body.notes ?? null,
+      },
+    });
 
-  if (!parsed.success) {
-    return err(ErrorCodes.UNPROCESSABLE, "Invalid proposal payload", 422, parsed.error.issues);
-  }
+    publish(upworkChannel, { profileId }, { type: "proposal.created", id: proposal.id });
 
-  const data = parsed.data;
-  const proposal = await db.upworkProposal.create({
-    data: {
-      profileId,
-      jobTitle: data.jobTitle,
-      clientName: data.clientName ?? null,
-      jobUrl: data.jobUrl ?? null,
-      jobDescription: data.jobDescription ?? null,
-      proposalText: data.proposalText ?? "",
-      screeningAnswers: JSON.stringify(data.screeningAnswers ?? []),
-      status: data.status ?? "draft",
-      notes: data.notes ?? null,
-    },
-  });
-
-  publish(upworkChannel, { profileId }, { type: "proposal.created", id: proposal.id });
-
-  return ok(serializeProposal(proposal), { status: 201 });
-}
+    return serializeProposal(proposal);
+  },
+);

@@ -3,8 +3,8 @@
 import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
 import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
 import { type PipelineColumnPage, type PipelineStage } from "@/types/api";
 
 function useStageTotal(stage: PipelineStage): number {

@@ -3,33 +3,30 @@ import {
   ACTIVE_PROFILE_COOKIE,
   getActiveProfileIdOrNull,
   setActiveProfileId,
-} from "@/lib/active-profile";
-import { parseIdParam, type ApiRouteContext } from "@/lib/api/request";
-import { err, ErrorCodes } from "@/lib/api/response";
-import { db } from "@/lib/db";
-import { deleteAllResumeArtifacts } from "@/lib/storage";
-
-type Params = ApiRouteContext<{ id: string }>;
+} from "@/server/active-profile";
+import { ErrorCodes } from "@/server/api/response";
+import { db } from "@/server/db";
+import { idParam } from "@/lib/contracts/shared";
+import { deleteAllResumeArtifacts } from "@/server/storage";
+import { conflict, HttpError, notFound } from "@/server/api/errors";
+import { api } from "@/server/api/route";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-export async function DELETE(_req: Request, ctx: Params) {
-  const { id, error } = await parseIdParam(ctx);
-  if (error) {
-    return error;
-  }
+export const DELETE = api.publicRoute({ params: idParam }, async ({ params }) => {
+  const { id } = params;
 
   const profile = await db.profile.findUnique({
     where: { id },
     select: { id: true, isActive: true },
   });
   if (!profile) {
-    return err(ErrorCodes.NOT_FOUND, "Profile not found", 404);
+    throw notFound("Profile not found");
   }
 
   const total = await db.profile.count();
   if (total <= 1) {
-    return err(ErrorCodes.CONFLICT, "Cannot delete the only remaining profile", 409);
+    throw conflict("Cannot delete the only remaining profile");
   }
 
   const resumes = await db.resume.findMany({
@@ -65,7 +62,7 @@ export async function DELETE(_req: Request, ctx: Params) {
     });
 
     if (!next) {
-      return err(ErrorCodes.INTERNAL, "No surviving profile after delete", 500);
+      throw new HttpError(ErrorCodes.INTERNAL, "No surviving profile after delete", 500);
     }
     await setActiveProfileId(next.id);
     activeProfileId = next.id;
@@ -73,6 +70,7 @@ export async function DELETE(_req: Request, ctx: Params) {
     activeProfileId = cookieActiveId ?? id;
   }
 
+  // Raw response so we can attach the active-profile cookie (escape hatch).
   const res = NextResponse.json({
     ok: true,
     data: { deleted: id, activeProfileId },
@@ -88,4 +86,4 @@ export async function DELETE(_req: Request, ctx: Params) {
     });
   }
   return res;
-}
+});

@@ -15,9 +15,9 @@ import {
 } from "@mui/material";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/api/client";
-import { queryKeys } from "@/lib/api/query-keys";
-import type { RunStatus } from "@/lib/schemas/run";
+import { apiClient } from "@/lib/client/api";
+import { queryKeys } from "@/lib/client/query-keys";
+import type { RunStatus } from "@/lib/contracts/run";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import type { RunDetailDto } from "@/types/api";
