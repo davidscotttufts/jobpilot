@@ -45,6 +45,7 @@ model Profile {
   references    Reference[]
   contacts        Contact[]
   outreachMessages OutreachMessage[]
+  coverLetters    CoverLetter[]
 
   updatedAt DateTime @updatedAt
 

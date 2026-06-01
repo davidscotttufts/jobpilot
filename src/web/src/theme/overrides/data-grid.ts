@@ -21,6 +21,7 @@ export const dataGridOverrides: Components<Theme>["MuiDataGrid"] = {
         textTransform: "uppercase",
       },
       "& .MuiDataGrid-cell": { fontSize: "0.875rem" },
+      "& .MuiDataGrid-row": { cursor: "pointer" },
     }),
   },
 };

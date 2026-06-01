@@ -88,4 +88,10 @@ export const queryKeys = {
       [...queryKeys.upworkProposals.all, "list", filters] as const,
     detail: (id: number) => [...queryKeys.upworkProposals.all, "detail", id] as const,
   },
+
+  coverLetters: {
+    all: ["cover-letters"] as const,
+    list: () => [...queryKeys.coverLetters.all, "list"] as const,
+    detail: (id: number) => [...queryKeys.coverLetters.all, "detail", id] as const,
+  },
 } as const;

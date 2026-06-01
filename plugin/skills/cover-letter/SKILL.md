@@ -51,6 +51,18 @@ Best regards,
 
 Invoke the `humanizer` skill on the full text. The final output must read as written by a real person.
 
+## Step 5: Save to History
+
+Persist the final letter so it's reviewable in the web app. Best-effort — if the call fails, continue:
+
+```bash
+curl -fsS -X POST "$JOBPILOT_API/api/cover-letters" -H 'content-type: application/json' \
+  -d "$(jq -n --arg c "<final letter text>" --arg u "<job url>" --arg t "<role title>" --arg co "<company>" --arg s "<source>" \
+        '{content:$c, jobUrl:($u|select(.!="")), jobTitle:($t|select(.!="")), company:($co|select(.!="")), source:$s}')"
+```
+
+`jobUrl`/`jobTitle`/`company` come from the JD argument (`$DIGEST` fields when present). `source` is the invoking context — `apply`, `auto-apply`, or `manual` (default `manual` when the caller didn't specify).
+
 ## Rules
 
 1. **One page.** 350–450 words for the body.

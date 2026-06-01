@@ -221,7 +221,7 @@ Invoke the `tailor-resume` skill with `$DIGEST`. Empty `$DIGEST` (legacy row) â†
 
 ### 4.4 Fill Forms
 
-Follow `../shared/form-filling.md`. Upload the 4.3 variant for resume fields. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
+Follow `../shared/form-filling.md`. Upload the 4.3 variant for resume fields. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` (pass `source:apply`) and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
 
 ### 4.5 Pre-Submit Review (Single-Job Mode Only)
 

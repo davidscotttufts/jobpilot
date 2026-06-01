@@ -10,3 +10,4 @@ export * from "./pipeline";
 export * from "./overview";
 export * from "./upwork";
 export * from "./outreach";
+export * from "./cover-letter";

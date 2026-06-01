@@ -147,7 +147,6 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       loading={loading}
       rowHeight={60}
       onRowClick={(p) => onRowClick(p.row as EmailMessageDto)}
-      sx={{ "& .MuiDataGrid-row": { cursor: "pointer" } }}
     />
   );
 }

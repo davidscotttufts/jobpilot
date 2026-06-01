@@ -1,5 +1,6 @@
 import {
   BusinessCenter,
+  Description,
   Forum,
   Handshake,
   Inbox,
@@ -30,6 +31,7 @@ export const navGroups: NavGroup[] = [
       { label: "Outreach", href: "/outreach", icon: Forum },
       { label: "Inbox", href: "/inbox", icon: Inbox },
       { label: "Resumes", href: "/resumes", icon: Storage },
+      { label: "Cover Letters", href: "/cover-letters", icon: Description },
       { label: "Boards", href: "/boards", icon: BusinessCenter },
       { label: "Settings", href: "/settings", icon: Settings },
     ],
