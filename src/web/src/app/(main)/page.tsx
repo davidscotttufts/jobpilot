@@ -2,11 +2,11 @@ import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import {
   AddUrlsButton,
+  CampaignLauncherButton,
   PipelineActionsProvider,
   PipelineFilterBar,
   PipelineHeaderStats,
   PipelineWorkspace,
-  RunLauncherButton,
 } from "@/components/features/pipeline";
 import { PageHeader } from "@/components/ui/layout";
 
@@ -22,7 +22,7 @@ export default function PipelinePage(): ReactElement {
             actions={
               <>
                 <AddUrlsButton />
-                <RunLauncherButton />
+                <CampaignLauncherButton />
               </>
             }
           />

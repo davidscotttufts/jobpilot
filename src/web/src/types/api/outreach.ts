@@ -39,7 +39,7 @@ export interface OutreachMessageDto {
   id: number;
   profileId: number;
   contactId: number;
-  runId: string | null;
+  campaignId: string | null;
   channel: OutreachChannel;
   linkedinKind: "inmail" | "connect_note" | "dm" | null;
   subject: string | null;

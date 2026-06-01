@@ -1,11 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { db } from "@/server/db";
 import { idParam } from "@/lib/contracts/shared";
 import { patchUpworkProposalSchema } from "@/lib/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 import { serializeProposal } from "@/utils/upwork";
 
 export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {

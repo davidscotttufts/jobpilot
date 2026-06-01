@@ -4,7 +4,7 @@ import { cleanReplacementChars } from "@/utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-// ── Campaign-level enums (stored in Run.config.outreach) ────────────────────
+// ── Campaign-level enums (stored in Campaign.config.outreach) ────────────────────
 
 export const OUTREACH_CHANNELS = ["email", "linkedin"] as const;
 export const outreachChannelSchema = z.enum(OUTREACH_CHANNELS);
@@ -21,7 +21,7 @@ export const outreachScopeSchema = z.enum(OUTREACH_SCOPES);
 export const RESUME_INCLUDE = ["none", "link", "attach-on-reply"] as const;
 export const resumeIncludeSchema = z.enum(RESUME_INCLUDE);
 
-/** Shape of `Run.config.outreach` — the per-campaign mode selector. */
+/** Shape of `Campaign.config.outreach` — the per-campaign mode selector. */
 export const outreachConfigSchema = z.object({
   channels: z.array(outreachChannelSchema).min(1),
   linkedinTier: linkedinTierSchema.optional(),
@@ -103,11 +103,11 @@ export const outreachMessageFieldsSchema = z.object({
 });
 
 /**
- * POST /api/runs/[id]/outreach — add a discovered contact (or attach to an
+ * POST /api/campaigns/[id]/outreach — add a discovered contact (or attach to an
  * existing one via `contactId`) plus an initial draft message. Mirrors the
- * `addRunJobSchema` create-and-relate shape.
+ * `addCampaignJobSchema` create-and-relate shape.
  */
-export const addRunOutreachSchema = z
+export const addCampaignOutreachSchema = z
   .object({
     contactId: z.number().int().optional(),
     contact: createContactSchema.optional(),
@@ -117,7 +117,7 @@ export const addRunOutreachSchema = z
     message: "Provide either contactId or contact.",
   });
 
-/** PATCH /api/runs/[id]/outreach/[messageId] — non-terminal edits. */
+/** PATCH /api/campaigns/[id]/outreach/[messageId] — non-terminal edits. */
 export const patchOutreachMessageSchema = z.object({
   status: outreachMessageStatusSchema.optional(),
   subject: z.string().optional().nullable(),
@@ -132,7 +132,7 @@ export const patchOutreachMessageSchema = z.object({
 export const OUTREACH_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
 export const outreachMessageOutcomeSchema = z.enum(OUTREACH_MESSAGE_OUTCOMES);
 
-/** POST /api/runs/[id]/outreach/[messageId]/result — terminal outcome. */
+/** POST /api/campaigns/[id]/outreach/[messageId]/result — terminal outcome. */
 export const outreachMessageResultSchema = z
   .object({
     outcome: outreachMessageOutcomeSchema,
@@ -172,7 +172,7 @@ export type ResumeInclude = z.infer<typeof resumeIncludeSchema>;
 export type OutreachMessageStatus = z.infer<typeof outreachMessageStatusSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type PatchContactInput = z.infer<typeof patchContactSchema>;
-export type AddRunOutreachInput = z.infer<typeof addRunOutreachSchema>;
+export type AddCampaignOutreachInput = z.infer<typeof addCampaignOutreachSchema>;
 export type PatchOutreachMessageInput = z.infer<typeof patchOutreachMessageSchema>;
 export type OutreachMessageOutcome = z.infer<typeof outreachMessageOutcomeSchema>;
 export type OutreachMessageResultInput = z.infer<typeof outreachMessageResultSchema>;

@@ -1,14 +1,14 @@
 import "server-only";
+import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@/lib/contracts/campaign";
 import { db } from "@/server/db";
-import { RUN_JOB_TERMINAL_OUTCOMES } from "@/lib/contracts/run";
 import type { PipelineColumnPage, PipelineJobDto, PipelineStage } from "@/types/api/pipeline";
-import { mapApplication, mapQueueEntry, mapRunJob } from "./mappers";
+import { mapApplication, mapCampaignJob, mapQueueEntry } from "./mappers";
 
-/** Active board/run/search scoping applied to a pipeline column query. */
+/** Active board/campaign/search scoping applied to a pipeline column query. */
 export interface PipelineFilters {
   search?: string | null;
   board?: string | null;
-  runId?: string | null;
+  campaignId?: string | null;
 }
 
 export function emptyPage(stage: PipelineStage): PipelineColumnPage {
@@ -21,9 +21,9 @@ export async function loadQueued(
   limit: number,
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
-  // Queued entries live in QueueEntry, which has no runId — a run scope can
+  // Queued entries live in QueueEntry, which has no campaignId — a campaign scope can
   // never match them, so short-circuit (mirrors the board handling).
-  if (filters.board || filters.runId) {
+  if (filters.board || filters.campaignId) {
     return emptyPage("queued");
   }
 
@@ -54,10 +54,10 @@ export async function loadApplying(
   filters: PipelineFilters,
 ): Promise<PipelineColumnPage> {
   const baseWhere = {
-    run: { status: "in_progress", profileId },
-    status: { notIn: [...RUN_JOB_TERMINAL_OUTCOMES] },
+    campaign: { status: "in_progress", profileId },
+    status: { notIn: [...CAMPAIGN_JOB_TERMINAL_OUTCOMES] },
     ...(filters.board ? { board: filters.board } : {}),
-    ...(filters.runId ? { runId: filters.runId } : {}),
+    ...(filters.campaignId ? { campaignId: filters.campaignId } : {}),
   };
   const searchWhere = filters.search
     ? {
@@ -75,7 +75,7 @@ export async function loadApplying(
     db.job.count({ where: { ...baseWhere, appliedAt: { gte: startOfToday() } } }),
   ]);
 
-  return finalize("applying", items, total, todayCount, limit, mapRunJob);
+  return finalize("applying", items, total, todayCount, limit, mapCampaignJob);
 }
 
 export function loadSubmitted(
@@ -120,7 +120,7 @@ async function loadApplicationStage(
     profileId,
     stage: stageFilter,
     ...(filters.board ? { board: filters.board } : {}),
-    ...(filters.runId ? { runId: filters.runId } : {}),
+    ...(filters.campaignId ? { campaignId: filters.campaignId } : {}),
   };
   const searchWhere = filters.search
     ? {

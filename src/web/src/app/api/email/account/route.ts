@@ -1,6 +1,6 @@
+import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 import { accountCanSend } from "@/server/email";
-import { api } from "@/server/api/route";
 
 export const GET = api.profileRoute({}, async ({ profileId }) => {
   const account = await db.emailAccount.findUnique({ where: { profileId } });

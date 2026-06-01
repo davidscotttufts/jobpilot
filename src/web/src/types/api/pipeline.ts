@@ -23,7 +23,7 @@ export interface PipelineJobDto {
   liveMessage: string | null;
   stageSummary: string | null;
   url: string;
-  runId: string | null;
+  campaignId: string | null;
   applicationId: number | null;
 }
 

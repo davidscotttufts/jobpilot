@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import { renderCoverLetterPdf } from "@/server/pdf/render";
 import { api } from "@/server/api/route";
+import { renderCoverLetterPdf } from "@/server/pdf/render";
 
 const requestSchema = z.object({
   text: z.string().min(1),

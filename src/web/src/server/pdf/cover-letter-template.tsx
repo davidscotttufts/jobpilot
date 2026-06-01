@@ -29,11 +29,7 @@ export function CoverLetterTemplate(props: CoverLetterTemplateProps): ReactEleme
     <Document>
       <Page size="LETTER" style={styles.page}>
         {lines.map((line, i) =>
-          line.trim() === "" ? (
-            <View key={i} style={styles.blank} />
-          ) : (
-            <Text key={i}>{line}</Text>
-          ),
+          line.trim() === "" ? <View key={i} style={styles.blank} /> : <Text key={i}>{line}</Text>,
         )}
       </Page>
     </Document>

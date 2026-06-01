@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Renamed the `Run` model and module to `Campaign`** throughout — DB tables
+  (`Run`→`Campaign`, `RunEvent`→`CampaignEvent`, PK `runId`→`campaignId`),
+  the `server/campaigns` module, all `/api/campaigns/*` routes, the
+  `/campaigns` UI, SSE channels, and the skills (the UI now injects
+  `campaign <id>` / `--campaign <id>`). `AutoApplySettings.maxApplicationsPerRun`
+  is now `maxApplicationsPerCampaign`. Data-preserving migration; no shims.
+- Skills now reference shared docs by path-relative reference
+  (`../shared/<doc>.md`) instead of repo-relative paths.
+
 ## [2.0.0] - 2026-05-07
 
 The whole state layer moved out of JSON/text files at the plugin root and

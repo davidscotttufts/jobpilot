@@ -1,7 +1,12 @@
 import { z } from "zod/v4";
-import { PIPELINE_STAGES } from "@/types/api/pipeline";
 import { api } from "@/server/api/route";
-import { loadApplying, loadInterviewing, loadQueued, loadSubmitted } from "@/server/pipeline/loaders";
+import {
+  loadApplying,
+  loadInterviewing,
+  loadQueued,
+  loadSubmitted,
+} from "@/server/pipeline/loaders";
+import { PIPELINE_STAGES } from "@/types/api/pipeline";
 
 const filter = z.string().trim().min(1).nullish().catch(null);
 
@@ -16,7 +21,7 @@ const pipelineQuery = z.object({
     .transform((n) => Math.min(n, 200)),
   search: filter,
   board: filter,
-  runId: filter,
+  campaignId: filter,
 });
 
 export const GET = api.profileRoute({ query: pipelineQuery }, ({ query, profileId }) => {
@@ -25,7 +30,7 @@ export const GET = api.profileRoute({ query: pipelineQuery }, ({ query, profileI
   const filters = {
     search: query.search ?? null,
     board: query.board ?? null,
-    runId: query.runId ?? null,
+    campaignId: query.campaignId ?? null,
   };
 
   switch (stage) {

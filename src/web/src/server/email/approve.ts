@@ -1,10 +1,10 @@
-import { ErrorCodes } from "@/server/api/response";
-import { db } from "@/server/db";
 import type { ApproveInput } from "@/lib/contracts/email";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { publish } from "@/lib/sse/server";
 import { HttpError, notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
+import { ErrorCodes } from "@/server/api/response";
+import { db } from "@/server/db";
 
 const POSITIVE_STAGES = new Set([
   "recruiter_screen",
@@ -27,7 +27,11 @@ interface ApproveEmailReplyInput {
   body: ApproveInput;
 }
 
-export async function approveEmailReply({ messageId: id, profileId, body }: ApproveEmailReplyInput) {
+export async function approveEmailReply({
+  messageId: id,
+  profileId,
+  body,
+}: ApproveEmailReplyInput) {
   const message = await findOwned(
     (where) => db.emailMessage.findFirst({ where }),
     { id, account: { profileId } },

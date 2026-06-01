@@ -9,7 +9,7 @@ export default function OverviewPage(): ReactElement {
       <PageHeader
         eyebrow="Workspace"
         title="Overview"
-        description="Roll-up stats across your applications, runs, and pipeline."
+        description="Roll-up stats across your applications, campaigns, and pipeline."
       />
       <OverviewView />
     </Container>

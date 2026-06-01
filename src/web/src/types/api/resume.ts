@@ -1,5 +1,5 @@
-import type { VariantRewriteAudit } from "@/server/resumes/rewrite";
 import type { ResumeData } from "@/lib/contracts/resume";
+import type { VariantRewriteAudit } from "@/server/resumes/rewrite";
 
 export interface ResumeDto {
   id: number;

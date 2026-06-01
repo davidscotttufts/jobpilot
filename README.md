@@ -7,7 +7,7 @@ runs the JobPilot provider skills against real job boards via Playwright.
 ## Components
 
 - **Web app** ([src/web/](src/web/)) - `http://localhost:8000`. Owns
-  profile, credentials, resumes, job boards, applications, runs, and the
+  profile, credentials, resumes, job boards, applications, campaigns, and the
   batch queue. It embeds an xterm.js terminal panel and exposes "Run
   autopilot" / "Run apply" buttons that inject slash commands.
 - **JobPilot.Terminal** ([src/terminal/](src/terminal/)) -

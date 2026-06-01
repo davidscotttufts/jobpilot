@@ -1,9 +1,9 @@
-import { db } from "@/server/db";
 import { idParam } from "@/lib/contracts/shared";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { sseResponse, subscribe } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
   await findOwned(

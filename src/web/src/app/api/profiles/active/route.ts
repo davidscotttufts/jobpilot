@@ -5,9 +5,9 @@ import {
   getActiveProfileIdOrNull,
   setActiveProfileId,
 } from "@/server/active-profile";
-import { db } from "@/server/db";
 import { notFound } from "@/server/api/errors";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 

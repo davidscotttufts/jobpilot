@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { db } from "@/server/db";
 import { notFound } from "@/server/api/errors";
+import { db } from "@/server/db";
 
 export const ACTIVE_PROFILE_COOKIE = "jobpilot:active_profile";
 

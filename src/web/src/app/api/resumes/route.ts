@@ -2,11 +2,11 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod/v4";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { db } from "@/server/db";
 import { resumeDataSchema } from "@/lib/contracts/resume";
-import { ensureResumesDir, generateResumeFilename } from "@/server/storage";
 import { badRequest } from "@/server/api/errors";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
+import { ensureResumesDir, generateResumeFilename } from "@/server/storage";
 import type { ResumeListItem } from "@/types/api";
 
 export const GET = api.profileRoute({}, async ({ profileId }) => {

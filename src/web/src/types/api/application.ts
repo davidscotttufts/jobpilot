@@ -15,7 +15,7 @@ export interface ApplicationDto {
   matchScore: number | null;
   matchReason: string | null;
   failReason: string | null;
-  runId: string | null;
+  campaignId: string | null;
 }
 
 export interface StageEventDto {

@@ -1,10 +1,10 @@
-import { getActiveProfileIdOrNull } from "@/server/active-profile";
-import { ErrorCodes } from "@/server/api/response";
-import { db } from "@/server/db";
 import { profileWithAutoApplySchema } from "@/lib/contracts/profile";
-import { resumePath } from "@/server/storage";
+import { getActiveProfileIdOrNull } from "@/server/active-profile";
 import { HttpError } from "@/server/api/errors";
+import { ErrorCodes } from "@/server/api/response";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
+import { resumePath } from "@/server/storage";
 
 const PROFILE_SCALAR_SELECT = {
   id: true,

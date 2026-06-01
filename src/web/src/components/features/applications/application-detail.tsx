@@ -99,7 +99,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
                 value={app.matchScore !== null ? `${app.matchScore}/100` : ""}
               />
               <Field label="Applied at" value={new Date(app.appliedAt).toLocaleString()} />
-              {app.runId && <Field label="Run" value={app.runId} />}
+              {app.campaignId && <Field label="Campaign" value={app.campaignId} />}
             </Stack>
             {app.matchReason && (
               <Box>

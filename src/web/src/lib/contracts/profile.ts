@@ -45,7 +45,10 @@ const optionalGithubUrl = z
   .optional()
   .nullable();
 
-const optionalEmail = z.union([z.literal(""), z.email()]).optional().nullable();
+const optionalEmail = z
+  .union([z.literal(""), z.email()])
+  .optional()
+  .nullable();
 
 export const referenceSchema = z.object({
   name: z.string().min(1, "Required"),
@@ -93,7 +96,7 @@ export const profileSchema = z.object({
 
 export const autoApplySettingsSchema = z.object({
   minMatchScore: z.number().int().min(0).max(100),
-  maxApplicationsPerRun: z.number().int().min(1).max(500).optional().nullable(),
+  maxApplicationsPerCampaign: z.number().int().min(1).max(500).optional().nullable(),
   defaultStartDate: z.string(),
 });
 
@@ -135,7 +138,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   primaryResumeId: null,
   autoApply: {
     minMatchScore: 70,
-    maxApplicationsPerRun: null,
+    maxApplicationsPerCampaign: null,
     defaultStartDate: "2 weeks notice",
   },
 };

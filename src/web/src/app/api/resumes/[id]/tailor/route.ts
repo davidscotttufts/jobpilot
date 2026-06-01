@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { idParam } from "@/lib/contracts/shared";
-import { createTailoredVariant } from "@/server/resumes/variant";
 import { api } from "@/server/api/route";
+import { createTailoredVariant } from "@/server/resumes/variant";
 
 const tailorRequestSchema = z.object({
   label: z.string().min(1),

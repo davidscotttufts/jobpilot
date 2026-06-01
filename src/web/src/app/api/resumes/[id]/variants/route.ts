@@ -1,9 +1,9 @@
-import { db } from "@/server/db";
 import { resumeVariantCreateSchema } from "@/lib/contracts/resume";
 import { idParam } from "@/lib/contracts/shared";
 import { notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 import type { ResumeVariantListItem } from "@/types/api";
 
 export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {

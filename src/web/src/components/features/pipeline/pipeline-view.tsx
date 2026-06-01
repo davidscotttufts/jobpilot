@@ -14,8 +14,8 @@ export function PipelineView(): ReactElement {
   const handleJobClick = (job: PipelineJobDto): void => {
     if (job.applicationId !== null) {
       router.push(`/applications/${job.applicationId}` as Parameters<typeof router.push>[0]);
-    } else if (job.runId !== null) {
-      router.push(`/runs/${job.runId}` as Parameters<typeof router.push>[0]);
+    } else if (job.campaignId !== null) {
+      router.push(`/campaigns/${job.campaignId}` as Parameters<typeof router.push>[0]);
     } else if (job.url) {
       window.open(job.url, "_blank", "noopener,noreferrer");
     }
@@ -39,7 +39,7 @@ export function PipelineView(): ReactElement {
           stage={stage}
           filters={filters}
           onJobClick={handleJobClick}
-          scopedOut={filters.runId !== null && stage === "queued"}
+          scopedOut={filters.campaignId !== null && stage === "queued"}
         />
       ))}
     </Stack>

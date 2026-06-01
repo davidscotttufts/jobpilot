@@ -63,7 +63,7 @@ export function OverviewView(): ReactElement {
             eyebrow="Diagnostics"
             title="Top failure reasons"
             entries={rejectReasonEntries}
-            emptyMessage="No failed run jobs recorded."
+            emptyMessage="No failed campaign jobs recorded."
           />
         </Grid>
       </Grid>

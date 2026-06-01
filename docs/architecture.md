@@ -7,7 +7,7 @@ together over HTTP and a single active PTY.
 
 **Next.js + SQLite web app** ([src/web/](../src/web/)) is the data and UI
 layer. It owns every persistent fact: profile, applications by stage,
-autopilot runs with per-job status, and the batch URL queue. Prisma schema is
+autopilot campaigns with per-job status, and the batch URL queue. Prisma schema is
 split per domain under `src/web/prisma/schema/`.
 
 **JobPilot.Terminal** ([src/terminal/](../src/terminal/)) is
@@ -54,7 +54,7 @@ codex --no-alt-screen -C .
 Browser (xterm.js)  <-- WS binary -->  JobPilot.Terminal :8001  <-- PTY -->  claude --plugin-dir plugin
                     -- POST /inject -> JobPilot.Terminal                   or codex --no-alt-screen -C <repo>
 Next.js :8000 API   <-- curl -------- JobPilot skills
-                                      -> insert/update runs/jobs in SQLite
+                                      -> insert/update campaigns/jobs in SQLite
 ```
 
 One Terminal instance owns one PTY. The PTY survives browser tab close;
@@ -85,7 +85,7 @@ Root `.claude/settings.json` grants the project permissions needed by the
 skills. The plugin owns reusable behavior; the repository owns local trust and
 permission policy.
 
-## Request Lifecycle: A Single Apply Run
+## Request Lifecycle: A Single Apply Campaign
 
 ```mermaid
 sequenceDiagram
@@ -102,16 +102,16 @@ sequenceDiagram
     API-->>S: { duplicate: false }
     S->>B: navigate / login / fill form
     B-->>S: snapshot, success page
-    S->>API: POST /api/runs/[id]/jobs/[jobKey]/result
+    S->>API: POST /api/campaigns/[id]/jobs/[jobKey]/result
     API-->>S: { runJob, application, summary }
     S-->>U: applied
 ```
 
 ## Live Runs
 
-Autopilot and apply create and update run rows through `/api/runs/*`.
-The web UI opens `EventSource /api/runs/[id]/events`, receives in-process SSE
-events, and invalidates the run detail query so the page refetches canonical
+Autopilot and apply create and update campaign rows through `/api/campaigns/*`.
+The web UI opens `EventSource /api/campaigns/[id]/events`, receives in-process SSE
+events, and invalidates the campaign detail query so the page refetches canonical
 state from SQLite.
 
 ## Skills Layer

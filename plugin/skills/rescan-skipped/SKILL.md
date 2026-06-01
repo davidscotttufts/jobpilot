@@ -1,12 +1,12 @@
 ---
 name: rescan-skipped
-description: Re-score a run's skipped jobs and promote the eligible ones to `approved` for later applying. Recovers jobs wrongly dropped for location, a sparse JD, 1099, or seniority. Does not apply.
-argument-hint: "<run-id> [--jobs key1,key2,…]"
+description: Re-score a campaign's skipped jobs and promote the eligible ones to `approved` for later applying. Recovers jobs wrongly dropped for location, a sparse JD, 1099, or seniority. Does not apply.
+argument-hint: "<campaign-id> [--jobs key1,key2,…]"
 ---
 
 # Rescan Skipped — Recover Wrongly-Dropped Jobs
 
-Re-score a run's `skipped` jobs and set eligible ones to `approved`. **Never apply and never change the run's status** — apply the promoted jobs afterward via the `apply` skill (`apply run <run-id>`) or the run page.
+Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Never apply and never change the campaign's status** — apply the promoted jobs afterward via the `apply` skill (`apply campaign <campaign-id>`) or the campaign page.
 
 ## Setup
 
@@ -14,25 +14,25 @@ Re-score a run's `skipped` jobs and set eligible ones to `approved`. **Never app
 JOBPILOT_API=http://localhost:8000
 ```
 
-Follow `plugin/skills/shared/setup.md`. Fetch the run: `curl -fsS "$JOBPILOT_API/api/runs/<run-id>"`. Threshold = `config.minScore` (fallback `data.autoApply.minMatchScore`, else 70).
+Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `data.autoApply.minMatchScore`, else 70).
 
 ## Select Targets
 
 Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restrict to those `key`s.
 
 - **Always leave (permanent) — only these:** `skipReason` starting `Already applied`, `CAPTCHA`, or `Payment required`, or one stating a JD-cited citizenship/clearance requirement.
-- **Whole-run mode (no `--jobs`):** also leave deliberate user choices — `Removed by user`, `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Run paused by user`.
+- **Whole-campaign mode (no `--jobs`):** also leave deliberate user choices — `Removed by user`, `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Campaign paused by user`.
 - **`--jobs` mode:** reconsider every named target except the permanent ones.
 
-Count the full target list up front and process every one. **Below-threshold, zero-score, and no-`skipReason` jobs are all targets** — the stored score came from the run that wrongly skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already at/above threshold.
+Count the full target list up front and process every one. **Below-threshold, zero-score, and no-`skipReason` jobs are all targets** — the stored score came from the campaign that wrongly skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already at/above threshold.
 
 ## Per Job
 
 1. **Digest** — parse the cached `digest`. Rich = non-empty `techStack` **and** `requirements`/`responsibilities`.
-2. **Re-read only when needed** — if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `plugin/skills/shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
+2. **Re-read only when needed** — if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/<run-id>/jobs/<key>" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg digest "$DIGEST" --arg desc "<posting text>" '{digest:$digest, description:$desc}')"
 ```
@@ -42,7 +42,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/runs/<run-id>/jobs/<key>" \
    - Eligible and `score >= threshold` → promote (no apply):
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/<run-id>/jobs/<key>" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson score <0-100> --arg reason "<one line>" '{status:"approved", matchScore:$score, matchReason:$reason}')"
 ```
@@ -58,4 +58,4 @@ Same rules as `auto-apply` 2.2a. **Seniority is never a skip** — never drop a 
 
 Process every target before finishing — `promoted + left-skipped + permanent` must equal the target count. If any are unprocessed, keep going; don't report a partial pass as complete.
 
-Print a short table (promoted vs left `skipped`, with reasons) plus the reconciliation (e.g. "228 skipped → 226 targets; 19 promoted, 207 left skipped"). Then point the user to `apply run <run-id>` (or the run page's Apply selected). Don't apply; don't change run status.
+Print a short table (promoted vs left `skipped`, with reasons) plus the reconciliation (e.g. "228 skipped → 226 targets; 19 promoted, 207 left skipped"). Then point the user to `apply campaign <campaign-id>` (or the campaign page's Apply selected). Don't apply; don't change campaign status.

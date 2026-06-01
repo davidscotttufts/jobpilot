@@ -33,15 +33,15 @@ export function ColumnEmptyState(props: ColumnEmptyStateProps): ReactElement {
             <Button size="small" variant="outlined" onClick={actions.openAddUrls}>
               Add URLs
             </Button>
-            <LinkButton size="small" variant="contained" href="/runs/new">
-              New run…
+            <LinkButton size="small" variant="contained" href="/campaigns/new">
+              New campaign…
             </LinkButton>
           </Stack>
         </>
       )}
       {stage === "applying" && (
         <Typography variant="captionMuted">
-          No active run. Use <strong>Run ▾</strong> above to start.
+          No active campaign. Use <strong>Campaign ▾</strong> above to start.
         </Typography>
       )}
       {stage === "submitted" && (

@@ -1,12 +1,12 @@
 import {
   BusinessCenter,
+  Forum,
   Handshake,
   Inbox,
   Insights,
   Settings,
   Storage,
   ViewKanban,
-  Forum,
   type SvgIconComponent,
 } from "@mui/icons-material";
 

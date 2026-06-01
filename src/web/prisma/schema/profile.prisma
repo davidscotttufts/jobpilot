@@ -36,7 +36,7 @@ model Profile {
 
   autoApply     AutoApplySettings?
   applications  Application[]
-  runs          Run[]
+  campaigns     Campaign[]
   credentials   Credential[]
   jobBoards     JobBoard[]
   queueEntries  QueueEntry[]
@@ -69,7 +69,7 @@ model AutoApplySettings {
   id                    Int     @id @default(autoincrement())
   profileId             Int     @unique
   profile               Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  minMatchScore         Int     @default(70)
-  maxApplicationsPerRun Int?
+  minMatchScore              Int     @default(70)
+  maxApplicationsPerCampaign Int?
   defaultStartDate      String  @default("2 weeks notice")
 }

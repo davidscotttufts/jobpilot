@@ -90,7 +90,7 @@ export async function computeOverviewStats(profileId: number): Promise<OverviewS
     }),
     db.job.groupBy({
       by: ["failReason"],
-      where: { failReason: { not: null }, run: { profileId } },
+      where: { failReason: { not: null }, campaign: { profileId } },
       _count: { _all: true },
       orderBy: { _count: { id: "desc" } },
       take: 5,

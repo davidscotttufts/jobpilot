@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { getActiveProfileId } from "@/server/active-profile";
-import { ErrorCodes } from "@/server/api/response";
 import { badRequest, HttpError } from "@/server/api/errors";
+import { ErrorCodes } from "@/server/api/response";
 import { api } from "@/server/api/route";
 import { completeEmailOAuth } from "@/server/email/oauth";
 

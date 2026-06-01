@@ -9,12 +9,12 @@ import { buildUrl } from "@/utils/url";
 export interface PipelineColumnFilters {
   search: string | null;
   board: string | null;
-  runId: string | null;
+  campaignId: string | null;
 }
 
 const DEFAULT_LIMIT = 50;
 
-const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null, runId: null };
+const EMPTY_FILTERS: PipelineColumnFilters = { search: null, board: null, campaignId: null };
 
 export function usePipelineColumn(
   stage: PipelineStage,

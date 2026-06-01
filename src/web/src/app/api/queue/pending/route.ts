@@ -1,5 +1,5 @@
-import { db } from "@/server/db";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 export const GET = api.profileRoute({}, ({ profileId }) =>
   db.queueEntry.findMany({

@@ -9,7 +9,7 @@ export default function BoardsPage(): ReactElement {
       <PageHeader
         eyebrow="Configure"
         title="Job boards"
-        description="Sites the search and apply skills can use. Pick one when launching a run."
+        description="Sites the search and apply skills can use. Pick one when launching a campaign."
         actions={<AddBoardButton />}
       />
       <BoardsContent />

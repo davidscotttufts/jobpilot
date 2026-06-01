@@ -1,8 +1,8 @@
-import { db } from "@/server/db";
 import { jobBoardPatchSchema } from "@/lib/contracts/job-board";
 import { idParam } from "@/lib/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 const findBoard = (id: number, profileId: number) =>
   findOwned(

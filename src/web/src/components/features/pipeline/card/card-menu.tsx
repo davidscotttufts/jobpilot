@@ -77,11 +77,11 @@ export function PipelineCardMenu(props: PipelineCardMenuProps): ReactElement {
     { kind: "divider", key: "after-queued", show: isQueued },
     {
       kind: "item",
-      key: "open-run",
-      label: "Open run",
+      key: "open-campaign",
+      label: "Open campaign",
       icon: <OpenInNew fontSize="sm" />,
-      show: job.stage === "applying" && job.runId !== null,
-      href: job.runId !== null ? (`/runs/${job.runId}` as Route) : undefined,
+      show: job.stage === "applying" && job.campaignId !== null,
+      href: job.campaignId !== null ? (`/campaigns/${job.campaignId}` as Route) : undefined,
     },
     {
       kind: "item",

@@ -10,7 +10,7 @@ Job applications often span multiple pages. For each page:
    - Text inputs → `browser_type` (or `browser_fill_form` for batch)
    - Selects → `browser_select_option`
    - Checkboxes / radios → `browser_click`
-   - File uploads (resume) → fetch the tailored variant from the caller's prior step into the scratch dir (see `plugin/skills/shared/setup.md` "Scratch files"): `mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp" && curl -fsS "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume.pdf"`, then `browser_file_upload` that path.
+   - File uploads (resume) → fetch the tailored variant from the caller's prior step into the scratch dir (see `./setup.md` "Scratch files"): `mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp" && curl -fsS "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume.pdf"`, then `browser_file_upload` that path.
    - Date fields → use the appropriate date format
 4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) the form snapshot couldn't enumerate cleanly: narrow the `browser_snapshot` to just that widget's container to obtain a ref.
 
@@ -23,7 +23,7 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 - **Address** → `data.profile.{street,aptUnit,city,state,zipCode,country}`
 - **Phone** → `data.profile.phone`
 - **LinkedIn / GitHub / Website** → `data.profile.{linkedin,github,website}`
-- **Salary expectations** → ask the user the first time it's needed and remember the answer for the rest of the run. For radios/dropdowns, pick the closest match.
+- **Salary expectations** → ask the user the first time it's needed and remember the answer for the rest of the campaign. For radios/dropdowns, pick the closest match.
 - **Start date** → "Immediately" or "2 weeks notice" unless `data.autoApply.defaultStartDate` overrides.
 - **Cover letter** (a textarea or a file-upload field labelled "cover letter") → generate via the `cover-letter` skill (already humanized). Then:
   - Text area → paste the text directly.

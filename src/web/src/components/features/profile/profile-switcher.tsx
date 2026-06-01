@@ -107,7 +107,7 @@ export function ProfileSwitcher(): ReactElement {
     const confirmed = await confirm({
       title: `Delete "${displayName(profile)}"?`,
       description:
-        "This permanently removes the profile along with its resumes, applications, runs, credentials, and job boards. This cannot be undone.",
+        "This permanently removes the profile along with its resumes, applications, campaigns, credentials, and job boards. This cannot be undone.",
       confirmLabel: "Delete",
       destructive: true,
     });

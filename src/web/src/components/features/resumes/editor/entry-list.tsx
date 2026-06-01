@@ -2,7 +2,15 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@mui/icons-material";
-import { Button, Card, CardContent, CardHeader, IconButton, Stack, Typography } from "@mui/material";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  IconButton,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
 
 interface EntryListProps<T> {

@@ -1,8 +1,8 @@
-import { db } from "@/server/db";
 import { credentialPatchSchema } from "@/lib/contracts/credential";
 import { idParam } from "@/lib/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 const findCredential = (id: number, profileId: number) =>
   findOwned(

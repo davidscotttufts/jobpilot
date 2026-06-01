@@ -10,7 +10,7 @@ Return the most recent verification code (or magic link) for a given board domai
 
 ## Setup
 
-Read `plugin/skills/shared/setup.md` to load `JOBPILOT_API`.
+Read `../shared/setup.md` to load `JOBPILOT_API`.
 
 ```bash
 JOBPILOT_API=http://localhost:8000

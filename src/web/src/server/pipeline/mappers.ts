@@ -34,7 +34,7 @@ export function mapQueueEntry(entry: QueueEntry): PipelineJobDto {
     liveMessage: null,
     stageSummary: entry.note,
     url: entry.url,
-    runId: null,
+    campaignId: null,
     applicationId: null,
   };
 }
@@ -50,9 +50,9 @@ function splitUrl(raw: string): { hostname: string; path: string } {
   }
 }
 
-export function mapRunJob(job: Job): PipelineJobDto {
+export function mapCampaignJob(job: Job): PipelineJobDto {
   return {
-    id: `run:${job.runId}:${job.key}`,
+    id: `campaign:${job.campaignId}:${job.key}`,
     stage: "applying",
     role: job.title,
     company: job.company,
@@ -65,7 +65,7 @@ export function mapRunJob(job: Job): PipelineJobDto {
     liveMessage: job.retryNotes,
     stageSummary: null,
     url: job.url,
-    runId: job.runId,
+    campaignId: job.campaignId,
     applicationId: null,
   };
 }
@@ -85,7 +85,7 @@ export function mapApplication(app: Application, stage: PipelineStage): Pipeline
     liveMessage: null,
     stageSummary: stage === "interviewing" ? formatApplicationStage(app.stage) : null,
     url: app.url,
-    runId: app.runId,
+    campaignId: app.campaignId,
     applicationId: app.id,
   };
 }

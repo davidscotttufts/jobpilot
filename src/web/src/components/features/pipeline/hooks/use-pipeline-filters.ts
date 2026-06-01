@@ -8,9 +8,9 @@ export interface PipelineFiltersValue {
   setSearch: (next: string | null) => void;
   board: string | null;
   setBoard: (next: string | null) => void;
-  /** Selected run scoping the board, or null for the whole pipeline. */
-  runId: string | null;
-  setRunId: (next: string | null) => void;
+  /** Selected campaign scoping the board, or null for the whole pipeline. */
+  campaignId: string | null;
+  setCampaignId: (next: string | null) => void;
   filters: PipelineColumnFilters;
   isAnyActive: boolean;
   clearAll: () => void;
@@ -19,15 +19,15 @@ export interface PipelineFiltersValue {
 export function usePipelineFilters(): PipelineFiltersValue {
   const [search, setSearch] = useSearchParam("search");
   const [board, setBoard] = useSearchParam("board");
-  const [runId, setRunId] = useSearchParam("runId");
+  const [campaignId, setCampaignId] = useSearchParam("campaignId");
 
-  const filters: PipelineColumnFilters = { search, board, runId };
-  const isAnyActive = search !== null || board !== null || runId !== null;
+  const filters: PipelineColumnFilters = { search, board, campaignId };
+  const isAnyActive = search !== null || board !== null || campaignId !== null;
 
   const clearAll = (): void => {
     setSearch(null);
     setBoard(null);
-    setRunId(null);
+    setCampaignId(null);
   };
 
   return {
@@ -35,8 +35,8 @@ export function usePipelineFilters(): PipelineFiltersValue {
     setSearch,
     board,
     setBoard,
-    runId,
-    setRunId,
+    campaignId,
+    setCampaignId,
     filters,
     isAnyActive,
     clearAll,

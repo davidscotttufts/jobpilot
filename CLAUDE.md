@@ -27,7 +27,7 @@ Web (`bun --cwd=src/web run …`):
 
 ## Skill conventions
 
-- One tree, both providers. Skills are provider-neutral: reference sibling skills by name (e.g. "invoke the `tailor-resume` skill"), not provider-specific command tokens, and reference shared docs by repo-relative path (`plugin/skills/shared/<doc>.md`). Claude extras like `allowed-tools` are fine in frontmatter — Codex ignores unknown keys.
+- One tree, both providers. Skills are provider-neutral: reference sibling skills by name (e.g. "invoke the `tailor-resume` skill"), not provider-specific command tokens, and reference shared docs by path-relative reference (`../shared/<doc>.md`). Claude extras like `allowed-tools` are fine in frontmatter — Codex ignores unknown keys.
 - Imperative voice, addressed to the provider.
 - Start by checking `GET /api/health`; abort with a clear message if the web app is down.
 - Talk to the web app via `curl -fsS "$JOBPILOT_API/api/..."` (`JOBPILOT_API=http://localhost:8000`). No direct DB access.
@@ -35,7 +35,7 @@ Web (`bun --cwd=src/web run …`):
 - Credential lookup: board override → `Credential.scope === <domain>` → `Credential.scope === "default"`.
 - Log in proactively before searching/applying.
 - Dedupe applied jobs via `GET /api/applied/check` (exact URL + fuzzy title+company, 30-day window).
-- During runs, `PATCH /api/runs/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/runs/[id]/jobs/[jobKey]/result` — one call updates RunJob, creates the Application row (when applied), marks the queue entry, and recomputes the run summary.
+- During campaigns, `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal status transitions (pending → approved → applying). On terminal outcome (applied / failed / skipped), `POST /api/campaigns/[id]/jobs/[jobKey]/result` — one call updates the Job, creates the Application row (when applied), marks the queue entry, and recomputes the campaign summary.
 - Browser automation: use `browser_snapshot` (with `ref` for large pages), not screenshots.
 
 ## API & module layout (`src/web/src/`)
@@ -44,7 +44,7 @@ Web (`bun --cwd=src/web run …`):
 - **Route kernel** (`server/api/route.ts`): wrap handlers in `api.profileRoute(config, handler)` (injects `profileId`) or `api.publicRoute(...)` (no profile). `config: { params?, query?, body?: ZodType, status? }`. Handlers receive `{ req, params, query, body, profileId }` and **return plain data** (auto-wrapped in the `ok` envelope) or a raw `Response` (escape hatch for SSE/file streams/redirects/cookies). The kernel maps errors: `HttpError`→its status, `ZodError`→422, Prisma `P2002`→409, unknown→logged 500 (never rethrown — preserves the JSON envelope contract).
 - **Errors**: `throw notFound(msg)` / `conflict(msg)` / `badRequest(msg)` or `new HttpError(code, msg, status)` from `server/api/errors`. Ownership-or-404: `findOwned((where) => db.X.findFirst({ where }), { id, profileId }, "Label")` from `server/api/owned`.
 - **Params/query parsing is Zod**, not hand-rolled utils: numeric id via `idParam` (`lib/contracts/shared`); query filters as an inline `z.object({...})` with `z.coerce`/`.trim()`/`.catch()`. Success status defaults to **200** (no 201).
-- **`src/server/**` = server-only** (db, fs, secrets, domain services) — guarded by `import "server-only"`; never imported by client code. Domains: `server/{runs,resumes,email,scoring,pdf,outreach,overview,pipeline}`, plus `server/{db,active-profile,storage}` and the `server/api` kernel.
+- **`src/server/**` = server-only** (db, fs, secrets, domain services) — guarded by `import "server-only"`; never imported by client code. Domains: `server/{campaigns,resumes,email,scoring,pdf,outreach,overview,pipeline}`, plus `server/{db,active-profile,storage}` and the `server/api` kernel.
 - **`src/lib/contracts/`** = Zod schemas shared by routes **and** client forms (the only schemas both sides import). **`src/lib/client/`** = `"use client"` helpers (`api.ts` fetch wrapper, `query-keys.ts`, `resume-urls.ts`). **`src/lib/api/envelope.ts`** = neutral envelope types both sides import. `src/lib/sse/` stays put (directive-split server/client/types).
 - Adding a route: add/reuse a schema in `lib/contracts`, write `export const GET = api.profileRoute({...}, …)`, put non-trivial logic in `server/<domain>`.
 

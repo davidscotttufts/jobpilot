@@ -123,7 +123,7 @@ export function BoardsContent(): ReactElement {
         {allRows.length === 0 ? (
           <Box sx={{ py: 3, textAlign: "center" }}>
             <Typography variant="body2Muted">
-              No boards yet. Run <code>bun db:setup</code> to seed defaults.
+              No boards yet. Campaign <code>bun db:setup</code> to seed defaults.
             </Typography>
           </Box>
         ) : filteredRows.length === 0 ? (

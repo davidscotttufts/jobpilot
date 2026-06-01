@@ -1,9 +1,9 @@
-import { db } from "@/server/db";
 import { patchContactSchema } from "@/lib/contracts/outreach";
 import { idParam } from "@/lib/contracts/shared";
 import { notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 export const GET = api.profileRoute({ params: idParam }, ({ params, profileId }) =>
   findOwned(

@@ -1,15 +1,15 @@
 import { defineChannel } from "../channel";
 
 export type PipelineEvent =
-  | { type: "run.updated"; runId: string; status?: string; source?: string }
-  | { type: "run.completed"; runId: string }
-  | { type: "runjob.created"; runId: string; key: string }
-  | { type: "runjob.updated"; runId: string; key: string; status?: string }
-  | { type: "application.created"; runId: string | null }
+  | { type: "campaign.updated"; campaignId: string; status?: string; source?: string }
+  | { type: "campaign.completed"; campaignId: string }
+  | { type: "campaignjob.created"; campaignId: string; key: string }
+  | { type: "campaignjob.updated"; campaignId: string; key: string; status?: string }
+  | { type: "application.created"; campaignId: string | null }
   | { type: "queue.updated" };
 
 /**
- * Profile-scoped feed for cross-run UI (kanban, auto-apply pill). The client
+ * Profile-scoped feed for cross-campaign UI (kanban, auto-apply pill). The client
  * URL is parameter-free; the server resolves the profile from the session.
  */
 export const pipelineChannel = defineChannel<PipelineEvent, void, { profileId: number }>({

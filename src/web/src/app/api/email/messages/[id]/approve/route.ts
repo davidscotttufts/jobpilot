@@ -5,6 +5,5 @@ import { approveEmailReply } from "@/server/email/approve";
 
 export const POST = api.profileRoute(
   { params: idParam, body: approveSchema },
-  ({ params: { id }, body, profileId }) =>
-    approveEmailReply({ messageId: id, profileId, body }),
+  ({ params: { id }, body, profileId }) => approveEmailReply({ messageId: id, profileId, body }),
 );

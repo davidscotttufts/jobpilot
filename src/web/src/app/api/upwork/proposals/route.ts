@@ -1,10 +1,10 @@
 import { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
-import { db } from "@/server/db";
 import { createUpworkProposalSchema } from "@/lib/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 import { serializeProposal } from "@/utils/upwork";
 
 const querySchema = z.object({

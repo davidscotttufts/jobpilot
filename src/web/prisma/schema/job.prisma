@@ -1,7 +1,7 @@
 model Job {
   id          Int       @id @default(autoincrement())
-  runId       String
-  run         Run       @relation(fields: [runId], references: [runId], onDelete: Cascade)
+  campaignId  String
+  campaign    Campaign  @relation(fields: [campaignId], references: [campaignId], onDelete: Cascade)
   key         String
   title       String
   company     String
@@ -20,6 +20,6 @@ model Job {
   description String?
   digest      String?
 
-  @@unique([runId, key])
-  @@index([runId, status])
+  @@unique([campaignId, key])
+  @@index([campaignId, status])
 }

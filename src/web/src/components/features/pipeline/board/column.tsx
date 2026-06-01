@@ -17,7 +17,7 @@ interface PipelineColumnProps {
   stage: PipelineStage;
   filters?: PipelineColumnFilters;
   onJobClick?: (job: PipelineJobDto) => void;
-  /** Stage can't be scoped to the active run (e.g. queued) — dim and skip the query. */
+  /** Stage can't be scoped to the active campaign (e.g. queued) — dim and skip the query. */
   scopedOut?: boolean;
 }
 
@@ -103,7 +103,7 @@ export function PipelineColumn(props: PipelineColumnProps): ReactElement {
               color: theme.palette.text.disabled,
             })}
           >
-            <Typography variant="captionMuted">Not tied to a run</Typography>
+            <Typography variant="captionMuted">Not tied to a campaign</Typography>
           </Stack>
         ) : query.isPending ? (
           <Stack

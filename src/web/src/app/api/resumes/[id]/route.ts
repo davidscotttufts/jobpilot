@@ -1,15 +1,19 @@
 import { writeFile } from "node:fs/promises";
 import { z } from "zod/v4";
-import { db } from "@/server/db";
-import { backfillResumeIds } from "@/server/resumes/backfill-ids";
 import { resumeDataSchema, type ResumeData } from "@/lib/contracts/resume";
 import { idParam } from "@/lib/contracts/shared";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { publish } from "@/lib/sse/server";
-import { deleteAllResumeArtifacts, ensureResumeBackupsDir, resumeBackupPath } from "@/server/storage";
 import { badRequest } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
+import { backfillResumeIds } from "@/server/resumes/backfill-ids";
+import {
+  deleteAllResumeArtifacts,
+  ensureResumeBackupsDir,
+  resumeBackupPath,
+} from "@/server/storage";
 import type { ResumeDto } from "@/types/api";
 
 export const GET = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {

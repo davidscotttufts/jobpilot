@@ -1,6 +1,6 @@
-import { db } from "@/server/db";
 import { profileWithAutoApplySchema } from "@/lib/contracts/profile";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 export const GET = api.publicRoute({}, () =>
   db.profile.findMany({

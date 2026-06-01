@@ -9,7 +9,7 @@ export default function OutreachPage(): ReactElement {
       <PageHeader
         eyebrow="Outreach"
         title="Contacts"
-        description="Hiring managers and recruiters discovered across your outreach campaigns. Start a campaign from a new run in Outreach mode."
+        description="Hiring managers and recruiters discovered across your outreach campaigns. Start a campaign from a new campaign in Outreach mode."
       />
       <ContactsTable />
     </Container>

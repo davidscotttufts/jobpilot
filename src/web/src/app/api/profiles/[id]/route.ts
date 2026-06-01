@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
+import { idParam } from "@/lib/contracts/shared";
 import {
   ACTIVE_PROFILE_COOKIE,
   getActiveProfileIdOrNull,
   setActiveProfileId,
 } from "@/server/active-profile";
-import { ErrorCodes } from "@/server/api/response";
-import { db } from "@/server/db";
-import { idParam } from "@/lib/contracts/shared";
-import { deleteAllResumeArtifacts } from "@/server/storage";
 import { conflict, HttpError, notFound } from "@/server/api/errors";
+import { ErrorCodes } from "@/server/api/response";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
+import { deleteAllResumeArtifacts } from "@/server/storage";
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 

@@ -17,10 +17,10 @@ export const AutoApplySection = withForm({
           <form.AppField name="autoApply.minMatchScore">
             {(field) => <field.TextField label="Min match score (0-100)" type="number" />}
           </form.AppField>
-          <form.AppField name="autoApply.maxApplicationsPerRun">
+          <form.AppField name="autoApply.maxApplicationsPerCampaign">
             {(field) => (
               <field.TextField
-                label="Max applications per run"
+                label="Max applications per campaign"
                 type="number"
                 helperText="Leave empty for unlimited"
               />

@@ -3,7 +3,7 @@ export * from "./job-board";
 export * from "./credential";
 export * from "./resume";
 export * from "./application";
-export * from "./run";
+export * from "./campaign";
 export * from "./queue";
 export * from "./email";
 export * from "./pipeline";

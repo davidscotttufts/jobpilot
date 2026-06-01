@@ -1,9 +1,9 @@
-import { db } from "@/server/db";
 import { idParam } from "@/lib/contracts/shared";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 export const POST = api.profileRoute({ params: idParam }, async ({ params, profileId }) => {
   await findOwned(

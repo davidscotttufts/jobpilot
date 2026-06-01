@@ -1,8 +1,8 @@
 import { randomBytes } from "node:crypto";
+import { badRequest, HttpError } from "@/server/api/errors";
 import { ErrorCodes } from "@/server/api/response";
 import { db } from "@/server/db";
 import { getProvider } from "@/server/email";
-import { badRequest, HttpError } from "@/server/api/errors";
 
 export function buildAuthorizeUrl(providerName: string): { authorizeUrl: string; state: string } {
   if (providerName !== "gmail") {

@@ -1,9 +1,9 @@
-import { ErrorCodes } from "@/server/api/response";
-import { accountCanSend, getProvider } from "@/server/email";
-import { loadFreshAccount } from "@/server/email/account";
 import { sendEmailSchema } from "@/lib/contracts/outreach";
 import { HttpError } from "@/server/api/errors";
+import { ErrorCodes } from "@/server/api/response";
 import { api } from "@/server/api/route";
+import { accountCanSend, getProvider } from "@/server/email";
+import { loadFreshAccount } from "@/server/email/account";
 
 /**
  * Send an outbound email from the profile's connected mailbox. Used by the

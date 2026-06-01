@@ -14,7 +14,7 @@ The API auto-resolves the active profile per request — no id needs threading t
 2. Profile with `isActive: true` (set by the UI switcher).
 3. First profile by id (fallback).
 
-To inspect: `curl -fsS "$JOBPILOT_API/api/profiles/active"` → `{ data: { profileId } }`. All other endpoints (`/api/profile`, `/api/resumes`, `/api/applied`, `/api/runs`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) already filter by the active profile.
+To inspect: `curl -fsS "$JOBPILOT_API/api/profiles/active"` → `{ data: { profileId } }`. All other endpoints (`/api/profile`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) already filter by the active profile.
 
 ## 1. Health Check
 
@@ -35,7 +35,7 @@ curl -fsS "$JOBPILOT_API/api/profile"
 ```
 
 - If `data.profile` is `null`: "Open http://localhost:8000/onboarding to set up your profile, then re-run this skill."
-- Otherwise read from `data.profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `data.autoApply` (minMatchScore, maxApplicationsPerRun, defaultStartDate).
+- Otherwise read from `data.profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `data.autoApply` (minMatchScore, maxApplicationsPerCampaign, defaultStartDate).
 
 The response also includes:
 
@@ -60,7 +60,7 @@ curl -fsS "$JOBPILOT_API/api/resumes/3/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/r
 
 ## Scratch files
 
-Any temporary artifact a skill writes to disk during a run — downloaded resume PDFs, generated cover letters, page snapshots, or other scratch output — goes under the project-local `.temp/` directory, never the repo root or the system temp dir. Create it once before writing:
+Any temporary artifact a skill writes to disk during a campaign — downloaded resume PDFs, generated cover letters, page snapshots, or other scratch output — goes under the project-local `.temp/` directory, never the repo root or the system temp dir. Create it once before writing:
 
 ```bash
 mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp"

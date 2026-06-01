@@ -108,10 +108,7 @@ export function ResumesList(): ReactElement {
       ) : (
         <Stack spacing={1}>
           {rows.map((r) => (
-            <Card
-              key={r.id}
-              sx={{ backgroundColor: r.isPrimary ? "action.selected" : undefined }}
-            >
+            <Card key={r.id} sx={{ backgroundColor: r.isPrimary ? "action.selected" : undefined }}>
               <CardContent>
                 <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
                   <Description fontSize="lg" sx={{ color: "text.secondary" }} />

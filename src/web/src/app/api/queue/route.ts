@@ -1,10 +1,10 @@
 import { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
-import { db } from "@/server/db";
 import { addQueueSchema } from "@/lib/contracts/queue";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { publish } from "@/lib/sse/server";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 
 export const GET = api.profileRoute(
   { query: z.object({ status: z.string().trim().min(1).optional() }) },

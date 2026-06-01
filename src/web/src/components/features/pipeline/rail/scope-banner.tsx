@@ -4,51 +4,58 @@ import type { ReactNode } from "react";
 import { Close } from "@mui/icons-material";
 import { Button, Card, CardActions, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { RUN_STATUS_COLOR, RUN_STATUS_LABEL } from "@/components/features/runs/run-status";
+import {
+  CAMPAIGN_STATUS_COLOR,
+  CAMPAIGN_STATUS_LABEL,
+} from "@/components/features/campaigns/campaign-status";
 import { LinkButton } from "@/components/ui/buttons";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/client/api";
 import { queryKeys } from "@/lib/client/query-keys";
-import type { RunDto } from "@/types/api";
+import type { CampaignDto } from "@/types/api";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 
 /**
- * Banner shown above the board when it is scoped to a run. Reads the run from
- * the (cached) runs list shared with the rail — no extra fetch. Renders nothing
- * when no run is scoped.
+ * Banner shown above the board when it is scoped to a campaign. Reads the campaign from
+ * the (cached) campaigns list shared with the rail — no extra fetch. Renders nothing
+ * when no campaign is scoped.
  */
 export function PipelineScopeBanner(): ReactNode {
-  const { runId, setRunId } = usePipelineFilters();
-  const runs = useApiQuery<RunDto[]>(queryKeys.runs.list(), () =>
-    apiClient.get<RunDto[]>("/api/runs"),
+  const { campaignId, setCampaignId } = usePipelineFilters();
+  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
+    apiClient.get<CampaignDto[]>("/api/campaigns"),
   );
 
-  if (!runId) {
+  if (!campaignId) {
     return null;
   }
 
-  const run = runs.data?.find((r) => r.runId === runId) ?? null;
+  const campaign = campaigns.data?.find((r) => r.campaignId === campaignId) ?? null;
 
   return (
     <Card sx={{ mx: 2.5, mt: 2, display: "flex", alignItems: "center", flexWrap: "wrap" }}>
       <CardContent sx={{ flex: 1, minWidth: 0 }}>
-        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-          <Typography variant="overlineMuted">Scoped to run</Typography>
-          {run && (
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
+        >
+          <Typography variant="overlineMuted">Scoped to campaign</Typography>
+          {campaign && (
             <Chip
               size="small"
-              label={RUN_STATUS_LABEL[run.status]}
-              color={RUN_STATUS_COLOR[run.status]}
+              label={CAMPAIGN_STATUS_LABEL[campaign.status]}
+              color={CAMPAIGN_STATUS_COLOR[campaign.status]}
               variant="outlined"
             />
           )}
           <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 0 }} noWrap>
-            {run?.query ?? runId}
+            {campaign?.query ?? campaignId}
           </Typography>
-          {run && (
+          {campaign && (
             <Typography variant="captionMuted">
-              {run.summary.applied} applied · {run.summary.failed} failed · {run.summary.skipped}{" "}
-              skipped
+              {campaign.summary.applied} applied · {campaign.summary.failed} failed ·{" "}
+              {campaign.summary.skipped} skipped
             </Typography>
           )}
         </Stack>
@@ -57,7 +64,7 @@ export function PipelineScopeBanner(): ReactNode {
         <LinkButton
           size="small"
           variant="text"
-          href={`/runs/${encodeURIComponent(runId)}` as Route}
+          href={`/campaigns/${encodeURIComponent(campaignId)}` as Route}
         >
           View details
         </LinkButton>
@@ -65,7 +72,7 @@ export function PipelineScopeBanner(): ReactNode {
           size="small"
           variant="text"
           startIcon={<Close fontSize="sm" />}
-          onClick={() => setRunId(null)}
+          onClick={() => setCampaignId(null)}
         >
           Clear scope
         </Button>

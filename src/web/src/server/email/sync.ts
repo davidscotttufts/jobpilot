@@ -1,11 +1,11 @@
+import { inboxChannel } from "@/lib/sse/channels/inbox";
+import { publish } from "@/lib/sse/server";
+import { HttpError, notFound } from "@/server/api/errors";
 import { ErrorCodes } from "@/server/api/response";
 import { db } from "@/server/db";
 import { getProvider } from "@/server/email";
 import { loadFreshAccount } from "@/server/email/account";
 import { linkOutreachReplies, type InboundForLinking } from "@/server/email/reply-linker";
-import { inboxChannel } from "@/lib/sse/channels/inbox";
-import { publish } from "@/lib/sse/server";
-import { HttpError, notFound } from "@/server/api/errors";
 
 export async function syncInbox(profileId: number) {
   let active;

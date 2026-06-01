@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
+import { api } from "@/server/api/route";
 import { fitProfileSchema, jobDigestSchema } from "@/server/scoring/fit";
 import { scoreJobFit } from "@/server/scoring/profile-fit";
-import { api } from "@/server/api/route";
 
 const requestSchema = z.object({
   digest: jobDigestSchema,

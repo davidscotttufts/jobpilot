@@ -49,7 +49,7 @@ export interface AutoApplySettingsDto {
   id: number;
   profileId: number;
   minMatchScore: number;
-  maxApplicationsPerRun: number | null;
+  maxApplicationsPerCampaign: number | null;
   defaultStartDate: string;
 }
 

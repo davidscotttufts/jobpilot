@@ -1,8 +1,8 @@
-import { db } from "@/server/db";
 import { resumeVariantPatchSchema } from "@/lib/contracts/resume";
 import { idParam } from "@/lib/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { db } from "@/server/db";
 import type { ResumeVariantDto } from "@/types/api";
 
 const findVariant = (id: number, profileId: number) =>

@@ -17,7 +17,7 @@ import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@/lib/contracts/outreach";
 import type { OutreachMessageDto } from "@/types/api";
 
 interface OutreachMessageDialogProps {
-  runId: string;
+  campaignId: string;
   message: OutreachMessageDto;
   canSend: boolean;
   invalidate: ReadonlyArray<ReadonlyArray<unknown>>;
@@ -26,11 +26,11 @@ interface OutreachMessageDialogProps {
 }
 
 export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactElement {
-  const { runId, message, canSend, invalidate, onClose, onSkip } = props;
+  const { campaignId, message, canSend, invalidate, onClose, onSkip } = props;
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
-  const base = `/api/runs/${encodeURIComponent(runId)}/outreach/${message.id}`;
+  const base = `/api/campaigns/${encodeURIComponent(campaignId)}/outreach/${message.id}`;
   const isEmail = message.channel === "email";
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = OUTREACH_MESSAGE_TERMINAL_STATUSES.includes(message.status);

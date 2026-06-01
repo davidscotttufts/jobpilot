@@ -15,7 +15,7 @@ User approves once up front. No per-job confirmation after that.
 
 ## Setup
 
-Follow `plugin/skills/shared/setup.md` to load profile, resume, credentials.
+Follow `../shared/setup.md` to load profile, resume, credentials.
 
 ```bash
 JOBPILOT_API=http://localhost:8000
@@ -26,14 +26,14 @@ Read `data.autoApply` for config (defaults applied per field):
 | Setting                 | Default            | Notes                                                                                            |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------ |
 | `minMatchScore`         | 70                 | Batch-mode threshold (0–100). Ignored in single-job mode.                                        |
-| `maxApplicationsPerRun` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
+| `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
-For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `plugin/skills/shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow **registers a new account when none exists** (no asking) and runs forgot-password if the stored password is stale.
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`. Follow `../shared/auth.md` — credentials are resolved from the `Credential.scope === <domain>` row or the `scope === "default"` fallback. The auth flow **registers a new account when none exists** (no asking) and runs forgot-password if the stored password is stale.
 
 ## Phase 0: Dispatch
 
-- Argument is `run <run-id>` → **re-apply mode**: set `RUN_ID=<run-id>`, set `config.maxApplications = null` (unlimited — the user hand-selected these jobs), skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The run viewer — or the `rescan-skipped` skill — promotes the chosen skipped/failed jobs to `approved` before injecting this.)
+- Argument is `campaign <campaign-id>` → **re-apply mode**: set `CAMPAIGN_ID=<campaign-id>`, set `config.maxApplications = null` (unlimited — the user hand-selected these jobs), skip Phases 1–3, and run the Phase 4 loop over its current `approved` jobs. (The campaign viewer — or the `rescan-skipped` skill — promotes the chosen skipped/failed jobs to `approved` before injecting this.)
 - Any other argument present → **Phase 1A** (single-job).
 - No argument → **Phase 1B** (batch).
 
@@ -45,7 +45,7 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 ### 1A.1 Fit Review
 
-URL input → `browser_navigate`, then take a `browser_snapshot` narrowed to the posting body (per `plugin/skills/shared/browser-tips.md`) and build the digest JSON (`title`, `company`, `location`, `salary`, `employmentType`, `remote`, `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `descriptionExcerpt`) from it. Pasted input → parse the same fields manually. Keep the digest in `DIGEST=...` for 1A.4.
+URL input → `browser_navigate`, then take a `browser_snapshot` narrowed to the posting body (per `../shared/browser-tips.md`) and build the digest JSON (`title`, `company`, `location`, `salary`, `employmentType`, `remote`, `requirements`, `responsibilities`, `techStack`, `yearsExperience`, `descriptionExcerpt`) from it. Pasted input → parse the same fields manually. Keep the digest in `DIGEST=...` for 1A.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -72,21 +72,21 @@ curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED
 
 If `data.applied === true`, surface the match (title + company + appliedAt + `data.match.kind`) and ask whether to proceed anyway. Stop on no.
 
-### 1A.3 Create Run-of-1
+### 1A.3 Create Campaign-of-1
 
 ```bash
-RUN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
-curl -fsS -X POST "$JOBPILOT_API/api/runs" \
+CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
+curl -fsS -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg runId "$RUN_ID" --arg query "<title> at <company>" \
-    '{runId:$runId, query:$query, source:"apply", config:{maxApplications:1}}')"
+  -d "$(jq -n --arg campaignId "$CAMPAIGN_ID" --arg query "<title> at <company>" \
+    '{campaignId:$campaignId, query:$query, source:"apply", config:{maxApplications:1}}')"
 ```
 
 ### 1A.4 Add the Job
 
 ```bash
 JOB_KEY=$(date -u +%s)-single
-curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
+curl -fsS -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "$JOB_KEY" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
@@ -95,7 +95,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
     '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved", digest:$digest, description:$desc}')"
 ```
 
-Keep `$RUN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/runs/<RUN_ID>`. Jump to **Phase 4**.
+Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/campaigns/<CAMPAIGN_ID>`. Jump to **Phase 4**.
 
 ---
 
@@ -109,14 +109,14 @@ curl -fsS "$JOBPILOT_API/api/queue/pending"
 
 `data` is `[{ id, url, note, status }]`. If empty, tell user to open `http://localhost:8000/queue` to add URLs and stop. Otherwise: **"Found N URLs in the queue. Visiting each to gather details..."**
 
-### 1B.2 Create Run
+### 1B.2 Create Campaign
 
 ```bash
-RUN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
-curl -fsS -X POST "$JOBPILOT_API/api/runs" \
+CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_apply)
+curl -fsS -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg runId "$RUN_ID" \
-    '{runId:$runId, query:"apply queue", source:"apply", config:{minScore:6, maxApplications:10}}')"
+  -d "$(jq -n --arg campaignId "$CAMPAIGN_ID" \
+    '{campaignId:$campaignId, query:"apply queue", source:"apply", config:{minScore:6, maxApplications:10}}')"
 ```
 
 ## Phase 2: Visit and Score (Batch Only)
@@ -135,8 +135,8 @@ If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped
 ### 2.2 Visit + Extract
 
 1. `browser_navigate` to the URL.
-2. Take a `browser_snapshot` narrowed to the posting body (per `plugin/skills/shared/browser-tips.md`) and build the digest JSON from it. Keep the stringified digest as `DIGEST` for 2.3.
-3. If login is needed, follow `plugin/skills/shared/auth.md`, then re-read the posting.
+2. Take a `browser_snapshot` narrowed to the posting body (per `../shared/browser-tips.md`) and build the digest JSON from it. Keep the stringified digest as `DIGEST` for 2.3.
+3. If login is needed, follow `../shared/auth.md`, then re-read the posting.
 4. Re-run `/api/applied/check` with title+company for fuzzy match.
 
 ### 2.3 Score and Add
@@ -154,7 +154,7 @@ CONF=$(echo "$FIT" | jq -r '.data.confidence')
 If `CONF >= 0.7` and `SCORE` is at least 10 from threshold either side, use it directly. Otherwise rescore from the digest using `strongMatches`/`partialMatches`/`gaps` in `FIT`.
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/runs/$RUN_ID/jobs" \
+curl -fsS -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<entry-id>" --arg title "<title>" --arg company "<company>" \
     --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
@@ -189,10 +189,10 @@ PATCH `Job.status` accordingly:
 - `go` → all qualified to `approved`
 - `go N,M` → selected to `approved`; rest to `skipped` (`"Not selected by user"`)
 - `remove N` → that job to `skipped` (`"Removed by user"`); re-present table
-- `stop` → PATCH run `status:"paused"` and stop
+- `stop` → PATCH campaign `status:"paused"` and stop
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<key>" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"approved"}'
 ```
 
@@ -203,25 +203,25 @@ For each `approved` job, score-descending:
 ### 4.1 Mark Applying
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID/jobs/<key>" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
 ### 4.2 Navigate + Find Apply
 
-Navigate to the job URL. `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`. `browser_snapshot` the form to enumerate fields and refs. If a login page appears, follow `plugin/skills/shared/auth.md`.
+Navigate to the job URL. `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`. `browser_snapshot` the form to enumerate fields and refs. If a login page appears, follow `../shared/auth.md`.
 
 ### 4.3 Tailor Resume
 
 ```bash
-DIGEST=$(curl -fsS "$JOBPILOT_API/api/runs/$RUN_ID/jobs" | jq -r --arg key "<key>" '.data[] | select(.key == $key) | .digest // empty')
+DIGEST=$(curl -fsS "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" | jq -r --arg key "<key>" '.data[] | select(.key == $key) | .digest // empty')
 ```
 
 Invoke the `tailor-resume` skill with `$DIGEST`. Empty `$DIGEST` (legacy row) → fall back to the job URL. Capture the variant id + PDF URL for 4.4. If no usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`.
 
 ### 4.4 Fill Forms
 
-Follow `plugin/skills/shared/form-filling.md`. Upload the 4.3 variant for resume fields. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
+Follow `../shared/form-filling.md`. Upload the 4.3 variant for resume fields. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation if a field needs it.
 
 ### 4.5 Pre-Submit Review (Single-Job Mode Only)
 
@@ -241,7 +241,7 @@ Click submit, `browser_wait_for`, then take a narrowed `browser_snapshot` for th
 
 ### 4.7 Record Result
 
-POST one of three outcomes to `/api/runs/$RUN_ID/jobs/<key>/result`. The server atomically updates the Job, creates Application (on `applied`), marks the queue, and recomputes summary.
+POST one of three outcomes to `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result`. The server atomically updates the Job, creates Application (on `applied`), marks the queue, and recomputes summary.
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -263,19 +263,19 @@ If `config.maxApplications` is set and `applied >= config.maxApplications`, stop
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-curl -fsS -X PATCH "$JOBPILOT_API/api/runs/$RUN_ID" \
+curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table and link to `http://localhost:8000/runs/<RUN_ID>`.
+Print a summary table and link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>`.
 
 ## Rules
 
 1. **Up-front confirmation mandatory** (1A.1 or Phase 3); single-job mode adds pre-submit review (4.5).
-2. **Create accounts when needed** — follow `plugin/skills/shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
+2. **Create accounts when needed** — follow `../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
 3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **CAPTCHAs / email verification** — pause and ask (see `plugin/skills/shared/auth.md`).
+4. **CAPTCHAs / email verification** — pause and ask (see `../shared/auth.md`).
 5. **Be honest about match scores.**
 6. **Pace** 3–5s between submissions on the same domain.
-7. **The Run is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
+7. **The Campaign is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.

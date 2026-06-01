@@ -193,4 +193,4 @@ the singleton Profile row is missing. Open `bun db:studio`, confirm the
 
 **Live viewer not updating** - the SSE broker is in-process. If multiple Bun
 servers are running on different ports, only the one processing
-`POST /api/runs/[id]/jobs` will publish events. Run a single dev server.
+`POST /api/campaigns/[id]/jobs` will publish events. Run a single dev server.

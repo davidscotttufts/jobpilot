@@ -18,8 +18,8 @@ model Application {
   matchReason String?
   failReason  String?
 
-  runId String?
-  run   Run?    @relation(fields: [runId], references: [runId], onDelete: SetNull)
+  campaignId String?
+  campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
 
   stageEvents    StageEvent[]
   emailMessages  EmailMessage[]
@@ -34,7 +34,7 @@ model Application {
   @@index([profileId])
   @@index([normalizedTitle, normalizedCompany])
   @@index([appliedAt])
-  @@index([runId])
+  @@index([campaignId])
 }
 
 model StageEvent {

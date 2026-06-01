@@ -11,10 +11,10 @@ import { queryKeys } from "@/lib/client/query-keys";
 import type { OutreachMessageStatus } from "@/lib/contracts/outreach";
 import { useAgent } from "@/providers/agent-provider";
 import type {
+  CampaignSummaryDto,
   EmailAccountStatus,
   OutreachConfigDto,
   OutreachMessageDto,
-  RunSummaryDto,
 } from "@/types/api";
 import { OutreachMessageDialog } from "./outreach-message-dialog";
 
@@ -32,28 +32,35 @@ const STATUS_COLOR: Record<
 };
 
 interface OutreachBoardProps {
-  runId: string;
-  summary: RunSummaryDto;
+  campaignId: string;
+  summary: CampaignSummaryDto;
   config?: OutreachConfigDto;
 }
 
 export function OutreachBoard(props: OutreachBoardProps): ReactElement {
-  const { runId, summary, config } = props;
+  const { campaignId, summary, config } = props;
   const agent = useAgent();
   const [openId, setOpenId] = useState<number | null>(null);
 
-  const messagesQuery = useApiQuery<OutreachMessageDto[]>(queryKeys.runs.outreach(runId), () =>
-    apiClient.get<OutreachMessageDto[]>(`/api/runs/${encodeURIComponent(runId)}/outreach`),
+  const messagesQuery = useApiQuery<OutreachMessageDto[]>(
+    queryKeys.campaigns.outreach(campaignId),
+    () =>
+      apiClient.get<OutreachMessageDto[]>(
+        `/api/campaigns/${encodeURIComponent(campaignId)}/outreach`,
+      ),
   );
   const accountQuery = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
     apiClient.get<EmailAccountStatus>("/api/email/account"),
   );
 
-  const invalidate = [queryKeys.runs.outreach(runId), queryKeys.runs.detail(runId)];
+  const invalidate = [
+    queryKeys.campaigns.outreach(campaignId),
+    queryKeys.campaigns.detail(campaignId),
+  ];
 
   const skip = useApiMutation<unknown, number>(
     (id) =>
-      apiClient.post(`/api/runs/${encodeURIComponent(runId)}/outreach/${id}/result`, {
+      apiClient.post(`/api/campaigns/${encodeURIComponent(campaignId)}/outreach/${id}/result`, {
         outcome: "skipped",
       }),
     { invalidate, successMessage: "Skipped" },
@@ -110,7 +117,9 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       headerName: "Channel",
       width: 130,
       valueGetter: (_v, row) =>
-        row.channel === "linkedin" ? `LinkedIn${row.linkedinKind ? ` · ${row.linkedinKind}` : ""}` : "Email",
+        row.channel === "linkedin"
+          ? `LinkedIn${row.linkedinKind ? ` · ${row.linkedinKind}` : ""}`
+          : "Email",
     },
     {
       field: "subject",
@@ -164,7 +173,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
         <Button
           size="small"
           variant="contained"
-          onClick={() => agent.injectSkill("outreach", `--run ${runId}`)}
+          onClick={() => agent.injectSkill("outreach", `--campaign ${campaignId}`)}
           sx={{ ml: "auto" }}
         >
           Continue with agent
@@ -187,7 +196,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
 
       {openMessage && (
         <OutreachMessageDialog
-          runId={runId}
+          campaignId={campaignId}
           message={openMessage}
           canSend={canSend}
           invalidate={invalidate}

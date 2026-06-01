@@ -42,13 +42,13 @@ export const queryKeys = {
     stats: () => [...queryKeys.dashboard.all, "stats"] as const,
   },
 
-  runs: {
-    all: ["runs"] as const,
+  campaigns: {
+    all: ["campaigns"] as const,
     list: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.runs.all, "list", filters] as const,
-    detail: (runId: string) => [...queryKeys.runs.all, "detail", runId] as const,
-    outreach: (runId: string) => [...queryKeys.runs.all, "outreach", runId] as const,
-    stats: () => [...queryKeys.runs.all, "stats"] as const,
+      [...queryKeys.campaigns.all, "list", filters] as const,
+    detail: (campaignId: string) => [...queryKeys.campaigns.all, "detail", campaignId] as const,
+    outreach: (campaignId: string) => [...queryKeys.campaigns.all, "outreach", campaignId] as const,
+    stats: () => [...queryKeys.campaigns.all, "stats"] as const,
   },
 
   contacts: {

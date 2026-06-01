@@ -10,7 +10,7 @@ Classify recent email and link each thread to an existing `Application` when the
 
 ## Setup
 
-Follow `plugin/skills/shared/setup.md`.
+Follow `../shared/setup.md`.
 
 ```bash
 JOBPILOT_API=http://localhost:8000
