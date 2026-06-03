@@ -110,3 +110,11 @@ export const SUBMIT_LABELS: Record<CampaignMode, string> = {
   "auto-apply": "Start auto-apply",
   outreach: "Start outreach",
 };
+
+export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
+  search:
+    "Search a board and score matches in the selected board - nothing is sent. Review the ranked list yourself.",
+  "auto-apply":
+    "Search, score, then auto-submit applications to matches above your score threshold in the selected board.",
+  outreach: "Skip the board — find hiring managers or recruiters and message them directly.",
+};

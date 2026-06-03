@@ -19,6 +19,7 @@ import {
   COMPOSER_DEFAULT_VALUES,
   composerFormSchema,
   makeCampaignId,
+  MODE_DESCRIPTIONS,
   SUBMIT_LABELS,
 } from "./form-config";
 import { OutreachFields } from "./outreach-fields";
@@ -85,18 +86,21 @@ export function CampaignComposer(): ReactElement {
         }}
       >
         <Stack spacing={2.5}>
-          <form.AppField name="mode">
-            {(field) => (
-              <field.Toggle
-                label="Mode"
-                options={[
-                  { value: "search", label: "Search only" },
-                  { value: "auto-apply", label: "Auto-apply" },
-                  { value: "outreach", label: "Outreach" },
-                ]}
-              />
-            )}
-          </form.AppField>
+          <Stack spacing={0.75}>
+            <form.AppField name="mode">
+              {(field) => (
+                <field.Toggle
+                  label="Mode"
+                  options={[
+                    { value: "search", label: "Search only" },
+                    { value: "auto-apply", label: "Auto-apply" },
+                    { value: "outreach", label: "Outreach" },
+                  ]}
+                />
+              )}
+            </form.AppField>
+            <Typography variant="captionMuted">{MODE_DESCRIPTIONS[mode]}</Typography>
+          </Stack>
 
           <Stack spacing={0.75}>
             <form.AppField name="query">
