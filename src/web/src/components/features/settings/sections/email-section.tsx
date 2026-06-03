@@ -42,7 +42,7 @@ export function EmailSection(): ReactElement {
     return (
       <SectionCard
         title="Email integration"
-        description="JobPilot reads new mail to track replies and auto-fill verification codes."
+        description="JobPilot reads new mail to track replies and auto-fill verification codes, and sends outreach emails on your behalf."
       >
         <Stack spacing={1.5}>
           <Box>
@@ -55,8 +55,10 @@ export function EmailSection(): ReactElement {
           </Box>
           {!data.canSend && (
             <Alert severity="info">
-              This mailbox is read-only. Reconnect to grant send access so JobPilot can send
-              outreach emails on your behalf.
+              This mailbox is read-only, so outreach can&apos;t send email yet. Add the{" "}
+              <code>gmail.send</code> scope under Google Auth Platform → Data access (see README →
+              Email Integration), then use <strong>Reconnect to enable sending</strong> below to
+              grant send access.
             </Alert>
           )}
           <Stack direction="row" spacing={1.5}>
@@ -90,7 +92,7 @@ export function EmailSection(): ReactElement {
   return (
     <SectionCard
       title="Email integration"
-      description="Connect Gmail so JobPilot can track recruiter replies and auto-fill verification codes."
+      description="Connect Gmail so JobPilot can track recruiter replies, auto-fill verification codes, and send outreach emails."
     >
       <Stack spacing={1.5} sx={{ maxWidth: 360 }}>
         <Select size="small" value={provider} onChange={(e) => setProvider(e.target.value)}>

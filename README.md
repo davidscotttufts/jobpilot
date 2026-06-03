@@ -71,8 +71,9 @@ $auto-apply senior typescript remote
 
 ## Email Integration (Gmail)
 
-JobPilot can read your Gmail inbox to track recruiter replies and auto-fill
-verification codes during login. Setup:
+JobPilot reads your Gmail inbox (to track recruiter replies and auto-fill
+verification codes during login) and sends outreach emails and replies on
+your behalf. Setup:
 
 1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
    create an OAuth 2.0 Client ID (type: **Web application**).
@@ -86,21 +87,26 @@ verification codes during login. Setup:
    GOOGLE_CLIENT_SECRET=...
    ```
 
-5. Add the **`gmail.readonly`** scope to the consent screen. Google
-   reorganized this UI — it now lives at
+5. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
+   screen. Google reorganized this UI — it now lives at
    [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
-   Click **Add or remove scopes**, search for `gmail.readonly`, tick the
-   Gmail API row marked **Sensitive**, then **Save**. Without this the
-   token gets issued but Gmail API returns 403 "insufficient scopes".
+   Click **Add or remove scopes**, search for `gmail.readonly` and
+   `gmail.send`, tick both Gmail API rows (each marked **Sensitive**), then
+   **Save**. `readonly` lets JobPilot track replies and read verification
+   codes; `send` lets it send outreach emails and replies. Without `readonly`
+   the Gmail API returns 403 "insufficient scopes"; without `send` the mailbox
+   connects read-only and outreach can't send.
 6. While in Testing mode, add your Gmail address under
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
-   Keep the app in Testing — `gmail.readonly` is a Sensitive scope, and
+   Keep the app in Testing — both Gmail scopes are Sensitive, and
    publishing requires a paid third-party CASA security audit. Testing
    mode allows 100 test users; refresh tokens expire after 7 days so
    you'll need to reconnect weekly.
-7. Restart `bun run dev`, open `/profile` → **Email** tab → **Connect Gmail**.
+7. Restart `bun run dev`, open `/settings` → **Email** section → **Connect
+   Gmail**.
 
-The scope is `gmail.readonly` — JobPilot never sends or deletes mail. The
+The scopes are `gmail.readonly` and `gmail.send` — JobPilot reads your mail and
+sends outreach emails and replies on your behalf, but never deletes mail. The
 account is stored as a singleton row in `EmailAccount` (refresh token kept
 locally in `src/web/prisma/app.db`).
 
@@ -110,9 +116,13 @@ locally in `src/web/prisma/app.db`).
   process"** — your Gmail isn't on the Test users list. Add it under
   **Audience → Test users**.
 - **`403 PERMISSION_DENIED — Request had insufficient authentication
-scopes`** — the `gmail.readonly` scope isn't on the consent screen.
-  Add it under **Data access**, then **Disconnect** and reconnect in
-  `/profile` so a new token with the right scope is issued.
+scopes`** — a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
+  on the consent screen. Add both under **Data access**, then **Disconnect**
+  and reconnect in `/settings` → **Email** so a new token with the right
+  scopes is issued.
+- **Mailbox connects read-only / outreach can't send** — the token was issued
+  without `gmail.send`. Add the `gmail.send` scope under **Data access**, then
+  use **Reconnect to enable sending** in `/settings` → **Email**.
 - **Google 500 after publishing** — you published an app that uses a
   Sensitive scope. Go back to Testing mode under
   **Audience → Publishing status → Back to testing**.
