@@ -31,7 +31,8 @@ curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.data.config.outreac
 ```
 
 `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium", autonomy:"draft"|"review"|"auto",
-dailyCap?, scope:"per-job"|"networking"|"both", resumeInclude:"none"|"link"|"attach-on-reply" }`.
+dailyCap?, scope:"per-job"|"networking"|"both", resumeInclude:"none"|"link"|"attach-on-reply",
+resumeUrl? }` (`resumeUrl` is a public, recipient-reachable link, present only when `resumeInclude:"link"`).
 
 The positional argument is the target criteria; when omitted (e.g. the campaign viewer's "Continue
 with agent"), fall back to `data.query` from `GET /api/campaigns/<campaign-id>`. For `scope:"per-job"`,
@@ -72,8 +73,9 @@ points — **this shapes the body even when no resume is sent**. Reuse the `huma
 tone. Then per channel:
 
 - **Email**: short subject + body, one specific proof point, soft ask. Per `resumeInclude`:
-  `"link"` → append the variant PDF URL (`/api/resumes/variants/<id>/pdf`); `"none"` /
-  `"attach-on-reply"` → no file on this first touch.
+  `"link"` → append `config.outreach.resumeUrl` verbatim (a public link the recipient can open;
+  if absent, skip the link — never build a `localhost` URL); `"none"` / `"attach-on-reply"` →
+  no file on this first touch.
 - **LinkedIn connect note** (free tier, not yet connected): ≤300 chars, no link.
 - **LinkedIn InMail** (premium) / **DM** (free, already connected): a few sentences.
 

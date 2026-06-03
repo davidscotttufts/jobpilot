@@ -29,6 +29,8 @@ export const outreachConfigSchema = z.object({
   dailyCap: z.number().int().min(1).max(100).optional(),
   scope: outreachScopeSchema.default("per-job"),
   resumeInclude: resumeIncludeSchema.default("none"),
+  // Public, recipient-reachable resume link used when `resumeInclude === "link"`.
+  resumeUrl: z.url().optional(),
 });
 
 // ── Message / contact enums ─────────────────────────────────────────────────

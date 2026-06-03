@@ -11,6 +11,7 @@ export const OutreachFields = withForm({
   render: function OutreachFields({ form }) {
     const channels = useStore(form.store, (s) => s.values.channels);
     const autonomy = useStore(form.store, (s) => s.values.autonomy);
+    const resumeInclude = useStore(form.store, (s) => s.values.resumeInclude);
 
     return (
       <Stack spacing={2}>
@@ -86,12 +87,23 @@ export const OutreachFields = withForm({
               label="Resume"
               items={[
                 { value: "none", label: "Don't include (recommended)" },
-                { value: "link", label: "Link in message body" },
+                { value: "link", label: "Public resume link" },
                 { value: "attach-on-reply", label: "Attach on reply only" },
               ]}
             />
           )}
         </form.AppField>
+        {resumeInclude === "link" && (
+          <form.AppField name="resumeUrl">
+            {(field) => (
+              <field.TextField
+                label="Resume URL"
+                placeholder="https://example.com/resume.pdf"
+                helperText="A publicly reachable link the recipient can open — not a localhost URL."
+              />
+            )}
+          </form.AppField>
+        )}
         <Typography variant="captionMuted">
           Cold-email attachments hurt deliverability — the tailored resume shapes the message either
           way and is best sent as a link or on the warm reply.

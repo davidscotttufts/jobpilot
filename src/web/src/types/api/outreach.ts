@@ -14,6 +14,7 @@ export interface OutreachConfigDto {
   dailyCap?: number;
   scope: OutreachScope;
   resumeInclude: ResumeInclude;
+  resumeUrl?: string;
 }
 
 export interface ContactDto {

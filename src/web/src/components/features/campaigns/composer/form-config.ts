@@ -19,6 +19,7 @@ export const composerFormSchema = z
     dailyCap: z.number().int().min(1).max(100),
     scope: z.enum(["per-job", "networking", "both"]),
     resumeInclude: z.enum(["none", "link", "attach-on-reply"]),
+    resumeUrl: z.string(),
   })
   .superRefine((v, ctx) => {
     if (v.mode !== "outreach" && !v.board) {
@@ -26,6 +27,13 @@ export const composerFormSchema = z
     }
     if (v.mode === "outreach" && v.channels.length === 0) {
       ctx.addIssue({ code: "custom", message: "Pick at least one channel", path: ["channels"] });
+    }
+    if (
+      v.mode === "outreach" &&
+      v.resumeInclude === "link" &&
+      !z.url().safeParse(v.resumeUrl.trim()).success
+    ) {
+      ctx.addIssue({ code: "custom", message: "Enter a valid resume URL", path: ["resumeUrl"] });
     }
   });
 
@@ -50,6 +58,7 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   dailyCap: 20,
   scope: "per-job",
   resumeInclude: "none",
+  resumeUrl: "",
 };
 
 export function makeCampaignId(query: string): string {
@@ -73,6 +82,9 @@ export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignR
         ...(values.autonomy === "auto" ? { dailyCap: values.dailyCap } : {}),
         scope: values.scope,
         resumeInclude: values.resumeInclude,
+        ...(values.resumeInclude === "link" && values.resumeUrl.trim()
+          ? { resumeUrl: values.resumeUrl.trim() }
+          : {}),
       },
     };
   }
