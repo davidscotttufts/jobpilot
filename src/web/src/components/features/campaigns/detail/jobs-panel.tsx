@@ -14,6 +14,7 @@ import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@/lib/contracts/c
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import type { CampaignDetailDto, CampaignJobDto } from "@/types/api";
+import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
 
 const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
@@ -22,22 +23,7 @@ const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
     label: s,
   }));
 
-const EMPTY_SELECTION: GridRowSelectionModel = { type: "include", ids: new Set() };
-
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-/** Selected, re-applicable jobs — resolved across all pages, not just the visible filter. */
-function resolveSelected(
-  model: GridRowSelectionModel,
-  allJobs: ReadonlyArray<CampaignJobDto>,
-  visible: ReadonlyArray<CampaignJobDto>,
-): CampaignJobDto[] {
-  const matched =
-    model.type === "include"
-      ? allJobs.filter((j) => model.ids.has(j.id))
-      : visible.filter((j) => !model.ids.has(j.id));
-  return matched.filter((j) => isReapplicable(j.status));
-}
 
 interface CampaignJobsPanelProps {
   campaign: CampaignDetailDto;
@@ -64,7 +50,9 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   );
 
   const canReapply = campaign.status !== "in_progress";
-  const selected = canReapply ? resolveSelected(selection, campaign.jobs, visible) : [];
+  const selected = canReapply
+    ? resolveSelectedRows(selection, campaign.jobs, visible).filter((j) => isReapplicable(j.status))
+    : [];
   const selectedSkipped = selected.filter((j) => j.status === "skipped");
   const hasFilters = statusFilter !== null || term !== "";
 

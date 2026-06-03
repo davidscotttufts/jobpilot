@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { Close } from "@mui/icons-material";
 import {
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Stack,
   TextField,
   Typography,
@@ -14,6 +16,7 @@ import {
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { apiClient } from "@/lib/client/api";
 import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@/lib/contracts/outreach";
+import { useAgent } from "@/providers/agent-provider";
 import type { OutreachMessageDto } from "@/types/api";
 
 interface OutreachMessageDialogProps {
@@ -27,6 +30,7 @@ interface OutreachMessageDialogProps {
 
 export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactElement {
   const { campaignId, message, canSend, invalidate, onClose, onSkip } = props;
+  const agent = useAgent();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
@@ -66,9 +70,14 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
 
   const canSendEmail = isEmail && canSend && !!message.contact.email && !terminal;
 
+  const regenerate = (): void => {
+    void agent.injectSkill("outreach", `--campaign ${campaignId} --rewrite ${message.id}`);
+    onClose();
+  };
+
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>
+      <DialogTitle sx={{ pr: 6 }}>
         {message.contact.name}
         {message.contact.title && (
           <Typography variant="captionMuted" component="div">
@@ -76,6 +85,13 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
             {message.contact.company ? ` · ${message.contact.company}` : ""}
           </Typography>
         )}
+        <IconButton
+          aria-label="Close"
+          onClick={onClose}
+          sx={{ position: "absolute", right: 8, top: 8 }}
+        >
+          <Close fontSize="sm" />
+        </IconButton>
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
@@ -110,31 +126,34 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
           )}
         </Stack>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-        {!terminal && (
-          <>
+      {!terminal && (
+        <DialogActions sx={{ justifyContent: "space-between", px: 3, pb: 2 }}>
+          <Stack direction="row" spacing={1}>
             <Button onClick={onSkip} color="warning">
               Skip
             </Button>
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+            <Button onClick={regenerate}>Regenerate</Button>
+          </Stack>
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" onClick={() => save.mutate()} disabled={save.isPending}>
               Save
             </Button>
-            <Button onClick={() => approve.mutate()} disabled={approve.isPending}>
-              Approve
-            </Button>
-            {isEmail && (
-              <Button
-                variant="contained"
-                onClick={() => send.mutate()}
-                disabled={!canSendEmail || send.isPending}
-              >
+            {canSendEmail ? (
+              <Button variant="contained" onClick={() => send.mutate()} disabled={send.isPending}>
                 Send
               </Button>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={() => approve.mutate()}
+                disabled={approve.isPending}
+              >
+                Approve
+              </Button>
             )}
-          </>
-        )}
-      </DialogActions>
+          </Stack>
+        </DialogActions>
+      )}
     </Dialog>
   );
 }

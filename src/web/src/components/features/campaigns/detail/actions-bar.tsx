@@ -88,6 +88,13 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     setRescanOpen(false);
   };
 
+  // Outreach campaigns have no jobs to replay — re-run the outreach skill instead of `resume`.
+  const handleResume = (): void => {
+    void (campaign.source === "outreach"
+      ? agent.injectSkill("outreach", `--campaign ${campaign.campaignId}`)
+      : agent.injectSkill("resume", campaign.campaignId));
+  };
+
   const menuItems: DropdownMenuItem[] = [
     {
       kind: "item",
@@ -132,11 +139,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
         </Button>
       )}
       {isStopped && (
-        <Button
-          variant="contained"
-          startIcon={<PlayArrow fontSize="sm" />}
-          onClick={() => void agent.injectSkill("resume", campaign.campaignId)}
-        >
+        <Button variant="contained" startIcon={<PlayArrow fontSize="sm" />} onClick={handleResume}>
           Resume
         </Button>
       )}

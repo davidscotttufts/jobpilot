@@ -99,8 +99,8 @@ export const patchContactSchema = contactFieldsSchema.partial();
 export const outreachMessageFieldsSchema = z.object({
   channel: outreachChannelSchema,
   linkedinKind: linkedinKindSchema.optional().nullable(),
-  subject: z.string().optional().nullable(),
-  body: z.string().default(""),
+  subject: reasonText.optional().nullable(),
+  body: reasonText.default(""),
   status: outreachMessageStatusSchema.optional(),
 });
 
@@ -122,8 +122,8 @@ export const addCampaignOutreachSchema = z
 /** PATCH /api/campaigns/[id]/outreach/[messageId] — non-terminal edits. */
 export const patchOutreachMessageSchema = z.object({
   status: outreachMessageStatusSchema.optional(),
-  subject: z.string().optional().nullable(),
-  body: z.string().optional(),
+  subject: reasonText.optional().nullable(),
+  body: reasonText.optional(),
   failReason: reasonText.optional().nullable(),
   providerId: z.string().optional().nullable(),
   threadId: z.string().optional().nullable(),
@@ -151,8 +151,8 @@ export const outreachMessageResultSchema = z
 
 export const sendEmailSchema = z.object({
   to: z.email(),
-  subject: z.string().default(""),
-  body: z.string().default(""),
+  subject: reasonText.default(""),
+  body: reasonText.default(""),
   threadId: z.string().optional(),
   attachments: z
     .array(

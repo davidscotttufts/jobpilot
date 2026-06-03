@@ -1,4 +1,6 @@
 import { z } from "zod/v4";
+import { campaignChannel } from "@/lib/sse/channels/campaign";
+import { publish } from "@/lib/sse/server";
 import { patchOutreachMessageSchema } from "@/lib/contracts/outreach";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
@@ -28,8 +30,8 @@ export const PATCH = api.route(
 
     const { contactLinkedinConnection, ...fields } = body;
 
-    return db.$transaction(async (tx) => {
-      const updated = await tx.outreachMessage.update({
+    const updated = await db.$transaction(async (tx) => {
+      const message = await tx.outreachMessage.update({
         where: { id: messageId },
         data: {
           status: fields.status,
@@ -44,16 +46,21 @@ export const PATCH = api.route(
 
       if (contactLinkedinConnection) {
         await tx.contact.update({
-          where: { id: updated.contactId },
+          where: { id: message.contactId },
           data: { linkedinConnection: contactLinkedinConnection },
         });
-        updated.contact.linkedinConnection = contactLinkedinConnection;
+        message.contact.linkedinConnection = contactLinkedinConnection;
       }
 
+      // Tile counts only move on a status change; skip the recompute on draft edits.
       if (fields.status) {
         await recomputeOutreachSummary(tx, campaignId);
       }
-      return updated;
+      return message;
     });
+
+    // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
+    publish(campaignChannel, { campaignId }, { type: "outreach-update" });
+    return updated;
   },
 );

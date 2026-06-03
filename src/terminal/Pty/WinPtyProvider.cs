@@ -36,7 +36,13 @@ public sealed class WinPtyProvider : IPtyProvider
 
         var env = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            ["TERM"] = "xterm-256color"
+            ["TERM"] = "xterm-256color",
+            // Force a UTF-8 locale so the spawned shell/tools (bash, jq, curl) read and write
+            // input as UTF-8 instead of the system code page — otherwise non-ASCII punctuation
+            // an agent types (em-dashes, smart quotes) is mangled to the replacement char.
+            ["LANG"] = "C.UTF-8",
+            ["LC_ALL"] = "C.UTF-8",
+            ["PYTHONUTF8"] = "1"
         };
         if (environment is not null)
         {

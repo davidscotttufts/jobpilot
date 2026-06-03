@@ -1,4 +1,6 @@
 import { z } from "zod/v4";
+import { campaignChannel } from "@/lib/sse/channels/campaign";
+import { publish } from "@/lib/sse/server";
 import { addCampaignOutreachSchema } from "@/lib/contracts/outreach";
 import { notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
@@ -75,6 +77,8 @@ export const POST = api.route(
       throw notFound("Contact not found");
     }
 
+    // Push the new contact/message to the live campaign viewer.
+    publish(campaignChannel, { campaignId: id }, { type: "outreach-update" });
     return result.outreachMessage;
   },
 );

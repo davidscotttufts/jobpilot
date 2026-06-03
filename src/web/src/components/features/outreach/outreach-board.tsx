@@ -1,14 +1,24 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { Alert, Button, Chip, Grid, Link, Stack } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import { Alert, Button, Chip, Grid, Link, Stack, Typography } from "@mui/material";
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRowSelectionModel,
+  type GridRowsProp,
+} from "@mui/x-data-grid";
+import { EmptyState } from "@/components/ui/data";
 import { StatCard } from "@/components/ui/display";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/client/api";
 import { queryKeys } from "@/lib/client/query-keys";
-import type { OutreachMessageStatus } from "@/lib/contracts/outreach";
+import type { CampaignStatus } from "@/lib/contracts/campaign";
+import {
+  OUTREACH_MESSAGE_TERMINAL_STATUSES,
+  type OutreachMessageStatus,
+} from "@/lib/contracts/outreach";
 import { useAgent } from "@/providers/agent-provider";
 import type {
   CampaignSummaryDto,
@@ -16,6 +26,7 @@ import type {
   OutreachConfigDto,
   OutreachMessageDto,
 } from "@/types/api";
+import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { OutreachMessageDialog } from "./outreach-message-dialog";
 
 const STATUS_COLOR: Record<
@@ -31,16 +42,28 @@ const STATUS_COLOR: Record<
   skipped: "default",
 };
 
+function emptyMessage(status: CampaignStatus): string {
+  if (status === "in_progress") {
+    return "Discovering contacts…";
+  }
+  if (status === "paused" || status === "interrupted") {
+    return "No contacts yet — use Resume above to discover contacts and draft messages.";
+  }
+  return "No contacts were added.";
+}
+
 interface OutreachBoardProps {
   campaignId: string;
+  status: CampaignStatus;
   summary: CampaignSummaryDto;
   config?: OutreachConfigDto;
 }
 
 export function OutreachBoard(props: OutreachBoardProps): ReactElement {
-  const { campaignId, summary, config } = props;
+  const { campaignId, status, summary, config } = props;
   const agent = useAgent();
   const [openId, setOpenId] = useState<number | null>(null);
+  const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
   const messagesQuery = useApiQuery<OutreachMessageDto[]>(
     queryKeys.campaigns.outreach(campaignId),
@@ -53,22 +76,45 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
     apiClient.get<EmailAccountStatus>("/api/email/account"),
   );
 
+  const outreachBase = `/api/campaigns/${encodeURIComponent(campaignId)}/outreach`;
   const invalidate = [
     queryKeys.campaigns.outreach(campaignId),
     queryKeys.campaigns.detail(campaignId),
   ];
 
   const skip = useApiMutation<unknown, number>(
-    (id) =>
-      apiClient.post(`/api/campaigns/${encodeURIComponent(campaignId)}/outreach/${id}/result`, {
-        outcome: "skipped",
-      }),
+    (id) => apiClient.post(`${outreachBase}/${id}/result`, { outcome: "skipped" }),
     { invalidate, successMessage: "Skipped" },
+  );
+
+  const approveSelected = useApiMutation<number[], number[]>(
+    async (ids) => {
+      for (const id of ids) {
+        const res = await apiClient.patch(`${outreachBase}/${id}`, { status: "approved" });
+        if (res.error) {
+          return { data: null, error: res.error };
+        }
+      }
+      return { data: ids, error: null };
+    },
+    {
+      invalidate,
+      successMessage: "Approved selected",
+      onSuccess: () => setSelection(EMPTY_SELECTION),
+    },
   );
 
   const messages = messagesQuery.data ?? [];
   const canSend = accountQuery.data?.canSend ?? false;
   const openMessage = messages.find((m) => m.id === openId) ?? null;
+  const selectedIds = resolveSelectedRows(selection, messages)
+    .filter((m) => !OUTREACH_MESSAGE_TERMINAL_STATUSES.includes(m.status))
+    .map((m) => m.id);
+
+  const regenerateSelected = (): void => {
+    void agent.injectSkill("outreach", `--campaign ${campaignId} --rewrite ${selectedIds.join(",")}`);
+    setSelection(EMPTY_SELECTION);
+  };
 
   const columns: GridColDef<OutreachMessageDto>[] = [
     {
@@ -170,14 +216,6 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
         ))}
         {config?.autonomy && <Chip size="small" label={`autonomy: ${config.autonomy}`} />}
         {config?.scope && <Chip size="small" label={`scope: ${config.scope}`} />}
-        <Button
-          size="small"
-          variant="contained"
-          onClick={() => agent.injectSkill("outreach", `--campaign ${campaignId}`)}
-          sx={{ ml: "auto" }}
-        >
-          Continue with agent
-        </Button>
       </Stack>
 
       {config?.channels.includes("email") && !canSend && (
@@ -186,12 +224,33 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
         </Alert>
       )}
 
+      {selectedIds.length > 0 && (
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Typography variant="body2Muted">{selectedIds.length} selected</Typography>
+          <Button size="small" variant="outlined" onClick={regenerateSelected}>
+            Regenerate selected
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => approveSelected.mutate(selectedIds)}
+            disabled={approveSelected.isPending}
+          >
+            Approve selected
+          </Button>
+        </Stack>
+      )}
+
       <DataGrid
         rows={messages as GridRowsProp}
         columns={columns as GridColDef[]}
         loading={messagesQuery.isLoading}
         getRowId={(row) => (row as OutreachMessageDto).id}
+        checkboxSelection
+        rowSelectionModel={selection}
+        onRowSelectionModelChange={setSelection}
         autoHeight
+        slots={{ noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage(status)} /> }}
       />
 
       {openMessage && (

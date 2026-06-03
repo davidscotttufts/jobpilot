@@ -1,5 +1,7 @@
 import type { z } from "zod/v4";
 import type { outreachMessageResultSchema } from "@/lib/contracts/outreach";
+import { campaignChannel } from "@/lib/sse/channels/campaign";
+import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";
 import { recomputeOutreachSummary } from "@/server/campaigns/summary";
 import { db } from "@/server/db";
@@ -17,12 +19,8 @@ interface RecordOutreachResultInput {
  * linker can match a reply later), and recomputes the campaign summary.
  * Mirrors campaigns/[id]/jobs/[key]/result.
  */
-export async function recordOutreachResult({
-  campaignId,
-  messageId,
-  profileId,
-  data,
-}: RecordOutreachResultInput) {
+export async function recordOutreachResult(input: RecordOutreachResultInput) {
+  const { campaignId, messageId, profileId, data } = input;
   const existing = await findOwned(
     (where) => db.outreachMessage.findFirst({ where }),
     { id: messageId, campaignId, profileId },
@@ -49,5 +47,7 @@ export async function recordOutreachResult({
     return { message, summary };
   });
 
+  // Refresh the live campaign viewer on the terminal outcome.
+  publish(campaignChannel, { campaignId }, { type: "outreach-update" });
   return { message: result.message, summary: result.summary };
 }

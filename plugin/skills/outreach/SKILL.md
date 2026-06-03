@@ -39,6 +39,10 @@ with agent"), fall back to `data.query` from `GET /api/campaigns/<campaign-id>`.
 derive the company/role from the related job/application; for `networking`, use the criteria
 directly. Skip contacts already messaged on this campaign before discovering more.
 
+**Rewrite mode** (`--rewrite <id[,id...]>`): skip discovery; for each non-terminal message re-run
+Phase 2 Compose and `PATCH .../outreach/<id>` the new `subject`/`body` (keep `status`). Don't
+discover or send.
+
 ## Phase 1: Discover (multi-modal — never rely on LinkedIn's own search)
 
 For each target company/role, sweep in this order and cross-reference:
@@ -72,17 +76,17 @@ Per contact, invoke the `tailor-resume` skill for the role to surface the 1–2 
 points — **this shapes the body even when no resume is sent**. Reuse the `humanizer` skill for
 tone.
 
-Sign as the user: name from `data.profile.{firstName, lastName}`, title from the resume's
-`content.basics.headline`. The profile has no `name`/`headline`/`title` field, `GET /api/profile`
-returns an object (`data.profile`, not an array), and the active-profile endpoint is
-`/api/profiles/active` (plural) returning only `{ profileId }`.
+Sign as the user: name = `data.profile.{firstName, lastName}`, title = resume `content.basics.headline`
+(profile has no `name`/`headline`; active profile is `GET /api/profiles/active` → `{ profileId }`).
+
+**Style:** plain ASCII only (hyphens not em/en-dashes, straight quotes, no bullets — the terminal
+mangles non-ASCII). Short and direct; run `humanizer`; no template tells.
 
 Then per channel:
 
 - **Email**: short subject + body, one specific proof point, soft ask. Per `resumeInclude`:
-  `"link"` → append `config.outreach.resumeUrl` verbatim (a public link the recipient can open;
-  if absent, skip the link — never build a `localhost` URL); `"none"` / `"attach-on-reply"` →
-  no file on this first touch.
+  `"link"` → append `config.outreach.resumeUrl` verbatim (skip if absent; never a `localhost` URL);
+  `"none"` / `"attach-on-reply"` → no file on this first touch.
 - **LinkedIn connect note** (free tier, not yet connected): ≤300 chars, no link.
 - **LinkedIn InMail** (premium) / **DM** (free, already connected): a few sentences.
 

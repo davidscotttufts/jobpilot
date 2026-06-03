@@ -30,7 +30,9 @@ From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`,
 
 ## Step 2 — Pick the Base
 
-Score each `data.resumes` entry (max 10):
+**Primary wins.** If `primaryResumeId` is set and that resume has `hasData` or a `sourceFilename`,
+use it as `BASE_ID` (skip scoring; Step 2.5 extracts content if missing). Otherwise score each
+`data.resumes` entry (max 10):
 
 | Signal              | Points | Rule                                                                                |
 | ------------------- | ------ | ----------------------------------------------------------------------------------- |

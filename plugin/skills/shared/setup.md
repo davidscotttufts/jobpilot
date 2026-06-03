@@ -39,7 +39,7 @@ curl -fsS "$JOBPILOT_API/api/profile"
 
 The response also includes:
 
-- `data.profile.primaryResumeId` — the primary base resume id (fallback when no specific match).
+- `data.profile.primaryResumeId` — the default base; `tailor-resume` uses it whenever it has content, else scores across resumes.
 - `data.primaryResumeSourceAbsolutePath` — absolute path to the primary's source PDF for `browser_file_upload` / `Read`. May be `null` if the primary has no uploaded PDF or no primary is set.
 - `data.resumes` — `[{ id, label, sourceFilename, hasData, variantCount, isPrimary, updatedAt }]` for every base.
 

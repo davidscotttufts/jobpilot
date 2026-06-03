@@ -36,6 +36,11 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
       onMessage: () => {
         queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
       },
+      on: {
+        "outreach-update": () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.outreach(campaignId) });
+        },
+      },
     },
   );
 
@@ -52,6 +57,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
         <CampaignHeaderCard campaign={campaign} />
         <OutreachBoard
           campaignId={campaignId}
+          status={campaign.status}
           summary={campaign.summary}
           config={campaign.config.outreach}
         />
