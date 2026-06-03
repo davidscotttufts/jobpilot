@@ -70,7 +70,14 @@ Keep the returned `data.id` (messageId) and `data.contactId`. Create one message
 
 Per contact, invoke the `tailor-resume` skill for the role to surface the 1–2 matching proof
 points — **this shapes the body even when no resume is sent**. Reuse the `humanizer` skill for
-tone. Then per channel:
+tone.
+
+Sign as the user: name from `data.profile.{firstName, lastName}`, title from the resume's
+`content.basics.headline`. The profile has no `name`/`headline`/`title` field, `GET /api/profile`
+returns an object (`data.profile`, not an array), and the active-profile endpoint is
+`/api/profiles/active` (plural) returning only `{ profileId }`.
+
+Then per channel:
 
 - **Email**: short subject + body, one specific proof point, soft ask. Per `resumeInclude`:
   `"link"` → append `config.outreach.resumeUrl` verbatim (a public link the recipient can open;
