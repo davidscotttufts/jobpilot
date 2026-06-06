@@ -6,12 +6,11 @@ import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
-import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/types/api";
+import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/api/types";
 import { AutoApplyFields } from "./auto-apply-fields";
 import {
   buildCampaignConfig,

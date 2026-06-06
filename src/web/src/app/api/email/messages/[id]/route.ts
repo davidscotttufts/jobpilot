@@ -1,5 +1,5 @@
-import { scanMessageSchema } from "@/lib/contracts/email";
-import { idParam } from "@/lib/contracts/shared";
+import { scanMessageSchema } from "@/api/contracts/email";
+import { idParam } from "@/api/contracts/shared";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";

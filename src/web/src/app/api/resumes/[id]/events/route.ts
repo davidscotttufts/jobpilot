@@ -1,4 +1,4 @@
-import { idParam } from "@/lib/contracts/shared";
+import { idParam } from "@/api/contracts/shared";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { sseResponse, subscribe } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";

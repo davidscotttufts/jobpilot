@@ -1,4 +1,4 @@
-import type { ResumeData } from "@/lib/contracts/resume";
+import type { ResumeData } from "@/api/contracts/resume";
 import { scoreFit, type FitProfile, type FitResult, type JobDigest } from "@/server/scoring/fit";
 
 /** Calculates the number of years since the earliest experience date in the resume content */

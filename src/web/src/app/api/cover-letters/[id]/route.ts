@@ -1,4 +1,4 @@
-import { idParam } from "@/lib/contracts/shared";
+import { idParam } from "@/api/contracts/shared";
 import { api } from "@/server/api/route";
 import { deleteCoverLetter, getCoverLetter } from "@/server/cover-letters/service";
 

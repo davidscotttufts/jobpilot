@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ResumeData } from "@/lib/contracts/resume";
+import type { ResumeData } from "@/api/contracts/resume";
 import { deriveProfileFitInputs, yearsSinceEarliestExperience } from "./profile-fit";
 
 const baseResume: ResumeData = {

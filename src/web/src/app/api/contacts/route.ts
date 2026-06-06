@@ -1,4 +1,4 @@
-import { createContactSchema } from "@/lib/contracts/outreach";
+import { createContactSchema } from "@/api/contracts/outreach";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 import { createContactPayload } from "@/server/outreach/contact";

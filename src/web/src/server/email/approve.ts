@@ -1,4 +1,4 @@
-import type { ApproveInput } from "@/lib/contracts/email";
+import type { ApproveInput } from "@/api/contracts/email";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { publish } from "@/lib/sse/server";
 import { HttpError, notFound } from "@/server/api/errors";

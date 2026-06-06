@@ -1,17 +1,17 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data/empty-state";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
-import type { EmailAccountStatus, EmailMessageDto } from "@/types/api";
+import type { EmailAccountStatus, EmailMessageDto } from "@/api/types";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
 import { MessageReviewDialog } from "./message-review-dialog";

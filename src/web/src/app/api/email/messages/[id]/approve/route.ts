@@ -1,5 +1,5 @@
-import { approveSchema } from "@/lib/contracts/email";
-import { idParam } from "@/lib/contracts/shared";
+import { approveSchema } from "@/api/contracts/email";
+import { idParam } from "@/api/contracts/shared";
 import { api } from "@/server/api/route";
 import { approveEmailReply } from "@/server/email/approve";
 

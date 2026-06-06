@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { ResumeData } from "@/lib/contracts/resume";
+import type { ResumeData } from "@/api/contracts/resume";
 
 function stableId(prefix: string, parts: Array<string | undefined>): string {
   const key = parts.map((p) => (p ?? "").trim().toLowerCase()).join("|");

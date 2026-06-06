@@ -2,7 +2,7 @@ import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { idParam } from "@/lib/contracts/shared";
+import { idParam } from "@/api/contracts/shared";
 import { badRequest, notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";

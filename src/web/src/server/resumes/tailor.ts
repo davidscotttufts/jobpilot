@@ -1,4 +1,4 @@
-import type { ResumeData, ResumeSkillGroup } from "@/lib/contracts/resume";
+import type { ResumeData, ResumeSkillGroup } from "@/api/contracts/resume";
 import { expandSynonyms, normalizePhrase } from "@/server/scoring/keyword-normalize";
 
 export interface TailorOptions {

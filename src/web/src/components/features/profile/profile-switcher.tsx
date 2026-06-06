@@ -15,16 +15,15 @@ import {
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useConfirm } from "@/providers/confirm-provider";
 import type {
   DeleteProfileResponse,
   ProfileListItemDto,
   SetActiveProfileResponse,
-} from "@/types/api";
+} from "@/api/types";
 
 function initials(p: ProfileListItemDto): string {
   const first = p.firstName?.[0] ?? "";

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { StageChip } from "@/components/ui/display/stage-chip";
-import type { StageEventDto } from "@/types/api";
+import type { StageEventDto } from "@/api/types";
 
 interface StageTimelineProps {
   events: ReadonlyArray<StageEventDto>;

@@ -1,5 +1,5 @@
 import type { z } from "zod/v4";
-import type { outreachMessageResultSchema } from "@/lib/contracts/outreach";
+import type { outreachMessageResultSchema } from "@/api/contracts/outreach";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";

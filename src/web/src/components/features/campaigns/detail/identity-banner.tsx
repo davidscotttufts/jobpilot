@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 import { PersonOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { ProfileResponse } from "@/types/api";
+import { useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { ProfileResponse } from "@/api/types";
 
 /**
  * Compact inline identity line for the campaign header — the active profile's name +

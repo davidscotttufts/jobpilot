@@ -1,14 +1,13 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { EmailAccountStatus } from "@/types/api";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { EmailAccountStatus } from "@/api/types";
 
 export function EmailSection(): ReactElement {
   const [provider, setProvider] = useState("gmail");

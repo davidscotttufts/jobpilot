@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { campaignJobResultSchema } from "@/lib/contracts/campaign";
+import { campaignJobResultSchema } from "@/api/contracts/campaign";
 import { api } from "@/server/api/route";
 import { recordJobResult } from "@/server/campaigns/job-result";
 

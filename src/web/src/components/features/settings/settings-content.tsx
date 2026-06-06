@@ -1,20 +1,19 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
-} from "@/lib/contracts/profile";
-import type { ProfileResponse } from "@/types/api";
+} from "@/api/contracts/profile";
+import type { ProfileResponse } from "@/api/types";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";
 import { CredentialsSection } from "./sections/credentials-section";

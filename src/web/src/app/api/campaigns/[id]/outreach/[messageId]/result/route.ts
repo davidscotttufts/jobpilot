@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { outreachMessageResultSchema } from "@/lib/contracts/outreach";
+import { outreachMessageResultSchema } from "@/api/contracts/outreach";
 import { api } from "@/server/api/route";
 import { recordOutreachResult } from "@/server/campaigns/outreach-result";
 

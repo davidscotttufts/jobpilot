@@ -1,4 +1,4 @@
-import { profileWithAutoApplySchema } from "@/lib/contracts/profile";
+import { profileWithAutoApplySchema } from "@/api/contracts/profile";
 import { getActiveProfileIdOrNull } from "@/server/active-profile";
 import { HttpError } from "@/server/api/errors";
 import { ErrorCodes } from "@/server/api/response";

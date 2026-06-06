@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { OpenInNew } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { SectionCard } from "@/components/ui/layout";
-import { resumePdfUrl } from "@/lib/client/resume-urls";
+import { resumePdfUrl } from "@/api/resume-urls";
 
 interface ResumePdfPreviewProps {
   resumeId: number;

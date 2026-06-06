@@ -18,16 +18,15 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { SelectField } from "@/components/ui/form";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
-import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/types/api";
+import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
 import { OUTCOME_OPTIONS, STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-ui";
 
 interface ProposalDetailProps {

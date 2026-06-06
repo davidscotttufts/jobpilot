@@ -1,4 +1,4 @@
-import type { ResumeData } from "@/lib/contracts/resume";
+import type { ResumeData } from "@/api/contracts/resume";
 import { expandSynonyms, normalizePhrase } from "@/server/scoring/keyword-normalize";
 
 /**

@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { OverviewStatsDto, OverviewTopBoardEntry } from "@/types/api";
+import { useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { OverviewStatsDto, OverviewTopBoardEntry } from "@/api/types";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { OverviewStatTiles } from "./overview-stat-tiles";
 import { StageBreakdownChart } from "./stage-breakdown-chart";

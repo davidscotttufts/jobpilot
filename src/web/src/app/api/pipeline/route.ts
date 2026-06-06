@@ -6,7 +6,7 @@ import {
   loadQueued,
   loadSubmitted,
 } from "@/server/pipeline/loaders";
-import { PIPELINE_STAGES } from "@/types/api/pipeline";
+import { PIPELINE_STAGES } from "@/api/types/pipeline";
 
 const filter = z.string().trim().min(1).nullish().catch(null);
 

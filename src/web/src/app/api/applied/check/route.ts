@@ -6,7 +6,7 @@ import {
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/server/scoring/applied-duplicates";
-import type { DuplicateCheckResult } from "@/types/api";
+import type { DuplicateCheckResult } from "@/api/types";
 
 const querySchema = z.object({
   url: z.string().trim().min(1).optional(),

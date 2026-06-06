@@ -12,7 +12,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import type { CampaignDto } from "@/types/api";
+import type { CampaignDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
 import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "./campaign-status";
 

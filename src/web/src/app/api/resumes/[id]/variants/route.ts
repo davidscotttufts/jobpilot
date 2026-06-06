@@ -1,10 +1,10 @@
-import { resumeVariantCreateSchema } from "@/lib/contracts/resume";
-import { idParam } from "@/lib/contracts/shared";
+import { resumeVariantCreateSchema } from "@/api/contracts/resume";
+import { idParam } from "@/api/contracts/shared";
 import { notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
-import type { ResumeVariantListItem } from "@/types/api";
+import type { ResumeVariantListItem } from "@/api/types";
 
 export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   await findOwned(

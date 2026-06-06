@@ -1,4 +1,4 @@
-import { coverLetterCreateSchema } from "@/lib/contracts/cover-letter";
+import { coverLetterCreateSchema } from "@/api/contracts/cover-letter";
 import { api } from "@/server/api/route";
 import { createCoverLetter, listCoverLetters } from "@/server/cover-letters/service";
 

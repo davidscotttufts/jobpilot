@@ -1,4 +1,4 @@
-import { CAMPAIGN_STATUSES, type CampaignStatus } from "@/lib/contracts/campaign";
+import { CAMPAIGN_STATUSES, type CampaignStatus } from "@/api/contracts/campaign";
 
 export const CAMPAIGN_STATUS_COLOR: Record<
   CampaignStatus,

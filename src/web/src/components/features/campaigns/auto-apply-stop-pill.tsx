@@ -4,14 +4,13 @@ import type { ReactNode } from "react";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { CampaignSource, CampaignStatus } from "@/lib/contracts/campaign";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignSource, CampaignStatus } from "@/api/contracts/campaign";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { useSseChannel } from "@/lib/sse/client";
-import type { CampaignDto } from "@/types/api";
+import type { CampaignDto } from "@/api/types";
 
 const FILTERS = {
   status: "in_progress" satisfies CampaignStatus,

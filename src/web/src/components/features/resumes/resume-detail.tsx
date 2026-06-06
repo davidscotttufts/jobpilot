@@ -1,15 +1,15 @@
-﻿"use client";
+"use client";
 
 import type { ReactElement } from "react";
 import { LinearProgress, Stack, useMediaQuery, useTheme } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import { EMPTY_RESUME_DATA, type ResumeData } from "@/lib/contracts/resume";
+import { useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import { EMPTY_RESUME_DATA, type ResumeData } from "@/api/contracts/resume";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
-import type { ResumeDto } from "@/types/api";
+import type { ResumeDto } from "@/api/types";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";
 import { SourceUploadCard } from "./detail/source-upload-card";

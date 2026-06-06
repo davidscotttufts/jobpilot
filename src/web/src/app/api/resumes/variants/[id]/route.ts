@@ -1,9 +1,9 @@
-import { resumeVariantPatchSchema } from "@/lib/contracts/resume";
-import { idParam } from "@/lib/contracts/shared";
+import { resumeVariantPatchSchema } from "@/api/contracts/resume";
+import { idParam } from "@/api/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
-import type { ResumeVariantDto } from "@/types/api";
+import type { ResumeVariantDto } from "@/api/types";
 
 const findVariant = (id: number, profileId: number) =>
   findOwned(

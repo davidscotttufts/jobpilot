@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import {
@@ -14,11 +14,10 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { ApplicationDto, EmailMessageDto } from "@/types/api";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { ApplicationDto, EmailMessageDto } from "@/api/types";
 
 interface MessageReviewDialogProps {
   messageId: number | null;

@@ -5,16 +5,16 @@ import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material"
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { PROFILE_DEFAULT_VALUES } from "@/lib/contracts/profile";
+import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
-import type { ResumeDto } from "@/types/api";
+import type { ResumeDto } from "@/api/types";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
 type StepState = "idle" | "uploading" | "extracting" | "done";

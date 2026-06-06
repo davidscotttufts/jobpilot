@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { patchCampaignJobSchema } from "@/lib/contracts/campaign";
+import { patchCampaignJobSchema } from "@/api/contracts/campaign";
 import { api } from "@/server/api/route";
 import { patchCampaignJob } from "@/server/campaigns/job-patch";
 

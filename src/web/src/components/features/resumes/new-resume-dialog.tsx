@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import {
@@ -11,9 +11,9 @@ import {
   TextField,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 
 interface NewResumeDialogProps {
   open: boolean;

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Button, Chip, Stack, Typography } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
-import type { EmailMessageDto } from "@/types/api";
+import type { EmailMessageDto } from "@/api/types";
 
 interface InboxTableProps {
   rows: ReadonlyArray<EmailMessageDto>;

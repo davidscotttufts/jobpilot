@@ -1,4 +1,4 @@
-import { profileWithAutoApplySchema } from "@/lib/contracts/profile";
+import { profileWithAutoApplySchema } from "@/api/contracts/profile";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 

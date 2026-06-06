@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { apiGet } from "@/server/api/fetch";
-import type { ProfileResponse } from "@/types/api";
+import type { ProfileResponse } from "@/api/types";
 import { isProfileEmpty } from "@/utils/profile";
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {

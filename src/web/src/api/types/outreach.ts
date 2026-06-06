@@ -4,7 +4,7 @@ import type {
   OutreachChannel,
   OutreachMessageStatus,
   ResumeInclude,
-} from "@/lib/contracts/outreach";
+} from "@/api/contracts/outreach";
 
 export interface OutreachConfigDto {
   channels: OutreachChannel[];

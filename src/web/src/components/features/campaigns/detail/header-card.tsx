@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
-import type { CampaignDetailDto } from "@/types/api";
+import type { CampaignDetailDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
 import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "../campaign-status";
 import { CampaignActionsBar } from "./actions-bar";

@@ -1,4 +1,4 @@
-import { credentialSchema } from "@/lib/contracts/credential";
+import { credentialSchema } from "@/api/contracts/credential";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 

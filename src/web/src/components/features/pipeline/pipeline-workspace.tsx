@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/client/query-keys";
+import { queryKeys } from "@/api/query-keys";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { useSseChannel } from "@/lib/sse/client";
 import { PipelineView } from "./pipeline-view";

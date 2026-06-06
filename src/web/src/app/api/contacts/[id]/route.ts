@@ -1,5 +1,5 @@
-import { patchContactSchema } from "@/lib/contracts/outreach";
-import { idParam } from "@/lib/contracts/shared";
+import { patchContactSchema } from "@/api/contracts/outreach";
+import { idParam } from "@/api/contracts/shared";
 import { notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";

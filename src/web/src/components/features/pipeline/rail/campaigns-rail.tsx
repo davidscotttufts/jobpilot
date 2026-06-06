@@ -20,8 +20,8 @@ import { CAMPAIGN_STATUS_OPTIONS } from "@/components/features/campaigns/campaig
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { usePersistedBoolean } from "@/hooks/use-persisted-boolean";
-import { CAMPAIGN_SOURCES, type CampaignSource } from "@/lib/contracts/campaign";
-import type { CampaignDto } from "@/types/api";
+import { CAMPAIGN_SOURCES, type CampaignSource } from "@/api/contracts/campaign";
+import type { CampaignDto } from "@/api/types";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 
 const RAIL_EXPANDED = 300;

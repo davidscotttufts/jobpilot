@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
-import { addQueueSchema } from "@/lib/contracts/queue";
+import { addQueueSchema } from "@/api/contracts/queue";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { publish } from "@/lib/sse/server";
 import { api } from "@/server/api/route";

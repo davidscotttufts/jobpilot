@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Box, Card, CardActionArea, Stack, Tooltip, Typography } from "@mui/material";
-import type { PipelineJobDto } from "@/types/api";
+import type { PipelineJobDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
 import { PipelineCardMenu } from "./card-menu";
 

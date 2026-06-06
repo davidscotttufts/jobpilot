@@ -5,7 +5,7 @@ import type {
   OverviewStatsDto,
   OverviewTopBoardEntry,
   OverviewTopReasonEntry,
-} from "@/types/api/overview";
+} from "@/api/types/overview";
 
 const NON_INTERVIEWING_STAGES = ["applied", "rejected", "withdrawn"] as const;
 const DAYS_IN_TIMELINE = 30;

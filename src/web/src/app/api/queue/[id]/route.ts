@@ -1,5 +1,5 @@
-import { patchQueueSchema } from "@/lib/contracts/queue";
-import { idParam } from "@/lib/contracts/shared";
+import { patchQueueSchema } from "@/api/contracts/queue";
+import { idParam } from "@/api/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";

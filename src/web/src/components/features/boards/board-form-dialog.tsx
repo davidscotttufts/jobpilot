@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { jobBoardSchema, type JobBoardInput } from "@/lib/contracts/job-board";
+import { jobBoardSchema, type JobBoardInput } from "@/api/contracts/job-board";
 
 interface BoardFormDialogProps {
   open: boolean;

@@ -9,10 +9,10 @@ import {
   CAMPAIGN_STATUS_LABEL,
 } from "@/components/features/campaigns/campaign-status";
 import { LinkButton } from "@/components/ui/buttons";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { CampaignDto } from "@/types/api";
+import { useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignDto } from "@/api/types";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 
 /**

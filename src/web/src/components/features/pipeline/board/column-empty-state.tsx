@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Button, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
-import type { PipelineStage } from "@/types/api";
+import type { PipelineStage } from "@/api/types";
 import { usePipelineActions } from "../actions-provider";
 
 interface ColumnEmptyStateProps {

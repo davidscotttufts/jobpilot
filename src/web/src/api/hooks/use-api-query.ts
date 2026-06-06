@@ -1,8 +1,8 @@
-﻿"use client";
+"use client";
 
 import { useQuery, type UseQueryOptions, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { ClientResult } from "@/lib/client/api";
+import type { ClientResult } from "@/api/client";
 import { useToast } from "@/providers/notification-provider";
 
 type QueryFn<T> = () => Promise<ClientResult<T>>;

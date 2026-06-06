@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
@@ -17,14 +17,13 @@ import { Route } from "next";
 import Link from "next/link";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import { resumePdfUrl } from "@/lib/client/resume-urls";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import { resumePdfUrl } from "@/api/resume-urls";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useToast } from "@/providers/notification-provider";
-import type { ResumeListItem } from "@/types/api";
+import type { ResumeListItem } from "@/api/types";
 import { NewResumeDialog } from "./new-resume-dialog";
 
 export function ResumesList(): ReactElement {

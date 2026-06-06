@@ -5,9 +5,9 @@ import { Delete } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface CoverLetterActionsProps {

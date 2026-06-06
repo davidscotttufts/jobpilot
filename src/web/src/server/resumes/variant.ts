@@ -1,4 +1,4 @@
-import type { ResumeData } from "@/lib/contracts/resume";
+import type { ResumeData } from "@/api/contracts/resume";
 import { HttpError, notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { ErrorCodes } from "@/server/api/response";

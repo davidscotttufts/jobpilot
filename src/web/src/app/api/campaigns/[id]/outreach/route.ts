@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { publish } from "@/lib/sse/server";
-import { addCampaignOutreachSchema } from "@/lib/contracts/outreach";
+import { addCampaignOutreachSchema } from "@/api/contracts/outreach";
 import { notFound } from "@/server/api/errors";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";

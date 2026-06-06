@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Card, CardContent, Grid, Stack, Typography } from "@mui/material";
-import type { OverviewStatsDto } from "@/types/api";
+import type { OverviewStatsDto } from "@/api/types";
 
 interface OverviewStatTilesProps {
   stats: OverviewStatsDto;

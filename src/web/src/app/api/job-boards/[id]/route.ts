@@ -1,5 +1,5 @@
-import { jobBoardPatchSchema } from "@/lib/contracts/job-board";
-import { idParam } from "@/lib/contracts/shared";
+import { jobBoardPatchSchema } from "@/api/contracts/job-board";
+import { idParam } from "@/api/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";

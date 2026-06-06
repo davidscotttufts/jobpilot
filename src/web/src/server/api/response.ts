@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { ApiErr, ApiOk } from "@/lib/api/envelope";
+import type { ApiErr, ApiOk } from "@/api/envelope";
 
 export function ok<T>(data: T, init?: ResponseInit): NextResponse<ApiOk<T>> {
   return NextResponse.json({ ok: true, data }, init);

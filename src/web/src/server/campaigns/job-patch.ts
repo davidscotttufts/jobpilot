@@ -1,5 +1,5 @@
 import type { z } from "zod/v4";
-import type { patchCampaignJobSchema } from "@/lib/contracts/campaign";
+import type { patchCampaignJobSchema } from "@/api/contracts/campaign";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { publish } from "@/lib/sse/server";

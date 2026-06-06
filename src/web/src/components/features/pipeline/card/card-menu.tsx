@@ -13,12 +13,12 @@ import {
 import { IconButton } from "@mui/material";
 import type { Route } from "next";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
-import type { PipelineJobDto } from "@/types/api";
+import type { PipelineJobDto } from "@/api/types";
 
 interface PipelineCardMenuProps {
   job: PipelineJobDto;

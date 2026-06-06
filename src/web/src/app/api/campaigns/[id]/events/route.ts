@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { campaignEventSchema } from "@/lib/contracts/campaign";
+import { campaignEventSchema } from "@/api/contracts/campaign";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { sseResponse, subscribe } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";

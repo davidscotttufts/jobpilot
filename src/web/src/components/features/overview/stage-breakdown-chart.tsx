@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
-import type { OverviewStageBreakdownEntry } from "@/types/api";
+import type { OverviewStageBreakdownEntry } from "@/api/types";
 
 const CHART_HEIGHT = 220;
 

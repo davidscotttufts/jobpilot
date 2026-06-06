@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { idParam } from "@/lib/contracts/shared";
+import { idParam } from "@/api/contracts/shared";
 import {
   ACTIVE_PROFILE_COOKIE,
   getActiveProfileIdOrNull,

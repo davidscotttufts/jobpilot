@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { idParam } from "@/lib/contracts/shared";
+import { idParam } from "@/api/contracts/shared";
 import { api } from "@/server/api/route";
 import { createTailoredVariant } from "@/server/resumes/variant";
 

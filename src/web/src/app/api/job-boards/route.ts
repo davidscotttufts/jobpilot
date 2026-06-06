@@ -1,4 +1,4 @@
-import { jobBoardSchema } from "@/lib/contracts/job-board";
+import { jobBoardSchema } from "@/api/contracts/job-board";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 

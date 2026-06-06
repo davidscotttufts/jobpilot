@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { idParam } from "@/lib/contracts/shared";
-import { patchUpworkProposalSchema, ScreeningAnswer } from "@/lib/contracts/upwork";
+import { idParam } from "@/api/contracts/shared";
+import { patchUpworkProposalSchema, ScreeningAnswer } from "@/api/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";

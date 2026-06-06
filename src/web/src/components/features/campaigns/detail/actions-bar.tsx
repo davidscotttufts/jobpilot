@@ -14,13 +14,13 @@ import {
   Typography,
 } from "@mui/material";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { CampaignStatus } from "@/lib/contracts/campaign";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignStatus } from "@/api/contracts/campaign";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
-import type { CampaignDetailDto } from "@/types/api";
+import type { CampaignDetailDto } from "@/api/types";
 
 interface CampaignActionsBarProps {
   campaign: CampaignDetailDto;

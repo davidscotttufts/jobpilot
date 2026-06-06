@@ -1,13 +1,13 @@
-﻿"use client";
+"use client";
 
 import type { ReactElement } from "react";
 import { CloudSync, FormatListBulleted } from "@mui/icons-material";
 import { Button, Stack, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
-import type { SyncResultDto } from "@/types/api";
+import type { SyncResultDto } from "@/api/types";
 import type { InboxFilter } from "./inbox-content";
 
 interface InboxToolbarProps {

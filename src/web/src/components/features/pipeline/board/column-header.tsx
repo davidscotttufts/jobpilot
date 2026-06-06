@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
-import { PIPELINE_STAGE_LABEL, type PipelineStage } from "@/types/api";
+import { PIPELINE_STAGE_LABEL, type PipelineStage } from "@/api/types";
 
 interface ColumnHeaderProps {
   stage: PipelineStage;

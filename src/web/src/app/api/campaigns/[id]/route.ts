@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
-import { updateCampaignSchema } from "@/lib/contracts/campaign";
+import { updateCampaignSchema } from "@/api/contracts/campaign";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { publish } from "@/lib/sse/server";

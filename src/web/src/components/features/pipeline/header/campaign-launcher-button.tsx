@@ -5,11 +5,11 @@ import { ArrowDropDown, PlayArrow } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { DropdownMenu } from "@/components/ui/feedback";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
-import type { PipelineColumnPage } from "@/types/api";
+import type { PipelineColumnPage } from "@/api/types";
 
 function useQueuedTotal(): number {
   const query = useApiQuery<PipelineColumnPage>(queryKeys.pipeline.total("queued"), () =>

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useApiQuery } from "@/hooks/use-api-query";
+import { useApiQuery } from "@/api/hooks";
 import { usePagination, type Pagination } from "@/hooks/use-pagination";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { CampaignSource, CampaignStatus } from "@/lib/contracts/campaign";
-import type { CampaignDto } from "@/types/api";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignSource, CampaignStatus } from "@/api/contracts/campaign";
+import type { CampaignDto } from "@/api/types";
 
 export interface UseCampaignsListResult {
   statusFilter: CampaignStatus | null;

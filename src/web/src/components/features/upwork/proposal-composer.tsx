@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { z } from "zod/v4";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
-import type { CreateUpworkProposalRequest, UpworkProposalDto } from "@/types/api";
+import type { CreateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
 
 interface FormValues {
   jobTitle: string;

@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
 import { StatCard } from "@/components/ui/display";
-import type { CampaignDetailDto } from "@/types/api";
+import type { CampaignDetailDto } from "@/api/types";
 
 interface CampaignSummaryTilesProps {
   campaign: CampaignDetailDto;

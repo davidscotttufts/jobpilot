@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { PIPELINE_STAGES, type PipelineJobDto } from "@/types/api";
+import { PIPELINE_STAGES, type PipelineJobDto } from "@/api/types";
 import { PipelineColumn } from "./board/column";
 import { usePipelineFilters } from "./hooks/use-pipeline-filters";
 

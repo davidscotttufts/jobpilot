@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { Delete, Launch } from "@mui/icons-material";
@@ -7,12 +7,11 @@ import { useRouter } from "next/navigation";
 import { StageChip } from "@/components/ui/display";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { Stage, StageTransitionInput } from "@/lib/contracts/application";
-import type { ApplicationDetailDto } from "@/types/api";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { Stage, StageTransitionInput } from "@/api/contracts/application";
+import type { ApplicationDetailDto } from "@/api/types";
 import { StageTimeline } from "./stage-timeline";
 import { StageTransitionDialog } from "./stage-transition-dialog";
 

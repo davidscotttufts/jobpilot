@@ -7,13 +7,13 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQueryClient } from "@tanstack/react-query";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@/lib/contracts/campaign";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@/api/contracts/campaign";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
-import type { CampaignDetailDto, CampaignJobDto } from "@/types/api";
+import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
 

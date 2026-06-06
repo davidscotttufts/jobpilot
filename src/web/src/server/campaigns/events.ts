@@ -1,5 +1,5 @@
 import type { z } from "zod/v4";
-import type { campaignEventSchema } from "@/lib/contracts/campaign";
+import type { campaignEventSchema } from "@/api/contracts/campaign";
 import { campaignChannel, type CampaignEvent } from "@/lib/sse/channels/campaign";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";

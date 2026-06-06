@@ -1,9 +1,9 @@
 "use client";
 
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { PipelineColumnPage, PipelineStage } from "@/types/api/pipeline";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { PipelineColumnPage, PipelineStage } from "@/api/types/pipeline";
 import { buildUrl } from "@/utils/url";
 
 export interface PipelineColumnFilters {

@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { z } from "zod/v4";
-import { resumeDataSchema, type ResumeData } from "@/lib/contracts/resume";
-import { idParam } from "@/lib/contracts/shared";
+import { resumeDataSchema, type ResumeData } from "@/api/contracts/resume";
+import { idParam } from "@/api/contracts/shared";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { publish } from "@/lib/sse/server";
 import { badRequest } from "@/server/api/errors";
@@ -14,7 +14,7 @@ import {
   ensureResumeBackupsDir,
   resumeBackupPath,
 } from "@/server/storage";
-import type { ResumeDto } from "@/types/api";
+import type { ResumeDto } from "@/api/types";
 
 export const GET = api.route({ params: idParam }, async ({ params, profileId }) => {
   const profile = await db.profile.findUnique({

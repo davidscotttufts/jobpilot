@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import { stat, writeFile } from "node:fs/promises";
-import type { ResumeData } from "@/lib/contracts/resume";
-import { idParam } from "@/lib/contracts/shared";
+import type { ResumeData } from "@/api/contracts/resume";
+import { idParam } from "@/api/contracts/shared";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";

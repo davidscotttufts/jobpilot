@@ -1,5 +1,5 @@
 import "server-only";
-import type { CoverLetterCreate } from "@/lib/contracts/cover-letter";
+import type { CoverLetterCreate } from "@/api/contracts/cover-letter";
 import { findOwned } from "@/server/api/owned";
 import { db } from "@/server/db";
 

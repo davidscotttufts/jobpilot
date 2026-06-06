@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
+import { useApiMutation } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
 import type {
   ActiveProfileResponse,
   CreateProfileResponse,
   ProfileListItemDto,
   SetActiveProfileResponse,
-} from "@/types/api";
+} from "@/api/types";
 import { isProfileEmpty } from "@/utils/profile";
 
 interface DraftProfileState {

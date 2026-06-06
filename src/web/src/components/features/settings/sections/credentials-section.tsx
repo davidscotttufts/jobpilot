@@ -1,16 +1,15 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { Add, Delete } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { CredentialInput } from "@/lib/contracts/credential";
-import type { CredentialDto } from "@/types/api";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { CredentialInput } from "@/api/contracts/credential";
+import type { CredentialDto } from "@/api/types";
 import { CredentialFormDialog } from "./credential-form-dialog";
 
 export function CredentialsSection(): ReactElement {

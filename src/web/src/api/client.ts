@@ -1,6 +1,6 @@
 "use client";
 
-import type { ApiResponse } from "@/lib/api/envelope";
+import type { ApiResponse } from "@/api/envelope";
 
 export type ClientResult<T> = { data: T | null; error: { code: string; message: string } | null };
 

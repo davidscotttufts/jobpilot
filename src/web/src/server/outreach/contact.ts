@@ -1,5 +1,5 @@
 import "server-only";
-import type { CreateContactInput } from "@/lib/contracts/outreach";
+import type { CreateContactInput } from "@/api/contracts/outreach";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans

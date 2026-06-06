@@ -1,4 +1,4 @@
-import { sendEmailSchema } from "@/lib/contracts/outreach";
+import { sendEmailSchema } from "@/api/contracts/outreach";
 import { HttpError } from "@/server/api/errors";
 import { ErrorCodes } from "@/server/api/response";
 import { api } from "@/server/api/route";

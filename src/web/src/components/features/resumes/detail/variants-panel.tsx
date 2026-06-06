@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, type ReactElement } from "react";
 import { Delete, OpenInNew, Search } from "@mui/icons-material";
@@ -16,12 +16,11 @@ import {
 } from "@mui/material";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import { variantPdfUrl } from "@/lib/client/resume-urls";
-import type { ResumeVariantListItem } from "@/types/api";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import { variantPdfUrl } from "@/api/resume-urls";
+import type { ResumeVariantListItem } from "@/api/types";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface VariantsPanelProps {

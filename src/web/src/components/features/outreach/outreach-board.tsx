@@ -10,22 +10,21 @@ import {
 } from "@mui/x-data-grid";
 import { EmptyState } from "@/components/ui/data";
 import { ExternalLink, StatCard } from "@/components/ui/display";
-import { useApiMutation } from "@/hooks/use-api-mutation";
-import { useApiQuery } from "@/hooks/use-api-query";
-import { apiClient } from "@/lib/client/api";
-import { queryKeys } from "@/lib/client/query-keys";
-import type { CampaignStatus } from "@/lib/contracts/campaign";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { apiClient } from "@/api/client";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignStatus } from "@/api/contracts/campaign";
 import {
   OUTREACH_MESSAGE_TERMINAL_STATUSES,
   type OutreachMessageStatus,
-} from "@/lib/contracts/outreach";
+} from "@/api/contracts/outreach";
 import { useAgent } from "@/providers/agent-provider";
 import type {
   CampaignSummaryDto,
   EmailAccountStatus,
   OutreachConfigDto,
   OutreachMessageDto,
-} from "@/types/api";
+} from "@/api/types";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { OutreachMessageDialog } from "./outreach-message-dialog";
 
