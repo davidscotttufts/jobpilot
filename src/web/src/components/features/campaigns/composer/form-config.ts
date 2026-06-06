@@ -45,7 +45,7 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   mode: "auto-apply",
   query: "",
   board: "",
-  minScore: 70,
+  minScore: 60,
   maxApps: null,
   maxJobs: 15,
   channels: ["email", "linkedin"],
@@ -113,7 +113,7 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
       "max-jobs": values.mode === "search" ? values.maxJobs : undefined,
       // Search saves results onto this campaign; pass the id the UI just created so
       // the skill doesn't have to rediscover it.
-      campaign: values.mode === "search" ? campaignId : undefined,
+      campaign: values.mode === "search" || values.mode === "auto-apply" ? campaignId : undefined,
     },
   });
 }

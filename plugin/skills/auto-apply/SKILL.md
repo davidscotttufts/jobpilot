@@ -18,7 +18,7 @@ Follow `../shared/setup.md`. Read `data.autoApply` (defaults applied per field):
 
 | Setting                 | Default            | Notes                                                                                     |
 | ----------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 70                 | Qualification threshold (0–100). Inline `--min-score` overrides.                          |
+| `minMatchScore`         | 60                 | Qualification threshold (0–100). Inline `--min-score` overrides.                          |
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Stop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited. |
 | `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                |
 
@@ -36,9 +36,11 @@ To recover wrongly-`skipped` jobs, use the dedicated `rescan-skipped` skill (it 
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/campaigns?status=in_progress"
+curl -fsS "$JOBPILOT_API/api/campaigns?status=paused"
+curl -fsS "$JOBPILOT_API/api/campaigns?status=interrupted"
 ```
 
-If a campaign's `query` matches, ask **"Found an incomplete campaign from `<startedAt>`. Resume or start fresh?"** Resume → replay the loop.
+If any matches, ask **"Found an incomplete campaign from `<startedAt>` (status: `<status>`). Resume or start fresh?"** Resume → inject the `resume` skill with that `campaignId`.
 
 Otherwise the web UI already created the campaign row when the user submitted `/campaigns/new` — confirm it exists and use that `campaignId`. If invoked manually (rare), create one:
 
@@ -105,7 +107,7 @@ SCORE=$(echo "$FIT" | jq -r '.data.score')
 CONF=$(echo "$FIT" | jq -r '.data.confidence')
 ```
 
-If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip — read the full posting (tab-1 detail or briefly in tab 2), rebuild the digest, and rescore first. Below `minMatchScore` after a fair read → add with `status:"skipped"`, `skipReason:"Below minimum match score (X < Y)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
+If `CONF >= 0.7` and `SCORE` is ≥10 from `minMatchScore` either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip — read the full posting (tab-1 detail or briefly in tab 2), rebuild the digest, and rescore first. Below `minMatchScore` after a fair read → add with `status:"skipped"`, `skipReason:"Below minimum match score ($SCORE < $MIN_SCORE)"` and move on (no tab). Otherwise add it (status `applying`) and apply (2.3):
 
 ```bash
 DIGEST=<stringified digest>

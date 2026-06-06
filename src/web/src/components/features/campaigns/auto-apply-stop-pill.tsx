@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,8 @@ import type { CampaignSource, CampaignStatus } from "@/api/contracts/campaign";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { useSseChannel } from "@/lib/sse/client";
 import type { CampaignDto } from "@/api/types";
+import { readAgentStorage, subscribeAgentStorage } from "@/providers/agent-provider";
+import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 
 const FILTERS = {
   status: "in_progress" satisfies CampaignStatus,
@@ -19,6 +21,18 @@ const FILTERS = {
 
 export function AutoApplyStopPill(): ReactNode {
   const queryClient = useQueryClient();
+
+  const dockWidth = useSyncExternalStore(
+    subscribeAgentStorage,
+    () => readAgentStorage()?.dockWidth ?? DOCK_EXPANDED,
+    () => DOCK_EXPANDED,
+  );
+  const dockExpanded = useSyncExternalStore(
+    subscribeAgentStorage,
+    () => readAgentStorage()?.dockExpanded ?? false,
+    () => false,
+  );
+  const rightOffset = (dockExpanded ? dockWidth : DOCK_COLLAPSED) + 16;
 
   const invalidateCampaigns = (): void => {
     queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
@@ -67,7 +81,7 @@ export function AutoApplyStopPill(): ReactNode {
       sx={(t) => ({
         position: "fixed",
         bottom: 16,
-        right: 16,
+        right: rightOffset,
         zIndex: t.zIndex.snackbar,
         borderRadius: t.radii.md,
         padding: 1.5,

@@ -44,11 +44,11 @@ Verify status is `paused` or `interrupted`. If `completed` or `failed`, stop:
 **"Campaign <id> is still in progress. If the agent crashed, wait for the
 auto-reconciler (5 min) or stop the campaign from the UI first."**
 
-Refuse to resume if there are no jobs with `status === "approved"`:
+Refuse to resume if there are no resumable jobs (`approved`, `pending`, or `applying`):
 
 ```bash
-APPROVED=$(echo "$CAMPAIGN" | jq '[.data.jobs[] | select(.status=="approved")] | length')
-[ "$APPROVED" = "0" ] && { echo "No approved jobs left to apply. Mark the campaign completed from the UI."; exit 0; }
+RESUMABLE=$(echo "$CAMPAIGN" | jq '[.data.jobs[] | select(.status=="approved" or .status=="pending" or .status=="applying")] | length')
+[ "$RESUMABLE" = "0" ] && { echo "No resumable jobs (approved/pending/applying). If none were ever added, start fresh with the auto-apply skill."; exit 0; }
 ```
 
 ## Phase 1: Re-open the Campaign
@@ -69,9 +69,7 @@ MAX_APPS=$(echo "$CAMPAIGN" | jq -r '.data.config.maxApplications // empty')
 
 ## Phase 2: Replay Apply Loop
 
-For each job where `status === "approved"`, score-descending, run the **exact
-same per-job flow as the apply skill's Phase 4** (see
-`plugin/skills/apply/SKILL.md` sections 4.1 through 4.9):
+For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending, run the **exact same per-job flow as the apply skill's Phase 4** (see `plugin/skills/apply/SKILL.md` sections 4.1 through 4.9):
 
 1. **4.1 Mark Applying** — PATCH job to `applying`.
 2. **4.2 Navigate + Find Apply** — `browser_navigate`, then `browser_snapshot` the header to find the Apply control and click its ref; `browser_snapshot` the form to enumerate fields and refs.

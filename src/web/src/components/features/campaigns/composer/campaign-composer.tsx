@@ -64,8 +64,8 @@ export function CampaignComposer(): ReactElement {
         source: value.mode,
         config: buildCampaignConfig(value),
       });
-      await agent.injectSkill(value.mode, buildSkillArg(value, campaignId));
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
+      void agent.injectSkill(value.mode, buildSkillArg(value, campaignId));
     },
   });
 
