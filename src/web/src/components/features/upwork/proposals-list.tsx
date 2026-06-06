@@ -6,17 +6,17 @@ import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
+import { apiClient } from "@/api/client";
+import type { UpworkProposalStatus } from "@/api/contracts/upwork";
+import { useApiQuery } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { UpworkProposalDto } from "@/api/types";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiQuery } from "@/api/hooks";
 import { usePagination } from "@/hooks/use-pagination";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
-import type { UpworkProposalStatus } from "@/api/contracts/upwork";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
-import type { UpworkProposalDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
 import { STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-ui";
 

@@ -4,12 +4,12 @@ import { useState, type ReactElement } from "react";
 import { Delete, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import { Button, Card, CardContent, IconButton, Stack, TextField, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useApiMutation } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
-import { useConfirm } from "@/providers/confirm-provider";
 import type { ResumeDto } from "@/api/types";
+import { useConfirm } from "@/providers/confirm-provider";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface ResumeHeaderBarProps {

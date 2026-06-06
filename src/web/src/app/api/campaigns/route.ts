@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import type { Prisma } from "@/generated/prisma/client";
 import { createCampaignSchema } from "@/api/contracts/campaign";
+import type { Prisma } from "@/generated/prisma/client";
 import { api } from "@/server/api/route";
 import { reconcileStaleCampaigns } from "@/server/campaigns/reconcile";
 import { db } from "@/server/db";

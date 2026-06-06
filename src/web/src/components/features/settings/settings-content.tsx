@@ -3,17 +3,17 @@
 import { useState, type ReactElement } from "react";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
-import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import {
   PROFILE_DEFAULT_VALUES,
   profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
 } from "@/api/contracts/profile";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
+import { useAppForm } from "@/components/ui/form/tanstack";
+import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";
 import { CredentialsSection } from "./sections/credentials-section";

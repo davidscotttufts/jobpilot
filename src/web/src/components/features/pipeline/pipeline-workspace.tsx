@@ -28,6 +28,7 @@ export function PipelineWorkspace(): ReactElement {
     on: {
       "campaign.updated": invalidateCampaigns,
       "campaign.completed": invalidateCampaigns,
+      "campaign.deleted": invalidateCampaigns,
     },
   });
 

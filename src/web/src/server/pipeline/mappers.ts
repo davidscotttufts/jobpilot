@@ -1,6 +1,6 @@
 import "server-only";
-import type { Application, Job, QueueEntry } from "@/generated/prisma/client";
 import type { PipelineJobDto, PipelineStage } from "@/api/types/pipeline";
+import type { Application, Job, QueueEntry } from "@/generated/prisma/client";
 
 const APPLICATION_STAGE_LABEL: Record<string, string> = {
   applied: "Applied",

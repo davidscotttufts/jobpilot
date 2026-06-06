@@ -2,8 +2,8 @@
 
 import type { ReactElement } from "react";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
-import { useAppForm } from "@/components/ui/form/tanstack";
 import { credentialSchema, type CredentialInput } from "@/api/contracts/credential";
+import { useAppForm } from "@/components/ui/form/tanstack";
 
 interface CredentialFormDialogProps {
   open: boolean;

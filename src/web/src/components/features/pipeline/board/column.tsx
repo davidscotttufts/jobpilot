@@ -3,8 +3,8 @@
 import { useRef, type ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { type PipelineJobDto, type PipelineStage } from "@/api/types";
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { PipelineCard } from "../card/card";
 import { usePipelineColumn, type PipelineColumnFilters } from "../hooks/use-pipeline-column";
 import { ColumnEmptyState } from "./column-empty-state";

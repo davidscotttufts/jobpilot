@@ -3,9 +3,9 @@
 import { useState, type ReactElement, type ReactNode } from "react";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";
-import { SectionCard } from "@/components/ui/layout";
 import type { CampaignJobStatus } from "@/api/contracts/campaign";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import { SectionCard } from "@/components/ui/layout";
 
 interface ReasonCount {
   reason: string;

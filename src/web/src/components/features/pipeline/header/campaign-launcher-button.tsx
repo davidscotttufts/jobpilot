@@ -4,12 +4,12 @@ import type { ReactElement } from "react";
 import { ArrowDropDown, PlayArrow } from "@mui/icons-material";
 import { Button, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { DropdownMenu } from "@/components/ui/feedback";
-import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import { useAgent } from "@/providers/agent-provider";
 import type { PipelineColumnPage } from "@/api/types";
+import { DropdownMenu } from "@/components/ui/feedback";
+import { useAgent } from "@/providers/agent-provider";
 
 function useQueuedTotal(): number {
   const query = useApiQuery<PipelineColumnPage>(queryKeys.pipeline.total("queued"), () =>

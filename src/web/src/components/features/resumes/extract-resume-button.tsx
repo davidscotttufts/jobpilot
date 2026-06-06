@@ -3,9 +3,9 @@
 import { useState, type ReactElement } from "react";
 import { DocumentScanner } from "@mui/icons-material";
 import { Button } from "@mui/material";
+import type { ResumeDto } from "@/api/types";
 import { ConfirmDialog } from "@/components/ui/feedback";
 import { useAgent } from "@/providers/agent-provider";
-import type { ResumeDto } from "@/api/types";
 import { buildCliArgs } from "@/utils/cli-args";
 
 interface ExtractResumeButtonProps {

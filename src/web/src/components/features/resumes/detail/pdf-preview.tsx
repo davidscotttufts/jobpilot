@@ -3,8 +3,8 @@
 import type { ReactElement } from "react";
 import { OpenInNew } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import { SectionCard } from "@/components/ui/layout";
 import { resumePdfUrl } from "@/api/resume-urls";
+import { SectionCard } from "@/components/ui/layout";
 
 interface ResumePdfPreviewProps {
   resumeId: number;

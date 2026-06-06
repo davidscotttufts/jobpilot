@@ -115,51 +115,54 @@ export const GET = api.route({ public: true }, async () => {
   };
 });
 
-export const PUT = api.route({ public: true, body: profileWithAutoApplySchema }, async ({ body }) => {
-  const id = await getActiveProfileIdOrNull();
-  if (id === null) {
-    throw new HttpError(
-      ErrorCodes.UNPROCESSABLE,
-      "No active profile. Create one via POST /api/profiles.",
-      422,
-    );
-  }
+export const PUT = api.route(
+  { public: true, body: profileWithAutoApplySchema },
+  async ({ body }) => {
+    const id = await getActiveProfileIdOrNull();
+    if (id === null) {
+      throw new HttpError(
+        ErrorCodes.UNPROCESSABLE,
+        "No active profile. Create one via POST /api/profiles.",
+        422,
+      );
+    }
 
-  const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } = body;
-  const preferredLocationsJson = JSON.stringify(preferredLocations);
+    const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } = body;
+    const preferredLocationsJson = JSON.stringify(preferredLocations);
 
-  await db.profile.update({
-    where: { id },
-    data: {
-      ...profileFields,
-      preferredLocations: preferredLocationsJson,
-      primaryResumeId: primaryResumeId ?? null,
-    },
-  });
-
-  // Replace the reference set wholesale — the settings form submits the full list.
-  await db.$transaction([
-    db.reference.deleteMany({ where: { profileId: id } }),
-    db.reference.createMany({
-      data: references.map((r, i) => ({
-        profileId: id,
-        name: r.name,
-        relationship: r.relationship ?? null,
-        company: r.company ?? null,
-        email: r.email ?? null,
-        phone: r.phone ?? null,
-        position: i,
-      })),
-    }),
-  ]);
-
-  if (autoApply) {
-    await db.autoApplySettings.upsert({
-      where: { profileId: id },
-      create: { profileId: id, ...autoApply },
-      update: autoApply,
+    await db.profile.update({
+      where: { id },
+      data: {
+        ...profileFields,
+        preferredLocations: preferredLocationsJson,
+        primaryResumeId: primaryResumeId ?? null,
+      },
     });
-  }
 
-  return { id };
-});
+    // Replace the reference set wholesale — the settings form submits the full list.
+    await db.$transaction([
+      db.reference.deleteMany({ where: { profileId: id } }),
+      db.reference.createMany({
+        data: references.map((r, i) => ({
+          profileId: id,
+          name: r.name,
+          relationship: r.relationship ?? null,
+          company: r.company ?? null,
+          email: r.email ?? null,
+          phone: r.phone ?? null,
+          position: i,
+        })),
+      }),
+    ]);
+
+    if (autoApply) {
+      await db.autoApplySettings.upsert({
+        where: { profileId: id },
+        create: { profileId: id, ...autoApply },
+        update: autoApply,
+      });
+    }
+
+    return { id };
+  },
+);

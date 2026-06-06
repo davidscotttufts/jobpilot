@@ -3,6 +3,7 @@ import { defineChannel } from "../channel";
 export type PipelineEvent =
   | { type: "campaign.updated"; campaignId: string; status?: string; source?: string }
   | { type: "campaign.completed"; campaignId: string }
+  | { type: "campaign.deleted"; campaignId: string }
   | { type: "campaignjob.created"; campaignId: string; key: string }
   | { type: "campaignjob.updated"; campaignId: string; key: string; status?: string }
   | { type: "application.created"; campaignId: string | null }

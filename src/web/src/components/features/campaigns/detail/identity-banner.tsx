@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { PersonOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
 

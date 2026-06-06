@@ -2,12 +2,12 @@
 
 import type { ReactElement } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { AnalyticsStatsDto, AnalyticsTopBoardEntry } from "@/api/types";
-import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
+import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { StageBreakdownChart } from "./stage-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
 

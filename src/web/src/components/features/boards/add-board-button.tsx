@@ -3,10 +3,10 @@
 import { useState, type ReactElement } from "react";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
-import { useApiMutation } from "@/api/hooks";
 import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import type { JobBoardInput } from "@/api/contracts/job-board";
+import { useApiMutation } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
 import { BoardFormDialog } from "./board-form-dialog";
 

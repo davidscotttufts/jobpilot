@@ -11,12 +11,12 @@ import {
   WorkOutlined,
 } from "@mui/icons-material";
 import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
+import { apiClient } from "@/api/client";
+import type { ResumeData } from "@/api/contracts/resume";
+import { useApiMutation } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";
 import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
-import { useApiMutation } from "@/api/hooks";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
-import type { ResumeData } from "@/api/contracts/resume";
 import { BasicsSection } from "./basics-section";
 import { EducationSection } from "./education-section";
 import { ExperienceSection } from "./experience-section";

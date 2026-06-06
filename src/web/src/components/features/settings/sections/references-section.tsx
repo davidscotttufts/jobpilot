@@ -11,9 +11,9 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import { PROFILE_DEFAULT_VALUES, type ReferenceInput } from "@/api/contracts/profile";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { PROFILE_DEFAULT_VALUES, type ReferenceInput } from "@/api/contracts/profile";
 
 const EMPTY_REFERENCE: ReferenceInput = {
   name: "",

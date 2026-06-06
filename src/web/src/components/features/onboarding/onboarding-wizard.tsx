@@ -14,6 +14,15 @@ import {
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import { apiClient } from "@/api/client";
+import {
+  PROFILE_DEFAULT_VALUES,
+  profileWithAutoApplySchema,
+  type ProfileWithAutoApplyInput,
+} from "@/api/contracts/profile";
+import { useApiMutation } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { DeleteProfileResponse, SetActiveProfileResponse } from "@/api/types";
 import {
   AddressSection,
   AutoApplySection,
@@ -23,17 +32,8 @@ import {
 } from "@/components/features/settings/sections";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/api/hooks";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
-import {
-  PROFILE_DEFAULT_VALUES,
-  profileWithAutoApplySchema,
-  type ProfileWithAutoApplyInput,
-} from "@/api/contracts/profile";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
-import type { DeleteProfileResponse, SetActiveProfileResponse } from "@/api/types";
 import { ResumeUploadStep } from "./resume-upload-step";
 import { useEnsureDraftProfile } from "./use-ensure-draft-profile";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";

@@ -1,4 +1,3 @@
-import { db } from "@/server/db";
 import type {
   AnalyticsPerDayEntry,
   AnalyticsStageBreakdownEntry,
@@ -6,6 +5,7 @@ import type {
   AnalyticsTopBoardEntry,
   AnalyticsTopReasonEntry,
 } from "@/api/types/analytics";
+import { db } from "@/server/db";
 
 const NON_INTERVIEWING_STAGES = ["applied", "rejected", "withdrawn"] as const;
 const DAYS_IN_TIMELINE = 30;

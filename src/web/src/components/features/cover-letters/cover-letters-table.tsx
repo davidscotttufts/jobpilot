@@ -6,8 +6,8 @@ import { Chip, IconButton, Link } from "@mui/material";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CoverLetterListItem } from "@/api/types";
 
@@ -51,7 +51,12 @@ export function CoverLettersTable(): ReactElement {
       headerName: "Source",
       width: 130,
       renderCell: (p) => (
-        <Chip size="small" label={p.row.source} color={SOURCE_COLOR[p.row.source]} variant="outlined" />
+        <Chip
+          size="small"
+          label={p.row.source}
+          color={SOURCE_COLOR[p.row.source]}
+          variant="outlined"
+        />
       ),
     },
     {

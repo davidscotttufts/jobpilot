@@ -3,11 +3,11 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Clear, Search } from "@mui/icons-material";
 import { Box, Button, InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
-import type { JobBoard } from "@/generated/prisma/client";
-import { useApiQuery } from "@/api/hooks";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
+import type { JobBoard } from "@/generated/prisma/client";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePipelineFilters } from "../hooks/use-pipeline-filters";
 
 const SEARCH_DEBOUNCE_MS = 250;

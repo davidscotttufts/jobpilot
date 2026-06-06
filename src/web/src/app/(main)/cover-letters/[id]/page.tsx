@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { Button, Chip, Container, Typography } from "@mui/material";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
+import { Button, Chip, Container, Typography } from "@mui/material";
 import { notFound } from "next/navigation";
 import { CoverLetterActions } from "@/components/features/cover-letters";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
@@ -58,7 +58,12 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
       <SectionCard
         title="Cover letter"
         actions={
-          <Chip size="small" label={letter.source} variant="outlined" sx={{ textTransform: "none" }} />
+          <Chip
+            size="small"
+            label={letter.source}
+            variant="outlined"
+            sx={{ textTransform: "none" }}
+          />
         }
       >
         <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>

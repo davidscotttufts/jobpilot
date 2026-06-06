@@ -1,11 +1,12 @@
 import { z } from "zod/v4";
-import type { Prisma } from "@/generated/prisma/client";
 import { updateCampaignSchema } from "@/api/contracts/campaign";
+import type { Prisma } from "@/generated/prisma/client";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { publish } from "@/lib/sse/server";
 import { findOwned } from "@/server/api/owned";
 import { api } from "@/server/api/route";
+import { deleteCampaign } from "@/server/campaigns/delete";
 import { reconcileStaleCampaigns } from "@/server/campaigns/reconcile";
 import { summarizeJobs } from "@/server/campaigns/summary";
 import { db } from "@/server/db";
@@ -106,3 +107,10 @@ export const PATCH = api.route(
     };
   },
 );
+
+export const DELETE = api.route({ params: campaignParams }, async ({ params, profileId }) => {
+  const { id } = params;
+  await deleteCampaign({ campaignId: id, profileId });
+  publish(pipelineChannel, { profileId }, { type: "campaign.deleted", campaignId: id });
+  return { deleted: true, campaignId: id };
+});

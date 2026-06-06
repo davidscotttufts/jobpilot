@@ -4,13 +4,13 @@ import type { ReactElement } from "react";
 import { Button, Chip, LinearProgress, Stack, Typography } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
+import { apiClient } from "@/api/client";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import { useAgent } from "@/providers/agent-provider";
-import type { CampaignDto, CreateCampaignRequest, JobBoardDto, ProfileResponse } from "@/api/types";
 import { AutoApplyFields } from "./auto-apply-fields";
 import {
   buildCampaignConfig,

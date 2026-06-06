@@ -3,13 +3,13 @@
 import { useState, type ReactElement } from "react";
 import { Add, Delete } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
+import { apiClient } from "@/api/client";
+import type { CredentialInput } from "@/api/contracts/credential";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { CredentialDto } from "@/api/types";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout/section-card";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
-import type { CredentialInput } from "@/api/contracts/credential";
-import type { CredentialDto } from "@/api/types";
 import { CredentialFormDialog } from "./credential-form-dialog";
 
 export function CredentialsSection(): ReactElement {

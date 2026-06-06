@@ -2,8 +2,8 @@
 
 import type { ReactElement } from "react";
 import { Typography } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { type PipelineColumnPage, type PipelineStage } from "@/api/types";
 

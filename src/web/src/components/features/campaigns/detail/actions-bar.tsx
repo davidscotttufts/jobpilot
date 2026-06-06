@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { Autorenew, DoneAll, MoreVert, Pause, PlayArrow, Replay } from "@mui/icons-material";
+import {
+  Autorenew,
+  Delete,
+  DoneAll,
+  MoreVert,
+  Pause,
+  PlayArrow,
+  Replay,
+} from "@mui/icons-material";
 import {
   Button,
   Dialog,
@@ -13,14 +21,16 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
-import { useApiMutation } from "@/api/hooks";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import type { CampaignStatus } from "@/api/contracts/campaign";
+import { useApiMutation } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignDetailDto } from "@/api/types";
+import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
-import type { CampaignDetailDto } from "@/api/types";
 
 interface CampaignActionsBarProps {
   campaign: CampaignDetailDto;
@@ -30,6 +40,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const { campaign } = props;
   const agent = useAgent();
   const confirm = useConfirm();
+  const router = useRouter();
 
   const campaignPath = `/api/campaigns/${encodeURIComponent(campaign.campaignId)}`;
 
@@ -64,11 +75,22 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     { invalidate: [queryKeys.campaigns.detail(campaign.campaignId), queryKeys.campaigns.all] },
   );
 
+  const remove = useApiMutation<{ deleted: true; campaignId: string }, void>(
+    () => apiClient.del<{ deleted: true; campaignId: string }>(campaignPath),
+    {
+      successMessage: "Campaign deleted",
+      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+      onSuccess: () => router.replace("/" as Route),
+    },
+  );
+
   const failedCount = campaign.jobs.filter((j) => j.status === "failed").length;
   const skippedCount = campaign.summary.skipped;
   const isInProgress = campaign.status === "in_progress";
   const isAutoApply = campaign.source === "auto-apply";
   const isStopped = campaign.status === "paused" || campaign.status === "interrupted";
+  const hasActionItems =
+    isStopped || (isAutoApply && failedCount > 0) || (!isInProgress && skippedCount > 0);
 
   const handleMarkDone = async (): Promise<void> => {
     const confirmed = await confirm({
@@ -79,6 +101,20 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     });
     if (confirmed) {
       complete.mutate();
+    }
+  };
+
+  const handleDelete = async (): Promise<void> => {
+    const confirmed = await confirm({
+      title: "Delete campaign?",
+      description:
+        "Permanently deletes this campaign and all of its data — jobs, history, applications it produced, and outreach. This cannot be undone.",
+      confirmLabel: "Delete campaign",
+      destructive: true,
+      confirmationText: "delete",
+    });
+    if (confirmed) {
+      remove.mutate();
     }
   };
 
@@ -120,6 +156,17 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       icon: <Autorenew fontSize="sm" />,
       show: !isInProgress && skippedCount > 0,
       onClick: () => setRescanOpen(true),
+    },
+    { kind: "divider", key: "del-divider", show: hasActionItems },
+    {
+      kind: "item",
+      key: "delete",
+      label: "Delete campaign",
+      icon: <Delete fontSize="sm" />,
+      danger: true,
+      show: true,
+      disabled: remove.isPending,
+      onClick: () => void handleDelete(),
     },
   ];
 

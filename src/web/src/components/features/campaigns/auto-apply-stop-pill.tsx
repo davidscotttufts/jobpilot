@@ -4,15 +4,15 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import type { CampaignSource, CampaignStatus } from "@/api/contracts/campaign";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { CampaignDto } from "@/api/types";
+import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { useSseChannel } from "@/lib/sse/client";
-import type { CampaignDto } from "@/api/types";
 import { readAgentStorage, subscribeAgentStorage } from "@/providers/agent-provider";
-import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 
 const FILTERS = {
   status: "in_progress" satisfies CampaignStatus,

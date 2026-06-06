@@ -3,14 +3,14 @@
 import type { ReactElement } from "react";
 import { Delete, PictureAsPdf } from "@mui/icons-material";
 import { Box, IconButton, Stack, Typography } from "@mui/material";
+import { apiClient } from "@/api/client";
+import { useApiMutation } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation } from "@/api/hooks";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useToast } from "@/providers/notification-provider";
-import type { ResumeDto } from "@/api/types";
 import { ExtractResumeButton } from "../extract-resume-button";
 
 interface SourceUploadCardProps {

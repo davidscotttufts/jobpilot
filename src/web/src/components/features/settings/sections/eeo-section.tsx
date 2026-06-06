@@ -1,8 +1,8 @@
 "use client";
 
+import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
 
 const PNTD = "Prefer not to disclose";
 const YES_NO_PNTD = [

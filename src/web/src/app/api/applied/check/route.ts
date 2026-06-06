@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import type { DuplicateCheckResult } from "@/api/types";
 import { api } from "@/server/api/route";
 import { db } from "@/server/db";
 import {
@@ -6,7 +7,6 @@ import {
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/server/scoring/applied-duplicates";
-import type { DuplicateCheckResult } from "@/api/types";
 
 const querySchema = z.object({
   url: z.string().trim().min(1).optional(),

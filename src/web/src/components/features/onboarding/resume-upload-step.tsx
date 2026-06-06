@@ -3,18 +3,18 @@
 import { useRef, useState } from "react";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
+import { apiClient } from "@/api/client";
+import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
+import { useApiMutation } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { ResumeDto } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { useApiMutation } from "@/api/hooks";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { PROFILE_DEFAULT_VALUES } from "@/api/contracts/profile";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
-import type { ResumeDto } from "@/api/types";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
 type StepState = "idle" | "uploading" | "extracting" | "done";

@@ -28,7 +28,11 @@ export const composerFormSchema = z
     if (v.mode === "outreach" && v.channels.length === 0) {
       ctx.addIssue({ code: "custom", message: "Pick at least one channel", path: ["channels"] });
     }
-    if (v.mode === "outreach" && v.resumeUrl.trim() && !z.url().safeParse(v.resumeUrl.trim()).success) {
+    if (
+      v.mode === "outreach" &&
+      v.resumeUrl.trim() &&
+      !z.url().safeParse(v.resumeUrl.trim()).success
+    ) {
       ctx.addIssue({ code: "custom", message: "Enter a valid resume URL", path: ["resumeUrl"] });
     }
   });

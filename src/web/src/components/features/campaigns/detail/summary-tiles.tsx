@@ -2,8 +2,8 @@
 
 import type { ReactElement } from "react";
 import { Grid } from "@mui/material";
-import { StatCard } from "@/components/ui/display";
 import type { CampaignDetailDto } from "@/api/types";
+import { StatCard } from "@/components/ui/display";
 
 interface CampaignSummaryTilesProps {
   campaign: CampaignDetailDto;

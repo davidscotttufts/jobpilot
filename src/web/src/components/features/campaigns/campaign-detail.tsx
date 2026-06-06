@@ -3,14 +3,14 @@
 import type { ReactElement } from "react";
 import { LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
-import { OutreachBoard } from "@/components/features/outreach";
-import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
+import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
+import { OutreachBoard } from "@/components/features/outreach";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent } from "@/providers/agent-provider";
-import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
 import { CampaignReasonBreakdown } from "./detail/reason-breakdown";

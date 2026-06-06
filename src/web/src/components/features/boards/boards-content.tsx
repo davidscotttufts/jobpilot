@@ -13,16 +13,16 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { apiClient } from "@/api/client";
+import type { JobBoardPatch } from "@/api/contracts/job-board";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { queryKeys } from "@/api/query-keys";
+import type { JobBoardDto } from "@/api/types";
 import { PaginationFooter } from "@/components/ui/data";
 import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
 import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePagination } from "@/hooks/use-pagination";
-import { apiClient } from "@/api/client";
-import { queryKeys } from "@/api/query-keys";
-import type { JobBoardPatch } from "@/api/contracts/job-board";
-import type { JobBoardDto } from "@/api/types";
 import { BoardFormDialog } from "./board-form-dialog";
 
 const PAGE_SIZE = 10;

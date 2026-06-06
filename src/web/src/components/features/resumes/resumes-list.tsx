@@ -15,15 +15,15 @@ import {
 } from "@mui/material";
 import { Route } from "next";
 import Link from "next/link";
-import { FileUpload } from "@/components/ui/form";
-import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
+import type { ResumeListItem } from "@/api/types";
+import { FileUpload } from "@/components/ui/form";
+import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useToast } from "@/providers/notification-provider";
-import type { ResumeListItem } from "@/api/types";
 import { NewResumeDialog } from "./new-resume-dialog";
 
 export function ResumesList(): ReactElement {

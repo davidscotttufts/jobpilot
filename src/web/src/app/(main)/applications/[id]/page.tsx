@@ -1,8 +1,8 @@
 import type { ReactElement } from "react";
 import { notFound } from "next/navigation";
+import type { ApplicationDetailDto } from "@/api/types";
 import { ApplicationDetail } from "@/components/features/applications";
 import { apiGet } from "@/server/api/fetch";
-import type { ApplicationDetailDto } from "@/api/types";
 
 interface PageProps {
   params: Promise<{ id: string }>;

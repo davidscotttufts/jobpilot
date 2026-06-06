@@ -2,12 +2,12 @@
 
 import { useState, type ReactElement } from "react";
 import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
-import { SectionCard } from "@/components/ui/layout/section-card";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus } from "@/api/types";
+import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
+import { SectionCard } from "@/components/ui/layout/section-card";
 
 export function EmailSection(): ReactElement {
   const [provider, setProvider] = useState("gmail");

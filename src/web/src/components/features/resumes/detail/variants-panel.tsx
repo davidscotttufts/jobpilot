@@ -14,13 +14,13 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { ConfirmDialog } from "@/components/ui/feedback";
-import { SectionCard } from "@/components/ui/layout";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
+import { ConfirmDialog } from "@/components/ui/feedback";
+import { SectionCard } from "@/components/ui/layout";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface VariantsPanelProps {

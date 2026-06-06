@@ -1,7 +1,7 @@
 import "server-only";
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@/api/contracts/campaign";
-import { db } from "@/server/db";
 import type { PipelineColumnPage, PipelineJobDto, PipelineStage } from "@/api/types/pipeline";
+import { db } from "@/server/db";
 import { mapApplication, mapCampaignJob, mapQueueEntry } from "./mappers";
 
 /** Active board/campaign/search scoping applied to a pipeline column query. */

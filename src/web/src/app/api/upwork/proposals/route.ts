@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import type { Prisma } from "@/generated/prisma/client";
 import { createUpworkProposalSchema, ScreeningAnswer } from "@/api/contracts/upwork";
+import type { Prisma } from "@/generated/prisma/client";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { publish } from "@/lib/sse/server";
 import { api } from "@/server/api/route";

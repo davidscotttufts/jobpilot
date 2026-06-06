@@ -2,8 +2,8 @@
 
 import type { ReactElement } from "react";
 import { Button, Stack, Typography } from "@mui/material";
-import { LinkButton } from "@/components/ui/buttons";
 import type { PipelineStage } from "@/api/types";
+import { LinkButton } from "@/components/ui/buttons";
 import { usePipelineActions } from "../actions-provider";
 
 interface ColumnEmptyStateProps {

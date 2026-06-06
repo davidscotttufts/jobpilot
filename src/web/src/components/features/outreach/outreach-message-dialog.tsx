@@ -13,11 +13,11 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useApiMutation } from "@/api/hooks";
 import { apiClient } from "@/api/client";
 import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@/api/contracts/outreach";
-import { useAgent } from "@/providers/agent-provider";
+import { useApiMutation } from "@/api/hooks";
 import type { OutreachMessageDto } from "@/api/types";
+import { useAgent } from "@/providers/agent-provider";
 
 interface OutreachMessageDialogProps {
   campaignId: string;

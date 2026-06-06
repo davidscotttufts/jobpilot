@@ -1,6 +1,6 @@
 import "server-only";
-import type { Prisma } from "@/generated/prisma/client";
 import type { CampaignJobStatus, CampaignSummary } from "@/api/contracts/campaign";
+import type { Prisma } from "@/generated/prisma/client";
 
 function emptySummary(): CampaignSummary {
   return {
