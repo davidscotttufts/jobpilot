@@ -3,13 +3,14 @@
 import { Stack, Typography } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { withForm } from "@/components/ui/form/tanstack";
-import { COMPOSER_DEFAULT_VALUES } from "./form-config";
+import { COMPOSER_DEFAULT_VALUES, isBoardSelected } from "./form-config";
 
-/** Outreach campaign fields: channels, LinkedIn tier, scope, autonomy, resume handling. */
+/** Outreach campaign fields: channels, LinkedIn tier, job cap, autonomy, resume handling. */
 export const OutreachFields = withForm({
   defaultValues: COMPOSER_DEFAULT_VALUES,
   render: function OutreachFields({ form }) {
     const channels = useStore(form.store, (s) => s.values.channels);
+    const board = useStore(form.store, (s) => s.values.board);
     const autonomy = useStore(form.store, (s) => s.values.autonomy);
     const resumeInclude = useStore(form.store, (s) => s.values.resumeInclude);
 
@@ -42,18 +43,20 @@ export const OutreachFields = withForm({
           </form.AppField>
         )}
 
-        <form.AppField name="scope">
-          {(field) => (
-            <field.Toggle
-              label="Scope"
-              options={[
-                { value: "per-job", label: "Per-job" },
-                { value: "networking", label: "Networking" },
-                { value: "both", label: "Both" },
-              ]}
-            />
-          )}
-        </form.AppField>
+        {/* Cap only applies when sourcing from a board. Reuses the optional `maxApps`
+            field (empty = unlimited) → mapped to config.maxJobs in buildCampaignConfig. */}
+        {isBoardSelected(board) && (
+          <form.AppField name="maxApps">
+            {(field) => (
+              <field.TextField
+                label="Max jobs to source"
+                type="number"
+                helperText="Leave empty to run until you stop."
+                slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
+              />
+            )}
+          </form.AppField>
+        )}
 
         <form.AppField name="autonomy">
           {(field) => (

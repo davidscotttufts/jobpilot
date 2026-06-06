@@ -15,9 +15,6 @@ export const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
 export const OUTREACH_AUTONOMY = ["draft", "review", "auto"] as const;
 export const outreachAutonomySchema = z.enum(OUTREACH_AUTONOMY);
 
-export const OUTREACH_SCOPES = ["per-job", "networking", "both"] as const;
-export const outreachScopeSchema = z.enum(OUTREACH_SCOPES);
-
 export const RESUME_INCLUDE = ["none", "link", "attach-on-reply"] as const;
 export const resumeIncludeSchema = z.enum(RESUME_INCLUDE);
 
@@ -27,7 +24,6 @@ export const outreachConfigSchema = z.object({
   linkedinTier: linkedinTierSchema.optional(),
   autonomy: outreachAutonomySchema.default("draft"),
   dailyCap: z.number().int().min(1).max(100).optional(),
-  scope: outreachScopeSchema.default("per-job"),
   resumeInclude: resumeIncludeSchema.default("none"),
   // Public, recipient-reachable resume link used when `resumeInclude === "link"`.
   resumeUrl: z.url().optional(),
@@ -169,7 +165,6 @@ export type OutreachConfig = z.infer<typeof outreachConfigSchema>;
 export type OutreachChannel = z.infer<typeof outreachChannelSchema>;
 export type LinkedinTier = z.infer<typeof linkedinTierSchema>;
 export type OutreachAutonomy = z.infer<typeof outreachAutonomySchema>;
-export type OutreachScope = z.infer<typeof outreachScopeSchema>;
 export type ResumeInclude = z.infer<typeof resumeIncludeSchema>;
 export type OutreachMessageStatus = z.infer<typeof outreachMessageStatusSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;

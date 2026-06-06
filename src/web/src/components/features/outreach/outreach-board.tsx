@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { Alert, Button, Chip, Grid, Link, Stack, Typography } from "@mui/material";
+import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
 import {
   DataGrid,
   type GridColDef,
@@ -9,7 +9,7 @@ import {
   type GridRowsProp,
 } from "@mui/x-data-grid";
 import { EmptyState } from "@/components/ui/data";
-import { StatCard } from "@/components/ui/display";
+import { ExternalLink, StatCard } from "@/components/ui/display";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { useApiQuery } from "@/hooks/use-api-query";
 import { apiClient } from "@/lib/client/api";
@@ -112,7 +112,10 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
     .map((m) => m.id);
 
   const regenerateSelected = (): void => {
-    void agent.injectSkill("outreach", `--campaign ${campaignId} --rewrite ${selectedIds.join(",")}`);
+    void agent.injectSkill(
+      "outreach",
+      `--campaign ${campaignId} --rewrite ${selectedIds.join(",")}`,
+    );
     setSelection(EMPTY_SELECTION);
   };
 
@@ -139,14 +142,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       valueGetter: (_v, row) => row.contact.name,
       renderCell: (p) =>
         p.row.contact.linkedinUrl ? (
-          <Link
-            href={p.row.contact.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            color="inherit"
-          >
-            {p.row.contact.name}
-          </Link>
+          <ExternalLink href={p.row.contact.linkedinUrl}>{p.row.contact.name}</ExternalLink>
         ) : (
           p.row.contact.name
         ),
@@ -157,6 +153,14 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       flex: 1,
       minWidth: 140,
       valueGetter: (_v, row) => row.contact.company ?? "",
+      renderCell: (p) =>
+        p.row.contact.relatedJobUrl ? (
+          <ExternalLink href={p.row.contact.relatedJobUrl}>
+            {p.row.contact.company ?? "View role"}
+          </ExternalLink>
+        ) : (
+          (p.row.contact.company ?? "")
+        ),
     },
     {
       field: "channel",
@@ -215,7 +219,6 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
           <Chip key={c} size="small" label={c} variant="outlined" />
         ))}
         {config?.autonomy && <Chip size="small" label={`autonomy: ${config.autonomy}`} />}
-        {config?.scope && <Chip size="small" label={`scope: ${config.scope}`} />}
       </Stack>
 
       {config?.channels.includes("email") && !canSend && (
@@ -250,7 +253,9 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}
         autoHeight
-        slots={{ noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage(status)} /> }}
+        slots={{
+          noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage(status)} />,
+        }}
       />
 
       {openMessage && (

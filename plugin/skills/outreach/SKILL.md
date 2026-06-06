@@ -27,25 +27,38 @@ JOBPILOT_API=http://localhost:8000
 `--campaign <id>` is required. Read the campaign config:
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.data.config.outreach'
+curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.data.config'
 ```
 
-`{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium", autonomy:"draft"|"review"|"auto",
-dailyCap?, scope:"per-job"|"networking"|"both", resumeInclude:"none"|"link"|"attach-on-reply",
-resumeUrl? }` (`resumeUrl` is a public, recipient-reachable link, present only when `resumeInclude:"link"`).
+`config.outreach` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
+autonomy:"draft"|"review"|"auto", dailyCap?, resumeInclude:"none"|"link"|"attach-on-reply",
+resumeUrl? }` (`resumeUrl` present only when `resumeInclude:"link"`). `config` may also carry `board`
+(domain to search) and optional `maxJobs` (cap; absent = run until stopped).
 
-The positional argument is the target criteria; when omitted (e.g. the campaign viewer's "Continue
-with agent"), fall back to `data.query` from `GET /api/campaigns/<campaign-id>`. For `scope:"per-job"`,
-derive the company/role from the related job/application; for `networking`, use the criteria
-directly. Skip contacts already messaged on this campaign before discovering more.
+Target criteria = the positional arg, else `data.query`. The optional `board` is the control:
+`board` set → search it (Phase 0.5) and loop results (Phase 1), grounding each message in its posting;
+no `board` → discover from criteria, grounding only if an opening turns up. Skip contacts already
+messaged on this campaign.
 
 **Rewrite mode** (`--rewrite <id[,id...]>`): skip discovery; for each non-terminal message re-run
 Phase 2 Compose and `PATCH .../outreach/<id>` the new `subject`/`body` (keep `status`). Don't
 discover or send.
 
-## Phase 1: Discover (multi-modal — never rely on LinkedIn's own search)
+## Phase 0.5: Open the board (when `config.board` set)
 
-For each target company/role, sweep in this order and cross-reference:
+```bash
+curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<config.board>" '.data[] | select(.domain == $d)'
+```
+
+No row → PATCH campaign `failed`, `failReason:"Board <domain> not configured"`, stop. Else
+`browser_navigate` to its `searchUrl` in **tab 1** (keep open), log in (`../shared/auth.md`), submit
+the query, and `browser_snapshot` the results (narrowed, per `../shared/browser-tips.md`) for
+`{ title, company, location, url }` per row.
+
+## Phase 1: Discover + reach out
+
+**Discover a contact** (multi-modal — never rely on LinkedIn's own search). For a company/role, sweep
+in this order and cross-reference:
 
 1. **Google → LinkedIn**: `WebSearch` `site:linkedin.com/in "<company>" ("recruiter" OR "talent"
    OR "hiring manager" OR "<title>")` — yields profile URLs without touching LinkedIn search.
@@ -55,20 +68,58 @@ For each target company/role, sweep in this order and cross-reference:
    address, MX-check the domain where possible. Set `emailSource:"guessed"` + a confidence.
 
 Use `WebFetch` for pages; `browser_snapshot` (with `ref`, per `browser-tips.md`) only when a page
-needs rendering. Pick the best match and save it:
+needs rendering. Pick the best match.
+
+### With a board — loop over results
+
+Walk tab-1 results top to bottom; per result:
+
+1. Dedupe in-board, then applied-check:
+
+   ```bash
+   URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+   TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
+   COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+   curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+   ```
+
+   On `data.applied`, keep `data.match.application.id` as `relatedAppId` — **don't skip** (outreach
+   complements applying).
+2. Save the job (stable, shell-safe `key`):
+
+   ```bash
+   curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+     -H 'content-type: application/json' \
+     -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
+       --arg location "<location>" --arg url "<job-url>" --arg board "<config.board>" \
+       '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,status:"pending"}')"
+   ```
+3. Discover + save the contact (below) with `relatedJobUrl` (+ `relatedAppId` if matched).
+4. Compose (Phase 2), then gate (Phase 3).
+5. Before the next result, `GET /api/campaigns/<campaign-id>`: `status:"paused"` → exit; `maxJobs`
+   reached → stop; no rows left → scroll / next page, else Phase 5.
+
+### Without a board — discover from criteria
+
+Derive target companies/roles from the criteria and sweep each. Optionally ground a message in a
+matching opening (`relatedJobUrl` + applied-check for `relatedAppId`); else reach out on criteria alone.
+
+### Save a contact + message
 
 ```bash
 curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg name "<name>" --arg title "<title>" --arg company "<company>" \
     --arg li "<linkedin-url>" --arg email "<email-or-empty>" --arg src "google" \
-    --arg chan "email" \
+    --arg chan "email" --arg jobUrl "<job-url-or-empty>" \
     '{contact:{name:$name,title:$title,company:$company,linkedinUrl:$li,
-      email:(if $email=="" then null else $email end),emailSource:"guessed",discoverySource:$src},
+      email:(if $email=="" then null else $email end),emailSource:"guessed",discoverySource:$src,
+      relatedJobUrl:(if $jobUrl=="" then null else $jobUrl end)},
       message:{channel:$chan,body:""}}')"
 ```
 
-Keep the returned `data.id` (messageId) and `data.contactId`. Create one message per channel.
+Add `relatedAppId:<id>` when applied-check matched. Keep the returned `data.id` (messageId) and
+`data.contactId`. Create one message per channel.
 
 ## Phase 2: Compose
 
@@ -103,6 +154,8 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageI
 (Set `linkedinKind` to `connect_note` | `inmail` | `dm` for LinkedIn messages.)
 
 ## Phase 3: Approval gate (by `autonomy`)
+
+In the board loop this runs per contact as drafted; for criteria-only, once over the drafted set.
 
 - **draft** → stop after drafting. Tell the user to review and send from
   `http://localhost:8000/campaigns/<campaign-id>`.

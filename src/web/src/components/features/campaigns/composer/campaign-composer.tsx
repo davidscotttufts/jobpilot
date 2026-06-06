@@ -134,21 +134,34 @@ export function CampaignComposer(): ReactElement {
             )}
           </Stack>
 
-          {!isOutreach &&
-            (hasBoards ? (
+          {/* One board control: required for search/auto-apply, optional for outreach
+              (where it toggles board-grounded vs criteria-only discovery). */}
+          {hasBoards ? (
+            <Stack spacing={0.75}>
               <form.AppField name="board">
                 {(field) => (
                   <field.Select
                     label="Board"
+                    optional={isOutreach}
+                    emptyLabel="No board — reach by criteria"
                     items={boards.map((b) => ({ value: b.domain, label: b.name }))}
                   />
                 )}
               </form.AppField>
-            ) : (
+              {isOutreach && (
+                <Typography variant="captionMuted">
+                  With a board, each contact is grounded in a matching opening; without one,
+                  outreach uses your criteria alone.
+                </Typography>
+              )}
+            </Stack>
+          ) : (
+            !isOutreach && (
               <Typography variant="body2Muted">
                 No boards configured. Add one on the Boards page first.
               </Typography>
-            ))}
+            )
+          )}
 
           {mode === "search" && <SearchFields form={form} />}
           {mode === "auto-apply" && <AutoApplyFields form={form} />}

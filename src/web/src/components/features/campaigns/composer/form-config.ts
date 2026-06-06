@@ -17,11 +17,12 @@ export const composerFormSchema = z
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
-    scope: z.enum(["per-job", "networking", "both"]),
     resumeInclude: z.enum(["none", "link", "attach-on-reply"]),
     resumeUrl: z.string(),
   })
   .superRefine((v, ctx) => {
+    // Board is required for search/auto-apply; for outreach it is optional (the
+    // control between board-grounded and criteria-only discovery).
     if (v.mode !== "outreach" && !v.board) {
       ctx.addIssue({ code: "custom", message: "Pick a board", path: ["board"] });
     }
@@ -56,7 +57,6 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   linkedinTier: "free",
   autonomy: "draft",
   dailyCap: 20,
-  scope: "per-job",
   resumeInclude: "none",
   resumeUrl: "",
 };
@@ -72,15 +72,25 @@ function hasMaxApps(
   return values.maxApps != null && Number.isFinite(values.maxApps);
 }
 
+/** Whether an outreach campaign has a board picked (board-grounded vs criteria-only). */
+export function isBoardSelected(board: string): boolean {
+  return board.trim() !== "";
+}
+
 export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
   if (values.mode === "outreach") {
+    // A selected board grounds outreach in real openings; the optional cap
+    // (reusing the maxApps field) maps to config.maxJobs — omit it to run until
+    // the user stops. No board → criteria-only discovery.
+    const searchesBoard = isBoardSelected(values.board);
     return {
+      ...(searchesBoard ? { board: values.board } : {}),
+      ...(searchesBoard && hasMaxApps(values) ? { maxJobs: values.maxApps } : {}),
       outreach: {
         channels: values.channels,
         ...(values.channels.includes("linkedin") ? { linkedinTier: values.linkedinTier } : {}),
         autonomy: values.autonomy,
         ...(values.autonomy === "auto" ? { dailyCap: values.dailyCap } : {}),
-        scope: values.scope,
         resumeInclude: values.resumeInclude,
         ...(values.resumeInclude === "link" && values.resumeUrl.trim()
           ? { resumeUrl: values.resumeUrl.trim() }
@@ -128,5 +138,6 @@ export const MODE_DESCRIPTIONS: Record<CampaignMode, string> = {
     "Search a board and score matches in the selected board - nothing is sent. Review the ranked list yourself.",
   "auto-apply":
     "Search, score, then auto-submit applications to matches above your score threshold in the selected board.",
-  outreach: "Skip the board — find hiring managers or recruiters and message them directly.",
+  outreach:
+    "Find hiring managers or recruiters and message them directly. Pick a board to ground outreach in real openings, or none to reach by criteria.",
 };
