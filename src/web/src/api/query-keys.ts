@@ -77,9 +77,9 @@ export const queryKeys = {
     total: (stage: string) => [...queryKeys.pipeline.all, "total", stage] as const,
   },
 
-  overview: {
-    all: ["overview"] as const,
-    stats: () => [...queryKeys.overview.all, "stats"] as const,
+  analytics: {
+    all: ["analytics"] as const,
+    stats: () => [...queryKeys.analytics.all, "stats"] as const,
   },
 
   upworkProposals: {

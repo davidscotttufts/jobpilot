@@ -3,12 +3,12 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
-import type { OverviewPerDayEntry } from "@/api/types";
+import type { AnalyticsPerDayEntry } from "@/api/types";
 
 const CHART_HEIGHT = 220;
 
 interface ApplicationsTimelineChartProps {
-  data: OverviewPerDayEntry[];
+  data: AnalyticsPerDayEntry[];
 }
 
 function formatTick(iso: string): string {

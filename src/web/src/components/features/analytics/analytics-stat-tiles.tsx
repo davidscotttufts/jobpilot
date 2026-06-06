@@ -2,10 +2,10 @@
 
 import type { ReactElement } from "react";
 import { Card, CardContent, Grid, Stack, Typography } from "@mui/material";
-import type { OverviewStatsDto } from "@/api/types";
+import type { AnalyticsStatsDto } from "@/api/types";
 
-interface OverviewStatTilesProps {
-  stats: OverviewStatsDto;
+interface AnalyticsStatTilesProps {
+  stats: AnalyticsStatsDto;
 }
 
 interface TileProps {
@@ -55,7 +55,7 @@ function Tile(props: TileProps): ReactElement {
   );
 }
 
-export function OverviewStatTiles(props: OverviewStatTilesProps): ReactElement {
+export function AnalyticsStatTiles(props: AnalyticsStatTilesProps): ReactElement {
   const { stats } = props;
   const { totals, thisWeek, responseRatePct } = stats;
 

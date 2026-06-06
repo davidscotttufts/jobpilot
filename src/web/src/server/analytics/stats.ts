@@ -1,11 +1,11 @@
 import { db } from "@/server/db";
 import type {
-  OverviewPerDayEntry,
-  OverviewStageBreakdownEntry,
-  OverviewStatsDto,
-  OverviewTopBoardEntry,
-  OverviewTopReasonEntry,
-} from "@/api/types/overview";
+  AnalyticsPerDayEntry,
+  AnalyticsStageBreakdownEntry,
+  AnalyticsStatsDto,
+  AnalyticsTopBoardEntry,
+  AnalyticsTopReasonEntry,
+} from "@/api/types/analytics";
 
 const NON_INTERVIEWING_STAGES = ["applied", "rejected", "withdrawn"] as const;
 const DAYS_IN_TIMELINE = 30;
@@ -32,7 +32,7 @@ function isoDateKey(d: Date): string {
   return startOfDay(d).toISOString().slice(0, 10);
 }
 
-export async function computeOverviewStats(profileId: number): Promise<OverviewStatsDto> {
+export async function computeAnalyticsStats(profileId: number): Promise<AnalyticsStatsDto> {
   const weekStart = startOfWeek();
   const timelineStart = startOfTimeline();
 
@@ -97,7 +97,7 @@ export async function computeOverviewStats(profileId: number): Promise<OverviewS
     }),
   ]);
 
-  const stageBreakdown: OverviewStageBreakdownEntry[] = stageGroupRows.map((r) => ({
+  const stageBreakdown: AnalyticsStageBreakdownEntry[] = stageGroupRows.map((r) => ({
     stage: r.stage,
     count: r._count._all,
   }));
@@ -117,16 +117,16 @@ export async function computeOverviewStats(profileId: number): Promise<OverviewS
     }
   }
 
-  const perDay: OverviewPerDayEntry[] = Array.from(perDayMap.entries()).map(([date, count]) => ({
+  const perDay: AnalyticsPerDayEntry[] = Array.from(perDayMap.entries()).map(([date, count]) => ({
     date,
     count,
   }));
 
-  const topBoards: OverviewTopBoardEntry[] = boardGroupRows
+  const topBoards: AnalyticsTopBoardEntry[] = boardGroupRows
     .filter((r) => r.board)
     .map((r) => ({ board: r.board as string, count: r._count._all }));
 
-  const topRejectReasons: OverviewTopReasonEntry[] = failReasonRows
+  const topRejectReasons: AnalyticsTopReasonEntry[] = failReasonRows
     .filter((r) => r.failReason)
     .map((r) => ({ reason: r.failReason as string, count: r._count._all }));
 
@@ -136,7 +136,7 @@ export async function computeOverviewStats(profileId: number): Promise<OverviewS
       ? Math.round((responded / (totalSubmitted + responded)) * 100)
       : 0;
 
-  const stats: OverviewStatsDto = {
+  const stats: AnalyticsStatsDto = {
     totals: {
       applications: totalApplications,
       submitted: totalSubmitted,

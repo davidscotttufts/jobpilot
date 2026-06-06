@@ -1,17 +1,17 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
-import { OverviewView } from "@/components/features/overview";
+import { AnalyticsView } from "@/components/features/analytics";
 import { PageHeader } from "@/components/ui/layout";
 
-export default function OverviewPage(): ReactElement {
+export default function AnalyticsPage(): ReactElement {
   return (
     <Container maxWidth="xl" sx={{ gap: 2 }}>
       <PageHeader
         eyebrow="Workspace"
-        title="Overview"
+        title="Analytics"
         description="Roll-up stats across your applications, campaigns, and pipeline."
       />
-      <OverviewView />
+      <AnalyticsView />
     </Container>
   );
 }

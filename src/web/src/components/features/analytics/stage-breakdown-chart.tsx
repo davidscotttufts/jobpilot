@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
-import type { OverviewStageBreakdownEntry } from "@/api/types";
+import type { AnalyticsStageBreakdownEntry } from "@/api/types";
 
 const CHART_HEIGHT = 220;
 
@@ -20,7 +20,7 @@ const STAGE_LABEL: Record<string, string> = {
 };
 
 interface StageBreakdownChartProps {
-  data: OverviewStageBreakdownEntry[];
+  data: AnalyticsStageBreakdownEntry[];
 }
 
 export function StageBreakdownChart(props: StageBreakdownChartProps): ReactElement {

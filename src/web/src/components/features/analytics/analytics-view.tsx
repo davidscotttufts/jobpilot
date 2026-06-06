@@ -5,25 +5,25 @@ import { Grid, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { apiClient } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
-import type { OverviewStatsDto, OverviewTopBoardEntry } from "@/api/types";
+import type { AnalyticsStatsDto, AnalyticsTopBoardEntry } from "@/api/types";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
-import { OverviewStatTiles } from "./overview-stat-tiles";
+import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { StageBreakdownChart } from "./stage-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
 
-function boardsToEntries(boards: OverviewTopBoardEntry[]): { label: string; count: number }[] {
+function boardsToEntries(boards: AnalyticsTopBoardEntry[]): { label: string; count: number }[] {
   return boards.map((b) => ({ label: b.board, count: b.count }));
 }
 
-export function OverviewView(): ReactElement {
-  const query = useApiQuery<OverviewStatsDto>(
-    queryKeys.overview.stats(),
-    () => apiClient.get<OverviewStatsDto>("/api/overview"),
-    { errorMessage: "Failed to load overview stats" },
+export function AnalyticsView(): ReactElement {
+  const query = useApiQuery<AnalyticsStatsDto>(
+    queryKeys.analytics.stats(),
+    () => apiClient.get<AnalyticsStatsDto>("/api/analytics"),
+    { errorMessage: "Failed to load analytics stats" },
   );
 
   if (query.isPending) {
-    return <Typography variant="body2Muted">Loading overview</Typography>;
+    return <Typography variant="body2Muted">Loading analytics</Typography>;
   }
 
   if (!query.data) {
@@ -38,7 +38,7 @@ export function OverviewView(): ReactElement {
 
   return (
     <Stack spacing={3}>
-      <OverviewStatTiles stats={stats} />
+      <AnalyticsStatTiles stats={stats} />
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>

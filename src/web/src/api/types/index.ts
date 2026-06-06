@@ -7,7 +7,7 @@ export * from "./campaign";
 export * from "./queue";
 export * from "./email";
 export * from "./pipeline";
-export * from "./overview";
+export * from "./analytics";
 export * from "./upwork";
 export * from "./outreach";
 export * from "./cover-letter";
