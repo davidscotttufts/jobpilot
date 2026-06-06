@@ -12,7 +12,6 @@ export const OutreachFields = withForm({
     const channels = useStore(form.store, (s) => s.values.channels);
     const board = useStore(form.store, (s) => s.values.board);
     const autonomy = useStore(form.store, (s) => s.values.autonomy);
-    const resumeInclude = useStore(form.store, (s) => s.values.resumeInclude);
 
     return (
       <Stack spacing={2}>
@@ -84,32 +83,18 @@ export const OutreachFields = withForm({
           </form.AppField>
         )}
 
-        <form.AppField name="resumeInclude">
+        <form.AppField name="resumeUrl">
           {(field) => (
-            <field.Select
-              label="Resume"
-              items={[
-                { value: "none", label: "Don't include (recommended)" },
-                { value: "link", label: "Public resume link" },
-                { value: "attach-on-reply", label: "Attach on reply only" },
-              ]}
+            <field.TextField
+              label="Resume URL (optional)"
+              placeholder="https://example.com/resume.pdf"
+              helperText="Paste your public resume URL — recipients will see a clickable link in the email. Leave blank to omit."
             />
           )}
         </form.AppField>
-        {resumeInclude === "link" && (
-          <form.AppField name="resumeUrl">
-            {(field) => (
-              <field.TextField
-                label="Resume URL"
-                placeholder="https://example.com/resume.pdf"
-                helperText="A publicly reachable link the recipient can open — not a localhost URL."
-              />
-            )}
-          </form.AppField>
-        )}
         <Typography variant="captionMuted">
-          Cold-email attachments hurt deliverability — the tailored resume shapes the message either
-          way and is best sent as a link or on the warm reply.
+          Cold-email attachments hurt deliverability — the tailored resume shapes the message and is
+          best shared as a link.
         </Typography>
       </Stack>
     );

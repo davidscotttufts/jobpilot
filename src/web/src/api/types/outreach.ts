@@ -3,7 +3,6 @@ import type {
   OutreachAutonomy,
   OutreachChannel,
   OutreachMessageStatus,
-  ResumeInclude,
 } from "@/api/contracts/outreach";
 
 export interface OutreachConfigDto {
@@ -11,7 +10,6 @@ export interface OutreachConfigDto {
   linkedinTier?: LinkedinTier;
   autonomy: OutreachAutonomy;
   dailyCap?: number;
-  resumeInclude: ResumeInclude;
   resumeUrl?: string;
 }
 

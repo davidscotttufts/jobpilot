@@ -31,8 +31,7 @@ curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.data.config'
 ```
 
 `config.outreach` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
-autonomy:"draft"|"review"|"auto", dailyCap?, resumeInclude:"none"|"link"|"attach-on-reply",
-resumeUrl? }` (`resumeUrl` present only when `resumeInclude:"link"`). `config` may also carry `board`
+autonomy:"draft"|"review"|"auto", dailyCap?, resumeUrl? }` (append `resumeUrl` verbatim to email body when present; never a `localhost` URL). `config` may also carry `board`
 (domain to search) and optional `maxJobs` (cap; absent = run until stopped).
 
 Target criteria = the positional arg, else `data.query`. The optional `board` is the control:
@@ -136,8 +135,7 @@ mangles non-ASCII). Short and direct; run `humanizer`; no template tells.
 Then per channel:
 
 - **Email**: short subject + body, one specific proof point, soft ask. Per `resumeInclude`:
-  `"link"` → append `config.outreach.resumeUrl` verbatim (skip if absent; never a `localhost` URL);
-  `"none"` / `"attach-on-reply"` → no file on this first touch.
+  `resumeUrl` present → append it verbatim (never a `localhost` URL); absent → no link.
 - **LinkedIn connect note** (free tier, not yet connected): ≤300 chars, no link.
 - **LinkedIn InMail** (premium) / **DM** (free, already connected): a few sentences.
 
@@ -205,7 +203,7 @@ Print a table (contact, channel, status) and link to `http://localhost:8000/camp
 
 1. **Human-in-loop per `autonomy`** — never auto-send InMail; keep LinkedIn volume low with
    randomized pacing (protects the user's own account from ToS bans).
-2. **No attachment on a cold first touch** — resume goes out as a link or on the warm reply only.
+2. **No attachment on a cold first touch** — resume goes out as a link only.
 3. **Dedupe** — skip contacts already messaged for the same role.
 4. **CAPTCHA / 2FA** during LinkedIn login → pause and ask (`../shared/auth.md`).
 5. **Personalize** — one specific, real detail per message; no generic templates.

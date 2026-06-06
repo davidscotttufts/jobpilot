@@ -17,7 +17,6 @@ export const composerFormSchema = z
     linkedinTier: z.enum(["free", "premium"]),
     autonomy: z.enum(["draft", "review", "auto"]),
     dailyCap: z.number().int().min(1).max(100),
-    resumeInclude: z.enum(["none", "link", "attach-on-reply"]),
     resumeUrl: z.string(),
   })
   .superRefine((v, ctx) => {
@@ -29,11 +28,7 @@ export const composerFormSchema = z
     if (v.mode === "outreach" && v.channels.length === 0) {
       ctx.addIssue({ code: "custom", message: "Pick at least one channel", path: ["channels"] });
     }
-    if (
-      v.mode === "outreach" &&
-      v.resumeInclude === "link" &&
-      !z.url().safeParse(v.resumeUrl.trim()).success
-    ) {
+    if (v.mode === "outreach" && v.resumeUrl.trim() && !z.url().safeParse(v.resumeUrl.trim()).success) {
       ctx.addIssue({ code: "custom", message: "Enter a valid resume URL", path: ["resumeUrl"] });
     }
   });
@@ -57,7 +52,6 @@ export const COMPOSER_DEFAULT_VALUES: ComposerFormValues = {
   linkedinTier: "free",
   autonomy: "draft",
   dailyCap: 20,
-  resumeInclude: "none",
   resumeUrl: "",
 };
 
@@ -91,10 +85,7 @@ export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignR
         ...(values.channels.includes("linkedin") ? { linkedinTier: values.linkedinTier } : {}),
         autonomy: values.autonomy,
         ...(values.autonomy === "auto" ? { dailyCap: values.dailyCap } : {}),
-        resumeInclude: values.resumeInclude,
-        ...(values.resumeInclude === "link" && values.resumeUrl.trim()
-          ? { resumeUrl: values.resumeUrl.trim() }
-          : {}),
+        ...(values.resumeUrl.trim() ? { resumeUrl: values.resumeUrl.trim() } : {}),
       },
     };
   }
