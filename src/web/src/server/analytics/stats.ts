@@ -173,8 +173,7 @@ export async function computeAnalyticsStats(profileId: number): Promise<Analytic
   const outreachBounced = outreachByStatus.get("bounced") ?? 0;
   // Dispatched = every message that left: still-sent + replied + bounced.
   const outreachSent = (outreachByStatus.get("sent") ?? 0) + outreachReplied + outreachBounced;
-  const replyRatePct =
-    outreachSent > 0 ? Math.round((outreachReplied / outreachSent) * 100) : 0;
+  const replyRatePct = outreachSent > 0 ? Math.round((outreachReplied / outreachSent) * 100) : 0;
 
   const topContactSources: AnalyticsContactSourceEntry[] = contactSourceRows
     .filter((r) => r.discoverySource)

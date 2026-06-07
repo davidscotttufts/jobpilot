@@ -205,6 +205,6 @@ Print a table (contact, channel, status) and link to `http://localhost:8000/camp
    randomized pacing (protects the user's own account from ToS bans).
 2. **No attachment on a cold first touch** — resume goes out as a link only.
 3. **Dedupe** — skip contacts already messaged for the same role.
-4. **CAPTCHA / 2FA** during LinkedIn login → pause and ask (`../shared/auth.md`).
+4. **CAPTCHA / 2FA** during LinkedIn login → for a CAPTCHA, invoke the `solve-captcha` skill; if unsolved (or for 2FA), pause and ask (`../shared/auth.md`).
 5. **Personalize** — one specific, real detail per message; no generic templates.
 6. **The Campaign is the audit trail** — PATCH non-terminal edits; POST `/result` for terminal outcomes.

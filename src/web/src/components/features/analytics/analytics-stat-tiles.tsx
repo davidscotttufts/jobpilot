@@ -16,7 +16,11 @@ export function AnalyticsStatTiles(props: AnalyticsStatTilesProps): ReactElement
   return (
     <Grid container spacing={1.5}>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
-        <StatTile label="Total" value={totals.applications} hint={`${totals.queueDepth} in queue`} />
+        <StatTile
+          label="Total"
+          value={totals.applications}
+          hint={`${totals.queueDepth} in queue`}
+        />
       </Grid>
       <Grid size={{ xs: 6, sm: 4, md: 2 }}>
         <StatTile

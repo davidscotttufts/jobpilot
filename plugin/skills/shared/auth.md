@@ -25,7 +25,7 @@ Typically **once per board per session** — handle once, then subsequent applic
 
 ### CAPTCHA / reCAPTCHA
 
-Narrowed `browser_snapshot` to confirm, ask the user to solve it in the browser, wait for confirmation, verify via a narrowed header snapshot.
+Narrowed `browser_snapshot` to confirm, then invoke the `solve-captcha` skill. On **solved**, verify via a narrowed header snapshot and continue. On **unsolved**, ask the user to solve it in the browser, wait for confirmation, then verify.
 
 **Loop skills (apply / auto-apply):** CAPTCHA / email-code during login → pause, don't fail. Only fail when the CAPTCHA appears mid-form (per-job, not per-board).
 

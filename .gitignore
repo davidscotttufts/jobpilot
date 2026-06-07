@@ -1,5 +1,6 @@
 node_modules/
 .playwright-mcp/
+.playwright-mcp-test/
 *.pdf
 *.csv
 snapshot-*.md

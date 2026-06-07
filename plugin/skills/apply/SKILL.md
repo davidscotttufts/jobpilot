@@ -275,7 +275,7 @@ Print a summary table and link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>
 1. **Up-front confirmation mandatory** (1A.1 or Phase 3); single-job mode adds pre-submit review (4.5).
 2. **Create accounts when needed** — follow `../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
 3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **CAPTCHAs / email verification** — pause and ask (see `../shared/auth.md`).
+4. **CAPTCHAs / email verification** — for a CAPTCHA, invoke the `solve-captcha` skill; if it returns **unsolved**, pause and ask (see `../shared/auth.md`). Email verification → pause and ask.
 5. **Be honest about match scores.**
 6. **Pace** 3–5s between submissions on the same domain.
 7. **The Campaign is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.

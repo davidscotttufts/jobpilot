@@ -40,10 +40,13 @@ export function CredentialsSection(): ReactElement {
 
   const rows = credentials.data ?? [];
 
+  const subtitle = (c: CredentialDto): string =>
+    c.apiKey ? `API key ••••${c.apiKey.slice(-4)}` : (c.email ?? "");
+
   return (
     <SectionCard
       title="Login credentials"
-      description="Used by skills to log into job boards. Stored locally in plaintext on your machine."
+      description="Used by skills to log into job boards, plus captcha-service API keys (2Captcha / CapSolver). Stored locally in plaintext on your machine."
       actions={
         <Button
           size="small"
@@ -72,7 +75,7 @@ export function CredentialsSection(): ReactElement {
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {c.scope}
                     </Typography>
-                    <Typography variant="captionMuted">{c.email}</Typography>
+                    <Typography variant="captionMuted">{subtitle(c)}</Typography>
                   </Box>
                   <IconButton onClick={() => setPendingDelete(c)} aria-label="Delete credential">
                     <Delete fontSize="md" />

@@ -6,7 +6,7 @@ argument-hint: "<search_query --board <domain> [--min-score N] [--max-apps N]> O
 
 # Auto-apply — Search + Apply On Demand
 
-Keep the chosen board open in tab 1; for each result that qualifies, apply in a second tab, then close it and move to the next job. **No batch pre-discovery and no per-job approval — launching the campaign is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** — skip the job; the user finishes it later via the `apply` skill. Live view at `http://localhost:8000/campaigns/<campaign-id>`.
+Keep the chosen board open in tab 1; for each result that qualifies, apply in a second tab, then close it and move to the next job. **No batch pre-discovery and no per-job approval — launching the campaign is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** — attempt the `solve-captcha` skill; if unsolved, skip the job (never pause) and the user finishes it later via the `apply` skill. Live view at `http://localhost:8000/campaigns/<campaign-id>`.
 
 ## Setup
 
@@ -136,10 +136,10 @@ Open a second tab: `browser_tabs(action:"new")`, then `browser_navigate` it to t
 
 1. **Find Apply** — `browser_snapshot` the header, `browser_click` the Apply / Easy Apply control's `ref`. `browser_wait_for`. If a new tab appeared (ATS portal), `browser_tabs(action:"select", index:<new>)`.
 2. **Authentication** — if a login/registration wall appears, follow `../shared/auth.md`. On unrecoverable login failure for the domain: POST `/result` `outcome:"failed"`, `failReason:"Login failed for <domain>"`, close apply tab(s), continue.
-3. **CAPTCHA gate** — `browser_snapshot` the apply form _before_ tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close apply tab(s), continue. Checking here avoids wasted tailoring/filling.
+3. **CAPTCHA gate** — `browser_snapshot` the apply form _before_ tailoring or filling. If it shows a CAPTCHA (reCAPTCHA / hCaptcha / Turnstile, "I'm not a robot", image/puzzle), invoke the `solve-captcha` skill. **Solved** → continue. **Unsolved** → skip: POST `/result` `outcome:"skipped"`, `skipReason:"CAPTCHA — apply manually via the apply skill"`, close apply tab(s), continue. Checking here avoids wasted tailoring/filling.
 4. **Tailor Resume** — invoke the `tailor-resume` skill with `$DIGEST` (empty → fall back to the job URL). Capture the variant id + PDF URL. No usable base → POST `/result` `outcome:"failed"`, `failReason:"No tailorable resume base"`, close apply tab(s), continue.
 5. **Fill Forms** — follow `../shared/form-filling.md`. Upload the tailored variant. If the form has a cover-letter field (textarea or file upload), generate one via the `cover-letter` skill with `$DIGEST` (pass `source:auto-apply`) and fill it per form-filling.md (paste text, or upload a generated PDF). Use `autoApply.defaultStartDate`; ask once for salary expectation and remember it for the campaign.
-6. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error = failure with that message as `failReason`. A CAPTCHA at this stage is a skip (2.4), not a failure.
+6. **Submit** — submit autonomously, `browser_wait_for`, then a narrowed `browser_snapshot`: a success confirmation = applied; a populated error = failure with that message as `failReason`. A CAPTCHA at this stage → invoke `solve-captcha`; **unsolved** is a skip (2.4), not a failure.
 
 ### 2.4 Record + Close Tab
 
@@ -181,7 +181,7 @@ Print a summary table, link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>`, 
 1. **Autonomous after launch.** No per-job or batch confirmation; the UI launch is the approval.
 2. **Account handling** — follow `../shared/auth.md`: register when missing (without asking), forgot-password via the `get-code` skill when stale.
 3. **Never process payments** — POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **Email codes** — fetch automatically via the `get-code` skill for `<board-domain>` (see `../shared/auth.md`); only ask the user when it returns nothing. **2FA** — pause and ask (one-time per board). **CAPTCHA** — never pause: skip the job (detect up front per step 2.3.3) for manual apply later.
+4. **Email codes** — fetch automatically via the `get-code` skill for `<board-domain>` (see `../shared/auth.md`); only ask the user when it returns nothing. **2FA** — pause and ask (one-time per board). **CAPTCHA** — never pause: detect up front per step 2.3.3, attempt the `solve-captcha` skill, and skip the job for manual apply later only if it returns unsolved.
 5. **One job per tab.** Board stays in tab 1; each application runs in tab 2, which is closed before the next job.
 6. **Deduplicate** within the board and against previously-applied before opening a tab.
 7. **Pace** 3–5s between submissions on the same domain.
