@@ -38,6 +38,7 @@ export function AnalyticsView(): ReactElement {
 
   return (
     <Stack spacing={3}>
+      <Typography variant="overlineMuted">Applications</Typography>
       <AnalyticsStatTiles stats={stats} />
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
