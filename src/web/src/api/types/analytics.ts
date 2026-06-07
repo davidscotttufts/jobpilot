@@ -33,6 +33,31 @@ export interface AnalyticsTopReasonEntry {
   count: number;
 }
 
+export interface AnalyticsOutreachTotals {
+  contacts: number;
+  sent: number; // dispatched: sent + replied + bounced
+  replied: number;
+  bounced: number;
+}
+
+export interface AnalyticsOutreachWeekly {
+  sent: number;
+  replied: number;
+}
+
+export interface AnalyticsContactSourceEntry {
+  source: string;
+  count: number;
+}
+
+export interface AnalyticsOutreachStats {
+  totals: AnalyticsOutreachTotals;
+  thisWeek: AnalyticsOutreachWeekly;
+  replyRatePct: number;
+  perDaySent: AnalyticsPerDayEntry[];
+  topContactSources: AnalyticsContactSourceEntry[];
+}
+
 export interface AnalyticsStatsDto {
   totals: AnalyticsTotals;
   thisWeek: AnalyticsWeekly;
@@ -41,4 +66,5 @@ export interface AnalyticsStatsDto {
   perDay: AnalyticsPerDayEntry[];
   topBoards: AnalyticsTopBoardEntry[];
   topRejectReasons: AnalyticsTopReasonEntry[];
+  outreach: AnalyticsOutreachStats;
 }

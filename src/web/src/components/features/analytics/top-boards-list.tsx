@@ -18,7 +18,7 @@ export function TopBoardsList(props: TopBoardsListProps): ReactElement {
     <Card sx={{ height: "100%" }}>
       <CardContent>
         <Typography variant="overlineMuted">{eyebrow}</Typography>
-        <Typography variant="h6" sx={{ mt: 0.5, mb: 2, fontSize: "0.9375rem", fontWeight: 500 }}>
+        <Typography variant="h5" sx={{ mt: 0.5, mb: 2 }}>
           {title}
         </Typography>
 

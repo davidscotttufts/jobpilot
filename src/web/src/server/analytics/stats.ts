@@ -1,4 +1,5 @@
 import type {
+  AnalyticsContactSourceEntry,
   AnalyticsPerDayEntry,
   AnalyticsStageBreakdownEntry,
   AnalyticsStatsDto,
@@ -32,6 +33,23 @@ function isoDateKey(d: Date): string {
   return startOfDay(d).toISOString().slice(0, 10);
 }
 
+/** Bucket timestamps into a zero-filled, day-by-day series over the timeline window. */
+function bucketPerDay(dates: Date[], start: Date): AnalyticsPerDayEntry[] {
+  const perDayMap = new Map<string, number>();
+  for (let i = 0; i < DAYS_IN_TIMELINE; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    perDayMap.set(isoDateKey(d), 0);
+  }
+  for (const date of dates) {
+    const key = isoDateKey(date);
+    if (perDayMap.has(key)) {
+      perDayMap.set(key, (perDayMap.get(key) ?? 0) + 1);
+    }
+  }
+  return Array.from(perDayMap.entries()).map(([date, count]) => ({ date, count }));
+}
+
 export async function computeAnalyticsStats(profileId: number): Promise<AnalyticsStatsDto> {
   const weekStart = startOfWeek();
   const timelineStart = startOfTimeline();
@@ -50,6 +68,12 @@ export async function computeAnalyticsStats(profileId: number): Promise<Analytic
     timelineRows,
     boardGroupRows,
     failReasonRows,
+    outreachStatusRows,
+    outreachContacts,
+    outreachWeekSent,
+    outreachWeekReplied,
+    outreachTimelineRows,
+    contactSourceRows,
   ] = await Promise.all([
     db.application.count({ where: { profileId } }),
     db.application.count({ where: { profileId, stage: "applied" } }),
@@ -95,6 +119,29 @@ export async function computeAnalyticsStats(profileId: number): Promise<Analytic
       orderBy: { _count: { id: "desc" } },
       take: 5,
     }),
+    db.outreachMessage.groupBy({
+      by: ["status"],
+      where: { profileId },
+      _count: { _all: true },
+    }),
+    db.outreachMessage.findMany({
+      where: { profileId },
+      select: { contactId: true },
+      distinct: ["contactId"],
+    }),
+    db.outreachMessage.count({ where: { profileId, sentAt: { gte: weekStart } } }),
+    db.outreachMessage.count({ where: { profileId, repliedAt: { gte: weekStart } } }),
+    db.outreachMessage.findMany({
+      where: { profileId, sentAt: { gte: timelineStart } },
+      select: { sentAt: true },
+    }),
+    db.contact.groupBy({
+      by: ["discoverySource"],
+      where: { profileId, discoverySource: { not: null }, messages: { some: {} } },
+      _count: { _all: true },
+      orderBy: { _count: { id: "desc" } },
+      take: 5,
+    }),
   ]);
 
   const stageBreakdown: AnalyticsStageBreakdownEntry[] = stageGroupRows.map((r) => ({
@@ -102,25 +149,10 @@ export async function computeAnalyticsStats(profileId: number): Promise<Analytic
     count: r._count._all,
   }));
 
-  const perDayMap = new Map<string, number>();
-
-  for (let i = 0; i < DAYS_IN_TIMELINE; i++) {
-    const d = new Date(timelineStart);
-    d.setDate(d.getDate() + i);
-    perDayMap.set(isoDateKey(d), 0);
-  }
-
-  for (const row of timelineRows) {
-    const key = isoDateKey(row.appliedAt);
-    if (perDayMap.has(key)) {
-      perDayMap.set(key, (perDayMap.get(key) ?? 0) + 1);
-    }
-  }
-
-  const perDay: AnalyticsPerDayEntry[] = Array.from(perDayMap.entries()).map(([date, count]) => ({
-    date,
-    count,
-  }));
+  const perDay = bucketPerDay(
+    timelineRows.map((r) => r.appliedAt),
+    timelineStart,
+  );
 
   const topBoards: AnalyticsTopBoardEntry[] = boardGroupRows
     .filter((r) => r.board)
@@ -135,6 +167,23 @@ export async function computeAnalyticsStats(profileId: number): Promise<Analytic
     totalSubmitted + responded > 0
       ? Math.round((responded / (totalSubmitted + responded)) * 100)
       : 0;
+
+  const outreachByStatus = new Map(outreachStatusRows.map((r) => [r.status, r._count._all]));
+  const outreachReplied = outreachByStatus.get("replied") ?? 0;
+  const outreachBounced = outreachByStatus.get("bounced") ?? 0;
+  // Dispatched = every message that left: still-sent + replied + bounced.
+  const outreachSent = (outreachByStatus.get("sent") ?? 0) + outreachReplied + outreachBounced;
+  const replyRatePct =
+    outreachSent > 0 ? Math.round((outreachReplied / outreachSent) * 100) : 0;
+
+  const topContactSources: AnalyticsContactSourceEntry[] = contactSourceRows
+    .filter((r) => r.discoverySource)
+    .map((r) => ({ source: r.discoverySource as string, count: r._count._all }));
+
+  const perDaySent = bucketPerDay(
+    outreachTimelineRows.map((r) => r.sentAt as Date),
+    timelineStart,
+  );
 
   const stats: AnalyticsStatsDto = {
     totals: {
@@ -155,6 +204,21 @@ export async function computeAnalyticsStats(profileId: number): Promise<Analytic
     perDay,
     topBoards,
     topRejectReasons,
+    outreach: {
+      totals: {
+        contacts: outreachContacts.length,
+        sent: outreachSent,
+        replied: outreachReplied,
+        bounced: outreachBounced,
+      },
+      thisWeek: {
+        sent: outreachWeekSent,
+        replied: outreachWeekReplied,
+      },
+      replyRatePct,
+      perDaySent,
+      topContactSources,
+    },
   };
 
   return stats;

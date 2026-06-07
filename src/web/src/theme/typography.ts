@@ -100,4 +100,20 @@ export const typography: TypographyVariantsOptions = {
     letterSpacing: "0",
     color: textColors.secondary,
   },
+  statValue: {
+    fontFamily: fontFamilies.display,
+    fontWeight: 400,
+    fontSize: "1.5rem",
+    lineHeight: 1.1,
+    letterSpacing: "-0.01em",
+  },
+  statLabel: {
+    fontFamily: fontFamilies.mono,
+    fontSize: "0.625rem",
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    lineHeight: 1,
+    fontWeight: 500,
+    color: textColors.secondary,
+  },
 };

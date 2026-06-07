@@ -9,6 +9,9 @@ const CHART_HEIGHT = 220;
 
 interface ApplicationsTimelineChartProps {
   data: AnalyticsPerDayEntry[];
+  title?: string;
+  metricLabel?: string;
+  emptyMessage?: string;
 }
 
 function formatTick(iso: string): string {
@@ -17,7 +20,12 @@ function formatTick(iso: string): string {
 }
 
 export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps): ReactElement {
-  const { data } = props;
+  const {
+    data,
+    title = "Applications over time",
+    metricLabel = "submitted",
+    emptyMessage = "No applications submitted yet.",
+  } = props;
   const theme = useTheme();
 
   const yData = data.map((d) => d.count);
@@ -28,9 +36,9 @@ export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps)
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent>
-        <Typography variant="overlineMuted">Applications over time</Typography>
-        <Typography variant="h6" sx={{ mt: 0.5, fontSize: "0.9375rem", fontWeight: 500 }}>
-          {total} submitted in the last 30 days
+        <Typography variant="overlineMuted">{title}</Typography>
+        <Typography variant="h5" sx={{ mt: 0.5 }}>
+          {total} {metricLabel} in the last 30 days
         </Typography>
 
         {total === 0 ? (
@@ -44,7 +52,7 @@ export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps)
               color: t.palette.text.disabled,
             })}
           >
-            <Typography variant="captionMuted">No applications submitted yet.</Typography>
+            <Typography variant="captionMuted">{emptyMessage}</Typography>
           </Stack>
         ) : (
           <Box sx={{ mt: 1, flex: 1 }}>

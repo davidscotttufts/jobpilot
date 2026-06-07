@@ -5,14 +5,18 @@ import { Grid, Stack, Typography } from "@mui/material";
 import { apiClient } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { AnalyticsStatsDto, AnalyticsTopBoardEntry } from "@/api/types";
+import type { AnalyticsStatsDto } from "@/api/types";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
+import { OutreachStatTiles } from "./outreach-stat-tiles";
 import { StageBreakdownChart } from "./stage-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
 
-function boardsToEntries(boards: AnalyticsTopBoardEntry[]): { label: string; count: number }[] {
-  return boards.map((b) => ({ label: b.board, count: b.count }));
+function toEntries<T extends { count: number }>(
+  items: T[],
+  label: (item: T) => string,
+): { label: string; count: number }[] {
+  return items.map((item) => ({ label: label(item), count: item.count }));
 }
 
 export function AnalyticsView(): ReactElement {
@@ -31,10 +35,6 @@ export function AnalyticsView(): ReactElement {
   }
 
   const stats = query.data;
-  const rejectReasonEntries = stats.topRejectReasons.map((r) => ({
-    label: r.reason,
-    count: r.count,
-  }));
 
   return (
     <Stack spacing={3}>
@@ -54,7 +54,7 @@ export function AnalyticsView(): ReactElement {
           <TopBoardsList
             eyebrow="Distribution"
             title="Top boards"
-            entries={boardsToEntries(stats.topBoards)}
+            entries={toEntries(stats.topBoards, (b) => b.board)}
             emptyMessage="No applications have been linked to a job board yet."
           />
         </Grid>
@@ -62,8 +62,32 @@ export function AnalyticsView(): ReactElement {
           <TopBoardsList
             eyebrow="Diagnostics"
             title="Top failure reasons"
-            entries={rejectReasonEntries}
+            entries={toEntries(stats.topRejectReasons, (r) => r.reason)}
             emptyMessage="No failed campaign jobs recorded."
+          />
+        </Grid>
+      </Grid>
+
+      <Typography variant="overlineMuted" sx={{ mt: 1 }}>
+        Outreach
+      </Typography>
+      <OutreachStatTiles outreach={stats.outreach} />
+
+      <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <ApplicationsTimelineChart
+            data={stats.outreach.perDaySent}
+            title="Messages over time"
+            metricLabel="sent"
+            emptyMessage="No outreach messages sent yet."
+          />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TopBoardsList
+            eyebrow="Distribution"
+            title="Contact sources"
+            entries={toEntries(stats.outreach.topContactSources, (s) => s.source)}
+            emptyMessage="No contacts discovered yet."
           />
         </Grid>
       </Grid>

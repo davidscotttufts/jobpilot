@@ -54,7 +54,7 @@ export function StageBreakdownChart(props: StageBreakdownChartProps): ReactEleme
     <Card sx={{ height: "100%" }}>
       <CardContent>
         <Typography variant="overlineMuted">Stage breakdown</Typography>
-        <Typography variant="h6" sx={{ mt: 0.5, fontSize: "0.9375rem", fontWeight: 500 }}>
+        <Typography variant="h5" sx={{ mt: 0.5 }}>
           {total} applications by stage
         </Typography>
 
