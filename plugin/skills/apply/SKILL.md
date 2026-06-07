@@ -130,7 +130,7 @@ URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
 curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED"
 ```
 
-If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job, then continue.
+If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped Job with `skipReason:"Already applied (<kind>)"`, then continue.
 
 ### 2.2 Visit + Extract
 
@@ -279,3 +279,4 @@ Print a summary table and link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>
 5. **Be honest about match scores.**
 6. **Pace** 3–5s between submissions on the same domain.
 7. **The Campaign is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
+8. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason`. No valid reason → not a skip.

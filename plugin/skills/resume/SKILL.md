@@ -77,7 +77,7 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
 4. **4.4 Fill Forms** — follow `../shared/form-filling.md`; upload the tailored variant.
 5. **4.5 Pre-Submit Review** — skip unless `config.maxApplications === 1`.
 6. **4.6 Submit** — submit; `browser_wait_for`, then a narrowed `browser_snapshot` for the success or error result.
-7. **4.7 Record Result** — POST `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` with `outcome:"applied"`/`"failed"`/`"skipped"`. Atomic: updates the Job, creates Application, marks queue consumed, recomputes summary.
+7. **4.7 Record Result** — POST `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` with `outcome:"applied"`/`"failed"`/`"skipped"` (a `"skipped"` outcome MUST include a non-empty `skipReason`). Atomic: updates the Job, creates Application, marks queue consumed, recomputes summary.
 8. **4.9 Limit** — if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 
 The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs `"auto-apply"`) on the created Application row automatically — no separate source-passthrough needed.
@@ -111,4 +111,5 @@ Suggest re-running the `auto-apply` skill in `retry-failed <CAMPAIGN_ID>` mode i
 1. **No new confirmation gate.** The user already approved the fit when the campaign was first launched.
 2. **Preserve `source`** when recording applications — a resumed `apply` campaign still records `source:"apply"`, not `"resume"`.
 3. **Idempotent.** Resuming the same campaign a second time should be a no-op when no `approved` jobs remain.
+4. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason`.
 4. **The Campaign is the audit trail.** PATCH after every state change so the SSE viewer reflects reality.

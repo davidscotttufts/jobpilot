@@ -189,3 +189,4 @@ Print a summary table, link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>`, 
 9. **Respect pause.** Re-read the campaign between jobs; `status === "paused"` → exit cleanly.
 10. **Missing resume file** → PATCH campaign to `paused`, ask the user to re-upload.
 11. **Eligibility** — follow 2.2a. Location/onsite, thin JDs, 1099 work, and below-your-level/seniority are never skip reasons; only a JD-stated citizenship/clearance requirement disqualifies.
+12. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason` (2.2a). No valid reason → not a skip.
