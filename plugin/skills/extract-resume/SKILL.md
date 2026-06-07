@@ -12,7 +12,7 @@ Read a resume's uploaded source PDF and produce JSON matching the JobPilot resum
 
 Follow `../shared/setup.md`. The profile response provides `data.profile.primaryResumeId`, `data.primaryResumeSourceAbsolutePath`, and `data.resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
 
-## Step 1 — Resolve Target
+## Step 1: Resolve Target
 
 Parse the argument:
 
@@ -29,7 +29,7 @@ curl -fsS "$JOBPILOT_API/api/resumes/$RESUME_ID"
 
 If 404, stop and report the id doesn't exist.
 
-## Step 2 — Verify Source PDF
+## Step 2: Verify Source PDF
 
 `sourceFilename` must be set. If `null`, stop:
 
@@ -42,7 +42,7 @@ Resolve the absolute path:
 
 If `sourceMimeType !== "application/pdf"`, stop and ask the user to re-upload as PDF.
 
-## Step 3 — Refuse to Clobber
+## Step 3: Refuse to Clobber
 
 If `content` is non-null and `FORCE === false`, stop:
 
@@ -50,7 +50,7 @@ If `content` is non-null and `FORCE === false`, stop:
 
 If `FORCE`, proceed and overwrite.
 
-## Step 4 — Read and Parse
+## Step 4: Read and Parse
 
 `Read` the PDF at the path from Step 2. Produce a single JSON object matching:
 
@@ -107,7 +107,7 @@ Hard rules:
 - A project's tech-stack line goes in `keywords` only — never copy it into `description`.
 - For long PDFs, use `Read` with `pages` to ingest all pages — don't silently drop later-page entries.
 
-## Step 5 — Save
+## Step 5: Save
 
 The PUT body must be `{ "content": <resume-object> }` — the API rejects a bare resume payload with 400 "label or content required". Write the file with that wrapper, then send it:
 
@@ -119,7 +119,7 @@ curl -fsS -X PUT "$JOBPILOT_API/api/resumes/$RESUME_ID" \
 
 Where `resume.json` looks like `{"content": {"basics": {...}, "experience": [...], ...}}`. On 422, read the issue list, fix the field, retry once.
 
-## Step 6 — Report
+## Step 6: Report
 
 > Extracted resume {id} ({label}) → version {n}.
 > Review at <http://localhost:8000/resumes/{id}>.

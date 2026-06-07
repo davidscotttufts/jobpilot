@@ -141,7 +141,7 @@ If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped
 
 ### 2.3 Score and Add
 
-Pre-score server-side; deliberate only on borderline cases.
+Pre-score server-side; deliberate only on borderline cases. Always populate the digest's `techStack` — it drives the score (empty → low score/confidence).
 
 ```bash
 FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \

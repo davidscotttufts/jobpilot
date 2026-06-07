@@ -16,6 +16,8 @@ The API auto-resolves the active profile per request — no id needs threading t
 
 To inspect: `curl -fsS "$JOBPILOT_API/api/profiles/active"` → `{ data: { profileId } }`. All other endpoints (`/api/profile`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) already filter by the active profile.
 
+**Don't invent endpoints.** Settings = `GET /api/profile` → `data.autoApply` (no `/api/settings`). Resumes = `data.resumes` or `GET /api/resumes` (plural, no `/api/resume`). No profile-by-id; use `/api/profile` and `/api/profiles/active`.
+
 ## 1. Health Check
 
 ```bash

@@ -12,7 +12,7 @@ Choose or produce a resume for a specific job. You decide reuse vs create; the u
 
 Follow `../shared/setup.md`. The profile response includes `data.resumes` (every base with `label`, `hasData`, `variantCount`, `isPrimary`).
 
-## Step 1 — Build the JD object
+## Step 1: Build the JD object
 
 Detect the argument shape:
 
@@ -28,10 +28,10 @@ From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`,
 - `keywords` — top 10 required-tech terms from `techStack` ∪ extracted from `requirements`. Lowercase, deduped, must-have ranked above nice-to-have.
 - `responsibilityTerms` — top 5 verbs/nouns from `responsibilities` (`design`, `mentor`, `migrate`, `on-call`, …).
 
-## Step 2 — Pick the Base
+## Step 2: Pick the Base
 
 **Primary wins.** If `primaryResumeId` is set and that resume has `hasData` or a `sourceFilename`,
-use it as `BASE_ID` (skip scoring; Step 2.5 extracts content if missing). Otherwise score each
+use it as `BASE_ID` (skip scoring; Step 3 extracts content if missing). Otherwise score each
 `data.resumes` entry (max 10):
 
 | Signal              | Points | Rule                                                                                |
@@ -49,7 +49,7 @@ Highest wins. Tie-break: primary → most recent → lowest id. If no candidate 
 
 Let `BASE_ID` be the chosen id.
 
-## Step 2.5 — Extract Structure if Missing
+## Step 3: Extract Structure if Missing
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID"
@@ -59,11 +59,11 @@ If `content` is `null`, delegate to extract-resume so the logic stays in one pla
 
 > Run the `extract-resume` skill for `$BASE_ID` and wait for it to finish.
 
-Refetch the base row afterward — Step 4 needs the saved `content`. If extract-resume stops because there's no `sourceFilename`, surface the same message and stop.
+Refetch the base row afterward — Step 5 needs the saved `content`. If extract-resume stops because there's no `sourceFilename`, surface the same message and stop.
 
 Skip this step when `hasData: true`.
 
-## Step 3 — Decide Reuse vs Create
+## Step 4: Decide Reuse vs Create
 
 ```bash
 curl -fsS "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
@@ -84,7 +84,7 @@ Pick the highest scorer:
 
 - **≥75** → reuse.
 - **60–74** → reuse, echo a one-line caveat naming the weakest component.
-- **<60** or no variant passes the gate → Step 4.
+- **<60** or no variant passes the gate → Step 5.
 
 On reuse:
 
@@ -93,7 +93,7 @@ On reuse:
 
 Stop.
 
-## Step 4 — Create a New Variant
+## Step 5: Create a New Variant
 
 The server does all structural rewriting (skill ordering, bullet ranking) deterministically. You write only:
 
@@ -102,7 +102,7 @@ The server does all structural rewriting (skill ordering, bullet ranking) determ
 - **`jobKeywords`** — optional, ~10 terms; defaults to `emphasizedTech`. Ranks experience/project bullets.
 - **`label`** — `"{Company} — {Title}"` (short).
 - **`jobUrl`** — when the argument was a URL or digest carried one.
-- **`applicationId`** — when the JD URL matches an existing Application (`GET /api/applications?url=…`).
+- **`applicationId`** — when the JD URL matches an existing Application (`GET /api/applied/check?url=…` → `data.match.application.id`).
 - **`diffNotes`** — 1–3 sentences on what was emphasized and why.
 
 ### Optional — reword recent bullets

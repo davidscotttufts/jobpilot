@@ -12,7 +12,7 @@ Write a concise, winning Upwork proposal that directly addresses the client's ne
 
 Follow `../shared/setup.md`. Then `Read` the resume at `data.primaryResumeSourceAbsolutePath` for full context (identity, skills, experience, projects, research).
 
-## Resolve the input
+## Step 1: Resolve the Input
 
 The argument is either a **proposal id** (an integer, when launched from the JobPilot UI) or a raw **job description** (manual use). Detect which:
 
@@ -22,19 +22,19 @@ The argument is either a **proposal id** (an integer, when launched from the Job
   curl -fsS "$JOBPILOT_API/api/upwork/proposals/$ARG"
   ```
 
-  Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 6.
+  Use `data.jobDescription` as the posting, plus `data.jobTitle` / `data.clientName` / `data.jobUrl` for context. Remember the id — you will `PATCH` the result back to it in Step 7.
 
-- **Anything else** → treat the argument itself as the job description. There is no row yet; you will `POST` a new one in Step 6.
+- **Anything else** → treat the argument itself as the job description. There is no row yet; you will `POST` a new one in Step 7.
 
-## Step 1: Analyze the JD
+## Step 2: Analyze the JD
 
 Identify: what the client needs built/fixed, required tech and skills, scope and timeline clues, pain points/challenges, and any specific questions the client asks. Pull out one concrete detail unique to _this_ posting — you'll reference it in the hook so the client can tell the proposal isn't a mass send.
 
-## Step 2: Select ONE Matching Case Study
+## Step 3: Select ONE Matching Case Study
 
 Pick the SINGLE most relevant project from the resume — one that matches their problem, not just their tech stack. One specific, on-point case study beats five generic ones. Don't list everything. If a portfolio/GitHub/live link exists for it, keep that link ready.
 
-## Step 3: Write
+## Step 4: Write
 
 Order it the way it gets read — them first, you second, never the reverse.
 
@@ -46,15 +46,15 @@ Order it the way it gets read — them first, you second, never the reverse.
 
 **CTA (1 line):** End with a real next step — the specific question above, or a calendar link if the resume/profile provides one. Never end with a dead phrase like "Looking forward to hearing from you." Create the next step.
 
-## Step 4: Answer Screening Questions
+## Step 5: Answer Screening Questions
 
 If the posting has screening questions, answer each one short, direct, and specific. "How many years with React?" → "4 years, including [project]." Never write a 300-word essay for a one-line question — long answers read as AI padding.
 
-## Step 5: Apply Humanizer
+## Step 6: Apply Humanizer
 
 Invoke the `humanizer` skill on the full text.
 
-## Step 6: Persist to JobPilot
+## Step 7: Persist to JobPilot
 
 Save the result so it appears on the Upwork page. `screeningAnswers` is a JSON array of `{ "question", "answer" }` objects (empty `[]` if the posting had none).
 

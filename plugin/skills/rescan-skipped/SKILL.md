@@ -16,7 +16,7 @@ JOBPILOT_API=http://localhost:8000
 
 Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `data.autoApply.minMatchScore`, else 70).
 
-## Select Targets
+## Step 1: Select Targets
 
 Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restrict to those `key`s.
 
@@ -26,7 +26,7 @@ Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restr
 
 Count the full target list up front and process every one. **Below-threshold, zero-score, and no-`skipReason` jobs are all targets** — the stored score came from the campaign that wrongly skipped them, so it's never a reason to skip the re-score. Don't cherry-pick the jobs already at/above threshold.
 
-## Per Job
+## Step 2: Per Job
 
 1. **Digest** — parse the cached `digest`. Rich = non-empty `techStack` **and** `requirements`/`responsibilities`.
 2. **Re-read only when needed** — if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
@@ -50,11 +50,11 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
    - Below threshold after a fair read → leave `skipped`, PATCH `skipReason:"Below minimum match score (X < Y)"`.
    - JD-stated citizenship/clearance found on re-read → leave `skipped` with that reason.
 
-## Eligibility
+## Step 3: Eligibility
 
 Same rules as `auto-apply` 2.2a. **Seniority is never a skip** — never drop a role for being below your level (Junior/Mid when your résumé is Senior) or for asking fewer years than you have; over-qualification is full marks on experience. Location/onsite, sparse JDs, and 1099/contractor work are never skips either — only a JD-stated citizenship/clearance requirement disqualifies.
 
-## Finish
+## Step 4: Finish
 
 Process every target before finishing — `promoted + left-skipped + permanent` must equal the target count. If any are unprocessed, keep going; don't report a partial pass as complete.
 

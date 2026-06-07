@@ -76,11 +76,11 @@ If no row matches, PATCH the campaign to `failed` with `failReason:"Board <domai
 1. `browser_navigate` to `searchUrl` (this is **tab 1** — keep it open for the whole campaign).
 2. Follow `../shared/auth.md` — logs in, and **registers a new account when none exists, without asking**.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) to read `{ title, company, location, url }` per row.
+4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is only the first viewport — scroll/paginate to load more rows as the loop drains them (see 2.5); never treat the first ~15 as all jobs.
 
 ## Phase 2: Apply Loop (on demand)
 
-Walk the tab-1 results top to bottom. For each result:
+Walk the tab-1 results top to bottom; at the last loaded row, scroll/page for more (1.2 step 4) before concluding. For each result:
 
 ### 2.1 Pre-filter (no tab)
 
@@ -97,7 +97,7 @@ If `data.applied`, add the job with `status:"skipped"`, `skipReason:"Already app
 
 ### 2.2 Score
 
-If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest and score server-side:
+If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest — `{ title, company, techStack[], requirements[], responsibilities[], yearsExperience, descriptionExcerpt }`; always populate `techStack` (it drives the score, empty → low score/confidence) — then score server-side:
 
 ```bash
 FIT=$(curl -fsS -X POST "$JOBPILOT_API/api/score-fit" \
@@ -159,11 +159,11 @@ Close all tabs with index ≥ 1: `browser_tabs(action:"close", index:<i>)` desce
 
 ### 2.5 Stop Conditions
 
-Before picking the next result, refetch the campaign (`GET /api/campaigns/<CAMPAIGN_ID>`):
+The loop ends **only** on one of these. Before picking the next result, refetch the campaign (`GET /api/campaigns/<CAMPAIGN_ID>`):
 
-1. `campaign.status === "paused"` → user stopped from the UI. POST `/result` `outcome:"skipped"`, `skipReason:"Campaign paused by user"` for any in-flight `applying` job and exit cleanly.
-2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → end the loop.
-3. No more results on tab 1 → scroll / go to the next results page and re-snapshot; if none remain, fall through to Phase 3.
+1. `status === "paused"` → POST `/result` `outcome:"skipped"`, `skipReason:"Campaign paused by user"` for any in-flight `applying` job, exit.
+2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → end. Unset (default) = no cap; keep going.
+3. Board exhausted — only when a scroll/next-page attempt surfaces no new rows. First page done ≠ exhausted.
 
 ## Phase 3: Summary
 

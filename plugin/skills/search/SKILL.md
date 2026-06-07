@@ -14,7 +14,7 @@ Search a single board (picked by the user when launching the campaign) and rank 
 2. Parse and strip the flags; the rest is the free-text query.
    - `--board <domain>` — **required** (e.g. `--board linkedin.com`).
    - `--max-jobs <N>` — optional cap on results to rank (default 15, max 100).
-   - `--campaign <campaign-id>` — campaign to save results to (Step 5). The web UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one.
+   - `--campaign <campaign-id>` — campaign to save results to (Phase 5). The web UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one.
 3. Resolve the board:
 
    ```bash
@@ -24,11 +24,11 @@ Search a single board (picked by the user when launching the campaign) and rank 
 
    If no row matches, abort with: "Board `<domain>` is not configured. Add it on /boards or run again with a different `--board`." When a `--campaign` id was given, PATCH it to `failed` with `failReason:"Board <domain> not configured"` first.
 
-## Step 1: Parse Query
+## Phase 1: Parse Query
 
 Extract title/role, keywords, location, other preferences (e.g. "no startups", "FAANG only", salary). If vague, ask before searching.
 
-## Step 2: Search the Board
+## Phase 2: Search the Board
 
 1. `browser_navigate` to the resolved board's `searchUrl`.
 2. Follow `../shared/auth.md` to log in proactively.
@@ -36,7 +36,7 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row.
 5. Take the first `--max-jobs` results (default 15). If fewer are available, take what's there. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, `browser_navigate` into the posting and `browser_snapshot` its body for the detail. Otherwise skip the per-job nav to save tokens.
 
-## Step 3: Exclude Previously Applied
+## Phase 3: Exclude Previously Applied
 
 ```bash
 URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
@@ -45,13 +45,13 @@ COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
 curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
 ```
 
-If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Step 5, not offered for apply.
+If `data.applied`, tag with "Previously Applied" (note `data.match.kind`: `url` for exact, `fuzzy` with score for title+company). These are saved as `skipped` in Phase 5, not offered for apply.
 
-## Step 4: Fit Review
+## Phase 4: Fit Review
 
 For each non-applied result, score 0–100 based on: tech stack overlap, years vs candidate, education match, domain/industry relevance, seniority alignment.
 
-## Step 5: Save Results to the Campaign
+## Phase 5: Save Results to the Campaign
 
 Save every result as a `Job` on `<campaign-id>` so it appears on the campaigns detail page. **Don't offer apply/search-again commands** — the user applies from there. Use a stable, shell-safe `key` per result (slug of `company-title` + rank, no spaces).
 
@@ -64,7 +64,7 @@ curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
     '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"pending"}')"
 ```
 
-Previously-applied results (Step 3) → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`. Then close the campaign:
+Previously-applied results (Phase 3) → save with `status:"skipped"`, `skipReason:"Already applied (<kind>)"`. Then close the campaign:
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -74,7 +74,7 @@ curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
     '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"
 ```
 
-## Step 6: Hand Off
+## Phase 6: Hand Off
 
 Print a compact ranked table, then link to the campaign — nothing else:
 
