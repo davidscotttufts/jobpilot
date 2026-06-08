@@ -7,6 +7,7 @@ import {
   cardOverrides,
 } from "./card";
 import { chipOverrides } from "./chip";
+import { containerOverrides } from "./container";
 import { dataGridOverrides } from "./data-grid";
 import {
   backdropOverrides,
@@ -43,6 +44,7 @@ export const componentOverrides: Components<Theme> = {
   MuiCardContent: cardContentOverrides,
   MuiCardHeader: cardHeaderOverrides,
   MuiChip: chipOverrides,
+  MuiContainer: containerOverrides,
   MuiDataGrid: dataGridOverrides,
   MuiDialog: dialogOverrides,
   MuiDialogActions: dialogActionsOverrides,

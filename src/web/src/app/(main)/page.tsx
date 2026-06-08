@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/ui/layout";
 export default function PipelinePage(): ReactElement {
   return (
     <PipelineActionsProvider>
-      <Stack sx={{ height: "100%", minHeight: 0 }}>
+      <Stack sx={{ flex: 1, minHeight: 0 }}>
         <Stack sx={{ paddingInline: 2.5 }}>
           <PageHeader
             eyebrow="Workspace"

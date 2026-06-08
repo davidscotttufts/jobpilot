@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/ui/layout";
 
 export default function AnalyticsPage(): ReactElement {
   return (
-    <Container maxWidth="xl" sx={{ gap: 2, pb: 3 }}>
+    <Container maxWidth="xl" sx={{ gap: 2 }}>
       <PageHeader
         eyebrow="Workspace"
         title="Analytics"
