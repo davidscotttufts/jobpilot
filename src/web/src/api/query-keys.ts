@@ -54,7 +54,6 @@ export const queryKeys = {
   contacts: {
     all: ["contacts"] as const,
     list: () => [...queryKeys.contacts.all, "list"] as const,
-    detail: (id: number) => [...queryKeys.contacts.all, "detail", id] as const,
   },
 
   queue: {
@@ -87,6 +86,11 @@ export const queryKeys = {
     list: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.upworkProposals.all, "list", filters] as const,
     detail: (id: number) => [...queryKeys.upworkProposals.all, "detail", id] as const,
+  },
+
+  upworkProfile: {
+    all: ["upwork-profile"] as const,
+    detail: () => [...queryKeys.upworkProfile.all, "detail"] as const,
   },
 
   coverLetters: {
