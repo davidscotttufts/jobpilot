@@ -1,8 +1,8 @@
 import "server-only";
-import { sleep } from "bun";
 import type { CaptchaType } from "@/api/contracts/captcha";
 import { HttpError } from "@/server/api/errors";
 import { ErrorCodes } from "@/server/api/response";
+import { sleep } from "@/utils/async";
 import type { ProviderJob } from "./types";
 
 const POLL_INTERVAL_MS = 5_000;

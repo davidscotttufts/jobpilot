@@ -1,5 +1,4 @@
 import "server-only";
-import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import type { EmailAccount } from "@/generated/prisma/client";
 import type {
@@ -20,6 +19,13 @@ import {
   stripQuotedReplies,
   type EmailHeader,
 } from "./utils";
+
+/**
+ * Derived from `google.auth.OAuth2` so the type always matches the bundled
+ * `google-auth-library` that `googleapis` ships — importing the type from the
+ * top-level `google-auth-library` can resolve to a different version and clash.
+ */
+type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
 
 /** Scope that grants outbound send. Absent ⇒ the account must be reconnected. */
 export const GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
