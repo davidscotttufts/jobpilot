@@ -1,4 +1,4 @@
-export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://localhost:8001";
+export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://localhost:4102";
 
 export const TERMINAL_WS_URL = TERMINAL_HTTP_URL.replace(/^http/, "ws") + "/ws";
 
@@ -55,6 +55,8 @@ interface StartOptions {
   provider: TerminalProviderId;
   /** Per-user agent PAT, injected into the PTY as JOBPILOT_API_TOKEN. */
   apiToken?: string;
+  /** Web app origin (this browser's location), injected into the PTY as JOBPILOT_WEB for user-facing links. */
+  webUrl?: string;
 }
 
 export function startSession(options: StartOptions): Promise<SessionStatus> {

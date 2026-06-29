@@ -29,7 +29,7 @@ Follow `../shared/setup.md`. `Read` the resume at `primaryResumeSourceAbsolutePa
        '{currentTitle:$ct, currentOverview:$co, currentPortfolio:$cp, suggestedTitle:$st, suggestedOverview:$so, suggestedPortfolio:$sp, status:"draft"}')"
    ```
 
-4. Print a short before/after summary and link to `http://localhost:8000/upwork/profile` — tell the user to review, edit, **Approve**, then run **Apply to Upwork**. Stop here; do not write to Upwork.
+4. Print a short before/after summary and link to `$JOBPILOT_WEB/upwork/profile` — tell the user to review, edit, **Approve**, then run **Apply to Upwork**. Stop here; do not write to Upwork.
 
 ## Mode: apply
 

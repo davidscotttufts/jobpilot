@@ -18,7 +18,7 @@ Search a single board (picked by the user when launching the campaign) and rank 
 3. Resolve the board:
 
    ```bash
-   JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+   JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
    curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
    ```
 
@@ -79,7 +79,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 Print a compact ranked table, then link to the campaign - nothing else:
 
 ```
-## Saved <N> jobs · "[query]" - review and apply at http://localhost:8000/campaigns/<campaign-id>
+## Saved <N> jobs · "[query]" - review and apply at $JOBPILOT_WEB/campaigns/<campaign-id>
 
 | # | Score | Title | Company | Location |
 |---|-------|-------|---------|----------|

@@ -82,8 +82,9 @@ public sealed class SessionManager : IDisposable
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
     /// <param name="apiToken">Per-user agent PAT injected as JOBPILOT_API_TOKEN; falls back to the host env var.</param>
+    /// <param name="webUrl">Web app origin (the browser's location) injected as JOBPILOT_WEB; falls back to the host env var.</param>
     /// <exception cref="PtyStartException">Thrown when the PTY provider fails to spawn the process.</exception>
-    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows, string? apiToken = null)
+    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows, string? apiToken = null, string? webUrl = null)
     {
         lock (stateLock)
         {
@@ -125,10 +126,14 @@ public sealed class SessionManager : IDisposable
                 // Backend base URL + the agent's per-user PAT (passed in by the web on
                 // session start). Host env vars are a local-dev fallback.
                 ["JOBPILOT_API"] =
-                    Environment.GetEnvironmentVariable("JOBPILOT_API") ?? "http://localhost:8002",
+                    Environment.GetEnvironmentVariable("JOBPILOT_API") ?? "http://localhost:4101",
                 ["JOBPILOT_API_TOKEN"] = !string.IsNullOrEmpty(apiToken)
                     ? apiToken
-                    : Environment.GetEnvironmentVariable("JOBPILOT_API_TOKEN") ?? ""
+                    : Environment.GetEnvironmentVariable("JOBPILOT_API_TOKEN") ?? "",
+                // Web app origin (the browser's own location) for user-facing links in skill output.
+                ["JOBPILOT_WEB"] = !string.IsNullOrEmpty(webUrl)
+                    ? webUrl
+                    : Environment.GetEnvironmentVariable("JOBPILOT_WEB") ?? "http://localhost:4100"
             };
 
             try

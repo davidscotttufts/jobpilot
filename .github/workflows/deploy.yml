@@ -105,5 +105,5 @@ jobs:
             docker image prune -f
             echo "Waiting for services to start..."
             sleep 15
-            curl -sf http://localhost:8002/api/health || echo "API not responding yet"
+            curl -sf http://localhost:4101/api/health || echo "API not responding yet"
             docker compose ps --format "table {{.Name}}\t{{.Status}}"

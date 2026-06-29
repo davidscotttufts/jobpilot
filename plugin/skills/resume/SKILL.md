@@ -10,7 +10,7 @@ Resumes a `paused` or `interrupted` Campaign by replaying the apply loop on jobs
 are still `approved` (or `pending` if approval was implicit). The user already
 approved the fit when the campaign was first launched, so no re-confirmation gate.
 
-Live view: `http://localhost:8000/campaigns/<campaign-id>`.
+Live view: `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Setup
 
@@ -18,7 +18,7 @@ Follow `../shared/setup.md` to load profile, resume,
 credentials. Check the web app is up:
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/health" >/dev/null || { echo "JobPilot web is down. Start it with 'bun run dev'."; exit 1; }
 ```
 
@@ -108,7 +108,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table and the campaign link `http://localhost:8000/campaigns/<CAMPAIGN_ID>`.
+Print a summary table and the campaign link `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 Suggest re-running the `auto-apply` skill in `retry-failed <CAMPAIGN_ID>` mode if any jobs failed.
 
 ## Rules

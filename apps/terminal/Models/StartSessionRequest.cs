@@ -8,4 +8,5 @@ namespace JobPilot.Terminal.Models;
 /// <param name="WorkingDir">Optional working directory for the terminal process.</param>
 /// <param name="Provider">Optional terminal provider id. Defaults to Claude.</param>
 /// <param name="ApiToken">Optional per-user agent PAT, injected into the PTY as JOBPILOT_API_TOKEN.</param>
-public sealed record StartSessionRequest(int Cols, int Rows, string? WorkingDir = null, string? Provider = null, string? ApiToken = null);
+/// <param name="WebUrl">Optional web app origin (the browser's location), injected into the PTY as JOBPILOT_WEB for user-facing links.</param>
+public sealed record StartSessionRequest(int Cols, int Rows, string? WorkingDir = null, string? Provider = null, string? ApiToken = null, string? WebUrl = null);

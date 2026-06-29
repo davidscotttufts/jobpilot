@@ -105,7 +105,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
     '{status:"completed", completedAt:$t, summary:{totalFound:$found, qualified:$qualified}}')"
 ```
 
-Print a compact ranked table and link to `http://localhost:8000/campaigns/<campaign-id>` - nothing else. The user reviews, hits **Draft proposal** on the ones they want, and applies on Upwork.
+Print a compact ranked table and link to `$JOBPILOT_WEB/campaigns/<campaign-id>` - nothing else. The user reviews, hits **Draft proposal** on the ones they want, and applies on Upwork.
 
 ## Rules
 

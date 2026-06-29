@@ -52,8 +52,8 @@ bun run dev
 
 That starts:
 
-- web app: `http://localhost:8000`
-- terminal host: `http://localhost:8001`
+- web app: `http://localhost:4100`
+- terminal host: `http://localhost:4102`
 
 Or run them separately:
 
@@ -69,7 +69,7 @@ JobPilot.Terminal owns one active provider PTY. It starts Claude Code with
 switch providers. Skills check `/api/health` and stop with a clear error if
 the web app is down.
 
-First visit to `http://localhost:8000/` redirects to `/onboarding`, a
+First visit to `http://localhost:4100/` redirects to `/onboarding`, a
 5-step wizard that creates the singleton Profile and AutopilotSettings rows.
 
 ## Direct Provider Use
@@ -174,7 +174,7 @@ through `/plugin`. Both provider manifests share the one `plugin/.mcp.json`.
 
 ## Troubleshooting
 
-**`curl: (7) Failed to connect to 127.0.0.1 port 8000`** - the web app is not
+**`curl: (7) Failed to connect to 127.0.0.1 port 4100`** - the web app is not
 running. Start it with `bun --cwd apps/web run dev`.
 
 **Prisma can't reach the database** - make sure the PostgreSQL container is up

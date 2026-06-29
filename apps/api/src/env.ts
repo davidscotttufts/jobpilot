@@ -6,7 +6,7 @@ import { z } from "zod/v4";
  */
 const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  PORT: z.coerce.number().default(8002),
+  PORT: z.coerce.number().default(4101),
 
   DATABASE_URL: z.string().min(1),
 
@@ -23,9 +23,9 @@ const EnvSchema = z.object({
     .refine((v) => Buffer.from(v, "base64").length === 32, "must be base64 of 32 bytes"),
 
   // CSV of allowed browser origins for CORS (credentials mode — no wildcard).
-  CORS_ORIGINS: z.string().default("http://localhost:8000"),
+  CORS_ORIGINS: z.string().default("http://localhost:4100"),
   // Public web origin, used for OAuth redirects back to the app.
-  APP_URL: z.string().default("http://localhost:8000"),
+  APP_URL: z.string().default("http://localhost:4100"),
 
   // Filesystem root for resumes / generated PDFs / backups (moved off process.cwd()).
   STORAGE_ROOT: z.string().default("./storage"),
@@ -34,7 +34,7 @@ const EnvSchema = z.object({
 
   // Google OAuth (Gmail) callback URL. Client id/secret are per-user (entered in the
   // app); only this shared callback is configured here — users register it in their own client.
-  GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:8002/api/email/oauth/callback"),
+  GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:4101/api/email/oauth/callback"),
 
   // Transactional email (Resend). Optional: when unset, the app logs the email
   // body (incl. magic links) instead of sending — fine for local dev.

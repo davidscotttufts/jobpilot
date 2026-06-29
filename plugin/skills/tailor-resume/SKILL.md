@@ -47,7 +47,7 @@ use it as `BASE_ID` (skip scoring; Step 3 extracts content if missing). Otherwis
 
 Highest wins. Tie-break: primary → most recent → lowest id. If no candidate has `hasData` AND no `sourceFilename`, stop:
 
-> No usable base resume. Upload a PDF at <http://localhost:8000/resumes>, or fill a resume's editor manually, then re-run.
+> No usable base resume. Upload a PDF at <$JOBPILOT_WEB/resumes>, or fill a resume's editor manually, then re-run.
 
 Let `BASE_ID` be the chosen id.
 
@@ -91,7 +91,7 @@ Pick the highest scorer:
 On reuse:
 
 > Reusing variant {id}: {label} (score {n}/100).
-> http://localhost:8000/api/resumes/variants/{id}/pdf
+> $JOBPILOT_API/api/resumes/variants/{id}/pdf
 
 Stop.
 
@@ -130,6 +130,6 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 Response `{ id, pdfUrl, rewordedBullets, flags }`. Echo:
 
 > Created variant {id} from base {baseId} ({rewordedBullets} reworded).
-> http://localhost:8000{pdfUrl}
+> $JOBPILOT_API{pdfUrl}
 
 If `flags` is non-empty, append: `⚠ verify - not elsewhere in your resume: {flags}`.

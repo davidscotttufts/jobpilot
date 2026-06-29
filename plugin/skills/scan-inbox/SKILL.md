@@ -13,7 +13,7 @@ Classify recent email and link each thread to an existing `Application` when the
 Follow `../shared/setup.md`.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 ```
 
 ## Phase 1: Confirm Mailbox Connected

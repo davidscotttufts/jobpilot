@@ -15,7 +15,7 @@ Backed by a `Campaign` (`source: "outreach"`); each contacted person + message i
 Follow `../shared/setup.md` (health, profile, primary/tailored resume, credentials).
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 ```
 
 - Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `.canSend` is false,
@@ -134,7 +134,7 @@ Add `relatedAppId:<id>` when applied-check matched. Keep the returned `id` (mess
 In the board loop this runs per contact as drafted; for criteria-only, once over the drafted set.
 
 - **draft** → stop after drafting. Tell the user to review and send from
-  `http://localhost:8000/campaigns/<campaign-id>`.
+  `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 - **review** → present a table (contact, channel, subject/preview); user approves which to send.
   PATCH approved messages `{"status":"approved"}`, then proceed for those only.
 - **auto** → send within `dailyCap`. **Email only**; LinkedIn connect requests pace at a low cap;
@@ -175,7 +175,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{status:"completed",completedAt:$t}')"
 ```
 
-Print a table (contact, channel, status) and link to `http://localhost:8000/campaigns/<campaign-id>`.
+Print a table (contact, channel, status) and link to `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Rules
 

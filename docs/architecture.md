@@ -8,15 +8,15 @@ together over HTTP and a single active PTY.
 **Next.js web app** ([apps/web/](../apps/web/)) is the UI layer. It renders
 profile, applications by stage, autopilot campaigns with per-job status, and
 the batch URL queue, talking to the API over HTTP (a dev proxy forwards
-`/api/*` to `:8002`).
+`/api/*` to `:4101`).
 
 **Elysia + PostgreSQL API** ([apps/api/](../apps/api/)) is the data layer on
-`127.0.0.1:8002`. It owns every persistent fact and serves the typed `/api/*`
+`127.0.0.1:4101`. It owns every persistent fact and serves the typed `/api/*`
 surface (Swagger at `/swagger`). Prisma schema is split per domain under
 `apps/api/prisma/schema/`.
 
 **JobPilot.Terminal** ([apps/terminal/](../apps/terminal/)) is
-an ASP.NET Core minimal API on `127.0.0.1:8001`. It owns one active provider
+an ASP.NET Core minimal API on `127.0.0.1:4102`. It owns one active provider
 PTY (ConPTY via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
 over WebSocket. HTTP endpoints (`POST /sessions/start`, `POST /sessions/inject`,
 `DELETE /sessions/current`, `GET /healthz`, `GET /ws`) let UI buttons write
@@ -56,9 +56,9 @@ codex --no-alt-screen -C .
 ## Topology
 
 ```text
-Browser (xterm.js)  <-- WS binary -->  JobPilot.Terminal :8001  <-- PTY -->  claude --plugin-dir plugin
+Browser (xterm.js)  <-- WS binary -->  JobPilot.Terminal :4102  <-- PTY -->  claude --plugin-dir plugin
                     -- POST /inject -> JobPilot.Terminal                   or codex --no-alt-screen -C <repo>
-Elysia API :8002    <-- curl -------- JobPilot skills
+Elysia API :4101    <-- curl -------- JobPilot skills
                                       -> insert/update campaigns/jobs in PostgreSQL
 ```
 
@@ -97,7 +97,7 @@ sequenceDiagram
     participant U as User
     participant T as JobPilot.Terminal
     participant S as Provider apply skill (single-job or queue mode)
-    participant API as Elysia API :8002
+    participant API as Elysia API :4101
     participant B as Playwright MCP
 
     U->>T: POST /sessions/inject provider command

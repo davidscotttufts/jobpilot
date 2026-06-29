@@ -18,7 +18,7 @@ Parse the argument:
 
 - Integer → use that resume id.
 - Empty → use `profile.primaryResumeId`. If no primary, stop:
-  > No primary resume set. Pass an explicit id, or set a primary at <http://localhost:8000/resumes>.
+  > No primary resume set. Pass an explicit id, or set a primary at <$JOBPILOT_WEB/resumes>.
 - `--force` (anywhere) → overwrite existing structured data. Otherwise refuse to overwrite (Step 3).
 
 Let `RESUME_ID` be the resolved id, `FORCE` be `true`/`false`.
@@ -33,7 +33,7 @@ If 404, stop and report the id doesn't exist.
 
 `sourceFilename` must be set. If `null`, stop:
 
-> Resume {id} ({label}) has no uploaded source PDF. Upload one at <http://localhost:8000/resumes/{id}>, then re-run.
+> Resume {id} ({label}) has no uploaded source PDF. Upload one at <$JOBPILOT_WEB/resumes/{id}>, then re-run.
 
 Resolve the absolute path:
 
@@ -46,7 +46,7 @@ If `sourceMimeType !== "application/pdf"`, stop and ask the user to re-upload as
 
 If `content` is non-null and `FORCE === false`, stop:
 
-> Resume {id} ({label}) already has structured data (version {n}). Edit at <http://localhost:8000/resumes/{id}>, or re-run with `--force` to overwrite from the PDF.
+> Resume {id} ({label}) already has structured data (version {n}). Edit at <$JOBPILOT_WEB/resumes/{id}>, or re-run with `--force` to overwrite from the PDF.
 
 If `FORCE`, proceed and overwrite.
 
@@ -122,6 +122,6 @@ Where `resume.json` looks like `{"content": {"basics": {...}, "experience": [...
 ## Step 6: Report
 
 > Extracted resume {id} ({label}) → version {n}.
-> Review at <http://localhost:8000/resumes/{id}>.
+> Review at <$JOBPILOT_WEB/resumes/{id}>.
 
 Do not echo the parsed fields — the editor and preview show them.

@@ -5,7 +5,7 @@ WORKDIR /app
 FROM base AS build
 # NEXT_PUBLIC_* are baked into the bundle at build time.
 ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_TERMINAL_URL=http://localhost:8001
+ARG NEXT_PUBLIC_TERMINAL_URL=http://localhost:4102
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_TERMINAL_URL=$NEXT_PUBLIC_TERMINAL_URL
 
@@ -39,11 +39,11 @@ COPY --from=build /app/apps/web/.next/standalone ./
 COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build /app/apps/web/public ./apps/web/public
 
-ENV PORT=8000
+ENV PORT=4100
 ENV HOSTNAME=0.0.0.0
-EXPOSE 8000
+EXPOSE 4100
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8000 || exit 1
+  CMD curl -f http://localhost:4100 || exit 1
 
 CMD ["node", "apps/web/server.js"]

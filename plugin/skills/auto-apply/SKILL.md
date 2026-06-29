@@ -6,12 +6,12 @@ argument-hint: "<search_query --board <domain> [--min-score N] [--max-apps N]> O
 
 # Auto-apply - Search + Apply On Demand
 
-Keep the chosen board open in tab 1; for each result that qualifies, delegate the application to the `job-worker` subagent (it works in its own tab and returns a compact result), then move to the next job. **No batch pre-discovery and no per-job approval - launching the campaign is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** - attempt the `solve-captcha` skill; if unsolved, skip the job (never pause) and the user finishes it later via the `apply` skill. Live view at `http://localhost:8000/campaigns/<campaign-id>`.
+Keep the chosen board open in tab 1; for each result that qualifies, delegate the application to the `job-worker` subagent (it works in its own tab and returns a compact result), then move to the next job. **No batch pre-discovery and no per-job approval - launching the campaign is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** - attempt the `solve-captcha` skill; if unsolved, skip the job (never pause) and the user finishes it later via the `apply` skill. Live view at `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Setup
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 ```
 
 Follow `../shared/setup.md`. Read `autoApply` (defaults applied per field):
@@ -57,7 +57,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     '{campaignId:$id, query:$q, source:"auto-apply", config:{board:$board, resumeId:$rid, minScore:$minScore}}')"
 ```
 
-Surface live view: `http://localhost:8000/campaigns/<CAMPAIGN_ID>`.
+Surface live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 
 ## Phase 1: Open the Board (tab 1)
 
@@ -180,7 +180,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table, link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>`, suggest `retry-failed <CAMPAIGN_ID>`, the `rescan-skipped` skill on `<CAMPAIGN_ID>` to recover dropped jobs, or a new search.
+Print a summary table, link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`, suggest `retry-failed <CAMPAIGN_ID>`, the `rescan-skipped` skill on `<CAMPAIGN_ID>` to recover dropped jobs, or a new search.
 
 ## Rules
 

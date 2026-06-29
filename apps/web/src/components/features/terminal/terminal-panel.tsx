@@ -124,6 +124,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
           rows: terminal.rows,
           provider,
           apiToken: data.token,
+          webUrl: window.location.origin,
         });
       } catch (err) {
         terminal.writeln(

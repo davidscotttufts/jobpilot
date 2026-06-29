@@ -1,6 +1,6 @@
 # JobPilot
 
-Multi-user AI job-application app. The Next.js web UI and the Elysia + PostgreSQL API (which owns all state) are **cloud-hosted and shared across users**; each user runs the **agent locally** - Claude Code or Codex driven through a .NET PTY host, plus Playwright browser automation - so jobs run on that user's own Claude/Codex subscription (see [project differentiator]). Dev ports: web `:8000`, API `:8002`, PTY host `:8001`.
+Multi-user AI job-application app. The Next.js web UI and the Elysia + PostgreSQL API (which owns all state) are **cloud-hosted and shared across users**; each user runs the **agent locally** - Claude Code or Codex driven through a .NET PTY host, plus Playwright browser automation - so jobs run on that user's own Claude/Codex subscription (see [project differentiator]). Dev ports: web `:4100`, API `:4101`, PTY host `:4102`.
 
 The agent authenticates to the (possibly remote, multi-user) API as the signed-in user via a per-user personal access token (PAT). On terminal session start the web fetches the user's **single reusable terminal token** (`POST /api/auth/tokens/terminal` - get-or-create, authed by the auth cookie) and passes it to the PTY host, which injects it as `JOBPILOT_API_TOKEN`; skills send it as `Authorization: Bearer`. The terminal token's raw value is stored encrypted at rest (per-user DEK) so the same token is returned every time - no manual setup, no per-session accumulation.
 
@@ -12,7 +12,7 @@ The agent authenticates to the (possibly remote, multi-user) API as the signed-i
   - `plugin/skills/<name>/SKILL.md` - one hand-authored, provider-neutral skill per directory; `plugin/skills/shared/*.md` - shared docs. **Edit here directly.**
   - `plugin/agents/<name>.md` - worker subagents (`job-worker` score/apply, `outreach-worker` discover/compose) that campaign skills delegate per-iteration so the heavy browser/web/snapshot work runs in an isolated context (saves the main conversation from compaction). Claude auto-discovers these; Codex equivalents are `.codex/agents/*.toml` (repo root) that point back at the same `.md`. Runtimes without custom subagents run the procedures inline (see `plugin/skills/shared/setup.md` → "Worker subagents"). The `.md` body is the single source of truth.
 - `apps/web/` - Bun + Next.js 16 + MUI 9 + TanStack Query/Form + Zod v4. The UI only; talks to the API over HTTP (no direct DB access). Browser + server call the Elysia backend **directly** via `API_BASE_URL` (`NEXT_PUBLIC_API_URL`, `apps/web/src/api/base-url.ts`) - no Next proxy. Cross-origin auth works because web and API are same-site: the httpOnly cookie rides `credentials: "include"` + CORS (`CORS_ORIGINS`). SSE/`EventSource` connects straight to the API too.
-- `apps/api/` - Bun + Elysia + Prisma 7 backend at `:8002`. Owns all persistence (PostgreSQL via `DATABASE_URL`, resumes/PDFs under `apps/api/storage/`). Exports its `App` type for end-to-end Eden Treaty typing; Swagger UI at `:8002/swagger` in dev.
+- `apps/api/` - Bun + Elysia + Prisma 7 backend at `:4101`. Owns all persistence (PostgreSQL via `DATABASE_URL`, resumes/PDFs under `apps/api/storage/`). Exports its `App` type for end-to-end Eden Treaty typing; Swagger UI at `:4101/swagger` in dev.
 - `apps/terminal/` - .NET 10 minimal API hosting one provider PTY (project `JobPilot.Terminal`). Exposes `/ws`, `/sessions/start`, `/sessions/inject`, `/sessions/current`, `/healthz`. `/sessions/start` takes a per-user `apiToken` (the web fetches the reusable terminal token via `POST /api/auth/tokens/terminal`) and injects it into the PTY as `JOBPILOT_API_TOKEN`; the host env var is only a local-dev fallback. Runs on each user's machine, not the server. A C# change needs `bun run build:terminal` + a host restart to take effect.
 - `packages/` - workspace libs: `@jobpilot/contracts` (Zod schemas + enums shared by API and web) and `@jobpilot/api-client` (Eden Treaty client bound to the API's `App` type).
 
@@ -20,7 +20,7 @@ The agent authenticates to the (possibly remote, multi-user) API as the signed-i
 
 Root (`bun run …`):
 
-- `dev` - runs terminal (`:8001`) + api (`:8002`) + web (`:8000`) together.
+- `dev` - runs terminal (`:4102`) + api (`:4101`) + web (`:4100`) together.
 - `db:up` / `db:down` - start/stop the local PostgreSQL container (`docker-compose.dev.yml`).
 - `db:setup` - generate Prisma client, apply migrations, seed default boards (runs on `apps/api`).
 - `build:api` / `build:web` / `build:terminal` - production builds.
@@ -41,7 +41,7 @@ API (`bun --cwd=apps/api run …`):
 - One tree, both providers. Skills are provider-neutral: reference sibling skills by name (e.g. "invoke the `tailor-resume` skill"), not provider-specific command tokens, and reference shared docs by path-relative reference (`../shared/<doc>.md`). Claude extras like `allowed-tools` are fine in frontmatter - Codex ignores unknown keys.
 - Imperative voice, addressed to the provider.
 - Start by checking `GET /api/health`; abort with a clear message if the API is down.
-- Talk to the API via `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."`. Both env vars are injected by the terminal host - `JOBPILOT_API` is the backend base URL (`:8002` in dev, the hosted URL in prod), `JOBPILOT_API_TOKEN` is the per-user PAT. No direct DB access.
+- Talk to the API via `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."`. Three env vars are injected by the terminal host - `JOBPILOT_API` is the backend base URL (`:4101` in dev, the hosted URL in prod), `JOBPILOT_API_TOKEN` is the per-user PAT, and `JOBPILOT_WEB` is the web app origin (`:4100` in dev, the hosted URL in prod) for any user-facing link. Never hard-code `localhost`. No direct DB access.
 - Load profile/resume/credentials via `plugin/skills/shared/setup.md`.
 - Credential lookup: board override → `Credential.scope === <domain>` → `Credential.scope === "default"`.
 - Log in proactively before searching/applying.

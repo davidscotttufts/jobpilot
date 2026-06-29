@@ -18,7 +18,7 @@ User approves once up front. No per-job confirmation after that.
 Follow `../shared/setup.md` to load profile, resume, credentials.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 ```
 
 Read `autoApply` for config (defaults applied per field):
@@ -97,7 +97,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved", digest:$digest, description:$desc}')"
 ```
 
-Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/campaigns/<CAMPAIGN_ID>`. Jump to **Phase 5**.
+Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`. Jump to **Phase 5**.
 
 ---
 
@@ -109,7 +109,7 @@ Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `http://localhost:8000/campaigns/
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/queue/pending"
 ```
 
-`data` is `[{ id, url, note, status }]`. If empty, tell user to open `http://localhost:8000/queue` to add URLs and stop. Otherwise: **"Found N URLs in the queue. Visiting each to gather details..."**
+`data` is `[{ id, url, note, status }]`. If empty, tell user to open `$JOBPILOT_WEB/queue` to add URLs and stop. Otherwise: **"Found N URLs in the queue. Visiting each to gather details..."**
 
 ### 2.2 Create Campaign
 
@@ -236,7 +236,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --arg t "$NOW" '{status:"completed", completedAt:$t}')"
 ```
 
-Print a summary table and link to `http://localhost:8000/campaigns/<CAMPAIGN_ID>`.
+Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 
 ## Rules
 

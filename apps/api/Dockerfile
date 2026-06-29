@@ -37,11 +37,11 @@ COPY --from=deps /app/apps/api /app/apps/api
 RUN mkdir -p storage
 
 ENV NODE_ENV=production
-ENV PORT=8002
-EXPOSE 8002
+ENV PORT=4101
+EXPOSE 4101
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -f http://localhost:8002/api/health || exit 1
+  CMD curl -f http://localhost:4101/api/health || exit 1
 
 # Migrations are applied manually, not at startup.
 CMD ["bun", "run", "start"]

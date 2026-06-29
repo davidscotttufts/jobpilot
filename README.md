@@ -7,16 +7,16 @@ Playwright.
 
 ## Components
 
-- **Web app** ([apps/web/](apps/web/)) - `http://localhost:8000`. The Next.js
+- **Web app** ([apps/web/](apps/web/)) - `http://localhost:4100`. The Next.js
   UI for profile, credentials, resumes, job boards, applications, campaigns,
   and the batch queue. It embeds an xterm.js terminal panel and exposes "Run
   autopilot" / "Run apply" buttons that inject slash commands.
-- **API** ([apps/api/](apps/api/)) - `http://localhost:8002`. Bun + Elysia +
+- **API** ([apps/api/](apps/api/)) - `http://localhost:4101`. Bun + Elysia +
   Prisma backend that owns all persistence (PostgreSQL; resumes under
   `apps/api/storage/`) and serves the typed `/api/*` surface (Swagger at
   `/swagger`).
 - **JobPilot.Terminal** ([apps/terminal/](apps/terminal/)) -
-  `http://localhost:8001`. .NET 10 ASP.NET Core process that owns one active
+  `http://localhost:4102`. .NET 10 ASP.NET Core process that owns one active
   provider PTY (ConPTY) and bridges it to the web UI over WebSocket. The
   terminal drawer can switch between Claude Code and Codex.
 - **Plugin** ([plugin/](plugin/)) - one provider-neutral plugin loaded by both
@@ -51,10 +51,10 @@ cd jobpilot
 bun install
 bun run db:up    # starts the local PostgreSQL container (Docker)
 bun run db:setup # generates the Prisma client, runs migrations, seeds default data
-bun run dev      # web :8000 + api :8002 + terminal :8001
+bun run dev      # web :4100 + api :4101 + terminal :4102
 ```
 
-Open `http://localhost:8000` and toggle the Terminal panel.
+Open `http://localhost:4100` and toggle the Terminal panel.
 
 ### Remote database (SSH tunnel)
 
@@ -115,7 +115,7 @@ or CASA security audit. Setup (once per user):
 2. Enable the **Gmail API** for the project under "APIs & Services".
 3. In JobPilot, open **Settings → Email** and copy the **redirect URI** shown
    there; add it as an authorized redirect URI on your OAuth client (defaults to
-   `http://localhost:8002/api/email/oauth/callback` in dev; in production it's
+   `http://localhost:4101/api/email/oauth/callback` in dev; in production it's
    your deployment's API callback URL).
 4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
    screen. Google reorganized this UI - it now lives at

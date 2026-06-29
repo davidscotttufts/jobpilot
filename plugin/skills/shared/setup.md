@@ -3,8 +3,11 @@
 JobPilot stores all state in a Postgres-backed Elysia API. Skills call this API - never read files directly.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"   # backend base URL
+JOBPILOT_WEB="${JOBPILOT_WEB:-http://localhost:4100}"   # web origin, for user-facing links
 ```
+
+Both injected by the terminal host. Use `$JOBPILOT_WEB` for any link shown to the user — never hard-code `localhost`.
 
 ## Worker subagents (delegation)
 
@@ -49,7 +52,7 @@ Do not fall back to local JSON files - they have been removed.
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/profile"
 ```
 
-- If `profile` is `null`: "Open http://localhost:8000/onboarding to set up your profile, then re-run this skill."
+- If `profile` is `null`: "Open $JOBPILOT_WEB/onboarding to set up your profile, then re-run this skill."
 - Otherwise read from `profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `autoApply` (minMatchScore, maxApplicationsPerCampaign, defaultStartDate).
 
 The response also includes:

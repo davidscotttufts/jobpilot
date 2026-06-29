@@ -9,7 +9,7 @@ argument-hint: "[url | ref_or_description] (optional; a URL → navigate there f
 Clear a CAPTCHA on the **current browser tab**. Return **solved** or **unsolved** (the caller falls back). Authorized use only — the user's own applications.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 ```
 
 ## 1. Dispatch + identify
