@@ -1,0 +1,70 @@
+# Build the .NET PTY host (AOT) for each OS and publish a GitHub Release.
+# Trigger by pushing a tag like `terminal/v0.1.0`.
+name: Release Terminal
+
+on:
+  push:
+    tags:
+      - "terminal/v*"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rid: linux-x64
+          - os: macos-13
+            rid: osx-x64
+          - os: macos-latest
+            rid: osx-arm64
+          - os: windows-latest
+            rid: win-x64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish AOT
+        run: dotnet publish -c Release -r ${{ matrix.rid }} -o publish/
+        working-directory: apps/terminal
+
+      # The publish dir contains the native binary AND the bundled plugin/ tree,
+      # so archive the whole directory, not just the binary.
+      - name: Archive (Unix)
+        if: runner.os != 'Windows'
+        run: tar -czf jobpilot-terminal-${{ matrix.rid }}.tar.gz -C apps/terminal/publish .
+
+      - name: Archive (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path apps/terminal/publish/* -DestinationPath jobpilot-terminal-${{ matrix.rid }}.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobpilot-terminal-${{ matrix.rid }}
+          path: jobpilot-terminal-${{ matrix.rid }}.*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: jobpilot-terminal-*/*
+          generate_release_notes: true

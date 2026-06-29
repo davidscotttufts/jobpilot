@@ -1,0 +1,30 @@
+# Production stack pulled from GHCR. Postgres is external (DATABASE_URL in .env).
+# GITHUB_REPOSITORY (lowercased owner/repo) comes from .env, written by the deploy workflow.
+services:
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY}/api:latest
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+      - PORT=8002
+    ports:
+      - "127.0.0.1:${API_PORT:-8002}:8002"
+    volumes:
+      - api-storage:/app/apps/api/storage
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY}/web:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - HOSTNAME=0.0.0.0
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  api-storage:

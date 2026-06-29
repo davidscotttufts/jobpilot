@@ -1,0 +1,109 @@
+# Build web+api images, push to GHCR, deploy to the VPS over SSH.
+# Secrets: SSH_HOST, SSH_USER, SSH_KEY, ENV_DOCKER (the prod .env). Vars: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_TERMINAL_URL.
+
+name: Build and Deploy
+
+on:
+  push:
+    branches: [prod]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  APP_DIR: ~/deploy/jobpilot
+
+jobs:
+  build:
+    name: Build ${{ matrix.image }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: build-${{ matrix.image }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            file: ./apps/api/Dockerfile
+          - image: web
+            file: ./apps/web/Dockerfile
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set lowercase repository name
+        id: repo
+        run: echo "name=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.image }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/${{ matrix.image }}:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_TERMINAL_URL=${{ vars.NEXT_PUBLIC_TERMINAL_URL }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/${{ matrix.image }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/${{ matrix.image }}:buildcache,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: build
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Write .env from ENV_DOCKER secret
+        run: |
+          mkdir -p deploy
+          printf '%s\n' "${{ secrets.ENV_DOCKER }}" > deploy/.env
+          # Lowercased owner/repo so the compose image refs resolve.
+          echo "GITHUB_REPOSITORY=${GITHUB_REPOSITORY,,}" >> deploy/.env
+
+      - name: Copy deploy files to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "deploy/docker-compose.yml,deploy/.env,deploy/jobpilot.conf"
+          target: ${{ env.APP_DIR }}
+          strip_components: 1
+
+      - name: Deploy with Docker Compose
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ${{ env.APP_DIR }}
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose pull
+            docker compose up -d --force-recreate --remove-orphans
+            docker image prune -f
+            echo "Waiting for services to start..."
+            sleep 15
+            curl -sf http://localhost:8002/api/health || echo "API not responding yet"
+            docker compose ps --format "table {{.Name}}\t{{.Status}}"
