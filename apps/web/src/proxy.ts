@@ -15,6 +15,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // One call yields both the verified flag and the profile (auth rides the cookie).
   const { data, error } = await api.auth.me.get();
 
+  const onboarded =
+    !error &&
+    data !== null &&
+    data.user.emailVerified &&
+    data.profile !== null &&
+    !isProfileEmpty(data.profile);
+
+  // The root is the public marketing landing: stay public for signed-out /
+  // half-onboarded visitors, but bounce fully-onboarded users into the app.
+  if (request.nextUrl.pathname === "/") {
+    return onboarded
+      ? NextResponse.redirect(new URL("/pipeline", request.url))
+      : NextResponse.next();
+  }
+
   // Not authenticated -> send to login.
   if (error || data === null) {
     return NextResponse.redirect(new URL("/login", request.url));

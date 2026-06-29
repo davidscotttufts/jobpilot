@@ -1,44 +1,51 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Stack } from "@mui/material";
+import { Box, Tab, Tabs } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
+import { useSearchParam } from "@/hooks/use-search-param";
 import { pipelineChannel } from "@/lib/sse/channels/pipeline";
 import { useSseChannel } from "@/lib/sse/client";
-import { PipelineView } from "./pipeline-view";
-import { CampaignsRail } from "./rail/campaigns-rail";
-import { PipelineScopeBanner } from "./rail/scope-banner";
+import { ApplicationsPanel } from "./applications/applications-panel";
+import { OverviewPanel } from "./overview-panel";
+
+const TABS = ["overview", "applications"] as const;
+type WorkspaceTab = (typeof TABS)[number];
 
 /**
- * Pairs the Campaigns rail with the stage board and owns the single SSE
- * subscription for the page — invalidating both the pipeline columns and the
- * campaigns list so the board and the rail stay in sync from one connection.
+ * Two-tab workspace. Owns the single SSE subscription for the page, invalidating
+ * the campaigns, queue, and applications queries so every panel stays live from
+ * one connection.
  */
 export function PipelineWorkspace(): ReactElement {
   const queryClient = useQueryClient();
+  const [tabParam, setTab] = useSearchParam("tab");
+  const tab: WorkspaceTab = TABS.includes(tabParam as WorkspaceTab)
+    ? (tabParam as WorkspaceTab)
+    : "overview";
 
-  const invalidateCampaigns = (): void => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
-  };
   useSseChannel(pipelineChannel, null, {
     onMessage: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.pipeline.all });
-    },
-    on: {
-      "campaign.updated": invalidateCampaigns,
-      "campaign.completed": invalidateCampaigns,
-      "campaign.deleted": invalidateCampaigns,
+      queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.queue.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all });
     },
   });
 
   return (
-    <Stack direction="row" sx={{ flex: 1, minHeight: 0 }}>
-      <CampaignsRail />
-      <Stack sx={{ flex: 1, minWidth: 0, minHeight: 0 }}>
-        <PipelineScopeBanner />
-        <PipelineView />
-      </Stack>
-    </Stack>
+    <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <Tabs
+        value={tab}
+        onChange={(_, value: WorkspaceTab) => setTab(value === "overview" ? null : value)}
+        sx={{ paddingInline: 2.5, borderBottom: 1, borderColor: "divider" }}
+      >
+        <Tab value="overview" label="Overview" />
+        <Tab value="applications" label="Applications" />
+      </Tabs>
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: 2.5, paddingBlock: 2 }}>
+        {tab === "overview" ? <OverviewPanel /> : <ApplicationsPanel />}
+      </Box>
+    </Box>
   );
 }

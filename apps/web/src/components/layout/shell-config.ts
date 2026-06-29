@@ -25,7 +25,7 @@ export interface NavGroup {
 export const navGroups: NavGroup[] = [
   {
     items: [
-      { label: "Pipeline", href: "/", icon: ViewKanban },
+      { label: "Pipeline", href: "/pipeline", icon: ViewKanban },
       { label: "Analytics", href: "/analytics", icon: Insights },
       { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Outreach", href: "/outreach", icon: Forum },

@@ -26,7 +26,7 @@ export function Rail(): ReactElement {
     >
       <Box
         component={NextLink}
-        href="/"
+        href="/pipeline"
         aria-label={`${APP_TITLE} home`}
         sx={(theme) => ({
           position: "relative",

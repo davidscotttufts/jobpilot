@@ -1,6 +1,5 @@
 import type { ReactElement } from "react";
 import { Container } from "@mui/material";
-import type { Route } from "next";
 import { CampaignDetail } from "@/components/features/campaigns";
 import { PageHeader } from "@/components/ui/layout";
 
@@ -12,12 +11,7 @@ export default async function CampaignDetailPage(props: PageProps): Promise<Reac
   const { id } = await props.params;
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
-      <PageHeader
-        eyebrow="Campaign"
-        title={id}
-        backHref={`/?campaignId=${encodeURIComponent(id)}` as Route}
-        backLabel="Pipeline"
-      />
+      <PageHeader eyebrow="Campaign" title={id} backHref="/pipeline" backLabel="Pipeline" />
       <CampaignDetail campaignId={id} />
     </Container>
   );

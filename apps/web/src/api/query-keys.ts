@@ -70,10 +70,9 @@ export const queryKeys = {
   },
 
   pipeline: {
+    // Retained as the SSE invalidation namespace; column/total queries were
+    // replaced by the campaigns/queue/applications-backed workspace.
     all: ["pipeline"] as const,
-    column: (stage: string, filters: object = {}) =>
-      [...queryKeys.pipeline.all, "column", stage, filters] as const,
-    total: (stage: string) => [...queryKeys.pipeline.all, "total", stage] as const,
   },
 
   analytics: {
