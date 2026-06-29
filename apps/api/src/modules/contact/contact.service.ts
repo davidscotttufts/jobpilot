@@ -1,10 +1,10 @@
-import { singleton } from "tsyringe";
-import type { z } from "zod/v4";
 import {
   contactDiscoverySourceSchema,
   contactEmailSourceSchema,
   contactLinkedinConnectionSchema,
 } from "@jobpilot/contracts/outreach";
+import { singleton } from "tsyringe";
+import type { z } from "zod/v4";
 import { PrismaClient } from "@/generated/prisma/client";
 
 type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>;

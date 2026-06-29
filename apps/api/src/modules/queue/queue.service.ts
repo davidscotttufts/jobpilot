@@ -1,8 +1,8 @@
 import type { AddQueueEntry, PatchQueueEntry, QueueStatus } from "@jobpilot/contracts/queue";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
-import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { publish } from "@/common/sse";
+import { pipelineChannel } from "@/common/sse/channels/pipeline";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 
 type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status"> & {

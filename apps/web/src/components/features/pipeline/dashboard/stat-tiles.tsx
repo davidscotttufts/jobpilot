@@ -10,7 +10,9 @@ import { StatCard } from "@/components/ui/display";
 import { INTERVIEW_STAGES } from "../applications/funnel-bar";
 
 export function StatTiles(): ReactElement {
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () => api.campaigns.get());
+  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
+    api.campaigns.get(),
+  );
   const applications = useApiQuery<ApplicationDto[]>(queryKeys.applications.list({}), () =>
     api.applied.get({ query: {} }),
   );

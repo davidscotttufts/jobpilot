@@ -54,7 +54,9 @@ export function Hero(): ReactElement {
                   Sign in
                 </LinkButton>
               </Stack>
-              <Typography sx={{ fontFamily: fontFamilies.mono, fontSize: "0.75rem", color: "text.disabled" }}>
+              <Typography
+                sx={{ fontFamily: fontFamilies.mono, fontSize: "0.75rem", color: "text.disabled" }}
+              >
                 Runs on your Claude / Codex subscription · Your data stays on your machine
               </Typography>
             </Stack>

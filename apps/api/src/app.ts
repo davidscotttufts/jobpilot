@@ -1,7 +1,6 @@
 import "@/common/di/container";
 import { Elysia } from "elysia";
 import { db } from "@/common/database";
-import { httpErrorResponses } from "@/types/response";
 import { logger } from "@/common/logger";
 import { errorMiddleware } from "@/common/middleware";
 import { corsPlugin, swaggerPlugin } from "@/common/plugins";
@@ -23,6 +22,7 @@ import { queueController } from "@/modules/queue";
 import { publicResumeController, resumeController, resumeJob } from "@/modules/resume";
 import { scoringController } from "@/modules/scoring";
 import { upworkController } from "@/modules/upwork";
+import { httpErrorResponses } from "@/types/response";
 
 const app = new Elysia()
   .use(errorMiddleware)

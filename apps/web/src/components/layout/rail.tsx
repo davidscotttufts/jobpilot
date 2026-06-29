@@ -46,7 +46,8 @@ export function Rail(): ReactElement {
             content: '""',
             position: "absolute",
             inset: 0,
-            background: "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 55%)",
+            background:
+              "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 55%)",
             opacity: 0.8,
             transition: theme.motion.standard,
           },

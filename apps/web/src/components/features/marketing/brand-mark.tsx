@@ -34,10 +34,7 @@ export function BrandMark(props: BrandMarkProps): ReactElement {
         J
       </Box>
       {!iconOnly && (
-        <Typography
-          variant="h3"
-          sx={{ fontSize: "1.1rem", letterSpacing: "-0.01em" }}
-        >
+        <Typography variant="h3" sx={{ fontSize: "1.1rem", letterSpacing: "-0.01em" }}>
           JobPilot
         </Typography>
       )}

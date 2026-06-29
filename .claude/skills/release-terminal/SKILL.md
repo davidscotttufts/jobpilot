@@ -21,8 +21,8 @@ The user provides a version (e.g. `1.2.0`) or a bump type (`major`, `minor`,
 - **Release body:** the workflow sets `generate_release_notes: true`, so GitHub
   auto-generates notes from merged PRs/commits — no CHANGELOG section required.
 - **Build:** the workflow runs Native AOT publish for `linux-x64`, `osx-x64`,
-  `osx-arm64`, `win-x64` and archives each `apps/terminal/publish/` tree (binary
-  + bundled `plugin/`) to the GitHub Release.
+  `osx-arm64`, `win-x64` and archives each `apps/terminal/publish/` tree (the
+  native binary plus the bundled `plugin/`) to the GitHub Release.
 
 ## Steps
 

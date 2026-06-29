@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import { cleanReplacementChars } from "./utils/text";
 import { outreachConfigSchema } from "./outreach";
+import { cleanReplacementChars } from "./utils/text";
 
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);

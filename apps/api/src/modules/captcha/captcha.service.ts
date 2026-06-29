@@ -1,5 +1,9 @@
 import { Solver } from "@2captcha/captcha-solver";
-import type { CaptchaSolveInput, CaptchaSolveResult, CaptchaType } from "@jobpilot/contracts/captcha";
+import type {
+  CaptchaSolveInput,
+  CaptchaSolveResult,
+  CaptchaType,
+} from "@jobpilot/contracts/captcha";
 import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/credential";
 import { singleton } from "tsyringe";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";

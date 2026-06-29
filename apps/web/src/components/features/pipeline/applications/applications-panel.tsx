@@ -20,7 +20,9 @@ export function ApplicationsPanel(): ReactElement {
   const apps = useApiQuery<ApplicationDto[]>(queryKeys.applications.list({}), () =>
     api.applied.get({ query: {} }),
   );
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () => api.campaigns.get());
+  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
+    api.campaigns.get(),
+  );
   const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
     api["job-boards"].get(),
   );

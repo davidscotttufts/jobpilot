@@ -32,10 +32,7 @@ export const metadata: Metadata = {
 export default function RootLayout(props: PropsWithChildren): ReactElement {
   const { children } = props;
   return (
-    <html
-      lang="en"
-      className={`${archivo.variable} ${jetbrainsMono.variable}`}
-    >
+    <html lang="en" className={`${archivo.variable} ${jetbrainsMono.variable}`}>
       <body suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>

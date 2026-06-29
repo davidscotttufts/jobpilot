@@ -3,8 +3,8 @@ import { textColors } from "./palette";
 
 export const fontFamilies = {
   body: 'var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  display: 'var(--font-archivo), ui-sans-serif, system-ui, sans-serif',
-  mono: 'var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
+  display: "var(--font-archivo), ui-sans-serif, system-ui, sans-serif",
+  mono: "var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace",
 } as const;
 
 // The display role is Archivo widened to its expanded width axis (athletic headers).

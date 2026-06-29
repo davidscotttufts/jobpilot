@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import { normalizeLinkUrl } from "./utils/url";
 import { optionalPhoneSchema } from "./phone";
+import { normalizeLinkUrl } from "./utils/url";
 
 const linkUrl = z.string().transform(normalizeLinkUrl).optional();
 

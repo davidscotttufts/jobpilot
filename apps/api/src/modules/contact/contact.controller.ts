@@ -15,7 +15,6 @@ export const contactController = new Elysia({
     response: contactListSchema,
     detail: {
       summary: "List networking contacts",
-      description:
-        "Returns the active profile's networking contacts, ordered newest first.",
+      description: "Returns the active profile's networking contacts, ordered newest first.",
     },
   });

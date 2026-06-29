@@ -27,10 +27,7 @@ export function AuthCard(props: AuthCardProps): ReactElement {
       <Container maxWidth="xs">
         <Stack spacing={3}>
           <Stack spacing={0.5} sx={{ textAlign: "center" }}>
-            <Typography
-              variant="h1"
-              sx={{ fontSize: "2rem", letterSpacing: "-0.035em" }}
-            >
+            <Typography variant="h1" sx={{ fontSize: "2rem", letterSpacing: "-0.035em" }}>
               JobPilot
             </Typography>
             <Typography variant="body2Muted">

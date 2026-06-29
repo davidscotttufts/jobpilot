@@ -1,7 +1,7 @@
 import { mkdir, readdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { env } from "@/env";
 import { slugify } from "@/common/utils/slug";
+import { env } from "@/env";
 
 const STORAGE_ROOT = path.resolve(env.STORAGE_ROOT);
 const RESUMES_DIR = path.join(STORAGE_ROOT, "resumes");

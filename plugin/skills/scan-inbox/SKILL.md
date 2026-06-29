@@ -49,12 +49,12 @@ The rest of the skill runs over whatever you fetched. A re-scan overwrites the c
 
 For each message, pick one classification:
 
-| Classification | When                                                                         |
-| -------------- | ---------------------------------------------------------------------------- |
-| `interviewing` | Recruiter reply, interview invite, scheduling, take-home, next-round.        |
-| `rejected`     | Explicit rejection / "moved forward with other candidates".                  |
-| `offer`        | Formal job offer (comp, start date, offer letter attached).                  |
-| `verification` | One-time code, magic link, "confirm your email", 2FA from a job board.       |
+| Classification | When                                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `interviewing` | Recruiter reply, interview invite, scheduling, take-home, next-round.                                                                                         |
+| `rejected`     | Explicit rejection / "moved forward with other candidates".                                                                                                   |
+| `offer`        | Formal job offer (comp, start date, offer letter attached).                                                                                                   |
+| `verification` | One-time code, magic link, "confirm your email", 2FA from a job board.                                                                                        |
 | `irrelevant`   | Job alerts, digests, "jobs you may like", "you appeared in N searches", newsletters, "application received" auto-acknowledgements, marketing, calendar pings. |
 
 Use `subject`, `fromAddress`, `fromDomain`, `snippet`, `rawBody` as evidence.
@@ -73,7 +73,7 @@ For `interviewing | rejected | offer`:
    ```
 
 2. Score each against `fromName` / `fromDomain` / `subject`. Pick the best if score ≥ 0.7 (0–1).
-3. If nothing scores well enough — or the email only *mentions* the company rather than addressing the user's application — leave `matchedAppId` and `matchScore` as `null`.
+3. If nothing scores well enough — or the email only _mentions_ the company rather than addressing the user's application — leave `matchedAppId` and `matchScore` as `null`.
 
 For `verification`: do NOT propose a match. `get-code` handles those.
 

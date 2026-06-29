@@ -35,14 +35,16 @@ Read the sitekey (`browser_evaluate`, read-only):
 
 ```js
 () => {
-  const el = document.querySelector('.g-recaptcha, [data-sitekey]');
-  let key = el?.getAttribute('data-sitekey');
+  const el = document.querySelector(".g-recaptcha, [data-sitekey]");
+  let key = el?.getAttribute("data-sitekey");
   if (!key) {
-    const f = [...document.querySelectorAll('iframe[src*="recaptcha"]')].map(f => f.src).find(s => /[?&]k=/.test(s));
-    key = f && new URL(f).searchParams.get('k');
+    const f = [...document.querySelectorAll('iframe[src*="recaptcha"]')]
+      .map((f) => f.src)
+      .find((s) => /[?&]k=/.test(s));
+    key = f && new URL(f).searchParams.get("k");
   }
   return { sitekey: key, pageurl: location.href };
-}
+};
 ```
 
 hCaptcha: `iframe[src*="hcaptcha"]` → `type:"hcaptcha"`. Turnstile: `.cf-turnstile[data-sitekey]` → `type:"turnstile"`.
@@ -61,15 +63,19 @@ Inject the token (sanctioned `browser_evaluate` — a real solved token, not a f
 
 ```js
 (t) => {
-  document.querySelectorAll('textarea[name="g-recaptcha-response"], #g-recaptcha-response')
-    .forEach(el => { el.value = t; el.style.display = ''; });
+  document
+    .querySelectorAll('textarea[name="g-recaptcha-response"], #g-recaptcha-response')
+    .forEach((el) => {
+      el.value = t;
+      el.style.display = "";
+    });
   try {
     for (const c of Object.values(window.___grecaptcha_cfg?.clients ?? {}))
       for (const o of Object.values(c))
         for (const m of Object.values(o ?? {}))
-          if (typeof m?.callback === 'function') m.callback(t);
+          if (typeof m?.callback === "function") m.callback(t);
   } catch {}
-}
+};
 ```
 
 hCaptcha uses `h-captcha-response`; Turnstile uses `cf-turnstile-response`. `browser_wait_for`, verify → **solved**.

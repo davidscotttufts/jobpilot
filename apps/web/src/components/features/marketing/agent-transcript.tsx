@@ -11,7 +11,7 @@ interface Line {
 }
 
 const LINES: Line[] = [
-  { text: "$ jobpilot apply --campaign \"Senior Frontend\"", tone: "prompt" },
+  { text: '$ jobpilot apply --campaign "Senior Frontend"', tone: "prompt" },
   { text: "✓ Signed in to linkedin.com", tone: "ok" },
   { text: "→ Scoring 24 roles against your resume", tone: "step" },
   { text: "✓ Stripe · Senior Frontend Engineer — 92% match", tone: "ok" },
@@ -56,10 +56,7 @@ export function AgentTranscript(): ReactElement {
         {(["error.main", "warning.main", "success.main"] as const).map((c) => (
           <Box key={c} sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: c }} />
         ))}
-        <Typography
-          variant="captionMuted"
-          sx={{ fontFamily: fontFamilies.mono, pl: 1 }}
-        >
+        <Typography variant="captionMuted" sx={{ fontFamily: fontFamilies.mono, pl: 1 }}>
           agent — claude
         </Typography>
       </Stack>

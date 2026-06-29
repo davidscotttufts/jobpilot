@@ -172,7 +172,7 @@ scopes`** - a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
 | UI                 | MUI 9 + MUI X DataGrid                         |
 | Forms              | TanStack Form 1 + Zod v4                       |
 | Server state       | TanStack Query 5                               |
-| Database           | PostgreSQL via Prisma 7 + `@prisma/adapter-pg`  |
+| Database           | PostgreSQL via Prisma 7 + `@prisma/adapter-pg` |
 | Terminal host      | .NET 10 ASP.NET Core, ConPTY via Quick.PtyNet  |
 | Browser automation | Playwright via the Playwright MCP server       |
 

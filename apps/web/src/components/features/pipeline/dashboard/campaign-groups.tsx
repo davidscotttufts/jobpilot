@@ -22,7 +22,9 @@ const GROUPS: ReadonlyArray<{ label: string; statuses: CampaignStatus[] }> = [
 
 export function CampaignGroups(): ReactElement {
   const router = useRouter();
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () => api.campaigns.get());
+  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
+    api.campaigns.get(),
+  );
   const rows = campaigns.data ?? [];
 
   const open = (c: CampaignDto): void => {
@@ -62,7 +64,12 @@ export function CampaignGroups(): ReactElement {
                   {group.label} · {items.length}
                 </Typography>
                 {items.map((c) => (
-                  <CampaignRow key={c.campaignId} campaign={c} onSelect={open} onOpenDetail={open} />
+                  <CampaignRow
+                    key={c.campaignId}
+                    campaign={c}
+                    onSelect={open}
+                    onOpenDetail={open}
+                  />
                 ))}
               </Stack>
             );

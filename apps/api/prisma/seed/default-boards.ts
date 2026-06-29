@@ -28,7 +28,9 @@ async function main() {
     }
   }
   const count = await db.jobBoard.count();
-  console.log(`Backfilled board catalog onto ${profiles.length} profile(s). Total boards: ${count}`);
+  console.log(
+    `Backfilled board catalog onto ${profiles.length} profile(s). Total boards: ${count}`,
+  );
 }
 
 main()

@@ -1,4 +1,8 @@
-import type { ProposalsBucket, UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwork";
+import type {
+  ProposalsBucket,
+  UpworkClient,
+  UpworkQualityResult,
+} from "@jobpilot/contracts/upwork";
 
 /**
  * Heuristic Upwork client/job quality score. Server-side, deterministic, no LLM

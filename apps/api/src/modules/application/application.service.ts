@@ -5,12 +5,12 @@ import type {
 } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
+import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 import {
   APPLIED_DUPLICATE_THRESHOLD,
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/modules/scoring/applied-duplicates";
-import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 
 /** Stages that count as a positive recruiter/interview response. */
 const POSITIVE_STAGES = new Set([

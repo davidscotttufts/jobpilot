@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
-import { SignJWT, jwtVerify } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 import { env } from "@/env";
 import type { AuthUser } from "./types";
 

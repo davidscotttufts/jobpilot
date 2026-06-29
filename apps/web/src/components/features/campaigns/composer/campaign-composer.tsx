@@ -133,7 +133,9 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={!hasResumes || (!hasBoards && !isOutreach) || !canSubmit || isSubmitting}
+                  disabled={
+                    !hasResumes || (!hasBoards && !isOutreach) || !canSubmit || isSubmitting
+                  }
                 >
                   {isUpwork ? "Find Upwork jobs" : SUBMIT_LABELS[mode]}
                 </Button>

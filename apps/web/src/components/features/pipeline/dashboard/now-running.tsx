@@ -25,7 +25,9 @@ function progress(campaign: CampaignDto): { value: number; label: string } {
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () => api.campaigns.get());
+  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
+    api.campaigns.get(),
+  );
   const running = (campaigns.data ?? []).filter((c) => c.status === "in_progress");
 
   if (running.length === 0) {
@@ -49,7 +51,10 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
 
   const pause = useApiMutation<{ campaignId: string; status: string }, void>(
     () => api.campaigns({ id: campaign.campaignId }).patch({ status: "paused" }),
-    { successMessage: "Campaign paused", invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all] },
+    {
+      successMessage: "Campaign paused",
+      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+    },
   );
 
   return (

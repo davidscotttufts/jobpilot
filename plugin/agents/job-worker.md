@@ -32,8 +32,18 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 5. Close tabs, return:
 
 ```json
-{ "outcome": "reviewed", "digest": {}, "matchScore": 0, "confidence": 0.0,
-  "strongMatches": [], "partialMatches": [], "gaps": [], "blockers": [], "visaRisk": "...", "verdict": "1-2 lines" }
+{
+  "outcome": "reviewed",
+  "digest": {},
+  "matchScore": 0,
+  "confidence": 0.0,
+  "strongMatches": [],
+  "partialMatches": [],
+  "gaps": [],
+  "blockers": [],
+  "visaRisk": "...",
+  "verdict": "1-2 lines"
+}
 ```
 
 ## mode: score

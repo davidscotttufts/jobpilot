@@ -5,11 +5,7 @@ import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { tailorResumeSchema } from "../resume.schema";
-import {
-  tailoredVariantSchema,
-  variantDetailSchema,
-  variantListSchema,
-} from "./variant.schema";
+import { tailoredVariantSchema, variantDetailSchema, variantListSchema } from "./variant.schema";
 import { ResumeVariantService } from "./variant.service";
 
 const svc = container.resolve(ResumeVariantService);

@@ -87,7 +87,7 @@ export function firstErrorMessage(errors: ReadonlyArray<unknown>): string | unde
 ```
 
 **Bound field components** — each reads `useFieldContext<T>()` instead of taking
-`form`/`name`. `useFieldContext<T>()` is a *local cast*: it does not enforce that
+`form`/`name`. `useFieldContext<T>()` is a _local cast_: it does not enforce that
 `T` matches the actual field, so pick the widest value the component handles.
 
 ```tsx
@@ -134,6 +134,7 @@ shorthand:
 ```ts
 import { createFormHook } from "@tanstack/react-form";
 import { fieldContext, formContext } from "./form-context";
+
 // import bound field components + SubmitButton
 
 export const { useAppForm, withForm } = createFormHook({
@@ -175,8 +176,8 @@ the erased-type threading while keeping types across the boundary.
 
 ```tsx
 export const PersonalSection = withForm({
-  defaultValues: DEFAULTS,          // type-only; must match the parent form's data type
-  props: { title: "" },             // optional extra props with defaults
+  defaultValues: DEFAULTS, // type-only; must match the parent form's data type
+  props: { title: "" }, // optional extra props with defaults
   render: function PersonalSection({ form, title }) {
     return (
       <form.AppField name="firstName">
@@ -186,7 +187,7 @@ export const PersonalSection = withForm({
   },
 });
 // consumed by the parent, passing its typed useAppForm instance:
-<PersonalSection form={form} title="…" />
+<PersonalSection form={form} title="…" />;
 ```
 
 - `defaultValues` is for type inference only (not runtime). It must match the
@@ -217,11 +218,13 @@ literal with a `number` variable widens to `` `items[${number}].field` ``):
 
 ```tsx
 <form.AppField name="items" mode="array">
-  {(field) => field.state.value.map((_, i) => (
-    <form.AppField key={i} name={`items[${i}].label`}>
-      {(sub) => <sub.TextField label="Label" />}
-    </form.AppField>
-  ))}
+  {(field) =>
+    field.state.value.map((_, i) => (
+      <form.AppField key={i} name={`items[${i}].label`}>
+        {(sub) => <sub.TextField label="Label" />}
+      </form.AppField>
+    ))
+  }
 </form.AppField>
 ```
 

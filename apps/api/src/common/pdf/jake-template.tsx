@@ -1,5 +1,4 @@
 import { Children, type ReactElement, type ReactNode } from "react";
-import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type {
   ResumeBasics,
   ResumeData,
@@ -8,6 +7,7 @@ import type {
   ResumeProject,
   ResumeSkillGroup,
 } from "@jobpilot/contracts/resume";
+import { Document, Link, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
   page: {

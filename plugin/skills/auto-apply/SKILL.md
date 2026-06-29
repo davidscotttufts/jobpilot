@@ -16,11 +16,11 @@ JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
 
 Follow `../shared/setup.md`. Read `autoApply` (defaults applied per field):
 
-| Setting                 | Default            | Notes                                                                                     |
-| ----------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
-| `minMatchScore`         | 60                 | Qualification threshold (0-100). Inline `--min-score` overrides.                          |
+| Setting                      | Default            | Notes                                                                                     |
+| ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `minMatchScore`              | 60                 | Qualification threshold (0-100). Inline `--min-score` overrides.                          |
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Stop after this many successful applies. Inline `--max-apps` overrides; omit → unlimited. |
-| `defaultStartDate`      | `"2 weeks notice"` | Default start-date answer.                                                                |
+| `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                |
 
 Inline argument overrides take precedence. `--board <domain>` is **required** unless the argument is `resume` or `retry-failed <campaign-id>`.
 
