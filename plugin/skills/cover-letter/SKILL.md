@@ -10,7 +10,7 @@ Write a tailored, one-page cover letter connecting the candidate's resume to a s
 
 ## Setup
 
-Follow `../shared/setup.md` to load profile and resume. Then `Read` the resume file at `data.primaryResumeSourceAbsolutePath` for full context (identity, education, experience, skills, projects, research, awards).
+Follow `../shared/setup.md` to load profile and resume. Then `Read` the resume file at `primaryResumeSourceAbsolutePath` for full context (identity, education, experience, skills, projects, research, awards).
 
 ## Step 1: Analyze the JD
 
@@ -22,7 +22,7 @@ From the resume, pick the most relevant: 2–3 work experiences, 2–3 projects,
 
 ## Step 3: Write
 
-**Header** (values from `data.profile.*`):
+**Header** (values from `profile.*`):
 
 ```
 [Full Name]
@@ -56,7 +56,7 @@ Invoke the `humanizer` skill on the full text. The final output must read as wri
 Persist the final letter so it's reviewable in the web app. Best-effort — if the call fails, continue:
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/cover-letters" -H 'content-type: application/json' \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/cover-letters" -H 'content-type: application/json' \
   -d "$(jq -n --arg c "<final letter text>" --arg u "<job url>" --arg t "<role title>" --arg co "<company>" --arg s "<source>" \
         '{content:$c, jobUrl:($u|select(.!="")), jobTitle:($t|select(.!="")), company:($co|select(.!="")), source:$s}')"
 ```

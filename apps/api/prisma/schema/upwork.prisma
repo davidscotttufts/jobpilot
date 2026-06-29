@@ -1,0 +1,59 @@
+model UpworkProposal {
+  id        String  @id @default(uuid())
+  profileId String  @map("profile_id")
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  jobTitle       String  @map("job_title")
+  clientName     String? @map("client_name")
+  jobUrl         String? @map("job_url")
+  jobDescription String? @map("job_description")
+
+  proposalText     String @default("") @map("proposal_text")
+  screeningAnswers String @default("[]") @map("screening_answers") // JSON: { question: string, answer: string }[]
+
+  status  String  @default("draft") // draft | submitted | closed
+  outcome String? // when closed: hired | declined | no_response
+  notes   String?
+
+  // Link back to the campaign Job this proposal was drafted from (set when
+  // launched from an Upwork search recommendation). `source` distinguishes a
+  // manually-pasted JD from a search-originated draft.
+  source     String  @default("manual") // manual | search
+  campaignId String? @map("campaign_id")
+  jobKey     String? @map("job_key")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  submittedAt DateTime? @map("submitted_at")
+
+  @@index([profileId])
+  @@index([profileId, status])
+  @@index([campaignId])
+  @@map("upwork_proposal")
+}
+
+// One Upwork profile-enhancement record per profile. Holds the scraped current
+// state and the agent-generated suggestions; `status` gates the live write
+// (only `approved` may be applied to Upwork). Portfolio columns are JSON arrays
+// of { title, description, url?, skills?: string[] }.
+model UpworkProfile {
+  id        String  @id @default(uuid())
+  profileId String  @unique @map("profile_id")
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  currentTitle      String? @map("current_title")
+  currentOverview   String? @map("current_overview")
+  currentHourlyRate String? @map("current_hourly_rate")
+  currentPortfolio  String  @default("[]") @map("current_portfolio")
+
+  suggestedTitle      String? @map("suggested_title")
+  suggestedOverview   String? @map("suggested_overview")
+  suggestedHourlyRate String? @map("suggested_hourly_rate")
+  suggestedPortfolio  String  @default("[]") @map("suggested_portfolio")
+
+  status    String    @default("empty") // empty | draft | approved | applied
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  appliedAt DateTime? @map("applied_at")
+
+  @@map("upwork_profile")
+}

@@ -4,7 +4,7 @@ description: Find a hiring manager/recruiter for a role (or company) and send a 
 argument-hint: "<target criteria> --campaign <campaign-id>"
 ---
 
-# Outreach — Direct Hiring-Manager / Recruiter Contact
+# Outreach - Direct Hiring-Manager / Recruiter Contact
 
 Discover a contact, draft a personalized message, and send it via **email** and/or
 **LinkedIn** (Premium InMail or free connect-then-DM). Reaches people the ATS funnel hides.
@@ -15,10 +15,10 @@ Backed by a `Campaign` (`source: "outreach"`); each contacted person + message i
 Follow `../shared/setup.md` (health, profile, primary/tailored resume, credentials).
 
 ```bash
-JOBPILOT_API=http://localhost:8000
+JOBPILOT_API="${JOBPILOT_API:-http://localhost:8002}"
 ```
 
-- Email capability: `curl -fsS "$JOBPILOT_API/api/email/account"` → if `data.canSend` is false,
+- Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `.canSend` is false,
   tell the user to **Reconnect Gmail** in email settings before email sends; LinkedIn still works.
 - LinkedIn login: `../shared/auth.md`, credentials scope `"linkedin.com"`.
 
@@ -27,26 +27,27 @@ JOBPILOT_API=http://localhost:8000
 `--campaign <id>` is required. Read the campaign config:
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.data.config'
+CONFIG=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>" | jq '.config')
 ```
 
 `config.outreach` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
-autonomy:"draft"|"review"|"auto", dailyCap?, resumeUrl? }` (append `resumeUrl` verbatim to email body when present; never a `localhost` URL). `config` may also carry `board`
+autonomy:"draft"|"review"|"auto", dailyCap? }`. `config` also carries the campaign's selected
+`resumeId` - build its public link `RESUME_URL="$JOBPILOT_API/api/public/resumes/$(echo "$CONFIG" | jq -r '.resumeId')/pdf"` and append it to the email body (skip when it is a `localhost` URL - dev only). `config` may also carry `board`
 (domain to search) and optional `maxJobs` (cap; absent = run until stopped).
 
-Target criteria = the positional arg, else `data.query`. The optional `board` is the control:
+Target criteria = the positional arg, else `.query`. The optional `board` is the control:
 `board` set → search it (Phase 0.5) and loop results (Phase 1), grounding each message in its posting;
 no `board` → discover from criteria, grounding only if an opening turns up. Skip contacts already
 messaged on this campaign.
 
-**Rewrite mode** (`--rewrite <id[,id...]>`): skip discovery; for each non-terminal message re-run
-Phase 2 Compose and `PATCH .../outreach/<id>` the new `subject`/`body` (keep `status`). Don't
-discover or send.
+**Rewrite mode** (`--rewrite <id[,id...]>`): skip discovery; for each non-terminal message delegate
+to `outreach-worker` for compose only (pass the existing contact as `target`), then
+`PATCH .../outreach/<id>` the new `subject`/`body` (keep `status`). Don't discover or send.
 
 ## Phase 0.5: Open the board (when `config.board` set)
 
 ```bash
-curl -fsS "$JOBPILOT_API/api/job-boards" | jq --arg d "<config.board>" '.data[] | select(.domain == $d)'
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<config.board>" '.[] | select(.domain == $d)'
 ```
 
 No row → PATCH campaign `failed`, `failReason:"Board <domain> not configured"`, stop. Else
@@ -54,102 +55,79 @@ No row → PATCH campaign `failed`, `failReason:"Board <domain> not configured"`
 the query, and `browser_snapshot` the results (narrowed, per `../shared/browser-tips.md`) for
 `{ title, company, location, url }` per row.
 
-## Phase 1: Discover + reach out
+## Phase 1: Discover, compose, save
 
-**Discover a contact** (multi-modal — never rely on LinkedIn's own search). For a company/role, sweep
-in this order and cross-reference:
+Per target, delegate discovery **and** compose to the `outreach-worker` subagent - it runs the multi-modal contact sweep (`WebSearch`/`WebFetch`/rendered pages) and writes the personalized, humanized draft per channel in isolated context, returning only `{found, contact, messages}`. **One worker at a time** (shared browser). Save and gate its result here.
 
-1. **Google → LinkedIn**: `WebSearch` `site:linkedin.com/in "<company>" ("recruiter" OR "talent"
-   OR "hiring manager" OR "<title>")` — yields profile URLs without touching LinkedIn search.
-2. **Company site**: careers/about/team pages for named recruiters or hiring contacts.
-3. **General web**: press releases, GitHub (eng roles), meetup/conference pages.
-4. **Email**: web-search the company's email pattern (`first.last@`, `flast@`, …), construct the
-   address, MX-check the domain where possible. Set `emailSource:"guessed"` + a confidence.
-
-Use `WebFetch` for pages; `browser_snapshot` (with `ref`, per `browser-tips.md`) only when a page
-needs rendering. Pick the best match.
-
-### With a board — loop over results
+### With a board - loop over results
 
 Walk tab-1 results top to bottom; per result:
 
 1. Dedupe in-board, then applied-check:
 
-   ```bash
-   URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
-   TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
-   COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-   curl -fsS "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
-   ```
+```bash
+URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
+TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
+COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
+```
 
-   On `data.applied`, keep `data.match.application.id` as `relatedAppId` — **don't skip** (outreach
-   complements applying).
+On `.applied`, keep `.match.application.id` as `relatedAppId` - **don't skip** (outreach
+complements applying).
+
 2. Save the job (stable, shell-safe `key`):
 
-   ```bash
-   curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
-     -H 'content-type: application/json' \
-     -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
-       --arg location "<location>" --arg url "<job-url>" --arg board "<config.board>" \
-       '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,status:"pending"}')"
-   ```
-3. Discover + save the contact (below) with `relatedJobUrl` (+ `relatedAppId` if matched).
-4. Compose (Phase 2), then gate (Phase 3).
-5. Before the next result, `GET /api/campaigns/<campaign-id>`: `status:"paused"` → exit; `maxJobs`
-   reached → stop; no rows left → scroll / next page, else Phase 5.
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg key "<key>" --arg title "<title>" --arg company "<company>" \
+    --arg location "<location>" --arg url "<job-url>" --arg board "<config.board>" \
+    '{key:$key,title:$title,company:$company,location:$location,url:$url,board:$board,status:"pending"}')"
+```
 
-### Without a board — discover from criteria
+3. Delegate to `outreach-worker`:
 
-Derive target companies/roles from the criteria and sweep each. Optionally ground a message in a
-matching opening (`relatedJobUrl` + applied-check for `relatedAppId`); else reach out on criteria alone.
+```json
+{ "campaignId": "<campaign-id>",
+  "target": { "jobUrl": "<job-url>", "title": "<title>", "company": "<company>", "digest": <digest-or-null> },
+  "channels": <config.outreach.channels>, "linkedinTier": "<config.outreach.linkedinTier>", "resumeUrl": "<RESUME_URL>" }
+```
 
-### Save a contact + message
+`{found:false}` → log and continue. Otherwise save the returned draft (below), then gate (Phase 3).
+
+4. Before the next result, `GET /api/campaigns/<campaign-id>`: `status:"paused"` → exit; `maxJobs`
+   reached → stop. At the last loaded row, scroll/paginate per **Pagination & infinite scroll** in
+   `../shared/browser-tips.md`; Phase 5 only once it's exhausted. `maxJobs` absent → paginate until dry.
+
+### Without a board - discover from criteria
+
+Derive target companies/roles from the criteria; per target, delegate to `outreach-worker` with
+`target:{ "criteria": "<...>" }` (optionally add a matching opening's `jobUrl` for grounding +
+applied-check for `relatedAppId`). Save + gate as above.
+
+### Save the returned draft
+
+Persist the worker's `contact` + each `message` (body already composed and humanized):
 
 ```bash
-curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --arg name "<name>" --arg title "<title>" --arg company "<company>" \
-    --arg li "<linkedin-url>" --arg email "<email-or-empty>" --arg src "google" \
-    --arg chan "email" --arg jobUrl "<job-url-or-empty>" \
+  -d "$(jq -n --arg name "<contact.name>" --arg title "<contact.title>" --arg company "<contact.company>" \
+    --arg li "<contact.linkedinUrl>" --arg email "<contact.email-or-empty>" --arg esrc "<contact.emailSource-or-guessed>" \
+    --arg src "<contact.discoverySource>" --arg chan "<message.channel>" --arg subject "<message.subject-or-empty>" \
+    --arg body "<message.body>" --arg kind "<message.linkedinKind-or-empty>" --arg jobUrl "<job-url-or-empty>" \
     '{contact:{name:$name,title:$title,company:$company,linkedinUrl:$li,
-      email:(if $email=="" then null else $email end),emailSource:"guessed",discoverySource:$src,
+      email:(if $email=="" then null else $email end),emailSource:$esrc,discoverySource:$src,
       relatedJobUrl:(if $jobUrl=="" then null else $jobUrl end)},
-      message:{channel:$chan,body:""}}')"
+      message:{channel:$chan,subject:(if $subject=="" then null else $subject end),body:$body,
+      linkedinKind:(if $kind=="" then null else $kind end)}}')"
 ```
 
-Add `relatedAppId:<id>` when applied-check matched. Keep the returned `data.id` (messageId) and
-`data.contactId`. Create one message per channel.
+Add `relatedAppId:<id>` when applied-check matched. Keep the returned `id` (messageId) and
+`contactId`. Post one message per channel the worker returned, reusing the same `contactId`.
 
-## Phase 2: Compose
-
-Per contact, invoke the `tailor-resume` skill for the role to surface the 1–2 matching proof
-points — **this shapes the body even when no resume is sent**. Reuse the `humanizer` skill for
-tone.
-
-Sign as the user: name = `data.profile.{firstName, lastName}`, title = resume `content.basics.headline`
-(profile has no `name`/`headline`; active profile is `GET /api/profiles/active` → `{ profileId }`).
-
-**Style:** plain ASCII only (hyphens not em/en-dashes, straight quotes, no bullets — the terminal
-mangles non-ASCII). Short and direct; run `humanizer`; no template tells.
-
-Then per channel:
-
-- **Email**: short subject + body, one specific proof point, soft ask. Per `resumeInclude`:
-  `resumeUrl` present → append it verbatim (never a `localhost` URL); absent → no link.
-- **LinkedIn connect note** (free tier, not yet connected): ≤300 chars, no link.
-- **LinkedIn InMail** (premium) / **DM** (free, already connected): a few sentences.
-
-Save the draft:
-
-```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg s "<subject>" --arg b "<body>" --arg k "<linkedin-kind-or-empty>" \
-    '{subject:(if $s=="" then null else $s end),body:$b,
-      linkedinKind:(if $k=="" then null else $k end)}')"
-```
-
-(Set `linkedinKind` to `connect_note` | `inmail` | `dm` for LinkedIn messages.)
+**Rewrite mode** reuses the worker for compose only: delegate with the existing contact's
+`target` (no new discovery needed), then `PATCH .../outreach/<id>` the returned `subject`/`body`.
 
 ## Phase 3: Approval gate (by `autonomy`)
 
@@ -162,28 +140,28 @@ In the board loop this runs per contact as drafted; for criteria-only, once over
 - **auto** → send within `dailyCap`. **Email only**; LinkedIn connect requests pace at a low cap;
   **never auto-send InMail**.
 
-## Phase 4: Send loop (pace 3–5s; respect `dailyCap`)
+## Phase 4: Send loop (pace 3-5s; respect `dailyCap`)
 
 For each message to send:
 
-- **Email** — send (carry `threadId` on follow-ups for threading):
+- **Email** - send (carry `threadId` on follow-ups for threading):
   ```bash
-  SENT=$(curl -fsS -X POST "$JOBPILOT_API/api/email/send" \
+  SENT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/send" \
     -H 'content-type: application/json' \
     -d "$(jq -n --arg to "<email>" --arg s "<subject>" --arg b "<body>" \
       '{to:$to,subject:$s,body:$b}')")
-  PID=$(echo "$SENT" | jq -r '.data.providerId'); TID=$(echo "$SENT" | jq -r '.data.threadId')
-  curl -fsS -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>/result" \
+  PID=$(echo "$SENT" | jq -r '.providerId'); TID=$(echo "$SENT" | jq -r '.threadId')
+  curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/outreach/<messageId>/result" \
     -H 'content-type: application/json' \
     -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg p "$PID" --arg th "$TID" \
       '{outcome:"sent",sentAt:$t,providerId:$p,threadId:$th}')"
   ```
-- **LinkedIn Premium** — navigate to the profile, open Message (InMail), type, send. POST
+- **LinkedIn Premium** - navigate to the profile, open Message (InMail), type, send. POST
   `/result` `{outcome:"sent",sentAt}`.
-- **LinkedIn free** — not connected: click Connect, add the note if offered, send; then mark the
+- **LinkedIn free** - not connected: click Connect, add the note if offered, send; then mark the
   parent contact pending and the message sent:
   `PATCH .../outreach/<messageId> {"contactLinkedinConnection":"pending"}` then POST `/result`
-  `sent`. Already connected: send the DM. On a re-run, re-check `pending` contacts — when
+  `sent`. Already connected: send the DM. On a re-run, re-check `pending` contacts - when
   messaging is available, set `"connected"` and send the queued DM.
 
 Failures → POST `/result` `{outcome:"failed",failReason:"<why>"}`. A guessed email that bounces
@@ -192,7 +170,7 @@ will surface later via inbox sync.
 ## Phase 5: Summary
 
 ```bash
-curl -fsS -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '{status:"completed",completedAt:$t}')"
 ```
@@ -201,10 +179,10 @@ Print a table (contact, channel, status) and link to `http://localhost:8000/camp
 
 ## Rules
 
-1. **Human-in-loop per `autonomy`** — never auto-send InMail; keep LinkedIn volume low with
+1. **Human-in-loop per `autonomy`** - never auto-send InMail; keep LinkedIn volume low with
    randomized pacing (protects the user's own account from ToS bans).
-2. **No attachment on a cold first touch** — resume goes out as a link only.
-3. **Dedupe** — skip contacts already messaged for the same role.
+2. **No attachment on a cold first touch** - resume goes out as a link only.
+3. **Dedupe** - skip contacts already messaged for the same role.
 4. **CAPTCHA / 2FA** during LinkedIn login → for a CAPTCHA, invoke the `solve-captcha` skill; if unsolved (or for 2FA), pause and ask (`../shared/auth.md`).
-5. **Personalize** — one specific, real detail per message; no generic templates.
-6. **The Campaign is the audit trail** — PATCH non-terminal edits; POST `/result` for terminal outcomes.
+5. **Personalize** - one specific, real detail per message; no generic templates.
+6. **The Campaign is the audit trail** - PATCH non-terminal edits; POST `/result` for terminal outcomes.

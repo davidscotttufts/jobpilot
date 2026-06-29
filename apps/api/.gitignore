@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.local
+
+# Generated Prisma client (regenerated via `prisma generate`)
+src/generated/
+
+# Local file storage (resumes, generated PDFs, backups).
+# Anchored with a leading slash so it matches only apps/api/storage/ — an
+# unanchored `storage/` also ignores the src/common/storage/ source module.
+/storage/

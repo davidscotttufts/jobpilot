@@ -12,6 +12,10 @@
     "files.trimTrailingWhitespace": false
   },
 
+  "[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+  },
+
   "[csharp]": {
     "editor.defaultFormatter": "ms-dotnettools.csharp",
     "editor.formatOnSave": true,
@@ -43,7 +47,5 @@
 
   "dotnet.formatting.organizeImportsOnFormat": true,
   "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-  "omnisharp.enableEditorConfigSupport": true,
-
-  "eslint.workingDirectories": [{ "pattern": "src/web" }]
+  "omnisharp.enableEditorConfigSupport": true
 }
