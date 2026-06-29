@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Add, Delete, MoreVert, PlayArrow } from "@mui/icons-material";
-import { Box, Button, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
@@ -108,42 +108,37 @@ function QueueRow(props: { entry: QueueEntryDto }): ReactElement {
   ];
 
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      sx={(t) => ({
-        alignItems: "center",
-        padding: 1,
-        borderRadius: t.radii.sm,
-        border: `1px solid ${t.palette.line.divider}`,
-      })}
-    >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-          {urlLabel(entry.url)}
-        </Typography>
-        <Typography variant="captionMuted" noWrap>
-          {entry.note ? `${entry.note} · ` : ""}
-          {formatRelativeTime(entry.createdAt)}
-        </Typography>
-      </Box>
-      <Button
-        size="small"
-        variant="text"
-        startIcon={<PlayArrow fontSize="sm" />}
-        onClick={() => void agent.injectSkill("apply", entry.url)}
+    <Card>
+      <CardContent
+        sx={{ display: "flex", alignItems: "center", gap: 1, p: 1, "&:last-child": { pb: 1 } }}
       >
-        Apply
-      </Button>
-      <DropdownMenu
-        stopPropagation
-        items={items}
-        trigger={({ onOpen }) => (
-          <IconButton size="small" aria-label="Queue entry actions" onClick={onOpen}>
-            <MoreVert fontSize="sm" />
-          </IconButton>
-        )}
-      />
-    </Stack>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
+            {urlLabel(entry.url)}
+          </Typography>
+          <Typography variant="captionMuted" noWrap>
+            {entry.note ? `${entry.note} · ` : ""}
+            {formatRelativeTime(entry.createdAt)}
+          </Typography>
+        </Box>
+        <Button
+          size="small"
+          variant="text"
+          startIcon={<PlayArrow fontSize="sm" />}
+          onClick={() => void agent.injectSkill("apply", entry.url)}
+        >
+          Apply
+        </Button>
+        <DropdownMenu
+          stopPropagation
+          items={items}
+          trigger={({ onOpen }) => (
+            <IconButton size="small" aria-label="Queue entry actions" onClick={onOpen}>
+              <MoreVert fontSize="sm" />
+            </IconButton>
+          )}
+        />
+      </CardContent>
+    </Card>
   );
 }

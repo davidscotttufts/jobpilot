@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Card, CardContent, CardHeader, Stack, Typography } from "@mui/material";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
 
 /** Active interview-stage buckets the raw application stages roll up into. */
@@ -13,7 +13,12 @@ export const FUNNEL_GROUPS = [
     tone: "violet",
     stages: ["recruiter_screen", "assessment", "hiring_manager_screen"],
   },
-  { key: "interview", label: "Interview", tone: "peach", stages: ["technical_interview", "onsite"] },
+  {
+    key: "interview",
+    label: "Interview",
+    tone: "peach",
+    stages: ["technical_interview", "onsite"],
+  },
   { key: "offer", label: "Offer", tone: "green", stages: ["offer"] },
 ] as const;
 
@@ -48,36 +53,17 @@ export function FunnelBar(props: FunnelBarProps): ReactElement {
         const active = selected === group.key;
         const toggle = (): void => onSelect(active ? null : group.key);
         return (
-          <Box
-            key={group.key}
-            role="button"
-            tabIndex={0}
-            onClick={toggle}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                toggle();
-              }
-            }}
-            sx={(t) => ({
-              flex: 1,
-              minWidth: 120,
-              cursor: "pointer",
-              padding: 1.25,
-              borderRadius: t.radii.sm,
-              border: `1px solid ${active ? t.palette.accent.primary : t.palette.line.divider}`,
-              backgroundColor: active ? "action.selected" : t.palette.surfaces.card,
-              transition: t.motion.standard,
-            })}
-          >
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
-              <PulseDot tone={group.tone as PulseDotTone} />
-              <Typography variant="captionMuted">{group.label}</Typography>
-            </Stack>
-            <Typography variant="h4" sx={{ mt: 0.5 }}>
-              {counts[group.key]}
-            </Typography>
-          </Box>
+          <Card key={group.key} variant="interactive" sx={{ flex: 1, minWidth: 120 }}>
+            <CardContent aria-pressed={active} onClick={toggle}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <PulseDot tone={group.tone as PulseDotTone} />
+                <Typography variant="captionMuted">{group.label}</Typography>
+              </Stack>
+              <Typography variant="h4" sx={{ mt: 0.5 }}>
+                {counts[group.key]}
+              </Typography>
+            </CardContent>
+          </Card>
         );
       })}
     </Stack>
