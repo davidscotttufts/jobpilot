@@ -2,15 +2,20 @@
 
 import { useState, type ReactElement } from "react";
 import type { JobBoardPatch } from "@jobpilot/contracts/job-board";
-import { Clear, Delete, Edit, Person, Search } from "@mui/icons-material";
+import { Clear, Delete, Edit, MoreVert, Search } from "@mui/icons-material";
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   IconButton,
   InputAdornment,
+  Link,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
 } from "@mui/material";
@@ -19,10 +24,11 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
 import { PaginationFooter } from "@/components/ui/data";
-import { ConfirmDialog } from "@/components/ui/feedback/confirm-dialog";
+import { DropdownMenu } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePagination } from "@/hooks/use-pagination";
+import { useConfirm } from "@/providers/confirm-provider";
 import { BoardFormDialog } from "./board-form-dialog";
 
 const PAGE_SIZE = 10;
@@ -30,10 +36,10 @@ const SEARCH_DEBOUNCE_MS = 200;
 
 export function BoardsContent(): ReactElement {
   const [editing, setEditing] = useState<JobBoardDto | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<JobBoardDto | null>(null);
   const [searchDraft, setSearchDraft] = useState("");
 
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
+  const confirm = useConfirm();
 
   const boards = useApiQuery<JobBoardDto[]>(queryKeys.jobBoards.list(), () =>
     api["job-boards"].get(),
@@ -53,9 +59,20 @@ export function BoardsContent(): ReactElement {
     {
       successMessage: "Board removed",
       invalidate: [queryKeys.jobBoards.all],
-      onSuccess: () => setPendingDelete(null),
     },
   );
+
+  const handleDelete = async (board: JobBoardDto): Promise<void> => {
+    const confirmed = await confirm({
+      title: "Delete board?",
+      description: `Remove "${board.name}"? Skills won't search this board until you add it back.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) {
+      remove.mutate(board.id);
+    }
+  };
 
   const allRows = boards.data ?? [];
   const needle = search.trim().toLowerCase();
@@ -130,37 +147,76 @@ export function BoardsContent(): ReactElement {
             <Typography variant="body2Muted">No boards match the current filters.</Typography>
           </Box>
         ) : (
-          <Stack spacing={1}>
-            {pageRows.map((b) => (
-              <Card key={b.id}>
-                <CardContent>
-                  <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {b.name}
-                      </Typography>
-                      <Typography variant="captionMuted">{b.domain}</Typography>
-                      {b.email && (
-                        <Typography
-                          variant="captionMuted"
-                          sx={{ display: "flex", alignItems: "center", gap: 0.5, mt: 0.25 }}
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Domain</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Search URL</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {pageRows.map((b) => (
+                  <TableRow key={b.id} hover>
+                    <TableCell sx={{ fontWeight: 600 }}>{b.name}</TableCell>
+                    <TableCell>{b.domain}</TableCell>
+                    <TableCell>
+                      {b.email ?? <Typography variant="captionMuted">—</Typography>}
+                    </TableCell>
+                    <TableCell>
+                      {b.searchUrl ? (
+                        <Link
+                          href={b.searchUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{
+                            display: "block",
+                            maxWidth: 280,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
                         >
-                          <Person fontSize="sm" />
-                          {b.email}
-                        </Typography>
+                          {b.searchUrl}
+                        </Link>
+                      ) : (
+                        <Typography variant="captionMuted">—</Typography>
                       )}
-                    </Box>
-                    <IconButton onClick={() => setEditing(b)} aria-label="Edit board">
-                      <Edit fontSize="md" />
-                    </IconButton>
-                    <IconButton onClick={() => setPendingDelete(b)} aria-label="Delete board">
-                      <Delete fontSize="md" />
-                    </IconButton>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
+                    </TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                      <DropdownMenu
+                        trigger={({ onOpen }) => (
+                          <IconButton onClick={onOpen} aria-label="Board actions">
+                            <MoreVert fontSize="md" />
+                          </IconButton>
+                        )}
+                        items={[
+                          {
+                            kind: "item",
+                            key: "edit",
+                            label: "Edit",
+                            icon: <Edit fontSize="sm" />,
+                            onClick: () => setEditing(b),
+                          },
+                          {
+                            kind: "item",
+                            key: "delete",
+                            label: "Delete",
+                            icon: <Delete fontSize="sm" />,
+                            danger: true,
+                            onClick: () => void handleDelete(b),
+                          },
+                        ]}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
 
         <PaginationFooter
@@ -191,19 +247,6 @@ export function BoardsContent(): ReactElement {
         onClose={() => setEditing(null)}
         onSubmit={(values) => editing && update.mutate({ id: editing.id, patch: values })}
         submitting={update.isPending}
-      />
-      <ConfirmDialog
-        open={pendingDelete !== null}
-        title="Delete board?"
-        description={
-          pendingDelete
-            ? `Remove "${pendingDelete.name}"? Skills won't search this board until you add it back.`
-            : ""
-        }
-        confirmLabel="Delete"
-        destructive
-        onConfirm={() => pendingDelete && remove.mutate(pendingDelete.id)}
-        onCancel={() => setPendingDelete(null)}
       />
     </>
   );

@@ -10,8 +10,8 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ApplicationDetailDto } from "@/api/types";
 import { StageChip } from "@/components/ui/display";
-import { ConfirmDialog } from "@/components/ui/feedback";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
+import { useConfirm } from "@/providers/confirm-provider";
 import { StageTimeline } from "./stage-timeline";
 import { StageTransitionDialog } from "./stage-transition-dialog";
 
@@ -25,7 +25,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
 
   const router = useRouter();
   const [stageDialogOpen, setStageDialogOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const confirm = useConfirm();
 
   const detail = useApiQuery<ApplicationDetailDto>(
     queryKeys.applications.detail(id),
@@ -47,6 +47,19 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
     onSuccess: () => router.replace("/"),
   });
+
+  const handleDelete = async (): Promise<void> => {
+    const confirmed = await confirm({
+      title: "Delete application?",
+      description:
+        "This removes the record and its stage history. The duplicate-check API will no longer match this URL.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) {
+      remove.mutate();
+    }
+  };
 
   const app = detail.data ?? initialApplication;
 
@@ -71,7 +84,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <Button variant="contained" onClick={() => setStageDialogOpen(true)}>
                 Update stage
               </Button>
-              <IconButton onClick={() => setConfirmDelete(true)} aria-label="Delete application">
+              <IconButton onClick={() => void handleDelete()} aria-label="Delete application">
                 <Delete fontSize="md" />
               </IconButton>
             </>
@@ -123,16 +136,6 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         onClose={() => setStageDialogOpen(false)}
         onSubmit={(values) => updateStage.mutate(values)}
         submitting={updateStage.isPending}
-      />
-
-      <ConfirmDialog
-        open={confirmDelete}
-        title="Delete application?"
-        description="This removes the record and its stage history. The duplicate-check API will no longer match this URL."
-        confirmLabel="Delete"
-        destructive
-        onConfirm={() => remove.mutate()}
-        onCancel={() => setConfirmDelete(false)}
       />
     </>
   );

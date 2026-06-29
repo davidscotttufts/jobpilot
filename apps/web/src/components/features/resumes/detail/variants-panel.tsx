@@ -19,8 +19,8 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
-import { ConfirmDialog } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
+import { useConfirm } from "@/providers/confirm-provider";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
 
 interface VariantsPanelProps {
@@ -30,8 +30,8 @@ interface VariantsPanelProps {
 
 export function VariantsPanel(props: VariantsPanelProps): ReactElement {
   const { resumeId, resumeLabel } = props;
-  const [confirmDelete, setConfirmDelete] = useState<ResumeVariantListItem | null>(null);
   const [search, setSearch] = useState("");
+  const confirm = useConfirm();
 
   const query = useApiQuery<ResumeVariantListItem[]>(queryKeys.resume.variants(resumeId), () =>
     api.resumes({ id: resumeId }).variants.get(),
@@ -42,9 +42,20 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
     {
       successMessage: "Variant deleted",
       invalidate: [queryKeys.resume.variants(resumeId)],
-      onSuccess: () => setConfirmDelete(null),
     },
   );
+
+  const handleDelete = async (variant: ResumeVariantListItem): Promise<void> => {
+    const confirmed = await confirm({
+      title: "Delete variant?",
+      description: `Remove "${variant.label}"? This cannot be undone.`,
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (confirmed) {
+      remove.mutate(variant.id);
+    }
+  };
 
   const variants = query.data ?? [];
   const term = search.trim().toLowerCase();
@@ -120,7 +131,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                       >
                         <OpenInNew fontSize="md" />
                       </IconButton>
-                      <IconButton onClick={() => setConfirmDelete(v)} aria-label="Delete variant">
+                      <IconButton onClick={() => void handleDelete(v)} aria-label="Delete variant">
                         <Delete fontSize="md" />
                       </IconButton>
                     </Stack>
@@ -131,15 +142,6 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
           )}
         </Stack>
       )}
-      <ConfirmDialog
-        open={confirmDelete !== null}
-        title="Delete variant?"
-        description={confirmDelete ? `Remove "${confirmDelete.label}"? This cannot be undone.` : ""}
-        confirmLabel="Delete"
-        destructive
-        onConfirm={() => confirmDelete && remove.mutate(confirmDelete.id)}
-        onCancel={() => setConfirmDelete(null)}
-      />
     </SectionCard>
   );
 }

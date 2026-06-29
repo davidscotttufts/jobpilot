@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import type { ReactElement } from "react";
 import { DocumentScanner } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import type { ResumeDto } from "@/api/types";
-import { ConfirmDialog } from "@/components/ui/feedback";
 import { useAgent } from "@/providers/agent-provider";
+import { useConfirm } from "@/providers/confirm-provider";
 import { buildCliArgs } from "@/utils/cli-args";
 
 interface ExtractResumeButtonProps {
@@ -15,8 +15,8 @@ interface ExtractResumeButtonProps {
 
 export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactElement {
   const { resume, size = "small" } = props;
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const agent = useAgent();
+  const confirm = useConfirm();
 
   const hasData = resume.content !== null;
 
@@ -27,31 +27,30 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
     );
   };
 
-  const handleClick = () => {
-    if (hasData) {
-      setConfirmOpen(true);
-    } else {
+  const handleClick = async (): Promise<void> => {
+    if (!hasData) {
       void run(false);
+      return;
+    }
+    const confirmed = await confirm({
+      title: "Overwrite structured fields?",
+      description: `"${resume.label}" already has structured data. Re-extracting will replace every field with what is parsed from the PDF. Manual edits will be lost.`,
+      confirmLabel: "Overwrite",
+      destructive: true,
+    });
+    if (confirmed) {
+      void run(true);
     }
   };
 
   return (
-    <>
-      <Button size={size} variant="outlined" startIcon={<DocumentScanner />} onClick={handleClick}>
-        {hasData ? "Re-extract from PDF" : "Extract from PDF"}
-      </Button>
-      <ConfirmDialog
-        open={confirmOpen}
-        title="Overwrite structured fields?"
-        description={`"${resume.label}" already has structured data. Re-extracting will replace every field with what is parsed from the PDF. Manual edits will be lost.`}
-        confirmLabel="Overwrite"
-        destructive
-        onConfirm={() => {
-          setConfirmOpen(false);
-          void run(true);
-        }}
-        onCancel={() => setConfirmOpen(false)}
-      />
-    </>
+    <Button
+      size={size}
+      variant="outlined"
+      startIcon={<DocumentScanner />}
+      onClick={() => void handleClick()}
+    >
+      {hasData ? "Re-extract from PDF" : "Extract from PDF"}
+    </Button>
   );
 }
