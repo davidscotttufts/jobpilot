@@ -20,9 +20,9 @@ The user provides a version (e.g. `1.2.0`) or a bump type (`major`, `minor`,
 - **Tag format:** `terminal/vX.Y.Z` (matches `.github/workflows/release-terminal.yml` trigger `terminal/v*`)
 - **Release body:** the workflow sets `generate_release_notes: true`, so GitHub
   auto-generates notes from merged PRs/commits — no CHANGELOG section required.
-- **Build:** the workflow runs Native AOT publish for `linux-x64`, `osx-x64`,
-  `osx-arm64`, `win-x64` and archives each `apps/terminal/publish/` tree (the
-  native binary plus the bundled `plugin/`) to the GitHub Release.
+- **Build:** the workflow runs Native AOT publish for `linux-x64`, `osx-arm64`,
+  `win-x64` and archives each `apps/terminal/publish/` tree (the native binary
+  plus the bundled `plugin/`) to the GitHub Release.
 
 ## Steps
 
@@ -45,7 +45,7 @@ The user provides a version (e.g. `1.2.0`) or a bump type (`major`, `minor`,
 
 6. **Report:** show the new version and tag, and remind the user to run
    `git push && git push origin terminal/vX.Y.Z` to trigger the `Release Terminal`
-   workflow (AOT binaries for all four RIDs + auto-generated notes).
+   workflow (AOT binaries for all three RIDs + auto-generated notes).
 
 ## Do NOT
 
