@@ -18,7 +18,7 @@ User approves once up front. No per-job confirmation after that.
 Follow `../shared/setup.md` to load profile, resume, credentials.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
+JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 ```
 
 Read `autoApply` for config (defaults applied per field):

@@ -96,7 +96,7 @@ const AgentDockContext = createContext<AgentDockContextValue | null>(null);
 
 function describeInjectError(error: unknown): string {
   if (error instanceof TypeError) {
-    return "JobPilot Terminal isn't reachable. Start it (bun run dev) and open the Terminal tab in the dock.";
+    return "The JobPilot agent isn't reachable. Open the agent dock to install and start it, then try again.";
   }
 
   if (error instanceof TerminalApiError) {

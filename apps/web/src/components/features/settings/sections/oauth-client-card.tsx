@@ -2,27 +2,17 @@
 
 import type { ReactElement } from "react";
 import { oauthClientUpsertSchema, type OAuthClientUpsertInput } from "@jobpilot/contracts/email";
-import { CheckCircle, ContentCopy } from "@mui/icons-material";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  IconButton,
-  Link,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { CheckCircle } from "@mui/icons-material";
+import { Alert, Box, Button, Chip, Link, Stack, Tooltip, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { EmailAccountStatus, OAuthClientStatus } from "@/api/types";
+import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
-import { useToast } from "@/providers/notification-provider";
 
 /** "https://www.googleapis.com/auth/gmail.send" → "gmail.send". */
 const shortScope = (scope: string): string => scope.split("/").pop() ?? scope;
@@ -72,7 +62,6 @@ interface OAuthClientFormProps {
 
 function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
   const { config, connected } = props;
-  const toast = useToast();
   const confirm = useConfirm();
 
   const save = useApiMutation<OAuthClientStatus, OAuthClientUpsertInput>(
@@ -91,11 +80,6 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
       save.mutate({ clientId: value.clientId, clientSecret: value.clientSecret });
     },
   });
-
-  const copyRedirect = async (): Promise<void> => {
-    await navigator.clipboard.writeText(config.redirectUri);
-    toast.success("Redirect URI copied");
-  };
 
   const handleRemove = async (): Promise<void> => {
     const confirmed = await confirm({
@@ -148,28 +132,11 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
           <Typography variant="subtitle2" gutterBottom>
             Redirect URI
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Box
-              sx={{
-                flex: 1,
-                px: 1.5,
-                py: 1,
-                borderRadius: 1,
-                bgcolor: "action.hover",
-                fontFamily: "monospace",
-                fontSize: 13,
-                overflowX: "auto",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {config.redirectUri}
-            </Box>
-            <Tooltip title="Copy">
-              <IconButton onClick={copyRedirect} aria-label="Copy redirect URI">
-                <ContentCopy fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
+          <CopyField
+            value={config.redirectUri}
+            copyMessage="Redirect URI copied"
+            ariaLabel="Copy redirect URI"
+          />
         </Box>
 
         <Box>

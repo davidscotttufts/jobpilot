@@ -18,7 +18,7 @@ Follow `../shared/setup.md` to load profile, resume,
 credentials. Check the web app is up:
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
+JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/health" >/dev/null || { echo "JobPilot web is down. Start it with 'bun run dev'."; exit 1; }
 ```
 

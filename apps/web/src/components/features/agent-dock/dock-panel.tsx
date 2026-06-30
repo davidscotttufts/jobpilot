@@ -12,13 +12,18 @@ import {
   type SelectChangeEvent,
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
-import { PulseDot } from "@/components/ui/feedback";
+import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { useAgentDock } from "@/providers/agent-provider";
+import { AgentInstallCard } from "./agent-install-card";
 import { AgentOrb } from "./agent-orb";
+import { useTerminalHealth } from "./use-terminal-health";
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
+  const { health, recheck } = useTerminalHealth();
   const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
+  const statusLabel =
+    health === "reachable" ? "ready" : health === "unreachable" ? "offline" : "connecting";
 
   const handleProviderChange = (event: SelectChangeEvent<string>): void => {
     void switchProvider(event.target.value === "codex" ? "codex" : "claude");
@@ -42,8 +47,8 @@ export function DockPanel(): ReactElement {
               Agent
             </Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
-              <PulseDot tone="muted" pulsing={false} size="xs" />
-              <Typography variant="overlineMuted">ready</Typography>
+              <PulseDot tone="muted" pulsing={health === "checking"} size="xs" />
+              <Typography variant="overlineMuted">{statusLabel}</Typography>
             </Stack>
           </Stack>
         </Stack>
@@ -52,41 +57,50 @@ export function DockPanel(): ReactElement {
         </IconButton>
       </Stack>
 
-      <Stack
-        direction="row"
-        spacing={0.75}
-        sx={(theme) => ({
-          alignItems: "center",
-          paddingInline: theme.spacing(1.5),
-          paddingBlock: theme.spacing(0.75),
-          borderBottom: `1px solid ${theme.palette.line.divider}`,
-        })}
-      >
-        <Typography variant="captionMuted" sx={{ flex: 1 }}>
-          {providerLabel}
-        </Typography>
-        <Select
-          size="small"
-          value={provider}
-          onChange={handleProviderChange}
-          sx={{ minWidth: 120, fontSize: "0.75rem" }}
-        >
-          <MenuItem value="claude">Claude Code</MenuItem>
-          <MenuItem value="codex">Codex</MenuItem>
-        </Select>
-        <Tooltip title={`Restart ${providerLabel}`}>
-          <IconButton size="small" onClick={() => void restart()} aria-label="Restart">
-            <RestartAlt fontSize="sm" />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title={`Stop ${providerLabel}`}>
-          <IconButton size="small" onClick={() => void stop()} aria-label="Stop">
-            <StopCircle fontSize="sm" />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-
-      <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
+      {health === "checking" && (
+        <Stack sx={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <LoadingSpinner />
+        </Stack>
+      )}
+      {health === "unreachable" && <AgentInstallCard onRecheck={recheck} />}
+      {health === "reachable" && (
+        <>
+          <Stack
+            direction="row"
+            spacing={0.75}
+            sx={(theme) => ({
+              alignItems: "center",
+              paddingInline: theme.spacing(1.5),
+              paddingBlock: theme.spacing(0.75),
+              borderBottom: `1px solid ${theme.palette.line.divider}`,
+            })}
+          >
+            <Typography variant="captionMuted" sx={{ flex: 1 }}>
+              {providerLabel}
+            </Typography>
+            <Select
+              size="small"
+              value={provider}
+              onChange={handleProviderChange}
+              sx={{ minWidth: 120, fontSize: "0.75rem" }}
+            >
+              <MenuItem value="claude">Claude Code</MenuItem>
+              <MenuItem value="codex">Codex</MenuItem>
+            </Select>
+            <Tooltip title={`Restart ${providerLabel}`}>
+              <IconButton size="small" onClick={() => void restart()} aria-label="Restart">
+                <RestartAlt fontSize="sm" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={`Stop ${providerLabel}`}>
+              <IconButton size="small" onClick={() => void stop()} aria-label="Stop">
+                <StopCircle fontSize="sm" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+          <TerminalPanel key={`${provider}-${terminalRevision}`} provider={provider} />
+        </>
+      )}
     </Stack>
   );
 }

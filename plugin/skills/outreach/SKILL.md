@@ -15,7 +15,7 @@ Backed by a `Campaign` (`source: "outreach"`); each contacted person + message i
 Follow `../shared/setup.md` (health, profile, primary/tailored resume, credentials).
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
+JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 ```
 
 - Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `.canSend` is false,

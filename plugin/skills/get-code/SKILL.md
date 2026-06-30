@@ -13,7 +13,7 @@ Return the most recent verification code (or magic link) for a given board domai
 Read `../shared/setup.md` to load `JOBPILOT_API`.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
+JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 BOARD_DOMAIN="$1"
 ```
 

@@ -1,22 +1,23 @@
 # JobPilot
 
-A local-first AI job-application app. An Elysia + PostgreSQL API owns all
-state, a Next.js web UI talks to it, and an embedded Claude Code or Codex
-terminal session runs the JobPilot provider skills against real job boards via
-Playwright.
+A multi-user AI job-application app. The Next.js web UI and the Elysia +
+PostgreSQL API (which owns all state) are **hosted**; each user runs the
+JobPilot **agent locally** - an embedded Claude Code or Codex session that runs
+the provider skills against real job boards via Playwright, on the user's own
+Claude/Codex subscription.
 
 ## Components
 
-- **Web app** ([apps/web/](apps/web/)) - `http://localhost:4100`. The Next.js
+- **Web app** ([apps/web/](apps/web/)) - hosted; dev `:4100`. The Next.js
   UI for profile, credentials, resumes, job boards, applications, campaigns,
   and the batch queue. It embeds an xterm.js terminal panel and exposes "Run
   autopilot" / "Run apply" buttons that inject slash commands.
-- **API** ([apps/api/](apps/api/)) - `http://localhost:4101`. Bun + Elysia +
+- **API** ([apps/api/](apps/api/)) - hosted; dev `:4101`. Bun + Elysia +
   Prisma backend that owns all persistence (PostgreSQL; resumes under
   `apps/api/storage/`) and serves the typed `/api/*` surface (Swagger at
   `/swagger`).
-- **JobPilot.Terminal** ([apps/terminal/](apps/terminal/)) -
-  `http://localhost:4102`. .NET 10 ASP.NET Core process that owns one active
+- **JobPilot.Terminal** ([apps/terminal/](apps/terminal/)) - runs on each
+  user's machine; dev `:4102`. .NET 10 ASP.NET Core process that owns one active
   provider PTY (ConPTY) and bridges it to the web UI over WebSocket. The
   terminal drawer can switch between Claude Code and Codex.
 - **Plugin** ([plugin/](plugin/)) - one provider-neutral plugin loaded by both
@@ -44,6 +45,24 @@ Playwright.
     [.codex/agents/](.codex/agents/) into `~/.codex/agents/`.
 
 ## Quick Start
+
+### Use JobPilot (hosted)
+
+1. Open [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign in.
+2. Launch the agent from the dashboard. If the local agent isn't installed yet,
+   the dock shows a one-liner - or install it directly:
+   - **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
+   - **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
+3. Prefer your own Claude Code or Codex? Install the plugin from the
+   marketplace, then run the `setup` skill:
+
+   ```text
+   /plugin marketplace add https://github.com/suxrobgm/claude-plugins
+   /plugin install jobpilot@sukhrob-claude-plugins
+   /jobpilot:setup
+   ```
+
+### Develop
 
 ```bash
 git clone https://github.com/suxrobgm/jobpilot.git
@@ -160,7 +179,6 @@ scopes`** - a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
 ## Documentation
 
 - [docs/architecture.md](docs/architecture.md) - architecture walk-through.
-- [docs/self-hosting.md](docs/self-hosting.md) - operations and configuration.
 - [CLAUDE.md](CLAUDE.md) - contributor and agent context.
 
 ## Tech Stack

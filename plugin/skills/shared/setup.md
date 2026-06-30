@@ -3,11 +3,11 @@
 JobPilot stores all state in a Postgres-backed Elysia API. Skills call this API - never read files directly.
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"   # backend base URL
-JOBPILOT_WEB="${JOBPILOT_WEB:-http://localhost:4100}"   # web origin, for user-facing links
+JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"   # backend base URL
+JOBPILOT_WEB="${JOBPILOT_WEB:-https://jobpilot.suxrobgm.net}"   # web origin, for user-facing links
 ```
 
-Both injected by the terminal host. Use `$JOBPILOT_WEB` for any link shown to the user — never hard-code `localhost`.
+The terminal host injects these; the defaults above target the hosted app. Use `$JOBPILOT_WEB` for any link shown to the user - never hard-code `localhost`.
 
 ## Worker subagents (delegation)
 
@@ -18,13 +18,15 @@ Campaign skills offload the heavy per-iteration work (posting/form snapshots, ta
 
 ## Auth
 
-The API requires authentication. The terminal injects `JOBPILOT_API_TOKEN` (a personal access token); send it as a bearer header on every call:
+The API requires authentication. The terminal host injects `JOBPILOT_API_TOKEN` (a personal access token) when it launches the agent; send it as a bearer header on every call:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."
 ```
 
-If `JOBPILOT_API_TOKEN` is empty, calls return `401`. Tell the user to mint one (web app → account menu, or `POST /api/auth/tokens`) and set it in the terminal environment.
+**If `JOBPILOT_API_TOKEN` is empty, this session is not running inside the JobPilot terminal host.** Don't call authed endpoints (they return `401`); stop and tell the user:
+
+> JobPilot runs through the agent terminal in your dashboard. Open $JOBPILOT_WEB and launch the agent there - it signs in automatically. Or run the `setup` skill to install the agent terminal.
 
 Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at the top level. Errors are `{ code, message }` with an HTTP status.
 
@@ -42,7 +44,7 @@ curl -fsS "$JOBPILOT_API/api/health"
 
 On failure, stop and tell the user:
 
-> The JobPilot backend is not running. Start it with `bun run dev` from the repo root, then re-run this skill.
+> Can't reach the JobPilot backend at $JOBPILOT_API. Check your connection, then open $JOBPILOT_WEB and re-run this skill.
 
 Do not fall back to local JSON files - they have been removed.
 

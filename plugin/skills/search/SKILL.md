@@ -18,7 +18,7 @@ Search a single board (picked by the user when launching the campaign) and rank 
 3. Resolve the board:
 
    ```bash
-   JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
+   JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
    curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
    ```
 

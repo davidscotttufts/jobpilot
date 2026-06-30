@@ -11,7 +11,7 @@ Keep the chosen board open in tab 1; for each result that qualifies, delegate th
 ## Setup
 
 ```bash
-JOBPILOT_API="${JOBPILOT_API:-http://localhost:4101}"
+JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 ```
 
 Follow `../shared/setup.md`. Read `autoApply` (defaults applied per field):

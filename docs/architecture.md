@@ -7,16 +7,16 @@ together over HTTP and a single active PTY.
 
 **Next.js web app** ([apps/web/](../apps/web/)) is the UI layer. It renders
 profile, applications by stage, autopilot campaigns with per-job status, and
-the batch URL queue, talking to the API over HTTP (a dev proxy forwards
-`/api/*` to `:4101`).
+the batch URL queue, talking to the API directly over HTTP (no proxy - browser
+and server call the API via `API_BASE_URL`).
 
-**Elysia + PostgreSQL API** ([apps/api/](../apps/api/)) is the data layer on
-`127.0.0.1:4101`. It owns every persistent fact and serves the typed `/api/*`
+**Elysia + PostgreSQL API** ([apps/api/](../apps/api/)) is the data layer
+(hosted in production; dev `127.0.0.1:4101`). It owns every persistent fact and serves the typed `/api/*`
 surface (Swagger at `/swagger`). Prisma schema is split per domain under
 `apps/api/prisma/schema/`.
 
 **JobPilot.Terminal** ([apps/terminal/](../apps/terminal/)) is
-an ASP.NET Core minimal API on `127.0.0.1:4102`. It owns one active provider
+an ASP.NET Core minimal API on each user's machine (`127.0.0.1:4102`). It owns one active provider
 PTY (ConPTY via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
 over WebSocket. HTTP endpoints (`POST /sessions/start`, `POST /sessions/inject`,
 `DELETE /sessions/current`, `GET /healthz`, `GET /ws`) let UI buttons write
