@@ -1,8 +1,9 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using JobPilot.Terminal.Sessions;
 
-namespace JobPilot.Terminal;
+namespace JobPilot.Terminal.Realtime;
 
 /// <summary>
 /// Handles the browser WebSocket connection used by the embedded terminal.
@@ -65,7 +66,7 @@ public sealed class TerminalHub(SessionManager session, ILogger<TerminalHub> log
             {
               return;
             }
-            
+
             var type = typeProp.GetString();
 
             switch (type)

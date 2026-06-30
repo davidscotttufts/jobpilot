@@ -1,6 +1,6 @@
 using JobPilot.Terminal.Models;
 
-namespace JobPilot.Terminal;
+namespace JobPilot.Terminal.Sessions;
 
 /// <summary>
 /// Command and argument details used to launch a provider process.

@@ -13,4 +13,7 @@ namespace JobPilot.Terminal.Models;
 [JsonSerializable(typeof(TerminalProviderInfo[]))]
 // TypedResults.Problem returns this; the AOT serializer throws NotSupportedException without it.
 [JsonSerializable(typeof(ProblemDetails))]
+// Plugin auto-update: GitHub releases listing + the installed plugin manifest.
+[JsonSerializable(typeof(GitHubRelease[]))]
+[JsonSerializable(typeof(PluginManifest))]
 internal sealed partial class AppJsonContext : JsonSerializerContext;

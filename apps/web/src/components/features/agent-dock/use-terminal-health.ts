@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getStatus } from "@/lib/terminal";
+import { getStatus, type SessionStatus } from "@/lib/terminal";
 
 export type TerminalHealth = "checking" | "reachable" | "unreachable";
 
@@ -9,12 +9,15 @@ const POLL_INTERVAL_MS = 5000;
 
 export interface TerminalHealthState {
   health: TerminalHealth;
+  /** Last successful /healthz payload (host version, providers, …); null until first reachable. */
+  status: SessionStatus | null;
   recheck: () => void;
 }
 
 /** Polls the local terminal host; "reachable" when /healthz answers, "unreachable" on any error. */
 export function useTerminalHealth(): TerminalHealthState {
   const [health, setHealth] = useState<TerminalHealth>("checking");
+  const [status, setStatus] = useState<SessionStatus | null>(null);
   const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
@@ -23,8 +26,9 @@ export function useTerminalHealth(): TerminalHealthState {
 
     const probe = async (): Promise<void> => {
       try {
-        await getStatus();
+        const result = await getStatus();
         if (active) {
+          setStatus(result);
           setHealth("reachable");
         }
       } catch {
@@ -44,5 +48,5 @@ export function useTerminalHealth(): TerminalHealthState {
     };
   }, [nonce]);
 
-  return { health, recheck: () => setNonce((n) => n + 1) };
+  return { health, status, recheck: () => setNonce((n) => n + 1) };
 }

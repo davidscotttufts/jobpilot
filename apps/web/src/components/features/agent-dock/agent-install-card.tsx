@@ -4,22 +4,7 @@ import type { ReactElement } from "react";
 import { Refresh } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
-
-const INSTALL_COMMANDS = [
-  {
-    label: "Windows (PowerShell)",
-    command:
-      "irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex",
-  },
-  {
-    label: "macOS / Linux",
-    command:
-      "curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash",
-  },
-] as const;
-
-const isWindows = (): boolean =>
-  typeof navigator !== "undefined" && /win/i.test(navigator.userAgent);
+import { orderedInstallCommands } from "./agent-install";
 
 interface AgentInstallCardProps {
   onRecheck: () => void;
@@ -28,8 +13,7 @@ interface AgentInstallCardProps {
 /** Shown in the dock when the local terminal host is unreachable: install one-liners + recheck. */
 export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
   const { onRecheck } = props;
-  // Lead with the visitor's OS; the other command stays below.
-  const commands = isWindows() ? INSTALL_COMMANDS : [INSTALL_COMMANDS[1], INSTALL_COMMANDS[0]];
+  const commands = orderedInstallCommands();
 
   return (
     <Stack spacing={2} sx={{ flex: 1, minHeight: 0, p: 2, overflowY: "auto" }}>

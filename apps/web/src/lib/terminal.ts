@@ -14,6 +14,8 @@ export interface SessionStatus {
   session: "running" | "stopped";
   provider: TerminalProviderId;
   providers: TerminalProviderInfo[];
+  /** Host binary version, for the dashboard's "update available" prompt (the plugin self-updates). */
+  hostVersion: string;
 }
 
 export class TerminalApiError extends Error {

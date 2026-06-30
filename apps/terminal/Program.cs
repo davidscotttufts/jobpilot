@@ -1,6 +1,8 @@
-using JobPilot.Terminal;
 using JobPilot.Terminal.Models;
+using JobPilot.Terminal.Plugins;
 using JobPilot.Terminal.Pty;
+using JobPilot.Terminal.Realtime;
+using JobPilot.Terminal.Sessions;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,10 +25,16 @@ app.Lifetime.ApplicationStopping.Register(() =>
     session.Stop();
 });
 
+// Refresh the bundled plugin from the latest release before serving (no-op in dev, offline, or
+// when already current). Done before app.Run so no session can spawn against a half-swapped tree.
+await PluginUpdater.TryUpdateAsync(
+    app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("PluginUpdater"),
+    TimeSpan.FromSeconds(10));
+
 app.MapGet("/healthz", (SessionManager session) =>
 {
     var sessionState = session.State == SessionState.Running ? "running" : "stopped";
-    return TypedResults.Ok(new SessionStatus("ok", sessionState, session.ActiveProvider, SessionManager.Providers));
+    return TypedResults.Ok(new SessionStatus("ok", sessionState, session.ActiveProvider, SessionManager.Providers, SessionManager.HostVersion));
 });
 
 app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (StartSessionRequest request, SessionManager session) =>
@@ -42,7 +50,7 @@ app.MapPost("/sessions/start", Results<Ok<SessionStatus>, ProblemHttpResult> (St
           detail: ex.Message,
           statusCode: StatusCodes.Status500InternalServerError);
     }
-    return TypedResults.Ok(new SessionStatus("ok", "running", session.ActiveProvider, SessionManager.Providers));
+    return TypedResults.Ok(new SessionStatus("ok", "running", session.ActiveProvider, SessionManager.Providers, SessionManager.HostVersion));
 });
 
 app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (InjectRequest request, SessionManager session) =>
@@ -62,7 +70,7 @@ app.MapPost("/sessions/inject", async Task<Results<Ok, ProblemHttpResult>> (Inje
 app.MapDelete("/sessions/current", (SessionManager session) =>
 {
     session.Stop();
-    return TypedResults.Ok(new SessionStatus("ok", "stopped", session.ActiveProvider, SessionManager.Providers));
+    return TypedResults.Ok(new SessionStatus("ok", "stopped", session.ActiveProvider, SessionManager.Providers, SessionManager.HostVersion));
 });
 
 app.Map("/ws", async (HttpContext ctx, TerminalHub hub) =>
