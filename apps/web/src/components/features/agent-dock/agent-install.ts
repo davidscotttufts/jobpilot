@@ -1,6 +1,9 @@
 const GITHUB_REPO = "suxrobGM/jobpilot";
 const INSTALL_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/apps/terminal`;
 
+/** GitHub API endpoint listing published releases (latest first). */
+export const RELEASES_URL = `https://api.github.com/repos/${GITHUB_REPO}/releases`;
+
 const INSTALL_COMMANDS = [
   { label: "Windows (PowerShell)", command: `irm ${INSTALL_BASE}/install.ps1 | iex` },
   { label: "macOS / Linux", command: `curl -fsSL ${INSTALL_BASE}/install.sh | bash` },
@@ -14,4 +17,9 @@ const isWindows = (): boolean =>
 /** Install commands with the visitor's OS first. */
 export function orderedInstallCommands(): readonly InstallCommand[] {
   return isWindows() ? INSTALL_COMMANDS : [INSTALL_COMMANDS[1], INSTALL_COMMANDS[0]];
+}
+
+/** The install one-liner for the visitor's OS. */
+export function primaryInstallCommand(): string {
+  return orderedInstallCommands()[0].command;
 }

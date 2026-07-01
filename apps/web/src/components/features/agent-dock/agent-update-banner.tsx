@@ -6,7 +6,7 @@ import { Alert, IconButton, Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
 import { primaryInstallCommand, RELEASES_URL } from "./agent-install";
 
-const TAG_PREFIX = "terminal/v";
+const TAG_PREFIX = "v";
 
 interface GitHubRelease {
   tag_name: string;
@@ -44,19 +44,26 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
         const res = await fetch(RELEASES_URL, {
           headers: { accept: "application/vnd.github+json" },
         });
-        if (!res.ok) return;
+
+        if (!res.ok) {
+          return;
+        }
+
         const releases = (await res.json()) as GitHubRelease[];
         const versions = releases
           .map((r) => r.tag_name)
           .filter((tag) => tag.startsWith(TAG_PREFIX))
           .map((tag) => tag.slice(TAG_PREFIX.length));
+
         if (active && versions.length > 0) {
           setLatest(versions.reduce((max, v) => (isNewer(v, max) ? v : max)));
         }
       } catch {
         // offline or rate-limited - no banner
+        console.warn("Failed to check for agent updates");
       }
     };
+
     void check();
     return () => {
       active = false;
