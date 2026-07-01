@@ -25,8 +25,8 @@ const STATUS_COLOR: Record<UpworkProfileStatus, "default" | "info" | "warning" |
 
 const STATUS_LABEL: Record<UpworkProfileStatus, string> = {
   empty: "Not generated",
-  draft: "Draft — review",
-  approved: "Approved — ready to apply",
+  draft: "Draft - review",
+  approved: "Approved - ready to apply",
   applied: "Applied to Upwork",
 };
 
@@ -90,7 +90,7 @@ export function ProfileEnhancer(): ReactElement {
           <EmptyState
             variant="inline"
             title="No suggestions yet."
-            description="Run “Generate suggestions” — the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
+            description="Run “Generate suggestions” - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
           />
         )}
       </Stack>

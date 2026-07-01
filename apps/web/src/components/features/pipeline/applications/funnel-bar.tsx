@@ -33,7 +33,7 @@ export function groupForStage(stage: string): FunnelKey | null {
   return STAGE_TO_GROUP.get(stage) ?? null;
 }
 
-/** Stages past the initial "applied" bucket — i.e. an application that's interviewing. */
+/** Stages past the initial "applied" bucket - i.e. an application that's interviewing. */
 export const INTERVIEW_STAGES: ReadonlySet<string> = new Set(
   FUNNEL_GROUPS.filter((g) => g.key !== "applied").flatMap((g) => g.stages),
 );

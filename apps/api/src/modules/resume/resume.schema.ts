@@ -41,7 +41,7 @@ export const resumeDetailSchema = z.object({
   updatedAt: z.date(),
 });
 
-/** Result of updating a resume — id plus the bumped version. */
+/** Result of updating a resume - id plus the bumped version. */
 export const resumeUpdatedSchema = z.object({
   id: z.uuid(),
   version: z.number().int(),

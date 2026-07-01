@@ -10,7 +10,7 @@ export const pdfRequestSchema = z.object({
 /** Where a cover letter originated (mirrors `coverLetterSourceSchema`). */
 const coverLetterSource = z.enum(["apply", "auto-apply", "manual"]);
 
-/** A row in the cover-letter list (metadata only — no letter body). */
+/** A row in the cover-letter list (metadata only - no letter body). */
 export const coverLetterSummarySchema = z.object({
   id: z.uuid(),
   jobTitle: z.string().nullable(),
@@ -35,7 +35,7 @@ export const coverLetterDetailSchema = z.object({
 });
 
 /**
- * The newly created cover letter — the raw Prisma row is returned, so `source`
+ * The newly created cover letter - the raw Prisma row is returned, so `source`
  * is the un-narrowed column `string` and `createdAt` is a `Date` (serialized to
  * an ISO string on the wire).
  */

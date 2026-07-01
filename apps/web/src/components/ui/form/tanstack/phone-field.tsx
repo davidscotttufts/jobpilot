@@ -16,7 +16,7 @@ interface PhoneProps {
   fullWidth?: boolean;
 }
 
-/** TanStack Form-bound phone field — wires the canonical value/change/blur to the base PhoneField. */
+/** TanStack Form-bound phone field - wires the canonical value/change/blur to the base PhoneField. */
 export function Phone(props: PhoneProps): ReactElement {
   const { helperText, ...rest } = props;
   const field = useFieldContext<string | null | undefined>();

@@ -34,10 +34,10 @@ export const composerFormSchema = z
 export type CampaignMode = Extract<CampaignSource, "search" | "auto-apply" | "outreach">;
 export type ComposerFormValues = z.infer<typeof composerFormSchema>;
 
-/** Upwork is recommend-only — searched + scored, never auto-submitted. */
+/** Upwork is recommend-only - searched + scored, never auto-submitted. */
 export const UPWORK_DOMAIN = "upwork.com";
 export const UPWORK_MODE_DESCRIPTION =
-  "JobPilot searches Upwork, filters out low-quality and unresponsive clients, and ranks the rest by fit. Review the recommendations, then draft a proposal per job — you submit on Upwork yourself.";
+  "JobPilot searches Upwork, filters out low-quality and unresponsive clients, and ranks the rest by fit. Review the recommendations, then draft a proposal per job - you submit on Upwork yourself.";
 
 /**
  * Static defaults shared by the parent `useAppForm` and the `withForm` field
@@ -77,7 +77,7 @@ export function isBoardSelected(board: string): boolean {
 export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest["config"] {
   if (values.mode === "outreach") {
     // A selected board grounds outreach in real openings; the optional cap
-    // (reusing the maxApps field) maps to config.maxJobs — omit it to run until
+    // (reusing the maxApps field) maps to config.maxJobs - omit it to run until
     // the user stops. No board → criteria-only discovery.
     const searchesBoard = isBoardSelected(values.board);
     return {

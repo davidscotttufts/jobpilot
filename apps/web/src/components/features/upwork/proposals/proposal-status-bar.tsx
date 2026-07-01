@@ -27,7 +27,7 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
           label="Status"
           value={proposal.status}
           options={STATUS_OPTIONS}
-          emptyLabel="—"
+          emptyLabel="-"
           onChange={(v) => v && onChange({ status: v })}
         />
         {proposal.status === "closed" && (

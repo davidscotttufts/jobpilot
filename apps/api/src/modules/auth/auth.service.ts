@@ -52,7 +52,7 @@ export class AuthService {
     const autoVerified = env.NODE_ENV === "development";
     // Co-create the 1:1 profile (empty; onboarding populates it via PUT /api/profile)
     // so profileGuard always resolves for a registered user. Seed the default board
-    // catalog inline — Prisma fills profileId on each row from the parent create.
+    // catalog inline - Prisma fills profileId on each row from the parent create.
     const user = await this.prisma.user.create({
       data: {
         email: input.email,

@@ -7,7 +7,7 @@ import { resolveAuthUser } from "./auth.middleware";
 /**
  * Auth + the user's single profile (1:1). Self-contained (resolves the user
  * itself rather than nesting authGuard, whose scoped derive would not propagate
- * here). No cookie, no "active profile" — browser and agent resolve identically.
+ * here). No cookie, no "active profile" - browser and agent resolve identically.
  */
 export const profileGuard = new Elysia({ name: "profile-guard" }).derive(
   { as: "scoped" },

@@ -82,7 +82,7 @@ export class CampaignOutreachService {
   }
 
   /**
-   * Non-terminal edits to an outreach message — draft body/subject edits,
+   * Non-terminal edits to an outreach message - draft body/subject edits,
    * `draft → approved`, and (via `contactLinkedinConnection`) the parent contact's
    * connection state. Terminal outcomes go through `recordOutreachResult`.
    */

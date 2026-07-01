@@ -24,7 +24,7 @@ export const credentialSchema = z
       // Exactly one shape, and a service credential carries no login fields.
       return service ? !present(c.email) && !present(c.password) : login;
     },
-    { message: "Provide an email + password, or an API key — not both." },
+    { message: "Provide an email + password, or an API key - not both." },
   );
 
 export const credentialPatchSchema = z.object({

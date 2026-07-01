@@ -164,7 +164,7 @@ export function BoardsContent(): ReactElement {
                     <TableCell sx={{ fontWeight: 600 }}>{b.name}</TableCell>
                     <TableCell>{b.domain}</TableCell>
                     <TableCell>
-                      {b.email ?? <Typography variant="captionMuted">—</Typography>}
+                      {b.email ?? <Typography variant="captionMuted">-</Typography>}
                     </TableCell>
                     <TableCell>
                       {b.searchUrl ? (
@@ -183,7 +183,7 @@ export function BoardsContent(): ReactElement {
                           {b.searchUrl}
                         </Link>
                       ) : (
-                        <Typography variant="captionMuted">—</Typography>
+                        <Typography variant="captionMuted">-</Typography>
                       )}
                     </TableCell>
                     <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>

@@ -4,7 +4,7 @@ using JobPilot.Terminal.Models;
 namespace JobPilot.Terminal.Plugins;
 
 /// <summary>
-/// Refreshes the bundled plugin/ tree from the latest <c>v*</c> release at startup — the fast,
+/// Refreshes the bundled plugin/ tree from the latest <c>v*</c> release at startup - the fast,
 /// no-relaunch path (a directory swap), so skills stay current even when the <see cref="HostUpdater"/>
 /// binary swap defers. No-ops on any failure (the bundled copy stays); the caller supplies the shared
 /// releases list, the resolved plugin dir, and does the dev-checkout guard.

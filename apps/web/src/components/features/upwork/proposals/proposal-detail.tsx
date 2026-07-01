@@ -151,7 +151,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
           </Typography>
         ) : (
           <Typography variant="body2Muted">
-            Not generated yet. Click Generate to run the proposal skill in the terminal — this page
+            Not generated yet. Click Generate to run the proposal skill in the terminal - this page
             updates automatically when it finishes.
           </Typography>
         )}

@@ -9,7 +9,7 @@ interface EmptyStateProps {
   action?: ReactNode;
   /**
    * `card` (default) renders a full dashed-border panel. `inline` renders a
-   * compact centered message — use inside a SectionCard or list where a panel
+   * compact centered message - use inside a SectionCard or list where a panel
    * would be too heavy.
    */
   variant?: "card" | "inline";

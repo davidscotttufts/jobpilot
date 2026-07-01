@@ -36,7 +36,7 @@ export const campaignApplicationSchema = z
   .nullable();
 
 /**
- * Result of recording a job's terminal outcome — the updated job, the Application
+ * Result of recording a job's terminal outcome - the updated job, the Application
  * row (when applied), and the recomputed campaign summary.
  */
 export const campaignJobResultResponseSchema = z.object({

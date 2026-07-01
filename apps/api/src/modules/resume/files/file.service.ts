@@ -27,7 +27,7 @@ export class ResumeFileService {
     return this.streamResumePdf(resume);
   }
 
-  /** Public (unauthenticated) PDF render — the uuid acts as an unguessable token. */
+  /** Public (unauthenticated) PDF render - the uuid acts as an unguessable token. */
   async renderPublicPdf(id: string): Promise<Response> {
     const resume = await this.prisma.resume.findUnique({ where: { id } });
     if (!resume) {

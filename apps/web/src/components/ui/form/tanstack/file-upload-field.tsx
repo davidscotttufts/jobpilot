@@ -11,7 +11,7 @@ interface FileUploadProps {
   maxBytes?: number;
 }
 
-/** TanStack Form-bound file upload — wires a `File | null` field to the base FileUpload dropzone. */
+/** TanStack Form-bound file upload - wires a `File | null` field to the base FileUpload dropzone. */
 export function FileUpload(props: FileUploadProps): ReactElement {
   const { label, accept, maxBytes } = props;
   const field = useFieldContext<File | null | undefined>();

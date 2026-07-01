@@ -89,7 +89,7 @@ export class PipelineService {
     limit: number,
     filters: PipelineFilters,
   ): Promise<PipelineColumnPage> {
-    // Queued entries live in QueueEntry, which has no campaignId — a campaign scope can
+    // Queued entries live in QueueEntry, which has no campaignId - a campaign scope can
     // never match them, so short-circuit (mirrors the board handling).
     if (filters.board || filters.campaignId) {
       return emptyPage("queued");

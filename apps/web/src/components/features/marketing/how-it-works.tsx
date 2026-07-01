@@ -7,7 +7,7 @@ import { fontFamilies } from "@/theme";
 const STEPS = [
   {
     title: "Connect your agent",
-    body: "Run JobPilot locally — it drives Claude or Codex through your own terminal, on your subscription.",
+    body: "Run JobPilot locally - it drives Claude or Codex through your own terminal, on your subscription.",
   },
   {
     title: "Launch a campaign",

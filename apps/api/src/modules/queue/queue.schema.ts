@@ -19,7 +19,7 @@ export const queueEntrySchema = z.object({
 /** A list of queue entries. */
 export const queueListSchema = z.array(queueEntrySchema);
 
-/** Result of upserting job URLs into the queue — inserted count plus the entries. */
+/** Result of upserting job URLs into the queue - inserted count plus the entries. */
 export const queueAddedSchema = z.object({
   inserted: z.number().int(),
   items: z.array(queueEntrySchema),

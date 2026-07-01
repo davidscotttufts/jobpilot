@@ -89,7 +89,7 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           mixBlendMode: "screen",
         })}
       />
-      {/* slower counter-rotating dim arc — adds depth */}
+      {/* slower counter-rotating dim arc - adds depth */}
       <Box
         sx={{
           position: "absolute",
@@ -105,7 +105,7 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           opacity: 0.7,
         }}
       />
-      {/* donut hole — masks the rotating layers in the middle */}
+      {/* donut hole - masks the rotating layers in the middle */}
       <Box
         sx={(theme) => ({
           position: "absolute",

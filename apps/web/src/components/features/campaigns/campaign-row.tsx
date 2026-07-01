@@ -20,9 +20,9 @@ interface CampaignRowProps {
   campaign: CampaignDto;
   /** Highlights the row as the active board scope. */
   selected?: boolean;
-  /** Primary click — e.g. open the campaign. */
+  /** Primary click - e.g. open the campaign. */
   onSelect?: (campaign: CampaignDto) => void;
-  /** Secondary affordance — open the full campaign detail. */
+  /** Secondary affordance - open the full campaign detail. */
   onOpenDetail?: (campaign: CampaignDto) => void;
 }
 

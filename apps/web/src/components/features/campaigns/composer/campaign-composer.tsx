@@ -95,7 +95,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const isUpwork = board === UPWORK_DOMAIN;
   const isOutreach = mode === "outreach";
 
-  // Upwork has no auto-apply/outreach path — pin the mode to search.
+  // Upwork has no auto-apply/outreach path - pin the mode to search.
   useEffect(() => {
     if (isUpwork && mode !== "search") {
       form.setFieldValue("mode", "search");

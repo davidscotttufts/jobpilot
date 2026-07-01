@@ -15,7 +15,7 @@ interface ToggleProps {
   exclusive?: boolean;
 }
 
-/** TanStack Form-bound toggle group — wires a string field to an exclusive (or multi) toggle. */
+/** TanStack Form-bound toggle group - wires a string field to an exclusive (or multi) toggle. */
 export function Toggle(props: ToggleProps): ReactElement {
   const { label, options, exclusive = true } = props;
   const field = useFieldContext<string>();

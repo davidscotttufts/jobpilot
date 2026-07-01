@@ -23,7 +23,7 @@ interface SectionAnchorNavProps {
  * scroll viewport. Pair with `<Box data-section-id={id}>` wrappers on each
  * target section. Clicking an anchor smooth-scrolls to its section.
  *
- * Hidden below the `lg` breakpoint to keep narrow viewports clean — the
+ * Hidden below the `lg` breakpoint to keep narrow viewports clean - the
  * sections themselves still render stacked.
  */
 export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {

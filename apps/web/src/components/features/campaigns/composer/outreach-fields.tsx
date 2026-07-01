@@ -84,7 +84,7 @@ export const OutreachFields = withForm({
         )}
 
         <Typography variant="captionMuted">
-          The resume you selected above is shared as a link in each email — cold-email attachments
+          The resume you selected above is shared as a link in each email - cold-email attachments
           hurt deliverability.
         </Typography>
       </Stack>

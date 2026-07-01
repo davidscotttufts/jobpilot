@@ -28,7 +28,7 @@ export async function verifyAccessToken(token: string): Promise<AuthUser | null>
       email: typeof payload.email === "string" ? payload.email : "",
     };
   } catch {
-    // Invalid signature / expiry / malformed — treated as unauthenticated.
+    // Invalid signature / expiry / malformed - treated as unauthenticated.
     return null;
   }
 }

@@ -4,7 +4,7 @@
  * >= 90 as duplicates within a 30-day rolling window.
  *
  * Sibling of `fit.ts` (tech-keyword overlap for job fit scoring) inside
- * `lib/scoring/`. Different normalization rules and metric — kept separate.
+ * `lib/scoring/`. Different normalization rules and metric - kept separate.
  */
 
 const SENIORITY_TOKENS = new Set([
@@ -125,7 +125,7 @@ function jaro(a: string, b: string): number {
 
 /**
  * Jaro-Winkler similarity, scaled 0..100. Boosts strings sharing a common
- * prefix (up to 4 chars) — typical for job titles like "Senior Frontend Engineer"
+ * prefix (up to 4 chars) - typical for job titles like "Senior Frontend Engineer"
  * matching "Frontend Engineer" once seniority is normalized away.
  */
 function calculateSimilarity(a: string, b: string): number {

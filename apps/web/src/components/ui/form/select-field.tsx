@@ -20,7 +20,7 @@ interface SelectFieldProps<TValue extends string = string> {
 
 /**
  * Compact non-form-bound select used inside a FilterBar. Empty value
- * means "no filter" — selecting the empty option calls onChange(null).
+ * means "no filter" - selecting the empty option calls onChange(null).
  */
 export function SelectField<TValue extends string = string>(
   props: SelectFieldProps<TValue>,

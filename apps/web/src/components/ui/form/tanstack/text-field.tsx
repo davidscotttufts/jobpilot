@@ -15,7 +15,7 @@ interface TextFieldProps extends Omit<
   transform?: (value: string) => string;
 }
 
-/** TanStack Form-bound text field — wires value/change/blur and validation errors to the base TextField. */
+/** TanStack Form-bound text field - wires value/change/blur and validation errors to the base TextField. */
 export function TextField(props: TextFieldProps): ReactElement {
   const { transform, type, ...rest } = props;
   const field = useFieldContext<FieldValue>();

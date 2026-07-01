@@ -52,7 +52,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         if (!c) {
           return (
             <Typography variant="captionMuted" sx={{ pl: 0.5 }}>
-              —
+              -
             </Typography>
           );
         }
@@ -92,7 +92,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
               variant="captionMuted"
               sx={{ height: "100%", display: "flex", alignItems: "center", pl: 0.5 }}
             >
-              —
+              -
             </Typography>
           );
         }

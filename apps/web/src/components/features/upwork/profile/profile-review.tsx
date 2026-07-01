@@ -144,7 +144,7 @@ function ReadonlyField(props: ReadonlyFieldProps): ReactElement {
           color: value ? "text.primary" : "text.disabled",
         }}
       >
-        {value || "—"}
+        {value || "-"}
       </Typography>
     </Box>
   );

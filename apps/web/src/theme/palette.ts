@@ -5,8 +5,8 @@ export const surfaces = {
   hover: "#28313B",
 } as const;
 
-// Brand ramp: flame (primary/dark) + thrust blue (secondary) — the Afterburner duotone.
-// Green is reserved for go/success — see `feedback.success` / `stages.submitted`.
+// Brand ramp: flame (primary/dark) + thrust blue (secondary) - the Afterburner duotone.
+// Green is reserved for go/success - see `feedback.success` / `stages.submitted`.
 export const accent = {
   primary: "#FF6A3D",
   secondary: "#3B82F6",

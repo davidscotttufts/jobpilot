@@ -16,7 +16,7 @@ export interface MultiSelectProps {
 
 /**
  * Themed multi-value autocomplete that renders chips for the selected strings.
- * Presentational and controlled — defaults to free-solo so users can add
+ * Presentational and controlled - defaults to free-solo so users can add
  * arbitrary entries.
  */
 export function MultiSelect(props: MultiSelectProps): ReactElement {

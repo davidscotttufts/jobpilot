@@ -18,7 +18,7 @@ export interface TextFieldProps extends Omit<MuiTextFieldProps, "error"> {
 /**
  * Themed text input built on MUI's TextField with inline error text and a
  * built-in show/hide toggle for `type="password"`. Presentational and
- * controlled — pass `value`/`onChange` (no form coupling).
+ * controlled - pass `value`/`onChange` (no form coupling).
  */
 export function TextField(props: TextFieldProps): ReactElement {
   const { errorText, helperText, type, slotProps, ...rest } = props;

@@ -32,7 +32,7 @@ export class ScoringService {
       try {
         derived = deriveProfileFitInputs(JSON.parse(content) as ResumeData);
       } catch {
-        // resume content malformed — fall back to caller-provided profile only
+        // resume content malformed - fall back to caller-provided profile only
       }
     }
 

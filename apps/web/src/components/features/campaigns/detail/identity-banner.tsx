@@ -9,7 +9,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
 
 /**
- * Compact inline identity line for the campaign header — the active profile's name +
+ * Compact inline identity line for the campaign header - the active profile's name +
  * email, so a wrong-identity issue (e.g. the agent filling the wrong email) is
  * obvious at a glance.
  */

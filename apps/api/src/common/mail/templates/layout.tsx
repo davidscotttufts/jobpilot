@@ -26,7 +26,7 @@ const wordmark = { color: "#18181b", fontSize: "22px", fontWeight: 700, margin: 
 const divider = { borderColor: "#e4e4e7", margin: "20px 0" };
 const footer = { color: "#71717a", fontSize: "12px", lineHeight: "18px", margin: 0 };
 
-/** Shared branded wrapper for transactional emails. Inline styles are required — email clients strip stylesheets. */
+/** Shared branded wrapper for transactional emails. Inline styles are required - email clients strip stylesheets. */
 export function EmailLayout(props: EmailLayoutProps) {
   const { preview, children } = props;
   return (
@@ -41,7 +41,7 @@ export function EmailLayout(props: EmailLayoutProps) {
           <Hr style={divider} />
           <Section>
             <Text style={footer}>
-              If you didn&apos;t request this, you can safely ignore this email — no changes will be
+              If you didn&apos;t request this, you can safely ignore this email - no changes will be
               made to your account.
             </Text>
           </Section>

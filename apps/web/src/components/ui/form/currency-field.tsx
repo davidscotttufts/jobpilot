@@ -22,7 +22,7 @@ export interface CurrencyFieldProps extends Omit<
 
 /**
  * Themed currency input: shows a grouped, symbol-prefixed value when blurred and
- * a raw editable number while focused. Presentational and controlled — emits the
+ * a raw editable number while focused. Presentational and controlled - emits the
  * parsed numeric value (or `undefined` when cleared) via `onChange`.
  */
 export function CurrencyField(props: CurrencyFieldProps): ReactElement {

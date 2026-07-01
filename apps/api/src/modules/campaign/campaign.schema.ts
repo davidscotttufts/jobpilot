@@ -68,7 +68,7 @@ export const campaignSchema = z.object({
 export const campaignListSchema = z.array(campaignSchema);
 
 /**
- * Result of creating a campaign — the raw created row with dates serialized but
+ * Result of creating a campaign - the raw created row with dates serialized but
  * `config`/`summary` left as the stored JSON strings (the service does not parse
  * them on create).
  */
@@ -90,7 +90,7 @@ export const campaignWithJobsSchema = campaignSchema.extend({
   jobs: z.array(campaignJobSchema),
 });
 
-/** Result of deleting a campaign — `deleted` flag plus the removed campaign id. */
+/** Result of deleting a campaign - `deleted` flag plus the removed campaign id. */
 export const campaignDeletedSchema = z.object({
   deleted: z.boolean(),
   campaignId: z.string(),

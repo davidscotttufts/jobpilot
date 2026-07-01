@@ -58,7 +58,7 @@ export function OnboardingWizard(): ReactElement {
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   // The user's single profile is co-created at registration, so onboarding just
-  // populates it via PUT /profile — no draft/active-profile dance.
+  // populates it via PUT /profile - no draft/active-profile dance.
   const save = useApiMutation<{ id: string }, ProfileWithAutoApplyInput>(
     (vars) => api.profile.put(vars),
     {
@@ -141,7 +141,7 @@ export function OnboardingWizard(): ReactElement {
         ) : (
           <Stack spacing={3}>
             <Typography variant="body2Muted">
-              Optional — you can set these up now or anytime later in Settings.
+              Optional - you can set these up now or anytime later in Settings.
             </Typography>
             {step === 6 && <EmailSection />}
             {step === 7 && <CredentialsSection />}

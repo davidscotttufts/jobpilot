@@ -27,7 +27,7 @@ interface OAuthClientCardProps {
 }
 
 /**
- * Step 1 — the user's own Google OAuth app. Reads its config and the mailbox
+ * Step 1 - the user's own Google OAuth app. Reads its config and the mailbox
  * status (seeded by the SSR page, shared keys dedupe with the connect card),
  * then mounts the form once data is present so initial values are correct.
  */

@@ -1,7 +1,7 @@
 /**
  * Shared keyword-normalization primitives for the tech-stack matching paths
  * (`scoring/fit.ts` and `resume/tailor.ts`). NOT for title/company duplicate
- * detection — that lives in `scoring/applied-duplicates.ts` and strips
+ * detection - that lives in `scoring/applied-duplicates.ts` and strips
  * seniority/company suffixes for Jaro-Winkler comparison.
  */
 
@@ -17,13 +17,13 @@ const SYNONYMS: Record<string, string[]> = {
 };
 
 /** Lowercase + strip all non-alphanumerics (no spaces). Use for tight equality
- *  comparison of single tech tokens — e.g. "Next.js" → "nextjs". */
+ *  comparison of single tech tokens - e.g. "Next.js" → "nextjs". */
 export function normalizeKeyword(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
 /** Lowercase + collapse non-alphanumerics to single spaces. Use as the haystack
- *  for substring search inside bullet/sentence text — preserves word boundaries
+ *  for substring search inside bullet/sentence text - preserves word boundaries
  *  so "React.js applications" → "react js applications" matches a "react js"
  *  variant without collapsing into a single run. */
 export function normalizePhrase(s: string): string {

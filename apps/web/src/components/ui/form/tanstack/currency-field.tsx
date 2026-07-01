@@ -7,7 +7,7 @@ import { useFieldContext } from "./form-context";
 
 type CurrencyProps = Omit<CurrencyFieldProps, "value" | "onChange" | "onBlur" | "errorText">;
 
-/** TanStack Form-bound currency field — wires a numeric field to the base CurrencyField. */
+/** TanStack Form-bound currency field - wires a numeric field to the base CurrencyField. */
 export function Currency(props: CurrencyProps): ReactElement {
   const field = useFieldContext<number | undefined>();
 

@@ -15,7 +15,7 @@ export function PortfolioList(props: PortfolioListProps): ReactElement {
   if (items.length === 0) {
     return (
       <Typography variant="body2" sx={{ color: "text.disabled" }}>
-        —
+        -
       </Typography>
     );
   }

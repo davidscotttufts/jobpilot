@@ -1,6 +1,6 @@
 import type { EmailAccount } from "@/generated/prisma/client";
 
-/** The OAuth client (app) a provider authenticates as — resolved per-user from the user's own EmailOAuthClient. */
+/** The OAuth client (app) a provider authenticates as - resolved per-user from the user's own EmailOAuthClient. */
 export interface OAuthClientConfig {
   clientId: string;
   clientSecret: string;
@@ -40,7 +40,7 @@ export interface NormalizedMessage {
   fromAddress: string;
   /** Sender display name (e.g. "Jane @ Acme"), or `null` if absent. */
   fromName: string | null;
-  /** Lowercased domain portion of `fromAddress` — used for matching. */
+  /** Lowercased domain portion of `fromAddress` - used for matching. */
   fromDomain: string;
   /** Short single-line preview supplied by the provider. */
   snippet: string;
@@ -60,7 +60,7 @@ export interface OutboundAttachment {
 /**
  * An outbound message to send. `threadId` keeps a reply in the same thread;
  * `inReplyTo` is the RFC822 Message-Id being answered. `attachments` is only
- * populated on the warm reply/second touch — never on a cold first touch.
+ * populated on the warm reply/second touch - never on a cold first touch.
  */
 export interface SendMessageInput {
   to: string;
@@ -125,7 +125,7 @@ export interface EmailProvider {
   /**
    * Send an outbound message from the connected mailbox. Returns the
    * provider's message + thread ids so callers can track replies. Callers
-   * must gate on `accountCanSend` first — this assumes send scope is present.
+   * must gate on `accountCanSend` first - this assumes send scope is present.
    */
   sendMessage(
     config: OAuthClientConfig,

@@ -26,14 +26,14 @@ spawning a provider it also exports `JOBPILOT_SKILLS_ROOT` and
 filesystem inference.
 
 **Plugin** ([plugin/](../plugin/)) is one provider-neutral plugin loaded by
-both providers — there is no generation step. It holds:
+both providers - there is no generation step. It holds:
 
-- `plugin/skills/<name>/SKILL.md` — one directory per workflow; shared imports
+- `plugin/skills/<name>/SKILL.md` - one directory per workflow; shared imports
   live under `plugin/skills/shared/*.md`. Skills reference sibling skills by
   name (e.g. "the `tailor-resume` skill") and shared docs by repo-relative path
   (`plugin/skills/shared/<doc>.md`), so the same text works for both providers.
-- `plugin/.mcp.json` — the Playwright MCP server.
-- `plugin/.claude-plugin/plugin.json` and `plugin/.codex-plugin/plugin.json` —
+- `plugin/.mcp.json` - the Playwright MCP server.
+- `plugin/.claude-plugin/plugin.json` and `plugin/.codex-plugin/plugin.json` -
   the per-provider manifests (both name the plugin `jobpilot`). Codex's loader
   ignores unknown frontmatter keys, so Claude-only fields like `allowed-tools`
   stay in the single tree without breaking Codex.
@@ -43,7 +43,7 @@ Terminal starts Claude Code with `--plugin-dir plugin`, or Codex with
 auto-discovers
 [.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json) from
 the working directory, which points at `./plugin` (a local plugin source must
-be a subdirectory — Codex rejects the repo root itself, which is why the
+be a subdirectory - Codex rejects the repo root itself, which is why the
 manifests live in `plugin/` rather than at the repo root). On first launch a
 user enables the plugin from the `/plugin` menu. Developers can also run
 providers directly:
@@ -129,5 +129,5 @@ loading config. Every skill hits `/api/health`, then
 
 `auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting browser
 behavior. `plugin/skills/humanizer/SKILL.md` is chained from the cover-letter
-and upwork-proposal workflows by name — each instructs the provider to invoke
+and upwork-proposal workflows by name - each instructs the provider to invoke
 the `humanizer` skill.

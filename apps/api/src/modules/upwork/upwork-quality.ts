@@ -10,14 +10,14 @@ import type {
  * smart-filter postings before recommending them: a `skip` verdict carries the
  * exact `skipReason` to record on the campaign Job.
  *
- * Every signal is nullable — a partially-readable card degrades toward a
+ * Every signal is nullable - a partially-readable card degrades toward a
  * neutral 0.5 rather than failing.
  *
  * Quality blend (each component 0..1, null = neutral 0.5):
  *   30% payment verified
  *   20% client hire rate
  *   20% spend + reviews (proven track record)
- *   15% proposal saturation (inverse — fewer competitors is better)
+ *   15% proposal saturation (inverse - fewer competitors is better)
  *   15% recency (fresh posts get seen)
  */
 
@@ -126,15 +126,15 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   if (client.paymentVerified === false) {
     skipReason = "Unverified payment";
   } else if (client.proposalsBucket === "50+") {
-    skipReason = "Saturated — 50+ proposals";
+    skipReason = "Saturated - 50+ proposals";
   } else if (
     client.hireRate != null &&
     client.hireRate < LOW_HIRE_RATE_PCT &&
     (client.reviewsCount ?? 0) >= MIN_REVIEWS_FOR_HIRE_RATE
   ) {
-    skipReason = `Low hire rate (${Math.round(client.hireRate)}%) — posts but rarely hires`;
+    skipReason = `Low hire rate (${Math.round(client.hireRate)}%) - posts but rarely hires`;
   } else if (
-    // Observed zeros only — a card we simply couldn't read (null) stays neutral.
+    // Observed zeros only - a card we simply couldn't read (null) stays neutral.
     client.totalSpent === 0 &&
     client.reviewsCount === 0 &&
     client.paymentVerified !== true

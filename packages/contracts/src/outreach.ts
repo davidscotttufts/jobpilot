@@ -15,7 +15,7 @@ export const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
 export const OUTREACH_AUTONOMY = ["draft", "review", "auto"] as const;
 export const outreachAutonomySchema = z.enum(OUTREACH_AUTONOMY);
 
-/** Shape of `Campaign.config.outreach` — the per-campaign mode selector. */
+/** Shape of `Campaign.config.outreach` - the per-campaign mode selector. */
 export const outreachConfigSchema = z.object({
   channels: z.array(outreachChannelSchema).min(1),
   linkedinTier: linkedinTierSchema.optional(),
@@ -94,7 +94,7 @@ export const outreachMessageFieldsSchema = z.object({
 });
 
 /**
- * POST /api/campaigns/[id]/outreach — add a discovered contact (or attach to an
+ * POST /api/campaigns/[id]/outreach - add a discovered contact (or attach to an
  * existing one via `contactId`) plus an initial draft message. Mirrors the
  * `addCampaignJobSchema` create-and-relate shape.
  */
@@ -108,7 +108,7 @@ export const addCampaignOutreachSchema = z
     message: "Provide either contactId or contact.",
   });
 
-/** PATCH /api/campaigns/[id]/outreach/[messageId] — non-terminal edits. */
+/** PATCH /api/campaigns/[id]/outreach/[messageId] - non-terminal edits. */
 export const patchOutreachMessageSchema = z.object({
   status: outreachMessageStatusSchema.optional(),
   subject: reasonText.optional().nullable(),
@@ -123,7 +123,7 @@ export const patchOutreachMessageSchema = z.object({
 export const OUTREACH_MESSAGE_OUTCOMES = ["sent", "failed", "skipped"] as const;
 export const outreachMessageOutcomeSchema = z.enum(OUTREACH_MESSAGE_OUTCOMES);
 
-/** POST /api/campaigns/[id]/outreach/[messageId]/result — terminal outcome. */
+/** POST /api/campaigns/[id]/outreach/[messageId]/result - terminal outcome. */
 export const outreachMessageResultSchema = z
   .object({
     outcome: outreachMessageOutcomeSchema,

@@ -22,7 +22,7 @@ import {
 
 /**
  * Derived from `google.auth.OAuth2` so the type always matches the bundled
- * `google-auth-library` that `googleapis` ships — importing the type from the
+ * `google-auth-library` that `googleapis` ships - importing the type from the
  * top-level `google-auth-library` can resolve to a different version and clash.
  */
 type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
@@ -167,7 +167,7 @@ export class GmailProvider implements EmailProvider {
           }
         }
       } catch {
-        // history cursor too old — fall back to list
+        // history cursor too old - fall back to list
       }
     }
 

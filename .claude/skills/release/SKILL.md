@@ -7,7 +7,7 @@ user-invocable: true
 # Release Skill
 
 Cut a new JobPilot release. Host and plugin share **one version** and ship from
-**one tag** (`vX.Y.Z`), which triggers `.github/workflows/release.yml` — it builds
+**one tag** (`vX.Y.Z`), which triggers `.github/workflows/release.yml` - it builds
 the terminal binaries for all RIDs, publishes the GitHub Release (terminal
 archives + `jobpilot-plugin.tar.gz`), and syncs the plugin tree into the
 `claude-plugins` marketplace.
@@ -20,12 +20,12 @@ The user provides a version (e.g. `2.1.0`) or a bump type (`major`, `minor`,
 ## Context
 
 - **Version source of truth (must stay in lockstep):**
-  - `apps/terminal/JobPilot.Terminal.csproj` — the `<Version>` element
-  - `plugin/.claude-plugin/plugin.json` — `"version"`
-  - `plugin/.codex-plugin/plugin.json` — `"version"`
-  - `package.json` — `"version"`
+  - `apps/terminal/JobPilot.Terminal.csproj` - the `<Version>` element
+  - `plugin/.claude-plugin/plugin.json` - `"version"`
+  - `plugin/.codex-plugin/plugin.json` - `"version"`
+  - `package.json` - `"version"`
 - **Tag format:** `vX.Y.Z` (matches the `v*` trigger in `release.yml`).
-- **Release notes:** the workflow sets `generate_release_notes: true` — no
+- **Release notes:** the workflow sets `generate_release_notes: true` - no
   CHANGELOG needed.
 
 ## Steps
@@ -36,7 +36,7 @@ The user provides a version (e.g. `2.1.0`) or a bump type (`major`, `minor`,
    - Use the user's explicit version, else compute from the bump type, else bump patch.
    - Verify the new version is strictly greater than the current highest.
 
-2. **Pre-flight checks** (stop and report on any failure — do not paper over):
+2. **Pre-flight checks** (stop and report on any failure - do not paper over):
    - Working tree is clean (`git status`).
    - Current branch is `main` (or ask if on another branch).
    - No existing tag `vX.Y.Z` (`git tag -l`).
@@ -52,7 +52,7 @@ The user provides a version (e.g. `2.1.0`) or a bump type (`major`, `minor`,
 
 ## Do NOT
 
-- Do not push — the user pushes when ready.
-- Do not let the four version fields drift — bump all to the same value.
-- Do not use `--no-verify` / `--no-gpg-sign` if hooks fail — report instead.
-- Do not amend a previous commit to roll the version — always a new commit.
+- Do not push - the user pushes when ready.
+- Do not let the four version fields drift - bump all to the same value.
+- Do not use `--no-verify` / `--no-gpg-sign` if hooks fail - report instead.
+- Do not amend a previous commit to roll the version - always a new commit.

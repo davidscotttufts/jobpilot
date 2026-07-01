@@ -146,7 +146,7 @@ public sealed class SessionManager : IDisposable
     /// <summary>
     /// Injects a command line into the running session, then submits it with a separate Enter keystroke.
     /// </summary>
-    /// <param name="command">Bare command line — no trailing newline; the submit key is sent by this method.</param>
+    /// <param name="command">Bare command line - no trailing newline; the submit key is sent by this method.</param>
     /// <param name="expectedProvider">Optional provider id the caller believes is active. When set,
     /// the inject is rejected if it does not match the active provider.</param>
     /// <returns>True if the command was written to the PTY; false when the session is stopped or the

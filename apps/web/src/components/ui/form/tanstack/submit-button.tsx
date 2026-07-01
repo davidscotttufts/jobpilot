@@ -9,7 +9,7 @@ interface SubmitButtonProps extends Omit<ButtonProps, "type" | "children"> {
 }
 
 /**
- * TanStack Form-bound submit button — subscribes to `canSubmit` / `isSubmitting`
+ * TanStack Form-bound submit button - subscribes to `canSubmit` / `isSubmitting`
  * and renders a `type="submit"` button, so the enclosing `<form onSubmit>` drives
  * submission. Pass `disabled` to fold in external state (e.g. a pending mutation).
  */

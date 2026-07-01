@@ -115,13 +115,13 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
             disabled={terminal}
             helperText={
               isConnectNote
-                ? `${body.length}/300 — LinkedIn connect notes are capped at 300 characters.`
+                ? `${body.length}/300 - LinkedIn connect notes are capped at 300 characters.`
                 : undefined
             }
           />
           {!isEmail && !terminal && (
             <Typography variant="captionMuted">
-              LinkedIn messages are sent through the agent in the browser — approve here, then run
+              LinkedIn messages are sent through the agent in the browser - approve here, then run
               the agent to send.
             </Typography>
           )}

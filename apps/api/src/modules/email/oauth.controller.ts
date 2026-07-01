@@ -47,7 +47,7 @@ export const emailOAuthController = new Elysia({
     detail: {
       summary: "Remove mailbox OAuth client config",
       description:
-        "Removes the profile's Google OAuth client. Returns 409 while a mailbox is still connected — disconnect it first.",
+        "Removes the profile's Google OAuth client. Returns 409 while a mailbox is still connected - disconnect it first.",
     },
   })
   // --- Connect flow ----------------------------------------------------------

@@ -90,7 +90,7 @@ export const CampaignBasicsFields = withForm({
                 <field.Select
                   label="Board"
                   optional={isOutreach}
-                  emptyLabel="No board — reach by criteria"
+                  emptyLabel="No board - reach by criteria"
                   items={boards.map((b) => ({ value: b.domain, label: b.name }))}
                 />
               )}
@@ -110,7 +110,7 @@ export const CampaignBasicsFields = withForm({
           )
         )}
 
-        {/* Resume is mandatory for every mode — it drives scoring and is tailored
+        {/* Resume is mandatory for every mode - it drives scoring and is tailored
             per application (search/auto-apply) or shared as a link (outreach). */}
         {resumes.length > 0 ? (
           <Stack spacing={0.75}>
@@ -126,7 +126,7 @@ export const CampaignBasicsFields = withForm({
               )}
             </form.AppField>
             <Typography variant="captionMuted">
-              JobPilot tailors a copy of this resume to each application automatically — your
+              JobPilot tailors a copy of this resume to each application automatically - your
               original stays unchanged.
             </Typography>
           </Stack>

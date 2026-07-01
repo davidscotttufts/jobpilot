@@ -102,7 +102,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
     });
 
     const start = async (): Promise<void> => {
-      // Fetch the token while the container settles — it's independent of terminal size.
+      // Fetch the token while the container settles - it's independent of terminal size.
       const tokenPromise = api.auth.tokens.terminal.post();
 
       if (disposed) {
@@ -112,7 +112,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       const { data, error } = await tokenPromise;
       if (error) {
         terminal.writeln(
-          `\x1b[31m[terminal] couldn't authenticate the agent — sign in to JobPilot, then restart the terminal. (${error.value.message})\x1b[0m`,
+          `\x1b[31m[terminal] couldn't authenticate the agent - sign in to JobPilot, then restart the terminal. (${error.value.message})\x1b[0m`,
         );
         return;
       }

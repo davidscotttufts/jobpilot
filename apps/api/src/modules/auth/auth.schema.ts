@@ -11,7 +11,7 @@ export const publicUserSchema = z.object({
   createdAt: z.date(),
 });
 
-/** Auth result returned by register/login/refresh — public user plus a fresh token pair. */
+/** Auth result returned by register/login/refresh - public user plus a fresh token pair. */
 export const authSessionSchema = z.object({
   user: publicUserSchema,
   accessToken: z.string(),
@@ -75,7 +75,7 @@ export const apiTokenSummarySchema = z.object({
 
 export const apiTokenListSchema = z.array(apiTokenSummarySchema);
 
-/** A freshly minted token (mirrors `ApiTokenService.mint`) — the raw token is shown once. */
+/** A freshly minted token (mirrors `ApiTokenService.mint`) - the raw token is shown once. */
 export const apiTokenMintedSchema = z.object({
   id: z.uuid(),
   name: z.string(),

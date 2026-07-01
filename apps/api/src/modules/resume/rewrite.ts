@@ -73,7 +73,7 @@ export function extractNumbers(text: string): Set<string> {
   return out;
 }
 
-/** All free-text from the resume, normalized — the haystack for drift checks. */
+/** All free-text from the resume, normalized - the haystack for drift checks. */
 export function buildCorpus(base: ResumeData): string {
   const parts: string[] = [];
 
@@ -108,7 +108,7 @@ function isTechLike(token: string): boolean {
 /**
  * Best-effort drift detection: tech-like tokens in `tailored` that are absent
  * from the master `original` AND from the resume `corpus`. These are flagged for
- * review, not rejected — single-capitalized names (e.g. "Kubernetes") can slip
+ * review, not rejected - single-capitalized names (e.g. "Kubernetes") can slip
  * past; the hard guarantee against fabrication is the numbers guard.
  */
 export function driftFlags(tailored: string, original: string, corpus: string): string[] {

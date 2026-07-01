@@ -187,7 +187,7 @@ export class ResumeVariantService {
 
   /**
    * Create a tailored resume variant from model-authored hints. The model
-   * never writes structured ResumeData — just a tailored `summary` and a
+   * never writes structured ResumeData - just a tailored `summary` and a
    * small `emphasizedTech`/`jobKeywords` array. The server applies a
    * deterministic ranking against the base content.
    */

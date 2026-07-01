@@ -67,7 +67,7 @@ export const duplicateMatchApplicationSchema = z.object({
   stage: stageSchema,
 });
 
-/** Result of a duplicate check — `applied` flag with the matching application when found. */
+/** Result of a duplicate check - `applied` flag with the matching application when found. */
 export const applicationCheckSchema = z.union([
   z.object({
     applied: z.literal(true),
@@ -89,7 +89,7 @@ export const applicationCheckSchema = z.union([
   }),
 ]);
 
-/** Result of a stage transition — id and the new stage (`unchanged` when already in that stage). */
+/** Result of a stage transition - id and the new stage (`unchanged` when already in that stage). */
 export const stageTransitionResultSchema = z.object({
   id: z.uuid(),
   stage: stageSchema,

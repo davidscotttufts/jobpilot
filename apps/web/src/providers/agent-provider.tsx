@@ -57,7 +57,7 @@ export function readAgentStorage(): Partial<AgentStorage> | null {
   return readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY);
 }
 
-/** Subscribe to agent-storage changes — same-tab patches and cross-tab writes. */
+/** Subscribe to agent-storage changes - same-tab patches and cross-tab writes. */
 export function subscribeAgentStorage(listener: () => void): () => void {
   ensureCrossTabListener();
   storageListeners.add(listener);

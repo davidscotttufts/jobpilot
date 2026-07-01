@@ -58,7 +58,7 @@ export const outreachMessageSchema = z.object({
 export const outreachMessageListSchema = z.array(outreachMessageSchema);
 
 /**
- * Result of recording an outreach message's terminal outcome — the updated
+ * Result of recording an outreach message's terminal outcome - the updated
  * message and the recomputed campaign summary.
  */
 export const outreachMessageResultResponseSchema = z.object({

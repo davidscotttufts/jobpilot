@@ -9,7 +9,7 @@ interface CheckboxProps {
   disabled?: boolean;
 }
 
-/** TanStack Form-bound checkbox — wires a boolean field's value and change handler. */
+/** TanStack Form-bound checkbox - wires a boolean field's value and change handler. */
 export function Checkbox(props: CheckboxProps): ReactElement {
   const { label, disabled } = props;
   const field = useFieldContext<boolean>();

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 /**
  * Returns a copy of `value` that updates only after `delayMs` has elapsed
- * without further changes — useful for search inputs or any source that
+ * without further changes - useful for search inputs or any source that
  * fires faster than downstream work can keep up with.
  *
  * @example

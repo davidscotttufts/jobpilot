@@ -11,7 +11,7 @@ import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 import { scoreUpworkClient } from "./upwork-quality";
 import { decodeUpworkProposal, toUpworkProfileDto } from "./upwork.mapper";
 
-/** Plain column writes — shared by upsert's create and update (no Prisma field-op wrappers). */
+/** Plain column writes - shared by upsert's create and update (no Prisma field-op wrappers). */
 interface UpworkProfileFields {
   currentTitle?: string | null;
   currentOverview?: string | null;

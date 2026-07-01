@@ -46,7 +46,7 @@ const PING = sse({ event: "ping" });
 
 /**
  * In-process SSE broker: each event gets a monotonic id and is buffered per topic, so a reconnecting
- * client replays what it missed via `Last-Event-ID`. Single-process only — multi-instance needs a shared bus.
+ * client replays what it missed via `Last-Event-ID`. Single-process only - multi-instance needs a shared bus.
  */
 export function createSseBroker<TEvent = unknown>(
   options: SseBrokerOptions = {},
@@ -56,7 +56,7 @@ export function createSseBroker<TEvent = unknown>(
   const historyLimit = options.historyLimit ?? 64;
   const retentionMs = options.retentionMs ?? 60_000;
 
-  // Process-wide (not per-topic) so ids never repeat — a stale Last-Event-ID can't match a recycled topic.
+  // Process-wide (not per-topic) so ids never repeat - a stale Last-Event-ID can't match a recycled topic.
   let seq = 0;
 
   const frameFor = (id: number, event: TEvent): TEvent =>
@@ -112,7 +112,7 @@ export function createSseBroker<TEvent = unknown>(
     },
 
     async *subscribe(topic, lastEventId) {
-      // Register synchronously, before the first await — no events are missed
+      // Register synchronously, before the first await - no events are missed
       // between subscribe-time and the first suspension.
       const sub: Subscriber<TEvent> = { queue: [], wake: null, closed: false };
       let t = topics.get(topic);
@@ -128,7 +128,7 @@ export function createSseBroker<TEvent = unknown>(
       }
 
       t.subscribers.add(sub);
-      // Replay covers (lastEventId, cutoff]; live events (id > cutoff) arrive via the queue — no overlap.
+      // Replay covers (lastEventId, cutoff]; live events (id > cutoff) arrive via the queue - no overlap.
       const cutoff = seq;
       const replay =
         lastEventId != null ? t.history.filter((h) => h.id > lastEventId && h.id <= cutoff) : [];

@@ -97,7 +97,7 @@ export class VerificationService {
     return { ok: true };
   }
 
-  /** Send a password-reset link. Always succeeds — never reveals whether the email exists. */
+  /** Send a password-reset link. Always succeeds - never reveals whether the email exists. */
   async requestPasswordReset(email: string): Promise<{ ok: true }> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (user) {
@@ -126,7 +126,7 @@ export class VerificationService {
         where: { id: record.id },
         data: { consumedAt: new Date() },
       }),
-      // Force re-login everywhere — a reset implies the old sessions may be compromised.
+      // Force re-login everywhere - a reset implies the old sessions may be compromised.
       this.prisma.refreshToken.updateMany({
         where: { userId: record.userId, revokedAt: null },
         data: { revokedAt: new Date() },

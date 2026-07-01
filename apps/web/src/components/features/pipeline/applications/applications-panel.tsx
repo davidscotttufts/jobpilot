@@ -15,7 +15,7 @@ import { FUNNEL_GROUPS, FunnelBar, groupForStage, type FunnelKey } from "./funne
 /** Campaign-filter sentinel for applications with no campaign (single-apply). */
 const SINGLE = "__single__";
 
-/** Tab 2 — cross-campaign application funnel + filterable, attributed table. */
+/** Tab 2 - cross-campaign application funnel + filterable, attributed table. */
 export function ApplicationsPanel(): ReactElement {
   const apps = useApiQuery<ApplicationDto[]>(queryKeys.applications.list({}), () =>
     api.applied.get({ query: {} }),

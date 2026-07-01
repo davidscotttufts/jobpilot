@@ -37,14 +37,14 @@ export function CoverLettersTable(): ReactElement {
       headerName: "Company",
       flex: 1,
       minWidth: 160,
-      valueGetter: (_v, row) => row.company ?? "—",
+      valueGetter: (_v, row) => row.company ?? "-",
     },
     {
       field: "jobTitle",
       headerName: "Role",
       flex: 1.2,
       minWidth: 180,
-      valueGetter: (_v, row) => row.jobTitle ?? "—",
+      valueGetter: (_v, row) => row.jobTitle ?? "-",
     },
     {
       field: "source",

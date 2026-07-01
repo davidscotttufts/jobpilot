@@ -18,7 +18,7 @@ interface ConnectCardProps {
 }
 
 /**
- * Step 2 — connect / reconnect / disconnect the mailbox (gated on a saved
+ * Step 2 - connect / reconnect / disconnect the mailbox (gated on a saved
  * client). Reads the mailbox status and client config (seeded by the SSR page,
  * shared keys dedupe with the OAuth client card).
  */

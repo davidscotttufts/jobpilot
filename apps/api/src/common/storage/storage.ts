@@ -117,7 +117,7 @@ export function slugifyForDownload(label: string): string {
  * Ensures a PDF exists at `cachePath`, rendering it via `render` on a miss. On a hit
  * it bumps the file's mtime so the prune sweep treats time-since-last-download as the
  * idle clock (a frequently downloaded PDF whose source hasn't changed stays warm). The
- * cache is fully regenerable — eviction only costs a re-render on the next request.
+ * cache is fully regenerable - eviction only costs a re-render on the next request.
  */
 export async function ensureCachedPdf(
   cachePath: string,
@@ -130,7 +130,7 @@ export async function ensureCachedPdf(
     await writeFile(cachePath, buffer);
     return;
   }
-  // Recency bump is best-effort — never fail a download because utimes hiccuped.
+  // Recency bump is best-effort - never fail a download because utimes hiccuped.
   const now = new Date();
   try {
     await utimes(cachePath, now, now);
@@ -150,7 +150,7 @@ export interface CachePruneResult {
  * Prunes the generated-PDF cache so it can't fill the disk: first evicts files idle
  * longer than `ttlMs`, then, if the survivors still exceed `maxBytes`, evicts coldest
  * (oldest mtime) first until under the cap. A `ttlMs`/`maxBytes` of 0 disables that
- * stage. Safe to run repeatedly — every evicted file is re-rendered on next download.
+ * stage. Safe to run repeatedly - every evicted file is re-rendered on next download.
  */
 export async function pruneGeneratedCache(opts: {
   ttlMs: number;
@@ -188,7 +188,7 @@ export async function pruneGeneratedCache(opts: {
   let freedBytes = 0;
   const survivors: typeof files = [];
 
-  // 1. TTL eviction — drop files untouched for longer than ttlMs.
+  // 1. TTL eviction - drop files untouched for longer than ttlMs.
   for (const f of files) {
     if (opts.ttlMs > 0 && now - f.mtimeMs > opts.ttlMs) {
       if (await tryUnlink(f.path)) {
@@ -200,7 +200,7 @@ export async function pruneGeneratedCache(opts: {
     }
   }
 
-  // 2. Size-cap eviction — coldest first until the survivors fit in maxBytes.
+  // 2. Size-cap eviction - coldest first until the survivors fit in maxBytes.
   let remainingBytes = survivors.reduce((n, f) => n + f.size, 0);
   if (opts.maxBytes > 0 && remainingBytes > opts.maxBytes) {
     survivors.sort((a, b) => a.mtimeMs - b.mtimeMs);

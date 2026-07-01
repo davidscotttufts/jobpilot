@@ -46,7 +46,7 @@ function emptyMessage(status: CampaignStatus): string {
     return "Discovering contacts…";
   }
   if (status === "paused" || status === "interrupted") {
-    return "No contacts yet — use Resume above to discover contacts and draft messages.";
+    return "No contacts yet - use Resume above to discover contacts and draft messages.";
   }
   return "No contacts were added.";
 }
@@ -224,7 +224,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
 
       {config?.channels.includes("email") && !canSend && (
         <Alert severity="warning">
-          Your mailbox can&apos;t send yet — reconnect Gmail in Settings to enable email sends.
+          Your mailbox can&apos;t send yet - reconnect Gmail in Settings to enable email sends.
         </Alert>
       )}
 

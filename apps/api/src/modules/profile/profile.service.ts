@@ -122,7 +122,7 @@ export class ProfileService {
       },
     });
 
-    // Replace the reference set wholesale — the settings form submits the full list.
+    // Replace the reference set wholesale - the settings form submits the full list.
     await this.prisma.$transaction([
       this.prisma.reference.deleteMany({ where: { profileId } }),
       this.prisma.reference.createMany({

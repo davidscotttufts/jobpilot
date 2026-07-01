@@ -1,6 +1,6 @@
 // Built from escapes so this source file stays free of literal replacement chars.
 const REPLACEMENT_ARTIFACT = new RegExp("(?:\\uFFFD|\\u00EF\\u00BF\\u00BD)+", "g");
-const EM_DASH = "—";
+const EM_DASH = "-";
 
 /**
  * Restores an em-dash from replacement-char artifacts left when an agent's typed

@@ -274,7 +274,7 @@ export class CampaignService {
       await tx.application.deleteMany({ where: { campaignId: id, profileId } });
       await tx.outreachMessage.deleteMany({ where: { campaignId: id, profileId } });
 
-      // Only contacts left with no messages and no related application — i.e. ones
+      // Only contacts left with no messages and no related application - i.e. ones
       // that existed solely for this campaign. Skips contacts referenced elsewhere.
       await tx.contact.deleteMany({
         where: { id: { in: contactIds }, profileId, messages: { none: {} }, relatedAppId: null },

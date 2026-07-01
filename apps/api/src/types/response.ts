@@ -34,16 +34,16 @@ export const httpErrorResponses = {
 
 // ── Common success envelopes ──────────────────────────────────────────────────
 
-/** `{ id }` — returned by most create/update routes. */
+/** `{ id }` - returned by most create/update routes. */
 export const idResponseSchema = z.object({ id: z.uuid() });
 
-/** `{ deleted }` — returned by delete routes that echo the removed id. */
+/** `{ deleted }` - returned by delete routes that echo the removed id. */
 export const deletedResponseSchema = z.object({ deleted: z.uuid() });
 
-/** `{ ok: true }` — generic acknowledgement (failures throw the error envelope). */
+/** `{ ok: true }` - generic acknowledgement (failures throw the error envelope). */
 export const okResponseSchema = z.object({ ok: z.literal(true) });
 
-/** `{ message }` — message-only acknowledgement. */
+/** `{ message }` - message-only acknowledgement. */
 export const messageResponseSchema = z.object({ message: z.string() });
 
 // ── Pagination ────────────────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ function VerifyTokenView(props: { token: string }): ReactElement {
   const fired = useRef(false);
 
   useEffect(() => {
-    // Fire once — the token is single-use, so a strict-mode double-invoke would
+    // Fire once - the token is single-use, so a strict-mode double-invoke would
     // make the second call fail against an already-consumed token.
     if (fired.current) {
       return;
@@ -94,7 +94,7 @@ function VerifyGateView(): ReactElement {
       </Typography>
 
       {resendVerification.isSuccess && (
-        <Alert severity="success">Verification email sent — check your inbox.</Alert>
+        <Alert severity="success">Verification email sent - check your inbox.</Alert>
       )}
       {resendVerification.error && (
         <Alert severity="error">{resendVerification.error.message}</Alert>

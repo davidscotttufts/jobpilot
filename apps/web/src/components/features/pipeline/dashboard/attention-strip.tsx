@@ -43,7 +43,7 @@ export function AttentionStrip(): ReactNode {
             ) : null
           }
         >
-          {interrupted.length} campaign{interrupted.length === 1 ? "" : "s"} interrupted — open one
+          {interrupted.length} campaign{interrupted.length === 1 ? "" : "s"} interrupted - open one
           and Resume.
         </Alert>
       )}

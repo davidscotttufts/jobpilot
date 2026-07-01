@@ -1,5 +1,5 @@
 /**
- * Pure-data descriptor of an SSE channel — safe to import from client and
+ * Pure-data descriptor of an SSE channel - safe to import from client and
  * server. `TUrlParams` and `TTopicParams` differ when the topic key is
  * server-resolved (e.g. from the session) and absent from the URL.
  */

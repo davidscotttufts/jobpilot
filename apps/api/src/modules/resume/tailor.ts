@@ -69,7 +69,7 @@ function reorderSkillGroups(skills: ResumeSkillGroup[], emphasized: string[]): R
  * Deterministic resume tailoring. Takes the base resume and a small set of
  * model-authored hints; returns a new ResumeData with skills reordered to
  * surface emphasized tech, bullets sorted by job-keyword overlap, and the
- * summary spliced if provided. The model never authors structured JSON —
+ * summary spliced if provided. The model never authors structured JSON -
  * just `summary` prose and a few hint arrays.
  */
 export function tailorBase(base: ResumeData, opts: TailorOptions): ResumeData {

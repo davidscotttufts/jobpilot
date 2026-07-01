@@ -24,7 +24,7 @@ export interface CoverLetterPdf {
 export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /** The active profile's cover letters, newest first (no body — list payload). */
+  /** The active profile's cover letters, newest first (no body - list payload). */
   async list(profileId: string) {
     const rows = await this.prisma.coverLetter.findMany({
       where: { profileId },
@@ -72,7 +72,7 @@ export class CoverLetterService {
 
   /**
    * Render the `cover-letter` skill's plain text to a PDF for upload-only
-   * application forms. Ephemeral — the text differs per job, so nothing is stored.
+   * application forms. Ephemeral - the text differs per job, so nothing is stored.
    */
   async renderEphemeralPdf(text: string, name?: string): Promise<CoverLetterPdf> {
     const buffer = await renderCoverLetterPdf(text);

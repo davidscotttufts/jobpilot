@@ -14,7 +14,7 @@ const LINES: Line[] = [
   { text: '$ jobpilot apply --campaign "Senior Frontend"', tone: "prompt" },
   { text: "✓ Signed in to linkedin.com", tone: "ok" },
   { text: "→ Scoring 24 roles against your resume", tone: "step" },
-  { text: "✓ Stripe · Senior Frontend Engineer — 92% match", tone: "ok" },
+  { text: "✓ Stripe · Senior Frontend Engineer - 92% match", tone: "ok" },
   { text: "→ Tailoring resume + cover letter", tone: "step" },
   { text: "✓ Application submitted", tone: "ok" },
   { text: "→ 11 applied · 3 interviewing · 0 failed", tone: "muted" },
@@ -29,7 +29,7 @@ const TONE_COLOR: Record<Line["tone"], string> = {
 
 /**
  * The page signature: a terminal transcript of the local agent running a
- * campaign — the literal thing JobPilot does, not a decorative chart.
+ * campaign - the literal thing JobPilot does, not a decorative chart.
  */
 export function AgentTranscript(): ReactElement {
   return (
@@ -57,7 +57,7 @@ export function AgentTranscript(): ReactElement {
           <Box key={c} sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: c }} />
         ))}
         <Typography variant="captionMuted" sx={{ fontFamily: fontFamilies.mono, pl: 1 }}>
-          agent — claude
+          agent - claude
         </Typography>
       </Stack>
       <Stack spacing={0.75} sx={{ padding: 2 }}>

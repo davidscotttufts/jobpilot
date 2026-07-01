@@ -26,7 +26,7 @@ function urlLabel(url: string): string {
   }
 }
 
-/** First-class queue of single-apply URLs — replaces the old dead "queued" column. */
+/** First-class queue of single-apply URLs - replaces the old dead "queued" column. */
 export function QueuePanel(): ReactElement {
   const agent = useAgent();
   const { openAddUrls } = usePipelineActions();

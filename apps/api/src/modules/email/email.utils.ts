@@ -42,7 +42,7 @@ export function decodeBase64Url(data: string): string {
   return Buffer.from(normalized, "base64").toString("utf-8");
 }
 
-/** Encode a UTF-8 string as base64url (no padding) — Gmail's `raw` format. */
+/** Encode a UTF-8 string as base64url (no padding) - Gmail's `raw` format. */
 export function encodeBase64Url(data: string | Buffer): string {
   const buf = typeof data === "string" ? Buffer.from(data, "utf-8") : data;
   return buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");

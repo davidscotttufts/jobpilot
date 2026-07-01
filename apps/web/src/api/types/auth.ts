@@ -5,7 +5,7 @@ import type { api } from "@/api/client";
 export type MeResponse = Data<typeof api.auth.me.get>;
 export type AuthUserDto = MeResponse["user"];
 
-/** Login/register response (tokens are ignored — auth rides the httpOnly cookie). */
+/** Login/register response (tokens are ignored - auth rides the httpOnly cookie). */
 export type AuthSessionResponse = Data<typeof api.auth.login.post>;
 
 export type LogoutResponse = Data<typeof api.auth.logout.post>;

@@ -47,7 +47,7 @@ model OutreachMessage {
   status     String    @default("draft") // draft | approved | sent | replied | bounced | failed | skipped
   failReason String?   @map("fail_reason")
   providerId String?   @map("provider_id") // Gmail message id (sent)
-  threadId   String?   @map("thread_id") // Gmail thread id — used for reply matching
+  threadId   String?   @map("thread_id") // Gmail thread id - used for reply matching
   sentAt     DateTime? @map("sent_at")
   repliedAt  DateTime? @map("replied_at")
   createdAt  DateTime  @default(now()) @map("created_at")

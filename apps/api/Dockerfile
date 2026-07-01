@@ -1,4 +1,4 @@
-# JobPilot API — run interpreted by Bun so the entrypoint can migrate at startup and tsyringe keeps its decorator metadata.
+# JobPilot API - run interpreted by Bun so the entrypoint can migrate at startup and tsyringe keeps its decorator metadata.
 FROM oven/bun:1-alpine AS deps
 WORKDIR /app
 
@@ -22,7 +22,7 @@ COPY apps/api ./apps/api
 WORKDIR /app/apps/api
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" bun run db:generate
 
-# Runtime — same alpine/musl base so the copied engine binaries match.
+# Runtime - same alpine/musl base so the copied engine binaries match.
 FROM oven/bun:1-alpine AS runner
 WORKDIR /app/apps/api
 

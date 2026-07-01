@@ -6,7 +6,7 @@ import { ResumeFileService } from "./file.service";
 const svc = container.resolve(ResumeFileService);
 
 /**
- * Unauthenticated resume PDF access — the resume's v4 uuid is the capability
+ * Unauthenticated resume PDF access - the resume's v4 uuid is the capability
  * token. Used for recipient-reachable links (e.g. outreach emails) where a
  * bearer-authed `/api/resumes/:id/pdf` would not be openable.
  */

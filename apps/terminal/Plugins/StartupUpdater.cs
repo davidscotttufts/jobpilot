@@ -5,7 +5,7 @@ namespace JobPilot.Terminal.Plugins;
 /// <summary>
 /// Startup entry point that runs both auto-updaters off a single releases fetch, before the server
 /// binds (so no session spawns mid-swap). No-ops in a dev checkout or offline. Returns true when the
-/// host self-updated and relaunched — the caller should exit without binding so the new build takes over.
+/// host self-updated and relaunched - the caller should exit without binding so the new build takes over.
 /// </summary>
 public static class StartupUpdater
 {

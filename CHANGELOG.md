@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- **Renamed the `Run` model and module to `Campaign`** throughout — DB tables
+- **Renamed the `Run` model and module to `Campaign`** throughout - DB tables
   (`Run`→`Campaign`, `RunEvent`→`CampaignEvent`, PK `runId`→`campaignId`),
   the `server/campaigns` module, all `/api/campaigns/*` routes, the
   `/campaigns` UI, SSE channels, and the skills (the UI now injects
@@ -26,7 +26,7 @@ web app before running any skill.**
 
 ### Added
 
-- **`web/`** — Bun + Next.js 16 (App Router, RSC, typed routes) + MUI 9 +
+- **`web/`** - Bun + Next.js 16 (App Router, RSC, typed routes) + MUI 9 +
   Prisma 7 (`prisma-client` generator, `@prisma/adapter-libsql` adapter
   for Bun-on-Windows compatibility) + TanStack Query 5 + TanStack Form 1
   - Zod v4. Bound to `127.0.0.1:8000` with no auth (single-user local
@@ -60,14 +60,14 @@ web app before running any skill.**
   `/runs/[id]/jobs` CRUD, `/runs/[id]/jobs/[jobKey]` PATCH,
   `/runs/[id]/events` POST + GET (SSE), `/runs/stats` GET, `/queue`
   GET/POST, `/queue/pending` GET, `/queue/[id]` PATCH/DELETE.
-- **Multi-file Prisma schema** under `web/prisma/schema/` — one file per
+- **Multi-file Prisma schema** under `web/prisma/schema/` - one file per
   domain (`base`, `profile`, `resume`, `credential`, `job-board`,
   `application`, `run`, `queue`).
-- **Fuzzy duplicate matching** (`web/src/lib/matching.ts`) — Jaro-Winkler
+- **Fuzzy duplicate matching** (`web/src/lib/matching.ts`) - Jaro-Winkler
   on normalized title + company (seniority + legal-suffix tokens
   stripped); 60/40 weighted score; threshold 90; 30-day rolling window.
   Pattern adapted from `job-ops/applied-duplicate-matching.ts`.
-- **In-process SSE broker** (`web/src/lib/sse.ts`) — per-runId
+- **In-process SSE broker** (`web/src/lib/sse.ts`) - per-runId
   `Map<string, Set<controller>>` with a 15s heartbeat. `PATCH` to runs
   or run-jobs publishes `status` / `progress` / `job-update` events.
 - **`useRunEvents(runId)` hook** opens an `EventSource` and invalidates
@@ -114,9 +114,9 @@ offer / rejected / withdrawn`. Each transition writes a `StageEvent`
 ### Removed
 
 - `scripts/{check-applied,log-applied,update-run,run-stats,export-csv,_ensure-jq}.sh`
-  — replaced by `/api/applied/check`, `/api/applied`,
-  `/api/runs/[id]/jobs/[jobKey]` PATCH, `/api/runs/stats`,
-  `/api/applied/export.csv`.
+  - replaced by `/api/applied/check`, `/api/applied`,
+    `/api/runs/[id]/jobs/[jobKey]` PATCH, `/api/runs/stats`,
+    `/api/applied/export.csv`.
 - `applied-jobs.json` (now the `Application` table).
 - `runs/*.json` (now `Run` + `RunJob` + `RunEvent` tables, with SSE
   events instead of file polling).
@@ -125,7 +125,7 @@ offer / rejected / withdrawn`. Each transition writes a `StageEvent`
   at `/onboarding`).
 - `jobs-to-apply.txt`, `jobs-to-apply.example.txt` (now `QueueEntry`
   rows, managed at `/queue`).
-- `dashboard` skill — superseded by the web dashboard at
+- `dashboard` skill - superseded by the web dashboard at
   `http://localhost:8000/`. Use the browser; the per-skill text summary
   was redundant.
 - `docs/configuration.md` (replaced by `docs/self-hosting.md`).

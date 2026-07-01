@@ -4,7 +4,7 @@ import { z } from "zod/v4";
  * Strong-password policy shared by registration and password reset: at least
  * 8 characters spanning four character classes (upper, lower, number, symbol).
  * Login intentionally stays lax (`min(1)`) so existing accounts can still sign
- * in — the policy is only enforced when a password is set.
+ * in - the policy is only enforced when a password is set.
  */
 export const PasswordSchema = z
   .string()

@@ -67,7 +67,7 @@ export function usePersistedBoolean(
     try {
       window.localStorage.setItem(key, String(next));
     } catch {
-      // Ignore storage failures (private mode, quota) — state still updates in memory.
+      // Ignore storage failures (private mode, quota) - state still updates in memory.
     }
     notify();
   };

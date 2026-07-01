@@ -9,7 +9,7 @@ import { AgentTranscript } from "./agent-transcript";
 export function Hero(): ReactElement {
   return (
     <Box sx={{ position: "relative", overflow: "hidden" }}>
-      {/* Ambient brand orb — the one decorative flourish. */}
+      {/* Ambient brand orb - the one decorative flourish. */}
       <Box
         aria-hidden
         sx={(theme) => ({
@@ -43,7 +43,7 @@ export function Hero(): ReactElement {
               </Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 520 }}>
                 JobPilot drives Claude or Codex on your own subscription to search, tailor, apply,
-                and follow up — across every board, from one workspace. Your credentials and runs
+                and follow up - across every board, from one workspace. Your credentials and runs
                 stay local.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>

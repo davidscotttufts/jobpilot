@@ -105,7 +105,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     const confirmed = await confirm({
       title: "Delete campaign?",
       description:
-        "Permanently deletes this campaign and all of its data — jobs, history, applications it produced, and outreach. This cannot be undone.",
+        "Permanently deletes this campaign and all of its data - jobs, history, applications it produced, and outreach. This cannot be undone.",
       confirmLabel: "Delete campaign",
       destructive: true,
       confirmationText: "delete",
@@ -121,7 +121,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     setRescanOpen(false);
   };
 
-  // Outreach campaigns have no jobs to replay — re-run the outreach skill instead of `resume`.
+  // Outreach campaigns have no jobs to replay - re-run the outreach skill instead of `resume`.
   const handleResume = (): void => {
     void (campaign.source === "outreach"
       ? agent.injectSkill("outreach", `--campaign ${campaign.campaignId}`)
@@ -204,7 +204,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
           <Stack spacing={1} sx={{ pt: 1 }}>
             <Typography variant="body2Muted">
               Re-scores the {skippedCount} skipped {skippedCount === 1 ? "job" : "jobs"} against a
-              new threshold and sets eligible ones to <strong>approved</strong> — apply them from
+              new threshold and sets eligible ones to <strong>approved</strong> - apply them from
               the jobs list or with Re-apply selected. Lower the threshold to recover jobs dropped
               just below the cutoff.
             </Typography>

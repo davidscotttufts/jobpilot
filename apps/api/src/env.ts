@@ -22,7 +22,7 @@ const EnvSchema = z.object({
     .string()
     .refine((v) => Buffer.from(v, "base64").length === 32, "must be base64 of 32 bytes"),
 
-  // CSV of allowed browser origins for CORS (credentials mode — no wildcard).
+  // CSV of allowed browser origins for CORS (credentials mode - no wildcard).
   CORS_ORIGINS: z.string().default("http://localhost:4100"),
   // Public web origin, used for OAuth redirects back to the app.
   APP_URL: z.string().default("http://localhost:4100"),
@@ -33,11 +33,11 @@ const EnvSchema = z.object({
   LOG_LEVEL: z.string().default("info"),
 
   // Google OAuth (Gmail) callback URL. Client id/secret are per-user (entered in the
-  // app); only this shared callback is configured here — users register it in their own client.
+  // app); only this shared callback is configured here - users register it in their own client.
   GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:4101/api/email/oauth/callback"),
 
   // Transactional email (Resend). Optional: when unset, the app logs the email
-  // body (incl. magic links) instead of sending — fine for local dev.
+  // body (incl. magic links) instead of sending - fine for local dev.
   RESEND_API_KEY: z.string().optional(),
   // Sender of account emails. `onboarding@resend.dev` is Resend's no-domain test
   // sender (only delivers to the Resend account owner); production needs a verified domain.

@@ -37,7 +37,7 @@ export const accountStatusSchema = z.union([
 /** Confirmation returned by disconnecting the mailbox (`account.disconnectAccount`). */
 export const accountDisconnectedSchema = z.object({ disconnected: z.boolean() });
 
-/** OAuth client config status (`account.getOAuthClient`) — never includes the secret. */
+/** OAuth client config status (`account.getOAuthClient`) - never includes the secret. */
 export const oauthClientStatusSchema = z.object({
   configured: z.boolean(),
   provider: z.string(),
@@ -59,7 +59,7 @@ export const matchedAppSchema = z
   })
   .nullable();
 
-/** A serialized inbox message (`serializeMessage` — Date fields are ISO strings). */
+/** A serialized inbox message (`serializeMessage` - Date fields are ISO strings). */
 export const emailMessageSchema = z.object({
   id: z.uuid(),
   accountId: z.uuid(),

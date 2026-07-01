@@ -24,7 +24,7 @@ export type DropdownMenuItem =
       /** Renders the item as a `next/link`. Use the `as Route` cast for typed routes. */
       href?: Route;
       disabled?: boolean;
-      /** Tints the label red — for destructive actions like "Remove". */
+      /** Tints the label red - for destructive actions like "Remove". */
       danger?: boolean;
       show?: boolean;
     };

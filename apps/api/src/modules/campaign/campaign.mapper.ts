@@ -13,7 +13,7 @@ import type {
 import type { z } from "zod/v4";
 import type { Prisma } from "@/generated/prisma/client";
 
-/** Contact connection-state union — derived from the contract schema. */
+/** Contact connection-state union - derived from the contract schema. */
 type ContactLinkedinConnection = z.infer<typeof contactLinkedinConnectionSchema>;
 
 /**

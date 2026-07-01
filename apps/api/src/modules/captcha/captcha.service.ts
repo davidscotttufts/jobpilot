@@ -20,7 +20,7 @@ interface ProviderJob {
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLLS = 24; // ~120s budget
 
-/** 502 — the upstream solver failed or timed out. */
+/** 502 - the upstream solver failed or timed out. */
 function serviceError(message: string): HttpError {
   return new HttpError(ErrorCodes.INTERNAL, message, 502);
 }
@@ -104,7 +104,7 @@ export class CaptchaService {
   }
 
   /**
-   * CapSolver has no official Node SDK (REST-only, per docs.capsolver.com) — this
+   * CapSolver has no official Node SDK (REST-only, per docs.capsolver.com) - this
    * is a minimal typed client: create a task, then poll until it's ready.
    */
   private async solveWithCapSolver(apiKey: string, job: ProviderJob): Promise<string> {

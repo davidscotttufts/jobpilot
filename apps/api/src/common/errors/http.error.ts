@@ -1,4 +1,4 @@
-/** String error codes — kept stable because the web client and the agent's
+/** String error codes - kept stable because the web client and the agent's
  *  curl/jq skills read `error.code`. Do not switch to numeric codes. */
 export const ErrorCodes = {
   INVALID_REQUEST: "INVALID_REQUEST",

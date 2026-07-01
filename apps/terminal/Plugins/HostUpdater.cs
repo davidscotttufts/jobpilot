@@ -64,7 +64,7 @@ public static class HostUpdater
 
     /// <summary>
     /// Downloads/extracts/validates the release into a staging dir, then replaces the install. The running
-    /// exe is renamed aside (can't be overwritten while executing) and restored on failure — never bricked.
+    /// exe is renamed aside (can't be overwritten while executing) and restored on failure - never bricked.
     /// </summary>
     private static async Task SwapAsync(HttpClient http, string url, string exePath, string installDir, CancellationToken ct)
     {

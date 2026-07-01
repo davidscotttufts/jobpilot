@@ -4,7 +4,7 @@ import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 
-/** Where a resolved login came from — also the target to persist a refreshed password to. */
+/** Where a resolved login came from - also the target to persist a refreshed password to. */
 export type CredentialSource = "board" | "domain" | "default";
 
 export interface ResolvedCredential {
@@ -103,7 +103,7 @@ export class CredentialService {
     return { deleted: id };
   }
 
-  /** A row with both login fields present and the password decrypted — or null. */
+  /** A row with both login fields present and the password decrypted - or null. */
   private async toLogin(
     userId: string,
     row: { email: string | null; password: string | null } | null | undefined,

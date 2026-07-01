@@ -26,7 +26,7 @@ export class ApiTokenService {
     const created = await this.prisma.apiToken.create({
       data: { userId, name: input.name, tokenHash: hashToken(raw) },
     });
-    // The raw token is shown exactly once — the terminal stores it.
+    // The raw token is shown exactly once - the terminal stores it.
     return this.minted(created, raw);
   }
 

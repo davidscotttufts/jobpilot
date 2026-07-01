@@ -7,7 +7,7 @@ import { useFieldContext } from "./form-context";
 
 type MultiselectProps = Omit<MultiSelectProps, "value" | "onChange" | "onBlur" | "errorText">;
 
-/** TanStack Form-bound multi-select — wires a `string[]` field to the base MultiSelect. */
+/** TanStack Form-bound multi-select - wires a `string[]` field to the base MultiSelect. */
 export function Multiselect(props: MultiselectProps): ReactElement {
   const field = useFieldContext<string[]>();
 

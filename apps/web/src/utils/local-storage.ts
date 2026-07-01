@@ -2,7 +2,7 @@
  * Reads a JSON-serialized value from `window.localStorage` under `key`.
  * Returns `null` on SSR, when the key is missing, or when the stored value
  * cannot be parsed as JSON. The result is cast to `T` without runtime
- * validation — callers that need to defend against stale or hand-edited
+ * validation - callers that need to defend against stale or hand-edited
  * entries should validate the shape before using it.
  */
 export function readLocalStorage<T>(key: string): T | null {

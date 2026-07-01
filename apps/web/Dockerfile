@@ -1,4 +1,4 @@
-# JobPilot web — Next.js standalone. Needs the API source at build time (@jobpilot/api-client imports the App type).
+# JobPilot web - Next.js standalone. Needs the API source at build time (@jobpilot/api-client imports the App type).
 FROM oven/bun:1-slim AS base
 WORKDIR /app
 
@@ -28,7 +28,7 @@ RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" bun run db:gene
 WORKDIR /app/apps/web
 RUN bun run build
 
-# Runtime — Next.js standalone output on Node.
+# Runtime - Next.js standalone output on Node.
 FROM node:26-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production

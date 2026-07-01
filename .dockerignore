@@ -7,7 +7,7 @@ dist
 .git
 *.log
 
-# Secrets — never ship into an image
+# Secrets - never ship into an image
 .env
 .env.*
 !.env.example
