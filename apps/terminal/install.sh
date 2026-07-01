@@ -42,8 +42,8 @@ detect_platform() {
 get_latest_version() {
   local version
   version=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases" \
-    | grep -o '"tag_name": *"terminal/v[^"]*"' \
-    | sed 's/.*"terminal\/v\([^"]*\)".*/\1/' \
+    | grep -o '"tag_name": *"v[^"]*"' \
+    | sed 's/.*"v\([^"]*\)".*/\1/' \
     | sort -t. -k1,1n -k2,2n -k3,3n \
     | tail -1)
   if [ -z "$version" ]; then
@@ -54,7 +54,7 @@ get_latest_version() {
 
 download_and_install() {
   local rid="$1" version="$2"
-  local tag="terminal/${version}"
+  local tag="${version}"
   local archive="jobpilot-terminal-${rid}.tar.gz"
   local url="https://github.com/${REPO}/releases/download/${tag}/${archive}"
 

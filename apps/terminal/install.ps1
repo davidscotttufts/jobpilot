@@ -14,20 +14,20 @@ function Write-Info($Message) {
 
 function Get-LatestVersion {
     $releases = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases" -Headers @{ "User-Agent" = "jobpilot-installer" }
-    $terminalReleases = $releases | Where-Object { $_.tag_name -like "terminal/v*" }
+    $terminalReleases = $releases | Where-Object { $_.tag_name -like "v*" }
     if (-not $terminalReleases) {
-        throw "Could not find a terminal release. See https://github.com/$Repo/releases"
+        throw "Could not find a release. See https://github.com/$Repo/releases"
     }
     $highest = $terminalReleases |
-        ForEach-Object { [PSCustomObject]@{ Tag = $_.tag_name; Version = [Version]($_.tag_name -replace "^terminal/v", "") } } |
+        ForEach-Object { [PSCustomObject]@{ Tag = $_.tag_name; Version = [Version]($_.tag_name -replace "^v", "") } } |
         Sort-Object Version |
         Select-Object -Last 1
-    return $highest.Tag -replace "^terminal/", ""
+    return $highest.Tag
 }
 
 function Install-Terminal {
     $version = Get-LatestVersion
-    $tag = "terminal/$version"
+    $tag = $version
     $archive = "jobpilot-terminal-$Rid.zip"
     $url = "https://github.com/$Repo/releases/download/$tag/$archive"
 

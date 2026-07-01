@@ -17,7 +17,6 @@
     "build:api": "bun --cwd=apps/api run build",
     "build:web": "bun --cwd=apps/web run build",
     "build:terminal": "dotnet publish apps/terminal -c Release -o dist/terminal",
-    "sync:plugin": "bun run scripts/sync-plugin.ts",
     "format": "prettier --write ."
   },
   "devDependencies": {

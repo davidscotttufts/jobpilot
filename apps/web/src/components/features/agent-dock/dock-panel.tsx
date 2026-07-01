@@ -16,12 +16,11 @@ import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOrb } from "./agent-orb";
-import { AgentUpdateBanner } from "./agent-update-banner";
 import { useTerminalHealth } from "./use-terminal-health";
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
-  const { health, status, recheck } = useTerminalHealth();
+  const { health, recheck } = useTerminalHealth();
   const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
   const statusLabel =
     health === "reachable" ? "ready" : health === "unreachable" ? "offline" : "connecting";
@@ -66,7 +65,6 @@ export function DockPanel(): ReactElement {
       {health === "unreachable" && <AgentInstallCard onRecheck={recheck} />}
       {health === "reachable" && (
         <>
-          <AgentUpdateBanner currentVersion={status?.hostVersion ?? ""} />
           <Stack
             direction="row"
             spacing={0.75}

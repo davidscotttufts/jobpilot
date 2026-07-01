@@ -1,11 +1,13 @@
-# Build the .NET PTY host (AOT) for each OS and publish a GitHub Release.
-# Trigger by pushing a tag like `terminal/v0.1.0`.
-name: Release Terminal
+# One release for host + plugin. Push a tag like `v2.1.0` (or run manually to re-sync): builds the AOT
+# host per OS, publishes the Release (terminal archives + plugin tarball), and mirrors plugin/ into the
+# claude-plugins marketplace. Needs secret MARKETPLACE_PUSH_TOKEN (Contents:write on suxrobGM/claude-plugins).
+name: Release
 
 on:
   push:
     tags:
-      - "terminal/v*"
+      - "v*"
+  workflow_dispatch:
 
 jobs:
   build:
@@ -58,11 +60,42 @@ jobs:
       contents: write
 
     steps:
-      - name: Download artifacts
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download terminal artifacts
         uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      # Package the plugin/ contents (not the plugin/ dir itself) so the host
+      # extracts straight into its active plugin directory.
+      - name: Package plugin
+        run: tar -czf jobpilot-plugin.tar.gz -C plugin .
 
       - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v3
         with:
-          files: jobpilot-terminal-*/*
+          files: |
+            artifacts/*/jobpilot-terminal-*
+            jobpilot-plugin.tar.gz
           generate_release_notes: true
+
+      - name: Checkout marketplace
+        uses: actions/checkout@v7
+        with:
+          repository: suxrobGM/claude-plugins
+          token: ${{ secrets.MARKETPLACE_PUSH_TOKEN }}
+          path: marketplace
+
+      # Mirror plugin/ into the vendored marketplace copy and commit if changed.
+      - name: Sync to marketplace
+        run: |
+          rsync -a --delete plugin/ marketplace/plugins/jobpilot/
+          cd marketplace
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore: sync jobpilot plugin ${GITHUB_REF_NAME}"
+          git push

@@ -16,6 +16,13 @@ builder.Services.ConfigureHttpJsonOptions(c =>
 
 var app = builder.Build();
 
+// Auto-update host + plugin before binding. If the host self-updated it relaunched into the new build,
+// so exit and let that process bind the port.
+if (await StartupUpdater.RunAsync(app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Updater")))
+{
+    return;
+}
+
 app.UseCors(c => c.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
@@ -24,12 +31,6 @@ app.Lifetime.ApplicationStopping.Register(() =>
     var session = app.Services.GetRequiredService<SessionManager>();
     session.Stop();
 });
-
-// Refresh the bundled plugin from the latest release before serving (no-op in dev, offline, or
-// when already current). Done before app.Run so no session can spawn against a half-swapped tree.
-await PluginUpdater.TryUpdateAsync(
-    app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("PluginUpdater"),
-    TimeSpan.FromSeconds(10));
 
 app.MapGet("/healthz", (SessionManager session) =>
 {
