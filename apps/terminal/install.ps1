@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 
 $Repo = "suxrobGM/jobpilot"
 $Rid = "win-x64"
-$BinaryName = "JobPilot.Terminal.exe"
+$BinaryName = "jobpilot.exe"
 $InstallDir = if ($env:JOBPILOT_INSTALL_DIR) { $env:JOBPILOT_INSTALL_DIR } else { "$env:USERPROFILE\.jobpilot" }
 
 function Write-Info($Message) {

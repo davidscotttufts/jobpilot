@@ -8,17 +8,27 @@
     <PublishAot>true</PublishAot>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>JobPilot.Terminal</RootNamespace>
-    <AssemblyName>JobPilot.Terminal</AssemblyName>
+    <AssemblyName>jobpilot</AssemblyName>
     <Version>2.0.0</Version>
+    <!-- Trim the shipped install: no debug symbols, no static-web-assets manifest. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
   </ItemGroup>
 
-  <!-- Ship the single plugin/ directory (both manifests, shared skills/ tree,
-       and .mcp.json), rebased under plugin/ in the published output root so
-       TerminalSessionPaths.Resolve() finds the same layout at runtime. -->
+  <!-- Native AOT emits a .pdb on Windows despite DebugType=none; drop it from the publish output. -->
+  <Target Name="TrimPublishSymbols" AfterTargets="Publish">
+    <ItemGroup>
+      <_JobPilotStalePublish Include="$(PublishDir)**\*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(_JobPilotStalePublish)" />
+  </Target>
+
+  <!-- Ship the shared plugin/ tree, rebased under plugin/ so TerminalSessionPaths.Resolve() finds it at runtime. -->
   <ItemGroup>
     <Content Include="..\..\plugin\**\*">
       <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>

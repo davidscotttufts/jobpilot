@@ -6,7 +6,7 @@ set -euo pipefail
 
 REPO="suxrobGM/jobpilot"
 INSTALL_DIR="${JOBPILOT_INSTALL_DIR:-$HOME/.jobpilot}"
-BINARY_NAME="JobPilot.Terminal"
+BINARY_NAME="jobpilot"
 
 TMP_DIR=""
 cleanup() { [ -n "$TMP_DIR" ] && rm -rf "$TMP_DIR"; }
