@@ -33,11 +33,16 @@ export function CtaBand(): ReactElement {
             Put your job search on autopilot.
           </Typography>
           <Typography variant="body1Muted" sx={{ maxWidth: 520 }}>
-            Create an account and run your first campaign in minutes.
+            Create an account, install the agent, run your first campaign tonight.
           </Typography>
-          <LinkButton href="/register" variant="contained" size="large">
-            Get started
-          </LinkButton>
+          <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+            <LinkButton href="/register" variant="contained" size="large">
+              Get started
+            </LinkButton>
+            <LinkButton href="/docs" variant="outlined" size="large">
+              Read the docs
+            </LinkButton>
+          </Stack>
         </Stack>
       </Box>
     </Container>

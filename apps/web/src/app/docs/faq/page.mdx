@@ -1,0 +1,63 @@
+export const metadata = {
+  title: "FAQ",
+  description: "Common questions about JobPilot: the agent, boards, email, and your data.",
+};
+
+# FAQ
+
+## Do I need an API key?
+
+No. The agent runs on your existing Claude Code or Codex subscription.
+JobPilot ships no model keys and bills you for nothing.
+
+## Where does the agent run?
+
+On your machine. The dashboard and API are hosted, but the terminal host,
+the AI session, and the Playwright browser all run locally - you can watch
+every action in the agent dock.
+
+## Which job boards are supported?
+
+Twelve out of the box: LinkedIn, Indeed, Glassdoor, Hiring Cafe, Wellfound,
+Y Combinator (Work at a Startup), Welcome to the Jungle, Hacker News "Who's
+Hiring", We Work Remotely, Remote OK, 4 Day Week, and Upwork. You can manage
+the list on the boards page.
+
+## Can JobPilot read and send email?
+
+Yes, through your own Google OAuth client - see
+[Email setup](/docs/email-setup). Reading powers the inbox and verification
+codes; sending powers outreach. It can never delete mail, and it works
+without email too - you just lose those three features.
+
+## What about captchas?
+
+The agent solves checkbox and text captchas itself. For image challenges it
+uses a 2Captcha or CapSolver key if you've added one under
+[credentials](/docs/credentials); otherwise it skips the job and says why.
+
+## How do I update the agent?
+
+When a new version ships, the dashboard shows an update banner in the agent
+dock. Follow it - the flow updates the host and plugin, and on Claude Code
+reloads plugins without restarting your session.
+
+## Can I switch between Claude Code and Codex?
+
+Yes, any time, from the agent dock. Both providers run the same skills from
+the same plugin.
+
+## Where are my resumes stored?
+
+Uploaded PDFs and generated variants are stored by the hosted API, tied to
+your account. The structured resume content is editable in the resume studio.
+
+## How do I delete my data?
+
+Delete your account under settings. That destroys your per-user encryption
+key, which makes every stored secret unreadable, and removes your profile
+data.
+
+## Is JobPilot open source?
+
+Yes, MIT-licensed: [github.com/suxrobGM/jobpilot](https://github.com/suxrobGM/jobpilot).

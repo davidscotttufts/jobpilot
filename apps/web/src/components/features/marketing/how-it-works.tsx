@@ -6,22 +6,28 @@ import { fontFamilies } from "@/theme";
 
 const STEPS = [
   {
-    title: "Connect your agent",
-    body: "Run JobPilot locally - it drives Claude or Codex through your own terminal, on your subscription.",
+    title: "Create your account",
+    body: "Sign up and let onboarding build your profile from your resume. That's what the agent scores and applies with.",
+    snippet: "jobpilot.suxrobgm.net/register",
   },
   {
-    title: "Launch a campaign",
-    body: "Pick a mode, set your resume and filters, and let the agent work through the roles.",
+    title: "Install the agent",
+    body: "One command installs the local terminal - or add the plugin to your own Claude Code or Codex and run setup.",
+    snippet: "/jobpilot:setup",
   },
   {
-    title: "Track everything",
-    body: "Watch live progress and follow every application through the funnel to an offer.",
+    title: "Run a campaign",
+    body: "Launch the agent from the dashboard dock. Start with a search, graduate to auto-apply.",
+    snippet: "/jobpilot:auto-apply senior ts remote",
   },
 ];
 
 export function HowItWorks(): ReactElement {
   return (
-    <Box sx={{ borderBlock: 1, borderColor: "line.divider", backgroundColor: "surfaces.card" }}>
+    <Box
+      id="how-it-works"
+      sx={{ borderBlock: 1, borderColor: "line.divider", backgroundColor: "surfaces.card" }}
+    >
       <Container maxWidth="lg" sx={{ paddingBlock: { xs: 6, md: 9 } }}>
         <Typography variant="h2" sx={{ mb: 4 }}>
           From zero to applied in three steps.
@@ -29,7 +35,7 @@ export function HowItWorks(): ReactElement {
         <Grid container spacing={4}>
           {STEPS.map((step, i) => (
             <Grid key={step.title} size={{ xs: 12, md: 4 }}>
-              <Stack spacing={1.5}>
+              <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>
                 <Typography
                   sx={{
                     fontFamily: fontFamilies.mono,
@@ -44,6 +50,21 @@ export function HowItWorks(): ReactElement {
                   {step.title}
                 </Typography>
                 <Typography variant="body2Muted">{step.body}</Typography>
+                <Box
+                  component="code"
+                  sx={(theme) => ({
+                    fontFamily: fontFamilies.mono,
+                    fontSize: "0.75rem",
+                    color: theme.palette.text.secondary,
+                    backgroundColor: theme.palette.surfaces.elevated,
+                    border: `1px solid ${theme.palette.line.divider}`,
+                    borderRadius: `${theme.radii.sm}px`,
+                    paddingInline: 1,
+                    paddingBlock: 0.5,
+                  })}
+                >
+                  {step.snippet}
+                </Box>
               </Stack>
             </Grid>
           ))}

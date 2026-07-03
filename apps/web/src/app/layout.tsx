@@ -23,10 +23,27 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const description =
+  "JobPilot drives Claude Code or Codex on your own subscription to search 12 job boards, tailor your resume, apply, and track every reply - from one dashboard.";
+
 export const metadata: Metadata = {
-  title: "JobPilot",
-  description: "Local control center for AI-driven job applications",
+  metadataBase: new URL("https://jobpilot.suxrobgm.net"),
+  title: { default: "JobPilot - your AI job agent", template: "%s · JobPilot" },
+  description,
   icons: { icon: "/icon.svg" },
+  openGraph: {
+    siteName: "JobPilot",
+    url: "/",
+    type: "website",
+    locale: "en_US",
+    title: "JobPilot - your AI job agent",
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "JobPilot - your AI job agent",
+    description,
+  },
 };
 
 export default function RootLayout(props: PropsWithChildren): ReactElement {

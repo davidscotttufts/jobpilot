@@ -50,6 +50,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!_next|login|register|onboarding|verify-email|forgot-password|reset-password|favicon.ico|.*\\..*).*)",
+    "/((?!_next|docs|login|register|onboarding|verify-email|forgot-password|reset-password|opengraph-image|favicon.ico|.*\\..*).*)",
   ],
 };

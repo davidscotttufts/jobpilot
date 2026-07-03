@@ -1,209 +1,131 @@
+<div align="center">
+
+<img src="apps/web/public/icon.svg" width="88" alt="JobPilot logo" />
+
 # JobPilot
 
-A multi-user AI job-application app. The Next.js web UI and the Elysia +
-PostgreSQL API (which owns all state) are **hosted**; each user runs the
-JobPilot **agent locally** - an embedded Claude Code or Codex session that runs
-the provider skills against real job boards via Playwright, on the user's own
-Claude/Codex subscription.
+**Your AI job agent. Your machine, your subscription.**
 
-## Components
+[![Release](https://img.shields.io/github/v/release/suxrobGM/jobpilot?style=flat&color=FF6A3D)](https://github.com/suxrobGM/jobpilot/releases)
+[![CI](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Bun](https://img.shields.io/badge/Bun-1.3-black?logo=bun)](https://bun.sh)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
+[![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
 
-- **Web app** ([apps/web/](apps/web/)) - hosted; dev `:4100`. The Next.js
-  UI for profile, credentials, resumes, job boards, applications, campaigns,
-  and the batch queue. It embeds an xterm.js terminal panel and exposes "Run
-  autopilot" / "Run apply" buttons that inject slash commands.
-- **API** ([apps/api/](apps/api/)) - hosted; dev `:4101`. Bun + Elysia +
-  Prisma backend that owns all persistence (PostgreSQL; resumes under
-  `apps/api/storage/`) and serves the typed `/api/*` surface (Swagger at
-  `/swagger`).
-- **JobPilot.Terminal** ([apps/terminal/](apps/terminal/)) - runs on each
-  user's machine; dev `:4102`. .NET 10 ASP.NET Core process that owns one active
-  provider PTY (ConPTY) and bridges it to the web UI over WebSocket. The
-  terminal drawer can switch between Claude Code and Codex.
-- **Plugin** ([plugin/](plugin/)) - one provider-neutral plugin loaded by both
-  providers, with no generation step. It holds the hand-authored skill pack
-  (`plugin/skills/<name>/SKILL.md` plus shared setup, auth, browser-tips, and
-  form-filling docs under `plugin/skills/shared/`), the Playwright MCP config
-  (`plugin/.mcp.json`), and a manifest per provider
-  (`plugin/.claude-plugin/plugin.json`, `plugin/.codex-plugin/plugin.json` -
-  both name the plugin `jobpilot`).
-  - **Worker subagents** ([plugin/agents/](plugin/agents/)) - `job-worker`
-    (per-job score/apply) and `outreach-worker` (contact discovery + compose)
-    run the heavy browser/web work in an isolated context so long campaigns
-    don't fill the main conversation and trigger compaction. Claude
-    auto-discovers them from `plugin/agents/`; Codex definitions live at
-    [.codex/agents/](.codex/agents/) (repo root) and point back at the same
-    `plugin/agents/*.md` procedures. Any runtime that can't load custom
-    subagents simply runs those procedures inline - same behavior, no isolation
-    (see `plugin/skills/shared/setup.md` → "Worker subagents").
-  - Claude: `claude --plugin-dir plugin`.
-  - Codex: auto-discovered via
-    [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json)
-    (`source.path: ./plugin`) when launched at the repo root
-    (`codex --no-alt-screen -C .`); the same manifest is bundled into the
-    terminal publish root, so the installed agent gets auto-discovery too.
-    Enable it once from Codex's `/plugin` menu. Standalone installs come from
-    the published
-    [suxrobGM/codex-plugins](https://github.com/suxrobGM/codex-plugins)
-    marketplace (see Quick Start). For Codex subagent isolation outside the
-    repo, copy [.codex/agents/](.codex/agents/) into `~/.codex/agents/`.
+[Hosted app](https://jobpilot.suxrobgm.net) · [Docs](https://jobpilot.suxrobgm.net/docs) · [Architecture](docs/architecture.md) · [Changelog](CHANGELOG.md)
 
-## Quick Start
+</div>
 
-### Use JobPilot (hosted)
+JobPilot pairs a hosted dashboard with an AI agent that runs on your machine.
+The agent - Claude Code or Codex on your own subscription - drives a real
+browser to search job boards, tailor your resume, fill out applications, and
+message recruiters. The dashboard tracks every application, reply, and
+interview in one pipeline.
 
-1. Open [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign in.
-2. Launch the agent from the dashboard. If the local agent isn't installed yet,
-   the dock shows a one-liner - or install it directly:
-   - **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
-   - **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
-3. Prefer your own Claude Code or Codex? Install the plugin from a
+- **Four campaign modes** - search-and-review, autonomous auto-apply,
+  single-job apply, and recruiter outreach.
+- **12 job boards out of the box** - LinkedIn, Indeed, Glassdoor, Wellfound,
+  Y Combinator, HN Who's Hiring, We Work Remotely, Remote OK, and more.
+- **A pipeline, not a spreadsheet** - every application tracked through 9
+  stages, from applied to offer, with analytics on top.
+- **An inbox that reads itself** - recruiter replies are pulled from Gmail,
+  classified, and matched to applications; you approve the stage move.
+- **Resume studio** - base resumes plus AI-tailored variants per job, rendered
+  to PDF live.
+- **First-class Upwork** - client-quality filtering, targeted proposals, and
+  profile enhancement.
+- **Outreach** - finds the hiring manager or recruiter and sends a
+  personalized email or LinkedIn message.
+
+## How it works
+
+1. Create an account at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net)
+   and complete onboarding (profile + resume).
+2. Install the local agent - a one-line script, or the plugin inside your own
+   Claude Code / Codex.
+3. Launch the agent from the dashboard's agent dock.
+4. Run a campaign and watch applications land in your pipeline.
+
+The dashboard is hosted; the agent and the browser it drives run on your own
+computer, so you can watch every step. Curious how the pieces fit together?
+See [docs/architecture.md](docs/architecture.md).
+
+## Quick start
+
+1. Open [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign up.
+2. Launch the agent from the dashboard. If it isn't installed yet, the dock
+   shows a one-liner - or install it directly:
+
+- **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
+- **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
+
+3. Prefer your own Claude Code or Codex session? Install the plugin from a
    marketplace, then run the `setup` skill. Claude Code:
 
-   ```text
-   /plugin marketplace add https://github.com/suxrobgm/claude-plugins
-   /plugin install jobpilot@sukhrob-claude-plugins
-   /jobpilot:setup
-   ```
-
-   Codex (in a shell, then `$setup` in a session):
-
-   ```text
-   codex plugin marketplace add suxrobGM/codex-plugins
-   codex plugin add jobpilot@sukhrob-codex-plugins
-   ```
-
-### Develop
-
-```bash
-git clone https://github.com/suxrobgm/jobpilot.git
-cd jobpilot
-bun install
-bun run db:up    # starts the local PostgreSQL container (Docker)
-bun run db:setup # generates the Prisma client, runs migrations, seeds default data
-bun run dev      # web :4100 + api :4101 + terminal :4102
+```text
+/plugin marketplace add https://github.com/suxrobgm/claude-plugins
+/plugin install jobpilot@sukhrob-claude-plugins
+/jobpilot:setup
 ```
 
-Open `http://localhost:4100` and toggle the Terminal panel.
+Codex (in a shell, then `$setup` in a session):
 
-### Remote database (SSH tunnel)
-
-To point the API at a remote PostgreSQL, open an SSH tunnel and target it
-locally. Set the `SSH_TUNNEL_*` / `REMOTE_DB_*` / `LOCAL_DB_PORT` vars in
-[apps/api/.env](apps/api/.env) (see [apps/api/.env.example](apps/api/.env.example)),
-then:
-
-```bash
-bun run db:tunnel   # binds localhost:5433 -> remote db through the SSH host; Ctrl+C to close
+```text
+codex plugin marketplace add suxrobGM/codex-plugins
+codex plugin add jobpilot@sukhrob-codex-plugins
 ```
 
-With the tunnel up, set `DATABASE_URL=postgresql://<user>:<pass>@localhost:5433/<db>`
-in [apps/api/.env](apps/api/.env). `db:setup`, `db:studio`, and the API all then
-run against the remote DB. Set `REMOTE_DB_HOST` to `127.0.0.1` when the database
-runs on the SSH server itself, or to its private host when tunneling via a bastion.
+New here? Start with the [getting-started guide](https://jobpilot.suxrobgm.net/docs/getting-started).
+Want to run it locally or contribute? See [docs/development.md](docs/development.md).
 
 ## Skills
 
-Skill workflows live under [plugin/skills/](plugin/skills/) as `<name>/SKILL.md`
-directories, edited directly as the single source of truth for both providers.
-Shared docs (setup, auth, browser-tips, form-filling) live under
-[plugin/skills/shared/](plugin/skills/shared/). There is no build step.
-
-Claude commands use `/jobpilot:<skill>`, for example:
+Every JobPilot action is a skill - a command you run from the agent. Claude
+Code commands use `/jobpilot:<skill>`, Codex commands use `$<skill>`:
 
 ```text
 /jobpilot:auto-apply senior typescript remote
-```
-
-Codex commands use `$<skill>`, for example:
-
-```text
 $auto-apply senior typescript remote
 ```
 
-| Skill             | Purpose                                                              |
-| ----------------- | -------------------------------------------------------------------- |
-| `apply`           | Apply to a single URL (with fit review) or drain the `/queue` page.  |
-| `autopilot`       | Search enabled boards, score, batch-approve, and apply autonomously. |
-| `search`          | Search boards and rank results without applying.                     |
-| `cover-letter`    | Draft a tailored cover letter and run it through the humanizer.      |
-| `upwork-proposal` | Draft a tailored Upwork proposal.                                    |
-| `interview`       | Prepare behavioral, technical, and company-research interview notes. |
-| `scan-inbox`      | Classify new mail, fuzzy-match to applications, propose stage moves. |
-| `get-code`        | Pull the latest verification code or magic link for a board domain.  |
+| Skill               | Purpose                                                                         |
+| ------------------- | ------------------------------------------------------------------------------- |
+| **Campaigns**       |                                                                                 |
+| `search`            | Search a board, rank results against your resume, save them for review.         |
+| `auto-apply`        | Search and apply autonomously, one job at a time, until done or capped.         |
+| `apply`             | Apply to one job (URL or pasted posting) with a fit review, or drain the queue. |
+| `resume`            | Resume an interrupted campaign and finish its remaining approved jobs.          |
+| `rescan-skipped`    | Re-score a campaign's skipped jobs and promote the wrongly dropped ones.        |
+| `outreach`          | Find the hiring manager or recruiter and send a personalized message.           |
+| **Writing**         |                                                                                 |
+| `cover-letter`      | Draft a tailored one-page cover letter, humanized.                              |
+| `interview`         | Build a prep sheet: behavioral, technical, system design, company.              |
+| `tailor-resume`     | Pick or create the best resume variant for a job (runs automatically).          |
+| `extract-resume`    | Parse an uploaded resume PDF into the structured editor.                        |
+| **Email**           |                                                                                 |
+| `scan-inbox`        | Classify new mail, match it to applications, propose stage moves.               |
+| `get-code`          | Pull the latest verification code or magic link for a board domain.             |
+| **Upwork**          |                                                                                 |
+| `upwork-search`     | Search Upwork, filter out low-quality clients, rank the rest.                   |
+| `upwork-proposal`   | Draft a short, targeted Upwork proposal.                                        |
+| `upwork-profile`    | Improve your Upwork overview and portfolio; writes back on approval.            |
+| **Setup & helpers** |                                                                                 |
+| `setup`             | Install, start, or update the local agent terminal.                             |
+| `solve-captcha`     | Solve captchas - free vision path first, token service fallback.                |
+| `humanizer`         | Rewrite generated text to read naturally; used by the writing skills.           |
 
-## Email Integration (Gmail)
-
-JobPilot reads your Gmail inbox (to track recruiter replies and auto-fill
-verification codes during login) and sends outreach emails and replies on
-your behalf. Each user connects Gmail with **their own** Google OAuth client -
-JobPilot ships no shared client, so the app itself needs no Google verification
-or CASA security audit. Setup (once per user):
-
-1. In [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
-   create a new project, then an OAuth 2.0 Client ID (type: **Web application**).
-2. Enable the **Gmail API** for the project under "APIs & Services".
-3. In JobPilot, open **Settings → Email** and copy the **redirect URI** shown
-   there; add it as an authorized redirect URI on your OAuth client (defaults to
-   `http://localhost:4101/api/email/oauth/callback` in dev; in production it's
-   your deployment's API callback URL).
-4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
-   screen. Google reorganized this UI - it now lives at
-   [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
-   Click **Add or remove scopes**, search for `gmail.readonly` and
-   `gmail.send`, tick both Gmail API rows, then **Save**. `readonly` lets
-   JobPilot track replies and read verification codes; `send` lets it send
-   outreach emails and replies. Without `readonly` the Gmail API returns 403
-   "insufficient scopes"; without `send` the mailbox connects read-only and
-   outreach can't send.
-5. Keep **your** app in Testing mode and add your Gmail address under
-   [Audience → Test users](https://console.cloud.google.com/auth/audience).
-   Because it's your own project with you as the sole test user, no
-   verification/CASA is required. Note: Testing-mode refresh tokens expire
-   after ~7 days, so you'll reconnect periodically - publish your own app
-   (still no verification under Google's 100-user test limit) to avoid that.
-6. Back in **Settings → Email**, paste your **Client ID** and **Client
-   secret**, **Save**, then **Connect Gmail**.
-
-The scopes are `gmail.readonly` and `gmail.send` - JobPilot reads your mail and
-sends outreach emails and replies on your behalf, but never deletes mail. Your
-OAuth client id/secret are stored encrypted per-user (the secret never leaves
-the server); the connected account is one row per profile in `EmailAccount`.
-
-**Troubleshooting**
-
-- **"Access blocked: app has not completed the Google verification
-  process"** - your Gmail isn't on the Test users list. Add it under
-  **Audience → Test users**.
-- **`403 PERMISSION_DENIED - Request had insufficient authentication
-scopes`** - a required Gmail scope (`gmail.readonly` or `gmail.send`) isn't
-  on the consent screen. Add both under **Data access**, then **Disconnect**
-  and reconnect in `/settings` → **Email** so a new token with the right
-  scopes is issued.
-- **Mailbox connects read-only / outreach can't send** - the token was issued
-  without `gmail.send`. Add the `gmail.send` scope under **Data access**, then
-  use **Reconnect to enable sending** in `/settings` → **Email**.
-- **Google 500 after publishing** - you published an app that uses a
-  Sensitive scope. Go back to Testing mode under
-  **Audience → Publishing status → Back to testing**.
+Email (inbox scanning, verification codes, outreach sending) uses your own
+Google OAuth client - see the
+[email setup guide](https://jobpilot.suxrobgm.net/docs/email-setup).
 
 ## Documentation
 
+- [User docs](https://jobpilot.suxrobgm.net/docs) - getting started,
+  campaigns & skills, email setup, credentials, FAQ.
 - [docs/architecture.md](docs/architecture.md) - architecture walk-through.
-- [CLAUDE.md](CLAUDE.md) - contributor and agent context.
-
-## Tech Stack
-
-| Layer              | Choice                                         |
-| ------------------ | ---------------------------------------------- |
-| Runtime            | Bun 1.3                                        |
-| Framework          | Next.js 16 (App Router, RSC, typed routes)     |
-| UI                 | MUI 9 + MUI X DataGrid                         |
-| Forms              | TanStack Form 1 + Zod v4                       |
-| Server state       | TanStack Query 5                               |
-| Database           | PostgreSQL via Prisma 7 + `@prisma/adapter-pg` |
-| Terminal host      | .NET 10 ASP.NET Core, ConPTY via Quick.PtyNet  |
-| Browser automation | Playwright via the Playwright MCP server       |
+- [docs/development.md](docs/development.md) - local setup, repository
+  layout, and tech stack.
 
 ## License
 

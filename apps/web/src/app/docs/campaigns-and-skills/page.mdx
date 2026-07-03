@@ -1,0 +1,97 @@
+export const metadata = {
+  title: "Campaigns & skills",
+  description: "The four campaign modes, every JobPilot skill, and how the pipeline works.",
+};
+
+# Campaigns & skills
+
+A campaign is one run of the agent against a goal: find jobs, apply to them,
+or reach the people hiring. Skills are the commands that start and support
+campaigns. In Claude Code they're invoked as `/jobpilot:<skill>`, in Codex as
+`$<skill>`:
+
+```text
+/jobpilot:auto-apply senior typescript remote
+$auto-apply senior typescript remote
+```
+
+## The four campaign modes
+
+**Search** - the agent searches a board and scores every role against your
+resume, but doesn't apply. You review the ranked list on the campaign page
+and approve the ones worth applying to. Best when you're starting out or
+picky about targets.
+
+**Auto-apply** - the agent searches, scores, and applies on its own, one job
+at a time, skipping weak matches and jobs you already applied to. It stops
+when the board is exhausted, you pause it, or it hits your application cap.
+Best once you trust the scoring.
+
+**Apply** - one job at a time. Give it a URL or paste the posting; the agent
+reviews fit, tailors your resume, and applies. With no argument it drains
+your queue of saved URLs.
+
+**Outreach** - the agent finds the hiring manager or recruiter behind a role
+and drafts a personalized email or LinkedIn message. Nothing is sent without
+your approval.
+
+## Skills
+
+| Skill             | What it does                                                             |
+| ----------------- | ------------------------------------------------------------------------ |
+| `search`          | Search a board, rank results against your resume, save them for review.  |
+| `auto-apply`      | Search and apply autonomously until done, paused, or capped.             |
+| `apply`           | Apply to one job with a fit review, or drain the saved-URL queue.        |
+| `resume`          | Resume an interrupted campaign and finish its remaining approved jobs.   |
+| `rescan-skipped`  | Re-score a campaign's skipped jobs and promote the wrongly dropped ones. |
+| `outreach`        | Find the hiring contact for a role and draft a personalized message.     |
+| `scan-inbox`      | Classify new mail, match it to applications, propose stage moves.        |
+| `cover-letter`    | Draft a tailored one-page cover letter.                                  |
+| `interview`       | Build a prep sheet: behavioral, technical, system design, company.       |
+| `extract-resume`  | Parse an uploaded resume PDF into the structured editor.                 |
+| `upwork-search`   | Search Upwork, filter out low-quality clients, rank the rest.            |
+| `upwork-proposal` | Draft a short, targeted Upwork proposal.                                 |
+| `upwork-profile`  | Improve your Upwork overview and portfolio; writes back on approval.     |
+| `setup`           | Install, start, or update the local agent terminal.                      |
+
+A few skills run automatically when needed - you never call them yourself:
+`tailor-resume` picks or creates the right resume variant per job, `get-code`
+pulls verification codes from your mailbox during logins, `solve-captcha`
+handles captchas, and `humanizer` makes generated text read naturally.
+
+## The pipeline
+
+Every application moves through nine stages: **applied → recruiter screen →
+assessment → hiring manager screen → technical interview → onsite → offer**,
+with **rejected** and **withdrawn** as exits. The pipeline page rolls them up
+into a funnel - Applied, Screening, Interview, Offer - with every application
+listed beneath it; each application page keeps a full stage timeline.
+Analytics aggregates the funnel across campaigns.
+
+## The inbox loop
+
+With [email connected](/docs/email-setup), the `scan-inbox` skill reads new
+mail, classifies each message (interview request, rejection, offer, ...), and
+matches it to an application. Proposed stage moves appear in your inbox page -
+approve one and the application updates. Nothing changes stage without you.
+
+## Recovering a campaign
+
+- **Paused or interrupted?** Run the `resume` skill with the campaign id. It
+  picks the apply loop back up on the remaining approved jobs without
+  re-asking anything.
+- **Skipped too much?** Run `rescan-skipped`. It re-scores the campaign's
+  skipped jobs and promotes the ones dropped for bad reasons - a sparse job
+  description, a mislabeled location - back to approved.
+
+## Upwork
+
+Upwork gets its own toolkit because freelance marketplaces work differently:
+
+- `upwork-search` filters out clients with poor hire rates, low spend, or bad
+  ratings before ranking what's left against your profile. It saves
+  recommendations; it never submits.
+- `upwork-proposal` drafts a short proposal for a specific job, written for
+  your review before you send it.
+- `upwork-profile` reads your live profile, proposes an improved overview and
+  portfolio, and writes it back only after you approve.

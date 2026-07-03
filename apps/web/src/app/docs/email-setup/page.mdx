@@ -1,0 +1,67 @@
+export const metadata = {
+  title: "Email setup",
+  description: "Connect Gmail to JobPilot with your own Google OAuth client.",
+};
+
+# Email setup
+
+Connecting email powers three things: the inbox (recruiter replies are
+classified and matched to applications), verification codes (the agent reads
+sign-in codes during applies), and outreach (messages are sent from your own
+address).
+
+JobPilot connects to Gmail with **your own** Google OAuth client - it ships
+no shared client, so nothing about your mail passes through anyone else's
+Google app, and no Google verification or security audit is needed. Setup is
+once per user and takes about five minutes.
+
+## Create your OAuth client
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
+   create a new project, then an OAuth 2.0 Client ID (type: **Web application**).
+2. Enable the **Gmail API** for the project under "APIs & Services".
+3. In JobPilot, open **Settings → Email** and copy the **redirect URI** shown
+   there; add it as an authorized redirect URI on your OAuth client.
+4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
+   screen. This lives at
+   [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes):
+   click **Add or remove scopes**, search for `gmail.readonly` and
+   `gmail.send`, tick both Gmail API rows, then **Save**. `readonly` lets
+   JobPilot track replies and read verification codes; `send` lets it send
+   outreach emails and replies. Without `readonly` the Gmail API returns 403
+   "insufficient scopes"; without `send` the mailbox connects read-only and
+   outreach can't send.
+5. Keep **your** app in Testing mode and add your Gmail address under
+   [Audience → Test users](https://console.cloud.google.com/auth/audience).
+   Because it's your own project with you as the sole test user, no
+   verification is required. Note: Testing-mode refresh tokens expire after
+   about 7 days, so you'll reconnect periodically - publish your own app
+   (still no verification under Google's 100-user test limit) to avoid that.
+6. Back in **Settings → Email**, paste your **Client ID** and **Client
+   secret**, save, then **Connect Gmail**.
+
+## What JobPilot can and can't do
+
+The scopes are `gmail.readonly` and `gmail.send`: JobPilot reads your mail
+and sends outreach emails and replies on your behalf, but can never delete
+mail. Your client id and secret are stored encrypted per user - the secret
+never leaves the server - and the connected account is tied to your profile
+only.
+
+## Troubleshooting
+
+- **"Access blocked: app has not completed the Google verification
+  process"** - your Gmail isn't on the Test users list. Add it under
+  **Audience → Test users**.
+- **403 "Request had insufficient authentication scopes"** - a required
+  Gmail scope isn't on the consent screen. Add both under **Data access**,
+  then disconnect and reconnect in **Settings → Email** so a new token with
+  the right scopes is issued.
+- **Mailbox connects read-only / outreach can't send** - the token was
+  issued without `gmail.send`. Add the scope under **Data access**, then use
+  **Reconnect to enable sending** in **Settings → Email**.
+- **Google 500 after publishing** - you published an app that uses a
+  sensitive scope. Go back to Testing mode under
+  **Audience → Publishing status → Back to testing**.
+
+Outlook and IMAP support are planned; Gmail is the only provider today.

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -12,6 +13,7 @@ const config: NextConfig = {
   reactCompiler: true,
   typedRoutes: true,
   allowedDevOrigins: ["127.0.0.1"],
+  pageExtensions: ["ts", "tsx", "md", "mdx"],
   // Compile the workspace TS packages consumed by the app.
   transpilePackages: ["@jobpilot/contracts", "@jobpilot/api-client"],
   experimental: {
@@ -19,4 +21,11 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+// Plugins must be string references under Turbopack (loader options are serialized).
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: [["remark-gfm"]],
+  },
+});
+
+export default withMDX(config);

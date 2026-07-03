@@ -1,14 +1,19 @@
 # Architecture
 
-JobPilot is a web app, a provider terminal host, and provider plugins glued
-together over HTTP and a single active PTY.
+JobPilot is a hosted web app and API shared by all users, plus a terminal
+host and provider plugin that run on each user's machine, glued together over
+HTTP and a single active PTY. The web and API are multi-user (email +
+password accounts, per-user encrypted secrets); the local agent authenticates
+as the signed-in user with a personal access token the terminal injects.
 
 ## The Three Pieces
 
 **Next.js web app** ([apps/web/](../apps/web/)) is the UI layer. It renders
-profile, applications by stage, autopilot campaigns with per-job status, and
-the batch URL queue, talking to the API directly over HTTP (no proxy - browser
-and server call the API via `API_BASE_URL`).
+the application pipeline, campaigns with live per-job progress, the inbox,
+outreach contacts, the resume studio, Upwork pages, analytics, and settings,
+and embeds the agent dock - an xterm.js terminal that installs, launches, and
+monitors the local agent. It talks to the API directly over HTTP (no proxy -
+browser and server call the API via `API_BASE_URL`).
 
 **Elysia + PostgreSQL API** ([apps/api/](../apps/api/)) is the data layer
 (hosted in production; dev `127.0.0.1:4101`). It owns every persistent fact and serves the typed `/api/*`
@@ -20,18 +25,27 @@ an ASP.NET Core minimal API on each user's machine (`127.0.0.1:4102`). It owns o
 PTY (ConPTY via Quick.PtyNet) and bridges it to the web UI's xterm.js panel
 over WebSocket. HTTP endpoints (`POST /sessions/start`, `POST /sessions/inject`,
 `DELETE /sessions/current`, `GET /healthz`, `GET /ws`) let UI buttons write
-provider-specific commands directly into the active provider's stdin. When
-spawning a provider it also exports `JOBPILOT_SKILLS_ROOT` and
-`JOBPILOT_WORKSPACE_ROOT` so wrappers can resolve shared skills without
-filesystem inference.
+provider-specific commands directly into the active provider's stdin.
+`POST /sessions/start` receives the signed-in user's terminal token and
+injects it into the PTY as `JOBPILOT_API_TOKEN`, alongside `JOBPILOT_API`
+(the backend origin) and `JOBPILOT_WEB` (the web origin), so skills
+authenticate as that user with no manual setup. When spawning a provider it
+also exports `JOBPILOT_SKILLS_ROOT` and `JOBPILOT_WORKSPACE_ROOT` so wrappers
+can resolve shared skills without filesystem inference.
 
 **Plugin** ([plugin/](../plugin/)) is one provider-neutral plugin loaded by
 both providers - there is no generation step. It holds:
 
 - `plugin/skills/<name>/SKILL.md` - one directory per workflow; shared imports
   live under `plugin/skills/shared/*.md`. Skills reference sibling skills by
-  name (e.g. "the `tailor-resume` skill") and shared docs by repo-relative path
-  (`plugin/skills/shared/<doc>.md`), so the same text works for both providers.
+  name (e.g. "the `tailor-resume` skill") and shared docs by relative path
+  (`../shared/<doc>.md`), so the same text works for both providers.
+- `plugin/agents/*.md` - worker subagents (`job-worker` for score/apply,
+  `outreach-worker` for contact discovery + compose) that campaign skills
+  delegate per-iteration work to, keeping heavy browser and scoring output in
+  an isolated context. Claude auto-discovers them; Codex equivalents at
+  [.codex/agents/](../.codex/agents/) point back at the same `.md` bodies.
+  Runtimes without custom subagents run the procedures inline.
 - `plugin/.mcp.json` - the Playwright MCP server.
 - `plugin/.claude-plugin/plugin.json` and `plugin/.codex-plugin/plugin.json` -
   the per-provider manifests (both name the plugin `jobpilot`). Codex's loader
@@ -71,6 +85,11 @@ reopening the terminal panel attaches a new WebSocket to the same live session.
 Switching providers stops the current PTY and starts the selected provider.
 There is no replay buffer, so use the active provider's terminal scrollback for
 history.
+
+When a new release ships, the dashboard shows an update banner in the agent
+dock. The guided flow updates the host and plugin; on Claude it finishes with
+`/reload-plugins`, so the new plugin version loads without restarting the
+session.
 
 ## Plugin Layout
 
@@ -116,12 +135,14 @@ sequenceDiagram
     S-->>U: applied
 ```
 
-## Live Runs
+## Live Updates
 
-Autopilot and apply create and update campaign rows through `/api/campaigns/*`.
+Auto-apply and apply create and update campaign rows through `/api/campaigns/*`.
 The web UI opens `EventSource /api/campaigns/[id]/events`, receives in-process SSE
 events, and invalidates the campaign detail query so the page refetches canonical
-state from PostgreSQL.
+state from PostgreSQL. The same pattern powers four more channels - `inbox`,
+`pipeline`, `resume`, and `upwork` - so every open page stays current while
+the agent works.
 
 ## Skills Layer
 

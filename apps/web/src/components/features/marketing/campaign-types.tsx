@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Card, CardContent, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, Container, Grid, Link, Stack, Typography } from "@mui/material";
+import NextLink from "next/link";
 import { fontFamilies } from "@/theme";
 
 interface Mode {
@@ -33,7 +34,7 @@ const MODES: Mode[] = [
   {
     tag: "outreach",
     title: "Outreach",
-    body: "Find recruiters and hiring managers and send personalized messages.",
+    body: "Find the hiring manager and message them by email or LinkedIn.",
     tone: "warning.main",
   },
 ];
@@ -84,6 +85,13 @@ export function CampaignTypes(): ReactElement {
           </Grid>
         ))}
       </Grid>
+      <Typography variant="body2Muted" sx={{ mt: 3 }}>
+        Every mode is a skill you can also run by hand from the agent -{" "}
+        <Link component={NextLink} href="/docs/campaigns-and-skills">
+          see the docs
+        </Link>
+        .
+      </Typography>
     </Container>
   );
 }

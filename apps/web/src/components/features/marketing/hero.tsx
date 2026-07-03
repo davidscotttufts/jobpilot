@@ -42,9 +42,8 @@ export function Hero(): ReactElement {
                 Your AI job agent, running on your machine.
               </Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 520 }}>
-                JobPilot drives Claude or Codex on your own subscription to search, tailor, apply,
-                and follow up - across every board, from one workspace. Your credentials and runs
-                stay local.
+                JobPilot drives Claude Code or Codex on your own subscription to search 12 job
+                boards, tailor your resume, apply, and track every reply - from one dashboard.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
                 <LinkButton href="/register" variant="contained" size="large">
@@ -57,7 +56,7 @@ export function Hero(): ReactElement {
               <Typography
                 sx={{ fontFamily: fontFamilies.mono, fontSize: "0.75rem", color: "text.disabled" }}
               >
-                Runs on your Claude / Codex subscription · Your data stays on your machine
+                No API keys · Your Claude / Codex subscription does the work
               </Typography>
             </Stack>
           </Grid>

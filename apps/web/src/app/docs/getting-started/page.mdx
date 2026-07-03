@@ -1,0 +1,89 @@
+export const metadata = {
+  title: "Getting started",
+  description: "Create a JobPilot account, install the local agent, and run your first campaign.",
+};
+
+# Getting started
+
+JobPilot has two halves: a hosted dashboard and an agent that runs on your
+machine. Setup takes about ten minutes.
+
+## What you need
+
+- A [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex)
+  subscription. The agent runs on it - JobPilot needs no API keys.
+- Windows, macOS, or Linux.
+
+## 1. Create your account
+
+1. Go to [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign up.
+2. Verify your email address.
+3. Complete onboarding: fill in your profile and upload a resume PDF. The
+   profile powers form filling; the resume powers job scoring and tailoring.
+
+Everything can be changed later under **Settings**.
+
+## 2. Install the agent
+
+The agent is a small terminal host that runs Claude Code or Codex for you.
+Two ways to install it:
+
+**From the dashboard (easiest).** Open the agent dock - the terminal panel in
+the bottom corner. If the agent isn't installed yet, the dock shows a one-line
+install command:
+
+```text
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex
+
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash
+```
+
+**From your own Claude Code or Codex.** Install the plugin from a marketplace,
+then run the `setup` skill. In Claude Code:
+
+```text
+/plugin marketplace add https://github.com/suxrobgm/claude-plugins
+/plugin install jobpilot@sukhrob-claude-plugins
+/jobpilot:setup
+```
+
+In Codex, add the plugin from a shell, then run `$setup` inside a session:
+
+```text
+codex plugin marketplace add suxrobGM/codex-plugins
+codex plugin add jobpilot@sukhrob-codex-plugins
+```
+
+## 3. Launch the agent
+
+Back in the dashboard, open the agent dock and start the agent. Pick your
+provider - Claude Code or Codex; you can switch any time - and it signs in as
+you automatically. The terminal stays visible, so you can watch every step
+the agent takes.
+
+## 4. Run your first campaign
+
+Start gentle: search first, apply after review.
+
+```text
+/jobpilot:search senior typescript remote
+```
+
+The agent searches the board you pick, scores each role against your resume,
+and saves the matches to a campaign. Review the ranked list, then let it
+apply to the ones you approve.
+
+Once you trust the scoring, go autonomous:
+
+```text
+/jobpilot:auto-apply senior typescript remote
+```
+
+Auto-apply searches, scores, and applies one job at a time until the board
+is exhausted, you pause it, or it reaches your application cap (set under
+**Settings → Profile**).
+
+Every application lands in your pipeline, where it moves from applied to
+offer. Next up: [Campaigns & skills](/docs/campaigns-and-skills).
