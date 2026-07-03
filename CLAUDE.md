@@ -6,7 +6,7 @@ The agent authenticates to the (possibly remote, multi-user) API as the signed-i
 
 ## Layout
 
-- `plugin/` - the JobPilot plugin, loaded by Claude (`--plugin-dir plugin`) and Codex (via `.agents/plugins/marketplace.json` → `./plugin`). One tree serves both providers - no generation step.
+- `plugin/` - the JobPilot plugin, loaded by Claude (`--plugin-dir plugin`) and Codex (via `.agents/plugins/marketplace.json` → `./plugin`; bundled into the terminal publish root, published to `suxrobGM/codex-plugins` on release). One tree serves both providers - no generation step.
   - `plugin/.claude-plugin/plugin.json` & `plugin/.codex-plugin/plugin.json` - provider manifests (both name the plugin `jobpilot`).
   - `plugin/.mcp.json` - Playwright MCP wiring, shared by both providers.
   - `plugin/skills/<name>/SKILL.md` - one hand-authored, provider-neutral skill per directory; `plugin/skills/shared/*.md` - shared docs. **Edit here directly.**

@@ -39,14 +39,18 @@ both providers - there is no generation step. It holds:
   stay in the single tree without breaking Codex.
 
 Terminal starts Claude Code with `--plugin-dir plugin`, or Codex with
-`codex --no-alt-screen -C <repo>`. Codex has no `--plugin-dir` flag; it
+`codex --no-alt-screen -C <root>`. Codex has no `--plugin-dir` flag; it
 auto-discovers
 [.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json) from
 the working directory, which points at `./plugin` (a local plugin source must
-be a subdirectory - Codex rejects the repo root itself, which is why the
-manifests live in `plugin/` rather than at the repo root). On first launch a
-user enables the plugin from the `/plugin` menu. Developers can also run
-providers directly:
+be a subdirectory - Codex rejects the root itself, which is why the manifests
+live in `plugin/` rather than at the root). The terminal publish output
+bundles the same manifest at its root, so installed hosts get identical
+discovery. On first launch a user enables the plugin from the `/plugin` menu.
+Outside the terminal, Codex users install from the published
+[suxrobGM/codex-plugins](https://github.com/suxrobGM/codex-plugins)
+marketplace (synced from `plugin/` on each release tag, like claude-plugins).
+Developers can also run providers directly:
 
 ```bash
 claude --plugin-dir plugin
@@ -79,7 +83,7 @@ plugin/                                    # the plugin (edit these)
     |-- shared/                            # setup, auth, form-filling, browser-tips
     `-- <name>/SKILL.md                    # one directory per workflow
 
-.agents/plugins/marketplace.json           # points Codex at ./plugin
+.agents/plugins/marketplace.json           # points Codex at ./plugin (also bundled into the publish root)
 ```
 
 The web app formats injected commands as `/jobpilot:<skill>` for Claude

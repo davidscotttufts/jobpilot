@@ -9,6 +9,8 @@ import { RELEASES_URL } from "./agent-install";
 
 const MARKETPLACE_UPDATE_COMMAND = "/plugin marketplace update sukhrob-claude-plugins";
 
+const CODEX_MARKETPLACE_UPDATE_COMMAND = "codex plugin marketplace upgrade sukhrob-codex-plugins";
+
 const TAG_PREFIX = "v";
 
 interface GitHubRelease {
@@ -106,9 +108,16 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
             />
           </Stack>
         ) : (
-          <Typography variant="captionMuted">
-            1. Update the JobPilot plugin from the Codex /plugin menu.
-          </Typography>
+          <Stack spacing={0.5}>
+            <Typography variant="captionMuted">
+              1. Update the JobPilot plugin (in a shell):
+            </Typography>
+            <CopyField
+              value={CODEX_MARKETPLACE_UPDATE_COMMAND}
+              copyMessage="Command copied"
+              ariaLabel="Copy plugin update command"
+            />
+          </Stack>
         )}
         <Stack spacing={0.5}>
           <Typography variant="captionMuted">

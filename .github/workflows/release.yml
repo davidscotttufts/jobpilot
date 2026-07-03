@@ -1,6 +1,7 @@
 # One release for host + plugin. Push a tag like `v2.1.0` (or run manually to re-sync): builds the AOT
 # host per OS, publishes the Release (terminal archives + plugin tarball), and mirrors plugin/ into the
-# claude-plugins marketplace. Needs secret MARKETPLACE_PUSH_TOKEN (Contents:write on suxrobGM/claude-plugins).
+# claude-plugins and codex-plugins marketplaces. Needs secret MARKETPLACE_PUSH_TOKEN (Contents:write on
+# suxrobGM/claude-plugins and suxrobGM/codex-plugins).
 name: Release
 
 on:
@@ -82,20 +83,28 @@ jobs:
             jobpilot-plugin.tar.gz
           generate_release_notes: true
 
-      - name: Checkout marketplace
+      - name: Checkout Claude marketplace
         uses: actions/checkout@v7
         with:
           repository: suxrobGM/claude-plugins
           token: ${{ secrets.MARKETPLACE_PUSH_TOKEN }}
           path: marketplace
 
-      # Mirror plugin/ into the vendored marketplace copy and commit if changed.
-      - name: Sync to marketplace
+      - name: Checkout Codex marketplace
+        uses: actions/checkout@v7
+        with:
+          repository: suxrobGM/codex-plugins
+          token: ${{ secrets.MARKETPLACE_PUSH_TOKEN }}
+          path: codex-marketplace
+
+      # Mirror plugin/ into each vendored marketplace copy and commit if changed.
+      - name: Sync to marketplaces
         run: |
-          rsync -a --delete plugin/ marketplace/plugins/jobpilot/
-          cd marketplace
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || git commit -m "chore: sync jobpilot plugin ${GITHUB_REF_NAME}"
-          git push
+          for dir in marketplace codex-marketplace; do
+            rsync -a --delete plugin/ "$dir/plugins/jobpilot/"
+            git -C "$dir" config user.name "github-actions[bot]"
+            git -C "$dir" config user.email "github-actions[bot]@users.noreply.github.com"
+            git -C "$dir" add -A
+            git -C "$dir" diff --cached --quiet || git -C "$dir" commit -m "chore: sync jobpilot plugin ${GITHUB_REF_NAME}"
+            git -C "$dir" push
+          done

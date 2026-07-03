@@ -40,9 +40,13 @@ Claude/Codex subscription.
   - Codex: auto-discovered via
     [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json)
     (`source.path: ./plugin`) when launched at the repo root
-    (`codex --no-alt-screen -C .`). Enable it once from Codex's `/plugin` menu.
-    For Codex subagent isolation outside the repo, copy
-    [.codex/agents/](.codex/agents/) into `~/.codex/agents/`.
+    (`codex --no-alt-screen -C .`); the same manifest is bundled into the
+    terminal publish root, so the installed agent gets auto-discovery too.
+    Enable it once from Codex's `/plugin` menu. Standalone installs come from
+    the published
+    [suxrobGM/codex-plugins](https://github.com/suxrobGM/codex-plugins)
+    marketplace (see Quick Start). For Codex subagent isolation outside the
+    repo, copy [.codex/agents/](.codex/agents/) into `~/.codex/agents/`.
 
 ## Quick Start
 
@@ -53,13 +57,20 @@ Claude/Codex subscription.
    the dock shows a one-liner - or install it directly:
    - **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
    - **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
-3. Prefer your own Claude Code or Codex? Install the plugin from the
-   marketplace, then run the `setup` skill:
+3. Prefer your own Claude Code or Codex? Install the plugin from a
+   marketplace, then run the `setup` skill. Claude Code:
 
    ```text
    /plugin marketplace add https://github.com/suxrobgm/claude-plugins
    /plugin install jobpilot@sukhrob-claude-plugins
    /jobpilot:setup
+   ```
+
+   Codex (in a shell, then `$setup` in a session):
+
+   ```text
+   codex plugin marketplace add suxrobGM/codex-plugins
+   codex plugin add jobpilot@sukhrob-codex-plugins
    ```
 
 ### Develop

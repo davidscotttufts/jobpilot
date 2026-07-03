@@ -34,6 +34,11 @@
       <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <!-- Ship the Codex marketplace manifest so terminal-launched Codex (-C <publish root>) auto-discovers ./plugin. -->
+    <Content Include="..\..\.agents\plugins\marketplace.json">
+      <Link>.agents\plugins\marketplace.json</Link>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
