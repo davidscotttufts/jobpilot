@@ -32,11 +32,7 @@ detect_platform() {
     *)             error "Unsupported architecture: $arch" ;;
   esac
 
-  rid="${os}-${arch}"
-  if [ "$rid" = "linux-arm64" ]; then
-    error "linux-arm64 builds are not available yet. Please build from source."
-  fi
-  echo "$rid"
+  echo "${os}-${arch}"
 }
 
 get_latest_version() {

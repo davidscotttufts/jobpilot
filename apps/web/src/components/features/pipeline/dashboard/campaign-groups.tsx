@@ -13,6 +13,7 @@ import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
+import { useAgentDock } from "@/providers/agent-provider";
 
 const GROUPS: ReadonlyArray<{ label: string; statuses: CampaignStatus[] }> = [
   { label: "Active", statuses: ["in_progress", "paused"] },
@@ -22,6 +23,7 @@ const GROUPS: ReadonlyArray<{ label: string; statuses: CampaignStatus[] }> = [
 
 export function CampaignGroups(): ReactElement {
   const router = useRouter();
+  const { expand } = useAgentDock();
   const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
     api.campaigns.get(),
   );
@@ -49,7 +51,12 @@ export function CampaignGroups(): ReactElement {
         <EmptyState
           variant="inline"
           title="No campaigns yet"
-          description="Start one from New campaign."
+          description="Start the JobPilot agent in the dock and run a search - or create a campaign manually."
+          action={
+            <Button size="small" variant="outlined" onClick={expand}>
+              Open agent dock
+            </Button>
+          }
         />
       ) : (
         <Stack spacing={2}>

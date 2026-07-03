@@ -18,14 +18,20 @@ import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOrb } from "./agent-orb";
 import { AgentUpdateBanner } from "./agent-update-banner";
-import { useTerminalHealth } from "./use-terminal-health";
+import { useTerminalHealth, type TerminalHealth } from "./use-terminal-health";
+
+const STATUS_LABELS: Record<TerminalHealth, string> = {
+  checking: "connecting",
+  reachable: "ready",
+  degraded: "needs reinstall",
+  unreachable: "offline",
+};
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
   const { health, status, recheck } = useTerminalHealth();
   const providerLabel = providerDisplayName(provider);
-  const statusLabel =
-    health === "reachable" ? "ready" : health === "unreachable" ? "offline" : "connecting";
+  const statusLabel = STATUS_LABELS[health];
 
   const handleProviderChange = (event: SelectChangeEvent<string>): void => {
     void switchProvider(event.target.value === "codex" ? "codex" : "claude");
@@ -68,6 +74,14 @@ export function DockPanel(): ReactElement {
         </Stack>
       )}
       {health === "unreachable" && <AgentInstallCard onRecheck={recheck} />}
+      {health === "degraded" && (
+        <AgentInstallCard
+          onRecheck={recheck}
+          title="Reinstall the JobPilot agent"
+          description="The agent host is running but its plugin files are missing or corrupt. Reinstall with the one-liner for your OS, then recheck."
+          detail={status?.detail}
+        />
+      )}
       {health === "reachable" && (
         <>
           {status && <AgentUpdateBanner currentVersion={status.hostVersion} provider={provider} />}

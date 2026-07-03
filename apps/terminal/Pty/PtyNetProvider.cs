@@ -1,18 +1,20 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using Pty.Net;
 
 namespace JobPilot.Terminal.Pty;
 
-/// <summary>Pty.Net-backed provider on the OS in-box ConPTY (static ctor redirects conpty.dll to kernel32).</summary>
-[SupportedOSPlatform("windows")]
+/// <summary>Pty.Net-backed provider: ConPTY on Windows (static ctor redirects conpty.dll to kernel32),
+/// forkpty via libc on Linux/macOS.</summary>
 public sealed class PtyNetProvider : IPtyProvider
 {
     static PtyNetProvider()
     {
         // Quick.PtyNet loads a bundled os64\conpty.dll it never ships; use the OS in-box ConPTY in kernel32 instead.
-        NativeLibrary.SetDllImportResolver(typeof(PtyProvider).Assembly, ResolveConPty);
+        if (OperatingSystem.IsWindows())
+        {
+            NativeLibrary.SetDllImportResolver(typeof(PtyProvider).Assembly, ResolveConPty);
+        }
     }
 
     private static IntPtr ResolveConPty(string libraryName, Assembly assembly, DllImportSearchPath? searchPath) =>
@@ -43,12 +45,13 @@ public sealed class PtyNetProvider : IPtyProvider
         commandLine[0] = command;
         Array.Copy(args, 0, commandLine, 1, args.Length);
 
+        // UTF-8 locale so spawned tools don't mangle non-ASCII; macOS ships en_US.UTF-8, not C.UTF-8.
+        var utf8Locale = OperatingSystem.IsMacOS() ? "en_US.UTF-8" : "C.UTF-8";
         var env = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["TERM"] = "xterm-256color",
-            // UTF-8 locale so spawned tools don't mangle non-ASCII (em-dashes, smart quotes) via the system code page.
-            ["LANG"] = "C.UTF-8",
-            ["LC_ALL"] = "C.UTF-8",
+            ["LANG"] = utf8Locale,
+            ["LC_ALL"] = utf8Locale,
             ["PYTHONUTF8"] = "1"
         };
         if (environment is not null)

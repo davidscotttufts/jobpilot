@@ -24,6 +24,8 @@ interface AgentStorage {
   provider: TerminalProviderId;
   dockWidth: number;
   dockExpanded: boolean;
+  /** True once a local terminal host has ever answered /healthz from this browser. */
+  everReachable: boolean;
 }
 
 const storageListeners = new Set<() => void>();
@@ -72,7 +74,10 @@ function getStoredProvider(): TerminalProviderId {
 }
 
 function getStoredExpanded(): boolean {
-  return readAgentStorage()?.dockExpanded ?? false;
+  const stored = readAgentStorage();
+  // Default expanded until a host has ever connected, so new users see the install card;
+  // an explicit collapse (stored dockExpanded) always wins.
+  return stored?.dockExpanded ?? !stored?.everReachable;
 }
 
 export interface AgentContextValue {

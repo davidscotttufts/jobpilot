@@ -5,8 +5,17 @@ export type EdenResult<T> = {
 };
 
 /** Pull a human-readable message out of an Eden Treaty error (`error.value.message`). */
-export function apiErrorMessage(error: unknown, fallback = "Request failed"): string {
+export function apiErrorMessage(error: unknown, fallback?: string): string {
   const value = (error as { value?: unknown } | null)?.value;
   const message = (value as { message?: unknown } | null)?.message;
-  return typeof message === "string" && message.length > 0 ? message : fallback;
+  if (typeof message === "string" && message.length > 0) {
+    return message;
+  }
+  if (fallback) {
+    return fallback;
+  }
+  const status = (error as { status?: unknown } | null)?.status;
+  return typeof status === "number" && status > 0
+    ? `Request failed (HTTP ${status})`
+    : "Can't reach the server - check your connection";
 }

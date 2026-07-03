@@ -21,34 +21,26 @@ import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import {
-  AddressSection,
-  AutoApplySection,
-  CredentialsSection,
-  EeoSection,
-  EmailSection,
-  PersonalSection,
-  WorkAuthSection,
-} from "@/components/features/settings/sections";
+import { PersonalSection } from "@/components/features/settings/sections";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
+import { patchAgentStorage } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
+import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";
 import { describeIssues, firstStepWithIssue } from "./validation-issues";
 
+// Minimal first run: resume + personal basics + agent install. Everything else
+// (address, work auth, EEO, auto-apply, email, credentials) lives in Settings,
+// surfaced by the pipeline's profile checklist.
 const STEPS = [
   { key: "resume", label: "Resume" },
   { key: "personal", label: "Personal" },
-  { key: "address", label: "Address" },
-  { key: "work-auth", label: "Work auth" },
-  { key: "eeo", label: "EEO" },
-  { key: "auto-apply", label: "Auto-apply" },
-  { key: "email", label: "Email" },
-  { key: "credentials", label: "Credentials" },
+  { key: "agent", label: "Connect agent" },
 ] as const;
 
-/** Profile-form steps come first; "email"/"credentials" are optional self-contained sections. */
-const PROFILE_STEPS = STEPS.findIndex((s) => s.key === "email");
+/** Profile-form steps come first; the agent step is a self-contained section. */
+const PROFILE_STEPS = STEPS.findIndex((s) => s.key === "agent");
 
 export function OnboardingWizard(): ReactElement {
   const router = useRouter();
@@ -81,7 +73,12 @@ export function OnboardingWizard(): ReactElement {
   });
   const isProfileStep = step < PROFILE_STEPS;
   const isLastProfileStep = step === PROFILE_STEPS - 1;
-  const isFinalStep = step === STEPS.length - 1;
+
+  const finish = (): void => {
+    // Land on the pipeline with the dock open so the agent is the obvious next step.
+    patchAgentStorage({ dockExpanded: true });
+    router.push("/pipeline");
+  };
 
   const submitForm = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -121,10 +118,6 @@ export function OnboardingWizard(): ReactElement {
             <Stack spacing={3}>
               {step === 0 && <ResumeUploadStep form={form} onContinue={() => setStep(1)} />}
               {step === 1 && <PersonalSection form={form} />}
-              {step === 2 && <AddressSection form={form} />}
-              {step === 3 && <WorkAuthSection form={form} />}
-              {step === 4 && <EeoSection form={form} />}
-              {step === 5 && <AutoApplySection form={form} />}
               {showValidationErrors && <ValidationSummary form={form} />}
               {step !== 0 && (
                 <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
@@ -140,20 +133,13 @@ export function OnboardingWizard(): ReactElement {
           </form>
         ) : (
           <Stack spacing={3}>
-            <Typography variant="body2Muted">
-              Optional - you can set these up now or anytime later in Settings.
-            </Typography>
-            {step === 6 && <EmailSection />}
-            {step === 7 && <CredentialsSection />}
+            <AgentSetupStep />
             <Stack direction="row" sx={{ justifyContent: "space-between", pt: 1 }}>
               <Button variant="outlined" onClick={() => setStep((s) => s - 1)}>
                 Back
               </Button>
-              <Button
-                variant="contained"
-                onClick={() => (isFinalStep ? router.push("/settings") : setStep((s) => s + 1))}
-              >
-                {isFinalStep ? "Finish" : "Continue"}
+              <Button variant="contained" onClick={finish}>
+                Finish
               </Button>
             </Stack>
           </Stack>

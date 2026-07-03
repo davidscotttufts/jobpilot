@@ -5,3 +5,4 @@ export * from "./logout-button";
 export * from "./forgot-password-form";
 export * from "./reset-password-form";
 export * from "./verify-email-view";
+export * from "./verify-email-banner";

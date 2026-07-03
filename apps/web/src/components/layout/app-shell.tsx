@@ -3,6 +3,7 @@
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box } from "@mui/material";
 import { AgentDock } from "@/components/features/agent-dock";
+import { VerifyEmailBanner } from "@/components/features/auth";
 import { Rail } from "./rail";
 
 export function AppShell(props: PropsWithChildren): ReactElement {
@@ -19,6 +20,7 @@ export function AppShell(props: PropsWithChildren): ReactElement {
     >
       <Rail />
       <Box component="main" sx={{ flex: 1, minWidth: 0, height: "100%", overflowY: "auto" }}>
+        <VerifyEmailBanner />
         {children}
       </Box>
       <AgentDock />

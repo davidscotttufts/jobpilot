@@ -11,9 +11,11 @@ namespace JobPilot.Terminal.Models;
 /// <param name="Providers">Supported provider metadata for clients.</param>
 /// <param name="HostVersion">The host binary version. The dashboard compares it to the latest
 /// terminal release to prompt a re-install; the plugin self-updates at startup, so it is not here.</param>
+/// <param name="Detail">Human-readable reason when <paramref name="Status"/> is <c>degraded</c>.</param>
 public sealed record SessionStatus(
     string Status,
     string Session,
     string Provider,
     TerminalProviderInfo[] Providers,
-    string HostVersion);
+    string HostVersion,
+    string? Detail = null);

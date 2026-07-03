@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { profileGuard, requireVerifiedEmail } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
 import { idResponseSchema } from "@/types/response";
@@ -39,14 +39,22 @@ export const campaignController = new Elysia({
         "Returns the profile's campaigns (optionally filtered by status and source), reconciling any stale in-progress campaigns to interrupted before responding.",
     },
   })
-  .post("/", ({ profileId, body }) => svc.create(profileId, body), {
-    body: createCampaignSchema,
-    response: campaignCreatedSchema,
-    detail: {
-      summary: "Create campaign",
-      description: "Creates a new campaign for the profile and returns the created campaign row.",
+  .post(
+    "/",
+    async ({ user, profileId, body }) => {
+      await requireVerifiedEmail(user.id);
+      return svc.create(profileId, body);
     },
-  })
+    {
+      body: createCampaignSchema,
+      response: campaignCreatedSchema,
+      detail: {
+        summary: "Create campaign",
+        description:
+          "Creates a new campaign for the profile and returns the created campaign row. Requires a verified email address.",
+      },
+    },
+  )
   // ── Single campaign ───────────────────────────────────────────────────────────
   .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
     params: campaignParams,

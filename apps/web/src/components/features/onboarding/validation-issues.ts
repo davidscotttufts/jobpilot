@@ -1,3 +1,5 @@
+// Only the wizard's Personal step edits profile fields now; the rest live in
+// Settings, so issues on them (shouldn't happen - they're optional) get no step.
 const FIELD_TO_STEP: Record<string, number> = {
   firstName: 1,
   lastName: 1,
@@ -6,24 +8,6 @@ const FIELD_TO_STEP: Record<string, number> = {
   website: 1,
   linkedin: 1,
   github: 1,
-  street: 2,
-  aptUnit: 2,
-  city: 2,
-  state: 2,
-  zipCode: 2,
-  country: 2,
-  usAuthorized: 3,
-  requiresSponsorship: 3,
-  visaStatus: 3,
-  optExtension: 3,
-  willingToRelocate: 3,
-  preferredLocations: 3,
-  eeoGender: 4,
-  eeoRace: 4,
-  eeoEthnicity: 4,
-  eeoHispanicOrLatino: 4,
-  eeoVeteranStatus: 4,
-  eeoDisabilityStatus: 4,
 };
 
 export interface ValidationIssue {

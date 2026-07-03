@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/outreach";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { profileGuard, requireVerifiedEmail } from "@/common/middleware";
 import { campaignParams, outreachMessageParams } from "../campaign.schema";
 import {
   outreachMessageListSchema,
@@ -32,7 +32,10 @@ export const campaignOutreachController = new Elysia({
   })
   .post(
     "/:id/outreach",
-    ({ profileId, params, body }) => svc.addOutreach(profileId, params.id, body),
+    async ({ user, profileId, params, body }) => {
+      await requireVerifiedEmail(user.id);
+      return svc.addOutreach(profileId, params.id, body);
+    },
     {
       params: campaignParams,
       body: addCampaignOutreachSchema,
@@ -40,7 +43,7 @@ export const campaignOutreachController = new Elysia({
       detail: {
         summary: "Add outreach message",
         description:
-          "Adds a contact (new or existing) and an initial draft outreach message to the campaign, recomputes the outreach summary, emits an SSE update, and returns the created message.",
+          "Adds a contact (new or existing) and an initial draft outreach message to the campaign, recomputes the outreach summary, emits an SSE update, and returns the created message. Requires a verified email address.",
       },
     },
   )

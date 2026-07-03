@@ -47,17 +47,18 @@ public sealed class PtyService : IDisposable
     {
         Stop();
 
-        var next = CreateProvider();
-        next.OutputReceived += data => OutputReceived?.Invoke(data);
-        next.ProcessExited += code => ProcessExited?.Invoke(code);
-
+        // CreateProvider stays inside the try so platform failures surface as PtyStartException too.
+        IPtyProvider? next = null;
         try
         {
+            next = CreateProvider();
+            next.OutputReceived += data => OutputReceived?.Invoke(data);
+            next.ProcessExited += code => ProcessExited?.Invoke(code);
             next.Start(command, args, workingDirectory, cols, rows, environment);
         }
         catch (Exception ex)
         {
-            next.Dispose();
+            next?.Dispose();
 
             var error = $"\e[31mFailed to start '{command}': {ex.Message}\e[0m\r\n";
             OutputReceived?.Invoke(System.Text.Encoding.UTF8.GetBytes(error));
@@ -105,11 +106,12 @@ public sealed class PtyService : IDisposable
 
     private static IPtyProvider CreateProvider()
     {
-        if (!OperatingSystem.IsWindows())
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
         {
-            throw new PlatformNotSupportedException("Only Windows is supported");
+            return new PtyNetProvider();
         }
 
-        return new PtyNetProvider();
+        throw new PlatformNotSupportedException(
+            "The JobPilot terminal supports Windows, macOS, and Linux.");
     }
 }

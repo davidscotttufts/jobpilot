@@ -15,12 +15,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // One call yields both the verified flag and the profile (auth rides the cookie).
   const { data, error } = await api.auth.me.get();
 
+  // Email verification is a non-blocking banner in-app (outward-facing actions
+  // are gated server-side), so it doesn't factor into routing.
   const onboarded =
-    !error &&
-    data !== null &&
-    data.user.emailVerified &&
-    data.profile !== null &&
-    !isProfileEmpty(data.profile);
+    !error && data !== null && data.profile !== null && !isProfileEmpty(data.profile);
 
   // The root is the public marketing landing: stay public for signed-out /
   // half-onboarded visitors, but bounce fully-onboarded users into the app.
@@ -35,12 +33,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Authenticated but unverified -> gate at verify-email until they confirm.
-  if (!data.user.emailVerified) {
-    return NextResponse.redirect(new URL("/verify-email", request.url));
-  }
-
-  // Verified but profile not filled in -> onboarding.
+  // Profile not filled in -> onboarding.
   if (data.profile === null || isProfileEmpty(data.profile)) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
@@ -50,6 +43,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!_next|docs|login|register|onboarding|verify-email|forgot-password|reset-password|opengraph-image|favicon.ico|.*\\..*).*)",
+    "/((?!_next|docs|install|login|register|onboarding|verify-email|forgot-password|reset-password|opengraph-image|favicon.ico|.*\\..*).*)",
   ],
 };

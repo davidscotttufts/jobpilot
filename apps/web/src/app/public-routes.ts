@@ -4,4 +4,4 @@
  * (Distinct from the proxy's public matcher, which also lets through
  * non-indexable flows like verify-email / reset-password.)
  */
-export const PUBLIC_ROUTES = ["/", "/docs", "/login", "/register"] as const;
+export const PUBLIC_ROUTES = ["/", "/docs", "/install", "/login", "/register"] as const;

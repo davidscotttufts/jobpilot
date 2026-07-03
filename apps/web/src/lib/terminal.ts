@@ -10,12 +10,15 @@ export interface TerminalProviderInfo {
 }
 
 export interface SessionStatus {
+  /** "ok", or "degraded" when the host runs but sessions can't start (e.g. plugin tree missing). */
   status: string;
   session: "running" | "stopped";
   provider: TerminalProviderId;
   providers: TerminalProviderInfo[];
   /** Host binary version, for the dashboard's "update available" prompt (the plugin self-updates). */
   hostVersion: string;
+  /** Human-readable reason when status is "degraded". */
+  detail?: string | null;
 }
 
 export class TerminalApiError extends Error {
@@ -35,10 +38,15 @@ async function send<T>(method: string, path: string, body?: unknown): Promise<T>
     body: body != null ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
-    throw new TerminalApiError(
-      response.status,
-      `JobPilot.Terminal ${method} ${path} -> ${response.status}`,
-    );
+    // The host answers errors as ProblemDetails; surface its detail instead of a bare status.
+    let message = `JobPilot.Terminal ${method} ${path} -> ${response.status}`;
+    try {
+      const problem = (await response.json()) as { detail?: string; title?: string } | null;
+      message = problem?.detail ?? problem?.title ?? message;
+    } catch {
+      // empty or non-JSON body (older host) - keep the fallback
+    }
+    throw new TerminalApiError(response.status, message);
   }
   if (response.headers.get("content-length") === "0") {
     return null as T;

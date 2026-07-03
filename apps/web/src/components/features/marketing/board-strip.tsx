@@ -17,45 +17,68 @@ const BOARDS = [
   "Upwork",
 ];
 
-/** The 12 seeded boards, set as mono tokens - the agent's territory, machine voice. */
+const chipSx = {
+  fontFamily: fontFamilies.mono,
+  fontSize: { xs: "0.75rem", md: "0.8125rem" },
+  whiteSpace: "nowrap",
+  paddingInline: 1.25,
+  paddingBlock: 0.5,
+  borderRadius: 999,
+} as const;
+
+/**
+ * The seeded boards as mono chips - the agent's territory, machine voice - with an
+ * explicit "add your own" affordance: the agent drives a real browser, so the list
+ * is a starting point, not a limit.
+ */
 export function BoardStrip(): ReactElement {
   return (
     <Box sx={{ borderBlock: 1, borderColor: "line.divider", backgroundColor: "surfaces.card" }}>
-      <Container maxWidth="lg" sx={{ paddingBlock: 3.5 }}>
+      <Container maxWidth="lg" sx={{ paddingBlock: { xs: 3, md: 4 } }}>
         <Stack spacing={2} sx={{ alignItems: "center" }}>
-          <Typography variant="overlineMuted">
+          <Typography variant="overlineMuted" sx={{ textAlign: "center" }}>
             Works where the jobs are ·{" "}
             <Box component="span" sx={{ color: "accent.primary" }}>
-              {BOARDS.length} boards
-            </Box>
+              {BOARDS.length} boards built in
+            </Box>{" "}
+            · any board you add
           </Typography>
           <Box
             sx={{
               display: "flex",
               flexWrap: "wrap",
               justifyContent: "center",
-              rowGap: 1,
-              "& > span + span::before": {
-                content: '"·"',
-                marginInline: 1.5,
-                color: "text.disabled",
-              },
+              gap: { xs: 0.75, md: 1 },
             }}
           >
             {BOARDS.map((board) => (
               <Typography
                 key={board}
                 component="span"
-                sx={{
-                  fontFamily: fontFamilies.mono,
-                  fontSize: "0.875rem",
-                  color: "text.secondary",
-                  whiteSpace: "nowrap",
-                }}
+                sx={[
+                  chipSx,
+                  (theme) => ({
+                    color: "text.secondary",
+                    border: `1px solid ${theme.palette.line.border}`,
+                    backgroundColor: theme.palette.surfaces.elevated,
+                  }),
+                ]}
               >
                 {board}
               </Typography>
             ))}
+            <Typography
+              component="span"
+              sx={[
+                chipSx,
+                (theme) => ({
+                  color: "accent.primary",
+                  border: `1px dashed ${theme.palette.accent.primary}66`,
+                }),
+              ]}
+            >
+              + your board
+            </Typography>
           </Box>
         </Stack>
       </Container>

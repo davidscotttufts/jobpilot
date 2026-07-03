@@ -33,6 +33,12 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
       return { code: ErrorCodes.CONFLICT, message: "Already exists" };
     }
 
+    // Update/delete on a row that vanished (concurrent delete) is a 404, not a 500.
+    if (prismaCode(error) === "P2025") {
+      set.status = 404;
+      return { code: ErrorCodes.NOT_FOUND, message: "Not found" };
+    }
+
     if (code === "VALIDATION") {
       set.status = 422;
       return {

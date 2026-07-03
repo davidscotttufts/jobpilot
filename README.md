@@ -25,8 +25,9 @@ interview in one pipeline.
 
 - **Four campaign modes** - search-and-review, autonomous auto-apply,
   single-job apply, and recruiter outreach.
-- **12 job boards out of the box** - LinkedIn, Indeed, Glassdoor, Wellfound,
-  Y Combinator, HN Who's Hiring, We Work Remotely, Remote OK, and more.
+- **Any job board** - 12 built in (LinkedIn, Indeed, Glassdoor, Wellfound,
+  Y Combinator, HN Who's Hiring, We Work Remotely, Remote OK, and more), and
+  you can add any other board yourself - the agent drives a real browser.
 - **A pipeline, not a spreadsheet** - every application tracked through 9
   stages, from applied to offer, with analytics on top.
 - **An inbox that reads itself** - recruiter replies are pulled from Gmail,

@@ -3,6 +3,7 @@ import { singleton } from "tsyringe";
 import { generateOpaqueToken, hashToken, type AuthUser } from "@/common/auth";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { notFound } from "@/common/errors";
+import { logger } from "@/common/logger";
 import { PrismaClient } from "@/generated/prisma/client";
 import { principal } from "./auth.mapper";
 
@@ -37,14 +38,28 @@ export class ApiTokenService {
       orderBy: { createdAt: "desc" },
     });
     if (existing?.tokenCipher && (!existing.expiresAt || existing.expiresAt > new Date())) {
-      const token = await this.crypto.decryptFor(
-        userId,
-        SECRET_CONTEXTS.apiTokenTerminal,
-        existing.tokenCipher,
-      );
-      return this.minted(existing, token);
+      try {
+        const token = await this.crypto.decryptFor(
+          userId,
+          SECRET_CONTEXTS.apiTokenTerminal,
+          existing.tokenCipher,
+        );
+        return this.minted(existing, token);
+      } catch (error) {
+        // Undecryptable cipher (master-key rotation, corrupt row): revoke and re-mint
+        // instead of surfacing a 500 the user can't act on.
+        logger.warn({ err: error, userId }, "Terminal token cipher undecryptable; rotating");
+        await this.prisma.apiToken.update({
+          where: { id: existing.id },
+          data: { revokedAt: new Date() },
+        });
+      }
     }
 
+    return this.mintTerminalToken(userId);
+  }
+
+  private async mintTerminalToken(userId: string) {
     const raw = generateOpaqueToken();
     const created = await this.prisma.apiToken.create({
       data: {

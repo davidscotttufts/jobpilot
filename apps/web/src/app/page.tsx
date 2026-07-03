@@ -22,11 +22,12 @@ export const metadata: Metadata = {
 };
 
 const SOFTWARE_DESCRIPTION =
-  "JobPilot drives Claude Code or Codex on your own subscription to search 12 job boards, tailor your resume, apply, and track every reply - from one dashboard.";
+  "JobPilot drives Claude Code or Codex on your own subscription to search any job board - 12 built in - tailor your resume, apply, and track every reply from one dashboard.";
 
 export default function LandingPage(): ReactElement {
   return (
-    <Box sx={{ minHeight: "100vh", backgroundColor: "surfaces.base" }}>
+    // overflowX clip: decorative glows/orbs must never widen the page on mobile.
+    <Box sx={{ minHeight: "100vh", backgroundColor: "surfaces.base", overflowX: "clip" }}>
       <JsonLd
         data={[
           organizationLd(),

@@ -53,7 +53,7 @@ export function MarketingNav(): ReactElement {
             <LinkButton href="/login" variant="text" size="small">
               Sign in
             </LinkButton>
-            <LinkButton href="/register" variant="contained" size="small">
+            <LinkButton href="/install" variant="contained" size="small">
               Get started
             </LinkButton>
           </Stack>

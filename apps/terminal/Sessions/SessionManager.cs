@@ -20,7 +20,7 @@ public sealed class SessionManager : IDisposable
 
     private readonly PtyService pty;
     private readonly ILogger<SessionManager> logger;
-    private readonly TerminalSessionPaths paths;
+    private readonly TerminalSessionPaths? paths;
     private readonly OutputBroadcaster broadcaster;
     private readonly Lock stateLock = new();
 
@@ -37,12 +37,27 @@ public sealed class SessionManager : IDisposable
     {
         this.pty = pty;
         this.logger = logger;
-        paths = TerminalSessionPaths.Resolve();
+        // A broken install (missing plugin tree) must not fail construction - /healthz would 500 and
+        // the dashboard would read a running host as "offline". Report it as degraded instead.
+        try
+        {
+            paths = TerminalSessionPaths.Resolve();
+        }
+        catch (Exception ex)
+        {
+            PathsError = ex.Message;
+            logger.LogError(ex, "Terminal host install is incomplete; sessions cannot start.");
+        }
         broadcaster = new OutputBroadcaster(logger);
 
         pty.OutputReceived += OnPtyOutput;
         pty.ProcessExited += OnPtyExit;
     }
+
+    /// <summary>
+    /// Non-null when the plugin tree could not be resolved; /healthz reports the host as degraded.
+    /// </summary>
+    public string? PathsError { get; }
 
     /// <summary>
     /// Gets the current terminal session state.
@@ -80,6 +95,9 @@ public sealed class SessionManager : IDisposable
     {
         lock (stateLock)
         {
+            var sessionPaths = paths ?? throw new InvalidOperationException(
+                $"Terminal host install is incomplete - reinstall the JobPilot agent. ({PathsError})");
+
             var normalizedProvider = TerminalProviders.Normalize(provider);
             if (state == SessionState.Running && activeProvider == normalizedProvider)
             {
@@ -97,9 +115,9 @@ public sealed class SessionManager : IDisposable
                 state = SessionState.Stopped;
             }
 
-            var workingDir = paths.ResolveWorkingDir(requestedWorkingDir);
+            var workingDir = sessionPaths.ResolveWorkingDir(requestedWorkingDir);
             PlaywrightScratchCleaner.Clean(workingDir, logger);
-            var spec = paths.GetLaunchSpec(normalizedProvider, workingDir);
+            var spec = sessionPaths.GetLaunchSpec(normalizedProvider, workingDir);
 
             logger.LogInformation(
                 "Starting {Provider}: cwd={Cwd} command={Command} args={Args} sharedSkillsDir={SharedSkillsDir} cols={Cols} rows={Rows}",
@@ -107,7 +125,7 @@ public sealed class SessionManager : IDisposable
                 workingDir,
                 spec.Command,
                 string.Join(" ", spec.Args),
-                paths.SharedSkillsDir,
+                sessionPaths.SharedSkillsDir,
                 cols,
                 rows);
 
@@ -117,7 +135,7 @@ public sealed class SessionManager : IDisposable
 
             var env = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["JOBPILOT_SKILLS_ROOT"] = paths.SharedSkillsDir,
+                ["JOBPILOT_SKILLS_ROOT"] = sessionPaths.SharedSkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
                 ["JOBPILOT_API"] = FromRequestOrEnv(apiUrl, "JOBPILOT_API", "http://localhost:4101"),
                 ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),

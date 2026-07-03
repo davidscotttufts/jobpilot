@@ -45,12 +45,12 @@ export function Hero(): ReactElement {
                 Your AI job agent, running on your machine.
               </Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 520 }}>
-                JobPilot drives Claude Code or Codex on your own subscription to search 12 job
-                boards, tailor your resume, apply, and track every reply - from one dashboard.
+                JobPilot drives Claude Code or Codex on your own subscription to search any job
+                board, tailor your resume, apply, and track every reply - from one dashboard.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
-                <LinkButton href="/register" variant="contained" size="large">
-                  Get started
+                <LinkButton href="/install" variant="contained" size="large">
+                  Install the agent
                 </LinkButton>
                 <LinkButton href="/login" variant="outlined" size="large">
                   Sign in

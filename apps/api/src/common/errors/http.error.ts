@@ -7,6 +7,7 @@ export const ErrorCodes = {
   UNPROCESSABLE: "UNPROCESSABLE_ENTITY",
   UNAUTHORIZED: "UNAUTHORIZED",
   FORBIDDEN: "FORBIDDEN",
+  EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
   INTERNAL: "INTERNAL_ERROR",
 } as const;
 
@@ -48,4 +49,12 @@ export function unauthorized(message = "Unauthorized"): HttpError {
 
 export function forbidden(message = "Forbidden"): HttpError {
   return new HttpError(ErrorCodes.FORBIDDEN, message, 403);
+}
+
+export function emailNotVerified(): HttpError {
+  return new HttpError(
+    ErrorCodes.EMAIL_NOT_VERIFIED,
+    "Verify your email address to use this feature - check your inbox for the verification link.",
+    403,
+  );
 }

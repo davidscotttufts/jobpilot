@@ -53,21 +53,30 @@ export class AuthService {
     // Co-create the 1:1 profile (empty; onboarding populates it via PUT /api/profile)
     // so profileGuard always resolves for a registered user. Seed the default board
     // catalog inline - Prisma fills profileId on each row from the parent create.
-    const user = await this.prisma.user.create({
-      data: {
-        email: input.email,
-        passwordHash,
-        emailVerified: autoVerified,
-        profile: {
-          create: {
-            firstName: "",
-            lastName: "",
-            email: input.email,
-            jobBoards: { createMany: { data: DEFAULT_BOARDS } },
+    let user: User;
+    try {
+      user = await this.prisma.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          emailVerified: autoVerified,
+          profile: {
+            create: {
+              firstName: "",
+              lastName: "",
+              email: input.email,
+              jobBoards: { createMany: { data: DEFAULT_BOARDS } },
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      // Concurrent signup slipped past the pre-check; keep the friendly message.
+      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+        throw conflict("Email already registered");
+      }
+      throw error;
+    }
     return this.session(user);
   }
 

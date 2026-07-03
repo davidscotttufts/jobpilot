@@ -70,7 +70,8 @@ export function ProductTour(): ReactElement {
                 aria-hidden
                 sx={{
                   position: "absolute",
-                  inset: -48,
+                  // Zero horizontal bleed on mobile - it widens the page and causes sideways scroll.
+                  inset: { xs: "-48px 0", md: -48 },
                   background: `radial-gradient(ellipse 60% 60% at 50% 50%, ${row.glow}, transparent 70%)`,
                   pointerEvents: "none",
                 }}

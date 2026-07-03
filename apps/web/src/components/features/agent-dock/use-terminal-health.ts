@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { getStatus, type SessionStatus } from "@/lib/terminal";
+import { patchAgentStorage, readAgentStorage } from "@/providers/agent-provider";
 
-export type TerminalHealth = "checking" | "reachable" | "unreachable";
+export type TerminalHealth = "checking" | "reachable" | "degraded" | "unreachable";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -14,7 +15,10 @@ export interface TerminalHealthState {
   recheck: () => void;
 }
 
-/** Polls the local terminal host; "reachable" when /healthz answers, "unreachable" on any error. */
+/**
+ * Polls the local terminal host; "reachable" when /healthz answers, "degraded" when the host
+ * runs but can't start sessions (broken install), "unreachable" on any error.
+ */
 export function useTerminalHealth(): TerminalHealthState {
   const [health, setHealth] = useState<TerminalHealth>("checking");
   const [status, setStatus] = useState<SessionStatus | null>(null);
@@ -29,7 +33,11 @@ export function useTerminalHealth(): TerminalHealthState {
         const result = await getStatus();
         if (active) {
           setStatus(result);
-          setHealth("reachable");
+          setHealth(result.status === "degraded" ? "degraded" : "reachable");
+          // Remember that a host ever answered - the dock only auto-expands before that.
+          if (!readAgentStorage()?.everReachable) {
+            patchAgentStorage({ everReachable: true });
+          }
         }
       } catch {
         if (active) {

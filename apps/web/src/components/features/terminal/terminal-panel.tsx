@@ -129,9 +129,13 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
           apiUrl: API_BASE_URL,
         });
       } catch (err) {
-        terminal.writeln(
-          `\x1b[31m[terminal] failed to start session: ${(err as Error).message}\x1b[0m`,
-        );
+        const message = (err as Error).message;
+        terminal.writeln(`\x1b[31m[terminal] failed to start session: ${message}\x1b[0m`);
+        if (/Failed to start '(claude|codex)'/.test(message)) {
+          terminal.writeln(
+            "\x1b[33m[terminal] Install the CLI and make sure it's on PATH, then restart the JobPilot host.\x1b[0m",
+          );
+        }
         return;
       }
 

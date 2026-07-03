@@ -61,8 +61,8 @@ export default function OpenGraphImage(): ImageResponse {
           Your AI job agent, running on your machine.
         </div>
         <div style={{ color: "#A7A49D", fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
-          Search 12 boards, tailor your resume, apply, and track every reply - on your own Claude or
-          Codex subscription.
+          Search any job board, tailor your resume, apply, and track every reply - on your own
+          Claude or Codex subscription.
         </div>
       </div>
       <div style={{ display: "flex", color: "#6C6860", fontSize: 24 }}>jobpilot.suxrobgm.net</div>

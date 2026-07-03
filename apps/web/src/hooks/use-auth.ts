@@ -44,14 +44,15 @@ export function useAuth(): UseAuthResult {
     router.push("/pipeline");
   };
 
+  // The forms render these errors inline - no toast on top.
   const login = useApiMutation<AuthSessionResponse, LoginInput>(
     (body) => api.auth.login.post(body),
-    { onSuccess: onSession },
+    { onSuccess: onSession, showErrorToast: false },
   );
 
   const register = useApiMutation<AuthSessionResponse, RegisterInput>(
     (body) => api.auth.register.post(body),
-    { onSuccess: onSession },
+    { onSuccess: onSession, showErrorToast: false },
   );
 
   const logout = useApiMutation<LogoutResponse, void>(() => api.auth.logout.post(), {

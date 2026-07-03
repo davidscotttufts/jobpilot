@@ -45,10 +45,10 @@ export function CtaBand(): ReactElement {
             Put your job search on autopilot.
           </Typography>
           <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 520 }}>
-            Create an account, install the agent, run your first campaign tonight.
+            Install the agent, create an account, run your first campaign tonight.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
-            <LinkButton href="/register" variant="contained" size="large">
+            <LinkButton href="/install" variant="contained" size="large">
               Get started
             </LinkButton>
             <LinkButton href="/docs" variant="outlined" size="large">

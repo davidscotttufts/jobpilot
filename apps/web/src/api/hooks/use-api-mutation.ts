@@ -17,6 +17,8 @@ type UseApiMutationOptions<TData, TVariables, TContext = unknown> = Omit<
 > & {
   successMessage?: string | ((data: TData, vars: TVariables) => string);
   errorMessage?: string | ((error: Error, vars: TVariables) => string);
+  /** Set false when the caller renders the error inline (avoids the duplicate toast). */
+  showErrorToast?: boolean;
   invalidate?: ReadonlyArray<ReadonlyArray<unknown>>;
   onSuccess?: (data: TData, variables: TVariables) => void;
   onError?: (error: Error, variables: TVariables) => void;
@@ -34,7 +36,15 @@ export function useApiMutation<TData, TVariables = void, TContext = unknown>(
   mutationFn: MutationFn<TData, TVariables>,
   options?: UseApiMutationOptions<NoInfer<TData>, NoInfer<TVariables>, TContext>,
 ): ApiMutationResult<TData, TVariables, TContext> {
-  const { successMessage, errorMessage, invalidate, onSuccess, onError, ...rest } = options ?? {};
+  const {
+    successMessage,
+    errorMessage,
+    showErrorToast = true,
+    invalidate,
+    onSuccess,
+    onError,
+    ...rest
+  } = options ?? {};
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -60,11 +70,12 @@ export function useApiMutation<TData, TVariables = void, TContext = unknown>(
       onSuccess?.(data, vars);
     },
     onError: (error: Error, vars: TVariables) => {
-      if (errorMessage) {
-        const msg = typeof errorMessage === "function" ? errorMessage(error, vars) : errorMessage;
+      if (showErrorToast) {
+        const msg =
+          typeof errorMessage === "function"
+            ? errorMessage(error, vars)
+            : (errorMessage ?? error.message);
         toast.error(msg);
-      } else {
-        toast.error(error.message);
       }
       onError?.(error, vars);
     },

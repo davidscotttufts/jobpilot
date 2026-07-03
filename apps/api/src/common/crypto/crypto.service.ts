@@ -43,10 +43,21 @@ export class CryptoService {
   /** Generate, persist (wrapped), and return a new DEK for a user that lacks one. */
   private async provisionDek(userId: string): Promise<Buffer> {
     const dek = generateDek();
-    await this.prisma.user.update({
-      where: { id: userId },
+    // First-write-wins: a concurrent provision must not overwrite an already-used DEK.
+    const { count } = await this.prisma.user.updateMany({
+      where: { id: userId, wrappedDek: null },
       data: { wrappedDek: wrapDek(MASTER_KEY, dek) },
     });
+    if (count === 0) {
+      const winner = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { wrappedDek: true },
+      });
+      if (!winner?.wrappedDek) {
+        throw new Error(`Cannot resolve encryption key: no user ${userId}`);
+      }
+      return unwrapDek(MASTER_KEY, winner.wrappedDek);
+    }
     return dek;
   }
 
