@@ -5,7 +5,12 @@ using JobPilot.Terminal.Realtime;
 using JobPilot.Terminal.Sessions;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-var builder = WebApplication.CreateBuilder(args);
+// Content root = exe dir, not launch CWD, so appsettings.json (pins :4102) loads regardless of where we start.
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = AppContext.BaseDirectory,
+});
 
 builder.Services.AddCors();
 builder.Services.AddTerminal();
