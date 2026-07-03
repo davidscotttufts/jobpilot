@@ -13,8 +13,8 @@ export const SearchFields = withForm({
           <field.TextField
             label="Jobs to search"
             type="number"
-            helperText="How many results to rank (1–100)."
-            slotProps={{ htmlInput: { min: 1, max: 100, step: 1 } }}
+            helperText="How many results to rank. Leave empty for unlimited."
+            slotProps={{ htmlInput: { min: 1, step: 1 } }}
           />
         )}
       </form.AppField>

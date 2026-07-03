@@ -34,7 +34,8 @@ export const campaignConfigSchema = z.object({
   resumeId: z.uuid().optional(),
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
-  maxJobs: z.number().int().min(1).max(100).optional(),
+  // No upper cap: absent = unlimited (search runs until the board is exhausted).
+  maxJobs: z.number().int().min(1).optional(),
   outreach: outreachConfigSchema.optional(),
 });
 

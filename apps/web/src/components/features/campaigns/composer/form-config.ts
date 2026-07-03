@@ -13,7 +13,8 @@ export const composerFormSchema = z
     resumeId: z.string().min(1, "Select a resume"),
     minScore: z.number().int().min(0).max(100),
     maxApps: z.union([z.number().int().min(1).max(500), z.null(), z.undefined()]),
-    maxJobs: z.number().int().min(1).max(100),
+    // Empty = unlimited (search until the board is exhausted), mirroring maxApps.
+    maxJobs: z.union([z.number().int().min(1), z.null(), z.undefined()]),
     // Outreach campaign settings (mode === "outreach").
     channels: z.array(z.enum(["email", "linkedin"])),
     linkedinTier: z.enum(["free", "premium"]),
@@ -69,6 +70,12 @@ function hasMaxApps(
   return values.maxApps != null && Number.isFinite(values.maxApps);
 }
 
+function hasMaxJobs(
+  values: ComposerFormValues,
+): values is ComposerFormValues & { maxJobs: number } {
+  return values.maxJobs != null && Number.isFinite(values.maxJobs);
+}
+
 /** Whether an outreach campaign has a board picked (board-grounded vs criteria-only). */
 export function isBoardSelected(board: string): boolean {
   return board.trim() !== "";
@@ -92,7 +99,8 @@ export function buildCampaignConfig(values: ComposerFormValues): CreateCampaignR
     };
   }
   if (values.mode !== "auto-apply") {
-    return { board: values.board, maxJobs: values.maxJobs };
+    // Omit maxJobs when empty so the search runs unlimited.
+    return { board: values.board, ...(hasMaxJobs(values) ? { maxJobs: values.maxJobs } : {}) };
   }
   return {
     board: values.board,
@@ -112,7 +120,7 @@ export function buildSkillArg(values: ComposerFormValues, campaignId: string): s
       board: values.board,
       "min-score": values.mode === "auto-apply" ? values.minScore : undefined,
       "max-apps": values.mode === "auto-apply" && hasMaxApps(values) ? values.maxApps : undefined,
-      "max-jobs": values.mode === "search" ? values.maxJobs : undefined,
+      "max-jobs": values.mode === "search" && hasMaxJobs(values) ? values.maxJobs : undefined,
       // Search saves results onto this campaign; pass the id the UI just created so
       // the skill doesn't have to rediscover it.
       campaign: values.mode === "search" || values.mode === "auto-apply" ? campaignId : undefined,

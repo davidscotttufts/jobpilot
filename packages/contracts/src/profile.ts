@@ -143,7 +143,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   eeoDisabilityStatus: "Prefer not to disclose",
   primaryResumeId: null,
   autoApply: {
-    minMatchScore: 70,
+    minMatchScore: 60,
     maxApplicationsPerCampaign: null,
     defaultStartDate: "2 weeks notice",
   },
