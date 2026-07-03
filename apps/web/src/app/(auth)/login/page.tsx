@@ -1,5 +1,12 @@
 import type { ReactElement } from "react";
+import type { Metadata } from "next";
 import { AuthCard, LoginForm } from "@/components/features/auth";
+
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to your JobPilot dashboard to run and track job-application campaigns.",
+  alternates: { canonical: "/login" },
+};
 
 export default function LoginPage(): ReactElement {
   return (

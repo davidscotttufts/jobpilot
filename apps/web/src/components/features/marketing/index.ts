@@ -6,5 +6,6 @@ export * from "./product-tour";
 export * from "./privacy-grid";
 export * from "./how-it-works";
 export * from "./faq";
+export * from "./faq-items";
 export * from "./cta-band";
 export * from "./marketing-footer";

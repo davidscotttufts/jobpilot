@@ -1,7 +1,8 @@
 import "./globals.css";
 import type { PropsWithChildren, ReactElement } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
+import { SITE_URL } from "@/lib/constants";
 import { AgentProvider } from "@/providers/agent-provider";
 import { ConfirmProvider } from "@/providers/confirm-provider";
 import { ToastProvider } from "@/providers/notification-provider";
@@ -27,10 +28,30 @@ const description =
   "JobPilot drives Claude Code or Codex on your own subscription to search 12 job boards, tailor your resume, apply, and track every reply - from one dashboard.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://jobpilot.suxrobgm.net"),
+  metadataBase: new URL(SITE_URL),
   title: { default: "JobPilot - your AI job agent", template: "%s · JobPilot" },
   description,
+  applicationName: "JobPilot",
+  keywords: [
+    "AI job application",
+    "job search agent",
+    "Claude Code",
+    "Codex",
+    "resume tailoring",
+    "auto apply jobs",
+    "Upwork proposals",
+    "job board automation",
+  ],
+  authors: [{ name: "Sukhrob Ilyosbekov", url: "https://github.com/suxrobGM" }],
+  creator: "Sukhrob Ilyosbekov",
+  category: "technology",
+  manifest: "/manifest.webmanifest",
   icons: { icon: "/icon.svg" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   openGraph: {
     siteName: "JobPilot",
     url: "/",
@@ -44,6 +65,12 @@ export const metadata: Metadata = {
     title: "JobPilot - your AI job agent",
     description,
   },
+};
+
+// Matches surfaces.base - the app ships a single dark palette.
+export const viewport: Viewport = {
+  themeColor: "#0B1016",
+  colorScheme: "dark",
 };
 
 export default function RootLayout(props: PropsWithChildren): ReactElement {

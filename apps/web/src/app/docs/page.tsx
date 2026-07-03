@@ -3,9 +3,14 @@ import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { DocsIndexCards } from "@/components/features/docs";
 
+const description = "How to set up and use JobPilot: the agent, campaigns, email, and credentials.";
+
 export const metadata: Metadata = {
   title: "Docs",
-  description: "How to set up and use JobPilot: the agent, campaigns, email, and credentials.",
+  description,
+  alternates: { canonical: "/docs" },
+  openGraph: { type: "article", url: "/docs", title: "Docs · JobPilot", description },
+  twitter: { title: "Docs · JobPilot", description },
 };
 
 export default function DocsIndexPage(): ReactElement {

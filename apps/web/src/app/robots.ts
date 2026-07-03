@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/constants";
 import { PUBLIC_ROUTES } from "./public-routes";
 
 export default function robots(): MetadataRoute.Robots {
@@ -23,6 +24,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: "https://jobpilot.suxrobgm.net/sitemap.xml",
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

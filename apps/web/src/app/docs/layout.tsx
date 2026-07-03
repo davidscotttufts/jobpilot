@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { Box, Container } from "@mui/material";
-import { DocsSidebar } from "@/components/features/docs";
+import { DocsBreadcrumbJsonLd, DocsSidebar } from "@/components/features/docs";
 import { MarketingFooter, MarketingNav } from "@/components/features/marketing";
 
 interface DocsLayoutProps {
@@ -18,6 +18,7 @@ export default function DocsLayout(props: DocsLayoutProps): ReactElement {
         backgroundColor: "surfaces.base",
       }}
     >
+      <DocsBreadcrumbJsonLd />
       <MarketingNav />
       <Container maxWidth="lg" sx={{ flex: 1, paddingBlock: { xs: 3, md: 6 } }}>
         <Box
