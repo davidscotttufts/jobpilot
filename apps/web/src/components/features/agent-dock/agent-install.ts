@@ -18,8 +18,3 @@ const isWindows = (): boolean =>
 export function orderedInstallCommands(): readonly InstallCommand[] {
   return isWindows() ? INSTALL_COMMANDS : [INSTALL_COMMANDS[1], INSTALL_COMMANDS[0]];
 }
-
-/** The install one-liner for the visitor's OS. */
-export function primaryInstallCommand(): string {
-  return orderedInstallCommands()[0].command;
-}

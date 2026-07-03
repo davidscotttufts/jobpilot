@@ -16,6 +16,7 @@ import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOrb } from "./agent-orb";
+import { AgentUpdateBanner } from "./agent-update-banner";
 import { useTerminalHealth } from "./use-terminal-health";
 
 export function DockPanel(): ReactElement {
@@ -68,6 +69,9 @@ export function DockPanel(): ReactElement {
       {health === "unreachable" && <AgentInstallCard onRecheck={recheck} />}
       {health === "reachable" && (
         <>
+          {status && (
+            <AgentUpdateBanner currentVersion={status.hostVersion} provider={provider} />
+          )}
           <Stack
             direction="row"
             spacing={0.75}

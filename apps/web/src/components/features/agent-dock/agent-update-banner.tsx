@@ -4,7 +4,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Close } from "@mui/icons-material";
 import { Alert, IconButton, Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
-import { primaryInstallCommand, RELEASES_URL } from "./agent-install";
+import { formatSkillCommand, type TerminalProviderId } from "@/lib/terminal";
+import { RELEASES_URL } from "./agent-install";
+
+const MARKETPLACE_UPDATE_COMMAND = "/plugin marketplace update sukhrob-claude-plugins";
 
 const TAG_PREFIX = "v";
 
@@ -29,11 +32,12 @@ function isNewer(latest: string, current: string): boolean {
 
 interface AgentUpdateBannerProps {
   currentVersion: string;
+  provider: TerminalProviderId;
 }
 
-/** Checks GitHub for the latest terminal release and prompts to re-run the installer when behind. */
+/** Checks GitHub for the latest terminal release; when behind, points the user at the plugin + setup update path. */
 export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
-  const { currentVersion } = props;
+  const { currentVersion, provider } = props;
   const [latest, setLatest] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -88,15 +92,32 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
         </IconButton>
       }
     >
-      <Stack spacing={0.75}>
+      <Stack spacing={1}>
         <Typography variant="captionMuted">
-          Agent update available - v{latest} (you have v{currentVersion}). Re-run the installer:
+          Agent update available - v{latest} (you have v{currentVersion}). In Claude Code or Codex:
         </Typography>
-        <CopyField
-          value={primaryInstallCommand()}
-          copyMessage="Command copied"
-          ariaLabel="Copy install command"
-        />
+        {provider === "claude" ? (
+          <Stack spacing={0.5}>
+            <Typography variant="captionMuted">1. Update the JobPilot plugin:</Typography>
+            <CopyField
+              value={MARKETPLACE_UPDATE_COMMAND}
+              copyMessage="Command copied"
+              ariaLabel="Copy plugin update command"
+            />
+          </Stack>
+        ) : (
+          <Typography variant="captionMuted">
+            1. Update the JobPilot plugin from the Codex /plugin menu.
+          </Typography>
+        )}
+        <Stack spacing={0.5}>
+          <Typography variant="captionMuted">2. Update the agent (restarts it, self-updating):</Typography>
+          <CopyField
+            value={formatSkillCommand(provider, "setup")}
+            copyMessage="Command copied"
+            ariaLabel="Copy setup command"
+          />
+        </Stack>
       </Stack>
     </Alert>
   );
