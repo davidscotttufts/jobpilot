@@ -19,7 +19,7 @@ model Resume {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([profileId])
-  @@map("resume")
+  @@map("resumes")
 }
 
 model ResumeVariant {
@@ -45,5 +45,5 @@ model ResumeVariant {
 
   @@index([resumeId])
   @@index([applicationId])
-  @@map("resume_variant")
+  @@map("resume_variants")
 }

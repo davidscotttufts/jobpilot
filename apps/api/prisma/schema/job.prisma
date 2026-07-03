@@ -23,5 +23,5 @@ model Job {
 
   @@unique([campaignId, key])
   @@index([campaignId, status])
-  @@map("job")
+  @@map("jobs")
 }

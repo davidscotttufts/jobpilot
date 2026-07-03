@@ -11,5 +11,5 @@ model QueueEntry {
   @@unique([profileId, url])
   @@index([profileId, status])
   @@index([status])
-  @@map("queue_entry")
+  @@map("queue_entries")
 }

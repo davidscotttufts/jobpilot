@@ -53,7 +53,7 @@ model Profile {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
-  @@map("profile")
+  @@map("profiles")
 }
 
 model Reference {
@@ -68,7 +68,7 @@ model Reference {
   position     Int     @default(0)
 
   @@index([profileId])
-  @@map("reference")
+  @@map("references")
 }
 
 model AutoApplySettings {

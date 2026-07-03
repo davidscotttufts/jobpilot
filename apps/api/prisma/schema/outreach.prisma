@@ -27,7 +27,7 @@ model Contact {
 
   @@index([profileId])
   @@index([profileId, company])
-  @@map("contact")
+  @@map("contacts")
 }
 
 model OutreachMessage {
@@ -58,5 +58,5 @@ model OutreachMessage {
   @@index([contactId])
   @@index([threadId])
   @@index([status])
-  @@map("outreach_message")
+  @@map("outreach_messages")
 }

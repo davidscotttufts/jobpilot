@@ -29,7 +29,7 @@ model UpworkProposal {
   @@index([profileId])
   @@index([profileId, status])
   @@index([campaignId])
-  @@map("upwork_proposal")
+  @@map("upwork_proposals")
 }
 
 // One Upwork profile-enhancement record per profile. Holds the scraped current
@@ -55,5 +55,5 @@ model UpworkProfile {
   updatedAt DateTime  @updatedAt @map("updated_at")
   appliedAt DateTime? @map("applied_at")
 
-  @@map("upwork_profile")
+  @@map("upwork_profiles")
 }

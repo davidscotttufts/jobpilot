@@ -25,7 +25,7 @@ model User {
   apiTokens          ApiToken[]
   verificationTokens VerificationToken[]
 
-  @@map("user")
+  @@map("users")
 }
 
 enum VerificationTokenType {
@@ -51,7 +51,7 @@ model VerificationToken {
 
   @@index([userId])
   @@index([expiresAt])
-  @@map("verification_token")
+  @@map("verification_tokens")
 }
 
 // Web session rotation. Only a hash of the token is stored, never the raw value.
@@ -67,7 +67,7 @@ model RefreshToken {
 
   @@index([userId])
   @@index([expiresAt])
-  @@map("refresh_token")
+  @@map("refresh_tokens")
 }
 
 // The local agent's credential: a long-lived, revocable PAT. PATs are hash-only;
@@ -87,5 +87,5 @@ model ApiToken {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("api_token")
+  @@map("api_tokens")
 }

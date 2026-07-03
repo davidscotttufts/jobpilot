@@ -17,7 +17,7 @@ model Campaign {
   outreachMessages OutreachMessage[]
 
   @@index([profileId])
-  @@map("campaign")
+  @@map("campaigns")
 }
 
 model CampaignEvent {
@@ -29,5 +29,5 @@ model CampaignEvent {
   createdAt  DateTime @default(now()) @map("created_at")
 
   @@index([campaignId, createdAt])
-  @@map("campaign_event")
+  @@map("campaign_events")
 }

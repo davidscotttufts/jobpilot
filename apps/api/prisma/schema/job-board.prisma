@@ -11,5 +11,5 @@ model JobBoard {
 
   @@unique([profileId, domain])
   @@index([profileId])
-  @@map("job_board")
+  @@map("job_boards")
 }

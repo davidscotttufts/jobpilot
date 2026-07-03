@@ -12,5 +12,5 @@ model CoverLetter {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([profileId, createdAt])
-  @@map("cover_letter")
+  @@map("cover_letters")
 }
