@@ -74,7 +74,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
   });
 
   const form = useAppForm({
-    defaultValues: { clientId: config.clientId ?? "", clientSecret: "" } as OAuthClientUpsertInput,
+    defaultValues: { clientId: "", clientSecret: "" } as OAuthClientUpsertInput,
     validators: { onSubmit: oauthClientUpsertSchema },
     onSubmit: ({ value }) => {
       save.mutate({ clientId: value.clientId, clientSecret: value.clientSecret });
@@ -104,27 +104,37 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
 
         <Box component="ol" sx={{ pl: 2.5, m: 0 }}>
           <Typography component="li" variant="body2Muted">
-            Create a project in{" "}
+            In the{" "}
             <Link
-              href="https://console.cloud.google.com/apis/credentials"
+              href="https://console.cloud.google.com/projectcreate"
               target="_blank"
               rel="noopener"
             >
               Google Cloud Console
-            </Link>{" "}
-            and an OAuth 2.0 Client ID (type <strong>Web application</strong>).
+            </Link>
+            , create or select a project, then enable the <strong>Gmail API</strong> (APIs &amp;
+            Services &rarr; Library).
           </Typography>
           <Typography component="li" variant="body2Muted">
-            Enable the <strong>Gmail API</strong> for the project.
+            Open <strong>Google Auth Platform &rarr; Branding</strong>, set the app name and support
+            email, and choose audience type <strong>External</strong>.
           </Typography>
           <Typography component="li" variant="body2Muted">
-            Add the redirect URI below to the client&apos;s authorized redirect URIs.
+            Under <strong>Data Access &rarr; Add or remove scopes</strong>, add the scopes listed
+            below (they aren&apos;t set on the client screen).
           </Typography>
           <Typography component="li" variant="body2Muted">
-            Add the scopes below, then add yourself as a Test user.
+            Under <strong>Audience &rarr; Test users</strong>, add your own Google account (the app
+            can stay in Testing mode).
           </Typography>
           <Typography component="li" variant="body2Muted">
-            Paste the Client ID and secret here and save.
+            Under <strong>Clients</strong>, create an <strong>OAuth client ID</strong> of type{" "}
+            <strong>Web application</strong> and paste the redirect URI below into its{" "}
+            <strong>Authorized redirect URIs</strong>.
+          </Typography>
+          <Typography component="li" variant="body2Muted">
+            Copy the generated <strong>Client ID</strong> and <strong>Client secret</strong> into the
+            fields below and save.
           </Typography>
         </Box>
 
@@ -163,13 +173,20 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
         >
           <Stack spacing={2} sx={{ maxWidth: 420 }}>
             <form.AppField name="clientId">
-              {(field) => <field.TextField label="Client ID" />}
+              {(field) => (
+                <field.TextField
+                  label="Client ID"
+                  placeholder="1234567890-abc123def456.apps.googleusercontent.com"
+                  helperText={config.configured ? `Current: ${config.clientId}` : undefined}
+                />
+              )}
             </form.AppField>
             <form.AppField name="clientSecret">
               {(field) => (
                 <field.TextField
                   label="Client secret"
                   type="password"
+                  placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
                   helperText={
                     config.configured ? "Leave blank to keep the current secret" : undefined
                   }
