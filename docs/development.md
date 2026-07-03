@@ -1,5 +1,8 @@
 # Development reference
 
+Technical reference for contributors. For the plain-language overview, see
+[architecture.md](architecture.md).
+
 ## Local setup
 
 ```bash
@@ -58,3 +61,117 @@ via a bastion.
 | Realtime           | In-process SSE channels                        |
 | Terminal host      | .NET 10 ASP.NET Core, ConPTY via Quick.PtyNet  |
 | Browser automation | Playwright via the Playwright MCP server       |
+
+## Architecture internals
+
+Hosted multi-user web + API; a terminal host and provider plugin on each
+user's machine. The local agent authenticates as the signed-in user via a
+personal access token the terminal injects into the PTY.
+
+### Topology
+
+```mermaid
+flowchart LR
+    subgraph Cloud [Hosted]
+        WEB["Next.js web (:4100 dev)"]
+        API["Elysia API (:4101 dev)"]
+        DB[(PostgreSQL)]
+    end
+    subgraph Local [User's machine]
+        T["JobPilot.Terminal :4102"]
+        P["Claude Code / Codex<br/>+ jobpilot plugin"]
+        B["Browser (Playwright MCP)"]
+    end
+    WEB -- "HTTP + SSE" --> API
+    API --> DB
+    WEB -- "xterm.js WS + POST /sessions/*" --> T
+    T -- "PTY stdin/stdout" --> P
+    P -- "curl, Bearer JOBPILOT_API_TOKEN" --> API
+    P --> B
+```
+
+### Components
+
+- **[apps/web/](../apps/web/)** - Next.js UI: pipeline, campaigns with live
+  per-job progress, inbox, outreach, resume studio, Upwork, analytics,
+  settings, and the agent dock (an xterm.js panel that installs, launches,
+  and monitors the local agent). Browser and server both call the API
+  directly via `API_BASE_URL` - no proxy.
+- **[apps/api/](../apps/api/)** - Elysia + Prisma; owns all state. Typed
+  `/api/*` surface, Swagger at `/swagger`, Prisma schema split per domain
+  under `apps/api/prisma/schema/`.
+- **[apps/terminal/](../apps/terminal/)** - ASP.NET Core minimal API owning
+  one provider PTY (ConPTY via Quick.PtyNet), bridged to the web's xterm.js
+  over WebSocket. Endpoints: `POST /sessions/start`, `POST /sessions/inject`,
+  `DELETE /sessions/current`, `GET /healthz`, `GET /ws`. `/sessions/start`
+  takes the user's terminal token and spawns the provider with
+  `JOBPILOT_API_TOKEN`, `JOBPILOT_API`, `JOBPILOT_WEB` (plus
+  `JOBPILOT_SKILLS_ROOT` / `JOBPILOT_WORKSPACE_ROOT` for wrappers) - skills
+  authenticate with zero manual setup.
+
+One Terminal instance owns one PTY. It survives tab close (reopening the
+panel reattaches a WebSocket to the live session); switching providers
+restarts the PTY; there is no replay buffer. The web injects commands as
+`/jobpilot:<skill>` for Claude and `$<skill>` for Codex. On a new release the
+agent dock shows an update banner; the guided flow updates host + plugin and
+finishes with `/reload-plugins` on Claude.
+
+### Plugin loading
+
+[plugin/](../plugin/) is one provider-neutral tree, no generation step:
+
+- `skills/<name>/SKILL.md` - one workflow per directory; shared docs in
+  `skills/shared/`. Skills reference siblings by name and shared docs by
+  relative path, so the same text serves both providers.
+- `agents/*.md` - worker subagents (`job-worker`, `outreach-worker`) that
+  campaign skills delegate per-iteration work to, isolating heavy browser
+  output. Claude auto-discovers them; [.codex/agents/](../.codex/agents/)
+  point at the same `.md` bodies. Runtimes without subagents run inline.
+- `.mcp.json` - Playwright MCP server.
+- `.claude-plugin/plugin.json` + `.codex-plugin/plugin.json` - provider
+  manifests (Codex ignores Claude-only frontmatter like `allowed-tools`).
+
+The terminal launches `claude --plugin-dir plugin` or
+`codex --no-alt-screen -C <root>`. Codex has no `--plugin-dir`; it discovers
+[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json),
+which points at `./plugin` (Codex requires a subdirectory source - hence the
+manifests live in `plugin/`, not the root). The terminal publish output
+bundles the same manifest. Standalone installs come from the
+[claude-plugins](https://github.com/suxrobGM/claude-plugins) /
+[codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces,
+synced from `plugin/` on each release tag. Root `.claude/settings.json`
+grants the permissions the skills need - the plugin owns behavior, the repo
+owns trust policy.
+
+### Apply lifecycle
+
+```mermaid
+sequenceDiagram
+    participant W as Web (agent dock)
+    participant T as Terminal :4102
+    participant S as apply skill (PTY)
+    participant API as API :4101
+    participant B as Browser (Playwright MCP)
+
+    W->>T: POST /sessions/inject
+    T->>S: PTY stdin
+    S->>API: GET /health, /profile, /credentials, /applied/check
+    S->>B: navigate, login, fill, submit
+    S->>API: POST /campaigns/[id]/jobs/[jobKey]/result
+    API-->>W: SSE campaign event → query invalidation → refetch
+```
+
+### Live updates
+
+Skills mutate through `/api/campaigns/*`; the web opens
+`EventSource /api/campaigns/[id]/events` and invalidates the TanStack Query
+cache on each event, refetching canonical state from PostgreSQL. Four more
+channels (`inbox`, `pipeline`, `resume`, `upwork`) follow the same pattern.
+
+### Skills layer
+
+`plugin/skills/shared/setup.md` is the single source of truth for config
+loading: `/api/health` → `GET /api/profile` → `GET /api/credentials`; resumes
+via `data.defaultResumeAbsolutePath` or `GET /api/resumes/[id]/file`.
+`auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting
+browser behavior; the writing skills chain the `humanizer` skill by name.

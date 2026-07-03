@@ -13,7 +13,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org)
 [![.NET](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
 
-[Hosted app](https://jobpilot.suxrobgm.net) · [Docs](https://jobpilot.suxrobgm.net/docs) · [Architecture](docs/architecture.md) · [Changelog](CHANGELOG.md)
+[Hosted app](https://jobpilot.suxrobgm.net) · [Docs](https://jobpilot.suxrobgm.net/docs) · [How it works](docs/architecture.md) · [Changelog](CHANGELOG.md)
 
 </div>
 
@@ -42,39 +42,42 @@ interview in one pipeline.
 
 1. Create an account at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net)
    and complete onboarding (profile + resume).
-2. Install the local agent - a one-line script, or the plugin inside your own
-   Claude Code / Codex.
-3. Launch the agent from the dashboard's agent dock.
-4. Run a campaign and watch applications land in your pipeline.
+2. Install the JobPilot plugin in your Claude Code or Codex and run the
+   `setup` skill - it installs and starts the local agent for you.
+3. Run a campaign and watch applications land in your pipeline.
 
 The dashboard is hosted; the agent and the browser it drives run on your own
-computer, so you can watch every step. Curious how the pieces fit together?
-See [docs/architecture.md](docs/architecture.md).
+computer, on your own Claude/Codex subscription, so you can watch every step.
+Curious how the pieces fit together? See the plain-language
+[how-it-works guide](docs/architecture.md).
 
 ## Quick start
 
 1. Open [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign up.
-2. Launch the agent from the dashboard. If it isn't installed yet, the dock
-   shows a one-liner - or install it directly:
+2. Install the plugin. In **Claude Code**:
+
+   ```text
+   /plugin marketplace add https://github.com/suxrobgm/claude-plugins
+   /plugin install jobpilot@sukhrob-claude-plugins
+   /jobpilot:setup
+   ```
+
+   In **Codex** (in a shell, then `$setup` in a session):
+
+   ```text
+   codex plugin marketplace add suxrobGM/codex-plugins
+   codex plugin add jobpilot@sukhrob-codex-plugins
+   ```
+
+3. The `setup` skill installs and starts the local agent terminal and opens
+   the dashboard. From then on, launch the agent anytime from the dashboard's
+   agent dock.
+
+Don't use Claude Code or Codex from a terminal yourself? Install the
+standalone agent with a one-liner instead, then launch it from the dashboard:
 
 - **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
 - **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
-
-3. Prefer your own Claude Code or Codex session? Install the plugin from a
-   marketplace, then run the `setup` skill. Claude Code:
-
-```text
-/plugin marketplace add https://github.com/suxrobgm/claude-plugins
-/plugin install jobpilot@sukhrob-claude-plugins
-/jobpilot:setup
-```
-
-Codex (in a shell, then `$setup` in a session):
-
-```text
-codex plugin marketplace add suxrobGM/codex-plugins
-codex plugin add jobpilot@sukhrob-codex-plugins
-```
 
 New here? Start with the [getting-started guide](https://jobpilot.suxrobgm.net/docs/getting-started).
 Want to run it locally or contribute? See [docs/development.md](docs/development.md).
@@ -123,9 +126,10 @@ Google OAuth client - see the
 
 - [User docs](https://jobpilot.suxrobgm.net/docs) - getting started,
   campaigns & skills, email setup, credentials, FAQ.
-- [docs/architecture.md](docs/architecture.md) - architecture walk-through.
+- [docs/architecture.md](docs/architecture.md) - how JobPilot works, in plain
+  language.
 - [docs/development.md](docs/development.md) - local setup, repository
-  layout, and tech stack.
+  layout, tech stack, and architecture internals.
 
 ## License
 
