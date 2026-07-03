@@ -111,7 +111,9 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
           </Typography>
         )}
         <Stack spacing={0.5}>
-          <Typography variant="captionMuted">2. Update the agent (restarts it, self-updating):</Typography>
+          <Typography variant="captionMuted">
+            2. Update the agent (restarts it, self-updating):
+          </Typography>
           <CopyField
             value={formatSkillCommand(provider, "setup")}
             copyMessage="Command copied"
