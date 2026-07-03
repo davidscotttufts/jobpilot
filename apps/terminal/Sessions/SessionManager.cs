@@ -74,8 +74,9 @@ public sealed class SessionManager : IDisposable
     /// <param name="rows">Initial terminal row count.</param>
     /// <param name="apiToken">Per-user agent PAT injected as JOBPILOT_API_TOKEN; falls back to the host env var.</param>
     /// <param name="webUrl">Web app origin (the browser's location) injected as JOBPILOT_WEB; falls back to the host env var.</param>
+    /// <param name="apiUrl">Backend base URL (the web's configured API origin) injected as JOBPILOT_API; falls back to the host env var, then localhost.</param>
     /// <exception cref="PtyStartException">Thrown when the PTY provider fails to spawn the process.</exception>
-    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows, string? apiToken = null, string? webUrl = null)
+    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows, string? apiToken = null, string? webUrl = null, string? apiUrl = null)
     {
         lock (stateLock)
         {
@@ -110,21 +111,18 @@ public sealed class SessionManager : IDisposable
                 cols,
                 rows);
 
+            // Prefer the value the web passed on session start; fall back to the host env var, then a dev default.
+            static string FromRequestOrEnv(string? passed, string envKey, string fallback) =>
+                !string.IsNullOrEmpty(passed) ? passed : Environment.GetEnvironmentVariable(envKey) ?? fallback;
+
             var env = new Dictionary<string, string>(StringComparer.Ordinal)
             {
                 ["JOBPILOT_SKILLS_ROOT"] = paths.SharedSkillsDir,
                 ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
-                // Backend base URL + the agent's per-user PAT (passed in by the web on
-                // session start). Host env vars are a local-dev fallback.
-                ["JOBPILOT_API"] =
-                    Environment.GetEnvironmentVariable("JOBPILOT_API") ?? "http://localhost:4101",
-                ["JOBPILOT_API_TOKEN"] = !string.IsNullOrEmpty(apiToken)
-                    ? apiToken
-                    : Environment.GetEnvironmentVariable("JOBPILOT_API_TOKEN") ?? "",
-                // Web app origin (the browser's own location) for user-facing links in skill output.
-                ["JOBPILOT_WEB"] = !string.IsNullOrEmpty(webUrl)
-                    ? webUrl
-                    : Environment.GetEnvironmentVariable("JOBPILOT_WEB") ?? "http://localhost:4100"
+                ["JOBPILOT_API"] = FromRequestOrEnv(apiUrl, "JOBPILOT_API", "http://localhost:4101"),
+                ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),
+                // JOBPILOT_WEB is the browser's own origin, for user-facing links in skill output.
+                ["JOBPILOT_WEB"] = FromRequestOrEnv(webUrl, "JOBPILOT_WEB", "http://localhost:4100")
             };
 
             try

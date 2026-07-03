@@ -20,7 +20,7 @@ import { useTerminalHealth } from "./use-terminal-health";
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
-  const { health, recheck } = useTerminalHealth();
+  const { health, status, recheck } = useTerminalHealth();
   const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
   const statusLabel =
     health === "reachable" ? "ready" : health === "unreachable" ? "offline" : "connecting";
@@ -49,6 +49,9 @@ export function DockPanel(): ReactElement {
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
               <PulseDot tone="muted" pulsing={health === "checking"} size="xs" />
               <Typography variant="overlineMuted">{statusLabel}</Typography>
+              {status?.hostVersion && (
+                <Typography variant="overlineMuted">· v{status.hostVersion}</Typography>
+              )}
             </Stack>
           </Stack>
         </Stack>

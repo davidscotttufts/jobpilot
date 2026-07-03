@@ -9,4 +9,12 @@ namespace JobPilot.Terminal.Models;
 /// <param name="Provider">Optional terminal provider id. Defaults to Claude.</param>
 /// <param name="ApiToken">Optional per-user agent PAT, injected into the PTY as JOBPILOT_API_TOKEN.</param>
 /// <param name="WebUrl">Optional web app origin (the browser's location), injected into the PTY as JOBPILOT_WEB for user-facing links.</param>
-public sealed record StartSessionRequest(int Cols, int Rows, string? WorkingDir = null, string? Provider = null, string? ApiToken = null, string? WebUrl = null);
+/// <param name="ApiUrl">Optional backend base URL (the web app's configured API origin), injected into the PTY as JOBPILOT_API. Lets a hosted web point the local agent at the remote API instead of localhost.</param>
+public sealed record StartSessionRequest(
+    int Cols,
+    int Rows,
+    string? WorkingDir = null,
+    string? Provider = null,
+    string? ApiToken = null,
+    string? WebUrl = null,
+    string? ApiUrl = null);

@@ -6,6 +6,7 @@ import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import { api } from "@/api/client";
+import { API_BASE_URL } from "@/api/base-url";
 import { startSession, TERMINAL_WS_URL, type TerminalProviderId } from "@/lib/terminal";
 import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { toBase64 } from "@/utils/base64";
@@ -125,6 +126,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
           provider,
           apiToken: data.token,
           webUrl: window.location.origin,
+          apiUrl: API_BASE_URL,
         });
       } catch (err) {
         terminal.writeln(
