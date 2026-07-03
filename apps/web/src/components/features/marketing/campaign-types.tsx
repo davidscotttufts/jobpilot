@@ -1,15 +1,20 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Card, CardContent, Container, Grid, Link, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, Grid, Link, Stack, Typography } from "@mui/material";
+import type { Theme } from "@mui/material/styles";
 import NextLink from "next/link";
 import { fontFamilies } from "@/theme";
+import { panelCellSx } from "./mock-panels/panel-frame";
+import { Section } from "./section";
+import { SectionEyebrow } from "./section-eyebrow";
 
 interface Mode {
   tag: string;
   title: string;
   body: string;
-  tone: "accent.primary" | "info.main" | "success.main" | "warning.main";
+  command: string;
+  tone: "info" | "accent" | "success" | "warning";
 }
 
 const MODES: Mode[] = [
@@ -17,69 +22,96 @@ const MODES: Mode[] = [
     tag: "search",
     title: "Search",
     body: "Find and score roles against your resume across every board.",
-    tone: "info.main",
+    command: "/jobpilot:search",
+    tone: "info",
   },
   {
     tag: "auto-apply",
     title: "Auto-apply",
     body: "Let the agent apply to your high-match roles on its own.",
-    tone: "accent.primary",
+    command: "/jobpilot:auto-apply",
+    tone: "accent",
   },
   {
     tag: "apply",
     title: "Apply",
     body: "Queue specific URLs and apply one by one, tailored each time.",
-    tone: "success.main",
+    command: "/jobpilot:apply <url>",
+    tone: "success",
   },
   {
     tag: "outreach",
     title: "Outreach",
     body: "Find the hiring manager and message them by email or LinkedIn.",
-    tone: "warning.main",
+    command: "/jobpilot:outreach",
+    tone: "warning",
   },
 ];
 
+const toneColor = (theme: Theme, tone: Mode["tone"]): string =>
+  tone === "accent" ? theme.palette.accent.primary : theme.palette[tone].main;
+
 export function CampaignTypes(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ paddingBlock: { xs: 6, md: 9 } }}>
+    <Section>
       <Stack spacing={1} sx={{ mb: 4 }}>
-        <Typography
-          sx={{
-            fontFamily: fontFamilies.mono,
-            fontSize: "0.75rem",
-            letterSpacing: "0.18em",
-            color: "text.secondary",
-          }}
-        >
-          FOUR WAYS TO RUN
-        </Typography>
+        <SectionEyebrow>FOUR WAYS TO RUN</SectionEyebrow>
         <Typography variant="h2">One workspace, every approach to the search.</Typography>
       </Stack>
       <Grid container spacing={2}>
         {MODES.map((mode) => (
           <Grid key={mode.tag} size={{ xs: 12, sm: 6, md: 3 }}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent>
-                <Stack spacing={1.5}>
-                  <Box
-                    component="span"
-                    sx={{
-                      alignSelf: "flex-start",
-                      fontFamily: fontFamilies.mono,
-                      fontSize: "0.7rem",
-                      color: mode.tone,
-                      borderLeft: 2,
-                      borderColor: mode.tone,
-                      pl: 1,
-                    }}
-                  >
-                    {mode.tag}
-                  </Box>
-                  <Typography variant="h3" sx={{ fontSize: "1.15rem" }}>
-                    {mode.title}
-                  </Typography>
-                  <Typography variant="body2Muted">{mode.body}</Typography>
-                </Stack>
+            <Card
+              sx={(theme) => {
+                const tone = toneColor(theme, mode.tone);
+                return {
+                  height: "100%",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
+                    borderColor: `${tone}80`,
+                    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -16px ${tone}59`,
+                  },
+                };
+              }}
+            >
+              <CardContent
+                sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}
+              >
+                <Box
+                  component="span"
+                  sx={(theme) => ({
+                    alignSelf: "flex-start",
+                    fontFamily: fontFamilies.mono,
+                    fontSize: "0.7rem",
+                    color: toneColor(theme, mode.tone),
+                    borderLeft: 2,
+                    borderColor: toneColor(theme, mode.tone),
+                    pl: 1,
+                  })}
+                >
+                  {mode.tag}
+                </Box>
+                <Typography variant="h3" sx={{ fontSize: "1.15rem" }}>
+                  {mode.title}
+                </Typography>
+                <Typography variant="body2Muted">{mode.body}</Typography>
+                <Box
+                  component="code"
+                  sx={(theme) => ({
+                    ...panelCellSx(theme),
+                    mt: "auto",
+                    px: 1,
+                    py: 0.5,
+                    fontFamily: fontFamilies.mono,
+                    fontSize: "0.7rem",
+                    color: "text.secondary",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  })}
+                >
+                  {mode.command}
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -92,6 +124,6 @@ export function CampaignTypes(): ReactElement {
         </Link>
         .
       </Typography>
-    </Container>
+    </Section>
   );
 }

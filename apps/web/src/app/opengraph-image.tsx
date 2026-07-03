@@ -14,7 +14,7 @@ export default function OpenGraphImage(): ImageResponse {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        backgroundColor: "#0B1016",
+        backgroundColor: "#0B0B0A",
         padding: 80,
       }}
     >
@@ -46,12 +46,12 @@ export default function OpenGraphImage(): ImageResponse {
         >
           J
         </div>
-        <div style={{ color: "#F1F0EE", fontSize: 40, fontWeight: 700 }}>JobPilot</div>
+        <div style={{ color: "#F4F2EE", fontSize: 40, fontWeight: 700 }}>JobPilot</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
         <div
           style={{
-            color: "#F1F0EE",
+            color: "#F4F2EE",
             fontSize: 74,
             fontWeight: 700,
             lineHeight: 1.05,
@@ -60,12 +60,12 @@ export default function OpenGraphImage(): ImageResponse {
         >
           Your AI job agent, running on your machine.
         </div>
-        <div style={{ color: "#9AA0A6", fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
+        <div style={{ color: "#A7A49D", fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
           Search 12 boards, tailor your resume, apply, and track every reply - on your own Claude or
           Codex subscription.
         </div>
       </div>
-      <div style={{ display: "flex", color: "#5C636B", fontSize: 24 }}>jobpilot.suxrobgm.net</div>
+      <div style={{ display: "flex", color: "#6C6860", fontSize: 24 }}>jobpilot.suxrobgm.net</div>
     </div>,
     { ...size },
   );

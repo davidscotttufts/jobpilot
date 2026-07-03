@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Grid, Stack, Typography } from "@mui/material";
 import { fontFamilies } from "@/theme";
+import { Section } from "./section";
 
 const STEPS = [
   {
@@ -28,7 +29,7 @@ export function HowItWorks(): ReactElement {
       id="how-it-works"
       sx={{ borderBlock: 1, borderColor: "line.divider", backgroundColor: "surfaces.card" }}
     >
-      <Container maxWidth="lg" sx={{ paddingBlock: { xs: 6, md: 9 } }}>
+      <Section>
         <Typography variant="h2" sx={{ mb: 4 }}>
           From zero to applied in three steps.
         </Typography>
@@ -69,7 +70,7 @@ export function HowItWorks(): ReactElement {
             </Grid>
           ))}
         </Grid>
-      </Container>
+      </Section>
     </Box>
   );
 }

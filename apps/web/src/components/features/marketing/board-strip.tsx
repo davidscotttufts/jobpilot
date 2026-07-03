@@ -20,10 +20,15 @@ const BOARDS = [
 /** The 12 seeded boards, set as mono tokens - the agent's territory, machine voice. */
 export function BoardStrip(): ReactElement {
   return (
-    <Box sx={{ borderBlock: 1, borderColor: "line.divider" }}>
+    <Box sx={{ borderBlock: 1, borderColor: "line.divider", backgroundColor: "surfaces.card" }}>
       <Container maxWidth="lg" sx={{ paddingBlock: 3.5 }}>
         <Stack spacing={2} sx={{ alignItems: "center" }}>
-          <Typography variant="overlineMuted">Works where the jobs are</Typography>
+          <Typography variant="overlineMuted">
+            Works where the jobs are ·{" "}
+            <Box component="span" sx={{ color: "accent.primary" }}>
+              {BOARDS.length} boards
+            </Box>
+          </Typography>
           <Box
             sx={{
               display: "flex",
@@ -43,7 +48,7 @@ export function BoardStrip(): ReactElement {
                 component="span"
                 sx={{
                   fontFamily: fontFamilies.mono,
-                  fontSize: "0.8125rem",
+                  fontSize: "0.875rem",
                   color: "text.secondary",
                   whiteSpace: "nowrap",
                 }}

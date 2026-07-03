@@ -75,7 +75,7 @@ export function MarketingFooter(): ReactElement {
                   color: "text.disabled",
                 }}
               >
-                MIT · © 2026 Sukhrob Ilyosbekov
+                © 2026 Sukhrob Ilyosbekov
               </Typography>
             </Stack>
           </Grid>

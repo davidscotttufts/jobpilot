@@ -1,8 +1,10 @@
+// Warm-carbon ladder: near-black with a whisper of warmth - low saturation so
+// large surfaces stay carbon, never brown.
 export const surfaces = {
-  base: "#0B1016",
-  card: "#15191F",
-  elevated: "#1D232B",
-  hover: "#28313B",
+  base: "#0B0B0A",
+  card: "#151413",
+  elevated: "#201E1B",
+  hover: "#2B2925",
 } as const;
 
 // Brand ramp: flame (primary/dark) + thrust blue (secondary) - the Afterburner duotone.
@@ -14,9 +16,9 @@ export const accent = {
 } as const;
 
 export const textColors = {
-  primary: "#F1F0EE",
-  secondary: "#9AA0A6",
-  disabled: "#5C636B",
+  primary: "#F4F2EE",
+  secondary: "#A7A49D",
+  disabled: "#6C6860",
 } as const;
 
 export const feedback = {
@@ -27,9 +29,9 @@ export const feedback = {
 } as const;
 
 export const line = {
-  divider: "#1E242B",
-  border: "#2A323B",
-  borderHi: "#3A444F",
+  divider: "#21201C",
+  border: "#38342E",
+  borderHi: "#4A463F",
 } as const;
 
 export const stages = {
@@ -41,8 +43,8 @@ export const stages = {
 } as const;
 
 export const editorial = {
-  paper: "#F1F0EE",
-  ink: "#0B1016",
+  paper: "#F4F2EE",
+  ink: "#0B0B0A",
   thrust: "#3B82F6",
   flame: "#FF6A3D",
   amber: "#FFB020",

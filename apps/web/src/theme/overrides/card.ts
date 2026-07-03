@@ -7,7 +7,8 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       borderRadius: theme.radii.md,
       border: `1px solid ${theme.palette.line.border}`,
       backgroundColor: theme.palette.surfaces.card,
-      boxShadow: theme.shadows_custom.sm,
+      // Top-edge highlight so panels read as lit surfaces, not flat rectangles.
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
       transition: theme.motion.fast,
     }),
   },

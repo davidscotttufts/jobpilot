@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
-import { Card, CardContent, Container, Grid, Stack, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
+import { Card, CardContent, Grid, Stack, Typography } from "@mui/material";
+import { Section } from "./section";
+import { SectionEyebrow } from "./section-eyebrow";
 
 const FACTS = [
   {
@@ -23,18 +24,9 @@ const FACTS = [
 
 export function PrivacyGrid(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ paddingBlock: { xs: 6, md: 9 } }}>
+    <Section>
       <Stack spacing={1} sx={{ mb: 4 }}>
-        <Typography
-          sx={{
-            fontFamily: fontFamilies.mono,
-            fontSize: "0.75rem",
-            letterSpacing: "0.18em",
-            color: "text.secondary",
-          }}
-        >
-          TRUST
-        </Typography>
+        <SectionEyebrow>TRUST</SectionEyebrow>
         <Typography variant="h2">Your keys stay yours.</Typography>
       </Stack>
       <Grid container spacing={2}>
@@ -53,6 +45,6 @@ export function PrivacyGrid(): ReactElement {
           </Grid>
         ))}
       </Grid>
-    </Container>
+    </Section>
   );
 }

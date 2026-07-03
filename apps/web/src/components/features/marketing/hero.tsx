@@ -5,11 +5,23 @@ import { Box, Container, Grid, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { fontFamilies } from "@/theme";
 import { AgentTranscript } from "./agent-transcript";
+import { SectionEyebrow } from "./section-eyebrow";
 
 export function Hero(): ReactElement {
   return (
     <Box sx={{ position: "relative", overflow: "hidden" }}>
-      {/* Ambient brand orb - the one decorative flourish. */}
+      {/* Ember wash anchored above the fold - lifts the hero off the carbon base. */}
+      <Box
+        aria-hidden
+        sx={{
+          position: "absolute",
+          inset: 0,
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% -10%, rgba(255,106,61,0.09), transparent 60%)",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Ambient brand orb. */}
       <Box
         aria-hidden
         sx={(theme) => ({
@@ -20,7 +32,7 @@ export function Hero(): ReactElement {
           height: 520,
           background: theme.gradients.orb,
           filter: "blur(120px)",
-          opacity: 0.18,
+          opacity: 0.16,
           pointerEvents: "none",
         })}
       />
@@ -28,16 +40,7 @@ export function Hero(): ReactElement {
         <Grid container spacing={6} sx={{ alignItems: "center" }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={3}>
-              <Typography
-                sx={{
-                  fontFamily: fontFamilies.mono,
-                  fontSize: "0.75rem",
-                  letterSpacing: "0.18em",
-                  color: "accent.primary",
-                }}
-              >
-                LOCAL-FIRST JOB AGENT
-              </Typography>
+              <SectionEyebrow color="accent.primary">LOCAL-FIRST JOB AGENT</SectionEyebrow>
               <Typography variant="h1" sx={{ fontSize: { xs: "2.25rem", md: "3.25rem" } }}>
                 Your AI job agent, running on your machine.
               </Typography>

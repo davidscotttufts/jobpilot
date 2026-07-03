@@ -69,7 +69,7 @@ export const metadata: Metadata = {
 
 // Matches surfaces.base - the app ships a single dark palette.
 export const viewport: Viewport = {
-  themeColor: "#0B1016",
+  themeColor: "#0B0B0A",
   colorScheme: "dark",
 };
 

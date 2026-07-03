@@ -1,4 +1,6 @@
 export * from "./marketing-nav";
+export * from "./section";
+export * from "./section-eyebrow";
 export * from "./hero";
 export * from "./board-strip";
 export * from "./campaign-types";

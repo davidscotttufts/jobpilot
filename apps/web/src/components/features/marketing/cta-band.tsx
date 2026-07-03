@@ -1,20 +1,22 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Container, Stack, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
+import { Section } from "./section";
 
 export function CtaBand(): ReactElement {
   return (
-    <Container maxWidth="lg" sx={{ paddingBlock: { xs: 6, md: 10 } }}>
+    <Section>
       <Box
         sx={(theme) => ({
           position: "relative",
           overflow: "hidden",
           borderRadius: theme.radii.lg,
-          border: `1px solid ${theme.palette.line.border}`,
+          border: `1px solid ${theme.palette.accent.primary}40`,
           backgroundColor: theme.palette.surfaces.card,
-          paddingBlock: { xs: 5, md: 7 },
+          boxShadow: `0 24px 64px -32px ${theme.palette.accent.primary}33`,
+          paddingBlock: { xs: 6, md: 8 },
           paddingInline: { xs: 3, md: 6 },
         })}
       >
@@ -24,15 +26,25 @@ export function CtaBand(): ReactElement {
             position: "absolute",
             inset: 0,
             background: theme.gradients.reversed,
-            opacity: 0.08,
+            opacity: 0.05,
             pointerEvents: "none",
           })}
         />
+        <Box
+          aria-hidden
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(ellipse 45% 90% at 10% -15%, rgba(255,106,61,0.2), transparent 50%)",
+            pointerEvents: "none",
+          }}
+        />
         <Stack spacing={3} sx={{ position: "relative", alignItems: "flex-start" }}>
-          <Typography variant="h2" sx={{ maxWidth: 620 }}>
+          <Typography variant="h2" sx={{ fontSize: { xs: "1.9rem", md: "2.5rem" }, maxWidth: 620 }}>
             Put your job search on autopilot.
           </Typography>
-          <Typography variant="body1Muted" sx={{ maxWidth: 520 }}>
+          <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 520 }}>
             Create an account, install the agent, run your first campaign tonight.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
@@ -45,6 +57,6 @@ export function CtaBand(): ReactElement {
           </Stack>
         </Stack>
       </Box>
-    </Container>
+    </Section>
   );
 }

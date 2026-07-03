@@ -6,17 +6,17 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
-  Container,
   Link,
   Stack,
   Typography,
 } from "@mui/material";
 import NextLink from "next/link";
 import { FAQ_ITEMS } from "./faq-items";
+import { Section } from "./section";
 
 export function Faq(): ReactElement {
   return (
-    <Container maxWidth="md" sx={{ paddingBlock: { xs: 6, md: 9 } }}>
+    <Section maxWidth="md">
       <Stack spacing={1} sx={{ mb: 4 }}>
         <Typography variant="h2">Questions, answered.</Typography>
         <Typography variant="body2Muted">
@@ -37,6 +37,8 @@ export function Faq(): ReactElement {
               border: `1px solid ${theme.palette.line.border}`,
               borderRadius: `${theme.radii.md}px`,
               backgroundColor: theme.palette.surfaces.card,
+              transition: theme.motion.fast,
+              "&:hover": { borderColor: theme.palette.line.borderHi },
               "&::before": { display: "none" },
             })}
           >
@@ -49,6 +51,6 @@ export function Faq(): ReactElement {
           </Accordion>
         ))}
       </Stack>
-    </Container>
+    </Section>
   );
 }
