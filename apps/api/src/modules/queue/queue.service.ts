@@ -2,7 +2,7 @@ import type { AddQueueEntry, PatchQueueEntry, QueueStatus } from "@jobpilot/cont
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
-import { pipelineChannel } from "@/common/sse/channels/pipeline";
+import { workspaceChannel } from "@/common/sse/channels/workspace";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 
 type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status"> & {
@@ -55,7 +55,7 @@ export class QueueService {
         }),
       ),
     );
-    publish(pipelineChannel, { profileId }, { type: "queue.updated" });
+    publish(workspaceChannel, { profileId }, { type: "queue.updated" });
     return { inserted: created.length, items: created.map(serializeQueueEntry) };
   }
 

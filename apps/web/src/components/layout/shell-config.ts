@@ -1,5 +1,6 @@
 import {
   BusinessCenter,
+  Dashboard,
   Description,
   Forum,
   Handshake,
@@ -7,7 +8,6 @@ import {
   Insights,
   Settings,
   Storage,
-  ViewKanban,
   type SvgIconComponent,
 } from "@mui/icons-material";
 
@@ -25,7 +25,7 @@ export interface NavGroup {
 export const navGroups: NavGroup[] = [
   {
     items: [
-      { label: "Pipeline", href: "/pipeline", icon: ViewKanban },
+      { label: "Workspace", href: "/workspace", icon: Dashboard },
       { label: "Analytics", href: "/analytics", icon: Insights },
       { label: "Upwork", href: "/upwork", icon: Handshake },
       { label: "Outreach", href: "/outreach", icon: Forum },

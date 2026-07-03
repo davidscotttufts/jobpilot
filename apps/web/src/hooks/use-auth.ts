@@ -27,7 +27,7 @@ export interface UseAuthResult {
  * Current-session access. Reads the signed-in user from `/api/auth/me`
  * (auth rides the httpOnly cookie) and exposes login/register/logout
  * mutations. On a successful login or register the `me` query is
- * invalidated and the user is sent to `/pipeline` - the proxy middleware
+ * invalidated and the user is sent to `/workspace` - the proxy middleware
  * then routes on to `/onboarding` when the profile is empty.
  */
 export function useAuth(): UseAuthResult {
@@ -41,7 +41,7 @@ export function useAuth(): UseAuthResult {
 
   const onSession = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
-    router.push("/pipeline");
+    router.push("/workspace");
   };
 
   // The forms render these errors inline - no toast on top.

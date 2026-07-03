@@ -12,7 +12,7 @@ import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
 import { formatRelativeTime } from "@/utils/format";
-import { usePipelineActions } from "../actions-provider";
+import { useWorkspaceActions } from "../actions-provider";
 
 const QUEUE_FILTER = { status: "pending" } as const;
 
@@ -29,7 +29,7 @@ function urlLabel(url: string): string {
 /** First-class queue of single-apply URLs - replaces the old dead "queued" column. */
 export function QueuePanel(): ReactElement {
   const agent = useAgent();
-  const { openAddUrls } = usePipelineActions();
+  const { openAddUrls } = useWorkspaceActions();
 
   const queue = useApiQuery<QueueEntryDto[]>(queryKeys.queue.list(QUEUE_FILTER), () =>
     api.queue.get({ query: QUEUE_FILTER }),
@@ -85,7 +85,7 @@ function QueueRow(props: { entry: QueueEntryDto }): ReactElement {
 
   const remove = useApiMutation<unknown, void>(() => api.queue({ id: entry.id }).delete(), {
     successMessage: "Removed from queue",
-    invalidate: [queryKeys.queue.all, queryKeys.pipeline.all],
+    invalidate: [queryKeys.queue.all, queryKeys.workspace.all],
   });
 
   const items: DropdownMenuItem[] = [

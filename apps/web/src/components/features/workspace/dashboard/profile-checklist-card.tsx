@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { Route } from "next";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
+import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";

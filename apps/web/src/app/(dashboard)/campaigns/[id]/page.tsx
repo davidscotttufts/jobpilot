@@ -11,7 +11,7 @@ export default async function CampaignDetailPage(props: PageProps): Promise<Reac
   const { id } = await props.params;
   return (
     <Container maxWidth="lg" sx={{ gap: 2 }}>
-      <PageHeader eyebrow="Campaign" title={id} backHref="/pipeline" backLabel="Pipeline" />
+      <PageHeader eyebrow="Campaign" title={id} backHref="/workspace" backLabel="Workspace" />
       <CampaignDetail campaignId={id} />
     </Container>
   );

@@ -51,7 +51,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       }),
     {
       successMessage: "Campaign paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
     },
   );
 
@@ -63,7 +63,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       }),
     {
       successMessage: "Campaign marked as done",
-      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
     },
   );
 
@@ -77,7 +77,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const remove = useApiMutation<unknown, void>(() => campaignResource.delete(), {
     successMessage: "Campaign deleted",
-    invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+    invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
     onSuccess: () => router.replace("/" as Route),
   });
 

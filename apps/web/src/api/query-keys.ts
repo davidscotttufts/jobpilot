@@ -69,10 +69,9 @@ export const queryKeys = {
       [...queryKeys.email.all, "messages", filters] as const,
   },
 
-  pipeline: {
-    // Retained as the SSE invalidation namespace; column/total queries were
-    // replaced by the campaigns/queue/applications-backed workspace.
-    all: ["pipeline"] as const,
+  workspace: {
+    // SSE invalidation namespace for the cross-campaign workspace live-refresh feed.
+    all: ["workspace"] as const,
   },
 
   analytics: {

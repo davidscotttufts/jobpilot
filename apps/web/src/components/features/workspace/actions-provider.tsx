@@ -17,28 +17,28 @@ interface AddUrlsResponse {
   inserted: number;
 }
 
-export interface PipelineActionsValue {
+export interface WorkspaceActionsValue {
   openAddUrls: () => void;
 }
 
-const PipelineActionsContext = createContext<PipelineActionsValue | null>(null);
+const WorkspaceActionsContext = createContext<WorkspaceActionsValue | null>(null);
 
-export function PipelineActionsProvider(props: PropsWithChildren): ReactElement {
+export function WorkspaceActionsProvider(props: PropsWithChildren): ReactElement {
   const { children } = props;
   const [addUrlsOpen, setAddUrlsOpen] = useState(false);
 
   const create = useApiMutation<AddUrlsResponse, AddQueueEntry>((vars) => api.queue.post(vars), {
     successMessage: (data) => `Queued ${data.inserted} URL${data.inserted === 1 ? "" : "s"}`,
-    invalidate: [queryKeys.queue.all, queryKeys.pipeline.all],
+    invalidate: [queryKeys.queue.all, queryKeys.workspace.all],
     onSuccess: () => setAddUrlsOpen(false),
   });
 
-  const value: PipelineActionsValue = {
+  const value: WorkspaceActionsValue = {
     openAddUrls: () => setAddUrlsOpen(true),
   };
 
   return (
-    <PipelineActionsContext.Provider value={value}>
+    <WorkspaceActionsContext.Provider value={value}>
       {children}
       <AddUrlsDialog
         key={addUrlsOpen ? "open" : "closed"}
@@ -47,14 +47,14 @@ export function PipelineActionsProvider(props: PropsWithChildren): ReactElement 
         onSubmit={(values) => create.mutate(values)}
         submitting={create.isPending}
       />
-    </PipelineActionsContext.Provider>
+    </WorkspaceActionsContext.Provider>
   );
 }
 
-export function usePipelineActions(): PipelineActionsValue {
-  const ctx = useContext(PipelineActionsContext);
+export function useWorkspaceActions(): WorkspaceActionsValue {
+  const ctx = useContext(WorkspaceActionsContext);
   if (!ctx) {
-    throw new Error("usePipelineActions must be used within a PipelineActionsProvider");
+    throw new Error("useWorkspaceActions must be used within a WorkspaceActionsProvider");
   }
   return ctx;
 }

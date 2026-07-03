@@ -1,7 +1,6 @@
-import { API_BASE_URL } from "@/api/base-url";
 import { defineChannel } from "../channel";
 
-export type PipelineEvent =
+export type WorkspaceEvent =
   | { type: "campaign.updated"; campaignId: string; status?: string; source?: string }
   | { type: "campaign.completed"; campaignId: string }
   | { type: "campaign.deleted"; campaignId: string }
@@ -11,11 +10,11 @@ export type PipelineEvent =
   | { type: "queue.updated" };
 
 /**
- * Profile-scoped feed for cross-campaign UI (kanban, auto-apply pill). The client
- * URL is parameter-free; the server resolves the profile from the session.
+ * Profile-scoped live-refresh feed for the workspace UI (dashboard, auto-apply pill).
+ * The client URL is parameter-free; the server resolves the profile from the session.
  */
-export const pipelineChannel = defineChannel<PipelineEvent, void, { profileId: string }>({
-  name: "pipeline",
-  url: () => `${API_BASE_URL}/api/pipeline/events`,
+export const workspaceChannel = defineChannel<WorkspaceEvent, void, { profileId: string }>({
+  name: "workspace",
+  url: () => "/api/workspace/events",
   topic: ({ profileId }) => String(profileId),
 });

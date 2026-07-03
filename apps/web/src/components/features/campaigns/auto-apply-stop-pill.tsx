@@ -10,7 +10,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
-import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
 import { readAgentStorage, subscribeAgentStorage } from "@/providers/agent-provider";
 
@@ -37,7 +37,7 @@ export function AutoApplyStopPill(): ReactNode {
   const invalidateCampaigns = (): void => {
     queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
   };
-  useSseChannel(pipelineChannel, null, {
+  useSseChannel(workspaceChannel, null, {
     on: {
       "campaign.updated": invalidateCampaigns,
       "campaign.completed": invalidateCampaigns,
@@ -61,7 +61,7 @@ export function AutoApplyStopPill(): ReactNode {
     },
     {
       successMessage: "Auto-apply paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
     },
   );
 

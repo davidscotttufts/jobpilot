@@ -16,12 +16,12 @@ import { credentialController } from "@/modules/credential";
 import { emailController } from "@/modules/email";
 import { healthController } from "@/modules/health";
 import { jobBoardController } from "@/modules/job-board";
-import { pipelineController } from "@/modules/pipeline";
 import { profileController } from "@/modules/profile";
 import { queueController } from "@/modules/queue";
 import { publicResumeController, resumeController, resumeJob } from "@/modules/resume";
 import { scoringController } from "@/modules/scoring";
 import { upworkController } from "@/modules/upwork";
+import { workspaceController } from "@/modules/workspace";
 import { httpErrorResponses } from "@/types/response";
 
 const app = new Elysia()
@@ -55,7 +55,7 @@ const app = new Elysia()
       .use(scoringController)
       .use(upworkController)
       .use(campaignController)
-      .use(pipelineController)
+      .use(workspaceController)
       .use(emailController),
   )
   .listen(env.PORT);

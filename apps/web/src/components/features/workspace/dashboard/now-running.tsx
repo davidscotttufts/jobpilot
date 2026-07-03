@@ -53,7 +53,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
     () => api.campaigns({ id: campaign.campaignId }).patch({ status: "paused" }),
     {
       successMessage: "Campaign paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.pipeline.all],
+      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
     },
   );
 

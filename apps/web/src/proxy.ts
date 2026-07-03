@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // half-onboarded visitors, but bounce fully-onboarded users into the app.
   if (request.nextUrl.pathname === "/") {
     return onboarded
-      ? NextResponse.redirect(new URL("/pipeline", request.url))
+      ? NextResponse.redirect(new URL("/workspace", request.url))
       : NextResponse.next();
   }
 

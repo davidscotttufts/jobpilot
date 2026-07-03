@@ -5,7 +5,7 @@ import { Box, Tab, Tabs } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
 import { useSearchParam } from "@/hooks/use-search-param";
-import { pipelineChannel } from "@/lib/sse/channels/pipeline";
+import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
 import { ApplicationsPanel } from "./applications/applications-panel";
 import { OverviewPanel } from "./overview-panel";
@@ -18,14 +18,14 @@ type WorkspaceTab = (typeof TABS)[number];
  * the campaigns, queue, and applications queries so every panel stays live from
  * one connection.
  */
-export function PipelineWorkspace(): ReactElement {
+export function WorkspaceView(): ReactElement {
   const queryClient = useQueryClient();
   const [tabParam, setTab] = useSearchParam("tab");
   const tab: WorkspaceTab = TABS.includes(tabParam as WorkspaceTab)
     ? (tabParam as WorkspaceTab)
     : "overview";
 
-  useSseChannel(pipelineChannel, null, {
+  useSseChannel(workspaceChannel, null, {
     onMessage: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.queue.all });

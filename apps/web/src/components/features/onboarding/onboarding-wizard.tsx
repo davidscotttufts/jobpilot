@@ -32,7 +32,7 @@ import { describeIssues, firstStepWithIssue } from "./validation-issues";
 
 // Minimal first run: resume + personal basics + agent install. Everything else
 // (address, work auth, EEO, auto-apply, email, credentials) lives in Settings,
-// surfaced by the pipeline's profile checklist.
+// surfaced by the workspace's profile checklist.
 const STEPS = [
   { key: "resume", label: "Resume" },
   { key: "personal", label: "Personal" },
@@ -75,9 +75,9 @@ export function OnboardingWizard(): ReactElement {
   const isLastProfileStep = step === PROFILE_STEPS - 1;
 
   const finish = (): void => {
-    // Land on the pipeline with the dock open so the agent is the obvious next step.
+    // Land on the workspace with the dock open so the agent is the obvious next step.
     patchAgentStorage({ dockExpanded: true });
-    router.push("/pipeline");
+    router.push("/workspace");
   };
 
   const submitForm = async (e: SubmitEvent<HTMLFormElement>) => {

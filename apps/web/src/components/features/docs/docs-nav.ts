@@ -16,7 +16,7 @@ export const DOCS_NAV: DocsNavEntry[] = [
   {
     title: "Campaigns & skills",
     href: "/docs/campaigns-and-skills",
-    description: "The four campaign modes, every skill, and how the pipeline works.",
+    description: "The four campaign modes, every skill, and how statuses work.",
   },
   {
     title: "Email setup",

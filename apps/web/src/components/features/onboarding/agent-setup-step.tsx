@@ -30,7 +30,7 @@ export function AgentSetupStep(): ReactElement {
       <Stack spacing={1.5}>
         <Alert severity="success">
           Agent detected{status?.hostVersion ? ` (v${status.hostVersion})` : ""} - you&apos;re all
-          set. Finish to open your pipeline and launch it from the agent dock.
+          set. Finish to open your workspace and launch it from the agent dock.
         </Alert>
       </Stack>
     );

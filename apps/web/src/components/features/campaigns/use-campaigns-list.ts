@@ -24,7 +24,7 @@ export interface UseCampaignsListResult {
 
 /**
  * Campaigns list state: status/source filtering over the cached campaigns query, the
- * interrupted-campaign count, and client-side pagination. Consumed by the pipeline
+ * interrupted-campaign count, and client-side pagination. Consumed by the workspace
  * Campaigns rail. SSE invalidation lives with the page-level subscription, not here.
  */
 export function useCampaignsList(pageSize: number): UseCampaignsListResult {

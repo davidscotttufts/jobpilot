@@ -64,7 +64,12 @@ function VerifyTokenView(props: { token: string }): ReactElement {
     return (
       <Stack spacing={2.5}>
         <Alert severity="success">Your email is verified.</Alert>
-        <Button onClick={() => router.push("/pipeline")} variant="contained" size="large" fullWidth>
+        <Button
+          onClick={() => router.push("/workspace")}
+          variant="contained"
+          size="large"
+          fullWidth
+        >
           Continue
         </Button>
       </Stack>

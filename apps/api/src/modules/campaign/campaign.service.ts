@@ -13,7 +13,7 @@ import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { campaignChannel, type CampaignEvent } from "@/common/sse/channels/campaign";
-import { pipelineChannel } from "@/common/sse/channels/pipeline";
+import { workspaceChannel } from "@/common/sse/channels/workspace";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
 import { type CampaignJobRow, type CampaignRow } from "./campaign.mapper";
 import { summarizeJobs } from "./campaign.summary";
@@ -66,7 +66,7 @@ export class CampaignService {
         { type: "status", payload: { status: "interrupted" } },
       );
       publish(
-        pipelineChannel,
+        workspaceChannel,
         { profileId },
         {
           type: "campaign.updated",
@@ -217,7 +217,7 @@ export class CampaignService {
         },
       );
       publish(
-        pipelineChannel,
+        workspaceChannel,
         { profileId },
         body.status === "completed"
           ? { type: "campaign.completed", campaignId: id }
@@ -270,7 +270,7 @@ export class CampaignService {
         })
       ).map((m) => m.contactId);
 
-      // Cascades StageEvent / ResumeVariant; SetNull on EmailMessage & Contact links.
+      // Cascades ApplicationEvent / ResumeVariant; SetNull on EmailMessage & Contact links.
       await tx.application.deleteMany({ where: { campaignId: id, profileId } });
       await tx.outreachMessage.deleteMany({ where: { campaignId: id, profileId } });
 
@@ -284,7 +284,7 @@ export class CampaignService {
       await tx.campaign.delete({ where: { campaignId: id } });
     });
 
-    publish(pipelineChannel, { profileId }, { type: "campaign.deleted", campaignId: id });
+    publish(workspaceChannel, { profileId }, { type: "campaign.deleted", campaignId: id });
     return { deleted: true, campaignId: id };
   }
 
