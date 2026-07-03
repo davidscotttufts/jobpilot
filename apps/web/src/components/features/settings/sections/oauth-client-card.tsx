@@ -133,8 +133,8 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
             <strong>Authorized redirect URIs</strong>.
           </Typography>
           <Typography component="li" variant="body2Muted">
-            Copy the generated <strong>Client ID</strong> and <strong>Client secret</strong> into the
-            fields below and save.
+            Copy the generated <strong>Client ID</strong> and <strong>Client secret</strong> into
+            the fields below and save.
           </Typography>
         </Box>
 

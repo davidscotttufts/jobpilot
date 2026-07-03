@@ -65,7 +65,7 @@ A small helper program that runs quietly on your computer. It keeps the agent
 session alive and connects it to the dashboard, so the terminal panel on the
 website shows the agent working on your machine - and buttons on the website
 can send it commands. It also hands the agent a secure token when it starts,
-so the agent acts as *you* without any manual setup.
+so the agent acts as _you_ without any manual setup.
 
 You don't interact with it directly: the `setup` skill (or the dashboard's
 agent dock) installs and starts it for you.

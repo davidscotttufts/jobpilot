@@ -112,7 +112,9 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
               />
             </Stack>
             <Stack spacing={0.5}>
-              <Typography variant="captionMuted">2. Reload plugins to pick up the update:</Typography>
+              <Typography variant="captionMuted">
+                2. Reload plugins to pick up the update:
+              </Typography>
               <CopyField
                 value={RELOAD_PLUGINS_COMMAND}
                 copyMessage="Command copied"
