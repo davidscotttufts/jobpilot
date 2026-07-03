@@ -79,6 +79,10 @@ export function killSession(): Promise<SessionStatus> {
   return send<SessionStatus>("DELETE", "/sessions/current");
 }
 
+export function providerDisplayName(provider: TerminalProviderId): string {
+  return provider === "codex" ? "Codex" : "Claude Code";
+}
+
 export function formatSkillCommand(
   provider: TerminalProviderId,
   skill: string,

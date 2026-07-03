@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
+import { providerDisplayName } from "@/lib/terminal";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOrb } from "./agent-orb";
@@ -22,7 +23,7 @@ import { useTerminalHealth } from "./use-terminal-health";
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
   const { health, status, recheck } = useTerminalHealth();
-  const providerLabel = provider === "codex" ? "Codex" : "Claude Code";
+  const providerLabel = providerDisplayName(provider);
   const statusLabel =
     health === "reachable" ? "ready" : health === "unreachable" ? "offline" : "connecting";
 
