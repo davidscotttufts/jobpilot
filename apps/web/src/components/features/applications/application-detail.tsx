@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import type { Stage, StageTransitionInput } from "@jobpilot/contracts/application";
+import type { ApplicationStatus, StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
 import { Box, Button, Container, IconButton, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
@@ -9,11 +9,11 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ApplicationDetailDto } from "@/api/types";
-import { StageChip } from "@/components/ui/display";
+import { StatusChip } from "@/components/ui/display";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
-import { StageTimeline } from "./stage-timeline";
-import { StageTransitionDialog } from "./stage-transition-dialog";
+import { ActivityTimeline } from "./activity-timeline";
+import { StatusTransitionDialog } from "./status-transition-dialog";
 
 interface ApplicationDetailProps {
   initialApplication: ApplicationDetailDto;
@@ -24,7 +24,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
   const id = initialApplication.id;
 
   const router = useRouter();
-  const [stageDialogOpen, setStageDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const confirm = useConfirm();
 
   const detail = useApiQuery<ApplicationDetailDto>(
@@ -33,14 +33,14 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     { initialData: initialApplication },
   );
 
-  const updateStage = useApiMutation<{ id: string; stage: Stage }, StageTransitionInput>(
-    (vars) => api.applied({ id }).stage.post(vars),
-    {
-      successMessage: "Stage updated",
-      invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
-      onSuccess: () => setStageDialogOpen(false),
-    },
-  );
+  const updateStatus = useApiMutation<
+    { id: string; status: ApplicationStatus },
+    StatusTransitionInput
+  >((vars) => api.applied({ id }).status.post(vars), {
+    successMessage: "Status updated",
+    invalidate: [queryKeys.applications.all, queryKeys.dashboard.all],
+    onSuccess: () => setStatusDialogOpen(false),
+  });
 
   const remove = useApiMutation<{ deleted: string }, void>(() => api.applied({ id }).delete(), {
     successMessage: "Application deleted",
@@ -52,7 +52,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
     const confirmed = await confirm({
       title: "Delete application?",
       description:
-        "This removes the record and its stage history. The duplicate-check API will no longer match this URL.",
+        "This removes the record and its activity history. The duplicate-check API will no longer match this URL.",
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -81,8 +81,8 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               >
                 Open posting
               </Button>
-              <Button variant="contained" onClick={() => setStageDialogOpen(true)}>
-                Update stage
+              <Button variant="contained" onClick={() => setStatusDialogOpen(true)}>
+                Update status
               </Button>
               <IconButton onClick={() => void handleDelete()} aria-label="Delete application">
                 <Delete fontSize="md" />
@@ -94,10 +94,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
         <SectionCard>
           <Stack spacing={2}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-              <StageChip stage={app.stage} />
-              {app.outcome && (
-                <Typography variant="captionMuted">Outcome: {app.outcome}</Typography>
-              )}
+              <StatusChip status={app.status} />
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
               <Field label="Board" value={app.board ?? ""} />
@@ -125,17 +122,17 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
           </Stack>
         </SectionCard>
 
-        <SectionCard title="Stage history">
-          <StageTimeline events={app.stageEvents} />
+        <SectionCard title="Activity">
+          <ActivityTimeline events={app.events} />
         </SectionCard>
       </Container>
 
-      <StageTransitionDialog
-        open={stageDialogOpen}
-        currentStage={app.stage}
-        onClose={() => setStageDialogOpen(false)}
-        onSubmit={(values) => updateStage.mutate(values)}
-        submitting={updateStage.isPending}
+      <StatusTransitionDialog
+        open={statusDialogOpen}
+        currentStatus={app.status}
+        onClose={() => setStatusDialogOpen(false)}
+        onSubmit={(values) => updateStatus.mutate(values)}
+        submitting={updateStatus.isPending}
       />
     </>
   );

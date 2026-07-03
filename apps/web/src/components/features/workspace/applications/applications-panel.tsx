@@ -10,7 +10,7 @@ import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useSearchParam } from "@/hooks/use-search-param";
 import { ApplicationsTable } from "./applications-table";
-import { FUNNEL_GROUPS, FunnelBar, groupForStage, type FunnelKey } from "./funnel-bar";
+import { FUNNEL_GROUPS, FunnelBar, groupForStatus, type FunnelKey } from "./funnel-bar";
 
 /** Campaign-filter sentinel for applications with no campaign (single-apply). */
 const SINGLE = "__single__";
@@ -46,7 +46,7 @@ export function ApplicationsPanel(): ReactElement {
     {} as Record<FunnelKey, number>,
   );
   for (const a of rows) {
-    const key = groupForStage(a.stage);
+    const key = groupForStatus(a.status);
     if (key !== null) {
       counts[key] += 1;
     }
@@ -54,7 +54,7 @@ export function ApplicationsPanel(): ReactElement {
 
   const q = search.trim().toLowerCase();
   const filtered = rows.filter((a) => {
-    if (group !== null && groupForStage(a.stage) !== group) {
+    if (group !== null && groupForStatus(a.status) !== group) {
       return false;
     }
     if (board !== null && a.board !== board) {

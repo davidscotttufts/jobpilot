@@ -4,11 +4,11 @@ import type { api } from "@/api/client";
 /** A submitted application row, inferred from `GET /api/applied`. */
 export type ApplicationDto = Data<typeof api.applied.get>[number];
 
-/** A single application with its stage history, from `GET /api/applied/:id`. */
+/** A single application with its activity history, from `GET /api/applied/:id`. */
 export type ApplicationDetailDto = Data<ReturnType<typeof api.applied>["get"]>;
 
-/** One stage-transition event on an application. */
-export type StageEventDto = ApplicationDetailDto["stageEvents"][number];
+/** One activity event on an application. */
+export type ApplicationEventDto = ApplicationDetailDto["events"][number];
 
 /** Result of the dedupe check, from `GET /api/applied/check`. */
 export type DuplicateCheckResult = Data<typeof api.applied.check.get>;

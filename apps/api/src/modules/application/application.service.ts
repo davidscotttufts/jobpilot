@@ -1,7 +1,9 @@
 import type {
+  ApplicationEventKind,
+  ApplicationEventSource,
   ApplicationSource,
-  Stage,
-  StageTransitionInput,
+  ApplicationStatus,
+  StatusTransitionInput,
 } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
@@ -11,19 +13,10 @@ import {
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/modules/scoring/applied-duplicates";
-
-/** Stages that count as a positive recruiter/interview response. */
-const POSITIVE_STAGES = new Set([
-  "recruiter_screen",
-  "assessment",
-  "hiring_manager_screen",
-  "technical_interview",
-  "onsite",
-  "offer",
-]);
+import { statusChangeOps } from "./status-change";
 
 export interface AppliedListFilters {
-  stage?: string;
+  status?: ApplicationStatus;
   board?: string;
   source?: string;
   search?: string;
@@ -40,12 +33,12 @@ export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async list(profileId: string, filters: AppliedListFilters) {
-    const { stage, board, source, search } = filters;
+    const { status, board, source, search } = filters;
 
     const where: Prisma.ApplicationWhereInput = { profileId };
 
-    if (stage) {
-      where.stage = stage;
+    if (status) {
+      where.status = status;
     }
     if (board) {
       where.board = board;
@@ -69,7 +62,6 @@ export class ApplicationService {
 
     return rows.map((r) => ({
       ...r,
-      stage: r.stage as Stage,
       source: r.source as ApplicationSource,
       appliedAt: r.appliedAt,
       rejectedAt: r.rejectedAt,
@@ -82,7 +74,7 @@ export class ApplicationService {
         this.prisma.application.findFirst({
           where,
           include: {
-            stageEvents: { orderBy: { occurredAt: "asc" } },
+            events: { orderBy: { createdAt: "asc" } },
           },
         }),
       { id, profileId },
@@ -91,15 +83,13 @@ export class ApplicationService {
 
     return {
       ...row,
-      stage: row.stage as Stage,
       source: row.source as ApplicationSource,
       appliedAt: row.appliedAt,
       rejectedAt: row.rejectedAt,
-      stageEvents: row.stageEvents.map((e) => ({
+      events: row.events.map((e) => ({
         ...e,
-        fromStage: e.fromStage as Stage | null,
-        toStage: e.toStage as Stage,
-        occurredAt: e.occurredAt,
+        kind: e.kind as ApplicationEventKind,
+        source: e.source as ApplicationEventSource | null,
       })),
     };
   }
@@ -114,40 +104,31 @@ export class ApplicationService {
     return { deleted: id };
   }
 
-  async transitionStage(profileId: string, id: string, input: StageTransitionInput) {
+  async transitionStatus(profileId: string, id: string, input: StatusTransitionInput) {
     const existing = await findOwned(
       (where) => this.prisma.application.findFirst({ where }),
       { id, profileId },
       "Application",
     );
 
-    const fromStage = existing.stage;
-    const toStage = input.toStage;
+    const fromStatus = existing.status;
+    const toStatus = input.toStatus;
 
-    if (fromStage === toStage) {
-      return { id, stage: toStage, unchanged: true };
+    if (fromStatus === toStatus) {
+      return { id, status: toStatus, unchanged: true };
     }
 
-    const outcome =
-      toStage === "rejected" ? "negative" : POSITIVE_STAGES.has(toStage) ? "positive" : null;
-    const rejectedAt = toStage === "rejected" ? new Date() : null;
-
-    await this.prisma.$transaction([
-      this.prisma.application.update({
-        where: { id },
-        data: { stage: toStage, outcome, rejectedAt },
+    await this.prisma.$transaction(
+      statusChangeOps(this.prisma, {
+        applicationId: id,
+        fromStatus,
+        toStatus,
+        source: "manual",
+        note: input.note,
       }),
-      this.prisma.stageEvent.create({
-        data: {
-          applicationId: id,
-          fromStage,
-          toStage,
-          note: input.note ?? null,
-        },
-      }),
-    ]);
+    );
 
-    return { id, stage: toStage };
+    return { id, status: toStatus };
   }
 
   async check(profileId: string, query: AppliedCheckQuery) {
@@ -170,7 +151,7 @@ export class ApplicationService {
               title: exact.title,
               company: exact.company,
               appliedAt: exact.appliedAt,
-              stage: exact.stage as Stage,
+              status: exact.status,
             },
           },
         };
@@ -187,7 +168,7 @@ export class ApplicationService {
           title: true,
           company: true,
           appliedAt: true,
-          stage: true,
+          status: true,
         },
         take: 1000,
       });
@@ -217,7 +198,7 @@ export class ApplicationService {
               title: matched.title,
               company: matched.company,
               appliedAt: matched.appliedAt,
-              stage: matched.stage as Stage,
+              status: matched.status,
             },
           },
         };

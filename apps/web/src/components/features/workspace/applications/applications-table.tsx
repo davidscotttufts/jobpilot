@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import type { ApplicationDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { StageChip, type Stage } from "@/components/ui/display";
+import { StatusChip, type ApplicationStatus } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 
 interface ApplicationsTableProps {
@@ -30,7 +30,7 @@ export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
           <TableRow>
             <TableCell>Role</TableCell>
             <TableCell>Company</TableCell>
-            <TableCell>Stage</TableCell>
+            <TableCell>Status</TableCell>
             <TableCell>Source</TableCell>
             <TableCell align="right">Applied</TableCell>
           </TableRow>
@@ -46,7 +46,7 @@ export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
               <TableCell sx={{ fontWeight: 500 }}>{a.title}</TableCell>
               <TableCell>{a.company}</TableCell>
               <TableCell>
-                <StageChip stage={a.stage as Stage} />
+                <StatusChip status={a.status as ApplicationStatus} />
               </TableCell>
               <TableCell>
                 <Typography variant="captionMuted">

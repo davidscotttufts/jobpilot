@@ -1,3 +1,4 @@
+import { statusSchema } from "@jobpilot/contracts/application";
 import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
 import { z } from "zod/v4";
 
@@ -55,7 +56,7 @@ export const matchedAppSchema = z
     id: z.uuid(),
     title: z.string(),
     company: z.string(),
-    stage: z.string(),
+    status: statusSchema,
   })
   .nullable();
 
@@ -80,7 +81,8 @@ export const emailMessageSchema = z.object({
   matchedAppId: z.uuid().nullable(),
   matchScore: z.number().nullable(),
   reviewStatus: reviewStatusSchema,
-  appliedStage: z.string().nullable(),
+  // Free String column; writes are validated against the status enum, reads stay lenient.
+  appliedStatus: z.string().nullable(),
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
@@ -100,7 +102,7 @@ export const messageDeniedSchema = z.object({
 export const messageApprovedSchema = z.object({
   id: z.uuid(),
   applicationId: z.uuid(),
-  stage: z.string(),
+  status: statusSchema,
 });
 
 /** Provider message + thread ids returned after sending (`account.send`). */

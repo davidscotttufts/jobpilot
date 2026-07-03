@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
-import { STAGES, type Stage } from "@jobpilot/contracts/application";
+import { STATUSES, type ApplicationStatus } from "@jobpilot/contracts/application";
 import {
   Button,
   Dialog,
@@ -12,30 +12,19 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { STATUS_LABEL } from "@/components/ui/display";
 
-const STAGE_LABEL: Record<Stage, string> = {
-  applied: "Applied",
-  recruiter_screen: "Recruiter screen",
-  assessment: "Assessment",
-  hiring_manager_screen: "HM screen",
-  technical_interview: "Technical",
-  onsite: "Onsite",
-  offer: "Offer",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-};
-
-interface StageTransitionDialogProps {
+interface StatusTransitionDialogProps {
   open: boolean;
-  currentStage: Stage;
+  currentStatus: ApplicationStatus;
   onClose: () => void;
-  onSubmit: (next: { toStage: Stage; note: string | null }) => void;
+  onSubmit: (next: { toStatus: ApplicationStatus; note: string | null }) => void;
   submitting?: boolean;
 }
 
-export function StageTransitionDialog(props: StageTransitionDialogProps): ReactElement {
-  const { open, currentStage, onClose, onSubmit, submitting } = props;
-  const [toStage, setToStage] = useState<Stage>(currentStage);
+export function StatusTransitionDialog(props: StatusTransitionDialogProps): ReactElement {
+  const { open, currentStatus, onClose, onSubmit, submitting } = props;
+  const [toStatus, setToStatus] = useState<ApplicationStatus>(currentStatus);
   const [note, setNote] = useState("");
 
   return (
@@ -43,22 +32,22 @@ export function StageTransitionDialog(props: StageTransitionDialogProps): ReactE
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          onSubmit({ toStage, note: note.trim() || null });
+          onSubmit({ toStatus, note: note.trim() || null });
         }}
       >
-        <DialogTitle>Update stage</DialogTitle>
+        <DialogTitle>Update status</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField
               select
               fullWidth
-              label="New stage"
-              value={toStage}
-              onChange={(e) => setToStage(e.target.value as Stage)}
+              label="New status"
+              value={toStatus}
+              onChange={(e) => setToStatus(e.target.value as ApplicationStatus)}
             >
-              {STAGES.map((s) => (
+              {STATUSES.map((s) => (
                 <MenuItem key={s} value={s}>
-                  {STAGE_LABEL[s]}
+                  {STATUS_LABEL[s]}
                 </MenuItem>
               ))}
             </TextField>
@@ -77,7 +66,7 @@ export function StageTransitionDialog(props: StageTransitionDialogProps): ReactE
           <Button
             type="submit"
             variant="contained"
-            disabled={submitting || toStage === currentStage}
+            disabled={submitting || toStatus === currentStatus}
           >
             Save
           </Button>

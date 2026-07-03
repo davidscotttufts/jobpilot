@@ -1,4 +1,4 @@
-import { stageTransitionSchema } from "@jobpilot/contracts/application";
+import { statusTransitionSchema } from "@jobpilot/contracts/application";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
@@ -10,7 +10,7 @@ import {
   applicationListQuerySchema,
   applicationListSchema,
   applicationQuerySchema,
-  stageTransitionResultSchema,
+  statusTransitionResultSchema,
 } from "./application.schema";
 import { ApplicationService } from "./application.service";
 
@@ -27,7 +27,7 @@ export const applicationController = new Elysia({
     detail: {
       summary: "List applications",
       description:
-        "Returns the profile's applied jobs (up to 500, newest first), optionally filtered by stage, board, source, or a search term matched against title, company, and URL.",
+        "Returns the profile's applied jobs (up to 500, newest first), optionally filtered by status, board, source, or a search term matched against title, company, and URL.",
     },
   })
   .get("/check", ({ profileId, query }) => svc.check(profileId, query), {
@@ -43,9 +43,9 @@ export const applicationController = new Elysia({
     params: idParam,
     response: applicationDetailSchema,
     detail: {
-      summary: "Get application with stage history",
+      summary: "Get application with activity history",
       description:
-        "Returns a single owned application by id, including its stage transition events ordered chronologically, or 404 if it does not belong to the profile.",
+        "Returns a single owned application by id, including its activity events ordered chronologically, or 404 if it does not belong to the profile.",
     },
   })
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
@@ -58,16 +58,16 @@ export const applicationController = new Elysia({
     },
   })
   .post(
-    "/:id/stage",
-    ({ profileId, params, body }) => svc.transitionStage(profileId, params.id, body),
+    "/:id/status",
+    ({ profileId, params, body }) => svc.transitionStatus(profileId, params.id, body),
     {
       params: idParam,
-      body: stageTransitionSchema,
-      response: stageTransitionResultSchema,
+      body: statusTransitionSchema,
+      response: statusTransitionResultSchema,
       detail: {
-        summary: "Transition application stage",
+        summary: "Transition application status",
         description:
-          "Moves the owned application to the requested interview stage, recording a stage event and updating its outcome and rejection timestamp, then returns the new stage (no-op if already in that stage).",
+          "Moves the owned application to the requested status, recording a status-change activity event and updating its rejection timestamp, then returns the new status (no-op if already in that status).",
       },
     },
   );

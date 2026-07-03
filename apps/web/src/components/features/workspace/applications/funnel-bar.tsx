@@ -1,42 +1,31 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Card, CardContent, CardHeader, Stack, Typography } from "@mui/material";
+import { Card, CardContent, Stack, Typography } from "@mui/material";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
 
-/** Active interview-stage buckets the raw application stages roll up into. */
+// Each funnel bucket is exactly one status (its `key`); rejected/withdrawn have no bucket.
 export const FUNNEL_GROUPS = [
-  { key: "applied", label: "Applied", tone: "blue", stages: ["applied"] },
-  {
-    key: "screening",
-    label: "Screening",
-    tone: "violet",
-    stages: ["recruiter_screen", "assessment", "hiring_manager_screen"],
-  },
-  {
-    key: "interview",
-    label: "Interview",
-    tone: "peach",
-    stages: ["technical_interview", "onsite"],
-  },
-  { key: "offer", label: "Offer", tone: "green", stages: ["offer"] },
+  { key: "applied", label: "Applied", tone: "blue" },
+  { key: "screening", label: "Screening", tone: "violet" },
+  { key: "interviewing", label: "Interviewing", tone: "peach" },
+  { key: "offer", label: "Offer", tone: "green" },
 ] as const;
 
 export type FunnelKey = (typeof FUNNEL_GROUPS)[number]["key"];
 
-const STAGE_TO_GROUP = new Map<string, FunnelKey>(
-  FUNNEL_GROUPS.flatMap((g) => g.stages.map((s) => [s, g.key] as const)),
-);
+const FUNNEL_KEYS = new Set<string>(FUNNEL_GROUPS.map((g) => g.key));
 
-/** Returns the funnel bucket for a stage, or null for closed-out stages (rejected/withdrawn). */
-export function groupForStage(stage: string): FunnelKey | null {
-  return STAGE_TO_GROUP.get(stage) ?? null;
+/** Returns the funnel bucket for a status, or null for closed-out statuses (rejected/withdrawn). */
+export function groupForStatus(status: string): FunnelKey | null {
+  return FUNNEL_KEYS.has(status) ? (status as FunnelKey) : null;
 }
 
-/** Stages past the initial "applied" bucket - i.e. an application that's interviewing. */
-export const INTERVIEW_STAGES: ReadonlySet<string> = new Set(
-  FUNNEL_GROUPS.filter((g) => g.key !== "applied").flatMap((g) => g.stages),
-);
+/** Statuses that mean an application is actively interviewing (past applied, not yet offer/closed). */
+export const INTERVIEW_STATUSES: ReadonlySet<string> = new Set<FunnelKey>([
+  "screening",
+  "interviewing",
+]);
 
 interface FunnelBarProps {
   counts: Record<FunnelKey, number>;

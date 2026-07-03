@@ -7,7 +7,7 @@ import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
-import { pipelineChannel } from "@/common/sse/channels/pipeline";
+import { workspaceChannel } from "@/common/sse/channels/workspace";
 import { PrismaClient } from "@/generated/prisma/client";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { toCampaignJobRow } from "../campaign.mapper";
@@ -64,7 +64,7 @@ export class CampaignJobService {
       },
     );
     publish(
-      pipelineChannel,
+      workspaceChannel,
       { profileId },
       {
         type: "campaignjob.created",
@@ -121,7 +121,7 @@ export class CampaignJobService {
     }
 
     publish(
-      pipelineChannel,
+      workspaceChannel,
       { profileId },
       { type: "campaignjob.updated", campaignId, key, status: patch.status },
     );
@@ -191,7 +191,9 @@ export class CampaignJobService {
               normalizedTitle: normalizeJobTitle(job.title),
               normalizedCompany: normalizeCompanyName(job.company),
               appliedAt: appliedAt!,
-              stageEvents: { create: { fromStage: null, toStage: "applied" } },
+              events: {
+                create: { kind: "status_change", toStatus: "applied", source: "campaign" },
+              },
             },
           });
           applicationCreated = true;
@@ -219,12 +221,12 @@ export class CampaignJobService {
     );
     publish(campaignChannel, { campaignId }, { type: "progress", payload: result.summary });
     publish(
-      pipelineChannel,
+      workspaceChannel,
       { profileId },
       { type: "campaignjob.updated", campaignId, key, status: data.outcome },
     );
     if (result.applicationCreated) {
-      publish(pipelineChannel, { profileId }, { type: "application.created", campaignId });
+      publish(workspaceChannel, { profileId }, { type: "application.created", campaignId });
     }
 
     return {

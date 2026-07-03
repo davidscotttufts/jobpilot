@@ -1,29 +1,19 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
-import type { AnalyticsStageBreakdownEntry } from "@/api/types";
+import type { AnalyticsStatusBreakdownEntry } from "@/api/types";
+import { STATUS_LABEL } from "@/components/ui/display";
 
 const CHART_HEIGHT = 220;
 
-const STAGE_LABEL: Record<string, string> = {
-  applied: "Applied",
-  recruiter_screen: "Recruiter screen",
-  assessment: "Assessment",
-  hiring_manager_screen: "Hiring manager screen",
-  technical_interview: "Technical interview",
-  onsite: "Onsite",
-  offer: "Offer",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-};
-
-interface StageBreakdownChartProps {
-  data: AnalyticsStageBreakdownEntry[];
+interface StatusBreakdownChartProps {
+  data: AnalyticsStatusBreakdownEntry[];
 }
 
-export function StageBreakdownChart(props: StageBreakdownChartProps): ReactElement {
+export function StatusBreakdownChart(props: StatusBreakdownChartProps): ReactElement {
   const { data } = props;
   const theme = useTheme();
 
@@ -42,8 +32,8 @@ export function StageBreakdownChart(props: StageBreakdownChartProps): ReactEleme
   const series = data
     .filter((d) => d.count > 0)
     .map((d, i) => ({
-      id: d.stage,
-      label: STAGE_LABEL[d.stage] ?? d.stage,
+      id: d.status,
+      label: STATUS_LABEL[d.status as ApplicationStatus] ?? d.status,
       value: d.count,
       color: colors[i % colors.length],
     }));
@@ -53,9 +43,9 @@ export function StageBreakdownChart(props: StageBreakdownChartProps): ReactEleme
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent>
-        <Typography variant="overlineMuted">Stage breakdown</Typography>
+        <Typography variant="overlineMuted">Status breakdown</Typography>
         <Typography variant="h5" sx={{ mt: 0.5 }}>
-          {total} applications by stage
+          {total} applications by status
         </Typography>
 
         {series.length === 0 ? (

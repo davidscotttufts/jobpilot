@@ -24,9 +24,9 @@ export const analyticsStatsSchema = z.object({
     rejected: z.number().int(),
   }),
   responseRatePct: z.number().int(),
-  stageBreakdown: z.array(
+  statusBreakdown: z.array(
     z.object({
-      stage: z.string(),
+      status: z.string(),
       count: z.number().int(),
     }),
   ),

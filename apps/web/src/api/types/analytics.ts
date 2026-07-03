@@ -6,7 +6,7 @@ export type AnalyticsStatsDto = Data<typeof api.analytics.get>;
 
 export type AnalyticsTotals = AnalyticsStatsDto["totals"];
 export type AnalyticsWeekly = AnalyticsStatsDto["thisWeek"];
-export type AnalyticsStageBreakdownEntry = AnalyticsStatsDto["stageBreakdown"][number];
+export type AnalyticsStatusBreakdownEntry = AnalyticsStatsDto["statusBreakdown"][number];
 export type AnalyticsPerDayEntry = AnalyticsStatsDto["perDay"][number];
 export type AnalyticsTopBoardEntry = AnalyticsStatsDto["topBoards"][number];
 export type AnalyticsTopReasonEntry = AnalyticsStatsDto["topRejectReasons"][number];

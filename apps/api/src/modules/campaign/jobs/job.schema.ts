@@ -1,3 +1,4 @@
+import { statusSchema } from "@jobpilot/contracts/application";
 import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
 import { z } from "zod/v4";
 import { campaignJobSchema } from "../campaign.schema";
@@ -23,8 +24,7 @@ export const campaignApplicationSchema = z
     board: z.string().nullable(),
     source: z.string(),
     appliedAt: z.date(),
-    stage: z.string(),
-    outcome: z.string().nullable(),
+    status: statusSchema,
     rejectedAt: z.date().nullable(),
     matchScore: z.number().int().nullable(),
     matchReason: z.string().nullable(),

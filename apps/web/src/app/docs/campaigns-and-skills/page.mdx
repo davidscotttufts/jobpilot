@@ -46,7 +46,7 @@ your approval.
 | `resume`          | Resume an interrupted campaign and finish its remaining approved jobs.   |
 | `rescan-skipped`  | Re-score a campaign's skipped jobs and promote the wrongly dropped ones. |
 | `outreach`        | Find the hiring contact for a role and draft a personalized message.     |
-| `scan-inbox`      | Classify new mail, match it to applications, propose stage moves.        |
+| `scan-inbox`      | Classify new mail, match it to applications, propose status moves.       |
 | `cover-letter`    | Draft a tailored one-page cover letter.                                  |
 | `interview`       | Build a prep sheet: behavioral, technical, system design, company.       |
 | `extract-resume`  | Parse an uploaded resume PDF into the structured editor.                 |
@@ -60,21 +60,20 @@ A few skills run automatically when needed - you never call them yourself:
 pulls verification codes from your mailbox during logins, `solve-captcha`
 handles captchas, and `humanizer` makes generated text read naturally.
 
-## The pipeline
+## Statuses
 
-Every application moves through nine stages: **applied → recruiter screen →
-assessment → hiring manager screen → technical interview → onsite → offer**,
-with **rejected** and **withdrawn** as exits. The pipeline page rolls them up
-into a funnel - Applied, Screening, Interview, Offer - with every application
-listed beneath it; each application page keeps a full stage timeline.
-Analytics aggregates the funnel across campaigns.
+Every application has one of six statuses: **applied → screening →
+interviewing → offer**, with **rejected** and **withdrawn** as exits. The
+workspace rolls them into a funnel - Applied, Screening, Interviewing, Offer -
+with every application listed beneath it; each application page keeps a full
+activity timeline. Analytics aggregates the funnel across campaigns.
 
 ## The inbox loop
 
 With [email connected](/docs/email-setup), the `scan-inbox` skill reads new
 mail, classifies each message (interview request, rejection, offer, ...), and
-matches it to an application. Proposed stage moves appear in your inbox page -
-approve one and the application updates. Nothing changes stage without you.
+matches it to an application. Proposed status moves appear in your inbox page -
+approve one and the application updates. Nothing changes status without you.
 
 ## Recovering a campaign
 

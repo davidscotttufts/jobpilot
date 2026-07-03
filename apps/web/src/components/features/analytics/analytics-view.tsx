@@ -9,7 +9,7 @@ import type { AnalyticsStatsDto } from "@/api/types";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { OutreachStatTiles } from "./outreach-stat-tiles";
-import { StageBreakdownChart } from "./stage-breakdown-chart";
+import { StatusBreakdownChart } from "./status-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
 
 function toEntries<T extends { count: number }>(
@@ -46,7 +46,7 @@ export function AnalyticsView(): ReactElement {
           <ApplicationsTimelineChart data={stats.perDay} />
         </Grid>
         <Grid size={{ xs: 12, md: 6 }}>
-          <StageBreakdownChart data={stats.stageBreakdown} />
+          <StatusBreakdownChart data={stats.statusBreakdown} />
         </Grid>
       </Grid>
 

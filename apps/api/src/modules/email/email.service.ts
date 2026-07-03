@@ -1,9 +1,16 @@
-import type { ApproveInput, ScanMessageInput } from "@jobpilot/contracts/email";
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
+import {
+  CLASSIFICATION_TO_STATUS,
+  type ApproveInput,
+  type Classification,
+  type ScanMessageInput,
+} from "@jobpilot/contracts/email";
 import { singleton } from "tsyringe";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
 import { PrismaClient, type Prisma } from "@/generated/prisma/client";
+import { statusChangeOps } from "@/modules/application/status-change";
 import { serializeMessage } from "./email.mapper";
 
 interface MessageQuery {
@@ -13,21 +20,6 @@ interface MessageQuery {
   domainHint?: string;
   verificationDomain?: string;
 }
-
-const POSITIVE_STAGES = new Set([
-  "recruiter_screen",
-  "assessment",
-  "hiring_manager_screen",
-  "technical_interview",
-  "onsite",
-  "offer",
-]);
-
-const CLASSIFICATION_TO_STAGE: Record<string, string> = {
-  interviewing: "recruiter_screen",
-  rejected: "rejected",
-  offer: "offer",
-};
 
 @singleton()
 export class EmailService {
@@ -66,7 +58,7 @@ export class EmailService {
       orderBy: { receivedAt: "desc" },
       take: 200,
       include: {
-        matchedApp: { select: { id: true, title: true, company: true, stage: true } },
+        matchedApp: { select: { id: true, title: true, company: true, status: true } },
       },
     });
 
@@ -79,7 +71,7 @@ export class EmailService {
         this.prisma.emailMessage.findFirst({
           where,
           include: {
-            matchedApp: { select: { id: true, title: true, company: true, stage: true } },
+            matchedApp: { select: { id: true, title: true, company: true, status: true } },
           },
         }),
       { id, account: { profileId } },
@@ -104,7 +96,7 @@ export class EmailService {
         reasoning: body.reasoning,
         matchedAppId: body.matchedAppId,
         matchScore: body.matchScore,
-        appliedStage: body.appliedStage,
+        appliedStatus: body.appliedStatus,
         reviewStatus: body.reviewStatus,
         verificationCode: body.verificationCode,
         verificationLink: body.verificationLink,
@@ -112,7 +104,7 @@ export class EmailService {
         scannedAt: body.classification ? new Date() : undefined,
       },
       include: {
-        matchedApp: { select: { id: true, title: true, company: true, stage: true } },
+        matchedApp: { select: { id: true, title: true, company: true, status: true } },
       },
     });
 
@@ -151,13 +143,13 @@ export class EmailService {
       throw new HttpError(ErrorCodes.UNPROCESSABLE, "Message has no matched application", 422);
     }
 
-    const inferred =
-      body.toStage ??
-      message.appliedStage ??
-      (message.classification ? CLASSIFICATION_TO_STAGE[message.classification] : undefined);
+    const inferred: ApplicationStatus | undefined =
+      body.toStatus ??
+      (message.appliedStatus as ApplicationStatus | null) ??
+      CLASSIFICATION_TO_STATUS[message.classification as Classification];
 
     if (!inferred) {
-      throw new HttpError(ErrorCodes.UNPROCESSABLE, "No target stage available", 422);
+      throw new HttpError(ErrorCodes.UNPROCESSABLE, "No target status available", 422);
     }
 
     const app = await this.prisma.application.findFirst({
@@ -167,33 +159,22 @@ export class EmailService {
       throw notFound("Application not found");
     }
 
-    const fromStage = app.stage;
-    const toStage = inferred;
-    const outcome =
-      toStage === "rejected" ? "negative" : POSITIVE_STAGES.has(toStage) ? "positive" : null;
-    const rejectedAt = toStage === "rejected" ? new Date() : null;
-
     await this.prisma.$transaction([
-      this.prisma.application.update({
-        where: { id: app.id },
-        data: { stage: toStage, outcome, rejectedAt },
-      }),
-      this.prisma.stageEvent.create({
-        data: {
-          applicationId: app.id,
-          fromStage,
-          toStage,
-          note: body.note ?? `From email: ${message.subject}`,
-        },
+      ...statusChangeOps(this.prisma, {
+        applicationId: app.id,
+        fromStatus: app.status,
+        toStatus: inferred,
+        source: "email",
+        note: body.note ?? `From email: ${message.subject}`,
       }),
       this.prisma.emailMessage.update({
         where: { id },
-        data: { reviewStatus: "approved", appliedStage: toStage },
+        data: { reviewStatus: "approved", appliedStatus: inferred },
       }),
     ]);
 
     publish(inboxChannel, undefined, { type: "message.reviewed", id, status: "approved" });
 
-    return { id, applicationId: app.id, stage: toStage };
+    return { id, applicationId: app.id, status: inferred };
   }
 }

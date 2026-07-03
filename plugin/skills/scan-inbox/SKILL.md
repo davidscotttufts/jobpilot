@@ -6,7 +6,7 @@ argument-hint: "[message-id] - omit to scan all pending unscanned; pass an id to
 
 # Scan Inbox - Triage Pending Email
 
-Classify recent email and link each thread to an existing `Application` when there's a confident match. This skill does **not** write `StageEvent` rows or mutate `Application.stage` - the user approves from `/inbox`, that's where state changes happen.
+Classify recent email and link each thread to an existing `Application` when there's a confident match. This skill does **not** write `ApplicationEvent` rows or mutate `Application.status` - the user approves from `/inbox`, that's where state changes happen.
 
 ## Setup
 
@@ -43,7 +43,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/emai
 
 If `data` is empty: **"Inbox is already triaged. Nothing new to classify."** and exit.
 
-The rest of the skill runs over whatever you fetched. A re-scan overwrites the classification and resets `reviewStatus`, but never undoes an approved stage move.
+The rest of the skill runs over whatever you fetched. A re-scan overwrites the classification and resets `reviewStatus`, but never undoes an approved status move.
 
 ## Phase 3: Classify
 
@@ -77,15 +77,15 @@ For `interviewing | rejected | offer`:
 
 For `verification`: do NOT propose a match. `get-code` handles those.
 
-### Propose Stage Move
+### Propose Status Move
 
-For matched non-verification messages, set `appliedStage`:
+For matched non-verification messages, set `appliedStatus`:
 
-| Classification | `appliedStage`     |
-| -------------- | ------------------ |
-| `interviewing` | `recruiter_screen` |
-| `rejected`     | `rejected`         |
-| `offer`        | `offer`            |
+| Classification | `appliedStatus` |
+| -------------- | --------------- |
+| `interviewing` | `interviewing`  |
+| `rejected`     | `rejected`      |
+| `offer`        | `offer`         |
 
 ## Phase 4: Write Back
 
@@ -94,20 +94,20 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -H 'content-type: application/json' \
   -d "$(jq -n --arg classification "<c>" --argjson confidence <0..1> --arg reasoning "<one line>" \
     --argjson matchedAppId <id-or-null> --argjson matchScore <0..1-or-null> \
-    --arg appliedStage "<stage-or-empty>" --arg reviewStatus "<pending|auto>" \
+    --arg appliedStatus "<status-or-empty>" --arg reviewStatus "<pending|auto>" \
     '{classification:$classification,
       confidence:$confidence,
       reasoning:$reasoning,
       matchedAppId:$matchedAppId,
       matchScore:$matchScore,
-      appliedStage: ($appliedStage // null),
+      appliedStatus: ($appliedStatus // null),
       reviewStatus:$reviewStatus}')"
 ```
 
 Rules:
 
 - Default `reviewStatus = "pending"` - human must Approve.
-- `reviewStatus = "auto"` only when `confidence ≥ 0.95` AND `matchedAppId` is set. This is a UI hint only - no `StageEvent` is written here.
+- `reviewStatus = "auto"` only when `confidence ≥ 0.95` AND `matchedAppId` is set. This is a UI hint only - no `ApplicationEvent` is written here.
 
 ## Phase 5: Summary
 

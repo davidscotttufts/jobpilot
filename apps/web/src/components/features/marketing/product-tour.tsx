@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { Box, Grid, Stack, Typography } from "@mui/material";
-import { InboxPanel, PipelinePanel, ResumePanel, UpworkPanel } from "./mock-panels";
+import { InboxPanel, ResumePanel, UpworkPanel, WorkspacePanel } from "./mock-panels";
 import { Section } from "./section";
 import { SectionEyebrow } from "./section-eyebrow";
 
@@ -15,16 +15,16 @@ interface TourRow {
 
 const ROWS: TourRow[] = [
   {
-    eyebrow: "PIPELINE",
+    eyebrow: "WORKSPACE",
     title: "Every application, one funnel.",
-    body: "Nine stages from applied to offer, in a funnel you never fill in by hand. The agent reports each application as it lands, and analytics sit on top.",
-    panel: <PipelinePanel />,
+    body: "Six statuses from applied to offer, in a funnel you never fill in by hand. The agent reports each application as it lands, and analytics sit on top.",
+    panel: <WorkspacePanel />,
     glow: "rgba(255,106,61,0.07)",
   },
   {
     eyebrow: "INBOX",
     title: "Replies land sorted.",
-    body: "JobPilot reads recruiter replies from your Gmail, classifies them, and matches each to an application. You approve the stage move - nothing changes without you.",
+    body: "JobPilot reads recruiter replies from your Gmail, classifies them, and matches each to an application. You approve the status move - nothing changes without you.",
     panel: <InboxPanel />,
     glow: "rgba(59,130,246,0.07)",
   },

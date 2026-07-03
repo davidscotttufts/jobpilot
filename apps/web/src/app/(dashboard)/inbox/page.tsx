@@ -15,7 +15,7 @@ export default async function InboxPage(props: InboxPageProps): Promise<ReactEle
       <PageHeader
         eyebrow="Email"
         title="Inbox"
-        description="Replies, rejections, and offers from the boards you applied to. Approve to update the matching application's stage."
+        description="Replies, rejections, and offers from the boards you applied to. Approve to update the matching application's status."
       />
       <InboxContent />
     </Container>

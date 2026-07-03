@@ -1,7 +1,7 @@
 import { singleton } from "tsyringe";
 import { PrismaClient } from "@/generated/prisma/client";
 
-const NON_INTERVIEWING_STAGES = ["applied", "rejected", "withdrawn"] as const;
+const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
 const DAYS_IN_TIMELINE = 30;
 
 function startOfDay(d: Date): Date {
@@ -61,7 +61,7 @@ export class AnalyticsService {
       weekSubmitted,
       weekInterviewing,
       weekRejected,
-      stageGroupRows,
+      statusGroupRows,
       timelineRows,
       boardGroupRows,
       failReasonRows,
@@ -73,28 +73,28 @@ export class AnalyticsService {
       contactSourceRows,
     ] = await Promise.all([
       this.prisma.application.count({ where: { profileId } }),
-      this.prisma.application.count({ where: { profileId, stage: "applied" } }),
+      this.prisma.application.count({ where: { profileId, status: "applied" } }),
       this.prisma.application.count({
-        where: { profileId, stage: { notIn: [...NON_INTERVIEWING_STAGES] } },
+        where: { profileId, status: { notIn: [...NON_INTERVIEWING_STATUSES] } },
       }),
-      this.prisma.application.count({ where: { profileId, stage: "offer" } }),
-      this.prisma.application.count({ where: { profileId, stage: "rejected" } }),
+      this.prisma.application.count({ where: { profileId, status: "offer" } }),
+      this.prisma.application.count({ where: { profileId, status: "rejected" } }),
       this.prisma.queueEntry.count({ where: { profileId, status: "pending" } }),
       this.prisma.application.count({
-        where: { profileId, stage: "applied", appliedAt: { gte: weekStart } },
+        where: { profileId, status: "applied", appliedAt: { gte: weekStart } },
       }),
       this.prisma.application.count({
         where: {
           profileId,
-          stage: { notIn: [...NON_INTERVIEWING_STAGES] },
+          status: { notIn: [...NON_INTERVIEWING_STATUSES] },
           appliedAt: { gte: weekStart },
         },
       }),
       this.prisma.application.count({
-        where: { profileId, stage: "rejected", appliedAt: { gte: weekStart } },
+        where: { profileId, status: "rejected", appliedAt: { gte: weekStart } },
       }),
       this.prisma.application.groupBy({
-        by: ["stage"],
+        by: ["status"],
         where: { profileId },
         _count: { _all: true },
       }),
@@ -141,8 +141,8 @@ export class AnalyticsService {
       }),
     ]);
 
-    const stageBreakdown = stageGroupRows.map((r) => ({
-      stage: r.stage,
+    const statusBreakdown = statusGroupRows.map((r) => ({
+      status: r.status,
       count: r._count._all,
     }));
 
@@ -196,7 +196,7 @@ export class AnalyticsService {
         rejected: weekRejected,
       },
       responseRatePct,
-      stageBreakdown,
+      statusBreakdown,
       perDay,
       topBoards,
       topRejectReasons,

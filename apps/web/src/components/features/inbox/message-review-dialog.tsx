@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactElement } from "react";
+import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
 import {
   Autocomplete,
   Box,
@@ -25,10 +26,9 @@ interface MessageReviewDialogProps {
   onClose: () => void;
 }
 
-// Classifications that map to an application stage transition (mirrors the
-// approve route's CLASSIFICATION_TO_STAGE). Only these can be approved;
-// "verification" / "irrelevant" have no stage and can never be approved.
-const STAGE_CLASSIFICATIONS = new Set(["interviewing", "rejected", "offer"]);
+// Only classifications with a mapped status can be approved ("verification" /
+// "irrelevant" have none); derived from the shared classification→status map.
+const STATUS_CLASSIFICATIONS = new Set(Object.keys(CLASSIFICATION_TO_STATUS));
 
 export function MessageReviewDialog(props: MessageReviewDialogProps): ReactElement {
   const { messageId, open, onClose } = props;
@@ -100,7 +100,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactEleme
   const isReviewed = m?.reviewStatus === "approved" || m?.reviewStatus === "denied";
 
   const canApprove = Boolean(
-    m && (STAGE_CLASSIFICATIONS.has(m.classification ?? "") || m.appliedStage),
+    m && (STATUS_CLASSIFICATIONS.has(m.classification ?? "") || m.appliedStatus),
   );
 
   return (

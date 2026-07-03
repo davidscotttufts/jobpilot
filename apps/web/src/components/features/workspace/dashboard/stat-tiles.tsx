@@ -7,7 +7,7 @@ import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { ApplicationDto, CampaignDto } from "@/api/types";
 import { StatCard } from "@/components/ui/display";
-import { INTERVIEW_STAGES } from "../applications/funnel-bar";
+import { INTERVIEW_STATUSES } from "../applications/funnel-bar";
 
 export function StatTiles(): ReactElement {
   const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
@@ -21,7 +21,7 @@ export function StatTiles(): ReactElement {
   const apps = applications.data ?? [];
 
   const active = rows.filter((c) => c.status === "in_progress" || c.status === "paused").length;
-  const interviewing = apps.filter((a) => INTERVIEW_STAGES.has(a.stage)).length;
+  const interviewing = apps.filter((a) => INTERVIEW_STATUSES.has(a.status)).length;
   const replies = rows.reduce((n, c) => n + c.summary.replied, 0);
 
   return (

@@ -5,11 +5,11 @@ import { Box, Stack, Typography } from "@mui/material";
 import { fontFamilies } from "@/theme";
 import { PanelBadge, panelCellSx, PanelFrame } from "./panel-frame";
 
-// Mirrors the real pipeline page: funnel-group cards on top, applications beneath.
+// Mirrors the real workspace page: funnel-group cards on top, applications beneath.
 const FUNNEL = [
   { label: "Applied", count: 47, dot: "stages.applying" },
   { label: "Screening", count: 4, dot: "warning.main" },
-  { label: "Interview", count: 2, dot: "accent.primary" },
+  { label: "Interviewing", count: 2, dot: "accent.primary" },
   { label: "Offer", count: 2, dot: "stages.submitted" },
 ];
 
@@ -17,21 +17,21 @@ const APPLICATIONS = [
   {
     company: "Stripe",
     role: "Senior Frontend Engineer",
-    stage: "Applied",
+    status: "Applied",
     tone: "stages.applying",
   },
-  { company: "Vercel", role: "Design Engineer", stage: "Interview", tone: "accent.primary" },
+  { company: "Vercel", role: "Design Engineer", status: "Interviewing", tone: "accent.primary" },
   {
     company: "Supabase",
     role: "Senior TypeScript Engineer",
-    stage: "Offer",
+    status: "Offer",
     tone: "stages.submitted",
   },
 ];
 
-export function PipelinePanel(): ReactElement {
+export function WorkspacePanel(): ReactElement {
   return (
-    <PanelFrame label="pipeline">
+    <PanelFrame label="workspace">
       <Stack spacing={1.5}>
         <Box sx={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1 }}>
           {FUNNEL.map((group) => (
@@ -73,14 +73,14 @@ export function PipelinePanel(): ReactElement {
                   {app.role}
                 </Typography>
               </Box>
-              <PanelBadge color={app.tone}>{app.stage}</PanelBadge>
+              <PanelBadge color={app.tone}>{app.status}</PanelBadge>
             </Box>
           ))}
         </Stack>
         <Typography
           sx={{ fontFamily: fontFamilies.mono, fontSize: "0.6875rem", color: "text.disabled" }}
         >
-          9 stages · applied → offer
+          6 statuses · applied → offer
         </Typography>
       </Stack>
     </PanelFrame>

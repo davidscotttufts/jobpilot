@@ -5,7 +5,7 @@ import type { Prisma } from "@/generated/prisma/client";
 export type EmailMessageRow = Omit<
   Prisma.EmailMessageGetPayload<{
     include: {
-      matchedApp: { select: { id: true; title: true; company: true; stage: true } };
+      matchedApp: { select: { id: true; title: true; company: true; status: true } };
     };
   }>,
   "receivedAt" | "fetchedAt" | "scannedAt"

@@ -15,7 +15,7 @@ model EmailAccount {
 
   messages EmailMessage[]
 
-  @@map("email_account")
+  @@map("email_accounts")
 }
 
 // Per-user Google OAuth client; separate from EmailAccount so it pre-dates connection and survives disconnect.
@@ -29,7 +29,7 @@ model EmailOAuthClient {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  @@map("email_oauth_client")
+  @@map("email_oauth_clients")
 }
 
 model EmailMessage {
@@ -55,7 +55,7 @@ model EmailMessage {
   matchedApp     Application? @relation(fields: [matchedAppId], references: [id], onDelete: SetNull)
   matchScore     Float?       @map("match_score")
   reviewStatus   String       @default("pending") @map("review_status")
-  appliedStage   String?      @map("applied_stage")
+  appliedStatus  String?      @map("applied_status")
 
   verificationCode   String? @map("verification_code")
   verificationLink   String? @map("verification_link")
@@ -65,5 +65,5 @@ model EmailMessage {
   @@index([matchedAppId])
   @@index([fromDomain, receivedAt])
   @@index([verificationDomain, receivedAt])
-  @@map("email_message")
+  @@map("email_messages")
 }

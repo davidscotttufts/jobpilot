@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { statusSchema, type ApplicationStatus } from "./application";
 
 export const EMAIL_PROVIDERS = ["gmail", "outlook", "imap"] as const;
 export const emailProviderSchema = z.enum(EMAIL_PROVIDERS);
@@ -12,6 +13,13 @@ export const CLASSIFICATIONS = [
 ] as const;
 export const classificationSchema = z.enum(CLASSIFICATIONS);
 
+/** Maps an approvable inbox classification to the application status it moves to. */
+export const CLASSIFICATION_TO_STATUS: Partial<Record<Classification, ApplicationStatus>> = {
+  interviewing: "interviewing",
+  rejected: "rejected",
+  offer: "offer",
+};
+
 export const REVIEW_STATUSES = ["pending", "approved", "denied", "auto"] as const;
 export const reviewStatusSchema = z.enum(REVIEW_STATUSES);
 
@@ -21,7 +29,7 @@ export const scanMessageSchema = z.object({
   reasoning: z.string().optional(),
   matchedAppId: z.uuid().optional().nullable(),
   matchScore: z.number().min(0).max(1).optional().nullable(),
-  appliedStage: z.string().optional().nullable(),
+  appliedStatus: statusSchema.optional().nullable(),
   reviewStatus: reviewStatusSchema.optional(),
   verificationCode: z.string().optional().nullable(),
   verificationLink: z.string().optional().nullable(),
@@ -29,7 +37,7 @@ export const scanMessageSchema = z.object({
 });
 
 export const approveSchema = z.object({
-  toStage: z.string().min(1).optional(),
+  toStatus: statusSchema.optional(),
   note: z.string().optional().nullable(),
 });
 
