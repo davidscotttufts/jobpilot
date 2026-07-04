@@ -13,7 +13,7 @@ export const AutoApplySection = withForm({
         title="Auto-apply"
         description="Defaults used by the auto-apply and apply skills."
       >
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <form.AppField name="autoApply.minMatchScore">
             {(field) => <field.TextField label="Min match score (0-100)" type="number" />}
           </form.AppField>

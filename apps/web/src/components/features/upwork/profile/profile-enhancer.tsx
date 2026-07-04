@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { ProfileReview } from "./profile-review";
 
 const STATUS_COLOR: Record<UpworkProfileStatus, "default" | "info" | "warning" | "success"> = {
@@ -33,6 +33,7 @@ const STATUS_LABEL: Record<UpworkProfileStatus, string> = {
 /** Loads the profile-enhancement record, streams live updates, and renders the review. */
 export function ProfileEnhancer(): ReactElement {
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const queryClient = useQueryClient();
 
   useSseChannel(upworkChannel, null, {
@@ -75,13 +76,15 @@ export function ProfileEnhancer(): ReactElement {
             variant="outlined"
           />
           <Box sx={{ flex: 1 }} />
-          <Button
-            variant={hasSuggestion ? "text" : "contained"}
-            startIcon={<AutoFixHigh fontSize="sm" />}
-            onClick={() => void agent.injectSkill("upwork-profile")}
-          >
-            {hasSuggestion ? "Re-generate" : "Generate suggestions"}
-          </Button>
+          {agentAvailable && (
+            <Button
+              variant={hasSuggestion ? "text" : "contained"}
+              startIcon={<AutoFixHigh fontSize="sm" />}
+              onClick={() => void agent.injectSkill("upwork-profile")}
+            >
+              {hasSuggestion ? "Re-generate" : "Generate suggestions"}
+            </Button>
+          )}
         </Stack>
 
         {hasSuggestion && profile ? (
@@ -90,7 +93,11 @@ export function ProfileEnhancer(): ReactElement {
           <EmptyState
             variant="inline"
             title="No suggestions yet."
-            description="Run “Generate suggestions” - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
+            description={
+              agentAvailable
+                ? "Run “Generate suggestions” - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
+                : "Open JobPilot on your desktop to generate suggestions - the agent reads your live Upwork profile and résumé, then drafts an improved overview and portfolio for review."
+            }
           />
         )}
       </Stack>

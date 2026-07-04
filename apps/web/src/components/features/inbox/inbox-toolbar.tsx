@@ -7,7 +7,7 @@ import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { SyncResultDto } from "@/api/types";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import type { InboxFilter } from "./inbox-content";
 
 interface InboxToolbarProps {
@@ -26,6 +26,7 @@ const FILTERS: ReadonlyArray<{ key: InboxFilter; label: string }> = [
 export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
   const { injectSkill } = useAgent();
+  const agentAvailable = useAgentAvailable();
 
   const sync = useApiMutation<SyncResultDto, void>(() => api.email.sync.post(), {
     successMessage: "Inbox synced",
@@ -49,16 +50,18 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
           {sync.isPending ? "Syncing" : "Sync"}
         </Button>
       </Tooltip>
-      <Tooltip title="Run the scan-inbox skill to classify pending messages">
-        <Button
-          size="small"
-          variant="contained"
-          startIcon={<FormatListBulleted />}
-          onClick={handleScan}
-        >
-          Scan pending
-        </Button>
-      </Tooltip>
+      {agentAvailable && (
+        <Tooltip title="Run the scan-inbox skill to classify pending messages">
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<FormatListBulleted />}
+            onClick={handleScan}
+          >
+            Scan pending
+          </Button>
+        </Tooltip>
+      )}
       <ToggleButtonGroup
         size="small"
         exclusive
@@ -68,7 +71,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
             onFilterChange(next);
           }
         }}
-        sx={{ ml: "auto" }}
+        sx={{ ml: { sm: "auto" }, flexWrap: "wrap" }}
       >
         {FILTERS.map((f) => (
           <ToggleButton key={f.key} value={f.key}>

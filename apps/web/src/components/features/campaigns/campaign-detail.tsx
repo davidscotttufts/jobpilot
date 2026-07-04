@@ -13,7 +13,7 @@ import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { OutreachBoard } from "@/components/features/outreach";
 import { campaignChannel } from "@/lib/sse/channels/campaign";
 import { useSseChannel } from "@/lib/sse/client";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { UPWORK_DOMAIN } from "./composer/form-config";
 import { CampaignHeaderCard } from "./detail/header-card";
@@ -30,6 +30,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const toast = useToast();
 
   const detail = useApiQuery<CampaignDetailDto>(queryKeys.campaigns.detail(campaignId), () =>
@@ -109,8 +110,8 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
       <CampaignReasonBreakdown campaign={campaign} />
       <CampaignJobsPanel
         campaign={campaign}
-        onApplyJob={isUpwork ? undefined : applyJob}
-        onDraftProposal={isUpwork ? draftProposal : undefined}
+        onApplyJob={!isUpwork && agentAvailable ? applyJob : undefined}
+        onDraftProposal={isUpwork && agentAvailable ? draftProposal : undefined}
         showReason={isUpwork}
       />
     </Stack>

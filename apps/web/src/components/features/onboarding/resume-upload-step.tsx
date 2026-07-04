@@ -13,7 +13,7 @@ import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { applyBasicsToForm } from "./map-basics-to-profile";
 
@@ -25,6 +25,7 @@ export const ResumeUploadStep = withForm({
   render: function ResumeUploadStep({ form, onContinue }) {
     const toast = useToast();
     const agent = useAgent();
+    const agentAvailable = useAgentAvailable();
     const [state, setState] = useState<StepState>("idle");
     const [resumeId, setResumeId] = useState<string | null>(null);
 
@@ -41,7 +42,15 @@ export const ResumeUploadStep = withForm({
         onSuccess: ({ id }) => {
           setResumeId(id);
           form.setFieldValue("primaryResumeId", id);
-          void startExtraction(id);
+          // Auto-fill needs the local agent; on mobile just keep the upload and move on.
+          if (agentAvailable) {
+            void startExtraction(id);
+          } else {
+            toast.info(
+              "Uploaded. Open JobPilot on your desktop to auto-fill your profile from it.",
+            );
+            onContinue();
+          }
         },
       },
     );

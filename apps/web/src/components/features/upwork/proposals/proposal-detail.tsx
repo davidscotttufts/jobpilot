@@ -21,7 +21,7 @@ import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types
 import { PageHeader, SectionCard } from "@/components/ui/layout";
 import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { ProposalNotes } from "./proposal-notes";
@@ -35,6 +35,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const { id } = props;
   const router = useRouter();
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const toast = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -115,13 +116,15 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
                 Open posting
               </Button>
             )}
-            <Button
-              variant="contained"
-              startIcon={<AutoAwesome fontSize="md" />}
-              onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
-            >
-              {proposal.proposalText ? "Regenerate" : "Generate"}
-            </Button>
+            {agentAvailable && (
+              <Button
+                variant="contained"
+                startIcon={<AutoAwesome fontSize="md" />}
+                onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
+              >
+                {proposal.proposalText ? "Regenerate" : "Generate"}
+              </Button>
+            )}
             <IconButton onClick={() => void handleDelete()} aria-label="Delete proposal">
               <Delete fontSize="md" />
             </IconButton>

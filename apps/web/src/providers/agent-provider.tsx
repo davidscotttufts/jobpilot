@@ -8,6 +8,7 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
+import { useMediaQuery } from "@mui/material";
 import {
   formatSkillCommand,
   injectCommand,
@@ -198,4 +199,12 @@ export function useAgentDock(): AgentDockContextValue {
     throw new Error("useAgentDock must be used within an AgentProvider");
   }
   return ctx;
+}
+
+/**
+ * True only on desktop, where the local agent terminal runs. Below md there is
+ * no dock to inject into, so agent-driving controls hide themselves against this.
+ */
+export function useAgentAvailable(): boolean {
+  return useMediaQuery((theme) => theme.breakpoints.up("md"));
 }

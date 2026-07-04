@@ -11,7 +11,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data/empty-state";
 import { inboxChannel } from "@/lib/sse/channels/inbox";
 import { useSseChannel } from "@/lib/sse/client";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { InboxTable } from "./inbox-table";
 import { InboxToolbar } from "./inbox-toolbar";
 import { MessageReviewDialog } from "./message-review-dialog";
@@ -28,6 +28,7 @@ export function InboxContent(): ReactElement {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const queryClient = useQueryClient();
   const { injectSkill } = useAgent();
+  const agentAvailable = useAgentAvailable();
 
   const account = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
     api.email.account.get(),
@@ -77,9 +78,13 @@ export function InboxContent(): ReactElement {
           rows={messages.data ?? []}
           loading={messages.isFetching}
           onRowClick={(row) => setSelectedId(row.id)}
-          onScanMessage={(row) => {
-            void injectSkill("scan-inbox", String(row.id));
-          }}
+          onScanMessage={
+            agentAvailable
+              ? (row) => {
+                  void injectSkill("scan-inbox", String(row.id));
+                }
+              : undefined
+          }
         />
       )}
       <MessageReviewDialog

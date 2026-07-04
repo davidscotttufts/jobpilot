@@ -17,7 +17,7 @@ export const AddressSection = withForm({
         <form.AppField name="aptUnit">
           {(field) => <field.TextField label="Apt / Unit" />}
         </form.AppField>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <form.AppField name="city">{(field) => <field.TextField label="City" />}</form.AppField>
           <form.AppField name="state">
             {(field) => <field.TextField label="State / Region" />}

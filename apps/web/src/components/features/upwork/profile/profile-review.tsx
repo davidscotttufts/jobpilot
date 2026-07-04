@@ -8,7 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { UpworkProfileDto } from "@/api/types";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { PortfolioList } from "./portfolio-list";
 
 interface ProfileReviewProps {
@@ -23,6 +23,7 @@ interface ProfileReviewProps {
 export function ProfileReview(props: ProfileReviewProps): ReactElement {
   const { profile } = props;
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
 
   const [title, setTitle] = useState(profile.suggestedTitle ?? "");
   const [hourlyRate, setHourlyRate] = useState(profile.suggestedHourlyRate ?? "");
@@ -111,7 +112,7 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
               Approve
             </Button>
           )}
-          {isApproved && (
+          {isApproved && agentAvailable && (
             <Button
               variant="contained"
               startIcon={<CloudUpload fontSize="sm" />}

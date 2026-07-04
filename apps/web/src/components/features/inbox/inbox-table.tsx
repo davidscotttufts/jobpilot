@@ -114,28 +114,33 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       width: 140,
       valueFormatter: (v) => (v ? new Date(v as string).toLocaleString() : ""),
     },
-    {
-      field: "scan",
-      headerName: "",
-      width: 100,
-      sortable: false,
-      filterable: false,
-      align: "right",
-      headerAlign: "right",
-      renderCell: (p) => (
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={(e) => {
-            // Don't open the review dialog (row click) when scanning.
-            e.stopPropagation();
-            onScanMessage?.(p.row);
-          }}
-        >
-          {p.row.classification ? "Rescan" : "Scan"}
-        </Button>
-      ),
-    },
+    // Scan action is agent-driven; omit the whole column when no handler is passed.
+    ...(onScanMessage
+      ? [
+          {
+            field: "scan",
+            headerName: "",
+            width: 100,
+            sortable: false,
+            filterable: false,
+            align: "right",
+            headerAlign: "right",
+            renderCell: (p) => (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={(e) => {
+                  // Don't open the review dialog (row click) when scanning.
+                  e.stopPropagation();
+                  onScanMessage(p.row);
+                }}
+              >
+                {p.row.classification ? "Rescan" : "Scan"}
+              </Button>
+            ),
+          } satisfies GridColDef<EmailMessageDto>,
+        ]
+      : []),
   ];
 
   // DTOs are interfaces without an index signature, so widen rows/columns at

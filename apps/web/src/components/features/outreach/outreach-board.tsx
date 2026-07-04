@@ -24,7 +24,7 @@ import type {
 } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { ExternalLink, StatCard } from "@/components/ui/display";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { OutreachMessageDialog } from "./outreach-message-dialog";
 
@@ -61,6 +61,7 @@ interface OutreachBoardProps {
 export function OutreachBoard(props: OutreachBoardProps): ReactElement {
   const { campaignId, status, summary, config } = props;
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
@@ -231,9 +232,11 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       {selectedIds.length > 0 && (
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <Typography variant="body2Muted">{selectedIds.length} selected</Typography>
-          <Button size="small" variant="outlined" onClick={regenerateSelected}>
-            Regenerate selected
-          </Button>
+          {agentAvailable && (
+            <Button size="small" variant="outlined" onClick={regenerateSelected}>
+              Regenerate selected
+            </Button>
+          )}
           <Button
             size="small"
             variant="outlined"

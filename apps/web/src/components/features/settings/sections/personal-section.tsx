@@ -13,7 +13,7 @@ export const PersonalSection = withForm({
         title="Personal"
         description="Your name, contact, and links shared with employers."
       >
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <form.AppField name="firstName">
             {(field) => <field.TextField label="First name" />}
           </form.AppField>
@@ -25,7 +25,7 @@ export const PersonalSection = withForm({
           {(field) => <field.TextField label="Email" type="email" />}
         </form.AppField>
         <form.AppField name="phone">{(field) => <field.Phone label="Phone" />}</form.AppField>
-        <Stack direction="row" spacing={2}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <form.AppField name="website">
             {(field) => <field.TextField label="Website" />}
           </form.AppField>

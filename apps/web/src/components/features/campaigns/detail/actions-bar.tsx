@@ -29,7 +29,7 @@ import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto } from "@/api/types";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface CampaignActionsBarProps {
@@ -39,6 +39,7 @@ interface CampaignActionsBarProps {
 export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement {
   const { campaign } = props;
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const confirm = useConfirm();
   const router = useRouter();
 
@@ -87,7 +88,8 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const isAutoApply = campaign.source === "auto-apply";
   const isStopped = campaign.status === "paused" || campaign.status === "interrupted";
   const hasActionItems =
-    isStopped || (isAutoApply && failedCount > 0) || (!isInProgress && skippedCount > 0);
+    isStopped ||
+    (agentAvailable && ((isAutoApply && failedCount > 0) || (!isInProgress && skippedCount > 0)));
 
   const handleMarkDone = async (): Promise<void> => {
     const confirmed = await confirm({
@@ -143,7 +145,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       key: "retry",
       label: `Retry failed (${failedCount})`,
       icon: <Replay fontSize="sm" />,
-      show: isAutoApply && failedCount > 0,
+      show: isAutoApply && failedCount > 0 && agentAvailable,
       onClick: () => void agent.injectSkill("auto-apply", `retry-failed ${campaign.campaignId}`),
     },
     {
@@ -151,7 +153,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       key: "rescan",
       label: `Rescan skipped (${skippedCount})…`,
       icon: <Autorenew fontSize="sm" />,
-      show: !isInProgress && skippedCount > 0,
+      show: !isInProgress && skippedCount > 0 && agentAvailable,
       onClick: () => setRescanOpen(true),
     },
     { kind: "divider", key: "del-divider", show: hasActionItems },
@@ -182,7 +184,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
           Stop
         </Button>
       )}
-      {isStopped && (
+      {isStopped && agentAvailable && (
         <Button variant="contained" startIcon={<PlayArrow fontSize="sm" />} onClick={handleResume}>
           Resume
         </Button>

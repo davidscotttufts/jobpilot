@@ -1,10 +1,10 @@
-import { createTheme } from "@mui/material/styles";
+import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { componentOverrides } from "./overrides";
 import { accent, feedback, line, stages, surfaces, textColors } from "./palette";
 import { gradients, iconSizes, motion, radii, shadows } from "./tokens";
 import { typography } from "./typography";
 
-export const theme = createTheme({
+const baseTheme = createTheme({
   cssVariables: true,
   palette: {
     mode: "dark",
@@ -35,3 +35,6 @@ export const theme = createTheme({
   iconSizes,
   components: componentOverrides,
 });
+
+// Scale headings (h1-h4) down on smaller viewports so page/marketing titles fit phones.
+export const theme = responsiveFontSizes(baseTheme, { variants: ["h1", "h2", "h3", "h4"] });

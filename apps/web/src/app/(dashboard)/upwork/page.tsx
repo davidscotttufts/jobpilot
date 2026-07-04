@@ -13,7 +13,8 @@ export default function UpworkPage(): ReactElement {
         title="Proposals"
         description="Drafted and submitted Upwork proposals, newest first."
         actions={
-          <Stack direction="row" spacing={1}>
+          // These lead to agent-driven flows, so hide them on mobile (read-only UI).
+          <Stack direction="row" spacing={1} sx={{ display: { xs: "none", md: "flex" } }}>
             <LinkButton
               variant="outlined"
               startIcon={<ManageAccounts fontSize="md" />}

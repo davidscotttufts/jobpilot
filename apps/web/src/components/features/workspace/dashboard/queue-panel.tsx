@@ -10,7 +10,7 @@ import type { QueueEntryDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { formatRelativeTime } from "@/utils/format";
 import { useWorkspaceActions } from "../actions-provider";
 
@@ -29,6 +29,7 @@ function urlLabel(url: string): string {
 /** First-class queue of single-apply URLs - replaces the old dead "queued" column. */
 export function QueuePanel(): ReactElement {
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const { openAddUrls } = useWorkspaceActions();
 
   const queue = useApiQuery<QueueEntryDto[]>(queryKeys.queue.list(QUEUE_FILTER), () =>
@@ -50,15 +51,17 @@ export function QueuePanel(): ReactElement {
           >
             Add URLs
           </Button>
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<PlayArrow fontSize="md" />}
-            disabled={entries.length === 0}
-            onClick={() => void agent.injectSkill("apply")}
-          >
-            Apply all
-          </Button>
+          {agentAvailable && (
+            <Button
+              size="small"
+              variant="contained"
+              startIcon={<PlayArrow fontSize="md" />}
+              disabled={entries.length === 0}
+              onClick={() => void agent.injectSkill("apply")}
+            >
+              Apply all
+            </Button>
+          )}
         </Stack>
       }
     >
@@ -82,6 +85,7 @@ export function QueuePanel(): ReactElement {
 function QueueRow(props: { entry: QueueEntryDto }): ReactElement {
   const { entry } = props;
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
 
   const remove = useApiMutation<unknown, void>(() => api.queue({ id: entry.id }).delete(), {
     successMessage: "Removed from queue",
@@ -121,14 +125,16 @@ function QueueRow(props: { entry: QueueEntryDto }): ReactElement {
             {formatRelativeTime(entry.createdAt)}
           </Typography>
         </Box>
-        <Button
-          size="small"
-          variant="text"
-          startIcon={<PlayArrow fontSize="sm" />}
-          onClick={() => void agent.injectSkill("apply", entry.url)}
-        >
-          Apply
-        </Button>
+        {agentAvailable && (
+          <Button
+            size="small"
+            variant="text"
+            startIcon={<PlayArrow fontSize="sm" />}
+            onClick={() => void agent.injectSkill("apply", entry.url)}
+          >
+            Apply
+          </Button>
+        )}
         <DropdownMenu
           stopPropagation
           items={items}

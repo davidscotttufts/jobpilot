@@ -44,3 +44,10 @@ export const DOCK_COLLAPSED = 56;
 export const DOCK_EXPANDED = 380;
 export const DOCK_MIN_EXPANDED = 320;
 export const DOCK_MAX_EXPANDED = 640;
+export const MOBILE_NAV_HEIGHT = 56;
+
+/** Active-route test shared by the desktop rail and the mobile bottom nav. */
+export function isNavItemActive(pathname: string, href: string): boolean {
+  const target = href.split("?")[0];
+  return target === "/" ? pathname === "/" : pathname.startsWith(target);
+}

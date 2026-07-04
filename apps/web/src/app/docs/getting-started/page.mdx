@@ -1,7 +1,8 @@
 import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("getting-started", {
-  description: "Create a JobPilot account, install the local agent, and run your first campaign.",
+  description:
+    "Install the JobPilot plugin, run setup, create your account, and run your first campaign.",
 });
 
 # Getting started
@@ -15,7 +16,42 @@ machine. Setup takes about ten minutes.
   subscription. The agent runs on it - JobPilot needs no API keys.
 - Windows, macOS, or Linux.
 
-## 1. Create your account
+## 1. Install the plugin
+
+JobPilot is a plugin for the Claude Code or Codex subscription you already
+have. Add it from a marketplace - the [install page](/install) has copy-paste
+commands for both providers. In Claude Code:
+
+```text
+/plugin marketplace add https://github.com/suxrobgm/claude-plugins
+/plugin install jobpilot@sukhrob-claude-plugins
+```
+
+In Codex, add the plugin from a shell:
+
+```text
+codex plugin marketplace add suxrobGM/codex-plugins
+codex plugin add jobpilot@sukhrob-codex-plugins
+```
+
+No Claude Code or Codex plugin support? The [install page](/install) also has a
+one-line direct installer for the local agent host.
+
+## 2. Run setup
+
+In the same session, run the `setup` skill. It installs and starts the local
+agent - a small terminal host that runs Claude Code or Codex for you - and
+signs it in as you automatically.
+
+```text
+/jobpilot:setup
+```
+
+The dashboard's agent dock (the terminal panel in the bottom corner) stays
+visible, so you can watch every step the agent takes. Pick your provider -
+Claude Code or Codex; you can switch any time.
+
+## 3. Create your account
 
 1. Go to [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign up.
 2. Verify your email address.
@@ -23,47 +59,6 @@ machine. Setup takes about ten minutes.
    profile powers form filling; the resume powers job scoring and tailoring.
 
 Everything can be changed later under **Settings**.
-
-## 2. Install the agent
-
-The agent is a small terminal host that runs Claude Code or Codex for you.
-The [install page](/install) walks through this step by step; in short,
-two ways to install it:
-
-**From the dashboard (easiest).** Open the agent dock - the terminal panel in
-the bottom corner. If the agent isn't installed yet, the dock shows a one-line
-install command:
-
-```text
-# Windows (PowerShell)
-irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex
-
-# macOS / Linux
-curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash
-```
-
-**From your own Claude Code or Codex.** Install the plugin from a marketplace,
-then run the `setup` skill. In Claude Code:
-
-```text
-/plugin marketplace add https://github.com/suxrobgm/claude-plugins
-/plugin install jobpilot@sukhrob-claude-plugins
-/jobpilot:setup
-```
-
-In Codex, add the plugin from a shell, then run `$setup` inside a session:
-
-```text
-codex plugin marketplace add suxrobGM/codex-plugins
-codex plugin add jobpilot@sukhrob-codex-plugins
-```
-
-## 3. Launch the agent
-
-Back in the dashboard, open the agent dock and start the agent. Pick your
-provider - Claude Code or Codex; you can switch any time - and it signs in as
-you automatically. The terminal stays visible, so you can watch every step
-the agent takes.
 
 ## 4. Run your first campaign
 

@@ -29,10 +29,20 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
           {backLabel ?? "Back"}
         </LinkButton>
       )}
-      <Stack direction="row" sx={{ alignItems: "flex-end", justifyContent: "space-between" }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={{ xs: 1.5, sm: 0 }}
+        sx={{
+          alignItems: { xs: "stretch", sm: "flex-end" },
+          justifyContent: "space-between",
+        }}
+      >
         <Box>
           {eyebrow && <Typography variant="overlineMuted">{eyebrow}</Typography>}
-          <Typography variant="h1" sx={{ fontSize: "1.75rem", mt: eyebrow ? 0.5 : 0 }}>
+          <Typography
+            variant="h1"
+            sx={{ fontSize: { xs: "1.4rem", sm: "1.75rem" }, mt: eyebrow ? 0.5 : 0 }}
+          >
             {title}
           </Typography>
           {description &&
@@ -45,7 +55,7 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
             ))}
         </Box>
         {actions && (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
             {actions}
           </Stack>
         )}

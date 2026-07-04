@@ -17,7 +17,7 @@ import {
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { OutreachMessageDto } from "@/api/types";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 
 interface OutreachMessageDialogProps {
   campaignId: string;
@@ -31,6 +31,7 @@ interface OutreachMessageDialogProps {
 export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactElement {
   const { campaignId, message, canSend, invalidate, onClose, onSkip } = props;
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const [subject, setSubject] = useState(message.subject ?? "");
   const [body, setBody] = useState(message.body);
 
@@ -133,7 +134,7 @@ export function OutreachMessageDialog(props: OutreachMessageDialogProps): ReactE
             <Button onClick={onSkip} color="warning">
               Skip
             </Button>
-            <Button onClick={regenerate}>Regenerate</Button>
+            {agentAvailable && <Button onClick={regenerate}>Regenerate</Button>}
           </Stack>
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={() => save.mutate()} disabled={save.isPending}>

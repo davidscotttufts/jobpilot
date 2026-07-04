@@ -7,13 +7,13 @@ import { Section } from "./section";
 
 const STEPS = [
   {
-    title: "Create your account",
-    body: "Sign up and let onboarding build your profile from your resume. That's what the agent scores and applies with.",
-    snippet: "jobpilot.suxrobgm.net/register",
+    title: "Install the plugin",
+    body: "Add JobPilot to the Claude Code or Codex subscription you already have - no API keys.",
+    snippet: "/plugin install jobpilot",
   },
   {
-    title: "Install the agent",
-    body: "One command installs the local terminal - or add the plugin to your own Claude Code or Codex and run setup.",
+    title: "Run setup & sign up",
+    body: "The setup skill installs and starts your local agent. Sign up and onboarding builds your profile from your resume - what the agent scores and applies with.",
     snippet: "/jobpilot:setup",
   },
   {

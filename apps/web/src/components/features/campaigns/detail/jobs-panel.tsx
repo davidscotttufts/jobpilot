@@ -12,7 +12,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { useAgent } from "@/providers/agent-provider";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { CampaignJobsTable, isReapplicable } from "./jobs-table";
@@ -39,6 +39,7 @@ interface CampaignJobsPanelProps {
 export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const { campaign, onApplyJob, onDraftProposal, showReason } = props;
   const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -53,7 +54,8 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
       (!term || `${j.title} ${j.company}`.toLowerCase().includes(term)),
   );
 
-  const canReapply = campaign.status !== "in_progress";
+  // Re-apply / rescan drive the agent, so they're desktop-only.
+  const canReapply = campaign.status !== "in_progress" && agentAvailable;
   const selected = canReapply
     ? resolveSelectedRows(selection, campaign.jobs, visible).filter((j) => isReapplicable(j.status))
     : [];

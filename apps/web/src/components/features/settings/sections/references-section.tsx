@@ -52,7 +52,7 @@ export const ReferencesSection = withForm({
                     />
                     <CardContent>
                       <Stack spacing={2}>
-                        <Stack direction="row" spacing={2}>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                           <form.AppField name={`references[${i}].name`}>
                             {(sub) => <sub.TextField label="Name" />}
                           </form.AppField>
@@ -63,7 +63,7 @@ export const ReferencesSection = withForm({
                         <form.AppField name={`references[${i}].company`}>
                           {(sub) => <sub.TextField label="Company" />}
                         </form.AppField>
-                        <Stack direction="row" spacing={2}>
+                        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                           <form.AppField name={`references[${i}].email`}>
                             {(sub) => <sub.TextField label="Email" type="email" />}
                           </form.AppField>

@@ -11,7 +11,7 @@ export const DOCS_NAV: DocsNavEntry[] = [
   {
     title: "Getting started",
     href: "/docs/getting-started",
-    description: "Create an account, install the agent, and run your first campaign.",
+    description: "Install the plugin, run setup, and launch your first campaign.",
   },
   {
     title: "Campaigns & skills",

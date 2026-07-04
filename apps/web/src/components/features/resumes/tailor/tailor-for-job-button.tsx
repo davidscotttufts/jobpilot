@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from "react";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Button } from "@mui/material";
+import { useAgentAvailable } from "@/providers/agent-provider";
 import { JobDescriptionDialog } from "./job-description-dialog";
 
 interface TailorForJobButtonProps {
@@ -11,7 +12,14 @@ interface TailorForJobButtonProps {
 
 export function TailorForJobButton(props: TailorForJobButtonProps): ReactElement {
   const { size = "small" } = props;
+  const agentAvailable = useAgentAvailable();
   const [open, setOpen] = useState(false);
+
+  // Tailoring runs the local agent, so this control is desktop-only.
+  if (!agentAvailable) {
+    return <></>;
+  }
+
   return (
     <>
       <Button
