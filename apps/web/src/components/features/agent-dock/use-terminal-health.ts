@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import { getStatus, type SessionStatus } from "@/lib/terminal";
 import { patchAgentStorage, readAgentStorage } from "@/providers/agent-provider";
 
-export type TerminalHealth =
-  | "checking"
-  | "reachable"
-  | "degraded"
-  | "offline"
-  | "uninstalled";
+export type TerminalHealth = "checking" | "reachable" | "degraded" | "offline" | "uninstalled";
 
 const POLL_INTERVAL_MS = 5000;
 
