@@ -16,6 +16,7 @@ import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
 import { providerDisplayName } from "@/lib/terminal";
 import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
+import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
 import { AgentUpdateBanner } from "./agent-update-banner";
 import { useTerminalHealth, type TerminalHealth } from "./use-terminal-health";
@@ -24,7 +25,8 @@ const STATUS_LABELS: Record<TerminalHealth, string> = {
   checking: "connecting",
   reachable: "ready",
   degraded: "needs reinstall",
-  unreachable: "offline",
+  offline: "offline",
+  uninstalled: "not installed",
 };
 
 export function DockPanel(): ReactElement {
@@ -73,12 +75,13 @@ export function DockPanel(): ReactElement {
           <LoadingSpinner />
         </Stack>
       )}
-      {health === "unreachable" && <AgentInstallCard onRecheck={recheck} />}
+      {health === "offline" && <AgentOfflineCard onRecheck={recheck} provider={provider} />}
+      {health === "uninstalled" && <AgentInstallCard onRecheck={recheck} />}
       {health === "degraded" && (
         <AgentInstallCard
           onRecheck={recheck}
           title="Reinstall the JobPilot agent"
-          description="The agent host is running but its plugin files are missing or corrupt. Reinstall with the one-liner for your OS, then recheck."
+          description="The agent host is running but its plugin files are missing or corrupt. Re-run setup to refresh it, then recheck."
           detail={status?.detail}
         />
       )}

@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { getStatus, type SessionStatus } from "@/lib/terminal";
 import { patchAgentStorage, readAgentStorage } from "@/providers/agent-provider";
 
-export type TerminalHealth = "checking" | "reachable" | "degraded" | "unreachable";
+export type TerminalHealth =
+  | "checking"
+  | "reachable"
+  | "degraded"
+  | "offline"
+  | "uninstalled";
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -17,7 +22,8 @@ export interface TerminalHealthState {
 
 /**
  * Polls the local terminal host; "reachable" when /healthz answers, "degraded" when the host
- * runs but can't start sessions (broken install), "unreachable" on any error.
+ * runs but can't start sessions (broken install). When unreachable, "offline" if a host has ever
+ * answered from this browser (installed, just stopped) else "uninstalled" (never connected).
  */
 export function useTerminalHealth(): TerminalHealthState {
   const [health, setHealth] = useState<TerminalHealth>("checking");
@@ -41,7 +47,7 @@ export function useTerminalHealth(): TerminalHealthState {
         }
       } catch {
         if (active) {
-          setHealth("unreachable");
+          setHealth(readAgentStorage()?.everReachable ? "offline" : "uninstalled");
         }
       }
       if (active) {

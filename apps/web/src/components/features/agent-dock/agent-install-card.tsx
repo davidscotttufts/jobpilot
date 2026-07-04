@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Refresh } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
-import { HostInstallCommands } from "@/components/features/install";
+import { Stack, Typography } from "@mui/material";
+import { PluginInstallCommands } from "@/components/features/install";
+import { RecheckButton } from "./recheck-button";
 
 interface AgentInstallCardProps {
   onRecheck: () => void;
@@ -14,7 +14,7 @@ interface AgentInstallCardProps {
   detail?: string | null;
 }
 
-/** Shown in the dock when the local terminal host is unreachable: install one-liners + recheck. */
+/** Shown in the dock when the local terminal host is unreachable: plugin-first install + recheck. */
 export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
   const { onRecheck, title, description, detail } = props;
 
@@ -24,7 +24,7 @@ export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
         <Typography variant="subtitle2">{title ?? "Install the JobPilot agent"}</Typography>
         <Typography variant="body2Muted">
           {description ??
-            "The agent runs locally and drives Claude Code or Codex on your machine. Run the one-liner for your OS, start it, and it connects here automatically."}
+            "Add the JobPilot plugin to Claude Code or Codex, then run setup - it installs and starts the local agent, which connects here automatically."}
         </Typography>
         {detail && (
           <Typography variant="captionMuted" sx={{ color: "error.main" }}>
@@ -33,17 +33,9 @@ export function AgentInstallCard(props: AgentInstallCardProps): ReactElement {
         )}
       </Stack>
 
-      <HostInstallCommands />
+      <PluginInstallCommands />
 
-      <Button
-        variant="outlined"
-        size="small"
-        startIcon={<Refresh />}
-        onClick={onRecheck}
-        sx={{ alignSelf: "flex-start" }}
-      >
-        Recheck
-      </Button>
+      <RecheckButton onClick={onRecheck} />
     </Stack>
   );
 }
