@@ -2,11 +2,14 @@
 
 Multi-user AI job-application app. The Next.js web UI and the Elysia + PostgreSQL API (which owns all state) are **cloud-hosted and shared across users**; each user runs the **agent locally** - Claude Code or Codex driven through a .NET PTY host, plus Playwright browser automation - so jobs run on that user's own Claude/Codex subscription (see [project differentiator]). Dev ports: web `:4100`, API `:4101`, PTY host `:4102`.
 
-The agent authenticates to the (possibly remote, multi-user) API as the signed-in user via a per-user personal access token (PAT). On terminal session start the web fetches the user's **single reusable terminal token** (`POST /api/auth/tokens/terminal` - get-or-create, authed by the auth cookie) and passes it to the PTY host, which injects it as `JOBPILOT_API_TOKEN`; skills send it as `Authorization: Bearer`. The terminal token's raw value is stored encrypted at rest (per-user DEK) so the same token is returned every time - no manual setup, no per-session accumulation.
+The agent authenticates to the (possibly remote, multi-user) API as the signed-in user via a per-user personal access token (PAT).
+On terminal session start the web fetches the user's **single reusable terminal token** (`POST /api/auth/tokens/terminal` - get-or-create, authed by the auth cookie) and passes it to the PTY host, which injects it as `JOBPILOT_API_TOKEN`; skills send it as `Authorization: Bearer`.
+The terminal token's raw value is stored encrypted at rest (per-user DEK) so the same token is returned every time - no manual setup, no per-session accumulation.
 
 ## Layout
 
-- `plugin/` - the JobPilot plugin, loaded by Claude (`--plugin-dir plugin`) and Codex (via `.agents/plugins/marketplace.json` → `./plugin`; bundled into the terminal publish root). One tree serves both providers - no generation step. On release the marketplaces (`suxrobGM/claude-plugins`, `suxrobGM/codex-plugins`) get a **setup-only** payload (manifests + `skills/setup` + `skills/shared`; the Codex manifest is trimmed in-workflow via `jq` - no `.mcp.json`, `defaultPrompt` = `$setup`) - every other skill needs the host-injected token, so the full tree ships only inside the terminal archives.
+- `plugin/` - the JobPilot plugin, loaded by Claude (`--plugin-dir plugin`) and Codex (via `.agents/plugins/marketplace.json` → `./plugin`;
+  bundled into the terminal publish root). One tree serves both providers - no generation step. On release the marketplaces (`suxrobGM/claude-plugins`, `suxrobGM/codex-plugins`) get a **setup-only** payload (manifests + the self-contained `skills/setup`; the Codex manifest is trimmed in-workflow via `jq` - no `.mcp.json`, `defaultPrompt` = `$setup`) - every other skill needs the host-injected token, so the full tree ships only inside the terminal archives.
   - `plugin/.claude-plugin/plugin.json` & `plugin/.codex-plugin/plugin.json` - provider manifests (both name the plugin `jobpilot`).
   - `plugin/.mcp.json` - Playwright MCP wiring, shared by both providers.
   - `plugin/skills/<name>/SKILL.md` - one hand-authored, provider-neutral skill per directory; `plugin/skills/shared/*.md` - shared docs. **Edit here directly.**
