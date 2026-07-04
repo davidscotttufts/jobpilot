@@ -29,8 +29,8 @@ export default function InstallPage(): ReactElement {
                 Install JobPilot in two commands.
               </Typography>
               <Typography variant="body1Muted" sx={{ maxWidth: 560 }}>
-                JobPilot is a plugin for the Claude Code or Codex subscription you already have.
-                Add it, run setup, and the agent takes care of everything else.
+                JobPilot is a plugin for the Claude Code or Codex subscription you already have. Add
+                it, run setup, and the agent takes care of everything else.
               </Typography>
             </Stack>
             <InstallGuide />

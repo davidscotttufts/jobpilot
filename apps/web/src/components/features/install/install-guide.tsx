@@ -114,7 +114,10 @@ export function InstallGuide(): ReactElement {
           onClick={() => setShowDirect((v) => !v)}
           endIcon={
             <ExpandMore
-              sx={{ transform: showDirect ? "rotate(180deg)" : "none", transition: "transform .2s" }}
+              sx={{
+                transform: showDirect ? "rotate(180deg)" : "none",
+                transition: "transform .2s",
+              }}
             />
           }
           sx={{ alignSelf: "flex-start", color: "text.secondary" }}
