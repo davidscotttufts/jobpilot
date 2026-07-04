@@ -7,10 +7,10 @@ import {
   BottomNavigationAction,
   Divider,
   Drawer,
-  List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  MenuList,
 } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
@@ -75,7 +75,8 @@ export function MobileNav(): ReactElement {
       </BottomNavigation>
 
       <Drawer anchor="bottom" open={moreOpen} onClose={() => setMoreOpen(false)}>
-        <List sx={{ pb: 1 }}>
+        {/* MenuList (not List): MUI 9 MenuItem throws without a MenuListContext. */}
+        <MenuList sx={{ pb: 1 }}>
           {moreItems.map((item) => (
             <ListItemButton
               key={item.href}
@@ -92,7 +93,7 @@ export function MobileNav(): ReactElement {
           ))}
           <Divider sx={{ my: 0.5 }} />
           <LogoutMenuItem onClick={() => setMoreOpen(false)} />
-        </List>
+        </MenuList>
       </Drawer>
     </>
   );
