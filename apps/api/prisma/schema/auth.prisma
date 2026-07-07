@@ -15,7 +15,6 @@ model User {
   // Decrypts this account's stored secrets (board logins, captcha keys, Gmail tokens).
   // Dropping it (account delete) crypto-shreds those secrets.
   wrappedDek    String?  @map("wrapped_dek")
-  dekKeyId      Int?     @map("dek_key_id")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 

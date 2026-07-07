@@ -6,6 +6,7 @@ import type {
 } from "@jobpilot/contracts/captcha";
 import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/credential";
 import { singleton } from "tsyringe";
+import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
 import { sleep } from "@/common/utils";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -41,7 +42,10 @@ interface CapSolverResponse {
 
 @singleton()
 export class CaptchaService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly crypto: CryptoService,
+  ) {}
 
   private solveWith(provider: ServiceProvider, apiKey: string, job: ProviderJob): Promise<string> {
     return provider === "2captcha"
@@ -53,8 +57,12 @@ export class CaptchaService {
    * Resolve a CAPTCHA via the profile's configured solving service (2captcha / CapSolver)
    * and return the token to inject. Throws 404 when no key is configured, 502 on solver failure.
    */
-  async solve(profileId: string, input: CaptchaSolveInput): Promise<CaptchaSolveResult> {
-    const cred = await this.resolveServiceCredential(profileId, input.provider);
+  async solve(
+    userId: string,
+    profileId: string,
+    input: CaptchaSolveInput,
+  ): Promise<CaptchaSolveResult> {
+    const cred = await this.resolveServiceCredential(userId, profileId, input.provider);
     if (!cred) {
       throw notFound(
         "No captcha-solving service key configured. Add a 2captcha or CapSolver key in Settings.",
@@ -68,6 +76,7 @@ export class CaptchaService {
   }
 
   private async resolveServiceCredential(
+    userId: string,
     profileId: string,
     provider?: ServiceProvider,
   ): Promise<{ provider: ServiceProvider; apiKey: string } | null> {
@@ -79,7 +88,12 @@ export class CaptchaService {
     for (const p of order) {
       const row = rows.find((r) => r.scope === p && r.apiKey);
       if (row?.apiKey) {
-        return { provider: p, apiKey: row.apiKey };
+        const apiKey = await this.crypto.decryptFor(
+          userId,
+          SECRET_CONTEXTS.credentialApiKey,
+          row.apiKey,
+        );
+        return { provider: p, apiKey };
       }
     }
     return null;

@@ -12,7 +12,7 @@ export const captchaController = new Elysia({
   detail: { tags: ["Captcha"] },
 })
   .use(profileGuard)
-  .post("/solve", ({ profileId, body }) => svc.solve(profileId, body), {
+  .post("/solve", ({ user, profileId, body }) => svc.solve(user.id, profileId, body), {
     body: captchaSolveSchema,
     response: captchaSolveResultSchema,
     detail: {
