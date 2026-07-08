@@ -6,7 +6,6 @@ import { env } from "@/env";
 const STORAGE_ROOT = path.resolve(env.STORAGE_ROOT);
 const RESUMES_DIR = path.join(STORAGE_ROOT, "resumes");
 const GENERATED_DIR = path.join(STORAGE_ROOT, "resumes-generated");
-const BACKUPS_DIR = path.join(STORAGE_ROOT, "resume-backups");
 
 export async function ensureResumesDir(): Promise<string> {
   await mkdir(RESUMES_DIR, { recursive: true });
@@ -16,11 +15,6 @@ export async function ensureResumesDir(): Promise<string> {
 export async function ensureGeneratedDir(): Promise<string> {
   await mkdir(GENERATED_DIR, { recursive: true });
   return GENERATED_DIR;
-}
-
-export async function ensureResumeBackupsDir(): Promise<string> {
-  await mkdir(BACKUPS_DIR, { recursive: true });
-  return BACKUPS_DIR;
 }
 
 export function resumePath(filename: string): string {
@@ -33,10 +27,6 @@ export function generatedResumePath(id: string, updatedAtMs: number): string {
 
 export function generatedVariantPath(variantId: string, createdAtMs: number): string {
   return path.join(GENERATED_DIR, `variant-${variantId}-${createdAtMs}.pdf`);
-}
-
-export function resumeBackupPath(resumeId: string, updatedAtMs: number): string {
-  return path.join(BACKUPS_DIR, `resume-${resumeId}-${updatedAtMs}.json`);
 }
 
 /** Unlinks a file, treating an already-missing file as success. Returns whether it removed anything. */
@@ -75,10 +65,6 @@ async function unlinkMatching(dir: string, prefix: string, suffix: string): Prom
   );
 }
 
-export function deleteResumeBackups(resumeId: string): Promise<void> {
-  return unlinkMatching(BACKUPS_DIR, `resume-${resumeId}-`, ".json");
-}
-
 export function deleteGeneratedResumeFiles(resumeId: string): Promise<void> {
   return unlinkMatching(GENERATED_DIR, `master-${resumeId}-`, ".pdf");
 }
@@ -97,7 +83,6 @@ export async function deleteAllResumeArtifacts(refs: ResumeArtifactRefs): Promis
   const { resumeId, sourceFilename, variantIds } = refs;
   await Promise.all([
     sourceFilename ? deleteResumeFile(sourceFilename) : Promise.resolve(),
-    deleteResumeBackups(resumeId),
     deleteGeneratedResumeFiles(resumeId),
     ...variantIds.map((id) => deleteGeneratedVariantFiles(id)),
   ]);

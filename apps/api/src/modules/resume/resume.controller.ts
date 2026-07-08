@@ -76,7 +76,7 @@ export const resumeController = new Elysia({
     detail: {
       summary: "Update resume",
       description:
-        "Updates a master resume's label and/or structured content, bumping the version and writing a backup when content changes, and returns the id and new version.",
+        "Updates a master resume's label and/or structured content, bumping the version when content changes, and returns the id and new version.",
     },
   })
   .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {

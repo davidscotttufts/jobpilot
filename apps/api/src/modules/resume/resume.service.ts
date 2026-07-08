@@ -7,10 +7,8 @@ import { publish } from "@/common/sse";
 import { resumeChannel } from "@/common/sse/channels/resume";
 import {
   deleteAllResumeArtifacts,
-  ensureResumeBackupsDir,
   ensureResumesDir,
   generateResumeFilename,
-  resumeBackupPath,
 } from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "./backfill-ids";
@@ -159,12 +157,6 @@ export class ResumeService {
     });
 
     if (body.content) {
-      await ensureResumeBackupsDir();
-      await writeFile(
-        resumeBackupPath(updated.id, updated.updatedAt.getTime()),
-        JSON.stringify(body.content, null, 2),
-        "utf8",
-      );
       publish(
         resumeChannel,
         { resumeId: updated.id },
