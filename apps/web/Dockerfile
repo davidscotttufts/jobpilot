@@ -43,7 +43,4 @@ ENV PORT=4100
 ENV HOSTNAME=0.0.0.0
 EXPOSE 4100
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:4100 || exit 1
-
 CMD ["node", "apps/web/server.js"]
