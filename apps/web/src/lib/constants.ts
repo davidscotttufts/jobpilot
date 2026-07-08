@@ -5,3 +5,6 @@ export const SITE_URL = "https://jobpilot.suxrobgm.net";
 
 /** GitHub repository, surfaced as the org's `sameAs` and in the footer. */
 export const GITHUB_URL = "https://github.com/suxrobGM/jobpilot";
+
+export const BUG_REPORT_URL = `${GITHUB_URL}/issues/new?template=bug_report.yml`;
+export const FEATURE_REQUEST_URL = `${GITHUB_URL}/issues/new?template=feature_request.yml`;

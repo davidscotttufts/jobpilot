@@ -16,7 +16,13 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
-import { isNavItemActive, MOBILE_NAV_HEIGHT, navGroups, type NavItem } from "./shell-config";
+import {
+  feedbackLinks,
+  isNavItemActive,
+  MOBILE_NAV_HEIGHT,
+  navGroups,
+  type NavItem,
+} from "./shell-config";
 
 const MORE_VALUE = "more";
 const PRIMARY_HREFS = ["/workspace", "/analytics", "/inbox", "/resumes"];
@@ -89,6 +95,22 @@ export function MobileNav(): ReactElement {
                 <item.icon fontSize="small" />
               </ListItemIcon>
               <ListItemText primary={item.label} />
+            </ListItemButton>
+          ))}
+          <Divider sx={{ my: 0.5 }} />
+          {feedbackLinks.map((link) => (
+            <ListItemButton
+              key={link.href}
+              component="a"
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMoreOpen(false)}
+            >
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <link.icon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary={link.label} />
             </ListItemButton>
           ))}
           <Divider sx={{ my: 0.5 }} />

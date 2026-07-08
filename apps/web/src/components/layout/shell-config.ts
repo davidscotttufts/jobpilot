@@ -1,4 +1,5 @@
 import {
+  BugReport,
   BusinessCenter,
   Dashboard,
   Description,
@@ -6,10 +7,12 @@ import {
   Handshake,
   Inbox,
   Insights,
+  Lightbulb,
   Settings,
   Storage,
   type SvgIconComponent,
 } from "@mui/icons-material";
+import { BUG_REPORT_URL, FEATURE_REQUEST_URL } from "@/lib/constants";
 
 export interface NavItem {
   label: string;
@@ -36,6 +39,12 @@ export const navGroups: NavGroup[] = [
       { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
+];
+
+/** External GitHub issue links - rendered as plain anchors, never through navGroups/next-link. */
+export const feedbackLinks: NavItem[] = [
+  { label: "Report a Bug", href: BUG_REPORT_URL, icon: BugReport },
+  { label: "Feature Request", href: FEATURE_REQUEST_URL, icon: Lightbulb },
 ];
 
 export const APP_TITLE = "JobPilot";

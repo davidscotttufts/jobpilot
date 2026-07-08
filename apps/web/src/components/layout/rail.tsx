@@ -5,6 +5,7 @@ import { Box, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { AccountMenu } from "@/components/features/profile";
 import { fontFamilies } from "@/theme";
+import { FeedbackMenu } from "./feedback-menu";
 import { NavGroup } from "./nav-group";
 import { APP_TITLE, navGroups, RAIL_WIDTH } from "./shell-config";
 
@@ -84,6 +85,7 @@ export function Rail(): ReactElement {
           ))}
         </Suspense>
       </Box>
+      <FeedbackMenu />
       <AccountMenu />
     </Stack>
   );
