@@ -166,6 +166,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
 
         <Box
           component="form"
+          autoComplete="off"
           onSubmit={(e) => {
             e.preventDefault();
             form.handleSubmit();
@@ -176,6 +177,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
               {(field) => (
                 <field.TextField
                   label="Client ID"
+                  autoComplete="off"
                   placeholder="1234567890-abc123def456.apps.googleusercontent.com"
                   helperText={config.configured ? `Current: ${config.clientId}` : undefined}
                 />
@@ -186,6 +188,7 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
                 <field.TextField
                   label="Client secret"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
                   helperText={
                     config.configured ? "Leave blank to keep the current secret" : undefined
