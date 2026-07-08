@@ -1,19 +1,26 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
-import { formatSkillCommand, providerDisplayName, type TerminalProviderId } from "@/lib/terminal";
+import {
+  formatSkillCommand,
+  providerDisplayName,
+  TERMINAL_PROTOCOL_URL,
+  type TerminalProviderId,
+} from "@/lib/terminal";
 import { RecheckButton } from "./recheck-button";
 
 interface AgentOfflineCardProps {
   onRecheck: () => void;
   provider: TerminalProviderId;
+  /** Whether the host reported the jobpilot:// scheme is registered, so the browser can relaunch it. */
+  canRelaunch: boolean;
 }
 
 /** Shown when a host previously connected from this browser but isn't answering now - installed, just stopped. */
 export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
-  const { onRecheck, provider } = props;
+  const { onRecheck, provider, canRelaunch } = props;
   const providerLabel = providerDisplayName(provider);
 
   return (
@@ -25,6 +32,17 @@ export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
           automatically.
         </Typography>
       </Stack>
+
+      {canRelaunch && (
+        <Button
+          variant="contained"
+          component="a"
+          href={TERMINAL_PROTOCOL_URL}
+          onClick={() => setTimeout(onRecheck, 1500)}
+        >
+          Start agent
+        </Button>
+      )}
 
       <Stack spacing={0.5}>
         <Typography variant="captionMuted">In {providerLabel}, run setup:</Typography>
