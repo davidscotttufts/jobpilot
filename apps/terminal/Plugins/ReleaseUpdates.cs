@@ -8,9 +8,9 @@ using JobPilot.Terminal.Sessions;
 namespace JobPilot.Terminal.Plugins;
 
 /// <summary>
-/// Shared plumbing for the startup auto-updaters (<see cref="PluginUpdater"/>, <see cref="HostUpdater"/>):
-/// a GitHub client, one releases fetch, release selection, archive download/extract, and the dev-checkout
-/// guard. Both key on the <c>v*</c> tag and run off a single fetched releases list.
+/// Shared plumbing for the host self-updaters (<see cref="StartupUpdater"/>, <see cref="RuntimeUpdater"/> via
+/// <see cref="HostUpdater"/>): a GitHub client, one releases fetch, release selection, archive download/extract,
+/// and the dev-checkout guard. Keys on the <c>v*</c> tag and runs off a single fetched releases list.
 /// </summary>
 internal static class ReleaseUpdates
 {

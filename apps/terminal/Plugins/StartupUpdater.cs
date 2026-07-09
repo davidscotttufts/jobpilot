@@ -3,9 +3,9 @@ using JobPilot.Terminal.Sessions;
 namespace JobPilot.Terminal.Plugins;
 
 /// <summary>
-/// Startup entry point that runs both auto-updaters off a single releases fetch, before the server
-/// binds (so no session spawns mid-swap). No-ops in a dev checkout or offline. Returns true when the
-/// host self-updated and relaunched - the caller should exit without binding so the new build takes over.
+/// Startup entry point that self-updates the host before the server binds (so no session spawns mid-swap).
+/// No-ops in a dev checkout or offline. Returns true when the host self-updated and relaunched - the caller
+/// should exit without binding so the new build takes over.
 /// </summary>
 public static class StartupUpdater
 {
@@ -28,12 +28,7 @@ public static class StartupUpdater
                 return false;
             }
 
-            if (await HostUpdater.TryUpdateAsync(logger, http, releases, cts.Token))
-            {
-                return true;
-            }
-            await PluginUpdater.TryUpdateAsync(logger, http, releases, pluginDir, cts.Token);
-            return false;
+            return await HostUpdater.TryUpdateAsync(logger, http, releases, cts.Token);
         }
         catch (Exception ex)
         {

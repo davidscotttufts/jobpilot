@@ -11,7 +11,3 @@ public sealed record GitHubRelease(
 public sealed record GitHubAsset(
     [property: JsonPropertyName("name")] string? Name,
     [property: JsonPropertyName("browser_download_url")] string? DownloadUrl);
-
-/// <summary>The subset of a plugin manifest the host reads to learn the installed version.</summary>
-public sealed record PluginManifest(
-    [property: JsonPropertyName("version")] string? Version);

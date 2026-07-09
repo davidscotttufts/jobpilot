@@ -8,8 +8,8 @@ user-invocable: true
 
 Cut a new JobPilot release. Host and plugin share **one version** and ship from
 **one tag** (`vX.Y.Z`), which triggers `.github/workflows/release.yml` - it builds
-the terminal binaries for all RIDs, publishes the GitHub Release (terminal
-archives + `jobpilot-plugin.tar.gz`), and syncs the plugin tree into the
+the terminal binaries for all RIDs, publishes the GitHub Release (the terminal
+archives, which bundle the plugin tree), and syncs the plugin tree into the
 `claude-plugins` and `codex-plugins` marketplaces.
 
 ## Usage
