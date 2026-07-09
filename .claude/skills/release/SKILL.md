@@ -1,6 +1,6 @@
 ---
 name: release
-description: Bump the unified JobPilot version (host + plugin), commit, and tag a new release
+description: Bump the unified JobPilot version (host + plugin), update the changelog, commit, and tag a new release
 user-invocable: true
 ---
 
@@ -25,8 +25,9 @@ The user provides a version (e.g. `2.1.0`) or a bump type (`major`, `minor`,
   - `plugin/.codex-plugin/plugin.json` - `"version"`
   - `package.json` - `"version"`
 - **Tag format:** `vX.Y.Z` (matches the `v*` trigger in `release.yml`).
-- **Release notes:** the workflow sets `generate_release_notes: true` - no
-  CHANGELOG needed.
+- **Changelog:** `CHANGELOG.md` at the repo root, [Keep a Changelog](https://keepachangelog.com)
+  format, newest release first. The workflow also sets `generate_release_notes: true`
+  for the GitHub Release.
 
 ## Steps
 
@@ -43,11 +44,21 @@ The user provides a version (e.g. `2.1.0`) or a bump type (`major`, `minor`,
 
 3. **Bump version:** set the new version in all four files.
 
-4. **Commit:** stage the four files, commit `chore: release vX.Y.Z`.
+4. **Update CHANGELOG.md** (create it with a `# Changelog` header if missing):
+   - List commits since the previous tag: `git log <prev-tag>..HEAD --oneline`
+     (all commits if no tag exists).
+   - Prepend a `## vX.Y.Z - YYYY-MM-DD` section, grouping the changes under
+     `### Added` / `### Changed` / `### Fixed` as applicable. Summarize
+     user-facing changes in plain language; fold internal chores/refactors into
+     one line or omit them.
+   - Skip merge commits and the release commit itself.
 
-5. **Tag:** `git tag -a vX.Y.Z -m "JobPilot vX.Y.Z"`.
+5. **Commit:** stage the four version files + `CHANGELOG.md`, commit
+   `chore: release vX.Y.Z`.
 
-6. **Report:** show the new version and tag, and remind the user to run
+6. **Tag:** `git tag -a vX.Y.Z -m "JobPilot vX.Y.Z"`.
+
+7. **Report:** show the new version and tag, and remind the user to run
    `git push && git push origin vX.Y.Z` to trigger `release.yml`.
 
 ## Do NOT
