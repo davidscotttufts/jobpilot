@@ -2,12 +2,56 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.1.0] - 2026-07-09
+
+### Added
+
+- One-click agent updates: the dashboard's agent dock now has an "Update now"
+  button that updates the local agent in place, with live updating / restarting
+  status, instead of copy-paste instructions. Manual steps remain as a fallback.
+- Launch the agent from the browser: a `jobpilot://` link on the offline card
+  starts a stopped agent without opening a shell (Windows).
+- Bug report and feature request templates, plus feedback links in the app.
 
 ### Changed
 
+- Onboarding is plugin-first, and the read-only dashboard now works on mobile.
 - Email settings: better defaults in the Google OAuth client form and clearer
   setup instructions.
+
+### Fixed
+
+- The agent terminal restores its screen on reload instead of coming back blank,
+  and a session that dies instantly no longer appears to still be running.
+- Updating the agent no longer strands the old and new hosts on the same port,
+  and a browser disconnect mid-update no longer silently cancels it. Files a new
+  release drops are now pruned.
+- The agent dock no longer flickers offline during an expected restart, leaks
+  sockets on unmount, or remounts the terminal on a theme change. Failed
+  starts, stops, and provider mismatches now surface accurate messages.
+- Large pastes into the terminal are no longer silently dropped.
+- Mobile navigation menu rendering.
+- Browser autofill no longer overwrites the OAuth client form; fixed the inbox
+  connect link.
+
+### Security
+
+- The terminal host now restricts which web origins may reach it. Previously any
+  page visited while the agent ran could inject keystrokes or commands into the
+  running agent session. Origins come from an allowlist covering the dev and
+  hosted web apps, applied to both CORS and WebSocket upgrades. Callers can also
+  no longer choose the agent's working directory.
+
+### Internal
+
+- Added a `tests/JobPilot.Terminal.Tests` suite (71 tests) and a `terminal` CI
+  job that includes a real NativeAOT publish, so compile and trimming errors
+  surface in CI rather than at a tagged release.
+- Restructured the terminal host (acyclic namespaces, update path behind DI
+  services) and removed the redundant `PluginUpdater` and its
+  `jobpilot-plugin.tar.gz` release asset.
+- Removed the unused resume-backups mechanism and `dek_key_id` column;
+  single-sourced docker-compose healthchecks.
 
 ## [2.0.5] - 2026-07-03
 
