@@ -1,0 +1,44 @@
+namespace JobPilot.Terminal.Tests;
+
+/// <summary>A throwaway directory tree, removed on dispose. Lets path-probing tests avoid touching
+/// process-global state such as <see cref="Environment.CurrentDirectory"/>.</summary>
+internal sealed class TempDir : IDisposable
+{
+    public TempDir()
+    {
+        Root = Path.Combine(Path.GetTempPath(), "jobpilot-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Root);
+    }
+
+    public string Root { get; }
+
+    /// <summary>Creates <paramref name="relativePath"/> (and its parents) with the given content.</summary>
+    public string File(string relativePath, string content = "{}")
+    {
+        var full = Path.Combine(Root, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+        System.IO.File.WriteAllText(full, content);
+        return full;
+    }
+
+    /// <summary>Lays out the minimal plugin tree <c>InstallPaths.Resolve</c> probes for.</summary>
+    public void WriteValidPluginTree()
+    {
+        File(Path.Combine("plugin", "skills", "shared", "setup.md"), "# setup");
+        File(Path.Combine("plugin", "skills", "auto-apply", "SKILL.md"), "# auto-apply");
+        File(Path.Combine("plugin", ".claude-plugin", "plugin.json"));
+        File(Path.Combine("plugin", ".codex-plugin", "plugin.json"));
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Directory.Delete(Root, recursive: true);
+        }
+        catch (IOException)
+        {
+            // A test left a handle open; the OS temp sweep will get it.
+        }
+    }
+}

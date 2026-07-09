@@ -1,19 +1,10 @@
-using JobPilot.Terminal.Models;
-
-namespace JobPilot.Terminal.Sessions;
+namespace JobPilot.Terminal.Hosting;
 
 /// <summary>
-/// Command and argument details used to launch a provider process.
+/// Resolved filesystem paths of a JobPilot install. Pure data, and foundational: nothing here depends on
+/// sessions, updates, or the provider table, so every layer can build on it without referencing each other.
 /// </summary>
-/// <param name="Provider">Provider metadata.</param>
-/// <param name="Command">Executable to spawn.</param>
-/// <param name="Args">Arguments passed to the executable.</param>
-public sealed record TerminalLaunchSpec(TerminalProviderInfo Provider, string Command, string[] Args);
-
-/// <summary>
-/// Resolved filesystem paths used to launch embedded AI terminal sessions.
-/// </summary>
-public sealed record TerminalSessionPaths
+public sealed record InstallPaths
 {
     /// <summary>Default working directory for a launched session.</summary>
     public required string WorkingDir { get; init; }
@@ -30,9 +21,15 @@ public sealed record TerminalSessionPaths
     /// <summary>
     /// Finds the JobPilot repository/plugin layout from the current process location.
     /// </summary>
-    public static TerminalSessionPaths Resolve()
+    public static InstallPaths Resolve()
     {
-        var roots = CandidateRoots().Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        return ResolveFrom(CandidateRoots());
+    }
+
+    /// <summary>Probes <paramref name="candidateRoots"/> in order for a valid plugin layout. Seam for tests.</summary>
+    internal static InstallPaths ResolveFrom(IEnumerable<string> candidateRoots)
+    {
+        var roots = candidateRoots.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
         // Both providers load from a single plugin/ directory holding the
         // .claude-plugin/ and .codex-plugin/ manifests, the shared skills/ tree,
@@ -47,7 +44,7 @@ public sealed record TerminalSessionPaths
                 && IsClaudePluginDir(pluginDir)
                 && IsCodexPluginDir(pluginDir))
             {
-                return new TerminalSessionPaths
+                return new InstallPaths
                 {
                     WorkingDir = root,
                     SharedSkillsDir = skillsDir,
@@ -59,43 +56,6 @@ public sealed record TerminalSessionPaths
 
         throw new DirectoryNotFoundException(
             "Could not find JobPilot provider assets: a plugin/ directory with skills/, .claude-plugin/, and .codex-plugin/.");
-    }
-
-    /// <summary>
-    /// Resolves an optional client-provided working directory against this session's default.
-    /// </summary>
-    public string ResolveWorkingDir(string? requestedWorkingDir)
-    {
-        return string.IsNullOrWhiteSpace(requestedWorkingDir)
-            ? WorkingDir
-            : Path.GetFullPath(requestedWorkingDir);
-    }
-
-    /// <summary>
-    /// Builds the launch command for a provider.
-    /// </summary>
-    public TerminalLaunchSpec GetLaunchSpec(string? provider, string workingDir)
-    {
-        var normalized = TerminalProviders.Normalize(provider);
-        var info = new TerminalProviderInfo(normalized, TerminalProviders.GetDisplayName(normalized));
-        return normalized switch
-        {
-            TerminalProviders.Claude => new TerminalLaunchSpec(info, "claude", ["--dangerously-skip-permissions", "--plugin-dir", ClaudePluginDir]),
-            TerminalProviders.Codex => new TerminalLaunchSpec(info, "codex", ["--no-alt-screen", "-C", workingDir]),
-            _ => throw new ArgumentOutOfRangeException(nameof(provider), provider, null)
-        };
-    }
-
-    /// <summary>
-    /// Returns every supported provider for UI discovery.
-    /// </summary>
-    public static TerminalProviderInfo[] Providers()
-    {
-        return
-        [
-            new TerminalProviderInfo(TerminalProviders.Claude, TerminalProviders.GetDisplayName(TerminalProviders.Claude)),
-            new TerminalProviderInfo(TerminalProviders.Codex, TerminalProviders.GetDisplayName(TerminalProviders.Codex))
-        ];
     }
 
     private static IEnumerable<string> CandidateRoots()

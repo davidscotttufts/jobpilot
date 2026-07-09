@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace JobPilot.Terminal.Hosting;
+namespace JobPilot.Terminal.Updates;
 
 /// <summary>Port handoff for a runtime self-update relaunch: the parent (post-swap) releases :4102 after
 /// answering the request, and the child waits for the predecessor (<c>JOBPILOT_AWAIT_PID</c>) to exit
@@ -20,13 +20,16 @@ public static class HostHandoff
 
     /// <summary>Parent side: after a runtime update swaps+relaunches, stop the app (releasing :4102) once the
     /// HTTP response has flushed, so the waiting child can bind.</summary>
-    public static void BeginRelease(IHostApplicationLifetime lifetime, CancellationToken ct)
+    public static void BeginRelease(IHostApplicationLifetime lifetime)
     {
+        // Deliberately untied from the request's CancellationToken: the child is already spawned and waiting
+        // on our pid. If the browser disconnects (likely - the host is about to die), a cancelled delay would
+        // skip StopApplication, we would keep :4102, and the child would time out and give up.
         _ = Task.Run(async () =>
         {
-            await Task.Delay(ResponseFlush, ct);
+            await Task.Delay(ResponseFlush, CancellationToken.None);
             lifetime.StopApplication(); // -> ApplicationStopping -> SessionManager.Stop() -> exit
-        }, ct);
+        }, CancellationToken.None);
     }
 
     /// <summary>Blocks until the predecessor pid in <c>JOBPILOT_AWAIT_PID</c> exits (bounded), so the port frees up.</summary>

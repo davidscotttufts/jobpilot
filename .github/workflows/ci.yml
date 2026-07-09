@@ -55,3 +55,41 @@ jobs:
       - name: Build web
         run: bun run build
         working-directory: apps/web
+
+  terminal:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ci-terminal-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Test terminal host
+        run: dotnet test tests/JobPilot.Terminal.Tests -c Release
+
+      # A missing [JsonSerializable] fails only under AOT: the reflection resolver later in
+      # TypeInfoResolverChain covers the gap under JIT and is trimmed away under AOT. `dotnet build`
+      # cannot catch it, so publish one RID the way release.yml does.
+      - name: Publish AOT (linux-x64)
+        run: dotnet publish -c Release -r linux-x64 -o publish/
+        working-directory: apps/terminal
+
+      # TerminalSessionPaths.Resolve() probes exactly these; without them the host boots "degraded".
+      - name: Verify publish root ships the plugin tree
+        working-directory: apps/terminal/publish
+        run: |
+          for f in jobpilot \
+                   plugin/.claude-plugin/plugin.json \
+                   plugin/.codex-plugin/plugin.json \
+                   plugin/skills/shared/setup.md \
+                   plugin/skills/auto-apply/SKILL.md \
+                   .agents/plugins/marketplace.json; do
+            test -e "$f" || { echo "missing from publish root: $f"; exit 1; }
+          done

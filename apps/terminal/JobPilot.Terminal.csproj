@@ -20,6 +20,10 @@
     <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="JobPilot.Terminal.Tests" />
+  </ItemGroup>
+
   <!-- Native AOT emits a .pdb on Windows despite DebugType=none; drop it from the publish output. -->
   <Target Name="TrimPublishSymbols" AfterTargets="Publish">
     <ItemGroup>
@@ -28,7 +32,7 @@
     <Delete Files="@(_JobPilotStalePublish)" />
   </Target>
 
-  <!-- Ship the shared plugin/ tree, rebased under plugin/ so TerminalSessionPaths.Resolve() finds it at runtime. -->
+  <!-- Ship the shared plugin/ tree, rebased under plugin/ so InstallPaths.Resolve() finds it at runtime. -->
   <ItemGroup>
     <Content Include="..\..\plugin\**\*">
       <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>

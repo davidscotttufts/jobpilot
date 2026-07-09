@@ -1,0 +1,73 @@
+using JobPilot.Terminal.Contracts;
+using JobPilot.Terminal.Hosting;
+using Xunit;
+
+namespace JobPilot.Terminal.Tests;
+
+/// <summary>Characterizes install-layout probing and provider launch specs. The argv asserted here is the
+/// contract the provider-registry consolidation must not alter.</summary>
+public class InstallPathsTests
+{
+    [Fact]
+    public void ResolveFrom_FindsACompletePluginTree()
+    {
+        using var temp = new TempDir();
+        temp.WriteValidPluginTree();
+
+        var paths = InstallPaths.ResolveFrom([temp.Root]);
+
+        Assert.Equal(temp.Root, paths.WorkingDir);
+        Assert.Equal(Path.Combine(temp.Root, "plugin", "skills"), paths.SharedSkillsDir);
+        Assert.Equal(Path.Combine(temp.Root, "plugin"), paths.ClaudePluginDir);
+        // Both providers load the same tree.
+        Assert.Equal(paths.ClaudePluginDir, paths.CodexPluginDir);
+    }
+
+    [Fact]
+    public void ResolveFrom_PrefersTheFirstMatchingRoot()
+    {
+        using var first = new TempDir();
+        using var second = new TempDir();
+        first.WriteValidPluginTree();
+        second.WriteValidPluginTree();
+
+        var paths = InstallPaths.ResolveFrom([first.Root, second.Root]);
+
+        Assert.Equal(first.Root, paths.WorkingDir);
+    }
+
+    [Fact]
+    public void ResolveFrom_SkipsRootsMissingTheCodexManifest()
+    {
+        using var incomplete = new TempDir();
+        using var complete = new TempDir();
+        incomplete.WriteValidPluginTree();
+        File.Delete(Path.Combine(incomplete.Root, "plugin", ".codex-plugin", "plugin.json"));
+        complete.WriteValidPluginTree();
+
+        var paths = InstallPaths.ResolveFrom([incomplete.Root, complete.Root]);
+
+        Assert.Equal(complete.Root, paths.WorkingDir);
+    }
+
+    [Theory]
+    [InlineData("skills/shared/setup.md")]
+    [InlineData("skills/auto-apply/SKILL.md")]
+    [InlineData(".claude-plugin/plugin.json")]
+    [InlineData(".codex-plugin/plugin.json")]
+    public void ResolveFrom_Throws_WhenAnyProbedFileIsMissing(string missing)
+    {
+        using var temp = new TempDir();
+        temp.WriteValidPluginTree();
+        File.Delete(Path.Combine(temp.Root, "plugin", missing.Replace('/', Path.DirectorySeparatorChar)));
+
+        Assert.Throws<DirectoryNotFoundException>(() => InstallPaths.ResolveFrom([temp.Root]));
+    }
+
+    [Fact]
+    public void ResolveFrom_Throws_WhenNoRootMatches()
+    {
+        using var temp = new TempDir();
+        Assert.Throws<DirectoryNotFoundException>(() => InstallPaths.ResolveFrom([temp.Root]));
+    }
+}

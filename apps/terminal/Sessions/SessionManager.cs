@@ -1,14 +1,13 @@
-using System.Net.WebSockets;
 using System.Text;
-using JobPilot.Terminal.Models;
-using JobPilot.Terminal.Plugins;
+using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Contracts;
 using JobPilot.Terminal.Pty;
 
 namespace JobPilot.Terminal.Sessions;
 
 /// <summary>
-/// Coordinates the lifetime of the active provider PTY session and fans its output out to connected
-/// WebSocket clients (via <see cref="OutputBroadcaster"/>).
+/// Coordinates the lifetime of the active provider PTY session, raising <see cref="Output"/> and
+/// <see cref="Exited"/> for a transport to deliver. Knows nothing about WebSockets.
 /// </summary>
 public sealed class SessionManager : IDisposable
 {
@@ -19,51 +18,39 @@ public sealed class SessionManager : IDisposable
     /// provider TUI reads the submit key separately instead of folding it into a paste.</summary>
     private static readonly TimeSpan SubmitKeyDelay = TimeSpan.FromMilliseconds(75);
 
-    private readonly PtyService pty;
+    private readonly IPty pty;
     private readonly ILogger<SessionManager> logger;
-    private readonly TerminalSessionPaths? paths;
-    private readonly OutputBroadcaster broadcaster;
+    private readonly HostInstall install;
     private readonly Lock stateLock = new();
 
     private volatile SessionState state = SessionState.Stopped;
     private volatile string activeProvider = TerminalProviders.Claude;
-    private bool suppressNextExitMessage;
+
+    /// <summary>Generation of the PTY this session owns, or 0 when we have relinquished it. A killed process
+    /// reports its exit asynchronously, so an exit only concerns us when it carries this generation.</summary>
+    private int liveGeneration;
 
     /// <summary>
     /// Initializes a new <see cref="SessionManager"/> and subscribes to PTY output and exit events.
     /// </summary>
-    /// <param name="pty">The PTY service used to start and control the terminal process.</param>
+    /// <param name="pty">The PTY used to start and control the terminal process.</param>
+    /// <param name="install">Resolved install layout; sessions cannot start without it.</param>
     /// <param name="logger">Logger for session lifecycle events.</param>
-    public SessionManager(PtyService pty, ILogger<SessionManager> logger)
+    public SessionManager(IPty pty, HostInstall install, ILogger<SessionManager> logger)
     {
         this.pty = pty;
+        this.install = install;
         this.logger = logger;
-        // A broken install (missing plugin tree) must not fail construction - /healthz would 500 and
-        // the dashboard would read a running host as "offline". Report it as degraded instead.
-        try
-        {
-            paths = TerminalSessionPaths.Resolve();
-        }
-        catch (Exception ex)
-        {
-            PathsError = ex.Message;
-            logger.LogError(ex, "Terminal host install is incomplete; sessions cannot start.");
-        }
-        // Invariant for the process lifetime, so resolve once here rather than per /healthz poll.
-        CanUpdate = paths is not null && ReleaseUpdates.IsPublishedInstall(paths.ClaudePluginDir);
-        broadcaster = new OutputBroadcaster(logger);
 
         pty.OutputReceived += OnPtyOutput;
         pty.ProcessExited += OnPtyExit;
     }
 
-    /// <summary>
-    /// Non-null when the plugin tree could not be resolved; /healthz reports the host as degraded.
-    /// </summary>
-    public string? PathsError { get; }
+    /// <summary>Raised with each chunk of terminal output. Delivering it to clients is the transport's job.</summary>
+    public event Action<byte[]>? Output;
 
-    /// <summary>True when this is a published install (not a dev checkout), so the host can self-update.</summary>
-    public bool CanUpdate { get; }
+    /// <summary>Raised when the session's own process exits. Never raised for a process we replaced.</summary>
+    public event Action<SessionExit>? Exited;
 
     /// <summary>
     /// Gets the current terminal session state.
@@ -76,33 +63,20 @@ public sealed class SessionManager : IDisposable
     public string ActiveProvider => activeProvider;
 
     /// <summary>
-    /// Gets every supported terminal provider.
-    /// </summary>
-    public static TerminalProviderInfo[] Providers => TerminalSessionPaths.Providers();
-
-    /// <summary>
-    /// Host version (from the assembly), reported by /healthz so the dashboard can detect a stale install.
-    /// </summary>
-    public static string HostVersion { get; } =
-        typeof(SessionManager).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
-
-    /// <summary>
     /// Starts the provider PTY session if it is not already running.
     /// </summary>
     /// <param name="provider">Provider id to launch.</param>
-    /// <param name="requestedWorkingDir">Optional working directory for the spawned process.</param>
     /// <param name="cols">Initial terminal column count.</param>
     /// <param name="rows">Initial terminal row count.</param>
     /// <param name="apiToken">Per-user agent PAT injected as JOBPILOT_API_TOKEN; falls back to the host env var.</param>
     /// <param name="webUrl">Web app origin (the browser's location) injected as JOBPILOT_WEB; falls back to the host env var.</param>
     /// <param name="apiUrl">Backend base URL (the web's configured API origin) injected as JOBPILOT_API; falls back to the host env var, then localhost.</param>
     /// <exception cref="PtyStartException">Thrown when the PTY provider fails to spawn the process.</exception>
-    public void Start(string? provider, string? requestedWorkingDir, int cols, int rows, string? apiToken = null, string? webUrl = null, string? apiUrl = null)
+    public void Start(string? provider, int cols, int rows, string? apiToken = null, string? webUrl = null, string? apiUrl = null)
     {
         lock (stateLock)
         {
-            var sessionPaths = paths ?? throw new InvalidOperationException(
-                $"Terminal host install is incomplete - reinstall the JobPilot agent. ({PathsError})");
+            var sessionPaths = install.RequirePaths();
 
             var normalizedProvider = TerminalProviders.Normalize(provider);
             if (state == SessionState.Running && activeProvider == normalizedProvider)
@@ -116,14 +90,16 @@ public sealed class SessionManager : IDisposable
                 logger.LogInformation(
                     "Switching terminal provider from {PreviousProvider} to {NextProvider}.", activeProvider,
                     normalizedProvider);
-                suppressNextExitMessage = true;
+                // Disown the outgoing PTY before killing it, so its exit lands as stale and never reports
+                // the replacement session as dead.
+                liveGeneration = 0;
                 pty.Stop();
                 state = SessionState.Stopped;
             }
 
-            var workingDir = sessionPaths.ResolveWorkingDir(requestedWorkingDir);
+            var workingDir = sessionPaths.WorkingDir;
             PlaywrightScratchCleaner.Clean(workingDir, logger);
-            var spec = sessionPaths.GetLaunchSpec(normalizedProvider, workingDir);
+            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.ClaudePluginDir, workingDir);
 
             logger.LogInformation(
                 "Starting {Provider}: cwd={Cwd} command={Command} args={Args} sharedSkillsDir={SharedSkillsDir} cols={Cols} rows={Rows}",
@@ -151,10 +127,11 @@ public sealed class SessionManager : IDisposable
 
             try
             {
-                pty.Start(spec.Command, spec.Args, workingDir, cols, rows, env);
+                liveGeneration = pty.Start(spec.Command, spec.Args, workingDir, cols, rows, env);
             }
             catch (PtyStartException ex)
             {
+                liveGeneration = 0;
                 state = SessionState.Stopped;
                 logger.LogError(ex, "Failed to start {Provider} PTY.", normalizedProvider);
                 throw;
@@ -171,15 +148,15 @@ public sealed class SessionManager : IDisposable
     /// <param name="command">Bare command line - no trailing newline; the submit key is sent by this method.</param>
     /// <param name="expectedProvider">Optional provider id the caller believes is active. When set,
     /// the inject is rejected if it does not match the active provider.</param>
-    /// <returns>True if the command was written to the PTY; false when the session is stopped or the
-    /// expected provider does not match.</returns>
-    public async Task<bool> Inject(string command, string? expectedProvider = null)
+    /// <exception cref="ArgumentException">The expected provider id is not a known provider.</exception>
+    public async Task<InjectResult> Inject(string command, string? expectedProvider = null)
     {
-        if (string.IsNullOrEmpty(command)) return false;
+        if (string.IsNullOrEmpty(command)) return InjectResult.NotRunning;
 
+        int generation;
         lock (stateLock)
         {
-            if (state != SessionState.Running) return false;
+            if (state != SessionState.Running) return InjectResult.NotRunning;
 
             if (expectedProvider is not null)
             {
@@ -189,9 +166,11 @@ public sealed class SessionManager : IDisposable
                     logger.LogWarning(
                         "Rejected inject: expected provider {Expected} but {Actual} is active.",
                         normalized, activeProvider);
-                    return false;
+                    return InjectResult.ProviderMismatch;
                 }
             }
+
+            generation = liveGeneration;
 
             // Write the command text without the submit key so the provider's TUI renders it as input.
             pty.Write(Encoding.UTF8.GetBytes(command));
@@ -201,9 +180,20 @@ public sealed class SessionManager : IDisposable
         // becomes a literal newline. The delay lands it in its own PTY read so it submits.
         await Task.Delay(SubmitKeyDelay);
 
-        if (state != SessionState.Running) return false;
-        pty.Write(EnterKey);
-        return true;
+        lock (stateLock)
+        {
+            // A provider switch during the delay leaves a *different* session running; its TUI must not
+            // receive a submit key for a command it never saw.
+            if (state != SessionState.Running || liveGeneration != generation)
+            {
+                logger.LogWarning("Dropped the submit key: the session ended or was replaced mid-inject.");
+                return InjectResult.NotRunning;
+            }
+
+            pty.Write(EnterKey);
+        }
+
+        return InjectResult.Injected;
     }
 
     /// <summary>
@@ -239,40 +229,22 @@ public sealed class SessionManager : IDisposable
         }
     }
 
-    /// <summary>
-    /// Adds a WebSocket client to the output broadcast set.
-    /// </summary>
-    /// <param name="socket">The connected browser WebSocket.</param>
-    public void RegisterClient(WebSocket socket) => broadcaster.Register(socket);
+    private void OnPtyOutput(byte[] data) => Output?.Invoke(data);
 
-    /// <summary>
-    /// Removes a WebSocket client from the output broadcast set.
-    /// </summary>
-    /// <param name="socket">The disconnected browser WebSocket.</param>
-    public void UnregisterClient(WebSocket socket) => broadcaster.Unregister(socket);
-
-    private void OnPtyOutput(byte[] data) => broadcaster.Broadcast(data);
-
-    private void OnPtyExit(int code)
+    private void OnPtyExit(PtyExit exit)
     {
         string provider;
-        bool suppressMessage;
         lock (stateLock)
         {
+            // Stale: this PTY was killed to make room for another, or its exit was already reported.
+            if (exit.Generation != liveGeneration) return;
+
+            liveGeneration = 0;
             provider = activeProvider;
-            suppressMessage = suppressNextExitMessage;
-            suppressNextExitMessage = false;
-            if (!suppressMessage)
-            {
-                state = SessionState.Stopped;
-            }
+            state = SessionState.Stopped;
         }
 
-        if (suppressMessage) return;
-
-        var displayName = TerminalProviders.GetDisplayName(provider);
-        var msg = $"\r\n\e[31m[JobPilot.Terminal] {displayName} exited with code {code}. Use Restart to reopen.\e[0m\r\n";
-        broadcaster.Broadcast(Encoding.UTF8.GetBytes(msg));
+        Exited?.Invoke(new SessionExit(TerminalProviders.GetDisplayName(provider), exit.ExitCode));
     }
 
     /// <summary>
@@ -283,6 +255,5 @@ public sealed class SessionManager : IDisposable
         Stop();
         pty.OutputReceived -= OnPtyOutput;
         pty.ProcessExited -= OnPtyExit;
-        broadcaster.Clear();
     }
 }

@@ -1,25 +1,25 @@
-using JobPilot.Terminal.Hosting;
 using Microsoft.Win32;
 
-namespace JobPilot.Terminal.Plugins;
+namespace JobPilot.Terminal.Hosting;
 
 /// <summary>
 /// Registers the <c>jobpilot://</c> URL scheme under HKCU so the dashboard can launch the offline host
 /// from the browser. Windows-only, idempotent, never throws - runs on every startup so a normal launch
 /// establishes it and it survives self-updates (the install-dir exe path is stable and re-written each boot).
 /// </summary>
-public static class ProtocolRegistrar
+public sealed class ProtocolRegistrar(ILogger<ProtocolRegistrar> logger)
 {
     private const string Scheme = "jobpilot";
     private const string SchemePrefix = $"{Scheme}://";
 
     /// <summary>True once the scheme is registered, so /healthz can tell the dashboard the browser can relaunch us.</summary>
-    public static bool IsRegistered { get; private set; }
+    public bool IsRegistered { get; private set; }
 
     /// <summary>
     /// On a <c>jobpilot://</c> launch, drops the flashed console window and strips the scheme arg (which
     /// ASP.NET config binding rejects). Returns the args to hand the host builder.
     /// </summary>
+    /// <remarks>Pure, and runs before the container exists - hence static.</remarks>
     public static string[] ResolveHostArgs(string[] args)
     {
         var hostArgs = args.Where(a => !a.StartsWith(SchemePrefix, StringComparison.OrdinalIgnoreCase)).ToArray();
@@ -30,7 +30,8 @@ public static class ProtocolRegistrar
         return hostArgs;
     }
 
-    public static void EnsureRegistered(ILogger logger)
+    /// <summary>Writes the scheme keys, recording success in <see cref="IsRegistered"/>.</summary>
+    public void EnsureRegistered()
     {
         if (!OperatingSystem.IsWindows())
         {
@@ -70,6 +71,7 @@ public static class ProtocolRegistrar
     /// Removes the <c>jobpilot://</c> scheme keys - for uninstall, so a deleted install doesn't leave a
     /// dead handler behind. No-op unless Windows; never throws.
     /// </summary>
+    /// <remarks>The <c>--unregister</c> path exits before a host is built, so this stays static.</remarks>
     public static void Unregister(ILogger logger)
     {
         if (!OperatingSystem.IsWindows())
@@ -80,7 +82,6 @@ public static class ProtocolRegistrar
         try
         {
             Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{Scheme}", throwOnMissingSubKey: false);
-            IsRegistered = false;
             logger.LogInformation("Removed {Scheme}:// URL scheme.", Scheme);
         }
         catch (Exception ex)

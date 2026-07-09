@@ -1,6 +1,6 @@
-using JobPilot.Terminal.Endpoints;
+using JobPilot.Terminal;
 using JobPilot.Terminal.Hosting;
-using JobPilot.Terminal.Plugins;
+using JobPilot.Terminal.Updates;
 using Microsoft.Extensions.Logging.Abstractions;
 
 // Pty.Net's macOS forkpty path requires CoreCLR's W^X remapping to be off; harmless under NativeAOT.
@@ -27,23 +27,23 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
     ContentRootPath = AppContext.BaseDirectory,
 });
 
-builder.Services.AddTerminalHost();
+builder.Services.AddTerminalHost(builder.Configuration);
 
 var app = builder.Build();
-var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
 // Register the jobpilot:// scheme so the dashboard can relaunch us from the browser when offline.
-ProtocolRegistrar.EnsureRegistered(loggerFactory.CreateLogger("Protocol"));
+app.Services.GetRequiredService<ProtocolRegistrar>().EnsureRegistered();
 
 // Auto-update the host before binding, unless a runtime self-update already relaunched us into the latest build.
 // A self-update relaunches into the new build, so exit and let that process bind the port.
-if (!HostHandoff.IsUpdateRelaunch && await StartupUpdater.RunAsync(loggerFactory.CreateLogger("Updater")))
+var updates = app.Services.GetRequiredService<HostUpdateService>();
+if (!HostHandoff.IsUpdateRelaunch && await updates.UpdateAtStartupAsync())
 {
     return;
 }
 
 // If a prior host relaunched us for a runtime self-update, wait for it to release :4102 before binding.
-await HostHandoff.WaitForParentExitAsync(loggerFactory.CreateLogger("Handoff"));
+await HostHandoff.WaitForParentExitAsync(app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Handoff"));
 
 app.UseTerminalPipeline();
 app.MapTerminalEndpoints();
