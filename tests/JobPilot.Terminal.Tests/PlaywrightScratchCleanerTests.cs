@@ -4,8 +4,6 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>Characterizes scratch cleanup. The browser profile lives in subdirectories of the same folder,
-/// so the top-level-only rule is load-bearing: recursing would sign the user out of every job board.</summary>
 public class PlaywrightScratchCleanerTests
 {
     private static void Clean(string workingDir) =>

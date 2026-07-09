@@ -3,11 +3,6 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>
-/// The staged-file swap. A real self-update needs a published install and a GitHub release, so this is the
-/// only place the rollback path is ever exercised: a mid-copy failure must restore the whole installation,
-/// not just the executable.
-/// </summary>
 public class ReleaseInstallerSwapTests
 {
     private static string Install(TempDir temp) => Path.Combine(temp.Root, "install");
@@ -46,7 +41,7 @@ public class ReleaseInstallerSwapTests
     {
         using var temp = new TempDir();
 
-        // "a" copies fine; "z-locked" is held open, so the copy over it throws part-way through.
+        // Lock the final target so earlier staged writes must be rolled back.
         temp.File(Path.Combine("install", "a.txt"), "original-a");
         var locked = temp.File(Path.Combine("install", "z-locked.txt"), "original-z");
         temp.File(Path.Combine("staging", "a.txt"), "updated-a");
@@ -58,10 +53,9 @@ public class ReleaseInstallerSwapTests
             Assert.ThrowsAny<IOException>(() => ReleaseInstaller.ApplyStaged(Staging(temp), Install(temp)));
         }
 
-        // The old plugin tree used to survive half-upgraded; every replaced file must come back.
+        // Replaced files are restored and newly introduced files are removed.
         Assert.Equal("original-a", File.ReadAllText(Path.Combine(Install(temp), "a.txt")));
         Assert.Equal("original-z", File.ReadAllText(locked));
-        // ...and every file the swap introduced must be gone.
         Assert.False(File.Exists(Path.Combine(Install(temp), "b-new.txt")));
         Assert.False(Directory.Exists(Install(temp) + ".bak"));
     }

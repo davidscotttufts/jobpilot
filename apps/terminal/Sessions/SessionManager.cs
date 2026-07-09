@@ -5,17 +5,12 @@ using JobPilot.Terminal.Pty;
 
 namespace JobPilot.Terminal.Sessions;
 
-/// <summary>
-/// Coordinates the lifetime of the active provider PTY session, raising <see cref="Output"/> and
-/// <see cref="Exited"/> for a transport to deliver. Knows nothing about WebSockets.
-/// </summary>
+/// <summary>Owns the active provider session and exposes its output and exit events.</summary>
 public sealed class SessionManager : IDisposable
 {
-    /// <summary>Carriage return sent on its own to submit an injected command.</summary>
     private static readonly byte[] EnterKey = "\r"u8.ToArray();
 
-    /// <summary>Pause between writing an injected command's text and its Enter keystroke, so the
-    /// provider TUI reads the submit key separately instead of folding it into a paste.</summary>
+    // Sending Enter separately prevents provider TUIs from treating it as pasted text.
     private static readonly TimeSpan SubmitKeyDelay = TimeSpan.FromMilliseconds(75);
 
     private readonly IPty pty;
@@ -26,16 +21,9 @@ public sealed class SessionManager : IDisposable
     private volatile SessionState state = SessionState.Stopped;
     private volatile string activeProvider = TerminalProviders.Claude;
 
-    /// <summary>Generation of the PTY this session owns, or 0 when we have relinquished it. A killed process
-    /// reports its exit asynchronously, so an exit only concerns us when it carries this generation.</summary>
+    // A killed PTY can exit after its replacement starts, so only this generation may change session state.
     private int liveGeneration;
 
-    /// <summary>
-    /// Initializes a new <see cref="SessionManager"/> and subscribes to PTY output and exit events.
-    /// </summary>
-    /// <param name="pty">The PTY used to start and control the terminal process.</param>
-    /// <param name="install">Resolved install layout; sessions cannot start without it.</param>
-    /// <param name="logger">Logger for session lifecycle events.</param>
     public SessionManager(IPty pty, HostInstall install, ILogger<SessionManager> logger)
     {
         this.pty = pty;
@@ -46,31 +34,19 @@ public sealed class SessionManager : IDisposable
         pty.ProcessExited += OnPtyExit;
     }
 
-    /// <summary>Raised with each chunk of terminal output. Delivering it to clients is the transport's job.</summary>
+    /// <summary>Raised for terminal output.</summary>
     public event Action<byte[]>? Output;
 
-    /// <summary>Raised when the session's own process exits. Never raised for a process we replaced.</summary>
+    /// <summary>Raised when the current process exits.</summary>
     public event Action<SessionExit>? Exited;
 
-    /// <summary>
-    /// Gets the current terminal session state.
-    /// </summary>
+    /// <summary>Current session state.</summary>
     public SessionState State => state;
 
-    /// <summary>
-    /// Gets the active or last requested terminal provider.
-    /// </summary>
+    /// <summary>Active or last requested provider.</summary>
     public string ActiveProvider => activeProvider;
 
-    /// <summary>
-    /// Starts the provider PTY session if it is not already running.
-    /// </summary>
-    /// <param name="provider">Provider id to launch.</param>
-    /// <param name="cols">Initial terminal column count.</param>
-    /// <param name="rows">Initial terminal row count.</param>
-    /// <param name="apiToken">Per-user agent PAT injected as JOBPILOT_API_TOKEN; falls back to the host env var.</param>
-    /// <param name="webUrl">Web app origin (the browser's location) injected as JOBPILOT_WEB; falls back to the host env var.</param>
-    /// <param name="apiUrl">Backend base URL (the web's configured API origin) injected as JOBPILOT_API; falls back to the host env var, then localhost.</param>
+    /// <summary>Starts a provider unless that provider is already running.</summary>
     /// <exception cref="PtyStartException">Thrown when the PTY provider fails to spawn the process.</exception>
     public void Start(string? provider, int cols, int rows, string? apiToken = null, string? webUrl = null, string? apiUrl = null)
     {
@@ -90,8 +66,7 @@ public sealed class SessionManager : IDisposable
                 logger.LogInformation(
                     "Switching terminal provider from {PreviousProvider} to {NextProvider}.", activeProvider,
                     normalizedProvider);
-                // Disown the outgoing PTY before killing it, so its exit lands as stale and never reports
-                // the replacement session as dead.
+                // Disown the outgoing PTY before its asynchronous exit arrives.
                 liveGeneration = 0;
                 pty.Stop();
                 state = SessionState.Stopped;
@@ -111,7 +86,6 @@ public sealed class SessionManager : IDisposable
                 cols,
                 rows);
 
-            // Prefer the value the web passed on session start; fall back to the host env var, then a dev default.
             static string FromRequestOrEnv(string? passed, string envKey, string fallback) =>
                 !string.IsNullOrEmpty(passed) ? passed : Environment.GetEnvironmentVariable(envKey) ?? fallback;
 
@@ -121,7 +95,6 @@ public sealed class SessionManager : IDisposable
                 ["JOBPILOT_WORKSPACE_ROOT"] = workingDir,
                 ["JOBPILOT_API"] = FromRequestOrEnv(apiUrl, "JOBPILOT_API", "http://localhost:4101"),
                 ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),
-                // JOBPILOT_WEB is the browser's own origin, for user-facing links in skill output.
                 ["JOBPILOT_WEB"] = FromRequestOrEnv(webUrl, "JOBPILOT_WEB", "http://localhost:4100")
             };
 
@@ -142,12 +115,7 @@ public sealed class SessionManager : IDisposable
         }
     }
 
-    /// <summary>
-    /// Injects a command line into the running session, then submits it with a separate Enter keystroke.
-    /// </summary>
-    /// <param name="command">Bare command line - no trailing newline; the submit key is sent by this method.</param>
-    /// <param name="expectedProvider">Optional provider id the caller believes is active. When set,
-    /// the inject is rejected if it does not match the active provider.</param>
+    /// <summary>Writes and submits a command to the active session.</summary>
     /// <exception cref="ArgumentException">The expected provider id is not a known provider.</exception>
     public async Task<InjectResult> Inject(string command, string? expectedProvider = null)
     {
@@ -172,18 +140,14 @@ public sealed class SessionManager : IDisposable
 
             generation = liveGeneration;
 
-            // Write the command text without the submit key so the provider's TUI renders it as input.
             pty.Write(Encoding.UTF8.GetBytes(command));
         }
 
-        // Send Enter separately: bundled with the text, providers treat the burst as a paste and the CR
-        // becomes a literal newline. The delay lands it in its own PTY read so it submits.
         await Task.Delay(SubmitKeyDelay);
 
         lock (stateLock)
         {
-            // A provider switch during the delay leaves a *different* session running; its TUI must not
-            // receive a submit key for a command it never saw.
+            // A provider switch during the delay must not receive Enter for a command it never saw.
             if (state != SessionState.Running || liveGeneration != generation)
             {
                 logger.LogWarning("Dropped the submit key: the session ended or was replaced mid-inject.");
@@ -196,28 +160,19 @@ public sealed class SessionManager : IDisposable
         return InjectResult.Injected;
     }
 
-    /// <summary>
-    /// Resizes the active PTY viewport.
-    /// </summary>
-    /// <param name="cols">New terminal column count.</param>
-    /// <param name="rows">New terminal row count.</param>
+    /// <summary>Resizes the active PTY.</summary>
     public void Resize(int cols, int rows)
     {
         pty.Resize(cols, rows);
     }
 
-    /// <summary>
-    /// Writes raw UTF-8 or control-sequence bytes to the active PTY.
-    /// </summary>
-    /// <param name="data">Bytes received from a connected terminal client.</param>
+    /// <summary>Writes raw input to the active PTY.</summary>
     public void WriteInput(byte[] data)
     {
         pty.Write(data);
     }
 
-    /// <summary>
-    /// Stops the active PTY session and marks the session as stopped.
-    /// </summary>
+    /// <summary>Stops the active session.</summary>
     public void Stop()
     {
         lock (stateLock)
@@ -236,7 +191,7 @@ public sealed class SessionManager : IDisposable
         string provider;
         lock (stateLock)
         {
-            // Stale: this PTY was killed to make room for another, or its exit was already reported.
+            // Ignore exits from replaced or already-reported PTYs.
             if (exit.Generation != liveGeneration) return;
 
             liveGeneration = 0;
@@ -247,9 +202,6 @@ public sealed class SessionManager : IDisposable
         Exited?.Invoke(new SessionExit(TerminalProviders.GetDisplayName(provider), exit.ExitCode));
     }
 
-    /// <summary>
-    /// Stops the PTY session and detaches event handlers.
-    /// </summary>
     public void Dispose()
     {
         Stop();

@@ -1,7 +1,6 @@
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>A throwaway directory tree, removed on dispose. Lets path-probing tests avoid touching
-/// process-global state such as <see cref="Environment.CurrentDirectory"/>.</summary>
+/// <summary>Disposable test directory.</summary>
 internal sealed class TempDir : IDisposable
 {
     public TempDir()
@@ -12,7 +11,6 @@ internal sealed class TempDir : IDisposable
 
     public string Root { get; }
 
-    /// <summary>Creates <paramref name="relativePath"/> (and its parents) with the given content.</summary>
     public string File(string relativePath, string content = "{}")
     {
         var full = Path.Combine(Root, relativePath);
@@ -21,7 +19,6 @@ internal sealed class TempDir : IDisposable
         return full;
     }
 
-    /// <summary>Lays out the minimal plugin tree <c>InstallPaths.Resolve</c> probes for.</summary>
     public void WriteValidPluginTree()
     {
         File(Path.Combine("plugin", "skills", "shared", "setup.md"), "# setup");
@@ -38,7 +35,7 @@ internal sealed class TempDir : IDisposable
         }
         catch (IOException)
         {
-            // A test left a handle open; the OS temp sweep will get it.
+            // Best-effort test cleanup.
         }
     }
 }

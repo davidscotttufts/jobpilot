@@ -2,12 +2,10 @@ using System.Diagnostics;
 
 namespace JobPilot.Terminal.Updates;
 
-/// <summary>Port handoff for a runtime self-update relaunch: the parent (post-swap) releases :4102 after
-/// answering the request, and the child waits for the predecessor (<c>JOBPILOT_AWAIT_PID</c>) to exit
-/// before binding, so it never races the parent for the port.</summary>
+/// <summary>Coordinates the listening-port handoff after a runtime update.</summary>
 public static class HostHandoff
 {
-    /// <summary>Env var carrying the predecessor pid on a runtime self-update relaunch; its presence marks the relaunch.</summary>
+    /// <summary>Environment variable carrying the predecessor process ID.</summary>
     public const string AwaitPidVar = "JOBPILOT_AWAIT_PID";
 
     private static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(15);
@@ -15,16 +13,14 @@ public static class HostHandoff
     private static readonly TimeSpan SocketDrain = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan ResponseFlush = TimeSpan.FromMilliseconds(500);
 
-    /// <summary>True when a runtime self-update relaunched us, so we're already latest and skip the startup update.</summary>
+    /// <summary>Whether this process is an update relaunch.</summary>
     public static bool IsUpdateRelaunch => Environment.GetEnvironmentVariable(AwaitPidVar) is not null;
 
-    /// <summary>Parent side: after a runtime update swaps+relaunches, stop the app (releasing :4102) once the
-    /// HTTP response has flushed, so the waiting child can bind.</summary>
+    /// <summary>Stops the parent after its update response has flushed.</summary>
     public static void BeginRelease(IHostApplicationLifetime lifetime)
     {
-        // Deliberately untied from the request's CancellationToken: the child is already spawned and waiting
-        // on our pid. If the browser disconnects (likely - the host is about to die), a cancelled delay would
-        // skip StopApplication, we would keep :4102, and the child would time out and give up.
+        // The child is already waiting on this PID. Request cancellation must not prevent the parent from
+        // releasing the port.
         _ = Task.Run(async () =>
         {
             await Task.Delay(ResponseFlush, CancellationToken.None);
@@ -32,11 +28,10 @@ public static class HostHandoff
         }, CancellationToken.None);
     }
 
-    /// <summary>Blocks until the predecessor pid in <c>JOBPILOT_AWAIT_PID</c> exits (bounded), so the port frees up.</summary>
+    /// <summary>Waits briefly for the predecessor to release the port.</summary>
     public static async Task WaitForParentExitAsync(ILogger logger)
     {
         var raw = Environment.GetEnvironmentVariable(AwaitPidVar);
-        // Clear it up front so it can't leak into a future relaunch spawned by this process.
         Environment.SetEnvironmentVariable(AwaitPidVar, null);
         if (!int.TryParse(raw, out var pid))
         {
@@ -57,12 +52,11 @@ public static class HostHandoff
             }
             catch (ArgumentException)
             {
-                break; // process already gone
+                break;
             }
             await Task.Delay(Poll);
         }
 
-        // Small grace so the OS fully releases the listen socket after the process exits.
         await Task.Delay(SocketDrain);
     }
 }

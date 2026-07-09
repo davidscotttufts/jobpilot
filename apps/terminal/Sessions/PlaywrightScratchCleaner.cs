@@ -1,10 +1,8 @@
 namespace JobPilot.Terminal.Sessions;
 
 /// <summary>
-/// Best-effort removal of scratch files (page snapshots, screenshots, downloaded PDFs, console logs)
-/// left by Playwright MCP in the previous session. Only top-level files with a known scratch
-/// extension are deleted; the browser profile (Default/, caches, Local State, …) is never touched.
-/// Failures (e.g. a file still locked by a closing browser) are ignored.
+/// Removes top-level Playwright scratch files. It never recurses because browser profiles live beneath the
+/// same directory.
 /// </summary>
 public static class PlaywrightScratchCleaner
 {

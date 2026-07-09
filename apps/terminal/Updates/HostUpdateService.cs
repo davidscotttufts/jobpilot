@@ -3,23 +3,15 @@ using JobPilot.Terminal.Contracts;
 
 namespace JobPilot.Terminal.Updates;
 
-/// <summary>
-/// Decides when the host self-updates and hands the mechanics to <see cref="ReleaseInstaller"/>. Two entry
-/// points: <see cref="UpdateAtStartupAsync"/> runs before the port is bound and swallows every failure;
-/// <see cref="UpdateNowAsync"/> serves <c>POST /update</c> and lets failures surface to the caller.
-/// </summary>
+/// <summary>Coordinates startup and dashboard-triggered host updates.</summary>
 public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostInstall install)
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(20);
 
-    /// <summary>Single-flight: a second POST /update while one is in flight reports "in-progress" rather than
-    /// racing two swaps over the same install directory.</summary>
+    /// <summary>Prevents concurrent swaps of the install directory.</summary>
     private readonly SemaphoreSlim gate = new(1, 1);
 
-    /// <summary>
-    /// Updates before the server binds, so no session can spawn mid-swap. Returns true when the host swapped
-    /// and launched its replacement - the caller must exit without binding. No-ops in a dev checkout or offline.
-    /// </summary>
+    /// <summary>Updates before binding. Returns true when a replacement was launched.</summary>
     public async Task<bool> UpdateAtStartupAsync()
     {
         try
@@ -54,10 +46,7 @@ public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostIns
         }
     }
 
-    /// <summary>
-    /// Dashboard-triggered update: swaps the binary and relaunches a detached child that waits for this
-    /// process to exit before binding. The caller then shuts down to hand off the port.
-    /// </summary>
+    /// <summary>Updates a running host and launches its handoff process.</summary>
     public async Task<UpdateResult> UpdateNowAsync(CancellationToken ct)
     {
         var current = HostInstall.HostVersion;
@@ -83,7 +72,7 @@ public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostIns
             var result = await ApplyLatestAsync(http, releases, RelaunchMode.Runtime, ct);
             if (result.Updating)
             {
-                releaseGate = false; // keep the gate held; we're relaunching + shutting down
+                releaseGate = false; // The process is shutting down; no second swap may start.
             }
             return result;
         }

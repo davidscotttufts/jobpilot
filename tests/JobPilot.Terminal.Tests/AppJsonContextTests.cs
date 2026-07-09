@@ -4,11 +4,6 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>
-/// Guards the wire format of types serialized directly against the source-generated context (WebSocket
-/// messages, ProblemDetails) rather than through the ASP.NET pipeline. A naming mismatch here does not throw -
-/// fields simply bind to null and the terminal silently stops responding to input.
-/// </summary>
 public class AppJsonContextTests
 {
     [Fact]
@@ -57,8 +52,6 @@ public class AppJsonContextTests
     [Fact]
     public void SessionStatus_SerializesCamelCase_ThroughTheContextsOwnOptions()
     {
-        // The exception handler and any direct WriteAsJsonAsync bypass the pipeline's web defaults, so the
-        // context itself must produce the casing apps/web/src/lib/terminal.ts reads.
         var json = JsonSerializer.Serialize(
             new SessionStatus
             {

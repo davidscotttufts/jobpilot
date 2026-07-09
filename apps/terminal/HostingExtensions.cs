@@ -11,17 +11,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace JobPilot.Terminal;
 
-/// <summary>
-/// Service registration, middleware pipeline, and run wrapper for the terminal host.
-/// </summary>
+/// <summary>Configures and runs the terminal host.</summary>
 public static class HostingExtensions
 {
-    /// <summary>
-    /// Registers every service the terminal host needs.
-    /// </summary>
-    /// <param name="services">Service collection to configure.</param>
-    /// <param name="configuration">Host configuration, for the browser origin allowlist.</param>
-    /// <returns>The same service collection for chaining.</returns>
+    /// <summary>Registers terminal host services.</summary>
     public static IServiceCollection AddTerminalHost(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddCors(options => options.AddPolicy(
@@ -39,28 +32,19 @@ public static class HostingExtensions
         services.ConfigureHttpJsonOptions(c =>
             c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
 
-        // Outside Development, minimal APIs answer a malformed body with a bare 400 and an empty response,
-        // bypassing the exception handler below. Make binding failures throw so every error carries a
-        // ProblemDetails.Detail, which is the only thing apps/web surfaces to the user.
+        // Production otherwise returns an empty 400 for binding failures, while the web expects ProblemDetails.
         services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
 
         return services;
     }
 
-    /// <summary>
-    /// Configures error handling, CORS, WebSockets, and session teardown on shutdown.
-    /// </summary>
-    /// <param name="app">The web application to configure.</param>
-    /// <returns>The same application for chaining.</returns>
+    /// <summary>Configures middleware and session teardown.</summary>
     public static WebApplication UseTerminalPipeline(this WebApplication app)
     {
-        // Nothing may escape as a bare 500 with an empty body - the web reads ProblemDetails.Detail.
         app.UseExceptionHandler(errorApp => errorApp.Run(async context =>
         {
             var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
 
-            // A malformed body surfaces as BadHttpRequestException(400) thanks to ThrowOnBadRequest above.
-            // Reporting that as 500 would blame the host for the caller's bad JSON.
             var status = error is BadHttpRequestException bad
                 ? bad.StatusCode
                 : StatusCodes.Status500InternalServerError;
@@ -76,10 +60,11 @@ public static class HostingExtensions
             await context.Response.WriteAsJsonAsync(problem, AppJsonContext.Default.ProblemDetails);
         }));
 
+        // CORS hides disallowed responses but does not stop simple requests such as POST /update.
+        app.Use(next => OriginPolicy.CreateGuard(app.Configuration, next));
         app.UseCors(OriginPolicy.CorsPolicy);
 
-        // CORS does not cover WebSockets - the browser opens them regardless of the CORS policy. Kestrel's
-        // own origin check does: a present-but-unlisted Origin is rejected, and an absent one is allowed.
+        // Kestrel validates WebSocket origins separately from HTTP middleware.
         var webSockets = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) };
         foreach (var origin in OriginPolicy.Resolve(app.Configuration))
         {
@@ -93,10 +78,7 @@ public static class HostingExtensions
         return app;
     }
 
-    /// <summary>
-    /// Runs the app, translating a bind conflict on the configured port into an actionable message and exit code 1.
-    /// </summary>
-    /// <param name="app">The configured web application.</param>
+    /// <summary>Runs the app with a useful port-conflict error.</summary>
     public static void RunWithPortDiagnostics(this WebApplication app)
     {
         try
@@ -112,7 +94,6 @@ public static class HostingExtensions
         }
     }
 
-    /// <summary>Port Kestrel was told to bind, so the diagnostic can never contradict appsettings.json.</summary>
     private static string ConfiguredPort(IConfiguration configuration)
     {
         var url = configuration["Kestrel:Endpoints:Http:Url"];

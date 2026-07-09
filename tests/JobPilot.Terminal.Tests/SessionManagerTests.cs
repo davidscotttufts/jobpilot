@@ -7,10 +7,6 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>
-/// The session state machine. A killed PTY reports its exit asynchronously, so most of these tests are about
-/// telling "the process I just replaced died" apart from "the process I am running died".
-/// </summary>
 public sealed class SessionManagerTests : IDisposable
 {
     private static readonly byte[] Enter = "\r"u8.ToArray();
@@ -117,7 +113,6 @@ public sealed class SessionManagerTests : IDisposable
         var replaced = pty.CurrentGeneration;
         Start(TerminalProviders.Codex);
 
-        // The Claude process we killed finally reports its death, after Codex is already running.
         pty.RaiseExit(replaced);
 
         Assert.Equal(SessionState.Running, session.State);
@@ -127,8 +122,7 @@ public sealed class SessionManagerTests : IDisposable
     [Fact]
     public void Exit_OfTheReplacementStillReports_AfterASupersededExitWasIgnored()
     {
-        // Guards the old suppressNextExitMessage flag: swallowing the switch's exit used to leave the flag
-        // set, so the next genuine crash was silently eaten and the session looked alive.
+        // Ignoring one stale exit must not suppress the replacement's real exit.
         Start(TerminalProviders.Claude);
         var replaced = pty.CurrentGeneration;
         Start(TerminalProviders.Codex);
@@ -143,8 +137,6 @@ public sealed class SessionManagerTests : IDisposable
     [Fact]
     public void Exit_OfTwiceSupersededGenerations_ArrivingLate_LeavesTheLiveSessionRunning()
     {
-        // The old one-shot suppress flag could not survive two switches: the first stale exit consumed it,
-        // and the second was mistaken for a crash of the session actually running.
         Start(TerminalProviders.Claude);
         var first = pty.CurrentGeneration;
         Start(TerminalProviders.Codex);
@@ -166,7 +158,6 @@ public sealed class SessionManagerTests : IDisposable
         session.Stop();
         Start();
 
-        // The killed process reports its exit only now, once its replacement is already serving.
         pty.RaiseExit(stopped);
 
         Assert.Equal(SessionState.Running, session.State);
@@ -224,8 +215,7 @@ public sealed class SessionManagerTests : IDisposable
     [Fact]
     public async Task Inject_DoesNotSubmitIntoAReplacementSession()
     {
-        // The submit key is sent 75ms after the command text. A provider switch inside that window used to
-        // leave state == Running, so Enter landed in a session that never received the command.
+        // Enter is delayed, leaving a window in which the provider can change.
         Start(TerminalProviders.Claude);
 
         var inject = session.Inject("rm -rf /");

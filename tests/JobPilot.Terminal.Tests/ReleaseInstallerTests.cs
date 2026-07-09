@@ -4,8 +4,6 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>Characterizes release selection. The self-update swap cannot be exercised without a real
-/// GitHub release, so this is the only automated guard on which release the updater would pick.</summary>
 public class ReleaseInstallerTests
 {
     private static GitHubRelease Release(string? tag) => new(tag, Assets: null);

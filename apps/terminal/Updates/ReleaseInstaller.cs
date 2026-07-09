@@ -11,56 +11,50 @@ using JobPilot.Terminal.Contracts;
 
 namespace JobPilot.Terminal.Updates;
 
-/// <summary>A GitHub release, as returned by the releases API (only the fields we read).</summary>
+/// <summary>Fields read from a GitHub release.</summary>
 public sealed record GitHubRelease(
     [property: JsonPropertyName("tag_name")] string? TagName,
     [property: JsonPropertyName("assets")] GitHubAsset[]? Assets);
 
-/// <summary>A downloadable asset attached to a GitHub release.</summary>
+/// <summary>Fields read from a GitHub release asset.</summary>
 public sealed record GitHubAsset(
     [property: JsonPropertyName("name")] string? Name,
     [property: JsonPropertyName("browser_download_url")] string? DownloadUrl);
 
-/// <summary>How a relaunched child hands off from its predecessor.</summary>
+/// <summary>Update relaunch behavior.</summary>
 public enum RelaunchMode
 {
-    /// <summary>Predecessor never bound the port (updater ran before bind); child binds immediately.</summary>
+    /// <summary>The predecessor did not bind the port.</summary>
     Startup,
 
-    /// <summary>Predecessor is a running host; child must wait for it to exit before binding (see HostHandoff).</summary>
+    /// <summary>The child waits for the running predecessor.</summary>
     Runtime,
 }
 
-/// <summary>
-/// Archive and filesystem mechanics of a host self-update: talking to the GitHub releases API, picking the
-/// newest <c>v*</c> tag, downloading and extracting the per-RID archive, and swapping it over the live
-/// install. Knows nothing about when an update should happen - that is <see cref="HostUpdateService"/>.
-/// </summary>
+/// <summary>Downloads, validates, and installs host releases.</summary>
 internal static class ReleaseInstaller
 {
     private const string ReleasesUrl = "https://api.github.com/repos/suxrobGM/jobpilot/releases?per_page=30";
 
-    /// <summary>Tag prefix for the unified host+plugin version line (<c>vX.Y.Z</c>).</summary>
     private const string TagPrefix = "v";
 
     public static HttpClient CreateClient()
     {
-        // Infinite client timeout on purpose: release archives are large, and every call is already bounded
-        // by its own CancellationToken. A finite timeout here would abort mid-download.
+        // Callers bound every request with a cancellation token.
         var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
         http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("jobpilot-terminal", HostInstall.HostVersion));
         http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
         return http;
     }
 
-    /// <summary>Fetches the releases list once; null if the payload can't be parsed.</summary>
+    /// <summary>Fetches available releases.</summary>
     public static async Task<GitHubRelease[]?> FetchReleasesAsync(HttpClient http, CancellationToken ct)
     {
         var json = await http.GetStringAsync(ReleasesUrl, ct);
         return JsonSerializer.Deserialize(json, AppJsonContext.Default.GitHubReleaseArray);
     }
 
-    /// <summary>Highest <c>vX.Y.Z</c> release newer than <paramref name="current"/>, or null if up to date.</summary>
+    /// <summary>Finds the highest newer <c>vX.Y.Z</c> release.</summary>
     public static (GitHubRelease Release, Version Version)? SelectLatestAbove(GitHubRelease[] releases, Version current)
     {
         GitHubRelease? best = null;
@@ -85,7 +79,7 @@ internal static class ReleaseInstaller
         return best is not null && bestVersion is not null && bestVersion > current ? (best, bestVersion) : null;
     }
 
-    /// <summary>Download URL of the current RID's host archive, or null (logged) when the release has none.</summary>
+    /// <summary>Finds the current platform's release asset.</summary>
     public static string? ResolveAssetUrl(ILogger logger, (GitHubRelease Release, Version Version) latest)
     {
         var assetName = $"jobpilot-terminal-{CurrentRid()}{(OperatingSystem.IsWindows() ? ".zip" : ".tar.gz")}";
@@ -99,9 +93,7 @@ internal static class ReleaseInstaller
     }
 
     /// <summary>
-    /// Downloads/extracts/validates the release into a staging dir, then replaces the install. The running exe
-    /// is renamed aside (it cannot be overwritten while executing) and every replaced file is backed up, so a
-    /// failure part-way through restores the whole installation rather than just the binary.
+    /// Stages and validates a release, renames the running executable, and rolls back files if copying fails.
     /// </summary>
     public static async Task SwapAsync(HttpClient http, string url, string exePath, string installDir, CancellationToken ct)
     {
@@ -120,7 +112,7 @@ internal static class ReleaseInstaller
             }
 
             var oldExe = exePath + ".old";
-            File.Delete(oldExe); // idempotent; clears a prior swap's leftover before renaming the live exe aside
+            File.Delete(oldExe);
             File.Move(exePath, oldExe);
             try
             {
@@ -128,23 +120,22 @@ internal static class ReleaseInstaller
             }
             catch
             {
-                File.Move(oldExe, exePath, overwrite: true); // restore the runnable binary
+                File.Move(oldExe, exePath, overwrite: true);
                 throw;
             }
 
             if (!OperatingSystem.IsWindows())
             {
-                File.Delete(oldExe); // Unix can unlink the still-running image; Windows waits for next startup
+                File.Delete(oldExe); // Windows keeps the running image until the next startup.
             }
         }
         finally
         {
-            // Always: a staging dir left behind is copied over the install by the *next* swap.
             DeleteIfExists(staging);
         }
     }
 
-    /// <summary>Deletes the renamed-aside binary from a prior swap (the process that held it has exited).</summary>
+    /// <summary>Deletes the previous executable after its process exits.</summary>
     public static void CleanupPreviousSwap(ILogger logger)
     {
         if (Environment.ProcessPath is null)
@@ -153,7 +144,7 @@ internal static class ReleaseInstaller
         }
         try
         {
-            File.Delete(Environment.ProcessPath + ".old"); // idempotent no-op when absent
+            File.Delete(Environment.ProcessPath + ".old");
         }
         catch (Exception ex)
         {
@@ -161,7 +152,7 @@ internal static class ReleaseInstaller
         }
     }
 
-    /// <summary>Launches the swapped-in binary with this process's arguments.</summary>
+    /// <summary>Launches the installed binary with the current arguments.</summary>
     public static void Relaunch(string exePath, RelaunchMode mode)
     {
         var psi = new ProcessStartInfo
@@ -176,13 +167,12 @@ internal static class ReleaseInstaller
         }
         if (mode == RelaunchMode.Runtime)
         {
-            // We still hold :4102: hand the child our pid so it waits for us to exit before binding.
             psi.Environment[HostHandoff.AwaitPidVar] = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
         }
         Process.Start(psi);
     }
 
-    /// <summary>Downloads the asset to a temp file and extracts it into <paramref name="destDir"/>, choosing zip or gzip+tar by extension.</summary>
+    /// <summary>Downloads and extracts a release archive.</summary>
     public static async Task DownloadAndExtractAsync(HttpClient http, string url, string destDir, CancellationToken ct)
     {
         var archive = Path.GetTempFileName();
@@ -219,18 +209,14 @@ internal static class ReleaseInstaller
         }
     }
 
-    /// <summary>An archive is only a host if it carries the binary and the plugin tree the host resolves at runtime.</summary>
+    /// <summary>Checks the minimum release payload.</summary>
     internal static bool IsValidHost(string dir, string exeName)
     {
         return File.Exists(Path.Combine(dir, exeName))
             && File.Exists(Path.Combine(dir, "plugin", ".claude-plugin", "plugin.json"));
     }
 
-    /// <summary>
-    /// Copies every staged file over the install, remembering what it replaced and what it created. A failure
-    /// half-way used to leave the plugin tree partly upgraded even though the exe was restored; now the whole
-    /// installation is rolled back.
-    /// </summary>
+    /// <summary>Copies staged files while tracking enough state to roll back a partial copy.</summary>
     internal static void ApplyStaged(string stagingDir, string installDir)
     {
         var backupDir = installDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + ".bak";
@@ -276,7 +262,7 @@ internal static class ReleaseInstaller
             }
             catch (IOException)
             {
-                // The install is consistent; a stray .bak dir is cleaned by the next swap.
+                // A later swap retries backup cleanup.
             }
         }
     }
@@ -291,7 +277,7 @@ internal static class ReleaseInstaller
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Best effort: keep restoring the rest rather than abandoning the install mid-rollback.
+                // Continue restoring the remaining files.
             }
         }
 

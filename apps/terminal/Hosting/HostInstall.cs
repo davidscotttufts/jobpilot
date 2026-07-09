@@ -1,13 +1,9 @@
 namespace JobPilot.Terminal.Hosting;
 
-/// <summary>
-/// Identity of this installation: where its assets live, whether it can self-update, and what version it is.
-/// Foundational - sessions and updates both depend on it, and it depends on neither.
-/// </summary>
+/// <summary>Resolved host installation and update capability.</summary>
 public sealed class HostInstall
 {
-    /// <summary>Resolves the install layout once. Never throws: a broken install must report itself as
-    /// degraded rather than 500 on /healthz, or the dashboard reads a running host as offline.</summary>
+    /// <summary>Resolves the layout without preventing a degraded host from starting.</summary>
     public HostInstall(ILogger<HostInstall> logger)
     {
         try
@@ -23,7 +19,6 @@ public sealed class HostInstall
         CanUpdate = Paths is not null && IsPublishedInstall(Paths.ClaudePluginDir);
     }
 
-    /// <summary>Test seam: build an install around a known layout without touching the filesystem probe.</summary>
     internal HostInstall(InstallPaths? paths, string? pathsError = null, bool canUpdate = false)
     {
         Paths = paths;
@@ -34,24 +29,21 @@ public sealed class HostInstall
     /// <summary>Resolved asset locations, or null when the plugin tree could not be found.</summary>
     public InstallPaths? Paths { get; }
 
-    /// <summary>Non-null when <see cref="Paths"/> could not be resolved; surfaced as /healthz "degraded".</summary>
+    /// <summary>Layout resolution error, if any.</summary>
     public string? PathsError { get; }
 
-    /// <summary>True when this is a published install rather than a dev checkout, so the host may self-update.</summary>
+    /// <summary>Whether this is a published, self-updatable install.</summary>
     public bool CanUpdate { get; }
 
-    /// <summary>Host version (from the assembly), reported by /healthz so the dashboard can detect a stale install.</summary>
+    /// <summary>Host assembly version.</summary>
     public static string HostVersion { get; } =
         typeof(HostInstall).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
-    /// <summary>The resolved paths, or a diagnosable failure explaining that the install is incomplete.</summary>
+    /// <summary>Returns the paths or throws the recorded resolution error.</summary>
     public InstallPaths RequirePaths() => Paths ?? throw new InvalidOperationException(
         $"Terminal host install is incomplete - reinstall the JobPilot agent. ({PathsError})");
 
-    /// <summary>
-    /// True when <paramref name="path"/> sits under the running binary's directory; false in a dev checkout,
-    /// where assets resolve to the repo root. Guards the updaters from overwriting a source tree.
-    /// </summary>
+    /// <summary>Checks that a path belongs to the published install.</summary>
     internal static bool IsPublishedInstall(string path)
     {
         var baseDir = Path.GetFullPath(AppContext.BaseDirectory);

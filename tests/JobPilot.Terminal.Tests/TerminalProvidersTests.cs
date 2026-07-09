@@ -3,14 +3,12 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>Characterizes provider id normalization and display naming. These pin the behaviour that the
-/// provider-registry consolidation must preserve.</summary>
 public class TerminalProvidersTests
 {
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    [InlineData("   ")] // Trim() runs before the switch, so whitespace collapses to the empty arm.
+    [InlineData("   ")]
     public void Normalize_DefaultsToClaude_WhenAbsent(string? provider)
     {
         Assert.Equal(TerminalProviders.Claude, TerminalProviders.Normalize(provider));
@@ -60,8 +58,6 @@ public class TerminalProvidersTests
     [Fact]
     public void Supported_AgreesWithNormalizeAndGetDisplayName()
     {
-        // Normalize, GetDisplayName, Supported and the launch spec used to be four switches that could
-        // silently disagree. They now derive from one table; this pins that they stay in step.
         foreach (var provider in TerminalProviders.Supported())
         {
             Assert.Equal(provider.Id, TerminalProviders.Normalize(provider.Id));

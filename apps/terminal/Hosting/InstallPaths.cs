@@ -1,9 +1,6 @@
 namespace JobPilot.Terminal.Hosting;
 
-/// <summary>
-/// Resolved filesystem paths of a JobPilot install. Pure data, and foundational: nothing here depends on
-/// sessions, updates, or the provider table, so every layer can build on it without referencing each other.
-/// </summary>
+/// <summary>Resolved filesystem paths of a JobPilot install.</summary>
 public sealed record InstallPaths
 {
     /// <summary>Default working directory for a launched session.</summary>
@@ -18,23 +15,17 @@ public sealed record InstallPaths
     /// <summary>Plugin dir Codex loads (holds .codex-plugin/); same tree as Claude's.</summary>
     public required string CodexPluginDir { get; init; }
 
-    /// <summary>
-    /// Finds the JobPilot repository/plugin layout from the current process location.
-    /// </summary>
+    /// <summary>Finds the repository or published plugin layout.</summary>
     public static InstallPaths Resolve()
     {
         return ResolveFrom(CandidateRoots());
     }
 
-    /// <summary>Probes <paramref name="candidateRoots"/> in order for a valid plugin layout. Seam for tests.</summary>
+    /// <summary>Returns the first candidate containing a valid plugin layout.</summary>
     internal static InstallPaths ResolveFrom(IEnumerable<string> candidateRoots)
     {
         var roots = candidateRoots.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
-        // Both providers load from a single plugin/ directory holding the
-        // .claude-plugin/ and .codex-plugin/ manifests, the shared skills/ tree,
-        // and .mcp.json. The same layout is used in dev (repo root) and in the
-        // published output root.
         foreach (var root in roots)
         {
             var pluginDir = Path.Combine(root, "plugin");
@@ -73,7 +64,6 @@ public sealed record InstallPaths
 
     private static bool IsSharedSkillsDir(string path)
     {
-        // Single tree: shared/ docs + one dir per skill (e.g. auto-apply/SKILL.md).
         return File.Exists(Path.Combine(path, "shared", "setup.md"))
             && File.Exists(Path.Combine(path, "auto-apply", "SKILL.md"));
     }

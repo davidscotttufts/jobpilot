@@ -9,20 +9,14 @@ using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Realtime;
 
-/// <summary>
-/// The browser transport for the embedded terminal: owns the connected sockets, fans session output out to
-/// them, and turns client control messages into session calls.
-/// </summary>
+/// <summary>Bridges browser WebSockets and the terminal session.</summary>
 public sealed class TerminalHub : IDisposable
 {
-    /// <summary>Chunks queued per client before it is considered stalled. At 4 KB per PTY read this bounds a
-    /// slow client at a few megabytes, after which we drop it rather than buffer the terminal indefinitely.</summary>
+    // Disconnect clients that fall this far behind rather than corrupting the stream.
     private const int OutboxCapacity = 1024;
 
-    /// <summary>Per-frame receive buffer. Messages larger than this arrive fragmented and are reassembled.</summary>
     private const int ReceiveBufferSize = 8192;
 
-    /// <summary>Ceiling on a single reassembled client message. A large paste is legitimate; a gigabyte is not.</summary>
     private const int MaxMessageBytes = 1024 * 1024;
 
     private readonly SessionManager session;
@@ -38,15 +32,10 @@ public sealed class TerminalHub : IDisposable
         session.Exited += OnSessionExited;
     }
 
-    /// <summary>
-    /// Serves one browser connection: pumps session output to it, and its control messages to the session.
-    /// </summary>
-    /// <param name="socket">Accepted WebSocket connection from the browser.</param>
-    /// <param name="ct">Cancellation token tied to the HTTP request lifetime.</param>
+    /// <summary>Serves one terminal WebSocket connection.</summary>
     public async Task HandleAsync(WebSocket socket, CancellationToken ct)
     {
-        // Wait, not DropWrite: a full outbox means the client cannot keep up, and silently discarding bytes
-        // from the middle of a terminal stream corrupts the screen. TryWrite fails instead and we disconnect.
+        // Wait mode makes TryWrite fail when full; dropping terminal bytes would corrupt the screen.
         var outbox = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(OutboxCapacity)
         {
             SingleReader = true,
@@ -73,7 +62,7 @@ public sealed class TerminalHub : IDisposable
         }
     }
 
-    /// <summary>Queues <paramref name="data"/> for every client; drops any client that cannot keep up.</summary>
+    /// <summary>Queues output for every connected client.</summary>
     private void Broadcast(byte[] data)
     {
         foreach (var (socket, outbox) in clients)
@@ -85,11 +74,10 @@ public sealed class TerminalHub : IDisposable
 
             logger.LogWarning("Dropping a WebSocket client that fell {Capacity} chunks behind.", OutboxCapacity);
             Unregister(socket);
-            socket.Abort(); // unblocks its receive loop, which tears the connection down
+            socket.Abort();
         }
     }
 
-    /// <summary>Removes a client and lets its send loop drain and exit.</summary>
     private void Unregister(WebSocket socket)
     {
         if (clients.TryRemove(socket, out var outbox))
@@ -105,7 +93,6 @@ public sealed class TerminalHub : IDisposable
         Broadcast(Encoding.UTF8.GetBytes(message));
     }
 
-    /// <summary>One reader per socket, so concurrent broadcasts can never interleave on the wire.</summary>
     private async Task SendLoopAsync(WebSocket socket, Channel<byte[]> outbox, CancellationToken ct)
     {
         try
@@ -145,8 +132,6 @@ public sealed class TerminalHub : IDisposable
                     return;
                 }
 
-                // Fragments of one message all carry its type and cannot interleave, so a non-text message is
-                // skipped whole and never lands mid-reassembly.
                 if (result.MessageType != WebSocketMessageType.Text)
                 {
                     continue;
@@ -161,8 +146,6 @@ public sealed class TerminalHub : IDisposable
 
                 message.Write(buffer.AsSpan(0, result.Count));
 
-                // A control message is only complete at EndOfMessage: parsing a fragment would throw, and the
-                // input would be dropped with nothing but a warning to show for it.
                 if (!result.EndOfMessage)
                 {
                     continue;
@@ -170,8 +153,7 @@ public sealed class TerminalHub : IDisposable
 
                 Dispatch(message.WrittenSpan);
 
-                // ResetWrittenCount keeps the grown buffer, so one big paste would pin its size for the whole
-                // connection. Steady-state traffic is keystrokes; hand the outsized buffer back to the GC.
+                // Do not retain an oversized paste buffer for the connection lifetime.
                 if (message.Capacity > ReceiveBufferSize)
                 {
                     message = new ArrayBufferWriter<byte>(ReceiveBufferSize);
@@ -214,7 +196,6 @@ public sealed class TerminalHub : IDisposable
                 break;
 
             case "resize":
-                // A bad resize from a socket is ignored rather than rejected; there is no reply channel.
                 if (message.Cols is { } cols && message.Rows is { } rows && Viewport.IsValid(cols, rows))
                 {
                     session.Resize(cols, rows);

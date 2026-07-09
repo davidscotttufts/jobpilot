@@ -1,8 +1,6 @@
 namespace JobPilot.Terminal.Contracts;
 
-/// <summary>
-/// Health and lifecycle status returned by terminal session endpoints.
-/// </summary>
+/// <summary>Terminal host and session status.</summary>
 public sealed record SessionStatus
 {
     /// <summary>The host runs and can start sessions.</summary>
@@ -26,38 +24,34 @@ public sealed record SessionStatus
     /// <summary>Supported provider metadata for clients.</summary>
     public required TerminalProviderInfo[] Providers { get; init; }
 
-    /// <summary>The host binary version. The dashboard compares it to the latest terminal release to prompt a
-    /// re-install; the plugin self-updates at startup, so it is not here.</summary>
+    /// <summary>Host binary version.</summary>
     public required string HostVersion { get; init; }
 
     /// <summary>Human-readable reason when <see cref="Status"/> is <see cref="StatusDegraded"/>.</summary>
     public string? Detail { get; init; }
 
-    /// <summary>True when the <c>jobpilot://</c> scheme is registered, so the dashboard can offer a one-click
-    /// relaunch when the host is offline.</summary>
+    /// <summary>Whether the browser can relaunch the host.</summary>
     public bool CanRelaunch { get; init; }
 
-    /// <summary>True when this is a published install (not a dev checkout), so the dashboard can offer a
-    /// one-click self-update via <c>POST /update</c>.</summary>
+    /// <summary>Whether this install supports self-update.</summary>
     public bool CanUpdate { get; init; }
 }
 
-/// <summary>Result of a runtime <c>POST /update</c> request (failures surface as <c>ProblemDetails</c> instead).</summary>
+/// <summary>Result of a runtime update request.</summary>
 public sealed record UpdateResult
 {
-    /// <summary>Machine-readable reasons for not updating. The web types these as a closed union.</summary>
     public const string ReasonUpToDate = "up-to-date";
     public const string ReasonDevCheckout = "dev-checkout";
     public const string ReasonInProgress = "in-progress";
     public const string ReasonNoAsset = "no-asset";
 
-    /// <summary>True when a swap+relaunch was performed and the host is shutting down to hand off the port.</summary>
+    /// <summary>Whether an update was installed and relaunched.</summary>
     public required bool Updating { get; init; }
 
-    /// <summary>Version currently running (pre-swap).</summary>
+    /// <summary>Version running before the update.</summary>
     public required string FromVersion { get; init; }
 
-    /// <summary>Version being launched, when <see cref="Updating"/>; null when already current or blocked.</summary>
+    /// <summary>Version being launched, if any.</summary>
     public string? ToVersion { get; init; }
 
     /// <summary>Machine-readable reason when not updating.</summary>

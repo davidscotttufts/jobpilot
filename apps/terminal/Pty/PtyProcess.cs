@@ -5,30 +5,23 @@ using Pty.Net;
 
 namespace JobPilot.Terminal.Pty;
 
-/// <summary>
-/// Raised when the PTY fails to spawn the requested executable.
-/// </summary>
+/// <summary>Raised when a PTY process cannot start.</summary>
 public sealed class PtyStartException(string command, Exception innerException)
     : Exception($"Failed to start '{command}': {innerException.Message}", innerException);
 
-/// <summary>
-/// Pty.Net-backed PTY: ConPTY on Windows, forkpty via libc on Linux/macOS. Long-lived; each
-/// <see cref="Start"/> swaps the underlying connection and mints a new generation.
-/// </summary>
+/// <summary>Pty.Net-backed process using ConPTY or forkpty.</summary>
 public sealed class PtyProcess : IPty
 {
     static PtyProcess()
     {
-        // NOTE: PtyProvider is Pty.Net's type, not ours. The resolver must be attached to *its* assembly so
-        // its conpty.dll import is intercepted; pointing this at typeof(PtyProcess).Assembly silently breaks
-        // every Windows session. SetDllImportResolver also throws if called twice, hence the static ctor.
+        // Attach to Pty.Net's assembly: that is where the missing bundled conpty.dll is imported.
+        // The static constructor also ensures SetDllImportResolver runs only once.
         if (OperatingSystem.IsWindows())
         {
             NativeLibrary.SetDllImportResolver(typeof(PtyProvider).Assembly, ResolveConPty);
         }
     }
 
-    /// <summary>Quick.PtyNet loads a bundled os64\conpty.dll it never ships; use the in-box ConPTY in kernel32.</summary>
     private static IntPtr ResolveConPty(string libraryName, Assembly assembly, DllImportSearchPath? searchPath) =>
         libraryName is "os64\\conpty.dll" or "os86\\conpty.dll"
             ? NativeLibrary.Load("kernel32.dll")
@@ -56,7 +49,6 @@ public sealed class PtyProcess : IPty
     {
         Stop();
 
-        // Mint before spawning, so the read loop and output closure both key off this start.
         var gen = Interlocked.Increment(ref generation);
 
         IPtyConnection spawned;
@@ -72,13 +64,11 @@ public sealed class PtyProcess : IPty
         }
         catch (Exception ex)
         {
-            // Surface the failure in the terminal itself before the HTTP error reaches the dashboard.
             OutputReceived?.Invoke(Encoding.UTF8.GetBytes($"\e[31mFailed to start '{command}': {ex.Message}\e[0m\r\n"));
             throw new PtyStartException(command, ex);
         }
 
-        // Ungated on purpose: a caller tells its own teardown apart from a crash by the generation, and
-        // suppressing this event for a killed process would strand it waiting for an exit that never comes.
+        // Do not suppress killed-process exits; their generation lets SessionManager discard stale ones.
         spawned.ProcessExited += (_, e) => ProcessExited?.Invoke(new PtyExit(gen, e.ExitCode));
 
         lock (connectionLock)
@@ -107,7 +97,7 @@ public sealed class PtyProcess : IPty
         }
         catch when (Volatile.Read(ref generation) != gen)
         {
-            // Torn down mid-write; the caller's session is already over.
+            // The PTY was replaced during the write.
         }
     }
 
@@ -120,7 +110,7 @@ public sealed class PtyProcess : IPty
         IPtyConnection? doomed;
         lock (connectionLock)
         {
-            // Invalidate before Kill: the read loop must already see a stale generation when its stream faults.
+            // Invalidate the read loop before closing its stream.
             Interlocked.Increment(ref generation);
             doomed = connection;
             connection = null;
@@ -130,7 +120,6 @@ public sealed class PtyProcess : IPty
         doomed?.Dispose();
     }
 
-    /// <summary>Kills the active PTY and releases it.</summary>
     public void Dispose() => Stop();
 
     private IPtyConnection? CurrentConnection()
@@ -151,7 +140,6 @@ public sealed class PtyProcess : IPty
                 var bytesRead = active.ReaderStream.Read(buffer, 0, buffer.Length);
                 if (bytesRead <= 0) break;
 
-                // Re-check: a Stop() racing this read must not push a dead session's bytes at the transport.
                 if (Volatile.Read(ref generation) != gen) break;
 
                 OutputReceived?.Invoke(buffer.AsSpan(0, bytesRead).ToArray());
@@ -159,7 +147,7 @@ public sealed class PtyProcess : IPty
         }
         catch when (Volatile.Read(ref generation) != gen)
         {
-            // Our generation ended; the faulted stream is the expected consequence of Stop().
+            // Stop closed this generation's stream.
         }
     }
 

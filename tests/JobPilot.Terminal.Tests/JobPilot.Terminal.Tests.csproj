@@ -7,13 +7,13 @@
     <IsPackable>false</IsPackable>
     <AssemblyName>JobPilot.Terminal.Tests</AssemblyName>
     <RootNamespace>JobPilot.Terminal.Tests</RootNamespace>
-    <!-- The host is AOT-published; the tests are not. Referencing it must not drag AOT analyzers in. -->
+    <!-- Tests run under JIT even though the host is AOT-published. -->
     <PublishAot>false</PublishAot>
     <IsAotCompatible>false</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The host targets Microsoft.NET.Sdk.Web; the tests need the same framework to see ILogger/ProblemDetails. -->
+    <!-- ILogger and ProblemDetails come from the shared ASP.NET Core framework. -->
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 

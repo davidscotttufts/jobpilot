@@ -4,8 +4,6 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>Characterizes install-layout probing and provider launch specs. The argv asserted here is the
-/// contract the provider-registry consolidation must not alter.</summary>
 public class InstallPathsTests
 {
     [Fact]
@@ -19,7 +17,6 @@ public class InstallPathsTests
         Assert.Equal(temp.Root, paths.WorkingDir);
         Assert.Equal(Path.Combine(temp.Root, "plugin", "skills"), paths.SharedSkillsDir);
         Assert.Equal(Path.Combine(temp.Root, "plugin"), paths.ClaudePluginDir);
-        // Both providers load the same tree.
         Assert.Equal(paths.ClaudePluginDir, paths.CodexPluginDir);
     }
 

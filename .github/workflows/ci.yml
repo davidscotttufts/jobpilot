@@ -74,14 +74,12 @@ jobs:
       - name: Test terminal host
         run: dotnet test tests/JobPilot.Terminal.Tests -c Release
 
-      # A missing [JsonSerializable] fails only under AOT: the reflection resolver later in
-      # TypeInfoResolverChain covers the gap under JIT and is trimmed away under AOT. `dotnet build`
-      # cannot catch it, so publish one RID the way release.yml does.
+      # JIT reflection can hide missing JsonSerializable registrations, so publish one Native AOT RID.
       - name: Publish AOT (linux-x64)
         run: dotnet publish -c Release -r linux-x64 -o publish/
         working-directory: apps/terminal
 
-      # TerminalSessionPaths.Resolve() probes exactly these; without them the host boots "degraded".
+      # InstallPaths.Resolve() requires these assets.
       - name: Verify publish root ships the plugin tree
         working-directory: apps/terminal/publish
         run: |
