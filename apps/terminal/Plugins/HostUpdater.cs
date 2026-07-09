@@ -1,14 +1,26 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
+using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Models;
 using JobPilot.Terminal.Sessions;
 
 namespace JobPilot.Terminal.Plugins;
 
+/// <summary>How a relaunched child hands off from its predecessor.</summary>
+public enum RelaunchMode
+{
+    /// <summary>Predecessor never bound the port (updater ran before bind); child binds immediately.</summary>
+    Startup,
+
+    /// <summary>Predecessor is a running host; child must wait for it to exit before binding (see HostHandoff).</summary>
+    Runtime,
+}
+
 /// <summary>
-/// Self-updates the host binary from the latest <c>v*</c> release at startup, then relaunches into the
-/// new build (before the server binds). No-ops on any failure. Pairs with <see cref="PluginUpdater"/>
-/// (binary vs plugin tree); the caller supplies the shared releases list and does the dev-checkout guard.
+/// Self-updates the host binary from the latest <c>v*</c> release and relaunches into it (the archive bundles
+/// the plugin tree, so the swap refreshes skills too). Two entry points: <see cref="TryUpdateAsync"/> (startup,
+/// swallows failures) and <see cref="UpdateNowAsync"/> (runtime, propagates failures for the endpoint to report).
 /// </summary>
 public static class HostUpdater
 {
@@ -37,7 +49,6 @@ public static class HostUpdater
         {
             return false;
         }
-        var installDir = Path.GetDirectoryName(exePath)!;
 
         var current = Version.Parse(SessionManager.HostVersion);
         var latest = ReleaseUpdates.SelectLatestAbove(releases, current);
@@ -47,19 +58,66 @@ public static class HostUpdater
             return false;
         }
 
-        var assetName = $"jobpilot-terminal-{CurrentRid()}{(OperatingSystem.IsWindows() ? ".zip" : ".tar.gz")}";
-        var asset = latest.Value.Release.Assets?.FirstOrDefault(a => string.Equals(a.Name, assetName, StringComparison.Ordinal));
-        if (asset?.DownloadUrl is null)
+        var downloadUrl = ResolveAssetUrl(logger, latest.Value);
+        if (downloadUrl is null)
         {
-            logger.LogInformation("Host release {Tag} has no {Asset} asset; skipping.", latest.Value.Release.TagName, assetName);
             return false;
         }
 
         logger.LogInformation("Updating host v{Current} -> v{Next}.", current, latest.Value.Version);
-        await SwapAsync(http, asset.DownloadUrl, exePath, installDir, ct);
-        Relaunch(exePath);
+        await SwapAsync(http, downloadUrl, exePath, Path.GetDirectoryName(exePath)!, ct);
+        Relaunch(exePath, RelaunchMode.Startup);
         logger.LogInformation("Host updated to v{Next}; relaunching.", latest.Value.Version);
         return true;
+    }
+
+    /// <summary>
+    /// Runtime self-update: swaps the binary and relaunches a detached child that waits for this process to exit
+    /// before binding (the caller then shuts down to hand off the port). Returns a non-updating result when
+    /// there's nothing to do; lets failures propagate so the endpoint can report them.
+    /// </summary>
+    public static async Task<UpdateResult> UpdateNowAsync(ILogger logger, HttpClient http, GitHubRelease[] releases, CancellationToken ct)
+    {
+        CleanupPreviousSwap(logger);
+
+        var exePath = Environment.ProcessPath
+            ?? throw new InvalidOperationException("Cannot resolve the host executable path.");
+
+        var current = Version.Parse(SessionManager.HostVersion);
+        var latest = ReleaseUpdates.SelectLatestAbove(releases, current);
+        if (latest is null)
+        {
+            return new UpdateResult { Updating = false, FromVersion = current.ToString(3), Reason = "up-to-date" };
+        }
+
+        var downloadUrl = ResolveAssetUrl(logger, latest.Value);
+        if (downloadUrl is null)
+        {
+            return new UpdateResult { Updating = false, FromVersion = current.ToString(3), Reason = "no-asset" };
+        }
+
+        logger.LogInformation("Runtime update host v{Current} -> v{Next}; relaunching and handing off port.", current, latest.Value.Version);
+        await SwapAsync(http, downloadUrl, exePath, Path.GetDirectoryName(exePath)!, ct);
+        Relaunch(exePath, RelaunchMode.Runtime);
+        return new UpdateResult
+        {
+            Updating = true,
+            FromVersion = current.ToString(3),
+            ToVersion = latest.Value.Version.ToString(3),
+        };
+    }
+
+    /// <summary>Download URL of the current RID's host archive in <paramref name="latest"/>, or null (logged) when absent.</summary>
+    private static string? ResolveAssetUrl(ILogger logger, (GitHubRelease Release, Version Version) latest)
+    {
+        var assetName = $"jobpilot-terminal-{CurrentRid()}{(OperatingSystem.IsWindows() ? ".zip" : ".tar.gz")}";
+        var asset = latest.Release.Assets?.FirstOrDefault(a => string.Equals(a.Name, assetName, StringComparison.Ordinal));
+        if (asset?.DownloadUrl is null)
+        {
+            logger.LogInformation("Host release {Tag} has no {Asset} asset; skipping.", latest.Release.TagName, assetName);
+            return null;
+        }
+        return asset.DownloadUrl;
     }
 
     /// <summary>
@@ -117,7 +175,7 @@ public static class HostUpdater
         }
     }
 
-    private static void Relaunch(string exePath)
+    private static void Relaunch(string exePath, RelaunchMode mode)
     {
         var psi = new ProcessStartInfo
         {
@@ -128,6 +186,11 @@ public static class HostUpdater
         foreach (var arg in Environment.GetCommandLineArgs().Skip(1))
         {
             psi.ArgumentList.Add(arg);
+        }
+        if (mode == RelaunchMode.Runtime)
+        {
+            // We still hold :4102: hand the child our pid so it waits for us to exit before binding.
+            psi.Environment[HostHandoff.AwaitPidVar] = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
         }
         Process.Start(psi);
     }

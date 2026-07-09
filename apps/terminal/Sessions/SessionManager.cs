@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using JobPilot.Terminal.Models;
+using JobPilot.Terminal.Plugins;
 using JobPilot.Terminal.Pty;
 
 namespace JobPilot.Terminal.Sessions;
@@ -48,6 +49,8 @@ public sealed class SessionManager : IDisposable
             PathsError = ex.Message;
             logger.LogError(ex, "Terminal host install is incomplete; sessions cannot start.");
         }
+        // Invariant for the process lifetime, so resolve once here rather than per /healthz poll.
+        CanUpdate = paths is not null && ReleaseUpdates.IsPublishedInstall(paths.ClaudePluginDir);
         broadcaster = new OutputBroadcaster(logger);
 
         pty.OutputReceived += OnPtyOutput;
@@ -58,6 +61,9 @@ public sealed class SessionManager : IDisposable
     /// Non-null when the plugin tree could not be resolved; /healthz reports the host as degraded.
     /// </summary>
     public string? PathsError { get; }
+
+    /// <summary>True when this is a published install (not a dev checkout), so the host can self-update.</summary>
+    public bool CanUpdate { get; }
 
     /// <summary>
     /// Gets the current terminal session state.

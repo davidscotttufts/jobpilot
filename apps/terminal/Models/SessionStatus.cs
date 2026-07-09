@@ -29,4 +29,8 @@ public sealed record SessionStatus
     /// <summary>True when the <c>jobpilot://</c> scheme is registered, so the dashboard can offer a one-click
     /// relaunch when the host is offline.</summary>
     public bool CanRelaunch { get; init; }
+
+    /// <summary>True when this is a published install (not a dev checkout), so the dashboard can offer a
+    /// one-click self-update via <c>POST /update</c>.</summary>
+    public bool CanUpdate { get; init; }
 }

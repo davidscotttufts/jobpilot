@@ -35,12 +35,15 @@ var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 // Register the jobpilot:// scheme so the dashboard can relaunch us from the browser when offline.
 ProtocolRegistrar.EnsureRegistered(loggerFactory.CreateLogger("Protocol"));
 
-// Auto-update host + plugin before binding. If the host self-updated it relaunched into the new build,
-// so exit and let that process bind the port.
-if (await StartupUpdater.RunAsync(loggerFactory.CreateLogger("Updater")))
+// Auto-update the host before binding, unless a runtime self-update already relaunched us into the latest build.
+// A self-update relaunches into the new build, so exit and let that process bind the port.
+if (!HostHandoff.IsUpdateRelaunch && await StartupUpdater.RunAsync(loggerFactory.CreateLogger("Updater")))
 {
     return;
 }
+
+// If a prior host relaunched us for a runtime self-update, wait for it to release :4102 before binding.
+await HostHandoff.WaitForParentExitAsync(loggerFactory.CreateLogger("Handoff"));
 
 app.UseTerminalPipeline();
 app.MapTerminalEndpoints();

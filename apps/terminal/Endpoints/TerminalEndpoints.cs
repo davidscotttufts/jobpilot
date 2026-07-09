@@ -1,3 +1,4 @@
+using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Models;
 using JobPilot.Terminal.Plugins;
 using JobPilot.Terminal.Realtime;
@@ -55,6 +56,29 @@ public static class TerminalEndpoints
             return TypedResults.Ok(CurrentStatus(session));
         });
 
+        app.MapPost("/update", async Task<Results<Ok<UpdateResult>, ProblemHttpResult>> (
+            SessionManager session, IHostApplicationLifetime lifetime, ILoggerFactory loggerFactory, CancellationToken ct) =>
+        {
+            var logger = loggerFactory.CreateLogger("RuntimeUpdater");
+            try
+            {
+                var result = await RuntimeUpdater.RunAsync(logger, session.CanUpdate, ct);
+                if (result.Updating)
+                {
+                    // Respond first, then release the port so the waiting child can bind.
+                    HostHandoff.BeginRelease(lifetime, ct);
+                }
+                return TypedResults.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.Problem(
+                    title: "Failed to update the terminal host",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status500InternalServerError);
+            }
+        });
+
         app.Map("/ws", async (HttpContext ctx, TerminalHub hub) =>
         {
             if (!ctx.WebSockets.IsWebSocketRequest)
@@ -83,5 +107,6 @@ public static class TerminalEndpoints
         HostVersion = SessionManager.HostVersion,
         Detail = session.PathsError,
         CanRelaunch = ProtocolRegistrar.IsRegistered,
+        CanUpdate = session.CanUpdate,
     };
 }

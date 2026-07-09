@@ -9,6 +9,7 @@ namespace JobPilot.Terminal.Models;
 [JsonSerializable(typeof(StartSessionRequest))]
 [JsonSerializable(typeof(InjectRequest))]
 [JsonSerializable(typeof(SessionStatus))]
+[JsonSerializable(typeof(UpdateResult))]
 [JsonSerializable(typeof(TerminalProviderInfo))]
 [JsonSerializable(typeof(TerminalProviderInfo[]))]
 // TypedResults.Problem returns this; the AOT serializer throws NotSupportedException without it.
