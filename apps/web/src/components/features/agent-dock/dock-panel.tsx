@@ -13,13 +13,16 @@ import {
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";
+import { readAgentStorage } from "@/lib/agent-storage";
 import { providerDisplayName } from "@/lib/terminal";
-import { readAgentStorage, useAgentDock } from "@/providers/agent-provider";
+import { useAgentDock } from "@/providers/agent-provider";
 import { AgentInstallCard } from "./agent-install-card";
 import { AgentOfflineCard } from "./agent-offline-card";
 import { AgentOrb } from "./agent-orb";
 import { AgentUpdateBanner } from "./agent-update-banner";
-import { useTerminalHealth, type TerminalHealth } from "./use-terminal-health";
+import { PendingRestartCard } from "./pending-restart-card";
+import { useDockHealth } from "./use-dock-health";
+import type { TerminalHealth } from "./use-terminal-health";
 
 const STATUS_LABELS: Record<TerminalHealth, string> = {
   checking: "connecting",
@@ -31,9 +34,10 @@ const STATUS_LABELS: Record<TerminalHealth, string> = {
 
 export function DockPanel(): ReactElement {
   const { collapse, provider, switchProvider, restart, stop, terminalRevision } = useAgentDock();
-  const { health, status, recheck } = useTerminalHealth();
+  const { health, status, recheck, pending, beginPending, unreachable } = useDockHealth();
   const providerLabel = providerDisplayName(provider);
-  const statusLabel = STATUS_LABELS[health];
+
+  const statusLabel = pending && unreachable ? `${pending}…` : STATUS_LABELS[health];
 
   const handleProviderChange = (event: SelectChangeEvent<string>): void => {
     void switchProvider(event.target.value === "codex" ? "codex" : "claude");
@@ -57,7 +61,11 @@ export function DockPanel(): ReactElement {
               Agent
             </Typography>
             <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
-              <PulseDot tone="muted" pulsing={health === "checking"} size="xs" />
+              <PulseDot
+                tone="muted"
+                pulsing={health === "checking" || (pending !== null && unreachable)}
+                size="xs"
+              />
               <Typography variant="overlineMuted">{statusLabel}</Typography>
               {status?.hostVersion && (
                 <Typography variant="overlineMuted">· v{status.hostVersion}</Typography>
@@ -75,14 +83,18 @@ export function DockPanel(): ReactElement {
           <LoadingSpinner />
         </Stack>
       )}
-      {health === "offline" && (
-        <AgentOfflineCard
-          onRecheck={recheck}
-          provider={provider}
-          // Live status while warm-offline; the persisted copy covers a cold reload (status is null then).
-          canRelaunch={status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false}
-        />
-      )}
+      {health === "offline" &&
+        (pending ? (
+          <PendingRestartCard action={pending} />
+        ) : (
+          <AgentOfflineCard
+            onRecheck={recheck}
+            onStart={() => beginPending("starting")}
+            provider={provider}
+            // Live status while warm-offline; the persisted copy covers a cold reload (status is null then).
+            canRelaunch={status?.canRelaunch ?? readAgentStorage()?.canRelaunch ?? false}
+          />
+        ))}
       {health === "uninstalled" && <AgentInstallCard onRecheck={recheck} />}
       {health === "degraded" && (
         <AgentInstallCard
@@ -100,6 +112,7 @@ export function DockPanel(): ReactElement {
               provider={provider}
               canUpdate={status.canUpdate}
               onUpdated={recheck}
+              onUpdating={() => beginPending("updating")}
             />
           )}
           <Stack

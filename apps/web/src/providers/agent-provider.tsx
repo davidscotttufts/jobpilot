@@ -10,6 +10,12 @@ import {
 } from "react";
 import { useMediaQuery } from "@mui/material";
 import {
+  getStoredExpanded,
+  getStoredProvider,
+  patchAgentStorage,
+  subscribeAgentStorage,
+} from "@/lib/agent-storage";
+import {
   formatSkillCommand,
   injectCommand,
   killSession,
@@ -17,71 +23,6 @@ import {
   type TerminalProviderId,
 } from "@/lib/terminal";
 import { useToast } from "@/providers/notification-provider";
-import { readLocalStorage, writeLocalStorage } from "@/utils/local-storage";
-
-const STORAGE_KEY = "jobpilot:agent";
-
-interface AgentStorage {
-  provider: TerminalProviderId;
-  dockWidth: number;
-  dockExpanded: boolean;
-  /** True once a local terminal host has ever answered /healthz from this browser. */
-  everReachable: boolean;
-  /** Last-reported host capability: the jobpilot:// scheme is registered, so it can be relaunched from the browser. */
-  canRelaunch: boolean;
-}
-
-const storageListeners = new Set<() => void>();
-
-function emitAgentStorageChange(): void {
-  for (const listener of storageListeners) {
-    listener();
-  }
-}
-
-let crossTabListenerAttached = false;
-function ensureCrossTabListener(): void {
-  if (crossTabListenerAttached || typeof window === "undefined") {
-    return;
-  }
-  crossTabListenerAttached = true;
-  window.addEventListener("storage", (e) => {
-    if (e.key === STORAGE_KEY) {
-      emitAgentStorageChange();
-    }
-  });
-}
-
-export function patchAgentStorage(patch: Partial<AgentStorage>): void {
-  const current = readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY) ?? {};
-  writeLocalStorage(STORAGE_KEY, { ...current, ...patch });
-  emitAgentStorageChange();
-}
-
-export function readAgentStorage(): Partial<AgentStorage> | null {
-  return readLocalStorage<Partial<AgentStorage>>(STORAGE_KEY);
-}
-
-/** Subscribe to agent-storage changes - same-tab patches and cross-tab writes. */
-export function subscribeAgentStorage(listener: () => void): () => void {
-  ensureCrossTabListener();
-  storageListeners.add(listener);
-  return () => {
-    storageListeners.delete(listener);
-  };
-}
-
-function getStoredProvider(): TerminalProviderId {
-  const p = readAgentStorage()?.provider;
-  return p === "codex" || p === "claude" ? p : "claude";
-}
-
-function getStoredExpanded(): boolean {
-  const stored = readAgentStorage();
-  // Default expanded until a host has ever connected, so new users see the install card;
-  // an explicit collapse (stored dockExpanded) always wins.
-  return stored?.dockExpanded ?? !stored?.everReachable;
-}
 
 export interface AgentContextValue {
   inject: (command: string) => Promise<void>;
@@ -111,6 +52,10 @@ function describeInjectError(error: unknown): string {
     if (error.status === 404) {
       return "Terminal session has ended. Restart it from the Terminal tab in the dock.";
     }
+    // The host answers 409 both for "not running" and for a provider mismatch.
+    if (error.status === 409 && /provider/i.test(error.message)) {
+      return "A different provider is running in the terminal. Switch provider in the dock or restart it.";
+    }
     if (error.status === 409 || error.status === 500) {
       return "No active terminal session. Open the Terminal tab in the dock and start one.";
     }
@@ -135,13 +80,26 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
   const [terminalRevision, setTerminalRevision] = useState(0);
 
   const stop = async (): Promise<void> => {
-    await killSession();
+    try {
+      await killSession();
+    } catch (error) {
+      toast.error(
+        error instanceof TerminalApiError
+          ? `Couldn't stop the terminal: ${error.message}`
+          : "The JobPilot agent isn't reachable, so there is nothing to stop.",
+      );
+    }
   };
 
   // Kill the host session and bump the revision so the TerminalPanel key changes,
-  // remounting it with a fresh xterm + a newly started session.
+  // remounting it with a fresh xterm + a newly started session. A failed kill still
+  // remounts - the fresh panel reports the host problem in place.
   const restart = async (): Promise<void> => {
-    await killSession();
+    try {
+      await killSession();
+    } catch {
+      // unreachable or already stopped
+    }
     setTerminalRevision((n) => n + 1);
   };
 
@@ -150,7 +108,11 @@ export function AgentProvider(props: PropsWithChildren): ReactElement {
       return;
     }
 
-    await killSession();
+    try {
+      await killSession();
+    } catch {
+      // unreachable or already stopped - starting the next provider replaces the session anyway
+    }
     patchAgentStorage({ provider: next });
     setTerminalRevision((n) => n + 1);
   };

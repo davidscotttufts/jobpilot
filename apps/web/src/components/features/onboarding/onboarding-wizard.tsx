@@ -24,7 +24,7 @@ import { queryKeys } from "@/api/query-keys";
 import { PersonalSection } from "@/components/features/settings/sections";
 import { useAppForm, withForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
-import { patchAgentStorage } from "@/providers/agent-provider";
+import { patchAgentStorage } from "@/lib/agent-storage";
 import { useToast } from "@/providers/notification-provider";
 import { AgentSetupStep } from "./agent-setup-step";
 import { ResumeUploadStep } from "./resume-upload-step";

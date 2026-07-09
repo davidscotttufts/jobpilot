@@ -20,16 +20,70 @@ interface TerminalPanelProps {
   provider: TerminalProviderId;
 }
 
+/** Shift+Enter as CSI-u, Ctrl+C copy-or-interrupt, Ctrl+V paste; everything else falls through to xterm. */
+function createKeyHandler(
+  terminal: Terminal,
+  sendInput: (b64: string) => void,
+): (event: KeyboardEvent) => boolean {
+  return (event) => {
+    if (event.type !== "keydown") {
+      return true;
+    }
+
+    if (event.key === "Enter" && event.shiftKey) {
+      event.preventDefault();
+      sendInput(SHIFT_ENTER_B64);
+      return false;
+    }
+    if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyC") {
+      // Copy when there's a selection, otherwise forward a single interrupt.
+      // Ctrl+C only interrupts the running process; the Stop button kills the session.
+      if (terminal.hasSelection()) {
+        event.preventDefault();
+        void navigator.clipboard?.writeText(terminal.getSelection());
+        return false;
+      }
+
+      event.preventDefault();
+      sendInput(CTRL_C_B64);
+      return false;
+    }
+    if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyV") {
+      event.preventDefault();
+      void navigator.clipboard?.readText().then((text) => {
+        if (text) {
+          sendInput(toBase64(text));
+        }
+      });
+      return false;
+    }
+    return true;
+  };
+}
+
 /** xterm.js bridged to a JobPilot.Terminal PTY over WebSocket; Shift+Enter sent as CSI-u `ESC[13;2u`. */
 export function TerminalPanel(props: TerminalPanelProps): ReactElement {
   const { provider } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const terminalRef = useRef<Terminal | null>(null);
   const theme = useTheme();
 
   const background = theme.palette.surfaces.base;
   const foreground = theme.palette.text.primary;
   const cursor = theme.palette.primary.main;
   const selection = `${theme.palette.primary.main}40`;
+
+  const themeRef = useRef({ background, foreground, cursor, selectionBackground: selection });
+
+  // Retheme the live terminal in place - remounting it would wipe the visible session.
+  useEffect(() => {
+    const next = { background, foreground, cursor, selectionBackground: selection };
+    themeRef.current = next;
+    const terminal = terminalRef.current;
+    if (terminal) {
+      terminal.options.theme = next;
+    }
+  }, [background, foreground, cursor, selection]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -44,8 +98,9 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       scrollOnUserInput: true,
       smoothScrollDuration: 0,
       windowsPty: { backend: "conpty" },
-      theme: { background, foreground, cursor, selectionBackground: selection },
+      theme: themeRef.current,
     });
+    terminalRef.current = terminal;
 
     const fit = new FitAddon();
     terminal.loadAddon(fit);
@@ -63,54 +118,24 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       }
     };
 
-    terminal.attachCustomKeyEventHandler((event) => {
-      if (event.type !== "keydown") {
-        return true;
-      }
+    // sendJson is a no-op after the socket closes, so late key events are harmless.
+    const sendInput = (data: string): void => {
+      socket?.sendJson({ type: "input", data });
+    };
 
-      if (event.key === "Enter" && event.shiftKey) {
-        event.preventDefault();
-        socket?.sendJson({ type: "input", data: SHIFT_ENTER_B64 });
-        return false;
-      }
-      if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyC") {
-        // Copy when there's a selection, otherwise forward a single interrupt.
-        // Ctrl+C only interrupts the running process; the Stop button kills the session.
-        if (terminal.hasSelection()) {
-          event.preventDefault();
-          void navigator.clipboard?.writeText(terminal.getSelection());
-          return false;
-        }
-
-        event.preventDefault();
-        socket?.sendJson({ type: "input", data: CTRL_C_B64 });
-        return false;
-      }
-      if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === "KeyV") {
-        event.preventDefault();
-        void navigator.clipboard?.readText().then((text) => {
-          if (text && !disposed) {
-            socket?.sendJson({ type: "input", data: toBase64(text) });
-          }
-        });
-        return false;
-      }
-      return true;
-    });
-
-    terminal.onData((data) => {
-      socket?.sendJson({ type: "input", data: toBase64(data) });
-    });
+    terminal.attachCustomKeyEventHandler(createKeyHandler(terminal, sendInput));
+    terminal.onData((data) => sendInput(toBase64(data)));
 
     const start = async (): Promise<void> => {
+      terminal.writeln("\x1b[2m[terminal] connecting…\x1b[0m");
+
       // Fetch the token while the container settles - it's independent of terminal size.
       const tokenPromise = api.auth.tokens.terminal.post();
 
+      const { data, error } = await tokenPromise;
       if (disposed) {
         return;
       }
-
-      const { data, error } = await tokenPromise;
       if (error) {
         terminal.writeln(
           `\x1b[31m[terminal] couldn't authenticate the agent - sign in to JobPilot, then restart the terminal. (${error.value.message})\x1b[0m`,
@@ -129,6 +154,9 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
           apiUrl: API_BASE_URL,
         });
       } catch (err) {
+        if (disposed) {
+          return;
+        }
         const message = (err as Error).message;
         terminal.writeln(`\x1b[31m[terminal] failed to start session: ${message}\x1b[0m`);
         if (/Failed to start '(claude|codex)'/.test(message)) {
@@ -138,18 +166,19 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
         }
         return;
       }
+      if (disposed) {
+        return;
+      }
 
+      // socket.close() in the cleanup detaches these callbacks, so none can hit a disposed terminal.
+      const write = (data: string | Uint8Array): void => {
+        terminal.write(data);
+      };
       socket = connectWebSocket(TERMINAL_WS_URL, {
         onOpen: () => fitAndResize(),
-        onBinary: (data) => {
-          terminal.write(data);
-        },
-        onText: (data) => {
-          terminal.write(data);
-        },
-        onClose: () => {
-          terminal.write("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n");
-        },
+        onBinary: write,
+        onText: write,
+        onClose: () => write("\r\n\x1b[33m[terminal] disconnected\x1b[0m\r\n"),
       });
     };
 
@@ -171,9 +200,10 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       }
       observer.disconnect();
       socket?.close(1000, "panel unmounted");
+      terminalRef.current = null;
       terminal.dispose();
     };
-  }, [provider, background, foreground, cursor, selection]);
+  }, [provider]);
 
   return (
     <Box

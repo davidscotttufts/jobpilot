@@ -13,6 +13,8 @@ import { RecheckButton } from "./recheck-button";
 
 interface AgentOfflineCardProps {
   onRecheck: () => void;
+  /** Marks a host relaunch as in flight, so the dock shows its starting state and polls fast. */
+  onStart: () => void;
   provider: TerminalProviderId;
   /** Whether the host reported the jobpilot:// scheme is registered, so the browser can relaunch it. */
   canRelaunch: boolean;
@@ -20,7 +22,7 @@ interface AgentOfflineCardProps {
 
 /** Shown when a host previously connected from this browser but isn't answering now - installed, just stopped. */
 export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
-  const { onRecheck, provider, canRelaunch } = props;
+  const { onRecheck, onStart, provider, canRelaunch } = props;
   const providerLabel = providerDisplayName(provider);
 
   return (
@@ -34,12 +36,7 @@ export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
       </Stack>
 
       {canRelaunch && (
-        <Button
-          variant="contained"
-          component="a"
-          href={TERMINAL_PROTOCOL_URL}
-          onClick={() => setTimeout(onRecheck, 1500)}
-        >
+        <Button variant="contained" component="a" href={TERMINAL_PROTOCOL_URL} onClick={onStart}>
           Start agent
         </Button>
       )}

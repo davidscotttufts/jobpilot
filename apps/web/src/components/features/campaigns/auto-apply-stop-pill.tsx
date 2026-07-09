@@ -12,7 +12,7 @@ import type { CampaignDto } from "@/api/types";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
-import { readAgentStorage, subscribeAgentStorage } from "@/providers/agent-provider";
+import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
 
 const FILTERS = {
   status: "in_progress" satisfies CampaignStatus,

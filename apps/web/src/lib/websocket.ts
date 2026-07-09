@@ -4,7 +4,10 @@ export interface WebSocketClient {
   /** Current native WebSocket readyState. */
   readonly readyState: number;
 
-  /** Close the socket with an optional WebSocket close code and reason. */
+  /**
+   * Close the socket with an optional WebSocket close code and reason.
+   * Also detaches every callback: the caller is tearing down, so nothing fires after this.
+   */
   close: (code?: number, reason?: string) => void;
 
   /** Send a JSON message if the socket is open. Returns false otherwise. */
@@ -46,6 +49,7 @@ export function connectWebSocket(url: string, options: WebSocketOptions = {}): W
       return socket.readyState;
     },
     close(code, reason) {
+      detach();
       socket.close(code, reason);
     },
     sendJson(message) {
@@ -57,25 +61,34 @@ export function connectWebSocket(url: string, options: WebSocketOptions = {}): W
     },
   };
 
-  socket.addEventListener("open", (event) => {
+  const handleOpen = (event: Event): void => {
     options.onOpen?.(client, event);
-  });
-
-  socket.addEventListener("message", (event) => {
+  };
+  const handleMessage = (event: MessageEvent): void => {
     if (event.data instanceof ArrayBuffer) {
       options.onBinary?.(new Uint8Array(event.data), event as MessageEvent<ArrayBuffer>);
     } else if (typeof event.data === "string") {
       options.onText?.(event.data, event as MessageEvent<string>);
     }
-  });
-
-  socket.addEventListener("close", (event) => {
+  };
+  const handleClose = (event: CloseEvent): void => {
     options.onClose?.(event);
-  });
-
-  socket.addEventListener("error", (event) => {
+  };
+  const handleError = (event: Event): void => {
     options.onError?.(event);
-  });
+  };
+
+  const detach = (): void => {
+    socket.removeEventListener("open", handleOpen);
+    socket.removeEventListener("message", handleMessage);
+    socket.removeEventListener("close", handleClose);
+    socket.removeEventListener("error", handleError);
+  };
+
+  socket.addEventListener("open", handleOpen);
+  socket.addEventListener("message", handleMessage);
+  socket.addEventListener("close", handleClose);
+  socket.addEventListener("error", handleError);
 
   return client;
 }
