@@ -25,6 +25,8 @@ public static class HostingExtensions
                 .AllowAnyMethod()));
         services.AddSingleton<HostInstall>();
         services.AddSingleton<ProtocolRegistrar>();
+        services.AddSingleton<GitHubReleaseClient>();
+        services.AddSingleton<ReleaseInstaller>();
         services.AddSingleton<HostUpdateService>();
         services.AddSingleton<IPty, PtyProcess>();
         services.AddSingleton<SessionManager>();
@@ -34,6 +36,9 @@ public static class HostingExtensions
 
         // Production otherwise returns an empty 400 for binding failures, while the web expects ProblemDetails.
         services.Configure<RouteHandlerOptions>(o => o.ThrowOnBadRequest = true);
+
+        // Must stay below HostHandoff.MaxWait or an update's relaunched child times out and fails to bind.
+        services.Configure<HostOptions>(o => o.ShutdownTimeout = TimeSpan.FromSeconds(5));
 
         return services;
     }
@@ -72,8 +77,15 @@ public static class HostingExtensions
         }
         app.UseWebSockets(webSockets);
 
+        // Resolve the hub before the first /ws request so pre-connect output reaches its replay buffer.
+        var hub = app.Services.GetRequiredService<TerminalHub>();
+
         app.Lifetime.ApplicationStopping.Register(() =>
-            app.Services.GetRequiredService<SessionManager>().Stop());
+        {
+            app.Services.GetRequiredService<SessionManager>().Stop();
+            // Open sockets otherwise hold Kestrel's graceful stop for the full shutdown timeout.
+            hub.AbortAll();
+        });
 
         return app;
     }

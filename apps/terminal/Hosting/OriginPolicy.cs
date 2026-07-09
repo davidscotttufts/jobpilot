@@ -14,6 +14,7 @@ public static class OriginPolicy
     private static readonly string[] Defaults =
     [
         "http://localhost:4100",
+        "http://127.0.0.1:4100",
         "https://jobpilot.suxrobgm.net",
     ];
 

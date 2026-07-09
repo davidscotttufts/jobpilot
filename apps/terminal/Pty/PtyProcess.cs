@@ -27,10 +27,14 @@ public sealed class PtyProcess : IPty
             ? NativeLibrary.Load("kernel32.dll")
             : IntPtr.Zero;
 
+    // Give Pty.Net's exit event a chance to deliver the real code before the EOF fallback reports one.
+    private static readonly TimeSpan EofExitGrace = TimeSpan.FromMilliseconds(500);
+
     private readonly Lock connectionLock = new();
 
     private IPtyConnection? connection;
     private int generation;
+    private int exitRaisedGeneration;
 
     /// <inheritdoc />
     public event Action<byte[]>? OutputReceived;
@@ -69,7 +73,7 @@ public sealed class PtyProcess : IPty
         }
 
         // Do not suppress killed-process exits; their generation lets SessionManager discard stale ones.
-        spawned.ProcessExited += (_, e) => ProcessExited?.Invoke(new PtyExit(gen, e.ExitCode));
+        spawned.ProcessExited += (_, e) => NotifyExit(gen, e.ExitCode);
 
         lock (connectionLock)
         {
@@ -138,7 +142,17 @@ public sealed class PtyProcess : IPty
             while (Volatile.Read(ref generation) == gen)
             {
                 var bytesRead = active.ReaderStream.Read(buffer, 0, buffer.Length);
-                if (bytesRead <= 0) break;
+                if (bytesRead <= 0)
+                {
+                    // EOF means the process died. Pty.Net's exit event can be missed when the process
+                    // dies before Start subscribes, so raise a fallback exit; NotifyExit dedupes.
+                    Thread.Sleep(EofExitGrace);
+                    if (Volatile.Read(ref generation) == gen)
+                    {
+                        NotifyExit(gen, TryGetExitCode(active));
+                    }
+                    break;
+                }
 
                 if (Volatile.Read(ref generation) != gen) break;
 
@@ -148,6 +162,28 @@ public sealed class PtyProcess : IPty
         catch when (Volatile.Read(ref generation) != gen)
         {
             // Stop closed this generation's stream.
+        }
+    }
+
+    /// <summary>Raises at most one exit per generation; the real event and the EOF fallback both call it.</summary>
+    private void NotifyExit(int gen, int exitCode)
+    {
+        if (Interlocked.Exchange(ref exitRaisedGeneration, gen) == gen)
+        {
+            return;
+        }
+        ProcessExited?.Invoke(new PtyExit(gen, exitCode));
+    }
+
+    private static int TryGetExitCode(IPtyConnection connection)
+    {
+        try
+        {
+            return connection.ExitCode;
+        }
+        catch
+        {
+            return -1;
         }
     }
 

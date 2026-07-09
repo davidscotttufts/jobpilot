@@ -19,9 +19,15 @@ public sealed class TerminalHub : IDisposable
 
     private const int MaxMessageBytes = 1024 * 1024;
 
+    private const int ReplayCapacityBytes = 512 * 1024;
+
     private readonly SessionManager session;
     private readonly ILogger<TerminalHub> logger;
     private readonly ConcurrentDictionary<WebSocket, Channel<byte[]>> clients = new();
+
+    // Guards the replay buffer and orders client registration against broadcasts (no gap, no duplication).
+    private readonly Lock replayLock = new();
+    private readonly ReplayBuffer replay = new(ReplayCapacityBytes);
 
     public TerminalHub(SessionManager session, ILogger<TerminalHub> logger)
     {
@@ -30,6 +36,7 @@ public sealed class TerminalHub : IDisposable
 
         session.Output += Broadcast;
         session.Exited += OnSessionExited;
+        session.Starting += OnSessionStarting;
     }
 
     /// <summary>Serves one terminal WebSocket connection.</summary>
@@ -43,7 +50,14 @@ public sealed class TerminalHub : IDisposable
             FullMode = BoundedChannelFullMode.Wait,
         });
 
-        clients[socket] = outbox;
+        lock (replayLock)
+        {
+            foreach (var chunk in replay.Chunks)
+            {
+                outbox.Writer.TryWrite(chunk);
+            }
+            clients[socket] = outbox;
+        }
         logger.LogInformation("WebSocket client connected.");
 
         using var connectionEnded = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -62,19 +76,55 @@ public sealed class TerminalHub : IDisposable
         }
     }
 
-    /// <summary>Queues output for every connected client.</summary>
+    /// <summary>Buffers output for replay and queues it for every connected client.</summary>
     private void Broadcast(byte[] data)
     {
-        foreach (var (socket, outbox) in clients)
+        List<WebSocket>? lagging = null;
+        lock (replayLock)
         {
-            if (outbox.Writer.TryWrite(data))
-            {
-                continue;
-            }
+            replay.Append(data);
 
+            foreach (var (socket, outbox) in clients)
+            {
+                if (!outbox.Writer.TryWrite(data))
+                {
+                    (lagging ??= []).Add(socket);
+                }
+            }
+        }
+
+        // Abort outside the lock: tearing down a socket must not stall the PTY reader or new connections.
+        if (lagging is null)
+        {
+            return;
+        }
+        foreach (var socket in lagging)
+        {
             logger.LogWarning("Dropping a WebSocket client that fell {Capacity} chunks behind.", OutboxCapacity);
-            Unregister(socket);
-            socket.Abort();
+            Drop(socket);
+        }
+    }
+
+    /// <summary>Aborts every client so an open socket cannot stall host shutdown.</summary>
+    public void AbortAll()
+    {
+        foreach (var (socket, _) in clients)
+        {
+            Drop(socket);
+        }
+    }
+
+    private void Drop(WebSocket socket)
+    {
+        Unregister(socket);
+        socket.Abort();
+    }
+
+    private void OnSessionStarting()
+    {
+        lock (replayLock)
+        {
+            replay.Clear();
         }
     }
 
@@ -232,6 +282,7 @@ public sealed class TerminalHub : IDisposable
     {
         session.Output -= Broadcast;
         session.Exited -= OnSessionExited;
+        session.Starting -= OnSessionStarting;
 
         foreach (var (socket, _) in clients)
         {

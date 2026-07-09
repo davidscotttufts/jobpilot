@@ -4,7 +4,11 @@ using JobPilot.Terminal.Contracts;
 namespace JobPilot.Terminal.Updates;
 
 /// <summary>Coordinates startup and dashboard-triggered host updates.</summary>
-public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostInstall install)
+public sealed class HostUpdateService(
+    ILogger<HostUpdateService> logger,
+    HostInstall install,
+    GitHubReleaseClient releases,
+    ReleaseInstaller installer)
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(20);
 
@@ -22,17 +26,16 @@ public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostIns
                 return false;
             }
 
-            using var http = ReleaseInstaller.CreateClient();
             using var cts = new CancellationTokenSource(StartupTimeout);
 
-            var releases = await ReleaseInstaller.FetchReleasesAsync(http, cts.Token);
-            if (releases is null)
+            var available = await releases.FetchReleasesAsync(cts.Token);
+            if (available is null)
             {
                 return false;
             }
 
-            ReleaseInstaller.CleanupPreviousSwap(logger);
-            var result = await ApplyLatestAsync(http, releases, RelaunchMode.Startup, cts.Token);
+            installer.CleanupPreviousSwap();
+            var result = await ApplyLatestAsync(available, RelaunchMode.Startup, cts.Token);
             if (result.Updating)
             {
                 logger.LogInformation("Host updated to v{Next}; relaunching.", result.ToVersion);
@@ -64,12 +67,11 @@ public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostIns
         var releaseGate = true;
         try
         {
-            using var http = ReleaseInstaller.CreateClient();
-            var releases = await ReleaseInstaller.FetchReleasesAsync(http, ct)
+            var available = await releases.FetchReleasesAsync(ct)
                 ?? throw new InvalidOperationException("Could not read the GitHub releases list.");
 
-            ReleaseInstaller.CleanupPreviousSwap(logger);
-            var result = await ApplyLatestAsync(http, releases, RelaunchMode.Runtime, ct);
+            installer.CleanupPreviousSwap();
+            var result = await ApplyLatestAsync(available, RelaunchMode.Runtime, ct);
             if (result.Updating)
             {
                 releaseGate = false; // The process is shutting down; no second swap may start.
@@ -86,28 +88,28 @@ public sealed class HostUpdateService(ILogger<HostUpdateService> logger, HostIns
     }
 
     /// <summary>Swaps in the newest release above the running version, then relaunches into it.</summary>
-    private async Task<UpdateResult> ApplyLatestAsync(HttpClient http, GitHubRelease[] releases, RelaunchMode mode, CancellationToken ct)
+    private async Task<UpdateResult> ApplyLatestAsync(GitHubRelease[] available, RelaunchMode mode, CancellationToken ct)
     {
         var exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException("Cannot resolve the host executable path.");
 
         var current = Version.Parse(HostInstall.HostVersion);
-        var latest = ReleaseInstaller.SelectLatestAbove(releases, current);
+        var latest = GitHubReleaseClient.SelectLatestAbove(available, current);
         if (latest is null)
         {
             logger.LogInformation("Host is up to date (v{Current}).", current);
             return NotUpdating(current.ToString(3), UpdateResult.ReasonUpToDate);
         }
 
-        var downloadUrl = ReleaseInstaller.ResolveAssetUrl(logger, latest.Value);
+        var downloadUrl = releases.ResolveAssetUrl(latest.Value);
         if (downloadUrl is null)
         {
             return NotUpdating(current.ToString(3), UpdateResult.ReasonNoAsset);
         }
 
         logger.LogInformation("Updating host v{Current} -> v{Next} ({Mode}).", current, latest.Value.Version, mode);
-        await ReleaseInstaller.SwapAsync(http, downloadUrl, exePath, Path.GetDirectoryName(exePath)!, ct);
-        ReleaseInstaller.Relaunch(exePath, mode);
+        await installer.SwapAsync(downloadUrl, exePath, Path.GetDirectoryName(exePath)!, ct);
+        installer.Relaunch(exePath, mode);
 
         return new UpdateResult
         {

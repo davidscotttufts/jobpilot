@@ -2,24 +2,8 @@ using System.Diagnostics;
 using System.Formats.Tar;
 using System.Globalization;
 using System.IO.Compression;
-using System.Net.Http.Headers;
-using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using JobPilot.Terminal.Hosting;
-using JobPilot.Terminal.Contracts;
 
 namespace JobPilot.Terminal.Updates;
-
-/// <summary>Fields read from a GitHub release.</summary>
-public sealed record GitHubRelease(
-    [property: JsonPropertyName("tag_name")] string? TagName,
-    [property: JsonPropertyName("assets")] GitHubAsset[]? Assets);
-
-/// <summary>Fields read from a GitHub release asset.</summary>
-public sealed record GitHubAsset(
-    [property: JsonPropertyName("name")] string? Name,
-    [property: JsonPropertyName("browser_download_url")] string? DownloadUrl);
 
 /// <summary>Update relaunch behavior.</summary>
 public enum RelaunchMode
@@ -32,70 +16,12 @@ public enum RelaunchMode
 }
 
 /// <summary>Downloads, validates, and installs host releases.</summary>
-internal static class ReleaseInstaller
+public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<ReleaseInstaller> logger)
 {
-    private const string ReleasesUrl = "https://api.github.com/repos/suxrobGM/jobpilot/releases?per_page=30";
-
-    private const string TagPrefix = "v";
-
-    public static HttpClient CreateClient()
-    {
-        // Callers bound every request with a cancellation token.
-        var http = new HttpClient { Timeout = Timeout.InfiniteTimeSpan };
-        http.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("jobpilot-terminal", HostInstall.HostVersion));
-        http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        return http;
-    }
-
-    /// <summary>Fetches available releases.</summary>
-    public static async Task<GitHubRelease[]?> FetchReleasesAsync(HttpClient http, CancellationToken ct)
-    {
-        var json = await http.GetStringAsync(ReleasesUrl, ct);
-        return JsonSerializer.Deserialize(json, AppJsonContext.Default.GitHubReleaseArray);
-    }
-
-    /// <summary>Finds the highest newer <c>vX.Y.Z</c> release.</summary>
-    public static (GitHubRelease Release, Version Version)? SelectLatestAbove(GitHubRelease[] releases, Version current)
-    {
-        GitHubRelease? best = null;
-        Version? bestVersion = null;
-        foreach (var release in releases)
-        {
-            if (release.TagName is null || !release.TagName.StartsWith(TagPrefix, StringComparison.Ordinal))
-            {
-                continue;
-            }
-            if (!Version.TryParse(release.TagName[TagPrefix.Length..], out var version))
-            {
-                continue;
-            }
-            if (bestVersion is null || version > bestVersion)
-            {
-                bestVersion = version;
-                best = release;
-            }
-        }
-
-        return best is not null && bestVersion is not null && bestVersion > current ? (best, bestVersion) : null;
-    }
-
-    /// <summary>Finds the current platform's release asset.</summary>
-    public static string? ResolveAssetUrl(ILogger logger, (GitHubRelease Release, Version Version) latest)
-    {
-        var assetName = $"jobpilot-terminal-{CurrentRid()}{(OperatingSystem.IsWindows() ? ".zip" : ".tar.gz")}";
-        var asset = latest.Release.Assets?.FirstOrDefault(a => string.Equals(a.Name, assetName, StringComparison.Ordinal));
-        if (asset?.DownloadUrl is null)
-        {
-            logger.LogInformation("Host release {Tag} has no {Asset} asset; skipping.", latest.Release.TagName, assetName);
-            return null;
-        }
-        return asset.DownloadUrl;
-    }
-
     /// <summary>
     /// Stages and validates a release, renames the running executable, and rolls back files if copying fails.
     /// </summary>
-    public static async Task SwapAsync(HttpClient http, string url, string exePath, string installDir, CancellationToken ct)
+    public async Task SwapAsync(string url, string exePath, string installDir, CancellationToken ct)
     {
         var staging = installDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + ".new";
         DeleteIfExists(staging);
@@ -103,7 +29,7 @@ internal static class ReleaseInstaller
 
         try
         {
-            await DownloadAndExtractAsync(http, url, staging, ct);
+            await DownloadAndExtractAsync(url, staging, ct);
 
             var exeName = Path.GetFileName(exePath);
             if (!IsValidHost(staging, exeName))
@@ -116,7 +42,7 @@ internal static class ReleaseInstaller
             File.Move(exePath, oldExe);
             try
             {
-                ApplyStaged(staging, installDir);
+                StagedApply.Run(staging, installDir);
             }
             catch
             {
@@ -136,7 +62,7 @@ internal static class ReleaseInstaller
     }
 
     /// <summary>Deletes the previous executable after its process exits.</summary>
-    public static void CleanupPreviousSwap(ILogger logger)
+    public void CleanupPreviousSwap()
     {
         if (Environment.ProcessPath is null)
         {
@@ -153,7 +79,7 @@ internal static class ReleaseInstaller
     }
 
     /// <summary>Launches the installed binary with the current arguments.</summary>
-    public static void Relaunch(string exePath, RelaunchMode mode)
+    public void Relaunch(string exePath, RelaunchMode mode)
     {
         var psi = new ProcessStartInfo
         {
@@ -165,6 +91,7 @@ internal static class ReleaseInstaller
         {
             psi.ArgumentList.Add(arg);
         }
+        psi.Environment[HostHandoff.JustUpdatedVar] = "1";
         if (mode == RelaunchMode.Runtime)
         {
             psi.Environment[HostHandoff.AwaitPidVar] = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
@@ -173,16 +100,12 @@ internal static class ReleaseInstaller
     }
 
     /// <summary>Downloads and extracts a release archive.</summary>
-    public static async Task DownloadAndExtractAsync(HttpClient http, string url, string destDir, CancellationToken ct)
+    private async Task DownloadAndExtractAsync(string url, string destDir, CancellationToken ct)
     {
         var archive = Path.GetTempFileName();
         try
         {
-            await using (var download = await http.GetStreamAsync(url, ct))
-            await using (var file = File.Create(archive))
-            {
-                await download.CopyToAsync(file, ct);
-            }
+            await releases.DownloadAsync(url, archive, ct);
 
             if (url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
@@ -214,94 +137,5 @@ internal static class ReleaseInstaller
     {
         return File.Exists(Path.Combine(dir, exeName))
             && File.Exists(Path.Combine(dir, "plugin", ".claude-plugin", "plugin.json"));
-    }
-
-    /// <summary>Copies staged files while tracking enough state to roll back a partial copy.</summary>
-    internal static void ApplyStaged(string stagingDir, string installDir)
-    {
-        var backupDir = installDir.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + ".bak";
-        DeleteIfExists(backupDir);
-        Directory.CreateDirectory(backupDir);
-
-        var replaced = new List<(string Target, string Backup)>();
-        var created = new List<string>();
-
-        try
-        {
-            foreach (var file in Directory.GetFiles(stagingDir, "*", SearchOption.AllDirectories))
-            {
-                var relative = Path.GetRelativePath(stagingDir, file);
-                var target = Path.Combine(installDir, relative);
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-
-                if (File.Exists(target))
-                {
-                    var backup = Path.Combine(backupDir, relative);
-                    Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
-                    File.Copy(target, backup, overwrite: true);
-                    replaced.Add((target, backup));
-                }
-                else
-                {
-                    created.Add(target);
-                }
-
-                File.Copy(file, target, overwrite: true);
-            }
-        }
-        catch
-        {
-            Rollback(replaced, created);
-            throw;
-        }
-        finally
-        {
-            try
-            {
-                DeleteIfExists(backupDir);
-            }
-            catch (IOException)
-            {
-                // A later swap retries backup cleanup.
-            }
-        }
-    }
-
-    private static void Rollback(List<(string Target, string Backup)> replaced, List<string> created)
-    {
-        foreach (var (target, backup) in replaced)
-        {
-            try
-            {
-                File.Copy(backup, target, overwrite: true);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                // Continue restoring the remaining files.
-            }
-        }
-
-        foreach (var target in created)
-        {
-            try
-            {
-                File.Delete(target);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-            }
-        }
-    }
-
-    private static string CurrentRid()
-    {
-        var os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
-        var arch = RuntimeInformation.OSArchitecture switch
-        {
-            Architecture.X64 => "x64",
-            Architecture.Arm64 => "arm64",
-            _ => throw new PlatformNotSupportedException($"Unsupported architecture: {RuntimeInformation.OSArchitecture}"),
-        };
-        return $"{os}-{arch}";
     }
 }

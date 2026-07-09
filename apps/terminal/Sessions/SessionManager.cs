@@ -37,6 +37,9 @@ public sealed class SessionManager : IDisposable
     /// <summary>Raised for terminal output.</summary>
     public event Action<byte[]>? Output;
 
+    /// <summary>Raised just before a new provider session spawns, so replay buffers reset ahead of its output.</summary>
+    public event Action? Starting;
+
     /// <summary>Raised when the current process exits.</summary>
     public event Action<SessionExit>? Exited;
 
@@ -97,6 +100,8 @@ public sealed class SessionManager : IDisposable
                 ["JOBPILOT_API_TOKEN"] = FromRequestOrEnv(apiToken, "JOBPILOT_API_TOKEN", ""),
                 ["JOBPILOT_WEB"] = FromRequestOrEnv(webUrl, "JOBPILOT_WEB", "http://localhost:4100")
             };
+
+            Starting?.Invoke();
 
             try
             {

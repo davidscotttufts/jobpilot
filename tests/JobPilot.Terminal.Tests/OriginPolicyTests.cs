@@ -19,7 +19,9 @@ public class OriginPolicyTests
     {
         var origins = OriginPolicy.Resolve(Config());
 
-        Assert.Equal(["http://localhost:4100", "https://jobpilot.suxrobgm.net"], origins);
+        Assert.Equal(
+            ["http://localhost:4100", "http://127.0.0.1:4100", "https://jobpilot.suxrobgm.net"],
+            origins);
     }
 
     [Fact]
