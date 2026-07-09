@@ -24,6 +24,18 @@ export interface SessionStatus {
   detail?: string | null;
   /** True when the host registered the jobpilot:// scheme, so the browser can relaunch it when offline. */
   canRelaunch: boolean;
+  /** True when this is a published install, so the dashboard can offer a one-click self-update. */
+  canUpdate: boolean;
+}
+
+/** Outcome of a dashboard-triggered host self-update (POST /update). */
+export interface UpdateResult {
+  /** True when the host swapped + relaunched and is shutting down; the health poll rides it back to reachable. */
+  updating: boolean;
+  fromVersion: string;
+  toVersion?: string | null;
+  /** Why nothing happened: the host is current, a dev checkout, already updating, or missing a build for this platform. */
+  reason?: "up-to-date" | "dev-checkout" | "in-progress" | "no-asset" | null;
 }
 
 export class TerminalApiError extends Error {
@@ -90,6 +102,11 @@ export function injectCommand(command: string, provider?: TerminalProviderId): P
 
 export function killSession(): Promise<SessionStatus> {
   return send<SessionStatus>("DELETE", "/sessions/current");
+}
+
+/** Ask the running host to self-update and relaunch; on `updating: true` poll health to see it return on the new version. */
+export function triggerUpdate(): Promise<UpdateResult> {
+  return send<UpdateResult>("POST", "/update");
 }
 
 export function providerDisplayName(provider: TerminalProviderId): string {

@@ -94,7 +94,14 @@ export function DockPanel(): ReactElement {
       )}
       {health === "reachable" && (
         <>
-          {status && <AgentUpdateBanner currentVersion={status.hostVersion} provider={provider} />}
+          {status && (
+            <AgentUpdateBanner
+              currentVersion={status.hostVersion}
+              provider={provider}
+              canUpdate={status.canUpdate}
+              onUpdated={recheck}
+            />
+          )}
           <Stack
             direction="row"
             spacing={0.75}
