@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import {
   OUTREACH_MESSAGE_TERMINAL_STATUSES,

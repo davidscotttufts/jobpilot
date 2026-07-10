@@ -59,7 +59,7 @@ export function ProfileEnhancer(): ReactElement {
   const status: UpworkProfileStatus = profile?.status ?? "empty";
   const hasSuggestion = Boolean(
     profile &&
-    (profile.suggestedTitle || profile.suggestedOverview || profile.suggestedPortfolio.length),
+      (profile.suggestedTitle || profile.suggestedOverview || profile.suggestedPortfolio.length),
   );
 
   return (

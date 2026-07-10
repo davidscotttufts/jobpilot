@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { editorial, fontFamilies } from "@/theme";
-import { panelCellSx, PanelFrame } from "./panel-frame";
+import { PanelFrame, panelCellSx } from "./panel-frame";
 
 const VARIANTS = [
   { name: "Base resume", target: "your source of truth", score: "" },

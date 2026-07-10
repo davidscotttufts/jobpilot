@@ -22,7 +22,7 @@ export class EmailSyncService {
   ) {}
 
   async syncInbox(userId: string, profileId: string) {
-    let loaded;
+    let loaded: Awaited<ReturnType<typeof loadFreshAccount>>;
     try {
       loaded = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
     } catch (e) {

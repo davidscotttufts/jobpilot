@@ -7,9 +7,9 @@ import type {
 } from "@jobpilot/contracts/upwork";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
-import { PrismaClient, type Prisma } from "@/generated/prisma/client";
-import { scoreUpworkClient } from "./upwork-quality";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { decodeUpworkProposal, toUpworkProfileDto } from "./upwork.mapper";
+import { scoreUpworkClient } from "./upwork-quality";
 
 /** Plain column writes - shared by upsert's create and update (no Prisma field-op wrappers). */
 interface UpworkProfileFields {

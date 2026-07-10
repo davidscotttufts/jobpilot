@@ -11,6 +11,7 @@ export function JsonLd(props: JsonLdProps): ReactElement {
   return (
     <script
       type="application/ld+json"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: only way to emit ld+json; `<` is escaped above
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
     />
   );

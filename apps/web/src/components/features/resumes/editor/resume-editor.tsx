@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType, type ReactElement, type ReactNode } from "react";
+import { type ComponentType, type ReactElement, type ReactNode, useState } from "react";
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import {
   AccountCircleOutlined,
@@ -11,12 +11,12 @@ import {
   StarOutlined,
   WorkOutlined,
 } from "@mui/icons-material";
-import { Box, Button, Stack, Typography, type SvgIconProps } from "@mui/material";
+import { Box, Button, Stack, type SvgIconProps, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { SectionCard } from "@/components/ui/layout";
-import { SectionAnchorNav, type SectionAnchor } from "@/components/ui/layout/section-anchor-nav";
+import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
 import { BasicsSection } from "./basics-section";
 import { EducationSection } from "./education-section";
 import { ExperienceSection } from "./experience-section";

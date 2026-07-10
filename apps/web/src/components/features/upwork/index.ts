@@ -1,2 +1,2 @@
-export * from "./proposals";
 export * from "./profile";
+export * from "./proposals";

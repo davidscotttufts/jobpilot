@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { CLASSIFICATION_TO_STATUS } from "@jobpilot/contracts/email";
 import {
   Autocomplete,

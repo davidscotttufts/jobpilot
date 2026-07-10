@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { OUTREACH_MESSAGE_TERMINAL_STATUSES } from "@jobpilot/contracts/outreach";
 import { Close } from "@mui/icons-material";
 import {

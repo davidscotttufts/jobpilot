@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import {
   PROFILE_DEFAULT_VALUES,
-  profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
+  profileWithAutoApplySchema,
 } from "@jobpilot/contracts/profile";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";

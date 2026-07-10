@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore, type ReactNode } from "react";
+import { type ReactNode, useSyncExternalStore } from "react";
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
@@ -10,9 +10,9 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
+import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
 import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
-import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
 
 const FILTERS = {
   status: "in_progress" satisfies CampaignStatus,

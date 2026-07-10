@@ -1,21 +1,21 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import {
   Box,
   InputAdornment,
   MenuItem,
   Select,
+  type SelectChangeEvent,
   TextField,
   Typography,
-  type SelectChangeEvent,
 } from "@mui/material";
 import {
   AsYouType,
+  type CountryCode,
   getCountries,
   getCountryCallingCode,
   parsePhoneNumberFromString,
-  type CountryCode,
 } from "libphonenumber-js";
 
 const REGION_NAMES = new Intl.DisplayNames(["en"], { type: "region" });

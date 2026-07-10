@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { MoreHoriz } from "@mui/icons-material";
 import {
   BottomNavigation,
@@ -20,8 +20,8 @@ import {
   feedbackLinks,
   isNavItemActive,
   MOBILE_NAV_HEIGHT,
-  navGroups,
   type NavItem,
+  navGroups,
 } from "./shell-config";
 
 const MORE_VALUE = "more";

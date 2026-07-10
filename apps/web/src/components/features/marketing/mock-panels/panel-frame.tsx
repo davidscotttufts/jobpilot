@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import { Box, Stack, Typography, type SxProps, type Theme } from "@mui/material";
+import { Box, Stack, type SxProps, type Theme, Typography } from "@mui/material";
 import { fontFamilies } from "@/theme";
 
 interface PanelFrameProps {

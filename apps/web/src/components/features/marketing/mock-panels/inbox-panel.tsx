@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { fontFamilies } from "@/theme";
-import { PanelBadge, panelCellSx, PanelFrame } from "./panel-frame";
+import { PanelBadge, PanelFrame, panelCellSx } from "./panel-frame";
 
 interface Message {
   from: string;

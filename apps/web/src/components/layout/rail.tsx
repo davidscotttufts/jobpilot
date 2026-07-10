@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, type ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
 import { Box, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { AccountMenu } from "@/components/features/profile";

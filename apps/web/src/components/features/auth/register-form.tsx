@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { RegisterSchema, type RegisterInput } from "@jobpilot/contracts/auth";
+import { type RegisterInput, RegisterSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { useAppForm } from "@/components/ui/form/tanstack";

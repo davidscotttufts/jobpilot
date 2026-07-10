@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { statusSchema, type ApplicationStatus } from "./application";
+import { type ApplicationStatus, statusSchema } from "./application";
 
 export const EMAIL_PROVIDERS = ["gmail", "outlook", "imap"] as const;
 export const emailProviderSchema = z.enum(EMAIL_PROVIDERS);

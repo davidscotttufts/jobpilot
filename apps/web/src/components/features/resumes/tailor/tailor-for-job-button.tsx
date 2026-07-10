@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import { useAgentAvailable } from "@/providers/agent-provider";

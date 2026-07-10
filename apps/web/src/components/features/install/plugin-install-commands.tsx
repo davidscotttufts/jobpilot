@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { Stack, Tab, Tabs, Typography } from "@mui/material";
 import { CopyField } from "@/components/ui/display";
 import { HostInstallCommands } from "./host-install-commands";
-import { PLUGIN_COMMANDS, SETUP_COMMANDS, type InstallProvider } from "./provider-commands";
+import { type InstallProvider, PLUGIN_COMMANDS, SETUP_COMMANDS } from "./provider-commands";
 
 /** Provider tabs + plugin/setup copy commands, with the direct host one-liner as a fallback. */
 export function PluginInstallCommands(): ReactElement {

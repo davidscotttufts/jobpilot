@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { UpdateUpworkProfileInput } from "@jobpilot/contracts/upwork";
 import { CloudUpload, TaskAlt } from "@mui/icons-material";
 import { Box, Button, Divider, Stack, TextField, Typography } from "@mui/material";

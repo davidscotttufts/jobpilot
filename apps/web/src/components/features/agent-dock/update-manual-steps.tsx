@@ -38,7 +38,9 @@ export function UpdateManualSteps(props: { provider: TerminalProviderId }): Reac
         </>
       ) : (
         <Stack spacing={0.5}>
-          <Typography variant="captionMuted">1. Update the JobPilot plugin (in a shell):</Typography>
+          <Typography variant="captionMuted">
+            1. Update the JobPilot plugin (in a shell):
+          </Typography>
           <CopyField
             value={CODEX_MARKETPLACE_UPDATE_COMMAND}
             copyMessage="Command copied"

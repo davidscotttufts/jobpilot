@@ -2,11 +2,11 @@
 
 import {
   createContext,
+  type PropsWithChildren,
+  type ReactElement,
   useContext,
   useState,
   useSyncExternalStore,
-  type PropsWithChildren,
-  type ReactElement,
 } from "react";
 import { useMediaQuery } from "@mui/material";
 import {

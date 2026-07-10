@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import { Button, Stack, TextField } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
@@ -10,7 +10,7 @@ import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useSearchParam } from "@/hooks/use-search-param";
 import { ApplicationsTable } from "./applications-table";
-import { FUNNEL_GROUPS, FunnelBar, groupForStatus, type FunnelKey } from "./funnel-bar";
+import { FUNNEL_GROUPS, FunnelBar, type FunnelKey, groupForStatus } from "./funnel-bar";
 
 /** Campaign-filter sentinel for applications with no campaign (single-apply). */
 const SINGLE = "__single__";

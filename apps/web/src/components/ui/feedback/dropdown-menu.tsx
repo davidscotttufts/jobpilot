@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import { type MouseEvent, type ReactElement, type ReactNode, useState } from "react";
 import { Divider, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";

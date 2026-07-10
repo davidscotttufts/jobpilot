@@ -1,4 +1,4 @@
-import { SECRET_CONTEXTS, type CryptoService } from "@/common/crypto";
+import { type CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { ErrorCodes, HttpError } from "@/common/errors";
 import { env } from "@/env";
 import { type EmailAccount, type PrismaClient } from "@/generated/prisma/client";

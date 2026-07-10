@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactElement } from "react";
+import { type ReactElement, useEffect } from "react";
 import { Button, LinearProgress, Stack } from "@mui/material";
 import { useStore } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";

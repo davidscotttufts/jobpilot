@@ -1,7 +1,7 @@
 "use client";
 
 import "@xterm/xterm/css/xterm.css";
-import { useEffect, useRef, type ReactElement } from "react";
+import { type ReactElement, useEffect, useRef } from "react";
 import { Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";

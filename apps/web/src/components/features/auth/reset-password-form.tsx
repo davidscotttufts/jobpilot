@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { ResetPasswordSchema, type ResetPasswordInput } from "@jobpilot/contracts/auth";
+import { type ResetPasswordInput, ResetPasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { useRouter } from "next/navigation";

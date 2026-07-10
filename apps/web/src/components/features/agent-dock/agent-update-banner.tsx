@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Close } from "@mui/icons-material";
-import { Alert, Button, CircularProgress, IconButton, Link, Stack, Typography } from "@mui/material";
-import { providerDisplayName, triggerUpdate, type TerminalProviderId } from "@/lib/terminal";
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  IconButton,
+  Link,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { providerDisplayName, type TerminalProviderId, triggerUpdate } from "@/lib/terminal";
 import { UpdateManualSteps } from "./update-manual-steps";
 import { isNewer, useLatestRelease } from "./use-latest-release";
 
@@ -101,7 +109,9 @@ export function AgentUpdateBanner(props: AgentUpdateBannerProps): ReactNode {
               variant="contained"
               disabled={phase === "updating"}
               onClick={() => void handleUpdate()}
-              startIcon={phase === "updating" ? <CircularProgress size={14} color="inherit" /> : undefined}
+              startIcon={
+                phase === "updating" ? <CircularProgress size={14} color="inherit" /> : undefined
+              }
               sx={{ alignSelf: "flex-start" }}
             >
               {phase === "updating" ? "Updating…" : "Update now"}

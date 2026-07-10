@@ -6,7 +6,7 @@ import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { badRequest, conflict, ErrorCodes, HttpError } from "@/common/errors";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import { accountCanSend, getProvider, GMAIL_SCOPES } from "../gmail.provider";
+import { accountCanSend, GMAIL_SCOPES, getProvider } from "../gmail.provider";
 import { loadFreshAccount, resolveOAuthClient } from "./account.utils";
 
 @singleton()

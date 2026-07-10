@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type MouseEvent, type ReactElement } from "react";
+import { type MouseEvent, type ReactElement, useState } from "react";
 import { Feedback } from "@mui/icons-material";
 import { IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Tooltip } from "@mui/material";
 import { feedbackLinks } from "./shell-config";

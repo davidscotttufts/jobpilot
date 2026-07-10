@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import type { JobBoardPatch } from "@jobpilot/contracts/job-board";
 import { Clear, Delete, Edit, MoreVert, Search } from "@mui/icons-material";
 import {

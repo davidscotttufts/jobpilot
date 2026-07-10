@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type DragEvent, type ReactElement } from "react";
+import { type ChangeEvent, type DragEvent, type ReactElement, useRef, useState } from "react";
 import { CloudUpload } from "@mui/icons-material";
-import { Box, Button, Stack, Typography, type ButtonProps } from "@mui/material";
+import { Box, Button, type ButtonProps, Stack, Typography } from "@mui/material";
 
 export type FileUploadVariant = "button" | "dropzone";
 

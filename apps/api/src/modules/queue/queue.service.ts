@@ -3,7 +3,7 @@ import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { workspaceChannel } from "@/common/sse/channels/workspace";
-import { PrismaClient, type Prisma } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
 type QueueEntryRow = Omit<Prisma.QueueEntryGetPayload<{}>, "status"> & {
   status: QueueStatus;

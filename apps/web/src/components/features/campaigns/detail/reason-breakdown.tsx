@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Button, Chip, Collapse, Grid, Stack, Typography } from "@mui/material";

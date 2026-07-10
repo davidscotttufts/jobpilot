@@ -1,11 +1,11 @@
 "use client";
 
 import {
+  type PointerEvent,
+  type ReactElement,
   useRef,
   useState,
   useSyncExternalStore,
-  type PointerEvent,
-  type ReactElement,
 } from "react";
 import { Box } from "@mui/material";
 import {

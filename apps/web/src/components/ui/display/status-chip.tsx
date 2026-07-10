@@ -1,10 +1,10 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { STATUSES, type ApplicationStatus } from "@jobpilot/contracts/application";
+import { type ApplicationStatus, STATUSES } from "@jobpilot/contracts/application";
 import { Chip, type ChipProps } from "@mui/material";
 
-export { STATUSES, type ApplicationStatus };
+export { type ApplicationStatus, STATUSES };
 
 export const STATUS_LABEL: Record<ApplicationStatus, string> = {
   applied: "Applied",

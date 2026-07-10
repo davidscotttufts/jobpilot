@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, type ChangeEvent, type ReactElement } from "react";
+import { type ChangeEvent, type ReactElement, useState } from "react";
 import {
   InputAdornment,
   TextField as MuiTextField,
   type TextFieldProps as MuiTextFieldProps,
 } from "@mui/material";
 
-export interface CurrencyFieldProps extends Omit<
-  MuiTextFieldProps,
-  "value" | "onChange" | "onBlur" | "error" | "name" | "type"
-> {
+export interface CurrencyFieldProps
+  extends Omit<MuiTextFieldProps, "value" | "onChange" | "onBlur" | "error" | "name" | "type"> {
   value: number | undefined;
   onChange: (value: number | undefined) => void;
   onBlur?: () => void;

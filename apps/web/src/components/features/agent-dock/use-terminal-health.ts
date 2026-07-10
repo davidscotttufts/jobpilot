@@ -32,6 +32,7 @@ export function useTerminalHealth(expectingReturn = false): TerminalHealthState 
   const [status, setStatus] = useState<SessionStatus | null>(null);
   const [nonce, setNonce] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: nonce is the recheck() re-run trigger
   useEffect(() => {
     let active = true;
     let timer: ReturnType<typeof setTimeout> | null = null;

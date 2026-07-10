@@ -1,2 +1,2 @@
-export * from "./cover-letters-table";
 export * from "./cover-letter-actions";
+export * from "./cover-letters-table";

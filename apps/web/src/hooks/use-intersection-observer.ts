@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 interface UseIntersectionObserverOptions {
   /** Scrollable ancestor element. Defaults to the browser viewport when omitted. */

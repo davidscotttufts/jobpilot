@@ -8,10 +8,8 @@ import { useFieldContext } from "./form-context";
 
 type FieldValue = string | number | null | undefined;
 
-interface TextFieldProps extends Omit<
-  MuiTextFieldProps,
-  "value" | "onChange" | "onBlur" | "error" | "name"
-> {
+interface TextFieldProps
+  extends Omit<MuiTextFieldProps, "value" | "onChange" | "onBlur" | "error" | "name"> {
   transform?: (value: string) => string;
 }
 

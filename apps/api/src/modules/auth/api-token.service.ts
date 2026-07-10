@@ -1,6 +1,6 @@
 import type { ApiTokenCreateInput } from "@jobpilot/contracts";
 import { singleton } from "tsyringe";
-import { generateOpaqueToken, hashToken, type AuthUser } from "@/common/auth";
+import { type AuthUser, generateOpaqueToken, hashToken } from "@/common/auth";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { notFound } from "@/common/errors";
 import { logger } from "@/common/logger";

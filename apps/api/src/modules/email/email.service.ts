@@ -1,7 +1,7 @@
 import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import {
-  CLASSIFICATION_TO_STATUS,
   type ApproveInput,
+  CLASSIFICATION_TO_STATUS,
   type Classification,
   type ScanMessageInput,
 } from "@jobpilot/contracts/email";
@@ -9,7 +9,7 @@ import { singleton } from "tsyringe";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { inboxChannel } from "@/common/sse/channels/inbox";
-import { PrismaClient, type Prisma } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
 import { serializeMessage } from "./email.mapper";
 

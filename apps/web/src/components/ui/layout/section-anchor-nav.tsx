@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactElement } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 
 export interface SectionAnchor {
@@ -31,6 +31,7 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
   const [activeId, setActiveId] = useState<string | null>(anchors[0]?.id ?? null);
   const idsKey = anchors.map((a) => a.id).join(" ");
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: idsKey stands in for the anchors identity
   useEffect(() => {
     if (anchors.length === 0) {
       return;
@@ -61,7 +62,6 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
     }
 
     return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idsKey, rootMargin]);
 
   const handleClick = (id: string): void => {

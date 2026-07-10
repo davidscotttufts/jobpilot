@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import type { ApplicationDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { StatusChip, type ApplicationStatus } from "@/components/ui/display";
+import { type ApplicationStatus, StatusChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 
 interface ApplicationsTableProps {

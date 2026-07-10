@@ -10,7 +10,7 @@ import {
   coverLetterListSchema,
   pdfRequestSchema,
 } from "./cover-letter.schema";
-import { CoverLetterService, type CoverLetterPdf } from "./cover-letter.service";
+import { type CoverLetterPdf, CoverLetterService } from "./cover-letter.service";
 
 const svc = container.resolve(CoverLetterService);
 

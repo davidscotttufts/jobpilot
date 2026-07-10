@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactElement } from "react";
+import { type ReactElement, useEffect, useRef } from "react";
 import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
 import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";

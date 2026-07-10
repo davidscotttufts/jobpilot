@@ -4,11 +4,11 @@ import { generateOpaqueToken, hashPassword, hashToken } from "@/common/auth";
 import { badRequest, notFound } from "@/common/errors";
 import {
   MAILER,
+  type Mailer,
   PasswordResetEmail,
   passwordResetEmailSubject,
   VerificationEmail,
   verificationEmailSubject,
-  type Mailer,
 } from "@/common/mail";
 import { env } from "@/env";
 import { PrismaClient, VerificationTokenType } from "@/generated/prisma/client";

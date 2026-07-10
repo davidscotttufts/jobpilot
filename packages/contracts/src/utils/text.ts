@@ -1,5 +1,5 @@
 // Built from escapes so this source file stays free of literal replacement chars.
-const REPLACEMENT_ARTIFACT = new RegExp("(?:\\uFFFD|\\u00EF\\u00BF\\u00BD)+", "g");
+const REPLACEMENT_ARTIFACT = /(?:\uFFFD|\u00EF\u00BF\u00BD)+/g;
 const EM_DASH = "-";
 
 /**

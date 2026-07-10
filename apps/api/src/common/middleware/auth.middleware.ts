@@ -1,5 +1,5 @@
-import { Elysia, type Cookie } from "elysia";
-import { verifyAccessToken, type AuthUser } from "@/common/auth";
+import { type Cookie, Elysia } from "elysia";
+import { type AuthUser, verifyAccessToken } from "@/common/auth";
 import { container } from "@/common/di";
 import { unauthorized } from "@/common/errors";
 import { ApiTokenService } from "@/modules/auth/api-token.service";

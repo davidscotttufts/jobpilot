@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type ReactElement, type SubmitEvent } from "react";
+import { type ReactElement, type SubmitEvent, useState } from "react";
 import {
   PROFILE_DEFAULT_VALUES,
-  profileWithAutoApplySchema,
   type ProfileWithAutoApplyInput,
+  profileWithAutoApplySchema,
 } from "@jobpilot/contracts/profile";
 import {
   Alert,

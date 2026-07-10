@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { useToast } from "@/providers/notification-provider";
 
 interface EmailConnectToastProps {

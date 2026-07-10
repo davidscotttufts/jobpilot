@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { fontFamilies } from "@/theme";
-import { PanelBadge, panelCellSx, PanelFrame } from "./panel-frame";
+import { PanelBadge, PanelFrame, panelCellSx } from "./panel-frame";
 
 const CLIENT_MARKERS = ["$40k+ spent", "92% hire rate", "4.9 rating", "payment verified"];
 

@@ -12,12 +12,12 @@ import type {
 import {
   buildMimeMessage,
   domainOf,
+  type EmailHeader,
   encodeBase64Url,
   extractPlainText,
   headerValue,
   parseAddress,
   stripQuotedReplies,
-  type EmailHeader,
 } from "./email.utils";
 
 /**

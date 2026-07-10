@@ -6,10 +6,10 @@ import {
   IconButton,
   MenuItem,
   Select,
+  type SelectChangeEvent,
   Stack,
   Tooltip,
   Typography,
-  type SelectChangeEvent,
 } from "@mui/material";
 import { TerminalPanel } from "@/components/features/terminal";
 import { LoadingSpinner, PulseDot } from "@/components/ui/feedback";

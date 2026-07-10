@@ -81,5 +81,3 @@ declare module "@mui/material/Paper" {
     live: true;
   }
 }
-
-export {};

@@ -1,4 +1,4 @@
-import { treaty, type Treaty } from "@elysiajs/eden";
+import { type Treaty, treaty } from "@elysiajs/eden";
 import type { App } from "@jobpilot/api";
 
 /** Create an Eden Treaty client bound to the JobPilot backend `App` type. */

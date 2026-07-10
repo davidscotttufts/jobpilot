@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { ForgotPasswordSchema, type ForgotPasswordInput } from "@jobpilot/contracts/auth";
+import { type ForgotPasswordInput, ForgotPasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { api } from "@/api/client";

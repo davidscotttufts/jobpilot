@@ -7,7 +7,7 @@ import type {
 } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
-import { PrismaClient, type Prisma } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   APPLIED_DUPLICATE_THRESHOLD,
   APPLIED_DUPLICATE_WINDOW_DAYS,

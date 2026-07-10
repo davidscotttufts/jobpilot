@@ -3,7 +3,7 @@
 import type { ReactElement } from "react";
 import { Box } from "@mui/material";
 import { editorial } from "@/theme/palette";
-import { iconSizes, type IconSizeToken } from "@/theme/tokens";
+import { type IconSizeToken, iconSizes } from "@/theme/tokens";
 
 interface AgentOrbProps {
   size?: IconSizeToken;

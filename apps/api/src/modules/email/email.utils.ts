@@ -50,6 +50,7 @@ export function encodeBase64Url(data: string | Buffer): string {
 
 /** RFC 2047 encode a header value when it contains non-ASCII characters. */
 function encodeHeaderValue(value: string): string {
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: RFC 2047 defines the ASCII range by codepoint
   if (/^[\x00-\x7F]*$/.test(value)) return value;
   return `=?UTF-8?B?${Buffer.from(value, "utf-8").toString("base64")}?=`;
 }

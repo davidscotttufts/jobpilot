@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
-import { STATUSES, type ApplicationStatus } from "@jobpilot/contracts/application";
+import { type ReactElement, useState } from "react";
+import { type ApplicationStatus, STATUSES } from "@jobpilot/contracts/application";
 import {
   Button,
   Dialog,

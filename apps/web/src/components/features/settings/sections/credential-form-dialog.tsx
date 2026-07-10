@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { type ReactElement, useState } from "react";
 import {
+  type CredentialInput,
   credentialSchema,
   SERVICE_PROVIDERS,
-  type CredentialInput,
 } from "@jobpilot/contracts/credential";
 import {
   Button,

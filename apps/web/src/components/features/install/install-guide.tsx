@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, type ReactElement, type ReactNode } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import { ExpandMore } from "@mui/icons-material";
 import { Box, Button, Collapse, Stack, Tab, Tabs, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
 import { HostInstallCommands } from "./host-install-commands";
-import { PLUGIN_COMMANDS, SETUP_COMMANDS, type InstallProvider } from "./provider-commands";
+import { type InstallProvider, PLUGIN_COMMANDS, SETUP_COMMANDS } from "./provider-commands";
 
 interface InstallStepProps {
   number: number;

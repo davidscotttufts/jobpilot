@@ -6,7 +6,7 @@ import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
-import { usePagination, type Pagination } from "@/hooks/use-pagination";
+import { type Pagination, usePagination } from "@/hooks/use-pagination";
 
 export interface UseCampaignsListResult {
   statusFilter: CampaignStatus | null;
