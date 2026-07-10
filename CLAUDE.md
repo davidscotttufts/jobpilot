@@ -27,10 +27,11 @@ Root (`bun run …`):
 - `db:up` / `db:down` - start/stop the local PostgreSQL container (`docker-compose.dev.yml`).
 - `db:setup` - generate Prisma client, apply migrations, seed default boards (runs on `apps/api`).
 - `build:api` / `build:web` / `build:terminal` - production builds.
+- `check` / `format` / `lint` - Biome across the whole repo (`check` = format + lint + import sort, with `--write`). Biome does not format Markdown; `.editorconfig` covers whitespace there. CI gate is `biome ci .`.
 
 Web (`bun --cwd=apps/web run …`):
 
-- `lint`, `typecheck`, `format` - Next lint, `tsc --noEmit`, Prettier.
+- `typecheck` - TypeScript 7 (`tsc --noEmit`), invoked by explicit path (see below).
 - `typegen` - Next route/type generation.
 
 API (`bun --cwd=apps/api run …`):
@@ -38,6 +39,17 @@ API (`bun --cwd=apps/api run …`):
 - `dev`, `start`, `build` - Elysia server (watch / run / compile to `dist/server.exe`).
 - `typecheck` - `tsc --noEmit`.
 - `db:generate`, `db:migrate` (create-only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`.
+
+### TypeScript 7 (`apps/web` carries two compilers - do not "clean this up")
+
+TypeScript 7 is the Go-native compiler and ships **no JS compiler API** (no `lib/typescript.js`, no `tsserver`; an API returns in 7.1). Next.js needs that API in `build/load-jsconfig.js` to read tsconfig `paths` - without it Next silently drops every `@/…` alias and `next build` dies with module-not-found. So `apps/web` declares both:
+
+- `typescript` (6.x) - the JS API for Next, and `tsserver` for the editor. Never imported by our code.
+- `@typescript/native` (alias of `typescript@7`) - the real compiler.
+
+Both packages declare a `tsc` bin and bun links the 6.x one, so web's `typecheck` calls the v7 binary **by explicit path**. `next build` never type-checks (`typescript.ignoreBuildErrors`); `bun run typecheck` is the only gate. `apps/api` and `packages/*` just use plain `typescript@7`.
+
+A tsyringe-injected class must stay a **value** import (`import { PrismaClient }`, never `import type`): `emitDecoratorMetadata` builds `design:paramtypes` from those bindings, so erasing them fails at runtime with `TypeInfo not known for "Object"`. Biome's `style/useImportType` is off for `apps/api` for exactly this reason.
 
 ## Skill conventions
 

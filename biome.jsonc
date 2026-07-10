@@ -1,0 +1,123 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.3/schema.json",
+  "root": true,
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    // Biome cannot parse Markdown yet; without this it reports every .md file.
+    "ignoreUnknown": true,
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/.next",
+      // Static assets, not source; Biome parses them as markup and lints them.
+      "!**/*.svg",
+      "!apps/api/src/generated",
+      "!apps/api/storage",
+      "!dist"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "parser": {
+      // tsyringe injects via constructor parameter decorators (`@inject(MAILER)`).
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "suspicious": {
+        // Pre-existing index keys in the resume/profile list editors are a real
+        // bug class, but fixing them needs stable ids on the data model. Warn
+        // (non-blocking) until that lands rather than suppress per call site.
+        "noArrayIndexKey": "warn"
+      }
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [":NODE:", ":PACKAGE:", ":ALIAS:", ":PATH:"]
+          }
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      // React leads the package group in JSX files.
+      "includes": ["**/*.jsx", "**/*.tsx"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": {
+              "level": "on",
+              "options": {
+                "groups": [":NODE:", ["react", "react/**"], ":PACKAGE:", ":ALIAS:", ":PATH:"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "domains": {
+          "next": "recommended",
+          "react": "recommended"
+        }
+      }
+    },
+    {
+      // `emitDecoratorMetadata` derives `design:paramtypes` from the constructor
+      // parameter types, so a tsyringe-injected class must stay a *value* import.
+      // Rewriting it to `import type` erases the binding and DI dies at runtime
+      // with `TypeInfo not known for "Object"`.
+      "includes": ["apps/api/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
+    },
+    {
+      // react-pdf renders a document once to a buffer: no reconciliation, and
+      // the mapped lines/strings carry no stable id.
+      "includes": ["apps/api/src/common/pdf/**"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          }
+        }
+      }
+    }
+  ]
+}

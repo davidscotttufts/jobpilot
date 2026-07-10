@@ -1,7 +1,6 @@
 {
   "recommendations": [
-    "esbenp.prettier-vscode",
-    "dbaeumer.vscode-eslint",
+    "biomejs.biome",
     "EditorConfig.EditorConfig",
     "ms-dotnettools.csharp",
     "ms-dotnettools.csdevkit",
