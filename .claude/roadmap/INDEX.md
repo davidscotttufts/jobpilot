@@ -8,7 +8,15 @@ view; details, pointers, and acceptance criteria live in the item files.
 
 Statuses: `todo` · `in-progress` · `done` · `deferred`
 
-Agreed sequence: Tier 0 first, then leases → stateless step loop → escalation queue.
+## North star — [The Pilot](pilot.md)
+
+One generic autonomous loop that manages everything: sense (server-compiled agenda) → decide
+(against the user's mandate) → act (delegate to workers) → record (journal) → exit; the host
+re-injects perpetually. The user states goals once; the Pilot runs the whole job search.
+T2 is its plumbing, T5 items are its reflexes — build toward this, not toward many loops.
+Its self-improvement flywheel is designed in [pilot-learning.md](pilot-learning.md).
+
+Agreed sequence: Tier 0 first, then leases → stateless step loop → escalation queue → Pilot v0.
 
 ## Tier 0 — Fixes (days, do first)
 
@@ -65,6 +73,23 @@ Agreed sequence: Tier 0 first, then leases → stateless step loop → escalatio
 | todo | [Mobile decision inbox](t4-mobile-decision-inbox.md) | one-tap answer cards on phone |
 | todo | [Budget governor](t4-budget-governor.md) | token burn-down, auto-degrade |
 | todo | [Multi-machine fleet](t4-multi-machine-fleet.md) | leases make it free; document + test |
+
+## Tier 5 — Pilot reflexes (added 2026-07-11)
+
+NOT separate loops — capabilities the [Pilot](pilot.md) absorbs (see its collapse table).
+Each file holds the design detail for one reflex; the supervisor watchdog is the exception that
+stays a standalone deterministic safety net. Most build on T1 telemetry + T2 leases.
+
+| Status | Item | Hook |
+| --- | --- | --- |
+| todo | [Supervisor watchdog](t5-supervisor-watchdog.md) | PTY host detects wedged workers, nudges/kills/re-leases |
+| todo | [Standing-query campaigns](t5-standing-query-campaigns.md) | subscribe-and-react; optimize latency-to-posting |
+| todo | [Strategist loop](t5-strategist-loop.md) | slow loop tunes queries/thresholds from yield telemetry |
+| todo | [Graduated autonomy](t5-graduated-autonomy.md) | per-board trust earned via receipts, server-enforced |
+| todo | [Gearbox effort control](t5-gearbox-effort-control.md) | cheap-model fast path, escalate on surprise |
+| todo | [Circuit breakers](t5-circuit-breakers.md) | quarantine a failing board, probe, heal or park |
+| todo | [Failures become fixtures](t5-failures-become-fixtures.md) | production failures auto-grow the eval lab |
+| todo | [Speculative preparation](t5-speculative-prep.md) | precompute next job's artifacts during browser waits |
 
 ## Deferred / rejected
 
