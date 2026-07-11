@@ -1,4 +1,3 @@
-using System.Globalization;
 using JobPilot.Terminal.Contracts;
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Pty;
@@ -66,16 +65,11 @@ public static class HostingExtensions
         }));
 
         // CORS hides disallowed responses but does not stop simple requests such as POST /update.
+        // The guard runs first, so it also rejects disallowed WebSocket handshakes.
         app.Use(next => OriginPolicy.CreateGuard(app.Configuration, next));
         app.UseCors(OriginPolicy.CorsPolicy);
 
-        // Kestrel validates WebSocket origins separately from HTTP middleware.
-        var webSockets = new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) };
-        foreach (var origin in OriginPolicy.Resolve(app.Configuration))
-        {
-            webSockets.AllowedOrigins.Add(origin);
-        }
-        app.UseWebSockets(webSockets);
+        app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
         // Resolve the hub before the first /ws request so pre-connect output reaches its replay buffer.
         var hub = app.Services.GetRequiredService<TerminalHub>();
@@ -99,18 +93,11 @@ public static class HostingExtensions
         }
         catch (IOException ex) when (ex.InnerException is AddressInUseException)
         {
+            var url = app.Configuration["Kestrel:Endpoints:Http:Url"] ?? "http://localhost:4102";
             Console.Error.WriteLine(
-                $"JobPilot terminal: port {ConfiguredPort(app.Configuration)} is already in use - another jobpilot instance is probably running.\n" +
+                $"JobPilot terminal: {url} is already in use - another jobpilot instance is probably running.\n" +
                 "Stop it and retry: 'Get-Process jobpilot | Stop-Process' (Windows) or 'pkill -x jobpilot' (macOS/Linux).");
             Environment.Exit(1);
         }
-    }
-
-    private static string ConfiguredPort(IConfiguration configuration)
-    {
-        var url = configuration["Kestrel:Endpoints:Http:Url"];
-        return Uri.TryCreate(url, UriKind.Absolute, out var parsed)
-            ? parsed.Port.ToString(CultureInfo.InvariantCulture)
-            : "4102";
     }
 }

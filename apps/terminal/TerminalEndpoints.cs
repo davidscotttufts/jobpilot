@@ -108,7 +108,7 @@ public static class TerminalEndpoints
             }
 
             using var socket = await ctx.WebSockets.AcceptWebSocketAsync();
-            await hub.HandleAsync(socket, ctx.RequestAborted);
+            await hub.ServeConnectionAsync(socket, ctx.RequestAborted);
         });
 
         return app;

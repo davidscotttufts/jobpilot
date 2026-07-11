@@ -22,7 +22,6 @@ public sealed class SessionManagerTests : IDisposable
             WorkingDir = temp.Root,
             SharedSkillsDir = Path.Combine(temp.Root, "plugin", "skills"),
             ClaudePluginDir = Path.Combine(temp.Root, "plugin"),
-            CodexPluginDir = Path.Combine(temp.Root, "plugin"),
         };
         session = new SessionManager(pty, new HostInstall(paths), NullLogger<SessionManager>.Instance);
     }

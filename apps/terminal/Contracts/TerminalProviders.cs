@@ -54,11 +54,11 @@ public static class TerminalProviders
     /// <summary>Returns every supported provider.</summary>
     public static TerminalProviderInfo[] Supported() => SupportedProviders;
 
-    /// <summary>Builds a provider launch command.</summary>
+    /// <summary>Builds a launch command for a normalized provider id.</summary>
     /// <exception cref="ArgumentException">The provider id is not a known provider.</exception>
-    public static TerminalLaunchSpec GetLaunchSpec(string? provider, string pluginDir, string workingDir)
+    public static TerminalLaunchSpec GetLaunchSpec(string provider, string pluginDir, string workingDir)
     {
-        var definition = Find(Normalize(provider));
+        var definition = Find(provider);
         return new TerminalLaunchSpec(
             new TerminalProviderInfo(definition.Id, definition.DisplayName),
             definition.Command,

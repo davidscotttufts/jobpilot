@@ -9,11 +9,8 @@ public sealed record InstallPaths
     /// <summary>Shared skills tree (plugin/skills).</summary>
     public required string SharedSkillsDir { get; init; }
 
-    /// <summary>Plugin dir Claude loads (holds .claude-plugin/).</summary>
+    /// <summary>Plugin dir Claude loads (holds .claude-plugin/; Codex reaches the same tree via its marketplace file).</summary>
     public required string ClaudePluginDir { get; init; }
-
-    /// <summary>Plugin dir Codex loads (holds .codex-plugin/); same tree as Claude's.</summary>
-    public required string CodexPluginDir { get; init; }
 
     /// <summary>Finds the repository or published plugin layout.</summary>
     public static InstallPaths Resolve()
@@ -40,7 +37,6 @@ public sealed record InstallPaths
                     WorkingDir = root,
                     SharedSkillsDir = skillsDir,
                     ClaudePluginDir = pluginDir,
-                    CodexPluginDir = pluginDir,
                 };
             }
         }

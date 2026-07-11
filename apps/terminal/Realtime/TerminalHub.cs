@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -23,10 +22,10 @@ public sealed class TerminalHub : IDisposable
 
     private readonly SessionManager session;
     private readonly ILogger<TerminalHub> logger;
-    private readonly ConcurrentDictionary<WebSocket, Channel<byte[]>> clients = new();
 
-    // Guards the replay buffer and orders client registration against broadcasts (no gap, no duplication).
+    // Guards the client registry and replay buffer, ordering registration against broadcasts (no gap, no duplication).
     private readonly Lock replayLock = new();
+    private readonly Dictionary<WebSocket, Channel<byte[]>> clients = [];
     private readonly ReplayBuffer replay = new(ReplayCapacityBytes);
 
     public TerminalHub(SessionManager session, ILogger<TerminalHub> logger)
@@ -39,8 +38,8 @@ public sealed class TerminalHub : IDisposable
         session.Starting += OnSessionStarting;
     }
 
-    /// <summary>Serves one terminal WebSocket connection.</summary>
-    public async Task HandleAsync(WebSocket socket, CancellationToken ct)
+    /// <summary>Serves one terminal WebSocket connection until it closes.</summary>
+    public async Task ServeConnectionAsync(WebSocket socket, CancellationToken ct)
     {
         // Wait mode makes TryWrite fail when full; dropping terminal bytes would corrupt the screen.
         var outbox = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(OutboxCapacity)
@@ -108,9 +107,17 @@ public sealed class TerminalHub : IDisposable
     /// <summary>Aborts every client so an open socket cannot stall host shutdown.</summary>
     public void AbortAll()
     {
-        foreach (var (socket, _) in clients)
+        foreach (var socket in SnapshotClients())
         {
             Drop(socket);
+        }
+    }
+
+    private WebSocket[] SnapshotClients()
+    {
+        lock (replayLock)
+        {
+            return [.. clients.Keys];
         }
     }
 
@@ -130,10 +137,12 @@ public sealed class TerminalHub : IDisposable
 
     private void Unregister(WebSocket socket)
     {
-        if (clients.TryRemove(socket, out var outbox))
+        Channel<byte[]>? outbox;
+        lock (replayLock)
         {
-            outbox.Writer.TryComplete();
+            clients.Remove(socket, out outbox);
         }
+        outbox?.Writer.TryComplete();
     }
 
     private void OnSessionExited(SessionExit exit)
@@ -284,7 +293,7 @@ public sealed class TerminalHub : IDisposable
         session.Exited -= OnSessionExited;
         session.Starting -= OnSessionStarting;
 
-        foreach (var (socket, _) in clients)
+        foreach (var socket in SnapshotClients())
         {
             Unregister(socket);
         }

@@ -32,10 +32,8 @@ var app = builder.Build();
 app.Services.GetRequiredService<ProtocolRegistrar>().EnsureRegistered();
 
 // A successful startup update launches its replacement before this process binds.
-// IsUpdateRelaunch stays checked too: hosts older than the just-updated marker relaunch without it.
-var justUpdated = HostHandoff.ConsumeJustUpdated();
 var updates = app.Services.GetRequiredService<HostUpdateService>();
-if (!justUpdated && !HostHandoff.IsUpdateRelaunch && await updates.UpdateAtStartupAsync())
+if (!HostHandoff.IsUpdateRelaunch && await updates.UpdateAtStartupAsync())
 {
     return;
 }

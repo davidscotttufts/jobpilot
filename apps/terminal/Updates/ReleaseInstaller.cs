@@ -5,21 +5,12 @@ using System.IO.Compression;
 
 namespace JobPilot.Terminal.Updates;
 
-/// <summary>Update relaunch behavior.</summary>
-public enum RelaunchMode
-{
-    /// <summary>The predecessor did not bind the port.</summary>
-    Startup,
-
-    /// <summary>The child waits for the running predecessor.</summary>
-    Runtime,
-}
-
 /// <summary>Downloads, validates, and installs host releases.</summary>
 public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<ReleaseInstaller> logger)
 {
     /// <summary>
-    /// Stages and validates a release, renames the running executable, and rolls back files if copying fails.
+    /// Stages and validates a release, renames the running executable, and copies the release over the
+    /// install directory. The executable is restored if copying fails; other files self-heal next update.
     /// </summary>
     public async Task SwapAsync(string url, string exePath, string installDir, CancellationToken ct)
     {
@@ -42,7 +33,8 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
             File.Move(exePath, oldExe);
             try
             {
-                StagedApply.Run(staging, installDir);
+                CopyOver(staging, installDir);
+                PruneRemovedPluginFiles(staging, installDir);
             }
             catch
             {
@@ -78,8 +70,8 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
         }
     }
 
-    /// <summary>Launches the installed binary with the current arguments.</summary>
-    public void Relaunch(string exePath, RelaunchMode mode)
+    /// <summary>Launches the installed binary with the current arguments; it waits for this process's port.</summary>
+    public void Relaunch(string exePath)
     {
         var psi = new ProcessStartInfo
         {
@@ -91,11 +83,7 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
         {
             psi.ArgumentList.Add(arg);
         }
-        psi.Environment[HostHandoff.JustUpdatedVar] = "1";
-        if (mode == RelaunchMode.Runtime)
-        {
-            psi.Environment[HostHandoff.AwaitPidVar] = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
-        }
+        psi.Environment[HostHandoff.AwaitPidVar] = Environment.ProcessId.ToString(CultureInfo.InvariantCulture);
         Process.Start(psi);
     }
 
@@ -137,5 +125,59 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
     {
         return File.Exists(Path.Combine(dir, exeName))
             && File.Exists(Path.Combine(dir, "plugin", ".claude-plugin", "plugin.json"));
+    }
+
+    /// <summary>Copies every staged file onto the install directory.</summary>
+    internal static void CopyOver(string stagingDir, string installDir)
+    {
+        foreach (var file in Directory.GetFiles(stagingDir, "*", SearchOption.AllDirectories))
+        {
+            var target = Path.Combine(installDir, Path.GetRelativePath(stagingDir, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target, overwrite: true);
+        }
+    }
+
+    /// <summary>
+    /// Deletes plugin files the new release no longer ships. Only the plugin/ subtree is pruned: the
+    /// install dir is also the session working dir, so everything outside it may hold user state.
+    /// </summary>
+    internal static void PruneRemovedPluginFiles(string stagingDir, string installDir)
+    {
+        var stagedPlugin = Path.Combine(stagingDir, "plugin");
+        var installedPlugin = Path.Combine(installDir, "plugin");
+        if (!Directory.Exists(stagedPlugin) || !Directory.Exists(installedPlugin))
+        {
+            return;
+        }
+
+        foreach (var file in Directory.GetFiles(installedPlugin, "*", SearchOption.AllDirectories))
+        {
+            if (!File.Exists(Path.Combine(stagedPlugin, Path.GetRelativePath(installedPlugin, file))))
+            {
+                File.Delete(file);
+            }
+        }
+
+        DeleteEmptyDirectories(installedPlugin);
+    }
+
+    private static void DeleteEmptyDirectories(string root)
+    {
+        // Deepest first so emptied parents follow their children.
+        foreach (var dir in Directory.GetDirectories(root, "*", SearchOption.AllDirectories)
+                     .OrderByDescending(d => d.Length))
+        {
+            try
+            {
+                if (!Directory.EnumerateFileSystemEntries(dir).Any())
+                {
+                    Directory.Delete(dir);
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
     }
 }

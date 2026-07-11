@@ -15,7 +15,6 @@ namespace JobPilot.Terminal;
 [JsonSerializable(typeof(TerminalClientMessage))]
 [JsonSerializable(typeof(SessionStatus))]
 [JsonSerializable(typeof(UpdateResult))]
-[JsonSerializable(typeof(TerminalProviderInfo))]
 [JsonSerializable(typeof(TerminalProviderInfo[]))]
 [JsonSerializable(typeof(ProblemDetails))]
 [JsonSerializable(typeof(GitHubRelease[]))]

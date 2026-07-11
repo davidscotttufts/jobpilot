@@ -8,26 +8,15 @@ public static class HostHandoff
     /// <summary>Environment variable carrying the predecessor process ID.</summary>
     public const string AwaitPidVar = "JOBPILOT_AWAIT_PID";
 
-    /// <summary>Environment variable marking a process relaunched right after an update.</summary>
-    public const string JustUpdatedVar = "JOBPILOT_UPDATED";
-
-    /// <summary>
-    /// Reads and clears the just-updated marker. A relaunched child must skip its own startup update check:
-    /// it avoids a redundant release fetch and breaks the relaunch loop a mis-versioned release would cause.
-    /// </summary>
-    public static bool ConsumeJustUpdated()
-    {
-        var updated = Environment.GetEnvironmentVariable(JustUpdatedVar) is not null;
-        Environment.SetEnvironmentVariable(JustUpdatedVar, null);
-        return updated;
-    }
-
     private static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan Poll = TimeSpan.FromMilliseconds(150);
     private static readonly TimeSpan SocketDrain = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan ResponseFlush = TimeSpan.FromMilliseconds(500);
 
-    /// <summary>Whether this process is an update relaunch.</summary>
+    /// <summary>
+    /// Whether this process is an update relaunch. A relaunched child skips its own startup update check:
+    /// it avoids a redundant release fetch and breaks the relaunch loop a mis-versioned release would cause.
+    /// </summary>
     public static bool IsUpdateRelaunch => Environment.GetEnvironmentVariable(AwaitPidVar) is not null;
 
     /// <summary>Stops the parent after its update response has flushed.</summary>

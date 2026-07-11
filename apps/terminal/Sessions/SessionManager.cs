@@ -124,7 +124,7 @@ public sealed class SessionManager : IDisposable
     /// <exception cref="ArgumentException">The expected provider id is not a known provider.</exception>
     public async Task<InjectResult> Inject(string command, string? expectedProvider = null)
     {
-        if (string.IsNullOrEmpty(command)) return InjectResult.NotRunning;
+        ArgumentException.ThrowIfNullOrEmpty(command);
 
         int generation;
         lock (stateLock)

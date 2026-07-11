@@ -12,8 +12,8 @@ public sealed class HostUpdateService(
 {
     private static readonly TimeSpan StartupTimeout = TimeSpan.FromSeconds(20);
 
-    /// <summary>Prevents concurrent swaps of the install directory.</summary>
-    private readonly SemaphoreSlim gate = new(1, 1);
+    /// <summary>Nonzero while a swap of the install directory is in flight.</summary>
+    private int updateInProgress;
 
     /// <summary>Updates before binding. Returns true when a replacement was launched.</summary>
     public async Task<bool> UpdateAtStartupAsync()
@@ -35,7 +35,7 @@ public sealed class HostUpdateService(
             }
 
             installer.CleanupPreviousSwap();
-            var result = await ApplyLatestAsync(available, RelaunchMode.Startup, cts.Token);
+            var result = await ApplyLatestAsync(available, cts.Token);
             if (result.Updating)
             {
                 logger.LogInformation("Host updated to v{Next}; relaunching.", result.ToVersion);
@@ -59,36 +59,34 @@ public sealed class HostUpdateService(
             return NotUpdating(current, UpdateResult.ReasonDevCheckout);
         }
 
-        if (!gate.Wait(0, ct))
+        if (Interlocked.Exchange(ref updateInProgress, 1) == 1)
         {
             return NotUpdating(current, UpdateResult.ReasonInProgress);
         }
 
-        var releaseGate = true;
+        var updating = false;
         try
         {
             var available = await releases.FetchReleasesAsync(ct)
                 ?? throw new InvalidOperationException("Could not read the GitHub releases list.");
 
             installer.CleanupPreviousSwap();
-            var result = await ApplyLatestAsync(available, RelaunchMode.Runtime, ct);
-            if (result.Updating)
-            {
-                releaseGate = false; // The process is shutting down; no second swap may start.
-            }
+            var result = await ApplyLatestAsync(available, ct);
+            updating = result.Updating;
             return result;
         }
         finally
         {
-            if (releaseGate)
+            // A successful update never re-arms: the process is shutting down and no second swap may start.
+            if (!updating)
             {
-                gate.Release();
+                Volatile.Write(ref updateInProgress, 0);
             }
         }
     }
 
     /// <summary>Swaps in the newest release above the running version, then relaunches into it.</summary>
-    private async Task<UpdateResult> ApplyLatestAsync(GitHubRelease[] available, RelaunchMode mode, CancellationToken ct)
+    private async Task<UpdateResult> ApplyLatestAsync(GitHubRelease[] available, CancellationToken ct)
     {
         var exePath = Environment.ProcessPath
             ?? throw new InvalidOperationException("Cannot resolve the host executable path.");
@@ -107,9 +105,9 @@ public sealed class HostUpdateService(
             return NotUpdating(current.ToString(3), UpdateResult.ReasonNoAsset);
         }
 
-        logger.LogInformation("Updating host v{Current} -> v{Next} ({Mode}).", current, latest.Value.Version, mode);
+        logger.LogInformation("Updating host v{Current} -> v{Next}.", current, latest.Value.Version);
         await installer.SwapAsync(downloadUrl, exePath, Path.GetDirectoryName(exePath)!, ct);
-        installer.Relaunch(exePath, mode);
+        installer.Relaunch(exePath);
 
         return new UpdateResult
         {

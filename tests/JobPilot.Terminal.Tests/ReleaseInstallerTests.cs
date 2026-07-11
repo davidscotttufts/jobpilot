@@ -3,14 +3,14 @@ using Xunit;
 
 namespace JobPilot.Terminal.Tests;
 
-public class StagedApplyTests
+public class ReleaseInstallerTests
 {
     private static string Install(TempDir temp) => Path.Combine(temp.Root, "install");
 
     private static string Staging(TempDir temp) => Path.Combine(temp.Root, "staging");
 
     [Fact]
-    public void Run_OverwritesExistingFilesAndAddsNewOnes()
+    public void CopyOver_OverwritesExistingFilesAndAddsNewOnes()
     {
         using var temp = new TempDir();
 
@@ -18,50 +18,14 @@ public class StagedApplyTests
         temp.File(Path.Combine("staging", "jobpilot.exe"), "new binary");
         temp.File(Path.Combine("staging", "plugin", "skills", "new-skill.md"), "fresh");
 
-        StagedApply.Run(Staging(temp), Install(temp));
+        ReleaseInstaller.CopyOver(Staging(temp), Install(temp));
 
         Assert.Equal("new binary", File.ReadAllText(Path.Combine(Install(temp), "jobpilot.exe")));
         Assert.Equal("fresh", File.ReadAllText(Path.Combine(Install(temp), "plugin", "skills", "new-skill.md")));
     }
 
     [Fact]
-    public void Run_LeavesNoBackupDirectoryBehind()
-    {
-        using var temp = new TempDir();
-        temp.File(Path.Combine("install", "a.txt"), "old");
-        temp.File(Path.Combine("staging", "a.txt"), "new");
-
-        StagedApply.Run(Staging(temp), Install(temp));
-
-        Assert.False(Directory.Exists(Install(temp) + ".bak"));
-    }
-
-    [Fact]
-    public void Run_RollsBackReplacedAndCreatedFiles_WhenACopyFails()
-    {
-        using var temp = new TempDir();
-
-        // Lock the final target so earlier staged writes must be rolled back.
-        temp.File(Path.Combine("install", "a.txt"), "original-a");
-        var locked = temp.File(Path.Combine("install", "z-locked.txt"), "original-z");
-        temp.File(Path.Combine("staging", "a.txt"), "updated-a");
-        temp.File(Path.Combine("staging", "b-new.txt"), "brand-new");
-        temp.File(Path.Combine("staging", "z-locked.txt"), "updated-z");
-
-        using (new FileStream(locked, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
-        {
-            Assert.ThrowsAny<IOException>(() => StagedApply.Run(Staging(temp), Install(temp)));
-        }
-
-        // Replaced files are restored and newly introduced files are removed.
-        Assert.Equal("original-a", File.ReadAllText(Path.Combine(Install(temp), "a.txt")));
-        Assert.Equal("original-z", File.ReadAllText(locked));
-        Assert.False(File.Exists(Path.Combine(Install(temp), "b-new.txt")));
-        Assert.False(Directory.Exists(Install(temp) + ".bak"));
-    }
-
-    [Fact]
-    public void Run_PrunesPluginFilesTheNewReleaseNoLongerShips()
+    public void Prune_RemovesPluginFilesTheNewReleaseNoLongerShips()
     {
         using var temp = new TempDir();
 
@@ -69,7 +33,8 @@ public class StagedApplyTests
         temp.File(Path.Combine("install", "plugin", "skills", "removed", "SKILL.md"), "stale");
         temp.File(Path.Combine("staging", "plugin", "skills", "kept", "SKILL.md"), "new");
 
-        StagedApply.Run(Staging(temp), Install(temp));
+        ReleaseInstaller.CopyOver(Staging(temp), Install(temp));
+        ReleaseInstaller.PruneRemovedPluginFiles(Staging(temp), Install(temp));
 
         Assert.Equal("new", File.ReadAllText(Path.Combine(Install(temp), "plugin", "skills", "kept", "SKILL.md")));
         Assert.False(File.Exists(Path.Combine(Install(temp), "plugin", "skills", "removed", "SKILL.md")));
@@ -77,7 +42,7 @@ public class StagedApplyTests
     }
 
     [Fact]
-    public void Run_NeverPrunesOutsideThePluginSubtree()
+    public void Prune_NeverTouchesFilesOutsideThePluginSubtree()
     {
         using var temp = new TempDir();
 
@@ -86,7 +51,8 @@ public class StagedApplyTests
         temp.File(Path.Combine("install", "plugin", "skills", "a.md"), "old");
         temp.File(Path.Combine("staging", "plugin", "skills", "a.md"), "new");
 
-        StagedApply.Run(Staging(temp), Install(temp));
+        ReleaseInstaller.CopyOver(Staging(temp), Install(temp));
+        ReleaseInstaller.PruneRemovedPluginFiles(Staging(temp), Install(temp));
 
         Assert.Equal("user state", File.ReadAllText(Path.Combine(Install(temp), "user-notes.md")));
     }

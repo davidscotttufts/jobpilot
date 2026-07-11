@@ -86,12 +86,6 @@ public class TerminalProvidersTests
     }
 
     [Fact]
-    public void GetLaunchSpec_DefaultsToClaude_WhenProviderIsAbsent()
-    {
-        Assert.Equal("claude", TerminalProviders.GetLaunchSpec(null, "/plugin", "/cwd").Command);
-    }
-
-    [Fact]
     public void GetLaunchSpec_Throws_ForAnUnknownProvider()
     {
         Assert.Throws<ArgumentException>(() => TerminalProviders.GetLaunchSpec("gemini", "/plugin", "/cwd"));

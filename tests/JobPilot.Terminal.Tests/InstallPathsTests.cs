@@ -17,7 +17,6 @@ public class InstallPathsTests
         Assert.Equal(temp.Root, paths.WorkingDir);
         Assert.Equal(Path.Combine(temp.Root, "plugin", "skills"), paths.SharedSkillsDir);
         Assert.Equal(Path.Combine(temp.Root, "plugin"), paths.ClaudePluginDir);
-        Assert.Equal(paths.ClaudePluginDir, paths.CodexPluginDir);
     }
 
     [Fact]

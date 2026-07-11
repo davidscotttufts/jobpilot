@@ -58,11 +58,6 @@ public sealed class PtyProcess : IPty
         IPtyConnection spawned;
         try
         {
-            if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
-            {
-                throw new PlatformNotSupportedException("The JobPilot terminal supports Windows, macOS, and Linux.");
-            }
-
             spawned = Task.Run(() => PtyProvider.SpawnAsync(BuildOptions(command, args, workingDirectory, cols, rows, environment), CancellationToken.None))
                 .GetAwaiter().GetResult();
         }
