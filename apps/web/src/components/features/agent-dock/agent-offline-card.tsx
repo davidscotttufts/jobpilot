@@ -36,7 +36,14 @@ export function AgentOfflineCard(props: AgentOfflineCardProps): ReactElement {
       </Stack>
 
       {canRelaunch && (
-        <Button variant="contained" component="a" href={TERMINAL_PROTOCOL_URL} onClick={onStart}>
+        <Button
+          variant="contained"
+          size="small"
+          component="a"
+          href={TERMINAL_PROTOCOL_URL}
+          onClick={onStart}
+          sx={{ alignSelf: "flex-start" }}
+        >
           Start agent
         </Button>
       )}
