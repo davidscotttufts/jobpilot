@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2026-07-11
+
+### Changed
+
+- Maintenance release: no user-facing changes. Internally, the terminal host
+  dropped redundant code and simplified the updater's staging and relaunch
+  paths, dependencies were upgraded (including TypeScript 7), and linting and
+  formatting moved from ESLint and Prettier to Biome.
+
 ## [2.1.0] - 2026-07-09
 
 ### Added
