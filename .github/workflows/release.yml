@@ -1,6 +1,6 @@
 # One release for host + plugin. Push a tag like `v2.1.0` (or run manually to re-sync): builds the AOT
-# host per OS, publishes the Release (terminal archives + plugin tarball), and mirrors plugin/ into the
-# claude-plugins and codex-plugins marketplaces. Needs secret MARKETPLACE_PUSH_TOKEN (Contents:write on
+# host per OS, mirrors provider-specific plugin payloads into the marketplaces, then publishes the
+# terminal archives. Needs secret MARKETPLACE_PUSH_TOKEN (Contents:write on
 # suxrobGM/claude-plugins and suxrobGM/codex-plugins).
 name: Release
 
@@ -73,14 +73,6 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v3
-        with:
-          files: |
-            artifacts/*/jobpilot-terminal-*
-          generate_release_notes: true
-
       - name: Checkout Claude marketplace
         uses: actions/checkout@v7
         with:
@@ -95,26 +87,29 @@ jobs:
           token: ${{ secrets.MARKETPLACE_PUSH_TOKEN }}
           path: codex-marketplace
 
-      # Marketplaces get only the bootstrap: manifests + the self-contained setup
-      # skill. Every other skill needs the host-injected token and would 401
-      # standalone; the full tree still ships in the terminal archives above.
-      - name: Stage marketplace payload
+      # Claude gets the setup bootstrap; Codex gets the full installed plugin used by dashboard sessions.
+      - name: Stage and verify marketplace payloads
         run: |
-          mkdir -p staged/skills staged/.codex-plugin
-          cp -r plugin/.claude-plugin staged/
-          cp -r plugin/skills/setup staged/skills/
-          # Trim the Codex manifest in place: no MCP before the host exists, setup-only prompt.
-          jq 'del(.mcpServers) | .interface.defaultPrompt = ["$setup"]' \
-            plugin/.codex-plugin/plugin.json > staged/.codex-plugin/plugin.json
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            test "${GITHUB_REF_NAME#v}" = "$(jq -er '.version' package.json)"
+          fi
+          bash .github/scripts/sync-marketplaces.sh . marketplace codex-marketplace
 
-      # Mirror the staged payload into each vendored marketplace copy and commit if changed.
-      - name: Sync to marketplaces
+      - name: Commit marketplace updates
         run: |
           for dir in marketplace codex-marketplace; do
-            rsync -a --delete staged/ "$dir/plugins/jobpilot/"
             git -C "$dir" config user.name "github-actions[bot]"
             git -C "$dir" config user.email "github-actions[bot]@users.noreply.github.com"
             git -C "$dir" add -A
             git -C "$dir" diff --cached --quiet || git -C "$dir" commit -m "chore: sync jobpilot plugin ${GITHUB_REF_NAME}"
             git -C "$dir" push
           done
+
+      # Publish the host only after its matching public Codex plugin is available.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            artifacts/*/jobpilot-terminal-*
+          generate_release_notes: true

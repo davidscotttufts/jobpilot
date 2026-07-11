@@ -121,7 +121,7 @@ finishes with `/reload-plugins` on Claude.
 [plugin/](../plugin/) is one provider-neutral tree, no generation step:
 
 - `skills/<name>/SKILL.md` - one workflow per directory; shared docs in
-  `skills/shared/`. Skills reference siblings by name and shared docs by
+  `shared/`. Skills reference siblings by name and shared docs by
   relative path, so the same text serves both providers.
 - `agents/*.md` - worker subagents (`job-worker`, `outreach-worker`) that
   campaign skills delegate per-iteration work to, isolating heavy browser
@@ -132,16 +132,20 @@ finishes with `/reload-plugins` on Claude.
   manifests (Codex ignores Claude-only frontmatter like `allowed-tools`).
 
 The terminal launches `claude --plugin-dir plugin` or
-`codex --no-alt-screen -C <root>`. Codex has no `--plugin-dir`; it discovers
-[.agents/plugins/marketplace.json](../.agents/plugins/marketplace.json),
-which points at `./plugin` (Codex requires a subdirectory source - hence the
-manifests live in `plugin/`, not the root). The terminal publish output
-bundles the same manifest. Standalone installs come from the
+`codex --no-alt-screen -C <root>`. Codex has no `--plugin-dir`; dashboard
+sessions reuse the plugin the user explicitly installed from the public
+marketplace under the same OS user and `CODEX_HOME`. The terminal publish
+output still bundles `plugin/` for Claude and for the shared worker resources
+addressed through `JOBPILOT_SKILLS_ROOT`, plus `.codex/agents/*.toml` for
+Codex worker discovery. It does not expose a repo-local Codex marketplace.
+Standalone installs come from the
 [claude-plugins](https://github.com/suxrobGM/claude-plugins) /
 [codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces,
-synced from `plugin/` on each release tag. Root `.claude/settings.json`
-grants the permissions the skills need - the plugin owns behavior, the repo
-owns trust policy.
+synced from `plugin/` on each release tag: Claude receives the setup bootstrap
+and Codex receives the full skill tree, its `shared/` references, and MCP
+configuration. Root
+`.claude/settings.json` grants the permissions the skills need - the plugin
+owns behavior, the repo owns trust policy.
 
 ### Apply lifecycle
 
@@ -170,7 +174,7 @@ channels (`inbox`, `pipeline`, `resume`, `upwork`) follow the same pattern.
 
 ### Skills layer
 
-`plugin/skills/shared/setup.md` is the single source of truth for config
+`plugin/shared/setup.md` is the single source of truth for config
 loading: `/api/health` → `GET /api/profile` → `GET /api/credentials`; resumes
 via `data.defaultResumeAbsolutePath` or `GET /api/resumes/[id]/file`.
 `auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting

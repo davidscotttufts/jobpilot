@@ -32,15 +32,15 @@
     <Delete Files="@(_JobPilotStalePublish)" />
   </Target>
 
-  <!-- Ship the shared plugin/ tree, rebased under plugin/ so InstallPaths.Resolve() finds it at runtime. -->
+  <!-- Ship the shared plugin/ tree for Claude and JobPilot runtime resources. -->
   <ItemGroup>
     <Content Include="..\..\plugin\**\*">
       <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <!-- Ship the Codex marketplace manifest so terminal-launched Codex (-C <publish root>) auto-discovers ./plugin. -->
-    <Content Include="..\..\.agents\plugins\marketplace.json">
-      <Link>.agents\plugins\marketplace.json</Link>
+    <!-- Codex loads the user-installed marketplace plugin; these repo-scoped agents provide worker parity with Claude. -->
+    <Content Include="..\..\.codex\agents\*.toml">
+      <Link>.codex\agents\%(Filename)%(Extension)</Link>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>

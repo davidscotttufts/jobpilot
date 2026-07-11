@@ -1,7 +1,7 @@
 # JobPilot job-worker subagent for Codex (multi_agent). Single source of truth is
 # plugin/agents/job-worker.md; this file points Codex at it so the two never drift.
 # Runtimes that don't load custom agents run that file inline instead (see
-# plugin/skills/shared/setup.md -> "Worker subagents").
+# plugin/shared/setup.md -> "Worker subagents").
 name = "job-worker"
 description = "Internal per-job worker for JobPilot apply/score loops. Spawn once per job; returns only a compact JSON result."
 developer_instructions = """

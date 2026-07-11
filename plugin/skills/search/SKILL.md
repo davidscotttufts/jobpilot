@@ -10,7 +10,7 @@ Search a single board (picked by the user when launching the campaign) and rank 
 
 ## Setup
 
-1. Follow `../shared/setup.md`.
+1. Follow `../../shared/setup.md`.
 2. Parse and strip the flags; the rest is the free-text query.
    - `--board <domain>` - **required** (e.g. `--board linkedin.com`).
    - `--max-jobs <N>` - optional cap on results to rank. Absent = unlimited (rank until the board is exhausted).
@@ -31,9 +31,9 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 ## Phase 2: Search the Board
 
 1. `browser_navigate` to the resolved board's `searchUrl`.
-2. Follow `../shared/auth.md` to log in proactively.
+2. Follow `../../shared/auth.md` to log in proactively.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row. While under `--max-jobs` (or always, when it's absent/unlimited), scroll/paginate per **Pagination & infinite scroll** in `../shared/browser-tips.md` until the cap is met or results run dry.
+4. Take a `browser_snapshot` narrowed to the results list (per `../../shared/browser-tips.md`) and read `{ title, company, location, url, postedAt }` per row. While under `--max-jobs` (or always, when it's absent/unlimited), scroll/paginate per **Pagination & infinite scroll** in `../../shared/browser-tips.md` until the cap is met or results run dry.
 5. Take the first `--max-jobs` results (or all of them when unlimited); if fewer after paginating, take what's there. Only if a brief description is needed for the ranked table AND the listing preview didn't include one, delegate that row to the `job-worker` subagent with `mode:"score"` and `minMatchScore:0` (so nothing is auto-skipped - search keeps every result for review): it opens the posting, scores, and saves the Job row in isolated context, keeping the body out of this conversation. Such rows are already saved - exclude them from the Phase 5 bulk save. Otherwise skip the per-job nav and rank from the row to save tokens.
 
 ## Phase 3: Exclude Previously Applied
@@ -88,9 +88,9 @@ Print a compact ranked table, then link to the campaign - nothing else:
 ## Rules
 
 1. **Exactly one board per campaign** - the `--board` flag is required and the skill targets only that board.
-2. **Account handling** - follow `../shared/auth.md`. If login fails because the account doesn't exist, the auth flow registers one with the stored credentials.
+2. **Account handling** - follow `../../shared/auth.md`. If login fails because the account doesn't exist, the auth flow registers one with the stored credentials.
 3. **Handle rate limiting** - if blocked, note it and continue.
 4. **Be honest about scores.** 50/100 is a stretch - label it as such.
 5. **Deduplicate** within the board.
 
-Read `../shared/browser-tips.md` for large pages, popups, and browser best practices.
+Read `../../shared/browser-tips.md` for large pages, popups, and browser best practices.

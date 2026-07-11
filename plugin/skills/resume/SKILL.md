@@ -14,7 +14,7 @@ Live view: `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Setup
 
-Follow `../shared/setup.md` to load profile, resume,
+Follow `../../shared/setup.md` to load profile, resume,
 credentials. Check the web app is up:
 
 ```bash

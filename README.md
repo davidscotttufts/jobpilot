@@ -63,7 +63,7 @@ Curious how the pieces fit together? See the plain-language
    /jobpilot:setup
    ```
 
-   In **Codex** (in a shell, then `$setup` in a session):
+   In **Codex** (run both commands in a shell, start a new session, then run `$setup`):
 
    ```text
    codex plugin marketplace add suxrobGM/codex-plugins
@@ -74,8 +74,9 @@ Curious how the pieces fit together? See the plain-language
    the dashboard. From then on, launch the agent anytime from the dashboard's
    agent dock.
 
-Don't use Claude Code or Codex from a terminal yourself? Install the
-standalone agent with a one-liner instead, then launch it from the dashboard:
+Need to install or repair the standalone terminal host separately? Use a
+one-liner below. The JobPilot plugin is still required before launching Codex
+from the dashboard:
 
 - **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
 - **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
@@ -92,6 +93,10 @@ Code commands use `/jobpilot:<skill>`, Codex commands use `$<skill>`:
 /jobpilot:auto-apply senior typescript remote
 $auto-apply senior typescript remote
 ```
+
+In Codex, `/skills` opens the skill picker if you want to browse the installed
+JobPilot skills. Direct invocation uses `$setup`, `$search`, and the other
+`$<skill>` forms; `/setup` and `/jobpilot:setup` are not Codex skill commands.
 
 | Skill               | Purpose                                                                         |
 | ------------------- | ------------------------------------------------------------------------------- |

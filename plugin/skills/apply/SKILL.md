@@ -15,7 +15,7 @@ User approves once up front. No per-job confirmation after that.
 
 ## Setup
 
-Follow `../shared/setup.md` to load profile, resume, credentials.
+Follow `../../shared/setup.md` to load profile, resume, credentials.
 
 ```bash
 JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
@@ -29,7 +29,7 @@ Read `autoApply` for config (defaults applied per field):
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
-For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`; the `job-worker` handles login/registration there per `../shared/auth.md`.
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`; the `job-worker` handles login/registration there per `../../shared/auth.md`.
 
 ## Phase 0: Dispatch
 
@@ -47,7 +47,7 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 **URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`verdict` to fill the review below; keep its `digest` as `DIGEST` for 1.4.
 
-**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../shared/digest-schema.md`), and `POST /api/score-fit` for the score. Keep the digest in `DIGEST=...` for 1.4.
+**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../../shared/digest-schema.md`), and `POST /api/score-fit` for the score. Keep the digest in `DIGEST=...` for 1.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -136,7 +136,7 @@ If applied, mark the queue entry consumed (`status:"skipped"`) and add a skipped
 
 ### 3.2 Score (delegate to `job-worker`)
 
-Delegate the visit + score to the `job-worker` subagent - it opens its own tab, reads the posting, fuzzy-dedupes by title+company, scores, applies eligibility (`../shared/eligibility.md`), and **saves the Job row itself** (so the full posting/digest never enters this conversation). One worker at a time. Input JSON:
+Delegate the visit + score to the `job-worker` subagent - it opens its own tab, reads the posting, fuzzy-dedupes by title+company, scores, applies eligibility (`../../shared/eligibility.md`), and **saves the Job row itself** (so the full posting/digest never enters this conversation). One worker at a time. Input JSON:
 
 ```json
 { "mode": "score", "campaignId": "<CAMPAIGN_ID>", "jobKey": "<entry-id>", "url": "<job-url>",
@@ -241,9 +241,9 @@ Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 ## Rules
 
 1. **Up-front confirmation mandatory** (1.1 or Phase 4); single-job mode adds pre-submit review (5.2).
-2. **Create accounts when needed** - the `job-worker` follows `../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
+2. **Create accounts when needed** - the `job-worker` follows `../../shared/auth.md`: register when no account exists (without asking), run forgot-password when the stored password is stale.
 3. **Never process payments** - on `needs_user reason:"payment"`, POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **CAPTCHAs / email verification** - the worker attempts `solve-captcha` and returns `skipped` when unsolved; for `needs_user reason:"2FA"` or email verification, pause and ask (see `../shared/auth.md`).
+4. **CAPTCHAs / email verification** - the worker attempts `solve-captcha` and returns `skipped` when unsolved; for `needs_user reason:"2FA"` or email verification, pause and ask (see `../../shared/auth.md`).
 5. **Be honest about match scores.**
 6. **Pace** 3-5s between submissions on the same domain.
 7. **The Campaign is the audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.

@@ -14,7 +14,7 @@ Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Neve
 JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 ```
 
-Follow `../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
+Follow `../../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
 
 ## Step 1: Select Targets
 
@@ -29,7 +29,7 @@ Count the full target list up front and process every one. **Below-threshold, ze
 ## Step 2: Per Job
 
 1. **Digest** - parse the cached `digest`. Rich = non-empty `techStack` **and** `requirements`/`responsibilities`.
-2. **Re-read only when needed** - if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
+2. **Re-read only when needed** - if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../../shared/auth.md` if walled), rebuild the digest, and write it back so future rescans skip the browser:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs/<key>" \
@@ -52,7 +52,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 
 ## Step 3: Eligibility
 
-Follow `../shared/eligibility.md` - seniority/below-level, location/onsite, sparse JDs, and 1099/contractor are never skips; only a JD-stated citizenship/clearance requirement disqualifies.
+Follow `../../shared/eligibility.md` - seniority/below-level, location/onsite, sparse JDs, and 1099/contractor are never skips; only a JD-stated citizenship/clearance requirement disqualifies.
 
 ## Step 4: Finish
 

@@ -6,10 +6,10 @@ public sealed record InstallPaths
     /// <summary>Default working directory for a launched session.</summary>
     public required string WorkingDir { get; init; }
 
-    /// <summary>Shared skills tree (plugin/skills).</summary>
+    /// <summary>Skills tree used as the JOBPILOT_SKILLS_ROOT anchor (plugin/skills).</summary>
     public required string SharedSkillsDir { get; init; }
 
-    /// <summary>Plugin dir Claude loads (holds .claude-plugin/; Codex reaches the same tree via its marketplace file).</summary>
+    /// <summary>Bundled plugin dir Claude loads and JobPilot workers use; Codex loads its user-installed public copy.</summary>
     public required string ClaudePluginDir { get; init; }
 
     /// <summary>Finds the repository or published plugin layout.</summary>
@@ -28,7 +28,7 @@ public sealed record InstallPaths
             var pluginDir = Path.Combine(root, "plugin");
             var skillsDir = Path.Combine(pluginDir, "skills");
 
-            if (IsSharedSkillsDir(skillsDir)
+            if (HasRuntimeResources(pluginDir, skillsDir)
                 && IsClaudePluginDir(pluginDir)
                 && IsCodexPluginDir(pluginDir))
             {
@@ -42,7 +42,7 @@ public sealed record InstallPaths
         }
 
         throw new DirectoryNotFoundException(
-            "Could not find JobPilot provider assets: a plugin/ directory with skills/, .claude-plugin/, and .codex-plugin/.");
+            "Could not find JobPilot provider assets: a plugin/ directory with skills/, shared/, .claude-plugin/, and .codex-plugin/.");
     }
 
     private static IEnumerable<string> CandidateRoots()
@@ -58,10 +58,10 @@ public sealed record InstallPaths
         }
     }
 
-    private static bool IsSharedSkillsDir(string path)
+    private static bool HasRuntimeResources(string pluginDir, string skillsDir)
     {
-        return File.Exists(Path.Combine(path, "shared", "setup.md"))
-            && File.Exists(Path.Combine(path, "auto-apply", "SKILL.md"));
+        return File.Exists(Path.Combine(pluginDir, "shared", "setup.md"))
+            && File.Exists(Path.Combine(skillsDir, "auto-apply", "SKILL.md"));
     }
 
     private static bool IsClaudePluginDir(string path)

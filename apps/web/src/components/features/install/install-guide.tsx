@@ -51,7 +51,7 @@ function InstallStep(props: InstallStepProps): ReactElement {
   );
 }
 
-/** Three-step plugin-first install flow, with a direct host-install fallback. */
+/** Three-step plugin-first install flow, with a separate host repair path. */
 export function InstallGuide(): ReactElement {
   const [provider, setProvider] = useState<InstallProvider>("claude");
   const [showDirect, setShowDirect] = useState(false);
@@ -88,7 +88,7 @@ export function InstallGuide(): ReactElement {
         <Typography variant="body2Muted">
           {provider === "claude"
             ? "In the same Claude Code session, run the setup skill. It installs and starts the local JobPilot agent for you."
-            : "Start a Codex session and run the setup skill. It installs and starts the local JobPilot agent for you."}
+            : "Start a new Codex session and run $setup. You can also find it in the /skills picker."}
         </Typography>
         <CopyField
           value={SETUP_COMMANDS[provider]}
@@ -122,13 +122,13 @@ export function InstallGuide(): ReactElement {
           }
           sx={{ alignSelf: "flex-start", color: "text.secondary" }}
         >
-          No Claude Code or Codex plugin support? Install the agent directly
+          Need to install or repair the terminal host separately?
         </Button>
         <Collapse in={showDirect}>
           <Stack spacing={1.5}>
             <Typography variant="body2Muted">
-              Run the one-liner for your OS, then start <code>jobpilot</code>. The dashboard&apos;s
-              agent dock shows the same commands.
+              Run the one-liner for your OS, then start <code>jobpilot</code>. This does not replace
+              the JobPilot plugin required by Codex.
             </Typography>
             <HostInstallCommands />
           </Stack>

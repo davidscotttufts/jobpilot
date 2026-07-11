@@ -16,12 +16,7 @@
     "developerName": "JobPilot",
     "category": "Productivity",
     "capabilities": ["Interactive", "Read", "Write"],
-    "defaultPrompt": [
-      "$setup",
-      "$search senior typescript remote",
-      "$auto-apply senior fullstack remote",
-      "$apply"
-    ],
+    "defaultPrompt": ["$setup"],
     "brandColor": "#2563EB",
     "screenshots": []
   }

@@ -6,7 +6,7 @@ import { CopyField } from "@/components/ui/display";
 import { HostInstallCommands } from "./host-install-commands";
 import { type InstallProvider, PLUGIN_COMMANDS, SETUP_COMMANDS } from "./provider-commands";
 
-/** Provider tabs + plugin/setup copy commands, with the direct host one-liner as a fallback. */
+/** Provider tabs + plugin/setup copy commands, with a separate host repair command. */
 export function PluginInstallCommands(): ReactElement {
   const [provider, setProvider] = useState<InstallProvider>("claude");
 
@@ -31,7 +31,7 @@ export function PluginInstallCommands(): ReactElement {
         ))}
       </Stack>
       <Typography variant="captionMuted">
-        No plugin support? Install the host directly, then start <code>jobpilot</code>:
+        Need to repair the terminal host? The plugin is still required for Codex:
       </Typography>
       <Stack spacing={1}>
         <HostInstallCommands />

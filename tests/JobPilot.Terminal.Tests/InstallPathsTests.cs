@@ -47,7 +47,7 @@ public class InstallPathsTests
     }
 
     [Theory]
-    [InlineData("skills/shared/setup.md")]
+    [InlineData("shared/setup.md")]
     [InlineData("skills/auto-apply/SKILL.md")]
     [InlineData(".claude-plugin/plugin.json")]
     [InlineData(".codex-plugin/plugin.json")]

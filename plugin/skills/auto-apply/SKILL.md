@@ -14,7 +14,7 @@ Keep the chosen board open in tab 1; for each result that qualifies, delegate th
 JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 ```
 
-Follow `../shared/setup.md`. Read `autoApply` (defaults applied per field):
+Follow `../../shared/setup.md`. Read `autoApply` (defaults applied per field):
 
 | Setting                      | Default            | Notes                                                                                     |
 | ---------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
@@ -76,9 +76,9 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-
 If no row matches, PATCH the campaign to `failed` with `failReason:"Board <domain> not configured"` and stop.
 
 1. `browser_navigate` to `searchUrl` (this is **tab 1** - keep it open for the whole campaign).
-2. Follow `../shared/auth.md` - logs in, and **registers a new account when none exists, without asking**.
+2. Follow `../../shared/auth.md` - logs in, and **registers a new account when none exists, without asking**.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport - scroll/paginate per **Pagination & infinite scroll** in `../shared/browser-tips.md` as the loop drains rows (see 2.5); never treat the first batch as all jobs.
+4. Take a `browser_snapshot` narrowed to the results list (per `../../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport - scroll/paginate per **Pagination & infinite scroll** in `../../shared/browser-tips.md` as the loop drains rows (see 2.5); never treat the first batch as all jobs.
 
 ## Phase 2: Apply Loop (on demand)
 
@@ -99,7 +99,7 @@ If `.applied`, add the job with `status:"skipped"`, `skipReason:"Already applied
 
 ### 2.2 Score
 
-If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest (`../shared/digest-schema.md`), then score server-side:
+If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest (`../../shared/digest-schema.md`), then score server-side:
 
 ```bash
 FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
@@ -124,7 +124,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 ### 2.2a Eligibility - what is (and isn't) a skip
 
-Follow `../shared/eligibility.md`.
+Follow `../../shared/eligibility.md`.
 
 ### 2.3 Apply (delegate to `job-worker`)
 
@@ -169,7 +169,7 @@ The loop ends **only** on one of these. Before picking the next result, refetch 
 
 1. `status === "paused"` → POST `/result` `outcome:"skipped"`, `skipReason:"Campaign paused by user"` for any in-flight `applying` job, exit.
 2. `config.maxApplications` set AND `summary.applied >= config.maxApplications` → end. Unset (default) = no cap; keep going.
-3. Board exhausted - per **Pagination & infinite scroll** in `../shared/browser-tips.md` (2 consecutive scrolls with no new rows). First batch done ≠ exhausted. With `maxApplications` unset, paginate until genuinely dry.
+3. Board exhausted - per **Pagination & infinite scroll** in `../../shared/browser-tips.md` (2 consecutive scrolls with no new rows). First batch done ≠ exhausted. With `maxApplications` unset, paginate until genuinely dry.
 
 ## Phase 3: Summary
 
@@ -185,9 +185,9 @@ Print a summary table, link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`, suggest 
 ## Rules
 
 1. **Autonomous after launch.** No per-job or batch confirmation; the UI launch is the approval.
-2. **Account handling** - follow `../shared/auth.md`: register when missing (without asking), forgot-password via the `get-code` skill when stale.
+2. **Account handling** - follow `../../shared/auth.md`: register when missing (without asking), forgot-password via the `get-code` skill when stale.
 3. **Never process payments** - POST `/result` `outcome:"failed"`, `failReason:"Payment required"`.
-4. **Email codes** - fetch automatically via the `get-code` skill for `<board-domain>` (see `../shared/auth.md`); only ask the user when it returns nothing. **2FA** - the worker returns `needs_user reason:"2FA"`; pause and ask (one-time per board). **CAPTCHA** - never pause: the `job-worker` detects it up front and attempts `solve-captcha`; an unsolved CAPTCHA comes back as a `skipped` outcome (manual apply later), never a pause.
+4. **Email codes** - fetch automatically via the `get-code` skill for `<board-domain>` (see `../../shared/auth.md`); only ask the user when it returns nothing. **2FA** - the worker returns `needs_user reason:"2FA"`; pause and ask (one-time per board). **CAPTCHA** - never pause: the `job-worker` detects it up front and attempts `solve-captcha`; an unsolved CAPTCHA comes back as a `skipped` outcome (manual apply later), never a pause.
 5. **One job per worker.** Board stays in tab 1; each application runs in the `job-worker`'s own tab, which it closes before returning. Delegate sequentially - one worker at a time (shared browser).
 6. **Deduplicate** within the board and against previously-applied before opening a tab.
 7. **Pace** 3-5s between submissions on the same domain.

@@ -12,7 +12,7 @@ Backed by a `Campaign` (`source: "outreach"`); each contacted person + message i
 
 ## Setup
 
-Follow `../shared/setup.md` (health, profile, primary/tailored resume, credentials).
+Follow `../../shared/setup.md` (health, profile, primary/tailored resume, credentials).
 
 ```bash
 JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
@@ -20,7 +20,7 @@ JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
 
 - Email capability: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"` → if `.canSend` is false,
   tell the user to **Reconnect Gmail** in email settings before email sends; LinkedIn still works.
-- LinkedIn login: `../shared/auth.md`, credentials scope `"linkedin.com"`.
+- LinkedIn login: `../../shared/auth.md`, credentials scope `"linkedin.com"`.
 
 ## Phase 0: Dispatch
 
@@ -51,8 +51,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-
 ```
 
 No row → PATCH campaign `failed`, `failReason:"Board <domain> not configured"`, stop. Else
-`browser_navigate` to its `searchUrl` in **tab 1** (keep open), log in (`../shared/auth.md`), submit
-the query, and `browser_snapshot` the results (narrowed, per `../shared/browser-tips.md`) for
+`browser_navigate` to its `searchUrl` in **tab 1** (keep open), log in (`../../shared/auth.md`), submit
+the query, and `browser_snapshot` the results (narrowed, per `../../shared/browser-tips.md`) for
 `{ title, company, location, url }` per row.
 
 ## Phase 1: Discover, compose, save
@@ -97,7 +97,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 4. Before the next result, `GET /api/campaigns/<campaign-id>`: `status:"paused"` → exit; `maxJobs`
    reached → stop. At the last loaded row, scroll/paginate per **Pagination & infinite scroll** in
-   `../shared/browser-tips.md`; Phase 5 only once it's exhausted. `maxJobs` absent → paginate until dry.
+   `../../shared/browser-tips.md`; Phase 5 only once it's exhausted. `maxJobs` absent → paginate until dry.
 
 ### Without a board - discover from criteria
 
@@ -183,6 +183,6 @@ Print a table (contact, channel, status) and link to `$JOBPILOT_WEB/campaigns/<c
    randomized pacing (protects the user's own account from ToS bans).
 2. **No attachment on a cold first touch** - resume goes out as a link only.
 3. **Dedupe** - skip contacts already messaged for the same role.
-4. **CAPTCHA / 2FA** during LinkedIn login → for a CAPTCHA, invoke the `solve-captcha` skill; if unsolved (or for 2FA), pause and ask (`../shared/auth.md`).
+4. **CAPTCHA / 2FA** during LinkedIn login → for a CAPTCHA, invoke the `solve-captcha` skill; if unsolved (or for 2FA), pause and ask (`../../shared/auth.md`).
 5. **Personalize** - one specific, real detail per message; no generic templates.
 6. **The Campaign is the audit trail** - PATCH non-terminal edits; POST `/result` for terminal outcomes.

@@ -1,4 +1,4 @@
-﻿---
+---
 name: humanizer
 version: 2.3.0
 description: |

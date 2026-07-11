@@ -14,12 +14,12 @@ const STEPS = [
   {
     title: "Run setup & sign up",
     body: "The setup skill installs and starts your local agent. Sign up and onboarding builds your profile from your resume - what the agent scores and applies with.",
-    snippet: "/jobpilot:setup",
+    snippet: "/jobpilot:setup  ·  $setup",
   },
   {
     title: "Run a campaign",
     body: "Launch the agent from the dashboard dock. Start with a search, graduate to auto-apply.",
-    snippet: "/jobpilot:auto-apply senior ts remote",
+    snippet: "/jobpilot:auto-apply  ·  $auto-apply",
   },
 ];
 

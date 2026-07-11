@@ -16,7 +16,7 @@ Find one hiring contact, draft their message(s), return one compact JSON object.
 
 ## Input
 
-`{ campaignId, target, channels, linkedinTier, resumeUrl }`. `target` is a job (`jobUrl`/`title`/`company`/`digest`) or `{ criteria }` free-text. `JOBPILOT_API`/`JOBPILOT_API_TOKEN` are in the env; shared docs at `$JOBPILOT_SKILLS_ROOT/shared/` (`setup.md` for profile, `browser-tips.md` for snapshots). Load the profile (setup.md); you sign as the user (`profile.{firstName,lastName}` + resume headline).
+`{ campaignId, target, channels, linkedinTier, resumeUrl }`. `target` is a job (`jobUrl`/`title`/`company`/`digest`) or `{ criteria }` free-text. `JOBPILOT_API`/`JOBPILOT_API_TOKEN` are in the env; shared docs at `$JOBPILOT_SKILLS_ROOT/../shared/` (`setup.md` for profile, `browser-tips.md` for snapshots). Load the profile (setup.md); you sign as the user (`profile.{firstName,lastName}` + resume headline).
 
 ## Step 1: Discover a contact
 

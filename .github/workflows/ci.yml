@@ -31,6 +31,33 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Test marketplace staging
+        run: |
+          fixture="$(mktemp -d)"
+          claude="$fixture/claude"
+          codex="$fixture/codex"
+          mkdir -p "$claude/plugins/jobpilot" \
+                   "$codex/plugins/jobpilot/.codex-plugin" \
+                   "$codex/.agents/plugins"
+          jq -n '{
+            name: "sukhrob-codex-plugins",
+            interface: { displayName: "Sukhrob Codex Plugins" },
+            plugins: [{
+              name: "jobpilot",
+              source: { source: "local", path: "./plugins/jobpilot" },
+              policy: { installation: "AVAILABLE", authentication: "ON_USE" },
+              category: "Productivity"
+            }]
+          }' > "$codex/.agents/plugins/marketplace.json"
+
+          # Equal size and mtime reproduces the old rsync false-negative.
+          cp -p plugin/.codex-plugin/plugin.json "$codex/plugins/jobpilot/.codex-plugin/plugin.json"
+          sed -i '0,/jobpilot/s//jobpilox/' "$codex/plugins/jobpilot/.codex-plugin/plugin.json"
+          touch -r plugin/.codex-plugin/plugin.json "$codex/plugins/jobpilot/.codex-plugin/plugin.json"
+
+          bash .github/scripts/sync-marketplaces.sh . "$claude" "$codex"
+          cmp plugin/.codex-plugin/plugin.json "$codex/plugins/jobpilot/.codex-plugin/plugin.json"
+
       - name: Lint & format check
         run: bun run ci
 
@@ -79,15 +106,20 @@ jobs:
         run: dotnet publish -c Release -r linux-x64 -o publish/
         working-directory: apps/terminal
 
-      # InstallPaths.Resolve() requires these assets.
-      - name: Verify publish root ships the plugin tree
+      # InstallPaths.Resolve() requires the plugin tree; Codex workers are repo-scoped runtime assets.
+      - name: Verify publish root ships provider assets
         working-directory: apps/terminal/publish
         run: |
           for f in jobpilot \
                    plugin/.claude-plugin/plugin.json \
                    plugin/.codex-plugin/plugin.json \
-                   plugin/skills/shared/setup.md \
+                   plugin/shared/setup.md \
                    plugin/skills/auto-apply/SKILL.md \
-                   .agents/plugins/marketplace.json; do
+                   .codex/agents/job-worker.toml \
+                   .codex/agents/outreach-worker.toml; do
             test -e "$f" || { echo "missing from publish root: $f"; exit 1; }
           done
+          test ! -e .agents/plugins/marketplace.json || {
+            echo "obsolete local Codex marketplace shipped in publish root"
+            exit 1
+          }

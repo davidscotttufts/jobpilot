@@ -65,6 +65,11 @@ download_and_install() {
   # Archive holds the binary plus the bundled plugin/ tree; extract it all.
   tar -xzf "${TMP_DIR}/${archive}" -C "$INSTALL_DIR"
   chmod +x "${INSTALL_DIR}/${BINARY_NAME}"
+
+  # Drop the obsolete repo-local Codex catalog while preserving unrelated install state.
+  rm -f "${INSTALL_DIR}/.agents/plugins/marketplace.json"
+  rmdir "${INSTALL_DIR}/.agents/plugins" 2>/dev/null || true
+  rmdir "${INSTALL_DIR}/.agents" 2>/dev/null || true
 }
 
 setup_path() {

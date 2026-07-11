@@ -34,18 +34,24 @@ codex plugin marketplace add suxrobGM/codex-plugins
 codex plugin add jobpilot@sukhrob-codex-plugins
 ```
 
-No Claude Code or Codex plugin support? The [install page](/install) also has a
-one-line direct installer for the local agent host.
+The [install page](/install) also has a one-line installer for repairing the
+local terminal host. It does not replace the plugin installation required by
+Codex.
 
 ## 2. Run setup
 
-In the same session, run the `setup` skill. It installs and starts the local
-agent - a small terminal host that runs Claude Code or Codex for you - and
-signs it in as you automatically.
+Start a new provider session, then run the `setup` skill. It installs and
+starts the local agent - a small terminal host that runs Claude Code or Codex
+for you - and signs it in as you automatically.
 
 ```text
 /jobpilot:setup
+$setup
 ```
+
+Use `/jobpilot:setup` in Claude Code or `$setup` in Codex. Codex also provides
+`/skills` as a picker for browsing installed skills; `/setup` is not a direct
+Codex skill command.
 
 The dashboard's agent dock (the terminal panel in the bottom corner) stays
 visible, so you can watch every step the agent takes. Pick your provider -
@@ -66,6 +72,7 @@ Start gentle: search first, apply after review.
 
 ```text
 /jobpilot:search senior typescript remote
+$search senior typescript remote
 ```
 
 The agent searches the board you pick, scores each role against your resume,
@@ -76,6 +83,7 @@ Once you trust the scoring, go autonomous:
 
 ```text
 /jobpilot:auto-apply senior typescript remote
+$auto-apply senior typescript remote
 ```
 
 Auto-apply searches, scores, and applies one job at a time until the board

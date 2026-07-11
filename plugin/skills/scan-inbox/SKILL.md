@@ -10,7 +10,7 @@ Classify recent email and link each thread to an existing `Application` when the
 
 ## Setup
 
-Follow `../shared/setup.md`.
+Follow `../../shared/setup.md`.
 
 ```bash
 JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
