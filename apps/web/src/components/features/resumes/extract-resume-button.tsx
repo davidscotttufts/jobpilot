@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactNode } from "react";
 import { DocumentScanner } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import type { ResumeDto } from "@/api/types";
@@ -13,7 +13,7 @@ interface ExtractResumeButtonProps {
   size?: "small" | "medium";
 }
 
-export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactElement {
+export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactNode {
   const { resume, size = "small" } = props;
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
@@ -46,7 +46,7 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactEleme
 
   // Extraction runs the local agent, so this control is desktop-only.
   if (!agentAvailable) {
-    return <></>;
+    return null;
   }
 
   return (

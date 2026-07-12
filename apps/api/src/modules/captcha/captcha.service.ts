@@ -8,6 +8,7 @@ import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/cre
 import { singleton } from "tsyringe";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
+import { acquireSlot, RATE_LIMITS } from "@/common/rate-limit";
 import { sleep } from "@/common/utils";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -62,17 +63,24 @@ export class CaptchaService {
     profileId: string,
     input: CaptchaSolveInput,
   ): Promise<CaptchaSolveResult> {
-    const cred = await this.resolveServiceCredential(userId, profileId, input.provider);
-    if (!cred) {
-      throw notFound(
-        "No captcha-solving service key configured. Add a 2captcha or CapSolver key in Settings.",
-      );
+    // try/finally rather than a lifecycle hook: no hook is guaranteed to run when the client aborts
+    // mid-poll, and a leaked counter would lock this user out permanently.
+    const release = acquireSlot(`captcha-solve:${userId}`, RATE_LIMITS.captchaSolve.maxInFlight);
+    try {
+      const cred = await this.resolveServiceCredential(userId, profileId, input.provider);
+      if (!cred) {
+        throw notFound(
+          "No captcha-solving service key configured. Add a 2captcha or CapSolver key in Settings.",
+        );
+      }
+
+      const job: ProviderJob = { type: input.type, sitekey: input.sitekey, pageurl: input.pageurl };
+      const token = await this.solveWith(cred.provider, cred.apiKey, job);
+
+      return { token, provider: cred.provider };
+    } finally {
+      release();
     }
-
-    const job: ProviderJob = { type: input.type, sitekey: input.sitekey, pageurl: input.pageurl };
-    const token = await this.solveWith(cred.provider, cred.apiKey, job);
-
-    return { token, provider: cred.provider };
   }
 
   private async resolveServiceCredential(

@@ -95,7 +95,7 @@ function dateRange(start: string | undefined, end: string | undefined): string {
   return `${s} – ${e}`;
 }
 
-function ContactBar(props: { basics: ResumeBasics }): ReactElement {
+function ContactBar(props: { basics: ResumeBasics }): ReactNode {
   const { basics } = props;
   const parts: { kind: "text" | "link"; value: string; href?: string }[] = [];
 
@@ -126,7 +126,7 @@ function ContactBar(props: { basics: ResumeBasics }): ReactElement {
   }
 
   if (parts.length === 0) {
-    return <></>;
+    return null;
   }
 
   return (
@@ -147,9 +147,9 @@ function ContactBar(props: { basics: ResumeBasics }): ReactElement {
   );
 }
 
-function Bullets(props: { items: string[] }): ReactElement {
+function Bullets(props: { items: string[] }): ReactNode {
   if (props.items.length === 0) {
-    return <></>;
+    return null;
   }
 
   return (
@@ -215,7 +215,7 @@ function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
   );
 }
 
-function SkillsList(props: { groups: ResumeSkillGroup[] }): ReactElement | null {
+function SkillsList(props: { groups: ResumeSkillGroup[] }): ReactNode {
   if (props.groups.length === 0) return null;
   return (
     <View style={{ marginTop: 4 }}>
