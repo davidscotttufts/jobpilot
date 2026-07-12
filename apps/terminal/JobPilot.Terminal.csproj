@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>JobPilot.Terminal</RootNamespace>
     <AssemblyName>jobpilot</AssemblyName>
-    <Version>2.1.1</Version>
+    <Version>2.1.2</Version>
     <!-- Trim the shipped install: no debug symbols, no static-web-assets manifest. -->
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>

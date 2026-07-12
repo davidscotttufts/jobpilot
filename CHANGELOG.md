@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] - 2026-07-12
+
+### Fixed
+
+- "Start agent" now launches the installed agent. On a machine that had also run
+  the agent from a source checkout, the `jobpilot://` link launched that build
+  instead, which then reported itself as a broken install and left the dashboard
+  stuck on "Reinstall the JobPilot agent". Only an installed agent may claim the
+  link now, and a source build releases a claim it made earlier.
+
+### Security
+
+- Inbox events are now scoped per user. Every connected client shared one stream,
+  so one user's inbox sync progress and scanned-message events reached all other
+  connected users, and a new subscriber could replay other users' history.
+- The login and captcha endpoints are rate-limited. Login is limited per account
+  and per network, so a single account under attack cannot lock out everyone
+  behind a shared connection, and captcha solving is limited per user with a cap
+  on how many solves may be in flight at once.
+- Agents now treat job postings and email as data, never as instructions. A
+  posting or message that tells the agent to run a command, follow a link, or
+  reveal its credentials is reported as a finding instead of obeyed, and
+  verification links from email must point at the job board they claim.
+
+### Changed
+
+- The Codex marketplace now ships the full skill tree, so a Codex agent launched
+  from the dashboard has every skill its Claude counterpart does.
+- Agents keep scratch files under the workspace's `.temp` directory.
+
+### Internal
+
+- Line endings are pinned to LF on all platforms (Windows checkouts reported
+  phantom lint failures), Biome runs clean, and `bun test` is bootstrapped in
+  `apps/api` with cross-user isolation coverage. Added the delivery roadmap under
+  `.claude/roadmap/`.
+
 ## [2.1.1] - 2026-07-11
 
 ### Changed
