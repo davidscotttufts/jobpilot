@@ -16,7 +16,7 @@ public sealed class HostInstall
             logger.LogError(ex, "Terminal host install is incomplete; sessions cannot start.");
         }
 
-        CanUpdate = Paths is not null && IsPublishedInstall(Paths.ClaudePluginDir);
+        CanUpdate = Paths is not null && IsPublishedHost;
     }
 
     internal HostInstall(InstallPaths? paths, string? pathsError = null, bool canUpdate = false)
@@ -39,14 +39,13 @@ public sealed class HostInstall
     public static string HostVersion { get; } =
         typeof(HostInstall).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
+    /// <summary>
+    /// Whether the running executable ships its own plugin tree - a published install rather than a
+    /// build output, which resolves the repo's tree from an ancestor directory.
+    /// </summary>
+    public static bool IsPublishedHost { get; } = InstallPaths.IsInstallRoot(AppContext.BaseDirectory);
+
     /// <summary>Returns the paths or throws the recorded resolution error.</summary>
     public InstallPaths RequirePaths() => Paths ?? throw new InvalidOperationException(
         $"Terminal host install is incomplete - reinstall the JobPilot agent. ({PathsError})");
-
-    /// <summary>Checks that a path belongs to the published install.</summary>
-    internal static bool IsPublishedInstall(string path)
-    {
-        var baseDir = Path.GetFullPath(AppContext.BaseDirectory);
-        return Path.GetFullPath(path).StartsWith(baseDir, StringComparison.OrdinalIgnoreCase);
-    }
 }

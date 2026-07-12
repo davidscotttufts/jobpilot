@@ -25,17 +25,13 @@ public sealed record InstallPaths
 
         foreach (var root in roots)
         {
-            var pluginDir = Path.Combine(root, "plugin");
-            var skillsDir = Path.Combine(pluginDir, "skills");
-
-            if (HasRuntimeResources(pluginDir, skillsDir)
-                && IsClaudePluginDir(pluginDir)
-                && IsCodexPluginDir(pluginDir))
+            if (IsInstallRoot(root))
             {
+                var pluginDir = Path.Combine(root, "plugin");
                 return new InstallPaths
                 {
                     WorkingDir = root,
-                    SharedSkillsDir = skillsDir,
+                    SharedSkillsDir = Path.Combine(pluginDir, "skills"),
                     ClaudePluginDir = pluginDir,
                 };
             }
@@ -43,6 +39,15 @@ public sealed record InstallPaths
 
         throw new DirectoryNotFoundException(
             "Could not find JobPilot provider assets: a plugin/ directory with skills/, shared/, .claude-plugin/, and .codex-plugin/.");
+    }
+
+    /// <summary>Whether a directory holds a complete plugin tree.</summary>
+    public static bool IsInstallRoot(string root)
+    {
+        var pluginDir = Path.Combine(root, "plugin");
+        return HasRuntimeResources(pluginDir, Path.Combine(pluginDir, "skills"))
+            && IsClaudePluginDir(pluginDir)
+            && IsCodexPluginDir(pluginDir);
     }
 
     private static IEnumerable<string> CandidateRoots()

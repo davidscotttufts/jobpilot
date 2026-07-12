@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using Microsoft.Win32;
 
 namespace JobPilot.Terminal.Hosting;
@@ -7,6 +8,7 @@ public sealed class ProtocolRegistrar(ILogger<ProtocolRegistrar> logger)
 {
     private const string Scheme = "jobpilot";
     private const string SchemePrefix = $"{Scheme}://";
+    private const string CommandKey = $@"Software\Classes\{Scheme}\shell\open\command";
 
     /// <summary>Whether registration succeeded.</summary>
     public bool IsRegistered { get; private set; }
@@ -38,8 +40,16 @@ public sealed class ProtocolRegistrar(ILogger<ProtocolRegistrar> logger)
                 return;
             }
 
+            // A build output must not own the scheme: the dashboard would launch a binary whose plugin
+            // tree is the repo's, not the one it shipped with. Only a published install may claim it.
+            if (!HostInstall.IsPublishedHost)
+            {
+                IsRegistered = ReleaseScheme(exePath);
+                return;
+            }
+
             var command = $"\"{exePath}\" \"%1\"";
-            using var commandKey = Registry.CurrentUser.CreateSubKey($@"Software\Classes\{Scheme}\shell\open\command");
+            using var commandKey = Registry.CurrentUser.CreateSubKey(CommandKey);
 
             if ((commandKey.GetValue(null) as string) != command)
             {
@@ -56,6 +66,28 @@ public sealed class ProtocolRegistrar(ILogger<ProtocolRegistrar> logger)
         {
             logger.LogDebug(ex, "Could not register the {Scheme}:// URL scheme; skipping.", Scheme);
         }
+    }
+
+    /// <summary>
+    /// Undoes a hijack an earlier build output left behind; keeps an installed host's registration.
+    /// Returns whether the scheme still points at some other host.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    private bool ReleaseScheme(string exePath)
+    {
+        using var commandKey = Registry.CurrentUser.OpenSubKey(CommandKey);
+        if (commandKey?.GetValue(null) is not string command || command.Length == 0)
+        {
+            return false;
+        }
+
+        if (!command.Contains(exePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        Unregister(logger);
+        return false;
     }
 
     /// <summary>Removes the protocol handler during uninstall.</summary>
