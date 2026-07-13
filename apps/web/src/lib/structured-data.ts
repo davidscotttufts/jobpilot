@@ -58,6 +58,43 @@ export function faqPageLd(items: readonly { q: string; a: string }[]): object {
   };
 }
 
+export interface JobPostingLdInput {
+  title: string;
+  company: string;
+  location: string | null;
+  remote: boolean;
+  salary: string | null;
+  employmentType: string | null;
+  descriptionExcerpt: string | null;
+  techStack: readonly string[];
+  /** Eden hands back a `Date`; a string is accepted so callers never have to re-wrap it. */
+  firstSeenAt: Date | string;
+  slug: string;
+}
+
+/** `datePosted` is our first sighting, not the board's post date - we aggregate, we don't publish. */
+export function jobPostingLd(job: JobPostingLdInput): object {
+  return {
+    "@context": "https://schema.org",
+    "@type": "JobPosting",
+    title: job.title,
+    url: abs(`/jobs/${job.slug}`),
+    datePosted: new Date(job.firstSeenAt).toISOString(),
+    description: job.descriptionExcerpt ?? `${job.title} at ${job.company}.`,
+    hiringOrganization: { "@type": "Organization", name: job.company },
+    ...(job.employmentType && { employmentType: job.employmentType }),
+    ...(job.salary && { baseSalary: job.salary }),
+    ...(job.techStack.length > 0 && { skills: job.techStack.join(", ") }),
+    ...(job.remote && { jobLocationType: "TELECOMMUTE" }),
+    ...(job.location && {
+      jobLocation: {
+        "@type": "Place",
+        address: { "@type": "PostalAddress", addressLocality: job.location },
+      },
+    }),
+  };
+}
+
 export function breadcrumbLd(trail: readonly { name: string; path: string }[]): object {
   return {
     "@context": "https://schema.org",

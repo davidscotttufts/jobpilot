@@ -47,6 +47,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   matcher: [
-    "/((?!_next|docs|install|login|register|onboarding|verify-email|forgot-password|reset-password|opengraph-image|favicon.ico|.*\\..*).*)",
+    "/((?!_next|docs|install|jobs|login|register|onboarding|verify-email|forgot-password|reset-password|opengraph-image|favicon.ico|.*\\..*).*)",
   ],
 };

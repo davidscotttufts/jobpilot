@@ -10,6 +10,7 @@ import {
   AdminSearchField,
 } from "@/components/features/admin";
 import { SectionCard } from "@/components/ui/layout";
+import { pageParam } from "@/utils/search-params";
 
 const PAGE_SIZE = 10;
 
@@ -20,8 +21,7 @@ interface AdminBoardsPageProps {
 /** The catalog is small, so `?q=` / `?page=` are applied here rather than as a filtered endpoint. */
 export default async function AdminBoardsPage(props: AdminBoardsPageProps): Promise<ReactElement> {
   const { page, q } = await props.searchParams;
-  const parsedPage = Number(page);
-  const currentPage = Number.isFinite(parsedPage) && parsedPage > 1 ? Math.floor(parsedPage) : 1;
+  const currentPage = pageParam(page);
 
   const { data } = await api.admin.boards.get(await getFetchOptions());
 

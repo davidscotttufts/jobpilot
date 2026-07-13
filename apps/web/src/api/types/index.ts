@@ -7,6 +7,7 @@ export * from "./cover-letter";
 export * from "./credential";
 export * from "./email";
 export * from "./job-board";
+export * from "./job-listing";
 export * from "./outreach";
 export * from "./profile";
 export * from "./queue";

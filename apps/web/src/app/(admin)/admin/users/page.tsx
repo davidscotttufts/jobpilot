@@ -5,6 +5,7 @@ import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { AdminPagination, AdminSearchField, AdminUsersTable } from "@/components/features/admin";
 import { SectionCard } from "@/components/ui/layout";
+import { pageParam } from "@/utils/search-params";
 
 const PAGE_SIZE = 20;
 
@@ -15,8 +16,7 @@ interface AdminUsersPageProps {
 /** `?q=` / `?page=` drive the server fetch; only the search box, pager, and role menu are client. */
 export default async function AdminUsersPage(props: AdminUsersPageProps): Promise<ReactElement> {
   const { page, q } = await props.searchParams;
-  const parsedPage = Number(page);
-  const currentPage = Number.isFinite(parsedPage) && parsedPage > 1 ? Math.floor(parsedPage) : 1;
+  const currentPage = pageParam(page);
 
   const { data } = await api.admin.users.get({
     query: { page: currentPage, limit: PAGE_SIZE, search: q || undefined },
