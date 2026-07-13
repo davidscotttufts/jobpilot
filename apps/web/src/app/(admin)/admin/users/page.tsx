@@ -22,6 +22,7 @@ export default async function AdminUsersPage(props: AdminUsersPageProps): Promis
     query: { page: currentPage, limit: PAGE_SIZE, search: q || undefined },
     ...(await getFetchOptions()),
   });
+
   if (!data) {
     notFound();
   }

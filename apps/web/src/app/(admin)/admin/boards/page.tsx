@@ -24,6 +24,7 @@ export default async function AdminBoardsPage(props: AdminBoardsPageProps): Prom
   const currentPage = Number.isFinite(parsedPage) && parsedPage > 1 ? Math.floor(parsedPage) : 1;
 
   const { data } = await api.admin.boards.get(await getFetchOptions());
+
   if (!data) {
     notFound();
   }

@@ -11,6 +11,7 @@ import { TopBoardsList } from "@/components/features/analytics/top-boards-list";
 /** Read-only, so it renders entirely on the server; only the charts ship as client leaves. */
 export default async function AdminOverviewPage(): Promise<ReactElement> {
   const { data } = await api.admin.stats.get(await getFetchOptions());
+
   if (!data) {
     notFound();
   }
