@@ -2,7 +2,6 @@
 
 import type { ReactElement } from "react";
 import { Box, Container, Link, Stack } from "@mui/material";
-import NextLink from "next/link";
 import { LinkButton } from "@/components/ui/buttons";
 import { BrandMark } from "./brand-mark";
 import { marketingLinkSx } from "./marketing-link-sx";
@@ -32,7 +31,10 @@ export function MarketingNav(): ReactElement {
               spacing={3}
               sx={{ alignItems: "center", display: { xs: "none", sm: "flex" } }}
             >
-              <Link component={NextLink} href="/docs" underline="none" sx={marketingLinkSx}>
+              <Link href="/jobs" underline="none" sx={marketingLinkSx}>
+                Jobs
+              </Link>
+              <Link href="/docs" underline="none" sx={marketingLinkSx}>
                 Docs
               </Link>
               <Link href="#how-it-works" underline="none" sx={marketingLinkSx}>

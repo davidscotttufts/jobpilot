@@ -9,6 +9,7 @@ import {
   Faq,
   Hero,
   HowItWorks,
+  LiveJobsStrip,
   MarketingFooter,
   MarketingNav,
   PrivacyGrid,
@@ -41,6 +42,7 @@ export default function LandingPage(): ReactElement {
         <Hero />
         <BoardStrip />
         <CampaignTypes />
+        <LiveJobsStrip />
         <ProductTour />
         <PrivacyGrid />
         <HowItWorks />

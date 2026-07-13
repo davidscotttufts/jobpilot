@@ -5,6 +5,7 @@ export * from "./faq";
 export * from "./faq-items";
 export * from "./hero";
 export * from "./how-it-works";
+export * from "./live-jobs-strip";
 export * from "./marketing-footer";
 export * from "./marketing-nav";
 export * from "./privacy-grid";

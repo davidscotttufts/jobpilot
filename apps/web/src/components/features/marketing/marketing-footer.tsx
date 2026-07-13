@@ -1,9 +1,6 @@
-"use client";
-
 import type { ReactElement, ReactNode } from "react";
 import { Box, Container, Grid, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import NextLink from "next/link";
 import { fontFamilies } from "@/theme";
 import { BrandMark } from "./brand-mark";
 import { marketingLinkSx } from "./marketing-link-sx";
@@ -31,7 +28,7 @@ interface InternalLinkProps {
 function InternalLink(props: InternalLinkProps): ReactElement {
   const { href, label } = props;
   return (
-    <Link component={NextLink} href={href} underline="none" sx={marketingLinkSx}>
+    <Link href={href} underline="none" sx={marketingLinkSx}>
       {label}
     </Link>
   );
@@ -81,6 +78,7 @@ export function MarketingFooter(): ReactElement {
           </Grid>
           <Grid size={{ xs: 6, md: 3 }}>
             <FooterColumn title="Product">
+              <InternalLink href="/jobs" label="Browse jobs" />
               <InternalLink href="/docs" label="Docs" />
               <InternalLink href="/login" label="Sign in" />
               <InternalLink href="/register" label="Create account" />
