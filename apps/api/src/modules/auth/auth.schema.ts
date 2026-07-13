@@ -1,3 +1,4 @@
+import { roleSchema } from "@jobpilot/contracts/role";
 import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
@@ -6,7 +7,7 @@ import { z } from "zod/v4";
 export const publicUserSchema = z.object({
   id: z.uuid(),
   email: z.string(),
-  role: z.enum(["ADMIN", "USER"]),
+  role: roleSchema,
   emailVerified: z.boolean(),
   createdAt: z.date(),
 });

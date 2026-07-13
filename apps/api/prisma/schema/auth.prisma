@@ -1,4 +1,6 @@
+// SUPER_ADMIN is a singleton granted only from SUPER_ADMIN_EMAIL (seed / register); no API route assigns it.
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
   USER
 

@@ -11,7 +11,6 @@ import {
 import { conflict, notFound, unauthorized } from "@/common/errors";
 import { env } from "@/env";
 import { PrismaClient, type User } from "@/generated/prisma/client";
-import { DEFAULT_BOARDS } from "@/modules/job-board/default-boards";
 import { principal, publicUser } from "./auth.mapper";
 
 const REFRESH_TTL_MS = durationToMs(env.REFRESH_TOKEN_EXPIRY, 30 * 86_400_000);
@@ -46,26 +45,38 @@ export class AuthService {
       throw conflict("Email already registered");
     }
     const passwordHash = await hashPassword(input.password);
-    // In development, skip the verification round-trip so local signups land straight
-    // in the app; every other environment must confirm the address (see proxy gate).
-    // The controller sends the verification email when `emailVerified` is false.
+    // Dev signups skip the verification round-trip; elsewhere the controller emails the link.
     const autoVerified = env.NODE_ENV === "development";
-    // Co-create the 1:1 profile (empty; onboarding populates it via PUT /api/profile)
-    // so profileGuard always resolves for a registered user. Seed the default board
-    // catalog inline - Prisma fills profileId on each row from the parent create.
+    // Granted here too, so a fresh DB works when the super admin registers after deploy.
+    const role = env.SUPER_ADMIN_EMAIL === input.email ? "SUPER_ADMIN" : "USER";
+    // An unseeded catalog yields zero links rather than a failed signup.
+    const defaults = await this.prisma.jobBoard.findMany({
+      where: { isDefault: true },
+      select: { id: true, sortOrder: true },
+      orderBy: { sortOrder: "asc" },
+    });
+    // Co-create the empty 1:1 profile so profileGuard always resolves for a registered user.
     let user: User;
     try {
       user = await this.prisma.user.create({
         data: {
           email: input.email,
           passwordHash,
+          role,
           emailVerified: autoVerified,
           profile: {
             create: {
               firstName: "",
               lastName: "",
               email: input.email,
-              jobBoards: { createMany: { data: DEFAULT_BOARDS } },
+              jobBoards: {
+                createMany: {
+                  data: defaults.map((board) => ({
+                    jobBoardId: board.id,
+                    sortOrder: board.sortOrder,
+                  })),
+                },
+              },
             },
           },
         },

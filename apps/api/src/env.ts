@@ -19,6 +19,10 @@ const EnvSchema = z.object({
     .string()
     .refine((v) => Buffer.from(v, "base64").length === 32, "must be base64 of 32 bytes"),
 
+  // The one account that can grant/revoke ADMIN. Granted at register + reconciled by `db:seed`;
+  // no API route assigns it. Unset = nobody holds the role.
+  SUPER_ADMIN_EMAIL: z.email().optional(),
+
   // CSV of allowed browser origins for CORS (credentials mode - no wildcard).
   CORS_ORIGINS: z.string().default("http://localhost:4100"),
   // Public web origin, used for OAuth redirects back to the app.
