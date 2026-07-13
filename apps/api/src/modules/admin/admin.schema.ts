@@ -32,7 +32,7 @@ export const adminBoardRecordSchema = z.object({
 
 export const adminBoardListSchema = z.array(adminBoardRecordSchema);
 
-/** Platform-wide counters. `signupsPerDay.date` is a `YYYY-MM-DD` bucket key, not a timestamp. */
+/** Platform-wide counters. `signupsPerDay.date` is UTC midnight of the bucketed day. */
 export const adminStatsSchema = z.object({
   users: z.object({
     total: z.number().int(),
@@ -52,5 +52,5 @@ export const adminStatsSchema = z.object({
   }),
   statusBreakdown: z.array(z.object({ status: z.string(), count: z.number().int() })),
   topBoards: z.array(z.object({ board: z.string(), count: z.number().int() })),
-  signupsPerDay: z.array(z.object({ date: z.string(), count: z.number().int() })),
+  signupsPerDay: z.array(z.object({ date: z.date(), count: z.number().int() })),
 });

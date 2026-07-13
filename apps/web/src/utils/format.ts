@@ -42,3 +42,15 @@ export function formatDate(value: string | Date | null | undefined): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
 }
+
+/** Locale month + day for a timeline bucket. UTC-pinned: the bucket is UTC midnight, which localises to the previous day west of Greenwich. */
+export function formatDayBucket(value: Date): string {
+  if (Number.isNaN(value.getTime())) {
+    return "";
+  }
+  return value.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}

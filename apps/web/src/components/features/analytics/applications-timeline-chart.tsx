@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { Box, Card, CardContent, Stack, Typography, useTheme } from "@mui/material";
 import { LineChart } from "@mui/x-charts/LineChart";
 import type { AnalyticsPerDayEntry } from "@/api/types";
+import { formatDayBucket } from "@/utils/format";
 
 const CHART_HEIGHT = 220;
 
@@ -12,11 +13,6 @@ interface ApplicationsTimelineChartProps {
   title?: string;
   metricLabel?: string;
   emptyMessage?: string;
-}
-
-function formatTick(iso: string): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps): ReactElement {
@@ -61,7 +57,7 @@ export function ApplicationsTimelineChart(props: ApplicationsTimelineChartProps)
                 {
                   data: xData,
                   scaleType: "point",
-                  valueFormatter: formatTick,
+                  valueFormatter: formatDayBucket,
                   tickLabelStyle: { fontSize: 10 },
                 },
               ]}

@@ -2,9 +2,9 @@ import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
 
-/** A single day's count in a 30-day timeline series (`date` is an ISO `YYYY-MM-DD` key). */
+/** A single day's count in a 30-day timeline series (`date` is UTC midnight of the bucketed day). */
 const perDayPointSchema = z.object({
-  date: z.string(),
+  date: z.date(),
   count: z.number().int(),
 });
 
