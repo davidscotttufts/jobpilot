@@ -38,7 +38,7 @@ they aren't re-litigated.
 | todo | [API core tests](t1-api-core-tests.md) | zero TS tests; cover the transactional core |
 | todo | [Agent eval laboratory](t1-eval-lab.md) | replayable ATS fixtures, graded scorecard |
 | todo | [Step telemetry](t1-step-telemetry.md) | OTel GenAI metrics per job |
-| todo | [Admin pages](t1-admin-pages.md) | role column + adminGuard + basic pages |
+| done | [Admin pages](t1-admin-pages.md) | 3-role ladder + adminGuard; job boards collapsed to one global table |
 
 ## Tier 2 — The Loop Engine (platform bet)
 
