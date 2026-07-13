@@ -1,90 +1,104 @@
 "use client";
 
-import type { ReactElement, SubmitEvent } from "react";
-import { Box, Button, Card, Chip, Stack, TextField } from "@mui/material";
-import type { Route } from "next";
+import { type ReactElement, type SubmitEvent, useRef } from "react";
+import { parseTechParam, serializeTechParam } from "@jobpilot/contracts/job-listing";
+import { Box, Button, Card, Stack, TextField, ToggleButton } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
+import { MultiSelect } from "@/components/ui/form";
+import { ActiveFilters } from "./active-filters";
+import { jobsHref } from "./jobs-href";
+
+interface JobFiltersProps {
+  /** The tech values the index actually contains, most common first. */
+  techOptions: string[];
+}
 
 /**
  * Filters navigate to a real `/jobs?q=…` URL rather than holding client state, so results stay
- * shareable and crawlable. `page` resets on every change, or narrowing a filter strands you on a
- * page that no longer exists.
+ * shareable and crawlable.
  */
-export function JobFilters(): ReactElement {
+export function JobFilters(props: JobFiltersProps): ReactElement {
+  const { techOptions } = props;
   const router = useRouter();
   const params = useSearchParams();
+  const form = useRef<HTMLFormElement>(null);
+
   const remote = params.get("remote") === "true";
+  const tech = parseTechParam(params.get("tech"));
 
-  const navigate = (next: URLSearchParams): void => {
-    next.delete("page");
-    const query = next.toString();
-    router.push((query ? `/jobs?${query}` : "/jobs") as Route);
-  };
-
-  const onSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
+  /**
+   * Seeds the query from the live form, then applies the patch (`null` drops a key). Reading the
+   * form - not just `params` - is what keeps text the user typed but has not submitted when they
+   * toggle Remote or pick a tech.
+   */
+  const apply = (patch: Record<string, string | null> = {}): void => {
     const next = new URLSearchParams(params);
-    const q = String(form.get("q") ?? "").trim();
-    const location = String(form.get("location") ?? "").trim();
+    const data = form.current ? new FormData(form.current) : null;
 
-    for (const [key, value] of [
-      ["q", q],
-      ["location", location],
-    ] as const) {
+    for (const key of ["q", "location"] as const) {
+      patch[key] ??= String(data?.get(key) ?? "").trim() || null;
+    }
+    for (const [key, value] of Object.entries(patch)) {
       if (value) {
         next.set(key, value);
       } else {
         next.delete(key);
       }
     }
-    navigate(next);
+    router.push(jobsHref(next));
   };
 
-  const toggleRemote = (): void => {
-    const next = new URLSearchParams(params);
-    if (remote) {
-      next.delete("remote");
-    } else {
-      next.set("remote", "true");
-    }
-    navigate(next);
+  const onSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    apply();
   };
-
-  const dirty = [...params.keys()].some((key) => key !== "page");
 
   return (
     <Card sx={{ p: 2 }}>
-      <Box component="form" onSubmit={onSubmit}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} sx={{ alignItems: "center" }}>
-          <TextField
-            name="q"
-            size="small"
-            placeholder="Title or company"
-            defaultValue={params.get("q") ?? ""}
-            sx={{ flex: 1, width: "100%" }}
-          />
-          <TextField
-            name="location"
-            size="small"
-            placeholder="Location"
-            defaultValue={params.get("location") ?? ""}
-            sx={{ flex: 1, width: "100%" }}
-          />
-          <Chip
-            label="Remote"
-            onClick={toggleRemote}
-            color={remote ? "success" : "default"}
-            variant={remote ? "filled" : "outlined"}
-          />
-          <Button type="submit" variant="contained" size="small">
-            Search
-          </Button>
-          {dirty && (
-            <Button size="small" variant="text" onClick={() => router.push("/jobs")}>
-              Clear
-            </Button>
-          )}
+      <Box component="form" ref={form} onSubmit={onSubmit}>
+        <Stack spacing={1.5}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={1.5}
+            sx={{ alignItems: { xs: "stretch", md: "center" } }}
+          >
+            <TextField
+              name="q"
+              placeholder="Title or company"
+              defaultValue={params.get("q") ?? ""}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              name="location"
+              placeholder="Location"
+              defaultValue={params.get("location") ?? ""}
+              sx={{ flex: 1 }}
+            />
+            <MultiSelect
+              value={tech}
+              onChange={(values) =>
+                apply({ tech: values.length > 0 ? serializeTechParam(values) : null })
+              }
+              options={techOptions}
+              freeSolo={false}
+              placeholder={tech.length > 0 ? undefined : "Tech stack"}
+              sx={{ flex: 1, minWidth: 180 }}
+            />
+            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <ToggleButton
+                value="remote"
+                selected={remote}
+                onChange={() => apply({ remote: remote ? null : "true" })}
+                sx={{ flex: { xs: 1, md: "none" } }}
+              >
+                Remote
+              </ToggleButton>
+              <Button type="submit" variant="contained" sx={{ flex: { xs: 1, md: "none" } }}>
+                Search
+              </Button>
+            </Stack>
+          </Stack>
+          <ActiveFilters />
         </Stack>
       </Box>
     </Card>

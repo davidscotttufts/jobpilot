@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { LinkButton } from "@/components/ui/buttons";
+import { jobsHref } from "./jobs-href";
 
 interface JobPagerProps {
   page: number;
@@ -18,20 +19,18 @@ export function JobPager(props: JobPagerProps): ReactNode {
     return null;
   }
 
-  const href = (target: number): Route => {
-    const next = new URLSearchParams(params);
-    if (target > 1) {
-      next.set("page", String(target));
-    }
-    const query = next.toString();
-    return (query ? `/jobs?${query}` : "/jobs") as Route;
-  };
+  const href = (target: number): Route => jobsHref(new URLSearchParams(params), target);
 
   return (
     <Stack
       direction="row"
-      spacing={2}
-      sx={{ alignItems: "center", justifyContent: "space-between", pt: 2 }}
+      sx={{
+        flexWrap: "wrap",
+        gap: 1,
+        alignItems: "center",
+        justifyContent: "space-between",
+        pt: 2,
+      }}
     >
       <LinkButton href={href(page - 1)} disabled={page <= 1} size="small" variant="outlined">
         Previous

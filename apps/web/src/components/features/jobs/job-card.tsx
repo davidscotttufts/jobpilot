@@ -3,6 +3,7 @@ import { Card, CardActionArea, CardContent, Chip, Stack, Typography } from "@mui
 import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
 import { fontFamilies } from "@/theme";
+import { formatRelativeTime } from "@/utils/format";
 import { TechChips } from "./tech-chips";
 
 interface JobCardProps {
@@ -22,7 +23,8 @@ export function JobCard(props: JobCardProps): ReactElement {
       <CardActionArea href={`/jobs/${job.slug}` as Route} sx={{ height: "100%" }}>
         <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Stack spacing={0.5}>
-            <Typography variant="h3" sx={{ fontSize: "1.05rem" }}>
+            {/* Scraped titles can be one long unbroken token; on a phone that overflows the card. */}
+            <Typography variant="h3" sx={{ fontSize: "1.05rem", overflowWrap: "anywhere" }}>
               {job.title}
             </Typography>
             <Typography variant="body2Muted">{job.company}</Typography>
@@ -43,11 +45,17 @@ export function JobCard(props: JobCardProps): ReactElement {
 
           <TechChips tech={job.techStack} max={maxTech} />
 
-          {job.sourceCount > 1 && (
-            <Typography variant="captionMuted" sx={{ mt: "auto" }}>
-              Posted on {job.sourceCount} boards
+          <Stack
+            direction="row"
+            sx={{ mt: "auto", flexWrap: "wrap", gap: 1, alignItems: "center" }}
+          >
+            <Typography variant="captionMuted">
+              Seen {formatRelativeTime(job.lastSeenAt)} ago
             </Typography>
-          )}
+            {job.sourceCount > 1 && (
+              <Typography variant="captionMuted">· {job.sourceCount} boards</Typography>
+            )}
+          </Stack>
         </CardContent>
       </CardActionArea>
     </Card>

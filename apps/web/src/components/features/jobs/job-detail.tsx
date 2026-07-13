@@ -4,7 +4,7 @@ import type { JobListingDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { ExternalLink } from "@/components/ui/display";
 import { fontFamilies } from "@/theme";
-import { formatDate } from "@/utils/format";
+import { formatDate, formatRelativeTime } from "@/utils/format";
 import { TechChips } from "./tech-chips";
 
 interface JobDetailProps {
@@ -17,7 +17,10 @@ export function JobDetail(props: JobDetailProps): ReactElement {
   return (
     <Stack spacing={4}>
       <Stack spacing={1.5}>
-        <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", md: "2.25rem" } }}>
+        <Typography
+          variant="h1"
+          sx={{ fontSize: { xs: "1.75rem", md: "2.25rem" }, overflowWrap: "anywhere" }}
+        >
           {job.title}
         </Typography>
         <Typography variant="h2" sx={{ fontSize: "1.15rem", color: "text.secondary" }}>
@@ -63,7 +66,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
           <Typography variant="h3" sx={{ fontSize: "1rem" }}>
             Tech stack
           </Typography>
-          <TechChips tech={job.techStack} />
+          <TechChips tech={job.techStack} linked />
         </Stack>
       )}
 
@@ -72,7 +75,11 @@ export function JobDetail(props: JobDetailProps): ReactElement {
           <Typography variant="h3" sx={{ fontSize: "1rem" }}>
             About the role
           </Typography>
-          <Typography variant="body1Muted" sx={{ whiteSpace: "pre-line" }}>
+          {/* pre-line alone still only wraps at whitespace: one long scraped token would overflow. */}
+          <Typography
+            variant="body1Muted"
+            sx={{ whiteSpace: "pre-line", overflowWrap: "anywhere" }}
+          >
             {job.descriptionExcerpt}
           </Typography>
         </Stack>
@@ -101,7 +108,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
           </Typography>
         )}
         <Typography variant="captionMuted">
-          First seen {formatDate(job.firstSeenAt)} · last seen {formatDate(job.lastSeenAt)}
+          Seen {formatRelativeTime(job.lastSeenAt)} ago · first found {formatDate(job.firstSeenAt)}
         </Typography>
       </Stack>
     </Stack>

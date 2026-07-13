@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
-import { Box, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
+import { serializeTechParam } from "@jobpilot/contracts/job-listing";
+import { Box, Link } from "@mui/material";
+import { fontFamilies, motion } from "@/theme";
+import { jobsHref } from "./jobs-href";
 
 /** Mono pill, matching the board strip on the landing page - the agent's machine voice. */
 const techChipSx = {
@@ -16,14 +18,27 @@ const techChipSx = {
   backgroundColor: "surfaces.elevated",
 } as const;
 
+// The raw token, not an `sx` theme callback: this renders in a server component, and a function
+// cannot cross the RSC boundary into MUI's client Link.
+const linkedChipSx = {
+  ...techChipSx,
+  transition: motion.fast,
+  "&:hover": { color: "accent.primary", borderColor: "accent.primary" },
+} as const;
+
 interface TechChipsProps {
   tech: readonly string[];
   /** Cap for dense grids; omit to show the full stack. */
   max?: number;
+  /**
+   * Make each chip a link into `/jobs?tech=…`. Never set this inside a JobCard - the whole card is
+   * already one anchor, and an anchor cannot nest.
+   */
+  linked?: boolean;
 }
 
 export function TechChips(props: TechChipsProps): ReactNode {
-  const { tech, max } = props;
+  const { tech, max, linked = false } = props;
   if (tech.length === 0) {
     return null;
   }
@@ -34,14 +49,22 @@ export function TechChips(props: TechChipsProps): ReactNode {
   return (
     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
       {shown.map((item) => (
-        <Typography key={item} component="span" sx={techChipSx}>
+        <Box
+          key={item}
+          component={linked ? Link : "span"}
+          {...(linked && {
+            href: jobsHref(new URLSearchParams({ tech: serializeTechParam([item]) })),
+            underline: "none",
+          })}
+          sx={linked ? linkedChipSx : techChipSx}
+        >
           {item}
-        </Typography>
+        </Box>
       ))}
       {overflow > 0 && (
-        <Typography component="span" sx={techChipSx}>
+        <Box component="span" sx={techChipSx}>
           +{overflow}
-        </Typography>
+        </Box>
       )}
     </Box>
   );

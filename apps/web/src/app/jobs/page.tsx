@@ -1,10 +1,11 @@
 import { type ReactElement, Suspense } from "react";
-import { JOB_LISTING_FILTER_KEYS } from "@jobpilot/contracts/job-listing";
+import { JOB_LISTING_FILTER_KEYS, JOB_LISTING_MAX_PAGE } from "@jobpilot/contracts/job-listing";
 import { Grid, Skeleton, Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
-import { JobCard, JobFilters, JobPager } from "@/components/features/jobs";
+import { JobCard, JobFilters, JobGridSkeleton, JobPager } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
+import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { breadcrumbLd } from "@/lib/structured-data";
 import { one, pageParam } from "@/utils/search-params";
@@ -41,14 +42,23 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
         </Typography>
       </Stack>
 
-      <JobFilters />
+      {/* The tech options come from the API, so the filter bar streams in too. */}
+      <Suspense fallback={<Skeleton variant="rectangular" height={98} />}>
+        <JobFiltersPanel />
+      </Suspense>
 
       {/* searchParams is dynamic, so the results need their own boundary; the shell prerenders. */}
-      <Suspense fallback={<JobsSkeleton />}>
+      <Suspense fallback={<JobGridSkeleton />}>
         <JobsResults searchParams={searchParams} />
       </Suspense>
     </Stack>
   );
+}
+
+/** The tech vocabulary is server-cached, so seeding the filter costs a cheap API hop. */
+async function JobFiltersPanel(): Promise<ReactElement> {
+  const { data } = await api.public.jobs.facets.get();
+  return <JobFilters techOptions={data?.tech.map((facet) => facet.value) ?? []} />;
 }
 
 async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
@@ -63,7 +73,7 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
   }
 
   const { data, error } = await api.public.jobs.get({
-    query: { ...filters, page: pageParam(params.page), limit: 24 },
+    query: { ...filters, page: pageParam(params.page, JOB_LISTING_MAX_PAGE), limit: 24 },
   });
 
   if (error || !data) {
@@ -80,12 +90,20 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
       <EmptyState
         title="No jobs match those filters"
         description="Try a broader search, or clear the filters to see everything the agents have found."
+        action={
+          <LinkButton href="/jobs" variant="outlined">
+            Clear filters
+          </LinkButton>
+        }
       />
     );
   }
 
   return (
     <Stack spacing={3}>
+      <Typography variant="body2Muted">
+        {data.pagination.total.toLocaleString()} {data.pagination.total === 1 ? "job" : "jobs"}
+      </Typography>
       <Grid container spacing={2}>
         {data.items.map((job) => (
           <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -100,19 +118,5 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
         params={filters}
       />
     </Stack>
-  );
-}
-
-const SKELETON_SLOTS = ["a", "b", "c", "d", "e", "f"];
-
-function JobsSkeleton(): ReactElement {
-  return (
-    <Grid container spacing={2}>
-      {SKELETON_SLOTS.map((slot) => (
-        <Grid key={slot} size={{ xs: 12, sm: 6, md: 4 }}>
-          <Skeleton variant="rectangular" height={180} />
-        </Grid>
-      ))}
-    </Grid>
   );
 }

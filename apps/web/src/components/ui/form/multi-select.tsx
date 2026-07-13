@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete, type SxProps, TextField, type Theme } from "@mui/material";
 
 export interface MultiSelectProps {
   value: string[];
@@ -12,6 +12,7 @@ export interface MultiSelectProps {
   label?: string;
   placeholder?: string;
   errorText?: string;
+  sx?: SxProps<Theme>;
 }
 
 /**
@@ -29,6 +30,7 @@ export function MultiSelect(props: MultiSelectProps): ReactElement {
     label,
     placeholder,
     errorText,
+    sx,
   } = props;
 
   return (
@@ -39,6 +41,7 @@ export function MultiSelect(props: MultiSelectProps): ReactElement {
       value={value}
       onChange={(_, v) => onChange(v)}
       onBlur={onBlur}
+      sx={sx}
       renderInput={(params) => (
         <TextField
           {...params}

@@ -16,6 +16,7 @@ export default function JobsLayout(props: JobsLayoutProps): ReactElement {
         display: "flex",
         flexDirection: "column",
         backgroundColor: "surfaces.base",
+        overflowX: "clip",
       }}
     >
       <MarketingNav />
