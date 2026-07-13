@@ -52,6 +52,15 @@ Both packages declare a `tsc` bin and bun links the 6.x one, so web's `typecheck
 
 A tsyringe-injected class must stay a **value** import (`import { PrismaClient }`, never `import type`): `emitDecoratorMetadata` builds `design:paramtypes` from those bindings, so erasing them fails at runtime with `TypeInfo not known for "Object"`. Biome's `style/useImportType` is off for `apps/api` for exactly this reason.
 
+## Comments
+
+Comment the non-obvious **why** - a constraint, trap, or rejected alternative the next reader would
+otherwise rediscover the hard way. Never the *what*; the code says that.
+
+- One line by default, four max. Never restate the signature, narrate the next statement, or write
+  to the reviewer ("previously we…", "added because…").
+- Prefer a better name over a comment explaining a murky one.
+
 ## Skill conventions
 
 - One tree, both providers. Skills are provider-neutral: reference sibling skills by name (e.g. "invoke the `tailor-resume` skill"), not provider-specific command tokens, and reference shared docs by path-relative reference (`../../shared/<doc>.md`). Claude extras like `allowed-tools` are fine in frontmatter - Codex ignores unknown keys.

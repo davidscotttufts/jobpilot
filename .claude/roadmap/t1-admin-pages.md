@@ -59,3 +59,13 @@ A non-admin gets 403 on every `/api/admin/*` route, proven by a test.
   It needed the dummy `env:` block in `ci.yml` that the existing comment there had predicted.
 
 - Job-listing moderation stays out, still gated on [t3-public-jobs-page.md](t3-public-jobs-page.md).
+
+- **2026-07-13 — moderation shipped** with [t3-public-jobs-page.md](t3-public-jobs-page.md):
+  `/admin/listings` (publish / hide / delete) over the deduped job index. Two structural changes
+  came with it: feature modules now own their own admin surface (`modules/job-listing/
+  admin-listing.controller.ts`, `modules/job-board/admin-board.controller.ts`) rather than piling
+  into `admin.controller.ts`, which keeps the admin module to the genuinely cross-cutting stats and
+  user/role routes. `admin.guard.test.ts` therefore **mounts each admin controller explicitly** — a
+  new admin controller that is not added there ships unguarded by the test, so register it. (It
+  cannot mount them from an array: passing one to Elysia's `.use()` widens them to `AnyElysia` and
+  collapses the `App` type Eden derives the web client from.)
