@@ -1,15 +1,20 @@
 "use client";
 
 import { type ReactElement, Suspense } from "react";
-import { Box, Stack } from "@mui/material";
+import { Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { AccountMenu } from "@/components/features/profile";
+import { useAuth } from "@/hooks/use-auth";
 import { fontFamilies } from "@/theme";
 import { FeedbackMenu } from "./feedback-menu";
 import { NavGroup } from "./nav-group";
-import { APP_TITLE, navGroups, RAIL_WIDTH } from "./shell-config";
+import { APP_TITLE, footerNavGroups, RAIL_WIDTH, visibleNavGroups } from "./shell-config";
 
 export function Rail(): ReactElement {
+  const { user } = useAuth();
+  const groups = visibleNavGroups(user?.role);
+  const footerGroups = visibleNavGroups(user?.role, footerNavGroups);
+
   return (
     <Stack
       component="aside"
@@ -80,11 +85,21 @@ export function Rail(): ReactElement {
       </Box>
       <Box sx={{ flex: 1, width: "100%" }}>
         <Suspense fallback={null}>
-          {navGroups.map((group, idx) => (
+          {groups.map((group, idx) => (
             <NavGroup key={group.label ?? idx} group={group} />
           ))}
         </Suspense>
       </Box>
+      {footerGroups.length > 0 && (
+        <>
+          <Divider flexItem sx={{ mx: 1.5 }} />
+          <Suspense fallback={null}>
+            {footerGroups.map((group, idx) => (
+              <NavGroup key={group.label ?? idx} group={group} />
+            ))}
+          </Suspense>
+        </>
+      )}
       <FeedbackMenu />
       <AccountMenu />
     </Stack>

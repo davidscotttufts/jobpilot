@@ -1,4 +1,5 @@
 import {
+  AdminPanelSettings,
   BugReport,
   BusinessCenter,
   Dashboard,
@@ -13,11 +14,14 @@ import {
   type SvgIconComponent,
 } from "@mui/icons-material";
 import { BUG_REPORT_URL, FEATURE_REQUEST_URL } from "@/lib/constants";
+import { isAdminRole } from "@/lib/roles";
 
 export interface NavItem {
   label: string;
   href: string;
   icon: SvgIconComponent;
+  /** Shown only to ADMIN/SUPER_ADMIN. Cosmetic - the API's requireRole is the real gate. */
+  adminOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -40,6 +44,23 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+/** Pinned to the foot of the rail, by the feedback and account controls - not part of the app's own nav. */
+export const footerNavGroups: NavGroup[] = [
+  {
+    items: [{ label: "Admin", href: "/admin", icon: AdminPanelSettings, adminOnly: true }],
+  },
+];
+
+/** The nav a given role may see. The rail and the mobile nav render from this, never from the raw groups. */
+export function visibleNavGroups(role: string | undefined, groups = navGroups): NavGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.adminOnly || isAdminRole(role)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 /** External GitHub issue links - rendered as plain anchors, never through navGroups/next-link. */
 export const feedbackLinks: NavItem[] = [

@@ -16,20 +16,18 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
+import { useAuth } from "@/hooks/use-auth";
 import {
   feedbackLinks,
+  footerNavGroups,
   isNavItemActive,
   MOBILE_NAV_HEIGHT,
   type NavItem,
-  navGroups,
+  visibleNavGroups,
 } from "./shell-config";
 
 const MORE_VALUE = "more";
 const PRIMARY_HREFS = ["/workspace", "/analytics", "/inbox", "/resumes"];
-
-const allItems = navGroups.flatMap((group) => group.items);
-const primaryItems = allItems.filter((item) => PRIMARY_HREFS.includes(item.href));
-const moreItems = allItems.filter((item) => !PRIMARY_HREFS.includes(item.href));
 
 /**
  * Bottom tab bar shown below md in place of the desktop rail: four primary
@@ -38,6 +36,17 @@ const moreItems = allItems.filter((item) => !PRIMARY_HREFS.includes(item.href));
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const { user } = useAuth();
+
+  // Derived per render, not at module scope: the visible set depends on the signed-in role.
+  const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
+  const footerItems = visibleNavGroups(user?.role, footerNavGroups).flatMap((group) => group.items);
+  const primaryItems = allItems.filter((item) => PRIMARY_HREFS.includes(item.href));
+  // The rail pins these to its foot, so they land at the end of the drawer here.
+  const moreItems = [
+    ...allItems.filter((item) => !PRIMARY_HREFS.includes(item.href)),
+    ...footerItems,
+  ];
 
   const activePrimary = primaryItems.find((item) => isNavItemActive(pathname, item.href));
   const moreActive = moreItems.some((item) => isNavItemActive(pathname, item.href));
