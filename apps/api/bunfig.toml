@@ -1,0 +1,3 @@
+[test]
+# tsyringe throws at import without the reflect polyfill; tests have no entry point to load it from.
+preload = ["reflect-metadata"]
