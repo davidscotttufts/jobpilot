@@ -34,6 +34,11 @@ export const jobListingSchema = jobListingSummarySchema.extend({
 
 export const jobListingPageSchema = paginatedResponseSchema(jobListingSummarySchema);
 
+/** The `?tech=` option list: what the index actually contains, so the filter can't be guessed wrong. */
+export const jobListingFacetsSchema = z.object({
+  tech: z.array(z.object({ value: z.string(), count: z.number().int() })),
+});
+
 /** Slug + freshness only: the web's sitemap needs nothing else. */
 export const jobListingSitemapSchema = z.array(
   z.object({ slug: z.string(), lastSeenAt: z.date() }),

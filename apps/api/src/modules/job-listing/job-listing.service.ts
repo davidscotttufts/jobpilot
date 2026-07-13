@@ -7,6 +7,12 @@ import { singleton } from "tsyringe";
 import { notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { createPaginatedResponse } from "@/types/response";
+import {
+  groupTechFacets,
+  resolveTechFilter,
+  type TechCountRow,
+  type TechVocabulary,
+} from "./tech-facets";
 
 /** Selected explicitly, not spread: a user column added to the table later must not leak out here. */
 const SUMMARY_SELECT = {
@@ -50,8 +56,15 @@ function withSourceCount<T extends CountedRow>({ _count, ...row }: T) {
 
 const SITEMAP_LIMIT = 5000;
 
+/** Enough to cover the long tail a user would plausibly filter by, short enough to ship to a phone. */
+const FACET_LIMIT = 40;
+const FACET_TTL_MS = 10 * 60_000;
+
 @singleton()
 export class JobListingService {
+  /** The in-flight promise, not the resolved value: N concurrent misses must share one scan. */
+  private vocabulary: { expiresAt: number; value: Promise<TechVocabulary> } | null = null;
+
   constructor(private readonly prisma: PrismaClient) {}
 
   /** Public list. Always scoped to published rows - hidden ones exist only for admins. */
@@ -69,9 +82,48 @@ export class JobListingService {
     return createPaginatedResponse(rows.map(withSourceCount), { page, limit, total });
   }
 
+  /** The tech option list behind the `?tech=` filter, most common first. */
+  async facets() {
+    const { facets } = await this.techVocabulary();
+    return { tech: facets.slice(0, FACET_LIMIT) };
+  }
+
+  /**
+   * Every tech name in the index, grouped by casing. Cached: it backs both the option list and the
+   * `?tech=` lookup, so it is read on every filtered request but changes only as jobs are ingested.
+   */
+  private techVocabulary(): Promise<TechVocabulary> {
+    const now = Date.now();
+    if (this.vocabulary && this.vocabulary.expiresAt > now) {
+      return this.vocabulary.value;
+    }
+
+    const value = this.loadVocabulary();
+    this.vocabulary = { expiresAt: now + FACET_TTL_MS, value };
+    // A failed scan must not be cached for ten minutes.
+    value.catch(() => {
+      this.vocabulary = null;
+    });
+    return value;
+  }
+
+  private async loadVocabulary(): Promise<TechVocabulary> {
+    // Every row, not just published: `where()` also serves the admin list, so a hidden listing's
+    // casing has to resolve too. The counts stay published-only, so the public facet list - which
+    // drops zero-count entries - can never leak a tech that exists solely on a hidden listing.
+    // `::int` because a bare count() comes back as a BigInt, which does not survive JSON.
+    const rows = await this.prisma.$queryRaw<TechCountRow[]>`
+      SELECT tech, count(*) FILTER (WHERE status = 'published'::job_listing_status)::int AS count
+      FROM (SELECT unnest(tech_stack) AS tech, status FROM job_listings) entries
+      GROUP BY 1
+      ORDER BY 2 DESC
+    `;
+    return groupTechFacets(rows);
+  }
+
   private async query<T extends Prisma.JobListingSelect>(query: AdminJobListingQuery, select: T) {
     const { page, limit } = query;
-    const where = this.where(query);
+    const where = await this.where(query);
 
     const [rows, total] = await Promise.all([
       this.prisma.jobListing.findMany({
@@ -87,14 +139,18 @@ export class JobListingService {
     return { page, limit, total, rows };
   }
 
-  private where(query: AdminJobListingQuery): Prisma.JobListingWhereInput {
+  private async where(query: AdminJobListingQuery): Promise<Prisma.JobListingWhereInput> {
     const { q, location, remote, board, tech, status } = query;
+    // `hasSome` is exact, so the request is expanded into the casings actually stored.
+    const techs = tech?.length
+      ? resolveTechFilter(tech, (await this.techVocabulary()).variants)
+      : [];
 
     return {
       ...(status && { status }),
       ...(remote !== undefined && { remote }),
       ...(location && { location: { contains: location, mode: "insensitive" } }),
-      ...(tech && { techStack: { has: tech } }),
+      ...(techs.length > 0 && { techStack: { hasSome: techs } }),
       // `board` is stored lowercase, so this is an indexed equality, not an ILIKE scan.
       ...(board && { sources: { some: { board: board.toLowerCase() } } }),
       ...(q && {

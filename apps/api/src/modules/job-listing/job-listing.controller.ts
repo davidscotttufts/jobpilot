@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { container } from "@/common/di";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import {
+  jobListingFacetsSchema,
   jobListingPageSchema,
   jobListingSchema,
   jobListingSitemapSchema,
@@ -29,6 +30,14 @@ export const publicJobListingController = new Elysia({
     },
   })
   // Declared before /:slug so the literal path wins the match.
+  .get("/facets", () => svc.facets(), {
+    response: jobListingFacetsSchema,
+    detail: {
+      summary: "Job listing filter facets",
+      description:
+        "Returns the tech-stack values present in the published index with their listing counts, most common first. Backs the /jobs tech filter. Unauthenticated.",
+    },
+  })
   .get("/sitemap", () => svc.sitemap(), {
     response: jobListingSitemapSchema,
     detail: {
