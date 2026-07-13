@@ -16,6 +16,7 @@ export default function DocsLayout(props: DocsLayoutProps): ReactElement {
         display: "flex",
         flexDirection: "column",
         backgroundColor: "surfaces.base",
+        overflowX: "clip",
       }}
     >
       <DocsBreadcrumbJsonLd />
@@ -24,12 +25,14 @@ export default function DocsLayout(props: DocsLayoutProps): ReactElement {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "200px minmax(0, 720px)" },
+            // minmax(0,…), not 1fr: an auto track is sized to its min-content, and on xs the sidebar
+            // is a row of nowrap pills - it would push the whole page wider than the phone.
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "200px minmax(0, 720px)" },
             gap: { xs: 3, md: 8 },
             alignItems: "start",
           }}
         >
-          <Box sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
+          <Box sx={{ minWidth: 0, position: { md: "sticky" }, top: { md: 88 } }}>
             <DocsSidebar />
           </Box>
           <Box component="article" sx={{ minWidth: 0 }}>
