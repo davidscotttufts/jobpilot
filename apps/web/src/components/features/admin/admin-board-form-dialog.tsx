@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { type AdminBoardInput, adminBoardSchema } from "@jobpilot/contracts/admin";
+import { type AdminBoardInput, adminBoardSchema } from "@jobpilot/contracts/job-board";
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Stack } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
 

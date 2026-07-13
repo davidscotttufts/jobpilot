@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { AdminBoardInput } from "@jobpilot/contracts/admin";
+import type { AdminBoardInput } from "@jobpilot/contracts/job-board";
 import { Add } from "@mui/icons-material";
 import { Button } from "@mui/material";
 import { useRouter } from "next/navigation";

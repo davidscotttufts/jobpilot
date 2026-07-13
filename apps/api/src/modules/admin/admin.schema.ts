@@ -16,22 +16,6 @@ export const adminUserSchema = publicUserSchema.extend({
 
 export const adminUserPageSchema = paginatedResponseSchema(adminUserSchema);
 
-/** A global board row plus `adoption` - how many profiles have linked it. */
-export const adminBoardRecordSchema = z.object({
-  id: z.uuid(),
-  name: z.string(),
-  domain: z.string(),
-  searchUrl: z.string().nullable(),
-  listed: z.boolean(),
-  isDefault: z.boolean(),
-  sortOrder: z.number().int(),
-  adoption: z.number().int(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const adminBoardListSchema = z.array(adminBoardRecordSchema);
-
 /** Platform-wide counters. `signupsPerDay.date` is UTC midnight of the bucketed day. */
 export const adminStatsSchema = z.object({
   users: z.object({

@@ -1,4 +1,4 @@
-import type { AdminBoardInput, AdminBoardPatch } from "@jobpilot/contracts/admin";
+import type { AdminBoardInput, AdminBoardPatch } from "@jobpilot/contracts/job-board";
 import { singleton } from "tsyringe";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 

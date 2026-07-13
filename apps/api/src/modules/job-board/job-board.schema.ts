@@ -27,3 +27,19 @@ export const jobBoardCatalogSchema = z.array(
     sortOrder: z.number().int(),
   }),
 );
+
+/** A global catalog row plus `adoption` - how many profiles have linked it. Admin view. */
+export const adminBoardRecordSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  domain: z.string(),
+  searchUrl: z.string().nullable(),
+  listed: z.boolean(),
+  isDefault: z.boolean(),
+  sortOrder: z.number().int(),
+  adoption: z.number().int(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const adminBoardListSchema = z.array(adminBoardRecordSchema);

@@ -10,19 +10,5 @@ export const adminUserQuerySchema = z.object({
 
 export const updateUserRoleSchema = z.object({ role: assignableRoleSchema });
 
-/** A global board row. Credentials live on the per-profile link, never here. */
-export const adminBoardSchema = z.object({
-  name: z.string().min(1),
-  domain: z.string().min(1),
-  searchUrl: z.string().optional().nullable(),
-  listed: z.boolean(),
-  isDefault: z.boolean(),
-  sortOrder: z.number().int(),
-});
-
-export const adminBoardPatchSchema = adminBoardSchema.partial();
-
 export type AdminUserQuery = z.infer<typeof adminUserQuerySchema>;
 export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
-export type AdminBoardInput = z.infer<typeof adminBoardSchema>;
-export type AdminBoardPatch = z.infer<typeof adminBoardPatchSchema>;

@@ -5,14 +5,18 @@ import { Elysia } from "elysia";
 import { signAccessToken } from "@/common/auth/tokens";
 import { errorMiddleware } from "@/common/middleware/error.middleware";
 import { adminController } from "@/modules/admin/admin.controller";
+import { adminBoardController } from "@/modules/job-board/admin-board.controller";
 import { httpErrorResponses } from "@/types/response";
 import { beforeAll, describe, expect, it } from "bun:test";
 
-// Mounted exactly as app.ts does, so the paths under test are the paths that ship.
+// Mounted exactly as app.ts does, so the paths under test are the paths that ship. Feature modules
+// own their admin controllers, so mount every one here - an omitted one ships untested.
 const app = new Elysia()
   .use(errorMiddleware)
   .guard({ as: "scoped", response: httpErrorResponses })
-  .group("/api", (api) => api.use(adminController));
+  .group("/api", (api) =>
+    api.use(adminController).use(adminBoardController),
+  );
 
 /** Enumerated from the router, so a route added later is covered without touching this test. */
 const adminRoutes = app.routes.filter((route) => route.path.startsWith("/api/admin"));
