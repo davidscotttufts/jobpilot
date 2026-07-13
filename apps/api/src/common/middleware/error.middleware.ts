@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { ErrorCodes, HttpError } from "@/common/errors";
+import { ErrorCodes, HttpError, prismaCode } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 
@@ -7,13 +7,6 @@ interface ErrorBody {
   code: string;
   message: string;
   details?: unknown;
-}
-
-function prismaCode(error: unknown): string | undefined {
-  if (error && typeof error === "object" && "code" in error) {
-    return String((error as { code: unknown }).code);
-  }
-  return undefined;
 }
 
 /**
