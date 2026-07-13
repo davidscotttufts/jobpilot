@@ -5,6 +5,7 @@ const TABS: Tab[] = [
   { label: "Overview", href: "/admin/overview" },
   { label: "Users", href: "/admin/users" },
   { label: "Boards", href: "/admin/boards" },
+  { label: "Listings", href: "/admin/listings" },
 ];
 
 export function AdminTabs(): ReactElement {
