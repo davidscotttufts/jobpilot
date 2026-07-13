@@ -6,6 +6,7 @@ import { signAccessToken } from "@/common/auth/tokens";
 import { errorMiddleware } from "@/common/middleware/error.middleware";
 import { adminController } from "@/modules/admin/admin.controller";
 import { adminBoardController } from "@/modules/job-board/admin-board.controller";
+import { adminJobListingController } from "@/modules/job-listing/admin-listing.controller";
 import { httpErrorResponses } from "@/types/response";
 import { beforeAll, describe, expect, it } from "bun:test";
 
@@ -15,7 +16,7 @@ const app = new Elysia()
   .use(errorMiddleware)
   .guard({ as: "scoped", response: httpErrorResponses })
   .group("/api", (api) =>
-    api.use(adminController).use(adminBoardController),
+    api.use(adminController).use(adminBoardController).use(adminJobListingController),
   );
 
 /** Enumerated from the router, so a route added later is covered without touching this test. */

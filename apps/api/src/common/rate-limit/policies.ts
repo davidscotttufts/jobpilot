@@ -50,6 +50,10 @@ export const RATE_LIMITS = {
    *  and reloading the link a few times never trips it. */
   publicResumePdf: { key: byIp, limit: 30, windowMs: HOUR, burst: 10 },
 
+  /** Sized for a crawler walking the paginated public job index, not just a human browsing it -
+   *  too tight here and we deindex ourselves. A scraper brake, not an anti-abuse wall. */
+  publicJobs: { key: byIp, limit: 300, windowMs: HOUR, burst: 60 },
+
   /** Burns the *user's own* solver credits (captcha.service.ts decrypts their key), so this is a
    *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several challenges.
    *  `maxInFlight` because a rate cap alone still lets several two-minute solves pile up on sockets. */

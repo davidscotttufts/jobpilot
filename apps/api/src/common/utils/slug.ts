@@ -15,6 +15,8 @@ export function slugify(input: string, options: SlugifyOptions = {}): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, maxLength);
+    .slice(0, maxLength)
+    // Again after the slice - truncating mid-word can leave a dangling separator.
+    .replace(/-+$/g, "");
   return slug || fallback;
 }

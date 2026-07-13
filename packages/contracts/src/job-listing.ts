@@ -1,0 +1,40 @@
+import { z } from "zod/v4";
+
+export const JOB_LISTING_STATUSES = ["published", "hidden"] as const;
+export const jobListingStatusSchema = z.enum(JOB_LISTING_STATUSES);
+
+/** Public /jobs filters. Every param is crawlable as a query string, so all are optional. */
+export const jobListingQuerySchema = z.object({
+  // Capped: a crawler will happily follow /jobs?page=50000 into an unbounded OFFSET scan.
+  page: z.coerce.number().int().min(1).max(500).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  /** Free text over title + company. */
+  q: z.string().trim().min(1).optional(),
+  location: z.string().trim().min(1).optional(),
+  remote: z.stringbool().optional(),
+  board: z.string().trim().min(1).optional(),
+  /** One tech-stack entry, matched case-insensitively. */
+  tech: z.string().trim().min(1).optional(),
+});
+
+/**
+ * The filter params, minus pagination - the web reads these off the URL and the pager preserves
+ * them. Derived from the schema so a new filter cannot be added here and forgotten there.
+ */
+export const JOB_LISTING_FILTER_KEYS = Object.keys(jobListingQuerySchema.shape).filter(
+  (key) => key !== "page" && key !== "limit",
+) as Exclude<keyof JobListingQuery, "page" | "limit">[];
+
+/** Admin moderation list - the one caller allowed to see hidden rows. */
+export const adminJobListingQuerySchema = jobListingQuerySchema.extend({
+  status: jobListingStatusSchema.optional(),
+});
+
+export const adminJobListingPatchSchema = z.object({
+  status: jobListingStatusSchema,
+});
+
+export type JobListingStatus = z.infer<typeof jobListingStatusSchema>;
+export type JobListingQuery = z.infer<typeof jobListingQuerySchema>;
+export type AdminJobListingQuery = z.infer<typeof adminJobListingQuerySchema>;
+export type AdminJobListingPatch = z.infer<typeof adminJobListingPatchSchema>;

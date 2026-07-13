@@ -9,6 +9,7 @@ import { publish } from "@/common/sse";
 import { campaignChannel } from "@/common/sse/channels/campaign";
 import { workspaceChannel } from "@/common/sse/channels/workspace";
 import { PrismaClient } from "@/generated/prisma/client";
+import { JobListingIngestService } from "@/modules/job-listing";
 import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { toCampaignJobRow } from "../campaign.mapper";
 import { recomputeCampaignSummary } from "../campaign.summary";
@@ -16,7 +17,10 @@ import { ensureCampaignOwned } from "../campaign.utils";
 
 @singleton()
 export class CampaignJobService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly listings: JobListingIngestService,
+  ) {}
 
   async listJobs(profileId: string, campaignId: string) {
     const jobs = await this.prisma.job.findMany({
@@ -54,6 +58,8 @@ export class CampaignJobService {
       where: { profileId, url: job.url, status: "pending" },
       data: { status: "consumed", consumedAt: new Date() },
     });
+
+    this.listings.ingestInBackground(job);
 
     publish(
       campaignChannel,
@@ -108,6 +114,11 @@ export class CampaignJobService {
         },
       });
     }
+
+    // The digest usually lands on a PATCH, not the POST - the agent scores from a results row and
+    // enriches after opening the posting. This is the call that populates most listings. Gating on
+    // the digest is the ingest's own job; duplicating that policy here would silently diverge.
+    this.listings.ingestInBackground(job);
 
     publish(
       campaignChannel,

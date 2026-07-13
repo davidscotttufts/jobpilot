@@ -1,0 +1,58 @@
+enum JobListingStatus {
+  published
+  hidden
+
+  @@map("job_listing_status")
+}
+
+// The public job index: one row per posting, deduped across every user's campaigns. Digest fields
+// only - it must never carry who discovered or applied. Grows into the fleet-wide shared job index.
+model JobListing {
+  id String @id @default(uuid())
+  slug String @unique
+  // sha256(normTitle|normCompany|normLocation). Not to be confused with `Job.digest`, which is the
+  // agent's JSON content summary, not a hash.
+  dedupeKey String @unique @map("dedupe_key")
+
+  title              String
+  company            String
+  location           String?
+  remote             Boolean  @default(false)
+  salary             String?
+  employmentType     String?  @map("employment_type")
+  techStack          String[] @map("tech_stack")
+  descriptionExcerpt String?  @map("description_excerpt")
+
+  // Auto-published behind the ingest quality gate; admins hide after the fact.
+  status      JobListingStatus @default(published)
+  firstSeenAt DateTime         @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime         @default(now()) @map("last_seen_at")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  sources JobListingSource[]
+
+  // Serves the default list and the sitemap: `where status ORDER BY last_seen_at DESC`.
+  @@index([status, lastSeenAt])
+  // `?tech=` is a `tech_stack @> ARRAY[..]` containment test - btree cannot serve it.
+  @@index([techStack], type: Gin)
+  @@map("job_listings")
+}
+
+// Where one posting was seen. A repost across boards collapses into one JobListing with several
+// sources; `url @unique` is what keeps the ingest upsert atomic under concurrent agents.
+model JobListingSource {
+  id        String @id @default(uuid())
+  listingId String @map("listing_id")
+  // Stored lowercase, so `?board=` is an equality hit rather than an ILIKE scan.
+  board     String?
+  // Canonicalized (tracking params stripped) - see canonicalizeUrl in dedupe.ts.
+  url        String   @unique
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+
+  listing JobListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@index([board, listingId])
+  @@map("job_listing_sources")
+}

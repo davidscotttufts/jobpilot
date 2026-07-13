@@ -1,17 +1,39 @@
 import { db } from "@/common/database";
 import { seedJobBoards } from "./job-boards";
+import { seedJobListings } from "./job-listings";
 import { seedProfileBoards } from "./profile-boards";
 import { seedSuperAdmin } from "./super-admin";
 
+interface Seeder {
+  fn: () => Promise<void>;
+  description: string;
+  /** Skipped by a bare `db:seed`; must be named with --only. For backfills that would replay. */
+  optIn: boolean;
+}
+
 // Insertion order is run order: profile-boards needs the catalog that job-boards seeds.
 const seeders = {
-  "job-boards": { fn: seedJobBoards, description: "Seed the global job-board catalog" },
+  "job-boards": {
+    fn: seedJobBoards,
+    description: "Seed the global job-board catalog",
+    optIn: false,
+  },
   "profile-boards": {
     fn: seedProfileBoards,
     description: "Link every profile to the default boards",
+    optIn: false,
   },
-  "super-admin": { fn: seedSuperAdmin, description: "Reconcile SUPER_ADMIN_EMAIL against the DB" },
-} as const;
+  "super-admin": {
+    fn: seedSuperAdmin,
+    description: "Reconcile SUPER_ADMIN_EMAIL against the DB",
+    optIn: false,
+  },
+  "job-listings": {
+    fn: seedJobListings,
+    description: "Backfill the public job index from existing jobs",
+    optIn: true,
+  },
+} as const satisfies Record<string, Seeder>;
 
 type SeederName = keyof typeof seeders;
 
@@ -25,15 +47,21 @@ function printHelp(): void {
   console.log("Examples:");
   console.log("  bun run db:seed");
   console.log("  bun run db:seed --only super-admin");
-  console.log("  bun run db:seed --only job-boards,profile-boards\n");
+  console.log("  bun run db:seed --only job-boards,profile-boards");
+  console.log("  bun run db:seed --only job-listings\n");
 }
 
 function listSeeders(): void {
   console.log("\n📋 Available seeders:\n");
-  for (const [name, { description }] of Object.entries(seeders)) {
-    console.log(`  ${name.padEnd(16)} - ${description}`);
+  for (const [name, seeder] of Object.entries(seeders)) {
+    console.log(`  ${name.padEnd(16)} - ${seeder.description}${seeder.optIn ? " (--only)" : ""}`);
   }
   console.log();
+}
+
+/** A bare `db:seed` runs the seeders that are safe to replay on every setup. */
+function defaultSeeders(): SeederName[] {
+  return (Object.keys(seeders) as SeederName[]).filter((name) => !seeders[name].optIn);
 }
 
 function parseArgs(): SeederName[] | "all" | "help" | "list" {
@@ -73,7 +101,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  const names = selected === "all" ? (Object.keys(seeders) as SeederName[]) : selected;
+  const names = selected === "all" ? defaultSeeders() : selected;
   console.log("\n🌱 Starting database seed...");
   for (const name of names) {
     console.log(`\n📦 Running seeder: ${name}`);
