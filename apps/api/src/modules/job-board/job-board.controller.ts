@@ -4,7 +4,11 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { profileGuard } from "@/common/middleware";
 import { deletedResponseSchema } from "@/types/response";
-import { jobBoardListSchema, jobBoardRecordSchema } from "./job-board.schema";
+import {
+  jobBoardCatalogSchema,
+  jobBoardListSchema,
+  jobBoardRecordSchema,
+} from "./job-board.schema";
 import { JobBoardService } from "./job-board.service";
 
 const svc = container.resolve(JobBoardService);
@@ -20,6 +24,14 @@ export const jobBoardController = new Elysia({
       summary: "List job boards",
       description:
         "Returns all saved job boards owned by the active profile, ordered by their sort order.",
+    },
+  })
+  .get("/catalog", ({ profileId }) => svc.catalog(profileId), {
+    response: jobBoardCatalogSchema,
+    detail: {
+      summary: "List available boards",
+      description:
+        "Returns the listed boards from the global catalog that the active profile has not linked yet.",
     },
   })
   .post("/", ({ user, profileId, body }) => svc.create(user.id, profileId, body), {

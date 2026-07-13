@@ -1,15 +1,40 @@
+// The global, admin-curated board catalog. A user adding an unknown domain creates an unlisted row.
 model JobBoard {
-  id        String  @id @default(uuid())
-  profileId String  @map("profile_id")
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
   name      String
-  domain    String
-  searchUrl String? @map("search_url")
-  email     String?
-  password  String?
-  sortOrder Int     @default(0) @map("sort_order")
+  domain    String   @unique
+  searchUrl String?  @map("search_url")
+  // Offered to other users in the board picker. User-created boards start unlisted.
+  listed    Boolean  @default(false)
+  // Auto-linked to every new profile at registration.
+  isDefault Boolean  @default(false) @map("is_default")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([profileId, domain])
-  @@index([profileId])
+  profiles ProfileJobBoard[]
+
   @@map("job_boards")
+}
+
+// A profile's adoption of a global board: its credentials, ordering, and optional overrides.
+model ProfileJobBoard {
+  id         String   @id @default(uuid())
+  profileId  String   @map("profile_id")
+  jobBoardId String   @map("job_board_id")
+  email      String?
+  // Encrypted under the user's DEK, like every other stored secret.
+  password   String?
+  // Null = inherit the global board's value.
+  name       String?
+  searchUrl  String?  @map("search_url")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  jobBoard JobBoard @relation(fields: [jobBoardId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, jobBoardId])
+  @@index([profileId])
+  @@map("profile_job_boards")
 }

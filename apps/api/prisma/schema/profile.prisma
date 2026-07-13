@@ -39,7 +39,7 @@ model Profile {
   applications     Application[]
   campaigns        Campaign[]
   credentials      Credential[]
-  jobBoards        JobBoard[]
+  jobBoards        ProfileJobBoard[]
   queueEntries     QueueEntry[]
   emailAccount     EmailAccount?
   emailOAuthClient EmailOAuthClient?

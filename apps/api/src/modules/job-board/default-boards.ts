@@ -1,14 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 
 /**
- * The board catalog every new profile starts with. Seeded inline when a profile
- * is created (see `AuthService.register`); the `prisma/seed/default-boards.ts`
- * script reuses this list to backfill profiles that predate a catalog change.
- *
- * Typed as the Prisma nested-create input so the catalog stays compile-checked
- * against the `JobBoard` schema (a new required column breaks the build here).
+ * What a fresh install's catalog holds. Consumed only by `prisma/seed/job-boards.ts` - after that
+ * the table is the source of truth. Typed as the Prisma input so a new column breaks the build here.
  */
-export const DEFAULT_BOARDS: Prisma.JobBoardCreateManyProfileInput[] = [
+export const DEFAULT_BOARDS: Prisma.JobBoardCreateManyInput[] = [
   {
     name: "LinkedIn",
     domain: "linkedin.com",

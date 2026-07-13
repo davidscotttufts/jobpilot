@@ -130,8 +130,8 @@ export class CredentialService {
   ): Promise<ResolvedCredential | null> {
     const board = await this.toLogin(
       userId,
-      await this.prisma.jobBoard.findFirst({
-        where: { profileId, domain },
+      await this.prisma.profileJobBoard.findFirst({
+        where: { profileId, jobBoard: { domain } },
         select: { email: true, password: true },
       }),
       SECRET_CONTEXTS.boardPassword,

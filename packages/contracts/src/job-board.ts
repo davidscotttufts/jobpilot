@@ -9,7 +9,8 @@ export const jobBoardSchema = z.object({
   sortOrder: z.number().int(),
 });
 
-export const jobBoardPatchSchema = jobBoardSchema.partial();
+/** `domain` identifies the global board, so it is fixed once linked - relink instead of renaming. */
+export const jobBoardPatchSchema = jobBoardSchema.omit({ domain: true }).partial();
 
 export type JobBoardInput = z.infer<typeof jobBoardSchema>;
 export type JobBoardPatch = z.infer<typeof jobBoardPatchSchema>;

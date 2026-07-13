@@ -19,7 +19,7 @@
     "db:migrate": "prisma migrate dev --create-only",
     "db:migrate:apply": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "bun run prisma/seed/default-boards.ts",
+    "db:seed": "bun run prisma/seed/index.ts",
     "db:reset": "prisma migrate reset --skip-seed"
   },
   "dependencies": {
