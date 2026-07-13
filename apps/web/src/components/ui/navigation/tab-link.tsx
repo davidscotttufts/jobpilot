@@ -6,13 +6,13 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-interface SettingsTabLinkProps {
+interface TabLinkProps {
   href: Route;
   label: string;
 }
 
-/** The one interactive leaf of the settings tab bar: highlights the active route. */
-export function SettingsTabLink(props: SettingsTabLinkProps): ReactElement {
+/** The one interactive leaf of a tab strip: highlights the active route. */
+export function TabLink(props: TabLinkProps): ReactElement {
   const { href, label } = props;
   const pathname = usePathname();
   const active = pathname === href;

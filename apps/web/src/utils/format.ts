@@ -33,3 +33,12 @@ export function formatRelativeTime(value: string | Date): string {
   const diffMon = Math.round(diffDay / 30);
   return `${diffMon}mo`;
 }
+
+/** Locale short date. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
+export function formatDate(value: string | Date | null | undefined): string {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString();
+}

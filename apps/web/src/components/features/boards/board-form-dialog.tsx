@@ -49,7 +49,10 @@ export function BoardFormDialog(props: BoardFormDialogProps): ReactElement {
                 {(field) => <field.TextField label="Display name" />}
               </form.AppField>
               <form.AppField name="domain">
-                {(field) => <field.TextField label="Domain (e.g. linkedin.com)" />}
+                {/* The domain identifies the shared board, so it is fixed once linked - remove and re-add to change it. */}
+                {(field) => (
+                  <field.TextField label="Domain (e.g. linkedin.com)" disabled={Boolean(initial)} />
+                )}
               </form.AppField>
             </Stack>
             <form.AppField name="searchUrl">

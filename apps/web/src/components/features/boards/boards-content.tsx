@@ -2,13 +2,10 @@
 
 import { type ReactElement, useState } from "react";
 import type { JobBoardPatch } from "@jobpilot/contracts/job-board";
-import { Clear, Delete, Edit, MoreVert, Search } from "@mui/icons-material";
+import { Clear, Delete, Edit, MoreVert } from "@mui/icons-material";
 import {
-  Box,
   Button,
   IconButton,
-  InputAdornment,
-  Link,
   Stack,
   Table,
   TableBody,
@@ -16,15 +13,16 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
-import { PaginationFooter } from "@/components/ui/data";
+import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { ExternalLink } from "@/components/ui/display";
 import { DropdownMenu } from "@/components/ui/feedback";
+import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { usePagination } from "@/hooks/use-pagination";
@@ -105,24 +103,13 @@ export function BoardsContent(): ReactElement {
           spacing={1.5}
           sx={{ alignItems: { xs: "stretch", md: "center" }, mb: 2 }}
         >
-          <TextField
-            size="small"
-            placeholder="Search name or domain"
+          <SearchField
             value={searchDraft}
-            onChange={(e) => {
-              setSearchDraft(e.target.value);
+            placeholder="Search name or domain"
+            onChange={(value) => {
+              setSearchDraft(value);
               setPage(1);
             }}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="sm" />
-                  </InputAdornment>
-                ),
-              },
-            }}
-            sx={{ flex: 1, minWidth: 200 }}
           />
           {isAnyFilterActive && (
             <Button
@@ -137,15 +124,9 @@ export function BoardsContent(): ReactElement {
         </Stack>
 
         {allRows.length === 0 ? (
-          <Box sx={{ py: 3, textAlign: "center" }}>
-            <Typography variant="body2Muted">
-              No boards yet. Campaign <code>bun db:setup</code> to seed defaults.
-            </Typography>
-          </Box>
+          <EmptyState variant="inline" title="No boards yet. Add one to let campaigns search it." />
         ) : filteredRows.length === 0 ? (
-          <Box sx={{ py: 3, textAlign: "center" }}>
-            <Typography variant="body2Muted">No boards match the current filters.</Typography>
-          </Box>
+          <EmptyState variant="inline" title="No boards match the current filters." />
         ) : (
           <TableContainer>
             <Table size="small">
@@ -168,20 +149,9 @@ export function BoardsContent(): ReactElement {
                     </TableCell>
                     <TableCell>
                       {b.searchUrl ? (
-                        <Link
-                          href={b.searchUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{
-                            display: "block",
-                            maxWidth: 280,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <ExternalLink href={b.searchUrl} truncateTo={280}>
                           {b.searchUrl}
-                        </Link>
+                        </ExternalLink>
                       ) : (
                         <Typography variant="captionMuted">-</Typography>
                       )}
