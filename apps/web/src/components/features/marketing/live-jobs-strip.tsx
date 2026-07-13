@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Grid, Stack, Typography } from "@mui/material";
-import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { JobCard } from "@/components/features/jobs";
 import { LinkButton } from "@/components/ui/buttons";
@@ -14,11 +13,8 @@ const SHOWN = 6;
  * the index is empty: the landing page must never 500 over a decorative section.
  */
 export async function LiveJobsStrip(): Promise<ReactNode> {
-  "use cache";
-  // Keeps the landing page prerendered instead of making every visit wait on the API.
-  cacheLife("hours");
-
   const jobs = await recentJobs();
+
   if (jobs.length === 0) {
     return null;
   }
@@ -54,9 +50,15 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
 
 async function recentJobs() {
   try {
-    const { data } = await api.public.jobs.get({ query: { page: 1, limit: SHOWN } });
+    const { data, error } = await api.public.jobs.get({ query: { page: 1, limit: SHOWN } });
+    if (error) {
+      // Logged, not swallowed: a down API used to look exactly like an empty index.
+      console.error("live jobs strip: job index unavailable", error.value);
+      return [];
+    }
     return data?.items ?? [];
-  } catch {
+  } catch (error) {
+    console.error("live jobs strip: job index unreachable", error);
     return [];
   }
 }

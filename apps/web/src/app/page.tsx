@@ -42,7 +42,9 @@ export default function LandingPage(): ReactElement {
         <Hero />
         <BoardStrip />
         <CampaignTypes />
+
         <LiveJobsStrip />
+
         <ProductTour />
         <PrivacyGrid />
         <HowItWorks />
