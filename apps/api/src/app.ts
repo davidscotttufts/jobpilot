@@ -5,6 +5,7 @@ import { logger } from "@/common/logger";
 import { errorMiddleware } from "@/common/middleware";
 import { corsPlugin, swaggerPlugin } from "@/common/plugins";
 import { env } from "@/env";
+import { adminController } from "@/modules/admin";
 import { analyticsController } from "@/modules/analytics";
 import { applicationController } from "@/modules/application";
 import { authController } from "@/modules/auth";
@@ -54,7 +55,8 @@ const app = new Elysia()
       .use(upworkController)
       .use(campaignController)
       .use(workspaceController)
-      .use(emailController),
+      .use(emailController)
+      .use(adminController),
   )
   .listen(env.PORT);
 

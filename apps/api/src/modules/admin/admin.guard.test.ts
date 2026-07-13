@@ -1,0 +1,64 @@
+// Needs the dummy env block in ci.yml: importing a real controller makes `@/env` validate at load.
+// Still no DB - requireRole rejects on the JWT claim before it confirms against the row.
+
+import { Elysia } from "elysia";
+import { signAccessToken } from "@/common/auth/tokens";
+import { errorMiddleware } from "@/common/middleware/error.middleware";
+import { adminController } from "@/modules/admin/admin.controller";
+import { httpErrorResponses } from "@/types/response";
+import { beforeAll, describe, expect, it } from "bun:test";
+
+// Mounted exactly as app.ts does, so the paths under test are the paths that ship.
+const app = new Elysia()
+  .use(errorMiddleware)
+  .guard({ as: "scoped", response: httpErrorResponses })
+  .group("/api", (api) => api.use(adminController));
+
+/** Enumerated from the router, so a route added later is covered without touching this test. */
+const adminRoutes = app.routes.filter((route) => route.path.startsWith("/api/admin"));
+
+/** Fill `:params` with a well-formed uuid. The body is irrelevant - the guard runs before validation. */
+function request(method: string, path: string, token?: string): Request {
+  return new Request(`http://localhost${path.replace(/:[^/]+/g, crypto.randomUUID())}`, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      ...(token ? { authorization: `Bearer ${token}` } : {}),
+    },
+    body: method === "GET" || method === "HEAD" ? undefined : "{}",
+  });
+}
+
+describe("every /api/admin/* route is admin-guarded", () => {
+  let userToken: string;
+
+  beforeAll(async () => {
+    userToken = await signAccessToken({
+      id: crypto.randomUUID(),
+      role: "USER",
+      email: "user@example.com",
+    });
+  });
+
+  it("registers at least one admin route", () => {
+    // Without this the suite would pass vacuously if the controller ever failed to mount.
+    expect(adminRoutes.length).toBeGreaterThan(0);
+  });
+
+  it("403s a signed-in USER on every route", async () => {
+    for (const route of adminRoutes) {
+      const response = await app.handle(request(route.method, route.path, userToken));
+      const label = `${route.method} ${route.path}`;
+      expect({ label, status: response.status }).toEqual({ label, status: 403 });
+      expect(await response.json()).toMatchObject({ code: "FORBIDDEN" });
+    }
+  });
+
+  it("401s an anonymous caller on every route", async () => {
+    for (const route of adminRoutes) {
+      const response = await app.handle(request(route.method, route.path));
+      const label = `${route.method} ${route.path}`;
+      expect({ label, status: response.status }).toEqual({ label, status: 401 });
+    }
+  });
+});

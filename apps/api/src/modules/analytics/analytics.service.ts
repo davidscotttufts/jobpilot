@@ -1,47 +1,8 @@
 import { singleton } from "tsyringe";
+import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
-const DAYS_IN_TIMELINE = 30;
-
-function startOfDay(d: Date): Date {
-  const out = new Date(d);
-  out.setHours(0, 0, 0, 0);
-  return out;
-}
-
-function startOfWeek(): Date {
-  const d = startOfDay(new Date());
-  d.setDate(d.getDate() - 6);
-  return d;
-}
-
-function startOfTimeline(): Date {
-  const d = startOfDay(new Date());
-  d.setDate(d.getDate() - (DAYS_IN_TIMELINE - 1));
-  return d;
-}
-
-function isoDateKey(d: Date): string {
-  return startOfDay(d).toISOString().slice(0, 10);
-}
-
-/** Bucket timestamps into a zero-filled, day-by-day series over the timeline window. */
-function bucketPerDay(dates: Date[], start: Date) {
-  const perDayMap = new Map<string, number>();
-  for (let i = 0; i < DAYS_IN_TIMELINE; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    perDayMap.set(isoDateKey(d), 0);
-  }
-  for (const date of dates) {
-    const key = isoDateKey(date);
-    if (perDayMap.has(key)) {
-      perDayMap.set(key, (perDayMap.get(key) ?? 0) + 1);
-    }
-  }
-  return Array.from(perDayMap.entries()).map(([date, count]) => ({ date, count }));
-}
 
 @singleton()
 export class AnalyticsService {

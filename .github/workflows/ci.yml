@@ -71,11 +71,15 @@ jobs:
         run: bun run typecheck
         working-directory: apps/api
 
-      # No services and no env: the SSE tests only reach the in-process broker. The first test that
-      # imports a service or controller will need a dummy env block here - env.ts validates at load.
+      # Still no services. The admin guard test imports a real controller, so env.ts has to validate -
+      # these are dummies: pg pools are lazy, and the 401/403 paths it asserts never issue a query.
       - name: Test API
         run: bun run test
         working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          JWT_SECRET: ci-test-secret
+          SECRET_MASTER_KEY: Y2ktdGVzdC1tYXN0ZXIta2V5LTMyLWJ5dGVzLWxvbmc=
 
       - name: Typegen web
         run: bun run typegen
