@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { type LoginInput, LoginSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
-import NextLink from "next/link";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -49,7 +48,7 @@ export function LoginForm(): ReactElement {
         </form.AppField>
 
         <Typography variant="body2Muted" sx={{ textAlign: "right", mt: -1 }}>
-          <Link component={NextLink} href="/forgot-password" color="primary">
+          <Link href="/forgot-password" color="primary">
             Forgot password?
           </Link>
         </Typography>
@@ -62,7 +61,7 @@ export function LoginForm(): ReactElement {
 
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
           No account?{" "}
-          <Link component={NextLink} href="/register" color="primary">
+          <Link href="/register" color="primary">
             Create one
           </Link>
         </Typography>

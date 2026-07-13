@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { Box, Card, CardContent, Grid, Link, Stack, Typography } from "@mui/material";
 import type { Theme } from "@mui/material/styles";
-import NextLink from "next/link";
 import { fontFamilies } from "@/theme";
 import { panelCellSx } from "./mock-panels/panel-frame";
 import { Section } from "./section";
@@ -119,10 +118,7 @@ export function CampaignTypes(): ReactElement {
       </Grid>
       <Typography variant="body2Muted" sx={{ mt: 3 }}>
         Every mode is a skill you can also run by hand from the agent -{" "}
-        <Link component={NextLink} href="/docs/campaigns-and-skills">
-          see the docs
-        </Link>
-        .
+        <Link href="/docs/campaigns-and-skills">see the docs</Link>.
       </Typography>
     </Section>
   );

@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { Box, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import { DOCS_NAV } from "./docs-nav";
 
@@ -17,7 +16,6 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
   const { href, label, active } = props;
   return (
     <Link
-      component={NextLink}
       href={href}
       underline="none"
       sx={{

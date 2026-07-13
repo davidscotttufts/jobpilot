@@ -3,7 +3,6 @@
 import type { ComponentProps, ReactElement } from "react";
 import { Box, Divider, Link, Typography } from "@mui/material";
 import type { Route } from "next";
-import NextLink from "next/link";
 import { fontFamilies } from "@/theme";
 
 // Docs body copy runs larger than the app chrome (theme body1 is dashboard-tuned).
@@ -41,14 +40,16 @@ export function DocsP(props: ComponentProps<"p">): ReactElement {
 export function DocsLink(props: ComponentProps<"a">): ReactElement {
   const { href = "", children, ...rest } = props;
   if (href.startsWith("http")) {
+    // Explicit anchor: next/link is the theme default for MuiLink, and it should not render an
+    // off-site URL.
     return (
-      <Link href={href} target="_blank" rel="noopener noreferrer" {...rest}>
+      <Link component="a" href={href} target="_blank" rel="noopener noreferrer" {...rest}>
         {children}
       </Link>
     );
   }
   return (
-    <Link component={NextLink} href={href as Route} {...rest}>
+    <Link href={href as Route} {...rest}>
       {children}
     </Link>
   );

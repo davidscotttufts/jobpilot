@@ -36,6 +36,23 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
         },
       }),
     },
+    {
+      props: { variant: "lift" },
+      style: ({ theme }) => ({
+        height: "100%",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          borderColor: `${theme.palette.accent.primary}80`,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -16px ${theme.palette.accent.primary}59`,
+        },
+      }),
+    },
+    {
+      props: { variant: "accent" },
+      style: ({ theme }) => ({
+        borderColor: `${theme.palette.accent.primary}59`,
+      }),
+    },
   ],
 };
 

@@ -23,7 +23,7 @@ import {
   selectOverrides,
   textFieldOverrides,
 } from "./input";
-import { linkOverrides } from "./link";
+import { buttonBaseOverrides, linkOverrides } from "./link";
 import { menuItemOverrides, menuOverrides } from "./menu";
 import { paperOverrides } from "./paper";
 import { stackOverrides } from "./stack";
@@ -40,6 +40,7 @@ import { typographyOverrides } from "./typography";
 export const componentOverrides: Components<Theme> = {
   MuiBackdrop: backdropOverrides,
   MuiButton: buttonOverrides,
+  MuiButtonBase: buttonBaseOverrides,
   MuiCard: cardOverrides,
   MuiCardActions: cardActionsOverrides,
   MuiCardContent: cardContentOverrides,

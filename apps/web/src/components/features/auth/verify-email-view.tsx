@@ -3,7 +3,6 @@
 import { type ReactElement, useEffect, useRef } from "react";
 import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
 import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
-import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
@@ -52,7 +51,7 @@ function VerifyTokenView(props: { token: string }): ReactElement {
           This link may have expired or already been used.
         </Typography>
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
-          <Link component={NextLink} href="/login" color="primary">
+          <Link href="/login" color="primary">
             Back to sign in
           </Link>
         </Typography>

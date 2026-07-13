@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { type ForgotPasswordInput, ForgotPasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
-import NextLink from "next/link";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ForgotPasswordResponse } from "@/api/types";
@@ -30,7 +29,7 @@ export function ForgotPasswordForm(): ReactElement {
           inbox.
         </Alert>
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
-          <Link component={NextLink} href="/login" color="primary">
+          <Link href="/login" color="primary">
             Back to sign in
           </Link>
         </Typography>
@@ -68,7 +67,7 @@ export function ForgotPasswordForm(): ReactElement {
 
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
           Remembered it?{" "}
-          <Link component={NextLink} href="/login" color="primary">
+          <Link href="/login" color="primary">
             Sign in
           </Link>
         </Typography>

@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { type ResetPasswordInput, ResetPasswordSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
-import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
@@ -40,7 +39,7 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
           This reset link is missing its token. Request a new one below.
         </Alert>
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
-          <Link component={NextLink} href="/forgot-password" color="primary">
+          <Link href="/forgot-password" color="primary">
             Request a new link
           </Link>
         </Typography>
@@ -77,7 +76,7 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
         </form.AppForm>
 
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
-          <Link component={NextLink} href="/login" color="primary">
+          <Link href="/login" color="primary">
             Back to sign in
           </Link>
         </Typography>

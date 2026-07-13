@@ -3,7 +3,6 @@
 import type { ReactElement } from "react";
 import { type RegisterInput, RegisterSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
-import NextLink from "next/link";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -61,7 +60,7 @@ export function RegisterForm(): ReactElement {
 
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
           Already have an account?{" "}
-          <Link component={NextLink} href="/login" color="primary">
+          <Link href="/login" color="primary">
             Sign in
           </Link>
         </Typography>

@@ -79,5 +79,9 @@ declare module "@mui/material/Paper" {
   interface PaperPropsVariantOverrides {
     interactive: true;
     live: true;
+    /** Hover-lift + accent glow, for a whole card that is a link. */
+    lift: true;
+    /** Flame-accent border, for inline CTA cards. */
+    accent: true;
   }
 }

@@ -10,7 +10,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import NextLink from "next/link";
 import { FAQ_ITEMS } from "./faq-items";
 import { Section } from "./section";
 
@@ -20,11 +19,7 @@ export function Faq(): ReactElement {
       <Stack spacing={1} sx={{ mb: 4 }}>
         <Typography variant="h2">Questions, answered.</Typography>
         <Typography variant="body2Muted">
-          More in the{" "}
-          <Link component={NextLink} href="/docs/faq">
-            full FAQ
-          </Link>
-          .
+          More in the <Link href="/docs/faq">full FAQ</Link>.
         </Typography>
       </Stack>
       <Stack spacing={1}>
