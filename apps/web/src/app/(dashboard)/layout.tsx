@@ -7,7 +7,14 @@ export default function DashboardLayout(props: PropsWithChildren): ReactElement 
   const { children } = props;
   return (
     <AppShell>
-      <Box sx={{ minHeight: "100%", display: "flex", flexDirection: "column", py: 3 }}>
+      <Box
+        sx={{
+          minHeight: "100%",
+          display: "flex",
+          flexDirection: "column",
+          py: { xs: 2, sm: 3 },
+        }}
+      >
         {children}
       </Box>
       <AutoApplyStopPill />

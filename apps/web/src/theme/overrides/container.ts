@@ -2,11 +2,18 @@ import type { Components, Theme } from "@mui/material/styles";
 
 /**
  * Page containers are vertical stacks that rely on `gap` for spacing between the
- * header and content cards. MUI's Container is a block element by default, so
- * `gap` is inert - make it a flex column so `sx={{ gap }}` actually applies.
+ * header and content cards.
  */
 export const containerOverrides: Components<Theme>["MuiContainer"] = {
   styleOverrides: {
-    root: { display: "flex", flexDirection: "column" },
+    root: ({ theme }) => ({
+      display: "flex",
+      flexDirection: "column",
+      // Tighter than MUI's 16px: the gutter stacks with the padding of the cards nested inside.
+      [theme.breakpoints.down("sm")]: {
+        paddingLeft: theme.spacing(1.5),
+        paddingRight: theme.spacing(1.5),
+      },
+    }),
   },
 };

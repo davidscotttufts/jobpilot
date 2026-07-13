@@ -10,6 +10,7 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
       paddingBlock: 9,
       fontWeight: 500,
       letterSpacing: 0,
+      whiteSpace: "nowrap",
       transition: theme.motion.standard,
       "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
     }),

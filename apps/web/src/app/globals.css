@@ -33,23 +33,27 @@ body::before {
   color: #f4f2ee;
 }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
+/* Mice only: a styled scrollbar is a classic one, and it steals layout width off the right edge.
+   Touch keeps its native overlay bar, which costs nothing and leaves content centred. */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #38342e;
-  border-radius: 6px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
+  ::-webkit-scrollbar-thumb {
+    background: #38342e;
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #4a463f;
-  background-clip: padding-box;
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a463f;
+    background-clip: padding-box;
+  }
 }

@@ -26,6 +26,7 @@ import {
 import { linkOverrides } from "./link";
 import { menuItemOverrides, menuOverrides } from "./menu";
 import { paperOverrides } from "./paper";
+import { stackOverrides } from "./stack";
 import {
   tableBodyOverrides,
   tableCellOverrides,
@@ -57,6 +58,7 @@ export const componentOverrides: Components<Theme> = {
   MuiOutlinedInput: outlinedInputOverrides,
   MuiPaper: paperOverrides,
   MuiSelect: selectOverrides,
+  MuiStack: stackOverrides,
   MuiSvgIcon: svgIconOverrides,
   MuiTab: tabOverrides,
   MuiTable: tableOverrides,

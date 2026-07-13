@@ -97,8 +97,7 @@ export function ResumesList(): ReactElement {
         >
           Start blank
         </Button>
-        <Box sx={{ flex: 1 }} />
-        <Typography variant="captionMuted">
+        <Typography variant="captionMuted" sx={{ ml: "auto" }}>
           {rows.length} resume{rows.length === 1 ? "" : "s"}
         </Typography>
       </Stack>

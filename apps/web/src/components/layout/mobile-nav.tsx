@@ -28,6 +28,8 @@ import {
 
 const MORE_VALUE = "more";
 const PRIMARY_HREFS = ["/workspace", "/analytics", "/inbox", "/resumes"];
+/** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
+const LABEL_SIZE = "0.6875rem";
 
 /**
  * Bottom tab bar shown below md in place of the desktop rail: four primary
@@ -42,6 +44,7 @@ export function MobileNav(): ReactElement {
   const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
   const footerItems = visibleNavGroups(user?.role, footerNavGroups).flatMap((group) => group.items);
   const primaryItems = allItems.filter((item) => PRIMARY_HREFS.includes(item.href));
+
   // The rail pins these to its foot, so they land at the end of the drawer here.
   const moreItems = [
     ...allItems.filter((item) => !PRIMARY_HREFS.includes(item.href)),
@@ -78,6 +81,17 @@ export function MobileNav(): ReactElement {
           zIndex: theme.zIndex.appBar,
           borderTop: `1px solid ${theme.palette.line.divider}`,
           backgroundColor: theme.palette.surfaces.base,
+          // Five tabs at MUI's 80px minimum overflow a 390px phone - share the width evenly instead.
+          "& .MuiBottomNavigationAction-root": { minWidth: 0, paddingInline: 0.5 },
+          "& .MuiBottomNavigationAction-label": {
+            maxWidth: "100%",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+            // Both states, or MUI grows the selected label to 0.875rem and re-clips the active tab.
+            fontSize: LABEL_SIZE,
+            "&.Mui-selected": { fontSize: LABEL_SIZE },
+          },
         })}
       >
         {primaryItems.map(renderTab)}

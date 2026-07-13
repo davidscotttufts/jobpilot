@@ -39,9 +39,15 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
   ],
 };
 
+// Tighter below sm: cards nest, and two levels at the desktop 20px eat a fifth of a phone's width.
 export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
   styleOverrides: {
-    root: { paddingInline: 20, paddingTop: 16, paddingBottom: 8 },
+    root: ({ theme }) => ({
+      paddingInline: 14,
+      paddingTop: 14,
+      paddingBottom: 8,
+      [theme.breakpoints.up("sm")]: { paddingInline: 20, paddingTop: 16 },
+    }),
     title: { fontSize: "1.0625rem", fontWeight: 600, lineHeight: 1.3 },
     subheader: { fontSize: "0.8125rem", marginTop: 2 },
   },
@@ -49,10 +55,23 @@ export const cardHeaderOverrides: Components<Theme>["MuiCardHeader"] = {
 
 export const cardContentOverrides: Components<Theme>["MuiCardContent"] = {
   styleOverrides: {
-    root: { padding: 20, "&:last-child": { paddingBottom: 20 } },
+    root: ({ theme }) => ({
+      padding: 14,
+      "&:last-child": { paddingBottom: 14 },
+      [theme.breakpoints.up("sm")]: {
+        padding: 20,
+        "&:last-child": { paddingBottom: 20 },
+      },
+    }),
   },
 };
 
 export const cardActionsOverrides: Components<Theme>["MuiCardActions"] = {
-  styleOverrides: { root: { padding: 16, gap: 8 } },
+  styleOverrides: {
+    root: ({ theme }) => ({
+      padding: 12,
+      gap: 8,
+      [theme.breakpoints.up("sm")]: { padding: 16 },
+    }),
+  },
 };

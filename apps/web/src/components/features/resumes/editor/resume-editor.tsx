@@ -150,14 +150,14 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
         sx={{
           display: "flex",
           flexDirection: { xs: "column", lg: "row" },
-          gap: 3,
+          gap: { xs: 2, sm: 3 },
           alignItems: "flex-start",
         }}
       >
         <SectionAnchorNav anchors={ANCHORS} />
 
         <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
-          <Stack spacing={4}>
+          <Stack spacing={{ xs: 3, sm: 4 }}>
             <SectionBlock section={SECTIONS[0]}>
               <BasicsSection value={data.basics} onChange={(v) => patch({ basics: v })} />
             </SectionBlock>
