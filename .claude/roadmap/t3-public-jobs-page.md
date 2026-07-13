@@ -30,6 +30,35 @@ same posting. ✅ All three verified live.
 - **2026-07-13 — shipped.** 213 listings backfilled from 684 existing jobs. `/jobs` renders with no
   cookie, `sitemap.xml` carries all 213 listing URLs, and detail pages collapse reposts.
 
+- **2026-07-13 — follow-up pass: filters, mobile, live strip.** Tech-stack filter (facets-driven
+  multi-select), removable active-filter chips, relative "seen" times, clickable tech chips on the
+  detail page, a mobile nav drawer, and a theme-wide control height. Four defects fixed:
+
+  - **The landing "live jobs" strip rendered nothing in production.** It was a `"use cache"` +
+    `cacheLife("hours")` component on a page with no dynamic hole, so `cacheComponents` prerendered
+    it at *build* time — where the API is unreachable from the image builder. Its `catch → [] →
+    return null` then baked an empty section into the static shell for hours, and swallowed Eden's
+    `error` too, so a down API looked exactly like an empty index. Now it fetches inside a `Suspense`
+    boundary (an uncached fetch there is a dynamic hole) and logs the failure.
+  - **`/docs` overflowed horizontally on mobile.** The grid was `gridTemplateColumns: { xs: "1fr" }`
+    and the sidebar grid item had no `minWidth: 0`, so the auto track was sized to the min-content of
+    six `white-space: nowrap` pills (~650px). `overflowX: "auto"` on the inner Stack could not help:
+    the auto-minimum-size-of-zero rule only applies when the *grid item itself* has a non-visible
+    overflow. `minmax(0, 1fr)` + `minWidth: 0` on the item.
+  - **The RSC boundary bit a third time** — a function `sx` (`transition: (theme) => …`) in the
+    server-rendered `TechChips` crashed the detail page the moment a chip became a MUI `Link`. Use
+    the raw `motion` token, not a theme callback, in any component that is not `"use client"`.
+  - **Elysia's query parser splits on commas.** `?tech=React,TypeScript` arrives as `string[]`, while
+    a lone `?tech=React` arrives as `string`, so the contract must accept a union of both. It only
+    surfaced at runtime — the Zod schema typechecked fine against a `string`-only shape.
+
+- **`?tech=` stays case-insensitive without a schema migration.** Prisma's array `hasSome` is exact,
+  and the agent writes whatever casing the posting used. Rather than add a normalized column, the
+  service caches one tech *vocabulary* (`unnest(tech_stack)` grouped by `lower()`, 10 min TTL) and
+  uses it for both jobs: it is the facets option list, and it expands an incoming `react` into every
+  stored casing (`React`, `react`) before the query. `tech-facets.ts` is pure, so it is unit-tested
+  with no DB.
+
 - **Two tables, not one.** `JobListing` (deduped posting) + `JobListingSource` (one row per board
   URL, `url @unique`). The child table is what makes "deduped reposts" *visible* ("Posted on N
   boards") and its unique URL makes the ingest upsert atomic — collapsing sources into a `String[]`

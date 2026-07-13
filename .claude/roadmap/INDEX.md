@@ -58,7 +58,7 @@ they aren't re-litigated.
 | todo | [FormIR + answer ledger](t3-formir-answer-ledger.md) | canonical form IR, provenance, receipts |
 | todo | [ATS playbooks](t3-ats-playbooks.md) | replay+verify instead of exploring; fleet-shared |
 | todo | [Pre-flight question harvesting](t3-preflight-harvest.md) | batch dry-run; one up-front answer form |
-| done | [Public jobs page](t3-public-jobs-page.md) | public /jobs from deduped listings; SEO funnel |
+| done | [Public jobs page](t3-public-jobs-page.md) | public /jobs from deduped listings; SEO funnel; tech facets + mobile pass 07-13 |
 | todo | [Scout/apply pipeline](t3-scout-apply-pipeline.md) | parallel scoring lane ahead of sequential applies |
 | todo | [Outcome calibration](t3-outcome-calibration.md) | interview rate by score band; bandit much later |
 | todo | [Token efficiency](t3-token-efficiency.md) | extractors, model routing, tailoring memoization |
