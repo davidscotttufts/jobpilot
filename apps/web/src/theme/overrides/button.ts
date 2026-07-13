@@ -1,20 +1,11 @@
 import type { Components, Theme } from "@mui/material/styles";
+import { controlBox, controlBoxSmall, outlinedControl } from "./control-box";
 
 export const buttonOverrides: Components<Theme>["MuiButton"] = {
   defaultProps: { disableElevation: true },
   styleOverrides: {
-    root: ({ theme }) => ({
-      position: "relative",
-      borderRadius: theme.radii.sm,
-      paddingInline: 16,
-      paddingBlock: 9,
-      fontWeight: 500,
-      letterSpacing: 0,
-      whiteSpace: "nowrap",
-      transition: theme.motion.standard,
-      "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
-    }),
-    sizeSmall: { paddingInline: 12, paddingBlock: 6 },
+    root: ({ theme }) => ({ position: "relative", ...controlBox(theme) }),
+    sizeSmall: ({ theme }) => controlBoxSmall(theme),
     contained: ({ theme }) => ({
       backgroundColor: theme.palette.accent.primary,
       color: (theme.vars ?? theme).palette.primary.contrastText,
@@ -33,12 +24,8 @@ export const buttonOverrides: Components<Theme>["MuiButton"] = {
       },
     }),
     outlined: ({ theme }) => ({
-      borderColor: theme.palette.line.borderHi,
+      ...outlinedControl(theme),
       color: (theme.vars ?? theme).palette.text.primary,
-      "&:hover": {
-        backgroundColor: theme.palette.surfaces.hover,
-        borderColor: theme.palette.accent.primary,
-      },
     }),
     text: ({ theme }) => ({
       color: (theme.vars ?? theme).palette.text.primary,

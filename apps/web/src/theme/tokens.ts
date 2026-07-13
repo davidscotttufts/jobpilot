@@ -25,6 +25,16 @@ export const radii = {
   pill: 999,
 } as const;
 
+/**
+ * The two heights every input, button and toggle snaps to, so a filter row lines up without
+ * per-call-site `sx`. `md` is what MUI's `size="small"` outlined input already measures at our
+ * 13px body font - the rest are pinned to it.
+ */
+export const controlHeights = {
+  sm: 32,
+  md: 38,
+} as const;
+
 export const iconSizes = {
   xs: 14,
   sm: 16,

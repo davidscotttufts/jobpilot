@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { accent, line, stages, surfaces } from "./palette";
-import type { gradients, iconSizes, motion, radii, shadows } from "./tokens";
+import type { controlHeights, gradients, iconSizes, motion, radii, shadows } from "./tokens";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -22,6 +22,7 @@ declare module "@mui/material/styles" {
     radii: typeof radii;
     shadows_custom: typeof shadows;
     iconSizes: typeof iconSizes;
+    controlHeights: typeof controlHeights;
   }
   interface ThemeOptions {
     gradients?: typeof gradients;
@@ -29,6 +30,7 @@ declare module "@mui/material/styles" {
     radii?: typeof radii;
     shadows_custom?: typeof shadows;
     iconSizes?: typeof iconSizes;
+    controlHeights?: typeof controlHeights;
   }
 
   interface TypographyVariants {

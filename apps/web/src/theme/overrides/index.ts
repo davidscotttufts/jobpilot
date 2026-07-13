@@ -35,6 +35,7 @@ import {
   tableRowOverrides,
 } from "./table";
 import { tabOverrides, tabsOverrides } from "./tabs";
+import { toggleButtonOverrides } from "./toggle-button";
 import { typographyOverrides } from "./typography";
 
 export const componentOverrides: Components<Theme> = {
@@ -69,5 +70,6 @@ export const componentOverrides: Components<Theme> = {
   MuiTableRow: tableRowOverrides,
   MuiTabs: tabsOverrides,
   MuiTextField: textFieldOverrides,
+  MuiToggleButton: toggleButtonOverrides,
   MuiTypography: typographyOverrides,
 };

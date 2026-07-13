@@ -6,6 +6,8 @@ export const textFieldOverrides: Components<Theme>["MuiTextField"] = {
 
 export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
   styleOverrides: {
+    // Pinned to the shared control height so a text field and the button beside it are the same box.
+    sizeSmall: ({ theme }) => ({ minHeight: theme.controlHeights.md }),
     root: ({ theme }) => ({
       borderRadius: theme.radii.sm,
       backgroundColor: theme.palette.surfaces.base,
