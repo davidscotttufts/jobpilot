@@ -7,23 +7,15 @@ import {
   type OutreachMessageStatus,
 } from "@jobpilot/contracts/outreach";
 import { Alert, Button, Chip, Grid, Stack, Typography } from "@mui/material";
-import {
-  DataGrid,
-  type GridColDef,
-  type GridRowSelectionModel,
-  type GridRowsProp,
-} from "@mui/x-data-grid";
+import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type {
-  CampaignSummaryDto,
-  EmailAccountStatus,
-  OutreachConfigDto,
-  OutreachMessageDto,
-} from "@/api/types";
+import type { CampaignSummaryDto, OutreachConfigDto, OutreachMessageDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { ExternalLink, StatCard } from "@/components/ui/display";
+import { DataTable } from "@/components/ui/data/data-table";
+import { ColorChip, ExternalLink, StatCard } from "@/components/ui/display";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { OutreachMessageDialog } from "./outreach-message-dialog";
@@ -65,13 +57,8 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const messagesQuery = useApiQuery<OutreachMessageDto[]>(
-    queryKeys.campaigns.outreach(campaignId),
-    () => api.campaigns({ id: campaignId }).outreach.get(),
-  );
-  const accountQuery = useApiQuery<EmailAccountStatus>(queryKeys.email.account(), () =>
-    api.email.account.get(),
-  );
+  const messagesQuery = useApiQuery(campaignQueries.outreach(campaignId));
+  const accountQuery = useApiQuery(emailQueries.account());
 
   const invalidate = [
     queryKeys.campaigns.outreach(campaignId),
@@ -127,14 +114,7 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
       headerName: "Status",
       width: 110,
       sortable: false,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.status}
-          color={STATUS_COLOR[p.row.status]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.status} colors={STATUS_COLOR} />,
     },
     {
       field: "name",
@@ -248,11 +228,11 @@ export function OutreachBoard(props: OutreachBoardProps): ReactElement {
         </Stack>
       )}
 
-      <DataGrid
-        rows={messages as GridRowsProp}
-        columns={columns as GridColDef[]}
+      <DataTable
+        rows={messages}
+        columns={columns}
         loading={messagesQuery.isLoading}
-        getRowId={(row) => (row as OutreachMessageDto).id}
+        getRowId={(row) => row.id}
         checkboxSelection
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}

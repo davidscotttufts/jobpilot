@@ -6,6 +6,7 @@ import { Add, Delete, Key, Lock } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { credentialQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
 import { LoadingSpinner } from "@/components/ui/feedback";
@@ -13,21 +14,11 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
 import { CredentialFormDialog } from "./credential-form-dialog";
 
-interface CredentialsSectionProps {
-  /** SSR-fetched seed; omitted in client-only contexts (onboarding) where it fetches itself. */
-  initialCredentials?: CredentialDto[];
-}
-
-export function CredentialsSection(props: CredentialsSectionProps): ReactElement {
-  const { initialCredentials } = props;
+export function CredentialsSection(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
   const confirm = useConfirm();
 
-  const credentials = useApiQuery<CredentialDto[]>(
-    queryKeys.credentials.list(),
-    () => api.credentials.get(),
-    { initialData: initialCredentials },
-  );
+  const credentials = useApiQuery(credentialQueries.list());
 
   const create = useApiMutation<CredentialDto, CredentialInput>(
     (vars) => api.credentials.post(vars),

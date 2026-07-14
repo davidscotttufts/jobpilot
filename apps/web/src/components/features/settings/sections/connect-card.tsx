@@ -5,38 +5,23 @@ import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/ma
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { EmailAccountStatus, OAuthClientStatus } from "@/api/types";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
 
-interface ConnectCardProps {
-  /** SSR-fetched seed; omitted in client-only contexts (onboarding) where it fetches itself. */
-  initialStatus?: EmailAccountStatus;
-  initialConfig?: OAuthClientStatus;
-}
-
 /**
  * Step 2 - connect / reconnect / disconnect the mailbox (gated on a saved
- * client). Reads the mailbox status and client config (seeded by the SSR page,
- * shared keys dedupe with the OAuth client card).
+ * client). Reads the mailbox status and client config (shared keys dedupe
+ * with the OAuth client card).
  */
-export function ConnectCard(props: ConnectCardProps): ReactElement {
-  const { initialStatus, initialConfig } = props;
+export function ConnectCard(): ReactElement {
   const [provider, setProvider] = useState("gmail");
   const confirm = useConfirm();
 
-  const statusQuery = useApiQuery<EmailAccountStatus>(
-    queryKeys.email.account(),
-    () => api.email.account.get(),
-    { initialData: initialStatus },
-  );
-  const configQuery = useApiQuery<OAuthClientStatus>(
-    queryKeys.email.oauthClient(),
-    () => api.email.oauth.client.get(),
-    { initialData: initialConfig },
-  );
+  const statusQuery = useApiQuery(emailQueries.account());
+  const configQuery = useApiQuery(emailQueries.oauthClient());
 
   const disconnect = useApiMutation<{ disconnected: boolean }, void>(
     () => api.email.account.delete(),

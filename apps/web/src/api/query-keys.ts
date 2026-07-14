@@ -34,6 +34,7 @@ export const queryKeys = {
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.applications.all, "list", filters] as const,
     detail: (id: string) => [...queryKeys.applications.all, "detail", id] as const,
+    search: (term: string) => [...queryKeys.applications.all, "search", term] as const,
   },
 
   dashboard: {
@@ -67,6 +68,7 @@ export const queryKeys = {
     oauthClient: () => [...queryKeys.email.all, "oauthClient"] as const,
     messages: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.email.all, "messages", filters] as const,
+    message: (id: string) => [...queryKeys.email.all, "message", id] as const,
   },
 
   workspace: {
@@ -96,4 +98,14 @@ export const queryKeys = {
     list: () => [...queryKeys.coverLetters.all, "list"] as const,
     detail: (id: string) => [...queryKeys.coverLetters.all, "detail", id] as const,
   },
+} as const;
+
+/** Named invalidation sets for useApiMutation's `invalidate:` option. */
+export const invalidations = {
+  resume: [queryKeys.resume.all, queryKeys.profile.all],
+  campaign: [queryKeys.campaigns.all, queryKeys.workspace.all],
+  queue: [queryKeys.queue.all, queryKeys.workspace.all],
+  application: [queryKeys.applications.all, queryKeys.dashboard.all],
+  // Approving a message can write an application status, so both trees go stale.
+  emailReview: [queryKeys.email.all, queryKeys.applications.all],
 } as const;

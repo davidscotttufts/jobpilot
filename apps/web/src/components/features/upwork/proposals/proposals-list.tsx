@@ -1,21 +1,21 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProposalStatus } from "@jobpilot/contracts/upwork";
 import { ChevronRight, Clear } from "@mui/icons-material";
 import { Box, Button, Card, CardActionArea, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
+import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { UpworkProposalDto } from "@/api/types";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePagination } from "@/hooks/use-pagination";
-import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { formatRelativeTime } from "@/utils/format";
 import { STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";
@@ -38,9 +38,7 @@ export function ProposalsList(): ReactElement {
     },
   });
 
-  const proposals = useApiQuery<UpworkProposalDto[]>(queryKeys.upworkProposals.list(), () =>
-    api.upwork.proposals.get(),
-  );
+  const proposals = useApiQuery(upworkProposalQueries.list());
 
   const allRows = proposals.data ?? [];
   const filteredRows = allRows.filter((p) => !statusFilter || p.status === statusFilter);
@@ -103,11 +101,10 @@ export function ProposalsList(): ReactElement {
                       spacing={1}
                       sx={{ alignItems: "center", flexWrap: "wrap" }}
                     >
-                      <Chip
-                        size="small"
+                      <ColorChip
+                        value={p.status}
+                        colors={STATUS_COLOR}
                         label={STATUS_LABEL[p.status]}
-                        color={STATUS_COLOR[p.status]}
-                        variant="outlined"
                       />
                       {p.clientName && (
                         <Chip size="small" label={p.clientName} variant="outlined" />

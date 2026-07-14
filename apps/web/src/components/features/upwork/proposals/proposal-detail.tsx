@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import { AutoAwesome, ContentCopy, Delete, Launch } from "@mui/icons-material";
 import {
   Box,
@@ -16,10 +17,10 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
 import { PageHeader, SectionCard } from "@/components/ui/layout";
-import { upworkChannel } from "@/lib/sse/channels/upwork";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -40,9 +41,7 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const confirm = useConfirm();
   const queryClient = useQueryClient();
 
-  const detail = useApiQuery<UpworkProposalDto>(queryKeys.upworkProposals.detail(id), () =>
-    api.upwork.proposals({ id }).get(),
-  );
+  const detail = useApiQuery(upworkProposalQueries.detail(id));
 
   useSseChannel(upworkChannel, null, {
     on: {

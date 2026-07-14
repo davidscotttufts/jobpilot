@@ -2,14 +2,15 @@
 
 import type { ReactElement } from "react";
 import { Launch } from "@mui/icons-material";
-import { Chip, IconButton, Link } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import { IconButton, Link } from "@mui/material";
+import type { GridColDef } from "@mui/x-data-grid";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
+import { DataTable } from "@/components/ui/data/data-table";
+import { ColorChip } from "@/components/ui/display";
 
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
   manual: "default",
@@ -19,9 +20,7 @@ const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "
 
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
-  const lettersQuery = useApiQuery<CoverLetterListItem[]>(queryKeys.coverLetters.list(), () =>
-    api["cover-letters"].get(),
-  );
+  const lettersQuery = useApiQuery(coverLetterQueries.list());
 
   const rows = lettersQuery.data ?? [];
 
@@ -50,14 +49,7 @@ export function CoverLettersTable(): ReactElement {
       field: "source",
       headerName: "Source",
       width: 130,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.source}
-          color={SOURCE_COLOR[p.row.source]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.source} colors={SOURCE_COLOR} />,
     },
     {
       field: "jobUrl",
@@ -84,12 +76,12 @@ export function CoverLettersTable(): ReactElement {
   ];
 
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={lettersQuery.isLoading}
-      getRowId={(row) => (row as CoverLetterListItem).id}
-      onRowClick={(p) => router.push(`/cover-letters/${p.id}` as Route)}
+      getRowId={(row) => row.id}
+      onRowClick={(row) => router.push(`/cover-letters/${row.id}` as Route)}
     />
   );
 }

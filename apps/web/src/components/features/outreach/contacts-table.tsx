@@ -1,12 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Chip, Link } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
-import { api } from "@/api/client";
+import { Link } from "@mui/material";
+import type { GridColDef } from "@mui/x-data-grid";
 import { useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { contactQueries } from "@/api/queries";
 import type { ContactDto } from "@/api/types";
+import { DataTable } from "@/components/ui/data/data-table";
+import { ColorChip } from "@/components/ui/display";
 
 const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "info" | "success"> = {
   none: "default",
@@ -15,9 +16,7 @@ const CONNECTION_COLOR: Record<ContactDto["linkedinConnection"], "default" | "in
 };
 
 export function ContactsTable(): ReactElement {
-  const contactsQuery = useApiQuery<ContactDto[]>(queryKeys.contacts.list(), () =>
-    api.contacts.get(),
-  );
+  const contactsQuery = useApiQuery(contactQueries.list());
 
   const rows = contactsQuery.data ?? [];
 
@@ -49,14 +48,7 @@ export function ContactsTable(): ReactElement {
       field: "linkedinConnection",
       headerName: "LinkedIn",
       width: 130,
-      renderCell: (p) => (
-        <Chip
-          size="small"
-          label={p.row.linkedinConnection}
-          color={CONNECTION_COLOR[p.row.linkedinConnection]}
-          variant="outlined"
-        />
-      ),
+      renderCell: (p) => <ColorChip value={p.row.linkedinConnection} colors={CONNECTION_COLOR} />,
     },
     {
       field: "discoverySource",
@@ -67,11 +59,11 @@ export function ContactsTable(): ReactElement {
   ];
 
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={contactsQuery.isLoading}
-      getRowId={(row) => (row as ContactDto).id}
+      getRowId={(row) => row.id}
       autoHeight
     />
   );

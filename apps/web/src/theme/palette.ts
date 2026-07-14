@@ -36,18 +36,18 @@ export const line = {
 
 export const stages = {
   queued: "#8A93A0",
-  applying: "#3B82F6",
-  submitted: "#16D98A",
-  interviewing: "#FFB020",
-  rejected: "#E5484D",
+  applying: accent.secondary,
+  submitted: feedback.success,
+  interviewing: feedback.warning,
+  rejected: feedback.error,
 } as const;
 
 export const editorial = {
-  paper: "#F4F2EE",
-  ink: "#0B0B0A",
-  thrust: "#3B82F6",
-  flame: "#FF6A3D",
-  amber: "#FFB020",
+  paper: textColors.primary,
+  ink: surfaces.base,
+  thrust: accent.secondary,
+  flame: accent.primary,
+  amber: feedback.warning,
 } as const;
 
 export type StageKey = keyof typeof stages;

@@ -2,16 +2,16 @@
 
 import { type ReactNode, useSyncExternalStore } from "react";
 import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
+import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { Stop } from "@mui/icons-material";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { CampaignDto } from "@/api/types";
+import { campaignQueries } from "@/api/queries";
+import { invalidations, queryKeys } from "@/api/query-keys";
 import { DOCK_COLLAPSED, DOCK_EXPANDED } from "@/components/layout/shell-config";
 import { readAgentStorage, subscribeAgentStorage } from "@/lib/agent-storage";
-import { workspaceChannel } from "@/lib/sse/channels/workspace";
 import { useSseChannel } from "@/lib/sse/client";
 
 const FILTERS = {
@@ -44,9 +44,7 @@ export function AutoApplyStopPill(): ReactNode {
     },
   });
 
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(FILTERS), () =>
-    api.campaigns.get({ query: { status: FILTERS.status, source: FILTERS.source } }),
-  );
+  const campaigns = useApiQuery(campaignQueries.list(FILTERS));
 
   const active = campaigns.data?.[0] ?? null;
 
@@ -61,7 +59,7 @@ export function AutoApplyStopPill(): ReactNode {
     },
     {
       successMessage: "Auto-apply paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+      invalidate: invalidations.campaign,
     },
   );
 

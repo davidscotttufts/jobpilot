@@ -6,7 +6,8 @@ import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { campaignQueries } from "@/api/queries";
+import { invalidations } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { PulseDot } from "@/components/ui/feedback";
@@ -25,9 +26,7 @@ function progress(campaign: CampaignDto): { value: number; label: string } {
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  const campaigns = useApiQuery<CampaignDto[]>(queryKeys.campaigns.list(), () =>
-    api.campaigns.get(),
-  );
+  const campaigns = useApiQuery(campaignQueries.list());
   const running = (campaigns.data ?? []).filter((c) => c.status === "in_progress");
 
   if (running.length === 0) {
@@ -53,7 +52,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
     () => api.campaigns({ id: campaign.campaignId }).patch({ status: "paused" }),
     {
       successMessage: "Campaign paused",
-      invalidate: [queryKeys.campaigns.all, queryKeys.workspace.all],
+      invalidate: invalidations.campaign,
     },
   );
 

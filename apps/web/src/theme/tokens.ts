@@ -1,7 +1,14 @@
+import { alpha } from "@mui/material/styles";
+import { accent, feedback } from "./palette";
+
+// Lighter flame tints used only inside these gradients - no equivalent in palette.ts.
+const flameLight = "#FF8A5C";
+const flameMid = "#FF7A4D";
+
 export const gradients = {
-  primary: "linear-gradient(135deg, #FF8A5C, #FF6A3D)",
-  reversed: "linear-gradient(135deg, #FF7A4D, #D9532A)",
-  orb: "conic-gradient(from 200deg, #FF6A3D, #FFB020, #3B82F6, #FF6A3D)",
+  primary: `linear-gradient(135deg, ${flameLight}, ${accent.primary})`,
+  reversed: `linear-gradient(135deg, ${flameMid}, ${accent.dark})`,
+  orb: `conic-gradient(from 200deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary}, ${accent.primary})`,
 } as const;
 
 export const motion = {
@@ -14,7 +21,7 @@ export const shadows = {
   sm: "none",
   md: "0 4px 14px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04)",
   lg: "0 18px 36px -10px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05)",
-  focus: "0 0 0 2px rgba(255, 106, 61, 0.5)",
+  focus: `0 0 0 2px ${alpha(accent.primary, 0.5)}`,
 } as const;
 
 export const radii = {

@@ -10,6 +10,7 @@ import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { profileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { ProfileResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -20,15 +21,8 @@ import { PersonalSection } from "./sections/personal-section";
 import { ReferencesSection } from "./sections/references-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
-interface SettingsContentProps {
-  /** SSR-fetched seed so the form renders without a loading flash. */
-  initialProfile?: ProfileResponse;
-}
-
-export function SettingsContent(props: SettingsContentProps): ReactElement {
-  const { initialProfile } = props;
-  const query = useApiQuery<ProfileResponse>(queryKeys.profile.detail(), () => api.profile.get(), {
-    initialData: initialProfile,
+export function SettingsContent(): ReactElement {
+  const query = useApiQuery(profileQueries.detail(), {
     errorMessage: "Failed to load profile",
   });
 

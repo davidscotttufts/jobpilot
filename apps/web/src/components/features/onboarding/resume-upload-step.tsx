@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
-import type { ResumeDto } from "@/api/types";
+import { resumeQueries } from "@/api/queries";
+import { invalidations } from "@/api/query-keys";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
@@ -38,7 +38,7 @@ export const ResumeUploadStep = withForm({
       (file) => api.resumes.upload.post({ file }),
       {
         successMessage: "Resume uploaded",
-        invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+        invalidate: invalidations.resume,
         onSuccess: ({ id }) => {
           setResumeId(id);
           form.setFieldValue("primaryResumeId", id);
@@ -58,14 +58,10 @@ export const ResumeUploadStep = withForm({
     // Extraction target: initial fetch covers an already-parsed resume; SSE gives
     // instant updates, and polling covers the race where the agent PUT finishes
     // before the EventSource subscription is established.
-    const resume = useApiQuery<ResumeDto>(
-      queryKeys.resume.detail(resumeId ?? ""),
-      () => api.resumes({ id: resumeId ?? "" }).get(),
-      {
-        enabled: resumeId !== null && state === "extracting",
-        refetchInterval: 2_000,
-      },
-    );
+    const resume = useApiQuery(resumeQueries.detail(resumeId ?? ""), {
+      enabled: resumeId !== null && state === "extracting",
+      refetchInterval: 2_000,
+    });
 
     useSseChannel(
       resumeChannel,

@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useState } from "react";
+import { resumeChannel } from "@jobpilot/contracts/sse";
 import { Add, Description, PictureAsPdf, Star, StarBorder } from "@mui/icons-material";
 import {
   Box,
@@ -18,13 +19,12 @@ import type { Route } from "next";
 import Link from "next/link";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { resumeQueries } from "@/api/queries";
+import { invalidations, queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
-import type { ResumeListItem } from "@/api/types";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { resumeChannel } from "@/lib/sse/channels/resume";
 import { useSseChannel } from "@/lib/sse/client";
 import { useToast } from "@/providers/notification-provider";
 import { NewResumeDialog } from "./new-resume-dialog";
@@ -48,18 +48,18 @@ export function ResumesList(): ReactElement {
   const toast = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const list = useApiQuery<ResumeListItem[]>(queryKeys.resume.list(), () => api.resumes.get());
+  const list = useApiQuery(resumeQueries.list());
 
   const upload = useApiMutation<{ id: string }, File>((file) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",
-    invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+    invalidate: invalidations.resume,
   });
 
   const setPrimary = useApiMutation<{ primaryResumeId: string | null }, string>(
     (id) => api.profile["primary-resume"].put({ resumeId: id }),
     {
       successMessage: "Primary resume updated",
-      invalidate: [queryKeys.resume.all, queryKeys.profile.all],
+      invalidate: invalidations.resume,
     },
   );
 

@@ -1,9 +1,12 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { Classification } from "@jobpilot/contracts/email";
 import { Button, Chip, Stack, Typography } from "@mui/material";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
+import { DataTable } from "@/components/ui/data/data-table";
+import { ColorChip } from "@/components/ui/display";
 
 interface InboxTableProps {
   rows: ReadonlyArray<EmailMessageDto>;
@@ -13,7 +16,10 @@ interface InboxTableProps {
   onScanMessage?: (row: EmailMessageDto) => void;
 }
 
-const CLASS_COLORS: Record<string, "default" | "primary" | "success" | "error" | "warning"> = {
+const CLASS_COLORS: Record<
+  Classification,
+  "default" | "primary" | "success" | "error" | "warning"
+> = {
   interviewing: "primary",
   offer: "success",
   rejected: "error",
@@ -56,10 +62,9 @@ export function InboxTable(props: InboxTableProps): ReactElement {
             </Typography>
           );
         }
-        const color = CLASS_COLORS[c] ?? "default";
         return (
           <Stack direction="row" spacing={0.5} sx={{ height: "100%", alignItems: "center" }}>
-            <Chip size="small" label={c} color={color} />
+            <ColorChip value={c} colors={CLASS_COLORS} variant="filled" />
             {p.row.reviewStatus === "auto" && (
               <Chip size="small" label="auto" variant="outlined" color="info" />
             )}
@@ -143,15 +148,13 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       : []),
   ];
 
-  // DTOs are interfaces without an index signature, so widen rows/columns at
-  // the grid boundary; columns above stay typed against EmailMessageDto.
   return (
-    <DataGrid
-      rows={rows as GridRowsProp}
-      columns={columns as GridColDef[]}
+    <DataTable
+      rows={rows}
+      columns={columns}
       loading={loading}
       rowHeight={60}
-      onRowClick={(p) => onRowClick(p.row as EmailMessageDto)}
+      onRowClick={onRowClick}
     />
   );
 }

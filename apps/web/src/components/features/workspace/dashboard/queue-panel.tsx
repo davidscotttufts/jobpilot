@@ -5,7 +5,8 @@ import { Add, Delete, MoreVert, PlayArrow } from "@mui/icons-material";
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { queueQueries } from "@/api/queries";
+import { invalidations } from "@/api/query-keys";
 import type { QueueEntryDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
@@ -32,9 +33,7 @@ export function QueuePanel(): ReactElement {
   const agentAvailable = useAgentAvailable();
   const { openAddUrls } = useWorkspaceActions();
 
-  const queue = useApiQuery<QueueEntryDto[]>(queryKeys.queue.list(QUEUE_FILTER), () =>
-    api.queue.get({ query: QUEUE_FILTER }),
-  );
+  const queue = useApiQuery(queueQueries.list(QUEUE_FILTER));
   const entries = queue.data ?? [];
 
   return (
@@ -89,7 +88,7 @@ function QueueRow(props: { entry: QueueEntryDto }): ReactElement {
 
   const remove = useApiMutation<unknown, void>(() => api.queue({ id: entry.id }).delete(), {
     successMessage: "Removed from queue",
-    invalidate: [queryKeys.queue.all, queryKeys.workspace.all],
+    invalidate: invalidations.queue,
   });
 
   const items: DropdownMenuItem[] = [
