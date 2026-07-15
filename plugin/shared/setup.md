@@ -59,7 +59,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/prof
 ```
 
 - If `profile` is `null`: "Open $JOBPILOT_WEB/onboarding to set up your profile, then re-run this skill."
-- Otherwise read from `profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, …) and `autoApply` (minMatchScore, maxApplicationsPerCampaign, defaultStartDate).
+- Otherwise read from `profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, salaryPreferences, …) and `autoApply` (minMatchScore, maxApplicationsPerCampaign, defaultStartDate).
 
 The response also includes:
 

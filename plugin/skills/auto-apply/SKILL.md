@@ -157,7 +157,7 @@ jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", fail
 
 `needs_user`:
 
-- `reason:"salary"` → ask the user once, remember the answer for the campaign, and re-delegate 2.3 with `salaryExpectation` set.
+- `reason:"salary"` (no profile salary preference matched) → ask the user once, remember the answer for the campaign, and re-delegate 2.3 with `salaryExpectation` set.
 - `reason:"2FA"` → PATCH the campaign `paused`, tell the user what's needed, and exit the loop (the worker left its tab open).
 - `reason:"payment"` → never pay: POST `/result` `outcome:"failed"`, `failReason:"Payment required"`, and continue.
 

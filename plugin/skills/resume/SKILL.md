@@ -82,7 +82,7 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
 
 (`digest` omitted → the worker fetches it from the saved Job.)
 
-3. **Record result** - map the worker's `outcome` to POST `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` (`applied`/`failed`/`skipped`; a `skipped` MUST carry a non-empty `skipReason`). Atomic: updates the Job, creates the Application, marks the queue, recomputes the summary. `needs_user`: `salary` → ask once then re-delegate; `2FA`/`payment` → pause/record as the apply skill does. The worker closed its tabs; re-select tab 0.
+3. **Record result** - map the worker's `outcome` to POST `/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` (`applied`/`failed`/`skipped`; a `skipped` MUST carry a non-empty `skipReason`). Atomic: updates the Job, creates the Application, marks the queue, recomputes the summary. `needs_user`: `salary` (no profile salary preference matched) → ask once then re-delegate; `2FA`/`payment` → pause/record as the apply skill does. The worker closed its tabs; re-select tab 0.
 4. **Limit** - if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
 
 The `/result` endpoint preserves the campaign's original `source` (`"apply"` vs `"auto-apply"`) on the created Application row automatically - no separate source-passthrough needed.

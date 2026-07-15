@@ -15,7 +15,7 @@ Process one job, return one compact JSON object. Snapshots, API payloads, and ta
 
 ## Input
 
-One JSON blob: `{ mode, campaignId, jobKey, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
+One JSON blob: `{ mode, campaignId, jobKey, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview }`. `mode` is `review`, `score`, or `apply`; absent fields are null. A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `profile.salaryPreferences`.
 
 ## Setup
 
@@ -78,7 +78,7 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 3. CAPTCHA gate: snapshot the form first; on a CAPTCHA invoke `solve-captcha`. Unsolved is `skipped`, `skipReason:"CAPTCHA - apply manually via the apply skill"`.
 4. 2FA / payment: do not solve, do not close the tab; return `needs_user`, `reason:"2FA"|"payment"`.
 5. Tailor: invoke `tailor-resume` with the digest (fall back to `url`), `--base <resumeId>` when set. No usable base is `failed`, `failReason:"No tailorable resume base"`.
-6. Fill (form-filling.md): upload the variant; a cover-letter field invokes `cover-letter` (pass `source`). Use `defaultStartDate`. A required salary field with `salaryExpectation` null returns `needs_user`, `reason:"salary"`.
+6. Fill (form-filling.md): upload the variant; a cover-letter field invokes `cover-letter` (pass `source`). Use `defaultStartDate`. Salary fields: resolve per form-filling.md (`salaryExpectation` override → `profile.salaryPreferences` match); unresolvable and required returns `needs_user`, `reason:"salary"`.
 7. Pre-submit review (only if `preSubmitReview`): fill, leave the tab open, return `needs_user`, `reason:"review"`, `detail` = a one-line field summary. (Re-delegated with it false, the form is already filled: confirm and submit.)
 8. Submit, `browser_wait_for`, narrow snapshot: success is `applied`; a populated error is `failed` with that message; a CAPTCHA at submit invokes `solve-captcha`, still unsolved is `skipped`.
 9. Close tabs, select tab 0, return one of:

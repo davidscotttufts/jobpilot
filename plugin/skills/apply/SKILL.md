@@ -221,7 +221,7 @@ jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", fail
 jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 ```
 
-`needs_user`: `reason:"salary"` → ask once, remember for the campaign, re-delegate 5.2 with `salaryExpectation`; `reason:"2FA"` or email verification → pause and ask; `reason:"payment"` → POST `/result` `failed` `"Payment required"`. The worker closed its tabs; re-select tab 0, then continue.
+`needs_user`: `reason:"salary"` (no profile salary preference matched) → ask once, remember for the campaign, re-delegate 5.2 with `salaryExpectation`; `reason:"2FA"` or email verification → pause and ask; `reason:"payment"` → POST `/result` `failed` `"Payment required"`. The worker closed its tabs; re-select tab 0, then continue.
 
 ### 5.4 Limit
 

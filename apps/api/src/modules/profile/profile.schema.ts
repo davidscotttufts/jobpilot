@@ -1,3 +1,4 @@
+import { SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/profile";
 import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
@@ -10,6 +11,17 @@ export const profileReferenceSchema = z.object({
   company: z.string().nullable(),
   email: z.string().nullable(),
   phone: z.string().nullable(),
+});
+
+/** A salary-preference row attached to the profile. */
+export const profileSalaryPreferenceSchema = z.object({
+  id: z.uuid(),
+  appliesTo: z.string(),
+  minAmount: z.number().nullable(),
+  maxAmount: z.number().nullable(),
+  // Enums (not z.string()) keep Eden's inferred types aligned with the contracts input type.
+  currency: z.enum(SALARY_CURRENCIES),
+  period: z.enum(SALARY_PERIODS),
 });
 
 /** The profile aggregate's scalar fields plus its parsed locations and references. */
@@ -42,6 +54,7 @@ export const profileViewSchema = z.object({
   eeoDisabilityStatus: z.string().nullable(),
   primaryResumeId: z.uuid().nullable(),
   references: z.array(profileReferenceSchema),
+  salaryPreferences: z.array(profileSalaryPreferenceSchema),
   updatedAt: z.date(),
 });
 

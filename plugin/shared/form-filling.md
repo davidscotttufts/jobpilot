@@ -23,7 +23,7 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 - **Address** → `profile.{street,aptUnit,city,state,zipCode,country}`
 - **Phone** → `profile.phone`
 - **LinkedIn / GitHub / Website** → `profile.{linkedin,github,website}`
-- **Salary expectations** → ask the user the first time it's needed and remember the answer for the rest of the campaign. For radios/dropdowns, pick the closest match.
+- **Salary expectations** → a caller-supplied `salaryExpectation` wins when non-null. Else `profile.salaryPreferences[]`, each `{appliesTo, minAmount, maxAmount, currency, period}`: pick the entry whose `appliesTo` best matches this job's title/seniority/type (a lone generic entry matches everything). Range fields → min-max; single field → `maxAmount` (else `minAmount`). Convert period if the form asks in the other unit (yearly ≈ hourly × 2080). Radios/dropdowns → closest bracket. Empty list or no plausible match → ask the user (workers: return `needs_user reason:"salary"`); remember the answer for the campaign.
 - **Start date** → "Immediately" or "2 weeks notice" unless `autoApply.defaultStartDate` overrides.
 - **Cover letter** (a textarea or a file-upload field labelled "cover letter") → generate via the `cover-letter` skill (already humanized; it also saves the letter to history - pass `source` = the invoking skill, `apply` or `auto-apply`). Then:
   - Text area → paste the text directly.

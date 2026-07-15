@@ -60,6 +60,24 @@ export const referenceSchema = z.object({
 
 export type ReferenceInput = z.infer<typeof referenceSchema>;
 
+export const SALARY_PERIODS = ["yearly", "hourly"] as const;
+
+export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
+
+export const SALARY_CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "INR"] as const;
+
+export type SalaryCurrency = (typeof SALARY_CURRENCIES)[number];
+
+export const salaryPreferenceSchema = z.object({
+  appliesTo: z.string().min(1, "Required"),
+  minAmount: z.number().nonnegative().optional().nullable(),
+  maxAmount: z.number().nonnegative().optional().nullable(),
+  currency: z.enum(SALARY_CURRENCIES),
+  period: z.enum(SALARY_PERIODS),
+});
+
+export type SalaryPreferenceInput = z.infer<typeof salaryPreferenceSchema>;
+
 export const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
@@ -83,6 +101,7 @@ export const profileSchema = z.object({
   willingToRelocate: z.boolean(),
   preferredLocations: z.array(z.string()),
   references: z.array(referenceSchema).max(3),
+  salaryPreferences: z.array(salaryPreferenceSchema).max(5),
 
   eeoGender: z.string().optional().nullable(),
   eeoRace: z.string().optional().nullable(),
@@ -135,6 +154,7 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   willingToRelocate: false,
   preferredLocations: [],
   references: [],
+  salaryPreferences: [],
   eeoGender: "Prefer not to disclose",
   eeoRace: "Prefer not to disclose",
   eeoEthnicity: "Prefer not to disclose",

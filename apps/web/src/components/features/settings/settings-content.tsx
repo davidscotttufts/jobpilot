@@ -19,6 +19,7 @@ import { AutoApplySection } from "./sections/auto-apply-section";
 import { EeoSection } from "./sections/eeo-section";
 import { PersonalSection } from "./sections/personal-section";
 import { ReferencesSection } from "./sections/references-section";
+import { SalarySection } from "./sections/salary-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
 export function SettingsContent(): ReactElement {
@@ -65,6 +66,13 @@ function toFormValues(data: ProfileResponse): ProfileWithAutoApplyInput {
       company: r.company ?? "",
       email: r.email ?? "",
       phone: r.phone ?? "",
+    })),
+    salaryPreferences: p.salaryPreferences.map((s) => ({
+      appliesTo: s.appliesTo,
+      minAmount: s.minAmount ?? undefined,
+      maxAmount: s.maxAmount ?? undefined,
+      currency: s.currency,
+      period: s.period,
     })),
     eeoGender: p.eeoGender ?? "",
     eeoRace: p.eeoRace ?? "",
@@ -116,6 +124,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
         <AddressSection form={form} />
         <WorkAuthSection form={form} />
         <ReferencesSection form={form} />
+        <SalarySection form={form} />
         <EeoSection form={form} />
         <AutoApplySection form={form} />
 

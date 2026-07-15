@@ -1,4 +1,8 @@
-import type { ProfileWithAutoApplyInput } from "@jobpilot/contracts/profile";
+import type {
+  ProfileWithAutoApplyInput,
+  SalaryCurrency,
+  SalaryPeriod,
+} from "@jobpilot/contracts/profile";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { resumePath } from "@/common/storage";
@@ -46,42 +50,55 @@ export class ProfileService {
       "Profile",
     );
 
-    const [autoApply, primarySource, resumeRows, withContent, references] = await Promise.all([
-      this.prisma.autoApplySettings.findUnique({ where: { profileId } }),
-      profile.primaryResumeId
-        ? this.prisma.resume.findUnique({
-            where: { id: profile.primaryResumeId },
-            select: { sourceFilename: true },
-          })
-        : Promise.resolve(null),
-      this.prisma.resume.findMany({
-        where: { profileId },
-        orderBy: { updatedAt: "desc" },
-        select: {
-          id: true,
-          label: true,
-          sourceFilename: true,
-          updatedAt: true,
-          _count: { select: { variants: true } },
-        },
-      }),
-      this.prisma.resume.findMany({
-        where: { profileId, content: { not: null } },
-        select: { id: true },
-      }),
-      this.prisma.reference.findMany({
-        where: { profileId },
-        orderBy: { position: "asc" },
-        select: {
-          id: true,
-          name: true,
-          relationship: true,
-          company: true,
-          email: true,
-          phone: true,
-        },
-      }),
-    ]);
+    const [autoApply, primarySource, resumeRows, withContent, references, salaryPreferences] =
+      await Promise.all([
+        this.prisma.autoApplySettings.findUnique({ where: { profileId } }),
+        profile.primaryResumeId
+          ? this.prisma.resume.findUnique({
+              where: { id: profile.primaryResumeId },
+              select: { sourceFilename: true },
+            })
+          : Promise.resolve(null),
+        this.prisma.resume.findMany({
+          where: { profileId },
+          orderBy: { updatedAt: "desc" },
+          select: {
+            id: true,
+            label: true,
+            sourceFilename: true,
+            updatedAt: true,
+            _count: { select: { variants: true } },
+          },
+        }),
+        this.prisma.resume.findMany({
+          where: { profileId, content: { not: null } },
+          select: { id: true },
+        }),
+        this.prisma.reference.findMany({
+          where: { profileId },
+          orderBy: { position: "asc" },
+          select: {
+            id: true,
+            name: true,
+            relationship: true,
+            company: true,
+            email: true,
+            phone: true,
+          },
+        }),
+        this.prisma.salaryPreference.findMany({
+          where: { profileId },
+          orderBy: { position: "asc" },
+          select: {
+            id: true,
+            appliesTo: true,
+            minAmount: true,
+            maxAmount: true,
+            currency: true,
+            period: true,
+          },
+        }),
+      ]);
 
     const hasContentIds = new Set(withContent.map((r) => r.id));
     const resumes = resumeRows.map((r) => ({
@@ -99,6 +116,11 @@ export class ProfileService {
         ...profile,
         preferredLocations: JSON.parse(profile.preferredLocations) as string[],
         references,
+        // The columns are plain TEXT; assert the enums the response schema declares.
+        salaryPreferences: salaryPreferences as ((typeof salaryPreferences)[number] & {
+          currency: SalaryCurrency;
+          period: SalaryPeriod;
+        })[],
         updatedAt: profile.updatedAt,
       },
       autoApply,
@@ -110,7 +132,14 @@ export class ProfileService {
   }
 
   async update(profileId: string, body: ProfileWithAutoApplyInput) {
-    const { autoApply, preferredLocations, primaryResumeId, references, ...profileFields } = body;
+    const {
+      autoApply,
+      preferredLocations,
+      primaryResumeId,
+      references,
+      salaryPreferences,
+      ...profileFields
+    } = body;
     const preferredLocationsJson = JSON.stringify(preferredLocations);
 
     await this.prisma.profile.update({
@@ -122,7 +151,7 @@ export class ProfileService {
       },
     });
 
-    // Replace the reference set wholesale - the settings form submits the full list.
+    // Replace the reference and salary-preference sets wholesale - the settings form submits the full lists.
     await this.prisma.$transaction([
       this.prisma.reference.deleteMany({ where: { profileId } }),
       this.prisma.reference.createMany({
@@ -133,6 +162,18 @@ export class ProfileService {
           company: r.company ?? null,
           email: r.email ?? null,
           phone: r.phone ?? null,
+          position: i,
+        })),
+      }),
+      this.prisma.salaryPreference.deleteMany({ where: { profileId } }),
+      this.prisma.salaryPreference.createMany({
+        data: salaryPreferences.map((s, i) => ({
+          profileId,
+          appliesTo: s.appliesTo,
+          minAmount: s.minAmount ?? null,
+          maxAmount: s.maxAmount ?? null,
+          currency: s.currency,
+          period: s.period,
           position: i,
         })),
       }),
