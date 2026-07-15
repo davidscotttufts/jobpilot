@@ -1,12 +1,12 @@
 ---
 name: cover-letter
-description: Write a tailored one-page cover letter from a job description and the user's resume, humanized for natural tone.
+description: Write a tailored, concise cover letter (150-250 words) from a job description and the user's resume, humanized for natural tone.
 argument-hint: "<job_description>"
 ---
 
 # Cover Letter Generator
 
-Write a tailored, one-page cover letter connecting the candidate's resume to a specific role.
+Write a short, tailored cover letter connecting the candidate's resume to a specific role.
 
 ## Setup
 
@@ -22,7 +22,7 @@ From the resume, pick the most relevant: 2–3 work experiences, 2–3 projects,
 
 ## Step 3: Write
 
-**Header** (values from `profile.*`):
+**Header** - values strictly from `profile.*`, never from the resume file (resumes carry stale addresses). Omit any line whose fields are empty:
 
 ```
 [Full Name]
@@ -30,15 +30,21 @@ From the resume, pick the most relevant: 2–3 work experiences, 2–3 projects,
 [LinkedIn] | [GitHub] | [Website]
 ```
 
-**Opening (2–3 sentences):** state the role, lead with strongest specific qualifier, show you understand what the team needs. **No** "I'm excited to apply" / "I'm writing to express my interest".
+**Body - 150–250 words, 3–4 paragraphs of uneven length.**
 
-**Body 1 - relevant experience (3–5 sentences):** connect your closest work to their needs, include specific metrics and outcomes, name projects and results (not just technologies).
+Pick ONE lead angle - the strongest for this JD, not a stack of all three:
 
-**Body 2 - technical depth (3–5 sentences):** deeper alignment with their stack/domain, reference specific projects or research. For AI/ML roles: reference publications.
+- a result that matches their core need (senior/lead roles: scope, architecture, team output)
+- direct experience with their exact stack, domain, or product (AI/ML/research roles: publications)
+- a genuine, specific reason for this company - only if you actually have one
 
-**Body 3 - why this company (2–3 sentences):** what specifically draws you here (genuine, not generic), how your background uniquely fits, what you'd bring beyond the requirements.
+Then write:
 
-**Closing (2–3 sentences):** interest in discussing further, portfolio/GitHub link if relevant, brief thanks.
+- **Lead (1–3 sentences):** the role + your angle. **No** "I'm excited to apply" / "I'm writing to express my interest".
+- **Proof (1–2 short paragraphs):** 1–2 proof points from the resume - a named project or outcome with one concrete detail each. Pick the points that fit *this* JD, not your two best overall. Let each stand on its own; don't explain why it's relevant - if you picked right, it's obvious.
+- **Close (1–2 sentences):** you'd like to talk, thanks. No recap of fit.
+
+If the draft came out as opening → experience → tech depth → why-company → closing, that's the template every AI letter follows - merge or cut a section and vary where the company mention lands.
 
 **Sign-off:**
 
@@ -65,18 +71,19 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 ## Rules
 
-1. **One page.** 350–450 words for the body.
+1. **150–250 words for the body.** Short reads as confident.
 2. **No fluff** - drop "passionate", "dedicated", "committed", "excited", "thrilled", "leverage", "utilize", "innovative", "cutting-edge", "eager", "dynamic".
 3. **No generic openings.**
 4. **Be specific.** Real project names, metrics, technologies from the resume.
-5. **Tailor aggressively.** Every sentence should connect to something in the JD.
-6. **Show, don't tell.** No "I'm a strong communicator" - demonstrate it through the writing.
-7. **Match tone.** Startup → conversational; enterprise/gov → formal.
-8. **No fabrication.** Only reference projects/skills from the resume.
-9. **First person** as the candidate.
-10. **AI/ML/research roles:** lead with publications and academic background.
-11. **Senior/lead roles:** lead with years, team collaboration, architectural decisions.
-12. **Startup roles:** lead with breadth of shipped products and autonomy.
+5. **Tailor by selection, not narration.** Prove fit by choosing the right material. Quote back at most ONE short JD phrase in the whole letter. Never end a paragraph by mapping yourself onto the JD - no "which is exactly what your team needs", "the same kind of X that Y requires", "which is basically the job description".
+6. **End paragraphs on the fact** - what you did or why you're interested - not a tie-back or a flourish.
+7. **One dash clause max** per letter (em dash or " - "); restructure the rest into commas or separate sentences.
+8. **One contrast max** per letter - "X rather than Y" / "not X, but Y" is a crutch; usually delete the negative half.
+9. **No rule-of-three.** Don't default to three-item lists; name one thing, or two, or four.
+10. **Show, don't tell.** No "I'm a strong communicator" - demonstrate it through the writing.
+11. **Match tone.** Startup → conversational; enterprise/gov → formal.
+12. **No fabrication.** Only reference projects/skills from the resume.
+13. **First person** as the candidate.
 
 ## Output
 

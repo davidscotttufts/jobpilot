@@ -32,7 +32,7 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 - **Years of experience** → calculate from earliest work experience date.
 - **Custom questions** → best judgment from the resume. Genuinely uncertain → ask (loop skills: make a reasonable attempt and log in notes).
 - **Relocation** → `profile.willingToRelocate`. For preferred/target locations, use `profile.preferredLocations`. Empty `[]` or contains `"Anywhere"` → user is open, answer accordingly without asking.
-- **Work auth / visa** → `profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map to form questions; for dropdowns, pick the closest option.
+- **Work auth / visa** → `profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map to form questions; for dropdowns, pick the closest option. Sponsorship questions ("Will you now or in the future require sponsorship?") → answer truthfully from `requiresSponsorship` - never misstate to pass a screen. If the form reveals a no-sponsorship policy the JD didn't state, still answer truthfully, finish the application, and note it in the result summary.
 - **EEO / Diversity** → `profile.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. Null → "Prefer not to disclose".
 - **References** → `profile.references[]`, each `{name, relationship, company, email, phone}`. Fill reference rows in order. If the form requires references and the array is empty, fill what you can and note the gap - never invent one.
 

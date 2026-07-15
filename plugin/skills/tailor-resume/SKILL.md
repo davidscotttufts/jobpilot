@@ -99,7 +99,7 @@ Stop.
 
 The server does all structural rewriting (skill ordering, bullet ranking) deterministically. You write only:
 
-- **`summary`** - ≤3 sentences targeting this role. Plain, specific. No clichés, no "passionate"/"results-driven" filler. **No fabrication** of experience, scope, or numbers.
+- **`summary`** - ≤3 sentences targeting this role, written the way the candidate would write it. Plain, specific; mirror 2-3 JD keywords naturally where the resume genuinely supports them. No clichés, no "passionate"/"results-driven" filler, no three-item trait lists, no "X rather than Y" framing. **No fabrication** of experience, scope, or numbers.
 - **`emphasizedTech`** - 4-8 lowercase tech terms from `JD.keywords` to surface first in skill groups.
 - **`jobKeywords`** - optional, ~10 terms; defaults to `emphasizedTech`. Ranks experience/project bullets.
 - **`label`** - `"{Company} - {Title}"` (short).

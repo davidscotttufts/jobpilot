@@ -32,7 +32,7 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 1. New tab, navigate to `url`, log in if needed (auth.md).
 2. Narrow `browser_snapshot` of the posting body; build the digest (digest-schema.md).
 3. `POST /api/score-fit {digest}` (+ `resumeId`). Below 0.7 confidence, deliberate from strong/partial/gaps.
-4. Flag JD-stated hard blockers (citizenship/clearance) and visa/sponsorship risk against the user's work auth (`profile` via setup.md), per eligibility.md.
+4. Flag JD-stated hard blockers (citizenship/clearance/no-sponsorship) in `blockers`, and JD silence on sponsorship (when the profile requires it) as `visaRisk`, per eligibility.md.
 5. Close tabs, return:
 
 ```json
@@ -58,7 +58,7 @@ Read the posting and persist a scored Job row. No application.
 2. Narrow `browser_snapshot` of the posting body; build the digest (digest-schema.md).
 3. Dedupe: `GET /api/applied/check?url=&title=&company=` (url-encode each). If applied, save the row `status:"skipped"`, `skipReason:"Already applied (<kind>)"`, close tabs, return `eligible:false`.
 4. `POST /api/score-fit {digest}` (+ `resumeId`). Below 0.7 confidence, deliberate from strong/partial/gaps.
-5. Eligibility (eligibility.md): below `minMatchScore`, or a JD-stated citizenship/clearance bar, is `skipped` with the exact reason; else `pending`.
+5. Eligibility (eligibility.md): below `minMatchScore`, a JD-stated citizenship/clearance bar, or JD-stated no-sponsorship language when `profile.requiresSponsorship` is true, is `skipped` with the exact reason; else `pending`. Profile requires sponsorship but the JD is silent → not a skip; append the risk note to `matchReason`.
 6. Save the row yourself (keeps the digest/JD out of the orchestrator); merge any `extraDigest` into `digest` first:
 
 ```bash

@@ -20,7 +20,7 @@ Follow `../../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization
 
 Targets are **every** `status:"skipped"` job; with `--jobs key1,key2,…`, restrict to those `key`s.
 
-- **Always leave (permanent) - only these:** `skipReason` starting `Already applied`, `CAPTCHA`, or `Payment required`, or one stating a JD-cited citizenship/clearance requirement.
+- **Always leave (permanent) - only these:** `skipReason` starting `Already applied`, `CAPTCHA`, `Payment required`, or `No visa sponsorship (JD:`, or one stating a JD-cited citizenship/clearance requirement.
 - **Whole-campaign mode (no `--jobs`):** also leave deliberate user choices - `Removed by user`, `Not selected by user`, `User cancelled…`, `Max applications limit reached`, `Campaign paused by user`.
 - **`--jobs` mode:** reconsider every named target except the permanent ones.
 
@@ -37,7 +37,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
   -d "$(jq -n --arg digest "$DIGEST" --arg desc "<posting text>" '{digest:$digest, description:$desc}')"
 ```
 
-3. **Re-score** - every target gets a fresh `POST /api/score-fit` with `{digest}`; never reuse the stored `matchScore`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier - only a JD-stated citizenship/clearance bar is (never infer from industry).
+3. **Re-score** - every target gets a fresh `POST /api/score-fit` with `{digest}`; never reuse the stored `matchScore`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier - only a JD-stated citizenship/clearance or no-sponsorship bar is (never infer from industry).
 4. **Decide:**
    - Eligible and `score >= threshold` → promote (no apply):
 
@@ -48,11 +48,11 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 ```
 
 - Below threshold after a fair read → leave `skipped`, PATCH `skipReason:"Below minimum match score (X < Y)"`.
-- JD-stated citizenship/clearance found on re-read → leave `skipped` with that reason.
+- JD-stated citizenship/clearance or no-sponsorship language found on re-read → leave `skipped` with that reason (eligibility.md phrasing).
 
 ## Step 3: Eligibility
 
-Follow `../../shared/eligibility.md` - seniority/below-level, location/onsite, sparse JDs, and 1099/contractor are never skips; only a JD-stated citizenship/clearance requirement disqualifies.
+Follow `../../shared/eligibility.md` - seniority/below-level, location/onsite, sparse JDs, and 1099/contractor are never skips; only a JD-stated citizenship/clearance requirement - or, when the profile requires sponsorship, JD-stated no-sponsorship language - disqualifies.
 
 ## Step 4: Finish
 

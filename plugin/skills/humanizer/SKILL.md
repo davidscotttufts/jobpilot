@@ -1,13 +1,14 @@
 ---
 name: humanizer
-version: 2.3.0
+version: 2.4.0
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
   comprehensive "Signs of AI writing" guide. Detects and fixes patterns including:
   inflated symbolism, promotional language, superficial -ing analyses, vague
   attributions, em dash overuse, rule of three, AI vocabulary words, negative
-  parallelisms, and excessive conjunctive phrases.
+  parallelisms, excessive conjunctive phrases, paragraph-final tie-backs,
+  spaced-hyphen dash clauses, and contrast-framing overuse.
 allowed-tools:
   - Read
   - Write
@@ -403,6 +404,48 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 **After:**
 
 > The cross functional team delivered a high quality, data driven report on our client facing tools. Their decision making process was known for being thorough and detail oriented.
+
+## STRUCTURAL PATTERNS
+
+### 26. Paragraph-Final Tie-Backs (Mirroring the Reader)
+
+**Words to watch:** which is exactly what, precisely what your team, the same kind of X that Y needs, which aligns with, which is basically what you're describing
+
+**Problem:** In persuasive writing (letters, proposals, outreach), AI ends nearly every paragraph by mapping the content back onto the reader's stated needs. One tie-back can land; one per paragraph is a template.
+
+**Before:**
+
+> I built the ingestion pipeline that cut processing time from 4 hours to 20 minutes - the same kind of scaling work your data team is tackling. Before that I led the migration to event-driven architecture, which is exactly what this role calls for.
+
+**After:**
+
+> I built the ingestion pipeline that cut processing time from 4 hours to 20 minutes. Before that I led our migration to event-driven architecture.
+
+### 27. Spaced Hyphens as Em-Dash Substitutes
+
+**Problem:** Told to avoid em dashes, AI swaps in " - " and keeps the identical appended-clause rhythm: fact - reframing of the fact. The tell is the structure, not the glyph. More than one per short text reads as AI; restructure with a comma, semicolon, or a new sentence instead.
+
+**Before:**
+
+> I shipped the billing rewrite in six weeks - a project two previous teams had abandoned. The rollout hit zero downtime - something the on-call rotation noticed immediately.
+
+**After:**
+
+> I shipped the billing rewrite in six weeks; two previous teams had abandoned it. The rollout hit zero downtime, which the on-call rotation noticed immediately.
+
+### 28. Contrast-Framing Crutch
+
+**Words to watch:** rather than, instead of merely, not just X but Y, as opposed to simply
+
+**Problem:** AI manufactures depth with "X rather than Y" / "not X, but Y", usually against a strawman nobody claimed ("real systems rather than tutorials"). At most one per text; usually the negative half can just be deleted.
+
+**Before:**
+
+> I learned agent orchestration by shipping production systems rather than following tutorials. This was hands-on debugging, not theoretical study - the kind of experience that comes from real usage rather than coursework.
+
+**After:**
+
+> I learned agent orchestration by shipping production systems, then debugging them when tool calls failed at 2am.
 
 ---
 
