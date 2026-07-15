@@ -35,7 +35,7 @@ they aren't re-litigated.
 
 | Status | Item | Hook |
 | --- | --- | --- |
-| todo | [API core tests](t1-api-core-tests.md) | zero TS tests; cover the transactional core |
+| done | [API core tests](t1-api-core-tests.md) | 8 suites cover the 5 core areas; recordJobResult via fake-prisma, no DB in CI 07-15 |
 | todo | [Agent eval laboratory](t1-eval-lab.md) | replayable ATS fixtures, graded scorecard |
 | todo | [Step telemetry](t1-step-telemetry.md) | OTel GenAI metrics per job |
 | done | [Admin pages](t1-admin-pages.md) | 3-role ladder + adminGuard; job boards collapsed to one global table |
