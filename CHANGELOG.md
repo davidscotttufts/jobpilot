@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.4] - 2026-07-15
+
+### Changed
+
+- Cover letters are shorter (150-250 word body) and built around one lead angle
+  with 1-2 proof points instead of a fixed five-block skeleton, so letters no
+  longer come out structurally identical. The humanizer also catches three new
+  templated patterns (paragraph-final JD tie-backs, spaced hyphens standing in
+  for em-dashes, and contrast framing).
+- Campaigns skip postings whose job description explicitly states no visa
+  sponsorship (an exact quote is required) when the profile needs sponsorship;
+  these skips are permanent and never re-promoted by rescans. A JD that is
+  silent on sponsorship still proceeds, with a risk note in the match reason.
+- Application forms answer sponsorship questions truthfully - never to pass a
+  screen - and tailored resume summaries mirror 2-3 JD keywords without trait
+  lists or contrast phrasing.
+
 ## [2.1.3] - 2026-07-14
 
 ### Added
