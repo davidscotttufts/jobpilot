@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.3] - 2026-07-14
+
+### Added
+
+- Salary preferences in the profile. Set up to five optional entries - each with
+  a free-text "applies to" label (e.g. "Senior/Staff roles"), a min/max range,
+  currency, and per-year or per-hour period - and the agent answers expected-salary
+  questions on application forms with the best-matching entry instead of pausing.
+  It still asks (once per campaign) when nothing matches or the list is empty.
+- Public job pages: a deduplicated `/jobs` index with detail pages, a tech-stack
+  filter with active-filter chips, and a landing page that funnels into it. Works
+  on mobile.
+- Admin section behind a SUPER_ADMIN > ADMIN > USER role ladder: platform stats,
+  user management, the job-board catalog, and job-listing moderation.
+
+### Changed
+
+- Job boards are one global catalog with per-profile links instead of per-profile
+  copies; `bun run db:seed` relinks existing profiles to the defaults.
+- Buttons, inputs, and toggles share one control height across the web app.
+
+### Fixed
+
+- Mobile layouts: the app shell, docs sidebar, and landing-page nav now fit a
+  phone.
+- The landing page prerenders fully - the live jobs strip no longer blocks it -
+  and the brand mark links home.
+- Activity timeline days are bucketed as real dates, so day boundaries no longer
+  shift with the viewer's timezone.
+
+### Internal
+
+- Feature modules each carry their own admin controller, shared Prisma error-code
+  helpers, shared TabStrip/SearchField components, and simplified web components.
+
 ## [2.1.2] - 2026-07-12
 
 ### Fixed
