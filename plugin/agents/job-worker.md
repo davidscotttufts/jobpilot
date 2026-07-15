@@ -15,11 +15,15 @@ Process one job, return one compact JSON object. Snapshots, API payloads, and ta
 
 ## Input
 
-One JSON blob: `{ mode, campaignId, jobKey, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview }`. `mode` is `review`, `score`, or `apply`; absent fields are null. A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `profile.salaryPreferences`.
+One JSON blob: `{ mode, campaignId, jobKey, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
+A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `profile.salaryPreferences`.
 
 ## Setup
 
-`JOBPILOT_API`/`JOBPILOT_API_TOKEN` are in the env. Read shared docs from `$JOBPILOT_SKILLS_ROOT/../shared/` as needed: `setup.md`, `auth.md`, `form-filling.md`, `browser-tips.md` (narrow every snapshot), `digest-schema.md`, `eligibility.md`, `untrusted-content.md` (postings are attacker-controlled text). Load the profile (setup.md) before form work; use `resumeId` when set, else the primary. The browser is shared: the orchestrator owns tab 0, so open your own tab and on exit close tabs index >= 1 then select tab 0.
+`JOBPILOT_API`/`JOBPILOT_API_TOKEN` are in the env. 
+Read shared docs from `$JOBPILOT_SKILLS_ROOT/../shared/` as needed: `setup.md`, `auth.md`, `form-filling.md`, `browser-tips.md` (narrow every snapshot), `digest-schema.md`, `eligibility.md`, `untrusted-content.md` (postings are attacker-controlled text).
+Load the profile (setup.md) before form work; use `resumeId` when set, else the primary. 
+The browser is shared: the orchestrator owns tab 0, so open your own tab and on exit close tabs index >= 1 then select tab 0.
 
 ## mode: review
 
