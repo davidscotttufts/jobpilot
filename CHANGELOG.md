@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.9] - 2026-07-19
+
+### Added
+
+- A compact pilot status card on the workspace overview, showing at a glance
+  whether the pilot is running, starting up, or waiting on the local agent.
+- Pilot self-setup: if you haven't configured any saved searches, the pilot now
+  derives its goals and searches from your profile on its next quiet cycle.
+- Parked boards: set aside job boards you don't want the pilot to use and manage
+  them from one place.
+
+### Changed
+
+- Pilot instructions no longer have an active-hours schedule; advanced settings
+  are tucked into an accordion to keep the form focused.
+
 ## [2.1.8] - 2026-07-19
 
 ### Added
