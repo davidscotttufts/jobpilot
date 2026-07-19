@@ -125,7 +125,7 @@ export function PilotActivity(): ReactElement {
           </Stack>
           {selectedKinds.length > 0 && (
             <Typography variant="captionMuted">
-              Filters apply to loaded entries — Load more fetches all kinds.
+              Filters apply to loaded entries - Load more fetches all kinds.
             </Typography>
           )}
         </Stack>

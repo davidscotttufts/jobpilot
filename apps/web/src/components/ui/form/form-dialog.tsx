@@ -49,7 +49,7 @@ export function FormDialogShell(props: FormDialogShellProps): ReactElement {
   );
 }
 
-/** Structural slice of a useAppForm instance — keeps the shell free of form generics. */
+/** Structural slice of a useAppForm instance - keeps the shell free of form generics. */
 interface FormDialogFormApi {
   handleSubmit: () => Promise<void>;
   AppForm: ComponentType<PropsWithChildren>;

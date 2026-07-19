@@ -1,6 +1,6 @@
 # Ghost-job & repost detection
 
-Tier 4 — Breakthrough bets · Status: **todo** · Depends on: [t4-shared-job-index.md](t4-shared-job-index.md)
+Tier 4 - Breakthrough bets · Status: **todo** · Depends on: [t4-shared-job-index.md](t4-shared-job-index.md)
 
 ## What
 

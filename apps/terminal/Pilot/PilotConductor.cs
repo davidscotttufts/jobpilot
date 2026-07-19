@@ -68,7 +68,7 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
         while (!stoppingToken.IsCancellationRequested)
         {
             // Publish the fresh CTS before reading the store: a WakeUp then either cancels the CTS this iteration
-            // will actually use or happens-before the read, which then sees the new state — no lost wake window.
+            // will actually use or happens-before the read, which then sees the new state - no lost wake window.
             CancellationTokenSource cts;
             lock (ctsGate)
             {

@@ -28,7 +28,7 @@ internal sealed record PilotSseState
 /// <summary>
 /// Long-lived listener on the API's pilot SSE feed. While the pilot is enabled+paired it holds a streaming
 /// connection and wakes the conductor the moment a question is answered, an approved promotion lands, or
-/// state changes — so a sleeping conductor starts its next cycle within seconds instead of at nextWakeAt.
+/// state changes - so a sleeping conductor starts its next cycle within seconds instead of at nextWakeAt.
 /// Reconnects with exponential backoff, tears down when disabled, and never faults the host.
 /// </summary>
 public sealed class PilotEventListener : BackgroundService

@@ -1,6 +1,6 @@
 # Shared job index (collective crawl)
 
-Tier 4 — Breakthrough bets · Status: **todo**
+Tier 4 - Breakthrough bets · Status: **todo**
 
 ## What
 
@@ -10,7 +10,7 @@ public data; digests carry no user info).
 
 ## Why
 
-Marginal campaign cost drops as the user base grows — a network effect on top of playbooks.
+Marginal campaign cost drops as the user base grows - a network effect on top of playbooks.
 The public jobs page ([t3-public-jobs-page.md](t3-public-jobs-page.md)) is this index's
 storefront; build the `JobListing` table there first. Enables
 [t4-ghost-job-detection.md](t4-ghost-job-detection.md).

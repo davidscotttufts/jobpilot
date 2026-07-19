@@ -1,6 +1,6 @@
 # Step telemetry
 
-Tier 1 — Foundations · Status: **todo**
+Tier 1 - Foundations · Status: **todo**
 
 ## What
 

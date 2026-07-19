@@ -1,6 +1,6 @@
 # Rate limiting
 
-Tier 0 — Fixes · Status: **done**
+Tier 0 - Fixes · Status: **done**
 
 ## What
 
@@ -20,27 +20,27 @@ middleware later. ✅
 
 ## Notes
 
-- 2026-07-12 — Done. New `apps/api/src/common/rate-limit/` — three files: `limiter.ts` (token bucket,
+- 2026-07-12 - Done. New `apps/api/src/common/rate-limit/` - three files: `limiter.ts` (token bucket,
   key derivation, the `beforeHandle` hook, `acquireSlot`), `policies.ts` (every limit with a
   rationale), `index.ts`. Each `rateLimit(policy)` owns a private bucket table, capped at
-  `MAX_KEYS` with batched eviction — an unbounded map keyed by client IP is itself a DoS.
+  `MAX_KEYS` with batched eviction - an unbounded map keyed by client IP is itself a DoS.
 - No cron sweep and no store registry: eviction already happens lazily at capacity (so memory is
   bounded either way), and every policy is instantiated exactly once, so a registry keyed by name
   deduped nothing. Both were cut in review as over-engineering, along with an Elysia *plugin* factory
-  — one attach mechanism (`beforeHandle`) is enough.
-- 2026-07-12 (cleanup) — Eviction only kept its amortization if the sweep leaves headroom: bailing at
+  - one attach mechanism (`beforeHandle`) is enough.
+- 2026-07-12 (cleanup) - Eviction only kept its amortization if the sweep leaves headroom: bailing at
   the first freed slot meant a saturated table re-scanned all `MAX_KEYS` on nearly every new key. It
   now drops down to `MAX_KEYS - EVICT_HEADROOM`. Also added `publicResumePdf` (the one unauthenticated
-  route that does real work — a cache miss re-renders the PDF) and moved the captcha in-flight cap into
+  route that does real work - a cache miss re-renders the PDF) and moved the captcha in-flight cap into
   the policy table as `maxInFlight`.
 - **The keys matter more than the algorithm.** Login is keyed by **(email, IP)** so stuffing one
   account can't lock out everyone behind a shared office NAT, plus a looser per-IP net for password
   spraying. `/captcha/solve` and `/auth/email/resend` are keyed by **user**.
 - **`x-real-ip` is load-bearing, not a nicety.** The API runs *inside a container*, so
-  `server.requestIP()` returns the Docker bridge gateway for every proxied request — one bucket for
+  `server.requestIP()` returns the Docker bridge gateway for every proxied request - one bucket for
   the entire user base. nginx sets `X-Real-IP $remote_addr`, which *replaces* any client value.
   `X-Forwarded-For` uses `$proxy_add_x_forwarded_for`, which **appends** to a client-supplied header,
-  so its leftmost entry is attacker-controlled — never read it.
+  so its leftmost entry is attacker-controlled - never read it.
 - Limiters attach **per route** (`beforeHandle`), never as a scoped Elysia plugin: a scoped hook
   covers every route declared after it in the instance, and the public auth routes each need a
   different policy.

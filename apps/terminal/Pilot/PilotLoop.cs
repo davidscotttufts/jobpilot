@@ -18,12 +18,12 @@ public sealed class PilotLoop(IPilotEnvironment env)
     public const int MaxSleepSeconds = 21600;
 
     // Stable, user-facing intervention summaries pushed to the API journal (the phone hears about these).
-    public const string NudgeReport = "Pilot watchdog: cycle stalled — nudged the agent.";
-    public const string SkipReport = "Pilot watchdog: still stalled after the nudge — told the agent to skip and fail the leased work.";
-    public const string KillReport = "Pilot watchdog: agent unresponsive — restarted the session; the leased job will recover by TTL.";
-    public const string BackoffReport = "Pilot watchdog: 3 consecutive stalls — backing off 30m.";
+    public const string NudgeReport = "Pilot watchdog: cycle stalled - nudged the agent.";
+    public const string SkipReport = "Pilot watchdog: still stalled after the nudge - told the agent to skip and fail the leased work.";
+    public const string KillReport = "Pilot watchdog: agent unresponsive - restarted the session; the leased job will recover by TTL.";
+    public const string BackoffReport = "Pilot watchdog: 3 consecutive stalls - backing off 30m.";
     public const string ExitBackoffReport =
-        "Pilot watchdog: the provider CLI keeps exiting right after startup — check its install and auth — backing off 30m.";
+        "Pilot watchdog: the provider CLI keeps exiting right after startup - check its install and auth - backing off 30m.";
 
     private readonly IPilotEnvironment env = env;
 
@@ -64,7 +64,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
 
         await env.InjectCycleAsync(pairing, ct);
 
-        // T5 ladder: each wedge (timeout or a stall heuristic firing early) climbs one rung — nudge, then skip, then kill.
+        // T5 ladder: each wedge (timeout or a stall heuristic firing early) climbs one rung - nudge, then skip, then kill.
         var result = await env.AwaitSentinelAsync(SentinelTimeout, ct);
         if (await TryFinishAsync(result, ct))
         {
@@ -80,7 +80,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
             return;
         }
 
-        // Rung 2: the nudge did not unstick it — force the leased work failed so the next cycle can move on.
+        // Rung 2: the nudge did not unstick it - force the leased work failed so the next cycle can move on.
         await ReportAsync(SkipReport);
         await env.InjectSkipAsync(pairing, ct);
         result = await env.AwaitSentinelAsync(NudgeGrace, ct);
@@ -89,7 +89,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
             return;
         }
 
-        // Rung 3: still wedged — kill for a clean restart, and back off once repeated kills prove the install is broken.
+        // Rung 3: still wedged - kill for a clean restart, and back off once repeated kills prove the install is broken.
         ConsecutiveTimeouts++;
         await ReportAsync(KillReport);
         env.StopSession();
@@ -116,7 +116,7 @@ public sealed class PilotLoop(IPilotEnvironment env)
     /// <summary>Ends the cycle on a sentinel (sleep) or a dead session; returns false to climb the next ladder rung.</summary>
     private async Task<bool> TryFinishAsync(PilotWaitResult result, CancellationToken ct)
     {
-        // The session died on its own; the next iteration restarts it, so no intervention is owed —
+        // The session died on its own; the next iteration restarts it, so no intervention is owed -
         // unless it keeps dying on startup (broken install/auth), which must back off, not hot-loop every ~15s.
         if (result.Outcome == PilotWaitOutcome.SessionExited)
         {

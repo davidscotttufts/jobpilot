@@ -1,6 +1,6 @@
 # Budget governor
 
-Tier 4 — Breakthrough bets · Status: **todo** · Depends on: [t1-step-telemetry.md](t1-step-telemetry.md)
+Tier 4 - Breakthrough bets · Status: **todo** · Depends on: [t1-step-telemetry.md](t1-step-telemetry.md)
 
 ## What
 

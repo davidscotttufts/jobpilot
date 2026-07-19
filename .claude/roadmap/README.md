@@ -1,6 +1,6 @@
-# JobPilot Roadmap — Index
+# JobPilot Roadmap - Index
 
-Consolidated 2026-07-15 around **[The Pilot](pilot.md)** — the T2 plumbing and T5 reflex items
+Consolidated 2026-07-15 around **[The Pilot](pilot.md)** - the T2 plumbing and T5 reflex items
 (plus four absorbed T3/T4 items) were folded into it; supersessions are recorded in
 [deferred.md](deferred.md) so they aren't re-litigated. Originally from the 2026-07-11
 architecture review.
@@ -10,7 +10,7 @@ _and_ in this table → add a dated note in the item's Notes section.
 
 Statuses: `todo` · `in-progress` · `done` · `deferred`
 
-## The Pilot build (north star — [pilot.md](pilot.md), learning in [pilot-learning.md](pilot-learning.md))
+## The Pilot build (north star - [pilot.md](pilot.md), learning in [pilot-learning.md](pilot-learning.md))
 
 One generic autonomous loop: sense (server-compiled agenda) → decide (against the user's
 instructions) → act (delegate to workers) → record (journal) → exit; the host conductor re-injects
@@ -18,12 +18,12 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 
 | Status | Milestone | Hook |
 | --- | --- | --- |
-| done | M1 — Pilot spine | instructions → agenda → lease → cycle → journal; conductor + host pairing |
-| done | M2 — Away-proof | web push, phone-answerable questions, unattended nights |
-| done | M3 — Full surface | inbox review, outreach + warm path, self-promotion, 7am digest |
-| done | M3.5 — Interview autonomy | invite → reply approval card + auto prep sheet |
-| done | M4 — Event wake + proactive | SSE wake, stall heuristics, strategy review, board health |
-| done | M5 — Learning-ready capture | correction capture, journal export, subjectKey conventions |
+| done | M1 - Pilot spine | instructions → agenda → lease → cycle → journal; conductor + host pairing |
+| done | M2 - Away-proof | web push, phone-answerable questions, unattended nights |
+| done | M3 - Full surface | inbox review, outreach + warm path, self-promotion, 7am digest |
+| done | M3.5 - Interview autonomy | invite → reply approval card + auto prep sheet |
+| done | M4 - Event wake + proactive | SSE wake, stall heuristics, strategy review, board health |
+| done | M5 - Learning-ready capture | correction capture, journal export, subjectKey conventions |
 
 ## Independent tracks
 
@@ -55,5 +55,5 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 
 ## Deferred / rejected
 
-See [deferred.md](deferred.md) — decisions with reasons (incl. the 2026-07-15 Pilot
+See [deferred.md](deferred.md) - decisions with reasons (incl. the 2026-07-15 Pilot
 consolidation supersessions), so they aren't re-litigated.

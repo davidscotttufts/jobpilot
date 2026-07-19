@@ -1,6 +1,6 @@
 # Salary benchmark & negotiation agent
 
-Tier 4 — Breakthrough bets · Status: **todo**
+Tier 4 - Breakthrough bets · Status: **todo**
 
 ## What
 

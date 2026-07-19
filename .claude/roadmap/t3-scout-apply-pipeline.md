@@ -1,6 +1,6 @@
 # Scout/apply pipeline
 
-Tier 3 — Intelligence & Efficiency · Status: **todo**
+Tier 3 - Intelligence & Efficiency · Status: **todo**
 
 ## What
 

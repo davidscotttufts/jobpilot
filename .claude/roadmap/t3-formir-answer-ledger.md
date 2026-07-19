@@ -1,6 +1,6 @@
 # FormIR + answer ledger + receipts
 
-Tier 3 — Intelligence & Efficiency · Status: **todo**
+Tier 3 - Intelligence & Efficiency · Status: **todo**
 
 ## What
 
@@ -12,7 +12,7 @@ Persist two artifacts:
 
 - **Answer ledger**: value, provenance (profile / resume / previously-approved / calculated /
   agent-inferred), confidence, user-approved flag, expiry. Every question answered once is never
-  asked again — including answers collected via
+  asked again - including answers collected via
   [t2-needs-user-escalation.md](t2-needs-user-escalation.md).
 - **Receipt** per application: domains visited, field provenance, final confirmation text, DOM
   hash. Workers currently discard all evidence; receipts answer "did it really submit?"

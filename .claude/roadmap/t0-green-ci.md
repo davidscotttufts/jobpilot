@@ -1,6 +1,6 @@
 # Green CI
 
-Tier 0 — Fixes · Status: **done**
+Tier 0 - Fixes · Status: **done**
 
 ## What
 
@@ -12,7 +12,7 @@ as CRLF, Biome formats to LF, and no `.gitattributes` normalized it. The index w
 (735/735 text files), so Linux CI never saw a CRLF. The real bug was that `bun run ci` was unusable
 locally.
 
-Only 8 diagnostics were real, and all 8 were **infos** — advisory by design.
+Only 8 diagnostics were real, and all 8 were **infos** - advisory by design.
 
 ## Done when
 
@@ -20,9 +20,9 @@ Only 8 diagnostics were real, and all 8 were **infos** — advisory by design.
 
 ## Notes
 
-- 2026-07-12 — Done. `.gitattributes` (`* text=auto eol=lf`) pins the worktree to LF on every
+- 2026-07-12 - Done. `.gitattributes` (`* text=auto eol=lf`) pins the worktree to LF on every
   platform, so local `bun run ci` now matches CI. Cleared the 8 advisory infos: 7 `return <></>`
   guard clauses became `return null` (then typed `ReactNode`, per the existing `SkillsList`
   precedent) and 1 redundant switch case. `biome check` is now fully silent.
-- Never `biome check --write --unsafe` — the `noNonNullAssertion` fix rewrites `cookie[KEY]!.set(…)`
+- Never `biome check --write --unsafe` - the `noNonNullAssertion` fix rewrites `cookie[KEY]!.set(…)`
   to `?.set(…)` and silently drops auth cookie writes.

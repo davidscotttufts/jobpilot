@@ -1,6 +1,6 @@
 # Pre-flight question harvesting (batch dry-run)
 
-Tier 3 — Intelligence & Efficiency · Status: **todo**
+Tier 3 - Intelligence & Efficiency · Status: **todo**
 
 ## What
 
@@ -11,7 +11,7 @@ apply the whole batch pause-free. Answers seed the ledger
 
 ## Why
 
-Converts N mid-loop interruptions into 1 up-front decision — the complement to
+Converts N mid-loop interruptions into 1 up-front decision - the complement to
 [t2-needs-user-escalation.md](t2-needs-user-escalation.md): questions handle surprises,
 pre-flight prevents most of them.
 
