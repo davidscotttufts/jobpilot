@@ -95,7 +95,7 @@ first (`search`, `apply`) or proceeds on its own up to a cap you set
 ## The Pilot: fully autonomous mode
 
 Everything above still works by hand, but you can also hand the whole loop
-over. Write your instructions once - goals, daily caps, active hours, saved
+over. Write your instructions once - goals, daily caps, saved
 searches, how much autonomy to give networking, which platforms you're okay
 posting to - and the Pilot takes it from there, repeating one cycle forever
 while it's enabled:

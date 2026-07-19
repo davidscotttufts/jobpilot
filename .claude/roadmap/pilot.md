@@ -38,8 +38,9 @@ all state server-side) and does ONE agenda item.
   jobs also gain a `needs_user` status so parked work is visible. Answered questions rank
   first on the agenda.
 - **Scheduling is server-side** in the instructions/agenda (`sleepSeconds`/`nextWakeAt` from
-  activeHours + saved-search cadence) - not host cron. A phone edit to the instructions changes
-  behavior next cycle; the host keeps one bit: enabled.
+  check interval + saved-search cadence) - not host cron. A phone edit to the instructions changes
+  behavior next cycle; the host keeps one bit: enabled. (Active hours removed 2026-07-19 -
+  noisy config; the pilot runs around the clock.)
 - **One-time host pairing** solves "browser tab must be open": Enable Pilot posts the reusable
   terminal token to the host (`POST /pilot/enable`), stored DPAPI/0600; the conductor
   self-starts sessions on boot/crash/wake.
@@ -51,7 +52,7 @@ all state server-side) and does ONE agenda item.
 One small, user-editable document in the dashboard:
 
 - **Goals**: "senior TypeScript remote role, ≥$150k, by October."
-- **Effort**: daily apply cap, active hours, check interval, saved searches.
+- **Effort**: daily apply cap, check interval, saved searches.
 - **Boundaries**: autonomy per outreach channel (email draft/review/auto; LinkedIn never
   auto-InMail), boards to avoid, promotion platforms + cadence.
 - **Question prefs**: push vs. morning digest.

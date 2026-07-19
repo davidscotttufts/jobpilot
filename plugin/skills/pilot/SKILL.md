@@ -111,6 +111,7 @@ The lease payload is enriched: `{questionId, questionKind, subjectType, subjectI
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
 - **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign by scanning each campaign's `GET /api/campaigns/<id>/networking` (`GET /api/campaigns` lists them). `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
 - **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
+- **`pilot`** → the answer to a `strategy.bootstrap` question: treat the answer text as the goals. Derive 1-3 saved searches from it exactly as `strategy.bootstrap`, then ONE `PUT /api/pilot/instructions` writing `{goals: <answer>, config: <config + new savedSearches>}`. Journal both facts.
 
 ### `search.discover`
 
@@ -174,6 +175,25 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 ```
 
 Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
+
+### `strategy.bootstrap`
+
+Payload `{goals, hasGoals, boards, minScore}` - no saved searches configured yet. Config work, **no browser**, no worker. Load the profile and primary resume per `../../shared/setup.md`, then:
+
+- `hasGoals` true → derive 1-3 saved searches from the goals + profile + resume: each `{query, board?, cadenceHours: 24, resumeId: <primary resume id>}`, `board` only from the payload's `boards` when one clearly fits, queries concrete enough to paste into a board search ("senior typescript remote", not "good jobs"). `GET /api/pilot`, append to `config.savedSearches`, `PUT /api/pilot/instructions` with the goals verbatim and the **full** config (preserve every other field, as the board-park flow does). Journal: "Bootstrapped 2 saved searches from your goals: 'senior typescript remote', 'dotnet engineer remote'."
+- `hasGoals` false but a primary resume exists → derive draft goals from the resume (titles, seniority, stack, remote/location), then the searches from those; ONE `PUT /api/pilot/instructions` writing both `goals` and `config`. Journal: "Set up goals and 2 saved searches from your resume - edit anytime."
+- No goals and no resume → POST a question and journal "No goals or resume yet - asked what to hunt for.":
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg dl "$JOBPILOT_WEB/pilot/instructions" \
+    '{kind:"question", subjectType:"pilot", subjectId:"bootstrap",
+      prompt:"What roles should the pilot hunt for? A sentence on titles, seniority, and remote/location is enough.",
+      options:[], deepLink:$dl}')"
+```
+
+The `pilot` answer is handled in `question.answered`. Discovery starts on the next cycle - do not search here.
 
 ### `job.rescanSkipped`
 

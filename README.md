@@ -41,9 +41,9 @@ can see what the agent is doing and step in when needed.
   and cover letters.
 - **Run auto-apply campaigns:** apply to matching jobs up to the score and volume
   limits you set.
-- **Use the Pilot:** give JobPilot goals, saved searches, active hours, and daily
-  limits. It works through the next available task and keeps a journal of each
-  action. When it needs a decision, it asks you.
+- **Use the Pilot:** give JobPilot your goals - it sets up its own saved searches
+  and works through the next available task, keeping a journal of each action.
+  When it needs a decision, it asks you.
 - **Contact recruiters:** find a relevant contact, draft a tailored message, and
   send it by email or LinkedIn.
 - **Track applications:** manage applications from initial submission through
