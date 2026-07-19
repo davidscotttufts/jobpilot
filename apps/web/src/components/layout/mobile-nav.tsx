@@ -3,6 +3,7 @@
 import { type ReactElement, useState } from "react";
 import { MoreHoriz } from "@mui/icons-material";
 import {
+  Badge,
   BottomNavigation,
   BottomNavigationAction,
   Divider,
@@ -16,18 +17,18 @@ import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
+import { useOpenQuestions } from "@/components/features/pilot/attention/use-open-questions";
 import { useAuth } from "@/hooks/use-auth";
 import {
   feedbackLinks,
   footerNavGroups,
-  isNavItemActive,
+  isNavEntryActive,
   MOBILE_NAV_HEIGHT,
   type NavItem,
   visibleNavGroups,
 } from "./shell-config";
 
 const MORE_VALUE = "more";
-const PRIMARY_HREFS = ["/workspace", "/analytics", "/inbox", "/resumes"];
 /** Below MUI's 0.75rem default - "Workspace" has to fit a fifth of a 360px phone. */
 const LABEL_SIZE = "0.6875rem";
 
@@ -39,21 +40,28 @@ export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { user } = useAuth();
+  const { count: questionCount } = useOpenQuestions();
 
   // Derived per render, not at module scope: the visible set depends on the signed-in role.
   const allItems = visibleNavGroups(user?.role).flatMap((group) => group.items);
   const footerItems = visibleNavGroups(user?.role, footerNavGroups).flatMap((group) => group.items);
-  const primaryItems = allItems.filter((item) => PRIMARY_HREFS.includes(item.href));
+  const primaryItems = allItems.filter((item) => item.primary);
 
   // The rail pins these to its foot, so they land at the end of the drawer here.
-  const moreItems = [
-    ...allItems.filter((item) => !PRIMARY_HREFS.includes(item.href)),
-    ...footerItems,
-  ];
+  const moreItems = [...allItems.filter((item) => !item.primary), ...footerItems];
 
-  const activePrimary = primaryItems.find((item) => isNavItemActive(pathname, item.href));
-  const moreActive = moreItems.some((item) => isNavItemActive(pathname, item.href));
+  const activePrimary = primaryItems.find((item) => isNavEntryActive(pathname, item));
+  const moreActive = moreItems.some((item) => isNavEntryActive(pathname, item));
   const value = activePrimary?.href ?? (moreActive ? MORE_VALUE : false);
+  // Pilot sits on the tab bar now; only badge More when a badged item actually lives in the drawer.
+  const moreHasQuestions = moreItems.some((item) => item.badge === "questions");
+
+  // One helper over the component's single useOpenQuestions subscription; content 0 hides the badge.
+  const badged = (icon: ReactElement, show = true): ReactElement => (
+    <Badge badgeContent={show ? questionCount : 0} color="error" max={99}>
+      {icon}
+    </Badge>
+  );
 
   const renderTab = (item: NavItem): ReactElement => (
     <BottomNavigationAction
@@ -62,7 +70,7 @@ export function MobileNav(): ReactElement {
       href={item.href as Route}
       value={item.href}
       label={item.label}
-      icon={<item.icon fontSize="small" />}
+      icon={badged(<item.icon fontSize="small" />, item.badge === "questions")}
     />
   );
 
@@ -98,7 +106,7 @@ export function MobileNav(): ReactElement {
         <BottomNavigationAction
           value={MORE_VALUE}
           label="More"
-          icon={<MoreHoriz fontSize="small" />}
+          icon={badged(<MoreHoriz fontSize="small" />, moreHasQuestions)}
           onClick={() => setMoreOpen(true)}
         />
       </BottomNavigation>
@@ -111,11 +119,11 @@ export function MobileNav(): ReactElement {
               key={item.href}
               component={Link}
               href={item.href as Route}
-              selected={isNavItemActive(pathname, item.href)}
+              selected={isNavEntryActive(pathname, item)}
               onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
-                <item.icon fontSize="small" />
+                {badged(<item.icon fontSize="small" />, item.badge === "questions")}
               </ListItemIcon>
               <ListItemText primary={item.label} />
             </ListItemButton>

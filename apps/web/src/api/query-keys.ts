@@ -98,6 +98,23 @@ export const queryKeys = {
     list: () => [...queryKeys.coverLetters.all, "list"] as const,
     detail: (id: string) => [...queryKeys.coverLetters.all, "detail", id] as const,
   },
+
+  pilot: {
+    all: ["pilot"] as const,
+    state: () => [...queryKeys.pilot.all, "state"] as const,
+    // Mount-fetch + manual refresh only; PilotLive never invalidates this key (agenda compile is costly).
+    agenda: () => [...queryKeys.pilot.all, "agenda"] as const,
+    journal: () => [...queryKeys.pilot.all, "journal"] as const,
+    questionsAll: () => [...queryKeys.pilot.all, "questions"] as const,
+    questions: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.pilot.questionsAll(), filters] as const,
+    promotionsAll: () => [...queryKeys.pilot.all, "promotions"] as const,
+    promotions: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.pilot.promotionsAll(), filters] as const,
+    push: () => [...queryKeys.pilot.all, "push"] as const,
+    pushKey: () => [...queryKeys.pilot.push(), "vapid-key"] as const,
+    pushDevices: () => [...queryKeys.pilot.push(), "devices"] as const,
+  },
 } as const;
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */

@@ -1,5 +1,6 @@
 using JobPilot.Terminal.Contracts;
 using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Pty;
 using JobPilot.Terminal.Realtime;
 using JobPilot.Terminal.Sessions;
@@ -30,6 +31,15 @@ public static class HostingExtensions
         services.AddSingleton<IPty, PtyProcess>();
         services.AddSingleton<SessionManager>();
         services.AddSingleton<TerminalHub>();
+        services.AddSingleton(sp => new PilotStore(
+            PilotStore.ResolvePath(sp.GetRequiredService<HostInstall>()),
+            sp.GetRequiredService<ILogger<PilotStore>>()));
+        services.AddSingleton<PilotApiClient>();
+        services.AddSingleton<IPilotEnvironment, PilotEnvironment>();
+        services.AddSingleton<PilotConductor>();
+        services.AddHostedService(sp => sp.GetRequiredService<PilotConductor>());
+        services.AddSingleton<PilotEventListener>();
+        services.AddHostedService(sp => sp.GetRequiredService<PilotEventListener>());
         services.ConfigureHttpJsonOptions(c =>
             c.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonContext.Default));
 

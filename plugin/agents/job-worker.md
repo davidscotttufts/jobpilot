@@ -91,10 +91,12 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 { "outcome": "applied", "appliedAt": "...", "matchScore": 0 }
 { "outcome": "failed",  "failReason": "...", "retryNotes": "..." }
 { "outcome": "skipped", "skipReason": "..." }
-{ "outcome": "needs_user", "reason": "2FA|payment|salary|review", "detail": "..." }
+{ "outcome": "needs_user", "reason": "2FA|payment|salary|review", "detail": "...", "kind": "question|choice|2fa|approval", "question": "...", "options": ["..."] }
 ```
 
 `appliedAt` = `date -u +%Y-%m-%dT%H:%M:%SZ`. You never POST `/result`; the orchestrator records terminal outcomes.
+
+`needs_user` fields: `reason` and `detail` stay for backward compatibility (auto-apply/apply key off `reason`; `detail` carries the pre-submit review field summary). `question` is new - one sentence the user can answer from a phone. `kind` is `2fa` for verification codes, `approval` for pre-submit review, `choice` when you have concrete options, else `question`. `options` (optional) lists short answer strings (e.g. salary ranges, yes/no) - each must be directly usable as the answer, never "see above".
 
 ## Rules
 
@@ -105,3 +107,4 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 5. Eligibility per eligibility.md; never skip silently.
 6. One job per invocation; no looping or pagination.
 7. Every file you write goes under `$JOBPILOT_WORKSPACE_ROOT/.temp`, prefixed with the job key (setup.md → "Scratch files"). Never the repo root.
+8. Optionally add `observations` to your return: an array of 0-3 short strings, **durable board/site facts only** (e.g. "greenhouse.io added a demographics page after submit"), never per-job trivia. Omit when there's nothing lasting to report.

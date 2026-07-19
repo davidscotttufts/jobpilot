@@ -5,17 +5,21 @@ import {
 } from "@jobpilot/contracts/outreach";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { findOwned, notFound } from "@/common/errors";
+import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
+import { PilotService } from "@/modules/pilot/pilot.service";
 import { toOutreachMessageRow } from "../campaign.mapper";
 import { recomputeOutreachSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 
 @singleton()
 export class CampaignOutreachService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly pilot: PilotService,
+  ) {}
 
   /** List the campaign's outreach messages (with their contacts) for the board. */
   async listOutreach(profileId: string, campaignId: string) {
@@ -92,8 +96,12 @@ export class CampaignOutreachService {
     messageId: string,
     body: PatchOutreachMessageInput,
   ) {
-    await findOwned(
-      (where) => this.prisma.outreachMessage.findFirst({ where, select: { id: true } }),
+    const existing = await findOwned(
+      (where) =>
+        this.prisma.outreachMessage.findFirst({
+          where,
+          select: { id: true, status: true, subject: true, body: true },
+        }),
       { id: messageId, campaignId, profileId },
       "Outreach message",
     );
@@ -131,7 +139,50 @@ export class CampaignOutreachService {
 
     // Refresh the live campaign board (e.g. a regenerated draft) without a reload.
     publish(campaignChannel, { campaignId }, { type: "outreach-update" });
+
+    // Draft-only approximation of a user edit: the agent regenerates drafts through this same route,
+    // so we can't perfectly separate the two - gate on "draft" and treat any content change as a correction.
+    const subjectChanged = fields.subject != null && fields.subject !== existing.subject;
+    const bodyChanged = fields.body != null && fields.body !== existing.body;
+    if (existing.status === "draft" && (subjectChanged || bodyChanged)) {
+      await this.pilot.appendJournal(profileId, {
+        entries: [
+          {
+            kind: "correction",
+            summary: "Edited outreach draft.",
+            detail: {
+              type: "outreach.edited",
+              messageId,
+              before: { subject: existing.subject, body: existing.body },
+              after: { subject: updated.subject, body: updated.body },
+            },
+            subjectType: "outreach",
+            subjectId: messageId,
+          },
+        ],
+      });
+    }
+
     return toOutreachMessageRow(updated);
+  }
+
+  /**
+   * Server-side send gate, enforced regardless of what the agent claims: a LinkedIn InMail may
+   * only be sent once the user approved it (InMails cost credits / are irreversible). The daily
+   * outreach cap is NOT checked here - this runs after the email already left, so rejecting the
+   * bookkeeping would leave sentAt null and let the agenda re-emit the message (duplicate email);
+   * the agenda's headroom slicing is the real cap gate.
+   */
+  private guardSend(message: {
+    channel: string;
+    linkedinKind: string | null;
+    status: string;
+  }): void {
+    if (message.channel === "linkedin" && message.linkedinKind === "inmail") {
+      if (message.status !== "approved") {
+        throw unprocessable("A LinkedIn InMail can only be sent after you approve it.");
+      }
+    }
   }
 
   /**
@@ -150,6 +201,10 @@ export class CampaignOutreachService {
       { id: messageId, campaignId, profileId },
       "Outreach message",
     );
+
+    if (data.outcome === "sent") {
+      this.guardSend(existing);
+    }
 
     const sentAt =
       data.outcome === "sent" ? (data.sentAt ? new Date(data.sentAt) : new Date()) : null;

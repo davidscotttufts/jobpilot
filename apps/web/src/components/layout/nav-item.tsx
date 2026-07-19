@@ -5,7 +5,8 @@ import { Box, Tooltip } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isNavItemActive, type NavItem as NavItemType } from "./shell-config";
+import { QuestionBadge } from "@/components/features/pilot/attention/question-badge";
+import { isNavEntryActive, type NavItem as NavItemType } from "./shell-config";
 
 interface NavItemProps {
   item: NavItemType;
@@ -15,7 +16,8 @@ export function NavItem(props: NavItemProps): ReactElement {
   const { item } = props;
   const pathname = usePathname();
   const Icon = item.icon;
-  const active = isNavItemActive(pathname, item.href);
+  const active = isNavEntryActive(pathname, item);
+  const icon = <Icon fontSize="md" />;
 
   return (
     <Tooltip title={item.label} placement="right" arrow disableInteractive>
@@ -53,7 +55,7 @@ export function NavItem(props: NavItemProps): ReactElement {
             : undefined,
         })}
       >
-        <Icon fontSize="md" />
+        {item.badge === "questions" ? <QuestionBadge>{icon}</QuestionBadge> : icon}
       </Box>
     </Tooltip>
   );
