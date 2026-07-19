@@ -190,10 +190,6 @@ public sealed class PtyProcess : IPty
         int rows,
         IReadOnlyDictionary<string, string>? environment)
     {
-        var commandLine = new string[args.Length + 1];
-        commandLine[0] = command;
-        Array.Copy(args, 0, commandLine, 1, args.Length);
-
         // UTF-8 locale so spawned tools don't mangle non-ASCII; macOS ships en_US.UTF-8, not C.UTF-8.
         var utf8Locale = OperatingSystem.IsMacOS() ? "en_US.UTF-8" : "C.UTF-8";
         var env = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -214,7 +210,8 @@ public sealed class PtyProcess : IPty
         return new PtyOptions
         {
             App = command,
-            CommandLine = commandLine,
+            // Args only - Pty.Net prepends App itself; duplicating it becomes a positional arg the CLI treats as a prompt.
+            CommandLine = args,
             Cwd = workingDirectory,
             Cols = cols,
             Rows = rows,
