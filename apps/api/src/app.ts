@@ -19,6 +19,7 @@ import { healthController } from "@/modules/health";
 import { adminBoardController, jobBoardController } from "@/modules/job-board";
 import { adminJobListingController, publicJobListingController } from "@/modules/job-listing";
 import { pilotController } from "@/modules/pilot";
+import { publicPortfolioController } from "@/modules/portfolio";
 import { profileController } from "@/modules/profile";
 import { pushController } from "@/modules/push";
 import { queueController } from "@/modules/queue";
@@ -53,6 +54,7 @@ const app = new Elysia()
       .use(resumeController)
       .use(publicResumeController)
       .use(publicJobListingController)
+      .use(publicPortfolioController)
       .use(coverLetterController)
       .use(applicationController)
       .use(scoringController)

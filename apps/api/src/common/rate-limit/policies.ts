@@ -54,6 +54,9 @@ export const RATE_LIMITS = {
    *  too tight here and we deindex ourselves. A scraper brake, not an anti-abuse wall. */
   publicJobs: { key: byIp, limit: 300, windowMs: HOUR, burst: 60 },
 
+  /** Public portfolio + leaderboard pages, crawlable. Same shape as publicJobs: a scraper brake. */
+  publicPortfolio: { key: byIp, limit: 300, windowMs: HOUR, burst: 60 },
+
   /** Burns the *user's own* solver credits (captcha.service.ts decrypts their key), so this is a
    *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several challenges.
    *  `maxInFlight` because a rate cap alone still lets several two-minute solves pile up on sockets. */

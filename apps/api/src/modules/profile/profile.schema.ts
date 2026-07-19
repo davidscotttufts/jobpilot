@@ -1,4 +1,4 @@
-import { SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/profile";
+import { availabilitySchema, SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/profile";
 import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
@@ -89,4 +89,15 @@ export const profileAggregateSchema = z.object({
 /** Result of setting (or clearing) the profile's primary resume. */
 export const primaryResumeSetSchema = z.object({
   primaryResumeId: z.uuid().nullable(),
+});
+
+/** Current public-portfolio settings (from the `users` row). Username is always assigned. */
+export const portfolioSettingsSchema = z.object({
+  username: z.string(),
+  availability: availabilitySchema.nullable(),
+});
+
+/** Whether a candidate username is free to claim. */
+export const usernameAvailabilitySchema = z.object({
+  available: z.boolean(),
 });

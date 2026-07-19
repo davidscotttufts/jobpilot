@@ -9,6 +9,7 @@ import {
   verifyPassword,
 } from "@/common/auth";
 import { conflict, notFound, unauthorized } from "@/common/errors";
+import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
 import { PrismaClient, type User } from "@/generated/prisma/client";
 import { principal, publicUser } from "./auth.mapper";
@@ -64,6 +65,7 @@ export class AuthService {
           passwordHash,
           role,
           emailVerified: autoVerified,
+          username: await this.uniqueUsername(),
           profile: {
             create: {
               firstName: "",
@@ -89,6 +91,19 @@ export class AuthService {
       throw error;
     }
     return this.session(user);
+  }
+
+  /** A random username not already taken. The unique constraint is the final backstop. */
+  private async uniqueUsername(): Promise<string> {
+    for (let i = 0; i < 10; i++) {
+      const candidate = randomUsername();
+      const taken = await this.prisma.user.findUnique({
+        where: { username: candidate },
+        select: { id: true },
+      });
+      if (!taken) return candidate;
+    }
+    return `pilot-${crypto.randomUUID().slice(0, 8)}`;
   }
 
   async login(input: LoginInput) {

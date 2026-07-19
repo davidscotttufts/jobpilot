@@ -1,10 +1,12 @@
-import type {
-  ProfileWithAutoApplyInput,
-  SalaryCurrency,
-  SalaryPeriod,
+import {
+  type PortfolioSettingsPatch,
+  type ProfileWithAutoApplyInput,
+  parseAvailability,
+  type SalaryCurrency,
+  type SalaryPeriod,
 } from "@jobpilot/contracts/profile";
 import { singleton } from "tsyringe";
-import { findOwned } from "@/common/errors";
+import { conflict, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -206,5 +208,53 @@ export class ProfileService {
     });
 
     return { primaryResumeId: resumeId };
+  }
+
+  async getPortfolioSettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, availability: true },
+    });
+    if (!user) throw notFound("User not found");
+    return {
+      username: user.username,
+      availability: parseAvailability(user.availability),
+    };
+  }
+
+  /** Free when no other user holds it; the caller's own current username also reads as free.
+   *  `username` arrives already normalized by `usernameSchema` on the route. */
+  async checkUsername(userId: string, username: string) {
+    const owner = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true },
+    });
+    return { available: !owner || owner.id === userId };
+  }
+
+  async updatePortfolioSettings(userId: string, body: PortfolioSettingsPatch) {
+    if (body.username !== undefined) {
+      const taken = await this.prisma.user.findUnique({
+        where: { username: body.username },
+        select: { id: true },
+      });
+      if (taken && taken.id !== userId) {
+        throw conflict("That username is already taken.");
+      }
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(body.username !== undefined && { username: body.username }),
+        ...(body.availability !== undefined && { availability: body.availability }),
+      },
+      select: { username: true, availability: true },
+    });
+
+    return {
+      username: updated.username,
+      availability: parseAvailability(updated.availability),
+    };
   }
 }
