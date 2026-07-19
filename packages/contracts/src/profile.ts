@@ -168,3 +168,34 @@ export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
     defaultStartDate: "2 weeks notice",
   },
 };
+
+// ── Public portfolio ("hire me" page) ────────────────────────────────────────
+
+/** The /u/[username] slug. Lowercased; letters, digits, and interior hyphens only. */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "At least 3 characters")
+  .max(30, "At most 30 characters")
+  .regex(
+    /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/,
+    "Use letters, numbers, and hyphens (no leading/trailing hyphen)",
+  );
+
+export const availabilitySchema = z.enum(["open", "not_looking"]);
+
+export type Availability = z.infer<typeof availabilitySchema>;
+
+/** Coerce a raw nullable DB string to the availability enum, or null. The one place that guards it. */
+export function parseAvailability(value: string | null): Availability | null {
+  return value === null ? null : (availabilitySchema.safeParse(value).data ?? null);
+}
+
+/** Partial update of the user's portfolio settings; every field optional. */
+export const portfolioSettingsPatchSchema = z.object({
+  username: usernameSchema.optional(),
+  availability: availabilitySchema.nullable().optional(),
+});
+
+export type PortfolioSettingsPatch = z.infer<typeof portfolioSettingsPatchSchema>;
