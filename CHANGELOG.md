@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.8] - 2026-07-19
+
+### Added
+
+- Public portfolio and "hire me" pages with a username-based URL, plus a
+  leaderboard, all wired into the dashboard.
+
+### Fixed
+
+- Toggle button selected state is now more visible.
+
 ## [2.1.7] - 2026-07-19
 
 ### Changed
