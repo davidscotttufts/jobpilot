@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.10] - 2026-07-19
+
+### Fixed
+
+- The terminal host stored its pilot pairing file in a doubly nested
+  `.jobpilot/.jobpilot/` folder; it now lives directly in the install root.
+  Re-pair (or move the old `pilot.json` up one folder) after updating.
+
 ## [2.1.9] - 2026-07-19
 
 ### Added
