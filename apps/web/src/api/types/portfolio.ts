@@ -11,5 +11,5 @@ export type LeaderboardDto = Data<typeof api.public.portfolio.leaderboard.get>;
 export type LeaderboardRow = LeaderboardDto["rows"][number];
 export type LeaderboardWindow = NonNullable<LeaderboardDto["window"]>;
 
-/** The user's own portfolio settings, from `GET /api/profile/portfolio`. */
-export type PortfolioSettingsDto = Data<typeof api.profile.portfolio.get>;
+/** The user's own portfolio settings, from `GET /api/user/portfolio`. */
+export type PortfolioSettingsDto = Data<typeof api.user.portfolio.get>;

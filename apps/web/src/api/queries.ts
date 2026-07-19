@@ -15,15 +15,15 @@ export const authQueries = {
   me: () => ({ queryKey: queryKeys.auth.me(), queryFn: () => api.auth.me.get() }),
 };
 
-export const profileQueries = {
-  detail: () => ({ queryKey: queryKeys.profile.detail(), queryFn: () => api.profile.get() }),
+export const userQueries = {
+  detail: () => ({ queryKey: queryKeys.user.detail(), queryFn: () => api.user.get() }),
   portfolio: () => ({
-    queryKey: queryKeys.profile.portfolio(),
-    queryFn: () => api.profile.portfolio.get(),
+    queryKey: queryKeys.user.portfolio(),
+    queryFn: () => api.user.portfolio.get(),
   }),
   portfolioPreview: () => ({
-    queryKey: queryKeys.profile.portfolioPreview(),
-    queryFn: () => api.profile.portfolio.preview.get(),
+    queryKey: queryKeys.user.portfolioPreview(),
+    queryFn: () => api.user.portfolio.preview.get(),
   }),
 };
 

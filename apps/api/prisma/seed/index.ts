@@ -1,8 +1,8 @@
 import { db } from "@/common/database";
 import { seedJobBoards } from "./job-boards";
 import { seedJobListings } from "./job-listings";
-import { seedProfileBoards } from "./profile-boards";
 import { seedSuperAdmin } from "./super-admin";
+import { seedUserBoards } from "./user-boards";
 
 interface Seeder {
   fn: () => Promise<void>;
@@ -11,16 +11,16 @@ interface Seeder {
   optIn: boolean;
 }
 
-// Insertion order is run order: profile-boards needs the catalog that job-boards seeds.
+// Insertion order is run order: user-boards needs the catalog that job-boards seeds.
 const seeders = {
   "job-boards": {
     fn: seedJobBoards,
     description: "Seed the global job-board catalog",
     optIn: false,
   },
-  "profile-boards": {
-    fn: seedProfileBoards,
-    description: "Link every profile to the default boards",
+  "user-boards": {
+    fn: seedUserBoards,
+    description: "Link every user to the default boards",
     optIn: false,
   },
   "super-admin": {
@@ -47,7 +47,7 @@ function printHelp(): void {
   console.log("Examples:");
   console.log("  bun run db:seed");
   console.log("  bun run db:seed --only super-admin");
-  console.log("  bun run db:seed --only job-boards,profile-boards");
+  console.log("  bun run db:seed --only job-boards,user-boards");
   console.log("  bun run db:seed --only job-listings\n");
 }
 

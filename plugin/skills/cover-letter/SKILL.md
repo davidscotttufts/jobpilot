@@ -22,7 +22,7 @@ From the resume, pick the most relevant: 2–3 work experiences, 2–3 projects,
 
 ## Step 3: Write
 
-**Header** - values strictly from `profile.*`, never from the resume file (resumes carry stale addresses). Omit any line whose fields are empty:
+**Header** - values strictly from `user.*`, never from the resume file (resumes carry stale addresses). Omit any line whose fields are empty:
 
 ```
 [Full Name]

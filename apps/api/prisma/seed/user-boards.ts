@@ -1,7 +1,7 @@
 import { db } from "@/common/database";
 
 /** New users link these at signup; this pushes a newly-defaulted board onto existing ones. */
-export async function seedProfileBoards(): Promise<void> {
+export async function seedUserBoards(): Promise<void> {
   const boards = await db.jobBoard.findMany({
     where: { isDefault: true },
     select: { id: true, sortOrder: true },
@@ -13,7 +13,7 @@ export async function seedProfileBoards(): Promise<void> {
 
   const users = await db.user.findMany({ select: { id: true } });
   // One createMany over the whole cross-product, not one per user.
-  const { count: linked } = await db.profileJobBoard.createMany({
+  const { count: linked } = await db.userJobBoard.createMany({
     data: users.flatMap((user) =>
       boards.map((board) => ({
         userId: user.id,

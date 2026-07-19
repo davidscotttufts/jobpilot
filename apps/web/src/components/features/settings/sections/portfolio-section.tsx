@@ -1,12 +1,12 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { usernameSchema } from "@jobpilot/contracts/profile";
+import { usernameSchema } from "@jobpilot/contracts/user";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { profileQueries } from "@/api/queries";
+import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { PortfolioSettingsDto } from "@/api/types";
 import { PortfolioView } from "@/components/features/portfolio";
@@ -17,7 +17,7 @@ import { SectionCard } from "@/components/ui/layout/section-card";
 type Availability = PortfolioSettingsDto["availability"];
 
 export function PortfolioSection(): ReactElement {
-  const settingsQuery = useApiQuery(profileQueries.portfolio());
+  const settingsQuery = useApiQuery(userQueries.portfolio());
 
   if (!settingsQuery.data) {
     return (
@@ -50,7 +50,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
     }
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const { data } = await api.profile.portfolio.available.get({ query: { username } });
+      const { data } = await api.user.portfolio.available.get({ query: { username } });
       if (!cancelled) setAvailable(data?.available ?? null);
     }, 350);
     return () => {
@@ -60,10 +60,10 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
   }, [username, usernameError, settings.username]);
 
   const save = useApiMutation(
-    (body: { username?: string; availability?: Availability }) => api.profile.portfolio.patch(body),
+    (body: { username?: string; availability?: Availability }) => api.user.portfolio.patch(body),
     {
       successMessage: "Portfolio settings saved",
-      invalidate: [queryKeys.profile.portfolio(), queryKeys.profile.portfolioPreview()],
+      invalidate: [queryKeys.user.portfolio(), queryKeys.user.portfolioPreview()],
     },
   );
 
@@ -146,7 +146,7 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
 }
 
 function PortfolioPreview(): ReactElement {
-  const previewQuery = useApiQuery(profileQueries.portfolioPreview());
+  const previewQuery = useApiQuery(userQueries.portfolioPreview());
 
   if (previewQuery.isPending) {
     return <LoadingSpinner />;

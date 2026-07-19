@@ -6,7 +6,7 @@ import { useSelector } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { campaignQueries, jobBoardQueries, profileQueries } from "@/api/queries";
+import { campaignQueries, jobBoardQueries, userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CreateCampaignRequest } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -37,7 +37,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const agent = useAgent();
 
   const boardsQuery = useApiQuery(jobBoardQueries.list());
-  const profileQuery = useApiQuery(profileQueries.detail());
+  const profileQuery = useApiQuery(userQueries.detail());
   const recentCampaignsQuery = useApiQuery(campaignQueries.list());
 
   const createCampaign = useApiMutation<unknown, CreateCampaignRequest>(

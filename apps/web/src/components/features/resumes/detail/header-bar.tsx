@@ -31,7 +31,7 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   );
 
   const setPrimary = useApiMutation<{ primaryResumeId: string | null }, void>(
-    () => api.profile["primary-resume"].put({ resumeId: resume.id }),
+    () => api.user["primary-resume"].put({ resumeId: resume.id }),
     {
       successMessage: "Set as primary",
       invalidate: invalidations.resume,

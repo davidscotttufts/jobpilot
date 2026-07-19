@@ -1,4 +1,4 @@
-import { availabilitySchema } from "@jobpilot/contracts/profile";
+import { availabilitySchema } from "@jobpilot/contracts/user";
 import { z } from "zod/v4";
 
 /** One day's activity count; `date` is UTC midnight of the bucketed day (render in UTC). */

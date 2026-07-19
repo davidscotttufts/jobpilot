@@ -48,7 +48,7 @@ Otherwise the web UI already created the campaign row when the user submitted `/
 SLUG=$(echo "<query>" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g; s/-\+/-/g; s/^-//; s/-$//')
 CAMPAIGN_ID=$(date -u +%Y-%m-%dT%H-%M-%S_${SLUG})
 # resumeId is REQUIRED for auto-apply - default to the profile's primary.
-RESUME_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/profile" | jq -r '.profile.primaryResumeId // ""')
+RESUME_ID=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/user" | jq -r '.user.primaryResumeId // ""')
 # maxApplications is OPTIONAL - omit the field entirely for unlimited mode.
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \

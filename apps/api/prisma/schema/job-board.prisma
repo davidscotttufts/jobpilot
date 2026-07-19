@@ -6,19 +6,19 @@ model JobBoard {
   searchUrl String?  @map("search_url")
   // Offered to other users in the board picker. User-created boards start unlisted.
   listed    Boolean  @default(false)
-  // Auto-linked to every new profile at registration.
+  // Auto-linked to every new user at registration.
   isDefault Boolean  @default(false) @map("is_default")
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  profiles ProfileJobBoard[]
+  userBoards UserJobBoard[]
 
   @@map("job_boards")
 }
 
 // A user's adoption of a global board: its credentials, ordering, and optional overrides.
-model ProfileJobBoard {
+model UserJobBoard {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
   jobBoardId String   @map("job_board_id")
@@ -36,5 +36,5 @@ model ProfileJobBoard {
 
   @@unique([userId, jobBoardId])
   @@index([userId])
-  @@map("profile_job_boards")
+  @@map("user_job_boards")
 }

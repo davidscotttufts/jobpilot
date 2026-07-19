@@ -1,6 +1,6 @@
 "use client";
 
-import { PROFILE_DEFAULT_VALUES, type ReferenceInput } from "@jobpilot/contracts/profile";
+import { type ReferenceInput, USER_DEFAULT_VALUES } from "@jobpilot/contracts/user";
 import { Add, Delete } from "@mui/icons-material";
 import {
   Box,
@@ -26,7 +26,7 @@ const EMPTY_REFERENCE: ReferenceInput = {
 };
 
 export const ReferencesSection = withForm({
-  defaultValues: PROFILE_DEFAULT_VALUES,
+  defaultValues: USER_DEFAULT_VALUES,
   render: function ReferencesSection({ form }) {
     const count = useSelector(form.store, (s) => s.values.references?.length ?? 0);
     const { keys, onRemove, onAdd } = useKeyedList(count);

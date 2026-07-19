@@ -2,17 +2,17 @@
 
 import { type ReactElement, useState } from "react";
 import {
-  PROFILE_DEFAULT_VALUES,
-  type ProfileWithAutoApplyInput,
-  profileWithAutoApplySchema,
-} from "@jobpilot/contracts/profile";
+  USER_DEFAULT_VALUES,
+  type UserWithAutoApplyInput,
+  userWithAutoApplySchema,
+} from "@jobpilot/contracts/user";
 import { Save } from "@mui/icons-material";
 import { Box, Button, LinearProgress, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { profileQueries } from "@/api/queries";
+import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { ProfileResponse } from "@/api/types";
+import type { UserAggregateResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { AddressSection } from "./sections/address-section";
 import { AutoApplySection } from "./sections/auto-apply-section";
@@ -23,7 +23,7 @@ import { SalarySection } from "./sections/salary-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
 export function SettingsContent(): ReactElement {
-  const query = useApiQuery(profileQueries.detail(), {
+  const query = useApiQuery(userQueries.detail(), {
     errorMessage: "Failed to load profile",
   });
 
@@ -34,9 +34,9 @@ export function SettingsContent(): ReactElement {
   return <SettingsForm initialData={toFormValues(query.data)} />;
 }
 
-function toFormValues(data: ProfileResponse): ProfileWithAutoApplyInput {
-  const p = data.profile;
-  const a = data.autoApply ?? PROFILE_DEFAULT_VALUES.autoApply!;
+function toFormValues(data: UserAggregateResponse): UserWithAutoApplyInput {
+  const p = data.user;
+  const a = data.autoApply ?? USER_DEFAULT_VALUES.autoApply!;
   return {
     firstName: p.firstName,
     lastName: p.lastName,
@@ -83,25 +83,25 @@ function toFormValues(data: ProfileResponse): ProfileWithAutoApplyInput {
 }
 
 interface SettingsFormProps {
-  initialData: ProfileWithAutoApplyInput;
+  initialData: UserWithAutoApplyInput;
 }
 
 function SettingsForm(props: SettingsFormProps): ReactElement {
   const { initialData } = props;
   const [, setDirty] = useState(false);
 
-  const save = useApiMutation<{ id: string }, ProfileWithAutoApplyInput>(
-    (vars) => api.profile.put(vars),
+  const save = useApiMutation<{ id: string }, UserWithAutoApplyInput>(
+    (vars) => api.user.put(vars),
     {
       successMessage: "Settings saved",
-      invalidate: [queryKeys.profile.all],
+      invalidate: [queryKeys.user.all],
       onSuccess: () => setDirty(false),
     },
   );
 
   const form = useAppForm({
     defaultValues: initialData,
-    validators: { onSubmit: profileWithAutoApplySchema },
+    validators: { onSubmit: userWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },

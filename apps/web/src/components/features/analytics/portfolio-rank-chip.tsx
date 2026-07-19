@@ -5,11 +5,11 @@ import { EmojiEvents, Share } from "@mui/icons-material";
 import { Chip, Stack } from "@mui/material";
 import Link from "next/link";
 import { useApiQuery } from "@/api/hooks";
-import { leaderboardQueries, profileQueries } from "@/api/queries";
+import { leaderboardQueries, userQueries } from "@/api/queries";
 
 /** Nudges the analytics viewer toward their public page; shows their leaderboard rank when they have one. */
 export function PortfolioRankChip(): ReactElement {
-  const settings = useApiQuery(profileQueries.portfolio());
+  const settings = useApiQuery(userQueries.portfolio());
   const board = useApiQuery(leaderboardQueries.list("all"));
 
   const username = settings.data?.username;

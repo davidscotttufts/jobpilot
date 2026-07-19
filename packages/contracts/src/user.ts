@@ -78,7 +78,7 @@ export const salaryPreferenceSchema = z.object({
 
 export type SalaryPreferenceInput = z.infer<typeof salaryPreferenceSchema>;
 
-export const profileSchema = z.object({
+export const userUpdateSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   contactEmail: z.email(),
@@ -119,21 +119,21 @@ export const autoApplySettingsSchema = z.object({
   defaultStartDate: z.string(),
 });
 
-export const profileWithAutoApplySchema = profileSchema.extend({
+export const userWithAutoApplySchema = userUpdateSchema.extend({
   autoApply: autoApplySettingsSchema.optional(),
 });
 
-/** Body for setting (or clearing, with `null`) the profile's primary resume. */
+/** Body for setting (or clearing, with `null`) the user's primary resume. */
 export const setPrimaryResumeSchema = z.object({
   resumeId: z.uuid().nullable(),
 });
 
-export type ProfileInput = z.infer<typeof profileSchema>;
+export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
 export type AutoApplySettingsInput = z.infer<typeof autoApplySettingsSchema>;
-export type ProfileWithAutoApplyInput = z.infer<typeof profileWithAutoApplySchema>;
+export type UserWithAutoApplyInput = z.infer<typeof userWithAutoApplySchema>;
 export type SetPrimaryResumeInput = z.infer<typeof setPrimaryResumeSchema>;
 
-export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
+export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   firstName: "",
   lastName: "",
   contactEmail: "",

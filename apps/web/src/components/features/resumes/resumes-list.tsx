@@ -56,7 +56,7 @@ export function ResumesList(): ReactElement {
   });
 
   const setPrimary = useApiMutation<{ primaryResumeId: string | null }, string>(
-    (id) => api.profile["primary-resume"].put({ resumeId: id }),
+    (id) => api.user["primary-resume"].put({ resumeId: id }),
     {
       successMessage: "Primary resume updated",
       invalidate: invalidations.resume,

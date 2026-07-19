@@ -59,7 +59,7 @@ export class AdminService {
       this.prisma.campaign.count({ where: { status: "in_progress" } }),
       this.prisma.application.count({ where: { appliedAt: { gte: weekStart } } }),
       this.prisma.jobBoard.count(),
-      this.prisma.profileJobBoard.count(),
+      this.prisma.userJobBoard.count(),
       this.prisma.application.groupBy({ by: ["status"], _count: { _all: true } }),
       this.prisma.application.groupBy({
         by: ["board"],

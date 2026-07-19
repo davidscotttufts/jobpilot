@@ -2,7 +2,7 @@ import { createApiClient } from "@jobpilot/api-client";
 import { type NextRequest, NextResponse } from "next/server";
 import { API_BASE_URL } from "@/api/base-url";
 import { isAdminRole } from "@/lib/roles";
-import { isProfileEmpty } from "@/utils/profile";
+import { isOnboardingIncomplete } from "@/utils/onboarding";
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Per-request Eden client that forwards the incoming auth cookie
@@ -16,7 +16,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { data, error } = await api.auth.me.get();
 
   // Email verification is a non-blocking banner in-app, so it doesn't factor into routing.
-  const onboarded = !error && data !== null && !isProfileEmpty(data);
+  const onboarded = !error && data !== null && !isOnboardingIncomplete(data);
 
   // The root is the public marketing landing: stay public for signed-out /
   // half-onboarded visitors, but bounce fully-onboarded users into the app.
@@ -32,7 +32,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Profile not filled in -> onboarding.
-  if (isProfileEmpty(data)) {
+  if (isOnboardingIncomplete(data)) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 

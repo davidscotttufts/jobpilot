@@ -133,13 +133,16 @@ ALTER TABLE "networking_messages" RENAME COLUMN "profile_id" TO "user_id";
 ALTER INDEX "networking_messages_profile_id_idx" RENAME TO "networking_messages_user_id_idx";
 ALTER TABLE "networking_messages" ADD CONSTRAINT "networking_messages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
--- profile_job_boards (table name kept; only the profile_id column becomes user_id)
+-- profile_job_boards -> user_job_boards (table renamed; profile_id column becomes user_id)
 ALTER TABLE "profile_job_boards" DROP CONSTRAINT "profile_job_boards_profile_id_fkey";
 UPDATE "profile_job_boards" c SET "profile_id" = p."user_id" FROM "profiles" p WHERE c."profile_id" = p."id";
 ALTER TABLE "profile_job_boards" RENAME COLUMN "profile_id" TO "user_id";
-ALTER INDEX "profile_job_boards_profile_id_job_board_id_key" RENAME TO "profile_job_boards_user_id_job_board_id_key";
-ALTER INDEX "profile_job_boards_profile_id_idx" RENAME TO "profile_job_boards_user_id_idx";
-ALTER TABLE "profile_job_boards" ADD CONSTRAINT "profile_job_boards_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "profile_job_boards" RENAME TO "user_job_boards";
+ALTER TABLE "user_job_boards" RENAME CONSTRAINT "profile_job_boards_pkey" TO "user_job_boards_pkey";
+ALTER INDEX "profile_job_boards_profile_id_job_board_id_key" RENAME TO "user_job_boards_user_id_job_board_id_key";
+ALTER INDEX "profile_job_boards_profile_id_idx" RENAME TO "user_job_boards_user_id_idx";
+ALTER TABLE "user_job_boards" RENAME CONSTRAINT "profile_job_boards_job_board_id_fkey" TO "user_job_boards_job_board_id_fkey";
+ALTER TABLE "user_job_boards" ADD CONSTRAINT "user_job_boards_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- queue_entries
 ALTER TABLE "queue_entries" DROP CONSTRAINT "queue_entries_profile_id_fkey";

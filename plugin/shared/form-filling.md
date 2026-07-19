@@ -16,14 +16,14 @@ Job applications often span multiple pages. For each page:
 
 ## Special Fields
 
-All paths refer to `GET /api/profile` (already loaded by setup.md).
+All paths refer to `GET /api/user` (already loaded by setup.md).
 
-- **Name** → `profile.{firstName, lastName}`.
-- **Email** → `profile.contactEmail`. **Always use this profile contact email - never your own account/assistant email, the credential login email, or any address seen elsewhere in the conversation.** When in doubt, re-read `profile.contactEmail` and use it verbatim.
-- **Address** → `profile.{street,aptUnit,city,state,zipCode,country}`
-- **Phone** → `profile.phone`
-- **LinkedIn / GitHub / Website** → `profile.{linkedin,github,website}`
-- **Salary expectations** → a caller-supplied `salaryExpectation` wins when non-null. Else `profile.salaryPreferences[]`, each `{appliesTo, minAmount, maxAmount, currency, period}`: pick the entry whose `appliesTo` best matches this job's title/seniority/type (a lone generic entry matches everything). Range fields → min-max; single field → `maxAmount` (else `minAmount`). Convert period if the form asks in the other unit (yearly ≈ hourly × 2080). Radios/dropdowns → closest bracket. Empty list or no plausible match → ask the user (workers: return `needs_user reason:"salary"`); remember the answer for the campaign.
+- **Name** → `user.{firstName, lastName}`.
+- **Email** → `user.contactEmail`. **Always use this profile contact email - never your own account/assistant email, the credential login email, or any address seen elsewhere in the conversation.** When in doubt, re-read `user.contactEmail` and use it verbatim.
+- **Address** → `user.{street,aptUnit,city,state,zipCode,country}`
+- **Phone** → `user.phone`
+- **LinkedIn / GitHub / Website** → `user.{linkedin,github,website}`
+- **Salary expectations** → a caller-supplied `salaryExpectation` wins when non-null. Else `user.salaryPreferences[]`, each `{appliesTo, minAmount, maxAmount, currency, period}`: pick the entry whose `appliesTo` best matches this job's title/seniority/type (a lone generic entry matches everything). Range fields → min-max; single field → `maxAmount` (else `minAmount`). Convert period if the form asks in the other unit (yearly ≈ hourly × 2080). Radios/dropdowns → closest bracket. Empty list or no plausible match → ask the user (workers: return `needs_user reason:"salary"`); remember the answer for the campaign.
 - **Start date** → "Immediately" or "2 weeks notice" unless `autoApply.defaultStartDate` overrides.
 - **Cover letter** (a textarea or a file-upload field labelled "cover letter") → generate via the `cover-letter` skill (already humanized; it also saves the letter to history - pass `source` = the invoking skill, `apply` or `auto-apply`). Then:
   - Text area → paste the text directly.
@@ -31,10 +31,10 @@ All paths refer to `GET /api/profile` (already loaded by setup.md).
 - **"How did you hear about us?"** → "Job board" or "Company website".
 - **Years of experience** → calculate from earliest work experience date.
 - **Custom questions** → best judgment from the resume. Genuinely uncertain → ask (loop skills: make a reasonable attempt and log in notes).
-- **Relocation** → `profile.willingToRelocate`. For preferred/target locations, use `profile.preferredLocations`. Empty `[]` or contains `"Anywhere"` → user is open, answer accordingly without asking.
-- **Work auth / visa** → `profile.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map to form questions; for dropdowns, pick the closest option. Sponsorship questions ("Will you now or in the future require sponsorship?") → answer truthfully from `requiresSponsorship` - never misstate to pass a screen. If the form reveals a no-sponsorship policy the JD didn't state, still answer truthfully, finish the application, and note it in the result summary.
-- **EEO / Diversity** → `profile.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. Null → "Prefer not to disclose".
-- **References** → `profile.references[]`, each `{name, relationship, company, email, phone}`. Fill reference rows in order. If the form requires references and the array is empty, fill what you can and note the gap - never invent one.
+- **Relocation** → `user.willingToRelocate`. For preferred/target locations, use `user.preferredLocations`. Empty `[]` or contains `"Anywhere"` → user is open, answer accordingly without asking.
+- **Work auth / visa** → `user.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`. Map to form questions; for dropdowns, pick the closest option. Sponsorship questions ("Will you now or in the future require sponsorship?") → answer truthfully from `requiresSponsorship` - never misstate to pass a screen. If the form reveals a no-sponsorship policy the JD didn't state, still answer truthfully, finish the application, and note it in the result summary.
+- **EEO / Diversity** → `user.{eeoGender, eeoRace, eeoEthnicity, eeoHispanicOrLatino, eeoVeteranStatus, eeoDisabilityStatus}`. Null → "Prefer not to disclose".
+- **References** → `user.references[]`, each `{name, relationship, company, email, phone}`. Fill reference rows in order. If the form requires references and the array is empty, fill what you can and note the gap - never invent one.
 
 ## Multi-Page Navigation
 

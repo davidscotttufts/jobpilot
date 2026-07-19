@@ -1,9 +1,9 @@
 import {
   portfolioSettingsPatchSchema,
-  profileWithAutoApplySchema,
   setPrimaryResumeSchema,
   usernameSchema,
-} from "@jobpilot/contracts/profile";
+  userWithAutoApplySchema,
+} from "@jobpilot/contracts/user";
 import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di";
@@ -14,34 +14,34 @@ import { idResponseSchema } from "@/types/response";
 import {
   portfolioSettingsSchema,
   primaryResumeSetSchema,
-  profileAggregateSchema,
+  userAggregateSchema,
   usernameAvailabilitySchema,
-} from "./profile.schema";
-import { ProfileService } from "./profile.service";
+} from "./user.schema";
+import { UserService } from "./user.service";
 
-const svc = container.resolve(ProfileService);
+const svc = container.resolve(UserService);
 const portfolioSvc = container.resolve(PortfolioService);
 
-export const profileController = new Elysia({
-  prefix: "/profile",
-  detail: { tags: ["Profile"] },
+export const userController = new Elysia({
+  prefix: "/user",
+  detail: { tags: ["User"] },
 })
   .use(authGuard)
   .get("/", ({ user }) => svc.get(user.id), {
-    response: profileAggregateSchema,
+    response: userAggregateSchema,
     detail: {
-      summary: "Get active profile",
+      summary: "Get current user",
       description:
-        "Returns the active profile aggregate, including its auto-apply settings, references, and resumes.",
+        "Returns the current user aggregate, including its auto-apply settings, references, and resumes.",
     },
   })
   .put("/", ({ user, body }) => svc.update(user.id, body), {
-    body: profileWithAutoApplySchema,
+    body: userWithAutoApplySchema,
     response: idResponseSchema,
     detail: {
-      summary: "Replace active profile",
+      summary: "Replace current user",
       description:
-        "Performs a full replace of the active profile and its auto-apply settings, returning the updated profile aggregate.",
+        "Performs a full replace of the current user's applicant data and auto-apply settings, returning the updated user id.",
     },
   })
   .put("/primary-resume", ({ user, body }) => svc.setPrimaryResume(user.id, body.resumeId), {
@@ -50,7 +50,7 @@ export const profileController = new Elysia({
     detail: {
       summary: "Set primary resume",
       description:
-        "Marks one of the profile's resumes as primary (or clears it with `null`), returning the new primary resume id.",
+        "Marks one of the user's resumes as primary (or clears it with `null`), returning the new primary resume id.",
     },
   })
   .get("/portfolio", ({ user }) => svc.getPortfolioSettings(user.id), {

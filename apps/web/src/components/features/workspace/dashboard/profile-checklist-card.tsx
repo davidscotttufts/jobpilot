@@ -5,7 +5,7 @@ import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { useApiQuery } from "@/api/hooks";
-import { credentialQueries, emailQueries, profileQueries } from "@/api/queries";
+import { credentialQueries, emailQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,7 +24,7 @@ interface ChecklistItem {
  */
 export function ProfileChecklistCard(): ReactElement | null {
   const { user } = useAuth();
-  const profileQuery = useApiQuery(profileQueries.detail());
+  const profileQuery = useApiQuery(userQueries.detail());
   const emailQuery = useApiQuery(emailQueries.account());
   const credentialsQuery = useApiQuery(credentialQueries.list());
 
@@ -33,7 +33,7 @@ export function ProfileChecklistCard(): ReactElement | null {
     return null;
   }
 
-  const profile = profileQuery.data.profile;
+  const profile = profileQuery.data.user;
   const items: ChecklistItem[] = [
     {
       key: "verify-email",

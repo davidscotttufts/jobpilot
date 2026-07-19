@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { PersonOutlined } from "@mui/icons-material";
 import { Chip, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
-import { profileQueries } from "@/api/queries";
+import { userQueries } from "@/api/queries";
 
 /**
  * Compact inline identity line for the campaign header - the active profile's name +
@@ -12,8 +12,8 @@ import { profileQueries } from "@/api/queries";
  * obvious at a glance.
  */
 export function CampaignIdentityBanner(): ReactNode {
-  const query = useApiQuery(profileQueries.detail());
-  const profile = query.data?.profile;
+  const query = useApiQuery(userQueries.detail());
+  const profile = query.data?.user;
 
   if (!profile) {
     return null;

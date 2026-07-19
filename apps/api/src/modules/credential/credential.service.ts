@@ -126,7 +126,7 @@ export class CredentialService {
   async resolveCredential(userId: string, domain: string): Promise<ResolvedCredential | null> {
     const board = await this.toLogin(
       userId,
-      await this.prisma.profileJobBoard.findFirst({
+      await this.prisma.userJobBoard.findFirst({
         where: { userId, jobBoard: { domain } },
         select: { email: true, password: true },
       }),

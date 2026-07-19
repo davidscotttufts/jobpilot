@@ -4,11 +4,11 @@ export const queryKeys = {
     me: () => [...queryKeys.auth.all, "me"] as const,
   },
 
-  profile: {
-    all: ["profile"] as const,
-    detail: () => [...queryKeys.profile.all, "detail"] as const,
-    portfolio: () => [...queryKeys.profile.all, "portfolio"] as const,
-    portfolioPreview: () => [...queryKeys.profile.all, "portfolio", "preview"] as const,
+  user: {
+    all: ["user"] as const,
+    detail: () => [...queryKeys.user.all, "detail"] as const,
+    portfolio: () => [...queryKeys.user.all, "portfolio"] as const,
+    portfolioPreview: () => [...queryKeys.user.all, "portfolio", "preview"] as const,
   },
 
   leaderboard: {
@@ -127,7 +127,7 @@ export const queryKeys = {
 
 /** Named invalidation sets for useApiMutation's `invalidate:` option. */
 export const invalidations = {
-  resume: [queryKeys.resume.all, queryKeys.profile.all],
+  resume: [queryKeys.resume.all, queryKeys.user.all],
   campaign: [queryKeys.campaigns.all, queryKeys.workspace.all],
   queue: [queryKeys.queue.all, queryKeys.workspace.all],
   application: [queryKeys.applications.all, queryKeys.dashboard.all],

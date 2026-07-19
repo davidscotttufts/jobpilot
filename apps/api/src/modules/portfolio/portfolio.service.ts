@@ -1,5 +1,5 @@
-import { parseAvailability } from "@jobpilot/contracts/profile";
 import { resumeDataSchema } from "@jobpilot/contracts/resume";
+import { parseAvailability } from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
 import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date";
 import { notFound } from "@/common/errors";

@@ -1,6 +1,6 @@
 "use client";
 
-import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
+import { USER_DEFAULT_VALUES } from "@jobpilot/contracts/user";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 
@@ -44,7 +44,7 @@ const RACE = [
 ];
 
 export const EeoSection = withForm({
-  defaultValues: PROFILE_DEFAULT_VALUES,
+  defaultValues: USER_DEFAULT_VALUES,
   render: function EeoSection({ form }) {
     return (
       <FormSection

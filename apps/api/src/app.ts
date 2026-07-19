@@ -20,12 +20,12 @@ import { adminBoardController, jobBoardController } from "@/modules/job-board";
 import { adminJobListingController, publicJobListingController } from "@/modules/job-listing";
 import { pilotController } from "@/modules/pilot";
 import { publicPortfolioController } from "@/modules/portfolio";
-import { profileController } from "@/modules/profile";
 import { pushController } from "@/modules/push";
 import { queueController } from "@/modules/queue";
 import { publicResumeController, resumeController, resumeJob } from "@/modules/resume";
 import { scoringController } from "@/modules/scoring";
 import { upworkController } from "@/modules/upwork";
+import { userController } from "@/modules/user";
 import { workspaceController } from "@/modules/workspace";
 import { httpErrorResponses } from "@/types/response";
 
@@ -50,7 +50,7 @@ const app = new Elysia()
       .use(contactController)
       .use(analyticsController)
       .use(captchaController)
-      .use(profileController)
+      .use(userController)
       .use(resumeController)
       .use(publicResumeController)
       .use(publicJobListingController)

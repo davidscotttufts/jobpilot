@@ -1,10 +1,10 @@
-import { availabilitySchema, SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/profile";
+import { availabilitySchema, SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/user";
 import { z } from "zod/v4";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
 
-/** A reference row attached to the profile. */
-export const profileReferenceSchema = z.object({
+/** A reference row attached to the user. */
+export const userReferenceSchema = z.object({
   id: z.uuid(),
   name: z.string(),
   relationship: z.string().nullable(),
@@ -13,8 +13,8 @@ export const profileReferenceSchema = z.object({
   phone: z.string().nullable(),
 });
 
-/** A salary-preference row attached to the profile. */
-export const profileSalaryPreferenceSchema = z.object({
+/** A salary-preference row attached to the user. */
+export const userSalaryPreferenceSchema = z.object({
   id: z.uuid(),
   appliesTo: z.string(),
   minAmount: z.number().nullable(),
@@ -24,8 +24,8 @@ export const profileSalaryPreferenceSchema = z.object({
   period: z.enum(SALARY_PERIODS),
 });
 
-/** The profile aggregate's scalar fields plus its parsed locations and references. */
-export const profileViewSchema = z.object({
+/** The user aggregate's scalar fields plus its parsed locations and references. */
+export const userViewSchema = z.object({
   id: z.uuid(),
   firstName: z.string(),
   lastName: z.string(),
@@ -53,8 +53,8 @@ export const profileViewSchema = z.object({
   eeoVeteranStatus: z.string().nullable(),
   eeoDisabilityStatus: z.string().nullable(),
   primaryResumeId: z.uuid().nullable(),
-  references: z.array(profileReferenceSchema),
-  salaryPreferences: z.array(profileSalaryPreferenceSchema),
+  references: z.array(userReferenceSchema),
+  salaryPreferences: z.array(userSalaryPreferenceSchema),
   updatedAt: z.date(),
 });
 
@@ -67,8 +67,8 @@ export const autoApplySettingsViewSchema = z.object({
   defaultStartDate: z.string(),
 });
 
-/** A row in the profile's resume summary list. */
-export const profileResumeSummarySchema = z.object({
+/** A row in the user's resume summary list. */
+export const userResumeSummarySchema = z.object({
   id: z.uuid(),
   label: z.string(),
   sourceFilename: z.string().nullable(),
@@ -78,15 +78,15 @@ export const profileResumeSummarySchema = z.object({
   updatedAt: z.date(),
 });
 
-/** The full active-profile aggregate returned by `GET /profile`. */
-export const profileAggregateSchema = z.object({
-  profile: profileViewSchema,
+/** The full current-user aggregate returned by `GET /user`. */
+export const userAggregateSchema = z.object({
+  user: userViewSchema,
   autoApply: autoApplySettingsViewSchema.nullable(),
   primaryResumeSourceAbsolutePath: z.string().nullable(),
-  resumes: z.array(profileResumeSummarySchema),
+  resumes: z.array(userResumeSummarySchema),
 });
 
-/** Result of setting (or clearing) the profile's primary resume. */
+/** Result of setting (or clearing) the user's primary resume. */
 export const primaryResumeSetSchema = z.object({
   primaryResumeId: z.uuid().nullable(),
 });

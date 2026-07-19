@@ -36,9 +36,9 @@ Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at 
 
 ## Profile
 
-Each account has exactly one profile; the API resolves it from your token automatically - no id threading, no profile switching. Endpoints (`/api/profile`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
+Each account has exactly one profile; the API resolves it from your token automatically - no id threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
 
-**Don't invent endpoints.** Settings = `GET /api/profile` → `autoApply` (no `/api/settings`). Resumes = `resumes` or `GET /api/resumes` (plural, no `/api/resume`).
+**Don't invent endpoints.** Settings = `GET /api/user` → `autoApply` (no `/api/settings`). Resumes = `resumes` or `GET /api/resumes` (plural, no `/api/resume`).
 
 ## 1. Health Check
 
@@ -55,15 +55,15 @@ Do not fall back to local JSON files - they have been removed.
 ## 2. Load Profile
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/profile"
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/user"
 ```
 
-- If `profile` is `null`: "Open $JOBPILOT_WEB/onboarding to set up your profile, then re-run this skill."
-- Otherwise read from `profile` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, salaryPreferences, …) and `autoApply` (minMatchScore, maxApplicationsPerCampaign, defaultStartDate).
+- If `user` is `null`: "Open $JOBPILOT_WEB/onboarding to set up your profile, then re-run this skill."
+- Otherwise read from `user` (firstName, lastName, email, phone, address, work auth, EEO, preferredLocations, salaryPreferences, …) and `autoApply` (minMatchScore, maxApplicationsPerCampaign, defaultStartDate).
 
 The response also includes:
 
-- `profile.primaryResumeId` - the default base; `tailor-resume` uses it whenever it has content, else scores across resumes.
+- `user.primaryResumeId` - the default base; `tailor-resume` uses it whenever it has content, else scores across resumes.
 - `primaryResumeSourceAbsolutePath` - absolute path to the primary's source PDF for `browser_file_upload` / `Read`. May be `null` if the primary has no uploaded PDF or no primary is set. (Local-only: valid while the agent and backend share a filesystem.)
 - `resumes` - `[{ id, label, sourceFilename, hasData, variantCount, isPrimary, updatedAt }]` for every base.
 

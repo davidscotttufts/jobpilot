@@ -5,7 +5,7 @@ import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
 /** The link row joined to its global board - everything needed to project the wire shape. */
-type LinkWithBoard = Prisma.ProfileJobBoardGetPayload<{ include: { jobBoard: true } }>;
+type LinkWithBoard = Prisma.UserJobBoardGetPayload<{ include: { jobBoard: true } }>;
 
 @singleton()
 export class JobBoardService {
@@ -29,7 +29,7 @@ export class JobBoardService {
   }
 
   async list(userId: string) {
-    const rows = await this.prisma.profileJobBoard.findMany({
+    const rows = await this.prisma.userJobBoard.findMany({
       where: { userId },
       include: { jobBoard: true },
       orderBy: { sortOrder: "asc" },
@@ -40,7 +40,7 @@ export class JobBoardService {
   /** Listed boards the user has not linked yet - the picker in the add-board dialog. */
   catalog(userId: string) {
     return this.prisma.jobBoard.findMany({
-      where: { listed: true, profiles: { none: { userId } } },
+      where: { listed: true, userBoards: { none: { userId } } },
       select: { id: true, name: true, domain: true, searchUrl: true, sortOrder: true },
       orderBy: { sortOrder: "asc" },
     });
@@ -58,7 +58,7 @@ export class JobBoardService {
       },
       update: {},
     });
-    const row = await this.prisma.profileJobBoard.create({
+    const row = await this.prisma.userJobBoard.create({
       data: {
         userId,
         jobBoardId: board.id,
@@ -80,7 +80,7 @@ export class JobBoardService {
 
   private findLink(userId: string, id: string) {
     return findOwned(
-      (where) => this.prisma.profileJobBoard.findFirst({ where, select: { id: true } }),
+      (where) => this.prisma.userJobBoard.findFirst({ where, select: { id: true } }),
       { id, userId },
       "Board",
     );
@@ -88,7 +88,7 @@ export class JobBoardService {
 
   async update(userId: string, id: string, input: JobBoardPatch) {
     await this.findLink(userId, id);
-    const row = await this.prisma.profileJobBoard.update({
+    const row = await this.prisma.userJobBoard.update({
       where: { id },
       data: {
         ...input,
@@ -106,7 +106,7 @@ export class JobBoardService {
   /** Unlinks the board from this user. The global row survives - other users still use it. */
   async remove(userId: string, id: string) {
     await this.findLink(userId, id);
-    await this.prisma.profileJobBoard.delete({ where: { id } });
+    await this.prisma.userJobBoard.delete({ where: { id } });
     return { deleted: id };
   }
 }

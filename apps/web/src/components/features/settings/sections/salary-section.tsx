@@ -1,11 +1,11 @@
 "use client";
 
 import {
-  PROFILE_DEFAULT_VALUES,
   SALARY_CURRENCIES,
   type SalaryCurrency,
   type SalaryPreferenceInput,
-} from "@jobpilot/contracts/profile";
+  USER_DEFAULT_VALUES,
+} from "@jobpilot/contracts/user";
 import { Add, Delete } from "@mui/icons-material";
 import {
   Box,
@@ -46,7 +46,7 @@ const CURRENCY_SYMBOLS: Record<SalaryCurrency, string> = {
 const CURRENCIES = SALARY_CURRENCIES.map((code) => ({ value: code, label: code }));
 
 export const SalarySection = withForm({
-  defaultValues: PROFILE_DEFAULT_VALUES,
+  defaultValues: USER_DEFAULT_VALUES,
   render: function SalarySection({ form }) {
     const count = useSelector(form.store, (s) => s.values.salaryPreferences?.length ?? 0);
     const { keys, onRemove, onAdd } = useKeyedList(count);

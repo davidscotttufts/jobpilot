@@ -16,7 +16,7 @@ Process one job, return one compact JSON object. Snapshots, API payloads, and ta
 ## Input
 
 One JSON blob: `{ mode, campaignId, jobKey, url, board, digest, resumeId, defaultStartDate, salaryExpectation, minMatchScore, preSubmitReview }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
-A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `profile.salaryPreferences`.
+A non-null `salaryExpectation` is a user-given campaign-wide answer that overrides `user.salaryPreferences`.
 
 ## Setup
 
@@ -58,7 +58,7 @@ Read the posting and persist a scored Job row. No application.
 2. Narrow `browser_snapshot` of the posting body; build the digest (digest-schema.md).
 3. Dedupe: `GET /api/applied/check?url=&title=&company=` (url-encode each). If applied, save the row `status:"skipped"`, `skipReason:"Already applied (<kind>)"`, close tabs, return `eligible:false`.
 4. `POST /api/score-fit {digest}` (+ `resumeId`). Below 0.7 confidence, deliberate from strong/partial/gaps.
-5. Eligibility (eligibility.md): below `minMatchScore`, a JD-stated citizenship/clearance bar, or JD-stated no-sponsorship language when `profile.requiresSponsorship` is true, is `skipped` with the exact reason; else `pending`. Profile requires sponsorship but the JD is silent → not a skip; append the risk note to `matchReason`.
+5. Eligibility (eligibility.md): below `minMatchScore`, a JD-stated citizenship/clearance bar, or JD-stated no-sponsorship language when `user.requiresSponsorship` is true, is `skipped` with the exact reason; else `pending`. Profile requires sponsorship but the JD is silent → not a skip; append the risk note to `matchReason`.
 6. Save the row yourself (keeps the digest/JD out of the orchestrator); merge any `extraDigest` into `digest` first:
 
 ```bash
@@ -82,7 +82,7 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 3. CAPTCHA gate: snapshot the form first; on a CAPTCHA invoke `solve-captcha`. Unsolved is `skipped`, `skipReason:"CAPTCHA - apply manually via the apply skill"`.
 4. 2FA / payment: do not solve, do not close the tab; return `needs_user`, `reason:"2FA"|"payment"`.
 5. Tailor: invoke `tailor-resume` with the digest (fall back to `url`), `--base <resumeId>` when set. No usable base is `failed`, `failReason:"No tailorable resume base"`.
-6. Fill (form-filling.md): upload the variant; a cover-letter field invokes `cover-letter` (pass `source`). Use `defaultStartDate`. Salary fields: resolve per form-filling.md (`salaryExpectation` override → `profile.salaryPreferences` match); unresolvable and required returns `needs_user`, `reason:"salary"`.
+6. Fill (form-filling.md): upload the variant; a cover-letter field invokes `cover-letter` (pass `source`). Use `defaultStartDate`. Salary fields: resolve per form-filling.md (`salaryExpectation` override → `user.salaryPreferences` match); unresolvable and required returns `needs_user`, `reason:"salary"`.
 7. Pre-submit review (only if `preSubmitReview`): fill, leave the tab open, return `needs_user`, `reason:"review"`, `detail` = a one-line field summary. (Re-delegated with it false, the form is already filled: confirm and submit.)
 8. Submit, `browser_wait_for`, narrow snapshot: success is `applied`; a populated error is `failed` with that message; a CAPTCHA at submit invokes `solve-captcha`, still unsolved is `skipped`.
 9. Close tabs, select tab 0, return one of:

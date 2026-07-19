@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PROFILE_DEFAULT_VALUES } from "@jobpilot/contracts/profile";
 import { resumeChannel } from "@jobpilot/contracts/sse";
+import { USER_DEFAULT_VALUES } from "@jobpilot/contracts/user";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
@@ -20,7 +20,7 @@ import { applyBasicsToForm } from "./map-basics-to-profile";
 type StepState = "idle" | "uploading" | "extracting" | "done";
 
 export const ResumeUploadStep = withForm({
-  defaultValues: PROFILE_DEFAULT_VALUES,
+  defaultValues: USER_DEFAULT_VALUES,
   props: { onContinue: () => {} },
   render: function ResumeUploadStep({ form, onContinue }) {
     const toast = useToast();

@@ -10,14 +10,14 @@ Read a resume's uploaded source PDF and produce JSON matching the JobPilot resum
 
 ## Setup
 
-Follow `../../shared/setup.md`. The profile response provides `profile.primaryResumeId`, `primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
+Follow `../../shared/setup.md`. The profile response provides `user.primaryResumeId`, `primaryResumeSourceAbsolutePath`, and `resumes` (every base with `id`, `label`, `sourceFilename`, `hasData`, `isPrimary`).
 
 ## Step 1: Resolve Target
 
 Parse the argument:
 
 - Integer → use that resume id.
-- Empty → use `profile.primaryResumeId`. If no primary, stop:
+- Empty → use `user.primaryResumeId`. If no primary, stop:
   > No primary resume set. Pass an explicit id, or set a primary at <$JOBPILOT_WEB/resumes>.
 - `--force` (anywhere) → overwrite existing structured data. Otherwise refuse to overwrite (Step 3).
 

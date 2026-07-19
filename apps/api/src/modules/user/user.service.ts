@@ -1,16 +1,16 @@
 import {
   type PortfolioSettingsPatch,
-  type ProfileWithAutoApplyInput,
   parseAvailability,
   type SalaryCurrency,
   type SalaryPeriod,
-} from "@jobpilot/contracts/profile";
+  type UserWithAutoApplyInput,
+} from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 
-const PROFILE_SCALAR_SELECT = {
+const USER_SCALAR_SELECT = {
   id: true,
   firstName: true,
   lastName: true,
@@ -42,22 +42,22 @@ const PROFILE_SCALAR_SELECT = {
 } as const;
 
 @singleton()
-export class ProfileService {
+export class UserService {
   constructor(private readonly prisma: PrismaClient) {}
 
   async get(userId: string) {
-    const profile = await findOwned(
-      (where) => this.prisma.user.findFirst({ where, select: PROFILE_SCALAR_SELECT }),
+    const user = await findOwned(
+      (where) => this.prisma.user.findFirst({ where, select: USER_SCALAR_SELECT }),
       { id: userId },
-      "Profile",
+      "User",
     );
 
     const [autoApply, primarySource, resumeRows, withContent, references, salaryPreferences] =
       await Promise.all([
         this.prisma.autoApplySettings.findUnique({ where: { userId } }),
-        profile.primaryResumeId
+        user.primaryResumeId
           ? this.prisma.resume.findUnique({
-              where: { id: profile.primaryResumeId },
+              where: { id: user.primaryResumeId },
               select: { sourceFilename: true },
             })
           : Promise.resolve(null),
@@ -109,21 +109,21 @@ export class ProfileService {
       sourceFilename: r.sourceFilename,
       hasData: hasContentIds.has(r.id),
       variantCount: r._count.variants,
-      isPrimary: r.id === profile.primaryResumeId,
+      isPrimary: r.id === user.primaryResumeId,
       updatedAt: r.updatedAt,
     }));
 
     return {
-      profile: {
-        ...profile,
-        preferredLocations: JSON.parse(profile.preferredLocations) as string[],
+      user: {
+        ...user,
+        preferredLocations: JSON.parse(user.preferredLocations) as string[],
         references,
         // The columns are plain TEXT; assert the enums the response schema declares.
         salaryPreferences: salaryPreferences as ((typeof salaryPreferences)[number] & {
           currency: SalaryCurrency;
           period: SalaryPeriod;
         })[],
-        updatedAt: profile.updatedAt,
+        updatedAt: user.updatedAt,
       },
       autoApply,
       primaryResumeSourceAbsolutePath: primarySource?.sourceFilename
@@ -133,21 +133,21 @@ export class ProfileService {
     };
   }
 
-  async update(userId: string, body: ProfileWithAutoApplyInput) {
+  async update(userId: string, body: UserWithAutoApplyInput) {
     const {
       autoApply,
       preferredLocations,
       primaryResumeId,
       references,
       salaryPreferences,
-      ...profileFields
+      ...userFields
     } = body;
     const preferredLocationsJson = JSON.stringify(preferredLocations);
 
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        ...profileFields,
+        ...userFields,
         preferredLocations: preferredLocationsJson,
         primaryResumeId: primaryResumeId ?? null,
       },

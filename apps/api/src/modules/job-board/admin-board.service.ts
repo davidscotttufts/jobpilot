@@ -3,7 +3,7 @@ import { singleton } from "tsyringe";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
 /** How many profiles have linked the board - the only thing the catalog view adds to the row. */
-const WITH_ADOPTION = { _count: { select: { profiles: true } } } as const;
+const WITH_ADOPTION = { _count: { select: { userBoards: true } } } as const;
 
 type BoardRow = Prisma.JobBoardGetPayload<{ include: typeof WITH_ADOPTION }>;
 
@@ -17,7 +17,7 @@ export class AdminBoardService {
 
   private project(row: BoardRow) {
     const { _count, ...board } = row;
-    return { ...board, adoption: _count.profiles };
+    return { ...board, adoption: _count.userBoards };
   }
 
   async list() {

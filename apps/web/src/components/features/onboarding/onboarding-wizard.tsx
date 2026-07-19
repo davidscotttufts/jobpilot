@@ -2,10 +2,10 @@
 
 import { type ReactElement, type SubmitEvent, useState } from "react";
 import {
-  PROFILE_DEFAULT_VALUES,
-  type ProfileWithAutoApplyInput,
-  profileWithAutoApplySchema,
-} from "@jobpilot/contracts/profile";
+  USER_DEFAULT_VALUES,
+  type UserWithAutoApplyInput,
+  userWithAutoApplySchema,
+} from "@jobpilot/contracts/user";
 import {
   Alert,
   AlertTitle,
@@ -51,11 +51,11 @@ export function OnboardingWizard(): ReactElement {
 
   // The user's single profile is co-created at registration, so onboarding just
   // populates it via PUT /profile - no draft/active-profile dance.
-  const save = useApiMutation<{ id: string }, ProfileWithAutoApplyInput>(
-    (vars) => api.profile.put(vars),
+  const save = useApiMutation<{ id: string }, UserWithAutoApplyInput>(
+    (vars) => api.user.put(vars),
     {
       successMessage: "Profile saved",
-      invalidate: [queryKeys.profile.all],
+      invalidate: [queryKeys.user.all],
       onSuccess: () => {
         queryClient.invalidateQueries();
         // Profile saved (non-empty) clears the redirect gate, so the optional steps can navigate away safely.
@@ -65,8 +65,8 @@ export function OnboardingWizard(): ReactElement {
   );
 
   const form = useAppForm({
-    defaultValues: PROFILE_DEFAULT_VALUES,
-    validators: { onSubmit: profileWithAutoApplySchema },
+    defaultValues: USER_DEFAULT_VALUES,
+    validators: { onSubmit: userWithAutoApplySchema },
     onSubmit: async ({ value }) => {
       await save.mutateAsync(value);
     },
@@ -87,7 +87,7 @@ export function OnboardingWizard(): ReactElement {
       return;
     }
 
-    const result = profileWithAutoApplySchema.safeParse(form.state.values);
+    const result = userWithAutoApplySchema.safeParse(form.state.values);
     if (!result.success) {
       const issues = describeIssues(result.error.issues);
       setShowValidationErrors(true);
@@ -150,12 +150,12 @@ export function OnboardingWizard(): ReactElement {
 }
 
 const ValidationSummary = withForm({
-  defaultValues: PROFILE_DEFAULT_VALUES,
+  defaultValues: USER_DEFAULT_VALUES,
   render: function ValidationSummary({ form }) {
     return (
       <form.Subscribe selector={(s) => s.values}>
         {(values) => {
-          const result = profileWithAutoApplySchema.safeParse(values);
+          const result = userWithAutoApplySchema.safeParse(values);
           if (result.success) {
             return null;
           }
