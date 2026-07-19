@@ -4,7 +4,7 @@
 
 # JobPilot
 
-**Your job search on autopilot - your machine, your subscription.**
+**Plan, run, and track your job search with Claude Code or Codex.**
 
 [![Release](https://img.shields.io/github/v/release/suxrobGM/jobpilot?style=flat&color=FF6A3D)](https://github.com/suxrobGM/jobpilot/releases)
 [![CI](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml)
@@ -19,63 +19,56 @@
 
 ---
 
-Write your instructions once and JobPilot takes the job search from there. The
-**Pilot** runs perpetual **sense → decide → act** cycles that discover roles,
-tailor your resume, fill out applications, and message recruiters on their own -
-overnight, while you sleep. Prefer to stay hands-on? Four manual campaign modes
-cover the same ground, step by step.
+JobPilot helps you search for roles, tailor resumes, submit applications, contact
+recruiters, and track the results. You can run one task at a time or enable the
+Pilot to work through a schedule and limits you define.
 
-Either way, the agent - **Claude Code or Codex, running on your own
-subscription** - drives a real browser on your own machine, so you can watch
-every move. The dashboard keeps every application, reply, and interview in one
-pipeline.
+The agent runs through your Claude Code or Codex subscription and uses a browser
+on your computer. The hosted dashboard stores your profile, resumes, campaigns,
+and application history. You can see what the agent is doing and step in when
+needed.
 
-> **No API keys. No new bill.** The work runs on the Claude or Codex plan you
-> already pay for, on hardware you control.
+## What you can do
 
-## What it does
+- **Search and review:** find jobs on supported boards, compare them with your
+  resume, and save the best matches for review.
+- **Apply:** submit one application or work through an approved queue. JobPilot
+  can fill forms, answer screening questions, and prepare job-specific resumes
+  and cover letters.
+- **Run auto-apply campaigns:** apply to matching jobs up to the score and volume
+  limits you set.
+- **Use the Pilot:** give JobPilot goals, saved searches, active hours, and daily
+  limits. It works through the next available task and keeps a journal of each
+  action. When it needs a decision, it asks you.
+- **Contact recruiters:** find a relevant contact, draft a tailored message, and
+  send it by email or LinkedIn.
+- **Track applications:** manage applications from initial submission through
+  interviews and offers, with pipeline and analytics views.
+- **Manage recruiter email:** connect Gmail to classify replies, match them to
+  applications, and suggest pipeline updates for your approval.
+- **Work with resumes and Upwork:** maintain resume variants, export PDFs, search
+  Upwork jobs, draft proposals, and improve your profile.
 
-- **The Pilot - your job search on autopilot.** Write your instructions once
-  (goals, daily caps, active hours, saved searches) and the agent runs
-  perpetual sense → decide → act → record cycles: it discovers and applies to
-  jobs, checks for warm intros before cold applies, sends and follows up on
-  outreach, reviews recruiter replies, and drafts interview prep and
-  self-promotion posts. Every action is narrated in a live journal, questions
-  reach your phone as one-tap cards, and hard caps are enforced server-side.
-- **Four manual campaign modes.** Search-and-review, autonomous auto-apply,
-  single-job apply, and recruiter outreach - for when you'd rather drive.
-- **Any job board.** 12 built in - LinkedIn, Indeed, Glassdoor, Wellfound, Y
-  Combinator, HN Who's Hiring, We Work Remotely, Remote OK, and more - plus any
-  other board you add yourself. The agent drives a real browser, so nothing is
-  off-limits.
-- **A pipeline, not a spreadsheet.** Every application tracked through 9 stages,
-  from applied to offer, with analytics on top.
-- **An inbox that reads itself.** Recruiter replies are pulled from Gmail,
-  classified, and matched to applications; you approve each stage move.
-- **Resume studio.** Base resumes plus AI-tailored variants per job, rendered to
-  PDF live.
-- **First-class Upwork.** Client-quality filtering, targeted proposals, and
-  profile enhancement.
-- **Outreach.** Finds the hiring manager or recruiter and sends a personalized
-  email or LinkedIn message.
+JobPilot includes workflows for LinkedIn, Indeed, Glassdoor, Wellfound, Y
+Combinator, Hacker News Who's Hiring, We Work Remotely, Remote OK, and other
+boards. You can also add a custom board.
 
 ## Get started
 
-1. **Sign up** at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and
-   complete onboarding - add your profile and a resume.
-2. **Install the plugin** in Claude Code or Codex and run the `setup` skill; it
-   installs and starts the local agent for you.
-3. **Start a campaign** (or switch on the Pilot) and watch applications land in
-   your pipeline.
-
-The app runs in your browser; the agent and the browser it drives run on your
-own computer, on your own Claude/Codex subscription - so nothing happens you
-can't see. Curious how the pieces fit together? Read the plain-language
-[how-it-works guide](docs/architecture.md).
+1. [Create an account](https://jobpilot.suxrobgm.net) and add your profile and
+   resume.
+2. Install the JobPilot plugin for Claude Code or Codex using the instructions
+   below.
+3. Run the `setup` skill. It installs the local terminal companion, starts the
+   agent, and opens the dashboard.
+4. Start with a search campaign. Review the matches, then apply to selected jobs
+   or create an auto-apply campaign.
 
 ### Install the plugin
 
-In **Claude Code**:
+#### Claude Code
+
+Run these commands in Claude Code:
 
 ```text
 /plugin marketplace add https://github.com/suxrobgm/claude-plugins
@@ -83,47 +76,52 @@ In **Claude Code**:
 /jobpilot:setup
 ```
 
-In **Codex** (run both commands in a shell, start a new session, then run `$setup`):
+#### Codex
+
+Run these commands in a shell:
 
 ```text
 codex plugin marketplace add suxrobGM/codex-plugins
 codex plugin add jobpilot@sukhrob-codex-plugins
 ```
 
-The `setup` skill installs and starts the local agent terminal and opens the
-dashboard. From then on, launch the agent anytime from the dashboard's agent
-dock.
+Start a new Codex session, then run:
 
-Need to install or repair the standalone terminal host on its own? Use a
-one-liner below (the JobPilot plugin is still required before launching Codex
-from the dashboard):
+```text
+$setup
+```
+
+After setup, you can launch the agent from the agent dock in the dashboard.
+
+### Install the terminal companion manually
+
+Use one of these commands if you need to install or repair the terminal
+companion without running the setup skill. The JobPilot plugin is still required
+to launch Codex from the dashboard.
 
 - **Windows (PowerShell):** `irm https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.ps1 | iex`
 - **macOS / Linux:** `curl -fsSL https://raw.githubusercontent.com/suxrobGM/jobpilot/main/apps/terminal/install.sh | bash`
 
-New here? Start with the
+For a guided walkthrough, see the
 [getting-started guide](https://jobpilot.suxrobgm.net/docs/getting-started).
-Want to run it locally or contribute? See
-[docs/development.md](docs/development.md).
 
 ## Skills
 
-Every JobPilot action is a skill - a command you run from the agent. Claude Code
-commands use `/jobpilot:<skill>`, Codex commands use `$<skill>`:
+Skills are the commands JobPilot adds to Claude Code and Codex. The command name
+is the same in both; only the prefix changes:
 
 ```text
 /jobpilot:auto-apply senior typescript remote
 $auto-apply senior typescript remote
 ```
 
-In Codex, `/skills` opens the skill picker if you want to browse the installed
-JobPilot skills. Direct invocation uses `$setup`, `$search`, and the other
-`$<skill>` forms; `/setup` and `/jobpilot:setup` are not Codex skill commands.
+In Codex, use `/skills` to browse installed skills. To run one directly, use the
+`$<skill>` form, such as `$search` or `$setup`.
 
 | Skill               | Purpose                                                                         |
 | ------------------- | ------------------------------------------------------------------------------- |
 | **Pilot**           |                                                                                 |
-| `pilot`             | One autonomous cycle - read the agenda, act on the top item, journal, exit. Driven by the Pilot host loop, not run by hand. |
+| `pilot`             | Run one Pilot cycle. The Pilot host calls this skill automatically.             |
 | **Campaigns**       |                                                                                 |
 | `search`            | Search a board, rank results against your resume, save them for review.         |
 | `auto-apply`        | Search and apply autonomously, one job at a time, until done or capped.         |
@@ -132,7 +130,7 @@ JobPilot skills. Direct invocation uses `$setup`, `$search`, and the other
 | `rescan-skipped`    | Re-score a campaign's skipped jobs and promote the wrongly dropped ones.        |
 | `outreach`          | Find the hiring manager or recruiter and send a personalized message.           |
 | **Writing**         |                                                                                 |
-| `cover-letter`      | Draft a tailored one-page cover letter, humanized.                              |
+| `cover-letter`      | Draft a natural, job-specific one-page cover letter.                            |
 | `interview`         | Build a prep sheet: behavioral, technical, system design, company.              |
 | `tailor-resume`     | Pick or create the best resume variant for a job (runs automatically).          |
 | `extract-resume`    | Parse an uploaded resume PDF into the structured editor.                        |
@@ -146,20 +144,21 @@ JobPilot skills. Direct invocation uses `$setup`, `$search`, and the other
 | **Setup & helpers** |                                                                                 |
 | `setup`             | Install, start, or update the local agent terminal.                             |
 | `solve-captcha`     | Solve captchas - free vision path first, token service fallback.                |
-| `humanizer`         | Rewrite generated text to read naturally; used by the writing skills.           |
+| `humanizer`         | Make generated text sound more natural; used by the writing skills.             |
 
-Email (inbox scanning, verification codes, outreach sending) uses your own
-Google OAuth client - see the
-[email setup guide](https://jobpilot.suxrobgm.net/docs/email-setup).
+Inbox scanning, verification codes, and outreach email require your own Google
+OAuth client. Follow the
+[email setup guide](https://jobpilot.suxrobgm.net/docs/email-setup) to connect
+it.
 
 ## Documentation
 
-- [User docs](https://jobpilot.suxrobgm.net/docs) - getting started, campaigns &
-  skills, email setup, credentials, FAQ.
-- [docs/architecture.md](docs/architecture.md) - how JobPilot works, in plain
-  language.
-- [docs/development.md](docs/development.md) - local setup, repository layout,
-  tech stack, and architecture internals.
+- [User documentation](https://jobpilot.suxrobgm.net/docs) - setup, campaigns,
+  skills, email, credentials, and common questions.
+- [How JobPilot works](docs/architecture.md) - a non-technical overview of the
+  dashboard, local agent, and terminal companion.
+- [Development guide](docs/development.md) - local setup, repository layout,
+  technical architecture, and contribution notes.
 
 ## License
 
