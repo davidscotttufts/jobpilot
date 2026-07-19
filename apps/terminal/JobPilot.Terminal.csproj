@@ -10,7 +10,7 @@
     <RootNamespace>JobPilot.Terminal</RootNamespace>
     <AssemblyName>jobpilot</AssemblyName>
     <Version>2.1.5</Version>
-    <!-- Trim the shipped install: no debug symbols, no static-web-assets manifest. -->
+    <ApplicationIcon>jobpilot.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
