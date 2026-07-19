@@ -17,7 +17,7 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
     /// <summary>Journal summary pushed when a restarted host resumes conducting on its own.</summary>
     public const string ResumeReport = "Pilot conductor resumed after host restart.";
 
-    private readonly PilotLoop loop = new PilotLoop(env);
+    private readonly PilotLoop loop = new(env);
 
     // Released to start from idle or to interrupt a running iteration when the pairing changes.
     private readonly SemaphoreSlim wake = new(0);
