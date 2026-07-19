@@ -11,7 +11,7 @@ interface Recorder {
   questionUpdate?: { data: Record<string, unknown> };
   journalCreates: Record<string, unknown>[];
   stateUpserts: { create: Record<string, unknown>; update: Record<string, unknown> }[];
-  pushes: { profileId: string; payload: PushPayload }[];
+  pushes: { userId: string; payload: PushPayload }[];
 }
 
 function makeDb(questionOver: Record<string, unknown> = {}) {
@@ -19,7 +19,7 @@ function makeDb(questionOver: Record<string, unknown> = {}) {
   // A single mutable question row so the status guard in updateMany is observable.
   const question: Record<string, unknown> = {
     id: "e1",
-    profileId: "p1",
+    userId: "p1",
     kind: "question",
     status: "open",
     subjectType: null,
@@ -115,7 +115,7 @@ describe("PilotService questions", () => {
 
     expect(rec.pushes).toHaveLength(1);
     expect(rec.pushes[0]).toMatchObject({
-      profileId: "p1",
+      userId: "p1",
       payload: {
         title: "JobPilot needs you",
         body: "Approve this application?",
@@ -186,7 +186,7 @@ describe("PilotService journal", () => {
 
     expect(rec.pushes).toHaveLength(1);
     expect(rec.pushes[0]).toMatchObject({
-      profileId: "p1",
+      userId: "p1",
       payload: {
         title: "Pilot alert",
         body: "Pilot stopped unexpectedly (watchdog)",

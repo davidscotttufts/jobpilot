@@ -1,10 +1,10 @@
 import { notFound } from "./http.error";
 
 /**
- * Load a profile-owned row or throw a 404. Takes a `find` closure instead of a
+ * Load a user-owned row or throw a 404. Takes a `find` closure instead of a
  * Prisma model so `T` infers cleanly from the call site.
  *
- *   await findOwned((w) => db.credential.findFirst({ where: w }), { id, profileId }, "Credential");
+ *   await findOwned((w) => db.credential.findFirst({ where: w }), { id, userId }, "Credential");
  */
 export async function findOwned<T>(
   find: (where: Record<string, unknown>) => Promise<T | null>,

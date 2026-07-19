@@ -1,7 +1,7 @@
 model Campaign {
   campaignId  String    @id @map("campaign_id")
-  profileId   String    @map("profile_id")
-  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   query       String
   source      String
   status      String    @default("in_progress")
@@ -16,7 +16,7 @@ model Campaign {
   applications       Application[]
   networkingMessages NetworkingMessage[]
 
-  @@index([profileId])
+  @@index([userId])
   @@map("campaigns")
 }
 

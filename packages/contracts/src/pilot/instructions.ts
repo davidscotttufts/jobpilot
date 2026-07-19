@@ -67,7 +67,7 @@ export const updatePilotInstructionsSchema = z.object({
 export const setPilotEnabledSchema = z.object({ enabled: z.boolean() });
 
 export const pilotStateSchema = z.object({
-  profileId: z.uuid(),
+  userId: z.uuid(),
   enabled: z.boolean(),
   instructionsGoals: z.string(),
   instructionsConfig: pilotInstructionsConfigSchema,

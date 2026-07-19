@@ -25,9 +25,9 @@ export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /** The active profile's cover letters, newest first (no body - list payload). */
-  async list(profileId: string) {
+  async list(userId: string) {
     const rows = await this.prisma.coverLetter.findMany({
-      where: { profileId },
+      where: { userId },
       orderBy: { createdAt: "desc" },
       select: LIST_SELECT,
     });
@@ -38,10 +38,10 @@ export class CoverLetterService {
     }));
   }
 
-  create(profileId: string, data: CoverLetterCreate) {
+  create(userId: string, data: CoverLetterCreate) {
     return this.prisma.coverLetter.create({
       data: {
-        profileId,
+        userId,
         content: data.content,
         jobUrl: data.jobUrl ?? null,
         jobTitle: data.jobTitle ?? null,
@@ -51,10 +51,10 @@ export class CoverLetterService {
     });
   }
 
-  async get(profileId: string, id: string) {
+  async get(userId: string, id: string) {
     const row = await findOwned(
       (where) => this.prisma.coverLetter.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Cover letter",
     );
     return {
@@ -64,8 +64,8 @@ export class CoverLetterService {
     };
   }
 
-  async remove(profileId: string, id: string): Promise<{ ok: true }> {
-    await this.get(profileId, id);
+  async remove(userId: string, id: string): Promise<{ ok: true }> {
+    await this.get(userId, id);
     await this.prisma.coverLetter.delete({ where: { id } });
     return { ok: true };
   }
@@ -81,8 +81,8 @@ export class CoverLetterService {
   }
 
   /** Render a saved cover letter to a PDF, viewable inline in a new tab. */
-  async renderSavedPdf(profileId: string, id: string): Promise<CoverLetterPdf> {
-    const letter = await this.get(profileId, id);
+  async renderSavedPdf(userId: string, id: string): Promise<CoverLetterPdf> {
+    const letter = await this.get(userId, id);
     const buffer = await renderCoverLetterPdf(letter.content);
     const slug = slugifyForDownload(
       letter.company ?? letter.jobTitle ?? `cover-letter-${letter.id}`,

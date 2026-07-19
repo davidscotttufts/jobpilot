@@ -53,7 +53,7 @@ export const promotionsQuerySchema = z.object({ status: promotionStatusSchema.op
 
 export const promotionSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   platform: z.string(),
   target: z.string().nullable(),
   title: z.string().nullable(),

@@ -29,42 +29,42 @@ function splitJobSubject(subjectId: string): { campaignId: string; jobKey: strin
 
 export async function revertJobToApproved(
   { prisma, campaignJobs }: JobMutationDeps,
-  profileId: string,
+  userId: string,
   campaignId: string,
   jobKey: string,
 ): Promise<void> {
   const job = await prisma.job.findFirst({
-    where: { campaignId, key: jobKey, campaign: { profileId } },
+    where: { campaignId, key: jobKey, campaign: { userId } },
     select: { status: true },
   });
   if (job?.status === "applying") {
-    await campaignJobs.patchJob(profileId, campaignId, jobKey, { status: "approved" });
+    await campaignJobs.patchJob(userId, campaignId, jobKey, { status: "approved" });
   }
 }
 
 async function skipParkedJob(
   { prisma, campaignJobs }: JobMutationDeps,
-  profileId: string,
+  userId: string,
   subjectId: string,
 ): Promise<void> {
   const { campaignId, jobKey } = splitJobSubject(subjectId);
   if (!campaignId || !jobKey) return;
   const job = await prisma.job.findFirst({
-    where: { campaignId, key: jobKey, campaign: { profileId } },
+    where: { campaignId, key: jobKey, campaign: { userId } },
     select: { status: true },
   });
   if (job?.status === "needs_user") {
-    await campaignJobs.recordJobResult(profileId, campaignId, jobKey, {
+    await campaignJobs.recordJobResult(userId, campaignId, jobKey, {
       outcome: "skipped",
       skipReason: "Question expired without an answer.",
     });
   }
 }
 
-async function expireLeases(deps: JobMutationDeps, profileId: string, now: Date): Promise<void> {
+async function expireLeases(deps: JobMutationDeps, userId: string, now: Date): Promise<void> {
   const { prisma } = deps;
   const leases = await prisma.pilotLease.findMany({
-    where: { profileId, releasedAt: null, expiresAt: { lt: now } },
+    where: { userId, releasedAt: null, expiresAt: { lt: now } },
     take: GATHER_CAP, // remainder is swept on the next compile.
     select: { id: true, kind: true, subjectId: true, payload: true },
   });
@@ -77,14 +77,14 @@ async function expireLeases(deps: JobMutationDeps, profileId: string, now: Date)
     .filter((l) => l.kind === "job.apply")
     .map((l) => jobRef(parsePayload(l.payload), l.subjectId))
     .filter((ref) => ref.campaignId)
-    .map((ref) => revertJobToApproved(deps, profileId, ref.campaignId, ref.jobKey));
+    .map((ref) => revertJobToApproved(deps, userId, ref.campaignId, ref.jobKey));
   await Promise.all(reverts);
 }
 
-async function expireQuestions(deps: JobMutationDeps, profileId: string, now: Date): Promise<void> {
+async function expireQuestions(deps: JobMutationDeps, userId: string, now: Date): Promise<void> {
   const { prisma } = deps;
   const questions = await prisma.question.findMany({
-    where: { profileId, status: "open", expiresAt: { not: null, lt: now } },
+    where: { userId, status: "open", expiresAt: { not: null, lt: now } },
     take: GATHER_CAP, // remainder is swept on the next compile.
     select: { id: true, subjectType: true, subjectId: true },
   });
@@ -95,7 +95,7 @@ async function expireQuestions(deps: JobMutationDeps, profileId: string, now: Da
   });
   const skips = questions
     .filter((e) => e.subjectType === "job" && e.subjectId)
-    .map((e) => skipParkedJob(deps, profileId, e.subjectId as string));
+    .map((e) => skipParkedJob(deps, userId, e.subjectId as string));
   await Promise.all(skips);
 }
 
@@ -105,10 +105,6 @@ async function expireQuestions(deps: JobMutationDeps, profileId: string, now: Da
  * `needs_user` is skipped through the campaign job service. The two passes are
  * independent, so they run in parallel. Runs first so the agenda reflects the cleanup.
  */
-export async function runExpiry(
-  deps: JobMutationDeps,
-  profileId: string,
-  now: Date,
-): Promise<void> {
-  await Promise.all([expireLeases(deps, profileId, now), expireQuestions(deps, profileId, now)]);
+export async function runExpiry(deps: JobMutationDeps, userId: string, now: Date): Promise<void> {
+  await Promise.all([expireLeases(deps, userId, now), expireQuestions(deps, userId, now)]);
 }

@@ -2,7 +2,7 @@ import type { CreateContactInput } from "@jobpilot/contracts/networking";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans
- * `profileId`). Shared by the manual contacts route and the campaign-discovery
+ * `userId`). Shared by the manual contacts route and the campaign-discovery
  * route so the optional-field defaulting lives in one place. Callers may
  * override individual fields after spreading (e.g. `discoverySource`).
  */

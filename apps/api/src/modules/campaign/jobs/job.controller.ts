@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { campaignJobParams, campaignJobSchema, campaignParams } from "../campaign.schema";
 import { campaignJobListSchema, campaignJobResultResponseSchema } from "./job.schema";
 import { CampaignJobService } from "./job.service";
@@ -16,8 +16,8 @@ export const campaignJobController = new Elysia({
   name: "campaign-jobs",
   detail: { tags: ["Campaigns"] },
 })
-  .use(profileGuard)
-  .get("/:id/jobs", ({ profileId, params }) => svc.listJobs(profileId, params.id), {
+  .use(authGuard)
+  .get("/:id/jobs", ({ user, params }) => svc.listJobs(user.id, params.id), {
     params: campaignParams,
     response: campaignJobListSchema,
     detail: {
@@ -25,7 +25,7 @@ export const campaignJobController = new Elysia({
       description: "Returns all queued jobs for the owned campaign, ordered by creation.",
     },
   })
-  .post("/:id/jobs", ({ profileId, params, body }) => svc.addJob(profileId, params.id, body), {
+  .post("/:id/jobs", ({ user, params, body }) => svc.addJob(user.id, params.id, body), {
     params: campaignParams,
     body: addCampaignJobSchema,
     response: campaignJobSchema,
@@ -37,7 +37,7 @@ export const campaignJobController = new Elysia({
   })
   .patch(
     "/:id/jobs/:key",
-    ({ profileId, params, body }) => svc.patchJob(profileId, params.id, params.key, body),
+    ({ user, params, body }) => svc.patchJob(user.id, params.id, params.key, body),
     {
       params: campaignJobParams,
       body: patchCampaignJobSchema,
@@ -51,7 +51,7 @@ export const campaignJobController = new Elysia({
   )
   .post(
     "/:id/jobs/:key/result",
-    ({ profileId, params, body }) => svc.recordJobResult(profileId, params.id, params.key, body),
+    ({ user, params, body }) => svc.recordJobResult(user.id, params.id, params.key, body),
     {
       params: campaignJobParams,
       body: campaignJobResultSchema,

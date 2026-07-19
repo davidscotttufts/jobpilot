@@ -12,7 +12,7 @@ import { conflict, notFound, unauthorized } from "@/common/errors";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
 import { PrismaClient, type User } from "@/generated/prisma/client";
-import { principal, publicUser } from "./auth.mapper";
+import { meUser, principal, publicUser } from "./auth.mapper";
 
 const REFRESH_TTL_MS = durationToMs(env.REFRESH_TOKEN_EXPIRY, 30 * 86_400_000);
 
@@ -56,7 +56,6 @@ export class AuthService {
       select: { id: true, sortOrder: true },
       orderBy: { sortOrder: "asc" },
     });
-    // Co-create the empty 1:1 profile so profileGuard always resolves for a registered user.
     let user: User;
     try {
       user = await this.prisma.user.create({
@@ -66,19 +65,13 @@ export class AuthService {
           role,
           emailVerified: autoVerified,
           username: await this.uniqueUsername(),
-          profile: {
-            create: {
-              firstName: "",
-              lastName: "",
-              email: input.email,
-              jobBoards: {
-                createMany: {
-                  data: defaults.map((board) => ({
-                    jobBoardId: board.id,
-                    sortOrder: board.sortOrder,
-                  })),
-                },
-              },
+          contactEmail: input.email,
+          jobBoards: {
+            createMany: {
+              data: defaults.map((board) => ({
+                jobBoardId: board.id,
+                sortOrder: board.sortOrder,
+              })),
             },
           },
         },
@@ -147,13 +140,10 @@ export class AuthService {
   }
 
   async me(userId: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { profile: true },
-    });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw notFound("User not found");
     }
-    return { user: publicUser(user), profile: user.profile };
+    return meUser(user);
   }
 }

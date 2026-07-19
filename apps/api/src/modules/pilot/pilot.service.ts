@@ -47,11 +47,11 @@ export class PilotService {
    * today's tz-aware applied count. The tz lives in the row's config, so the count
    * runs after the upsert rather than in parallel with it.
    */
-  private async toStateDto(profileId: string, row: PilotStateModel) {
+  private async toStateDto(userId: string, row: PilotStateModel) {
     const config = pilotInstructionsConfigSchema.parse(JSON.parse(row.instructionsConfig));
     const appliedToday = await countAppliedToday(
       this.prisma,
-      profileId,
+      userId,
       new Date(),
       config.activeHours?.tz,
     );
@@ -59,20 +59,20 @@ export class PilotService {
   }
 
   /** Create-on-first-read: every profile has exactly one PilotState, defaulted. */
-  async getState(profileId: string) {
+  async getState(userId: string) {
     const row = await this.prisma.pilotState.upsert({
-      where: { profileId },
-      create: { profileId },
+      where: { userId },
+      create: { userId },
       update: {},
     });
-    return this.toStateDto(profileId, row);
+    return this.toStateDto(userId, row);
   }
 
-  async updateInstructions(profileId: string, body: UpdatePilotInstructionsInput) {
+  async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
     const row = await this.prisma.pilotState.upsert({
-      where: { profileId },
+      where: { userId },
       create: {
-        profileId,
+        userId,
         instructionsGoals: body.goals,
         instructionsConfig: JSON.stringify(body.config),
         instructionsUpdatedAt: new Date(),
@@ -83,29 +83,29 @@ export class PilotService {
         instructionsUpdatedAt: new Date(),
       },
     });
-    const state = await this.toStateDto(profileId, row);
-    publish(pilotChannel, { profileId }, { type: "state.changed", state });
+    const state = await this.toStateDto(userId, row);
+    publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;
   }
 
-  async setEnabled(profileId: string, body: SetPilotEnabledInput) {
+  async setEnabled(userId: string, body: SetPilotEnabledInput) {
     const row = await this.prisma.pilotState.upsert({
-      where: { profileId },
-      create: { profileId, enabled: body.enabled },
+      where: { userId },
+      create: { userId, enabled: body.enabled },
       update: { enabled: body.enabled },
     });
-    const state = await this.toStateDto(profileId, row);
-    publish(pilotChannel, { profileId }, { type: "state.changed", state });
+    const state = await this.toStateDto(userId, row);
+    publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;
   }
 
   // ── Questions ─────────────────────────────────────────────────────────────────
 
-  async createQuestion(profileId: string, body: CreateQuestionInput) {
+  async createQuestion(userId: string, body: CreateQuestionInput) {
     const expiresAt = questionExpiry(body);
     const row = await this.prisma.question.create({
       data: {
-        profileId,
+        userId,
         kind: body.kind,
         subjectType: body.subjectType ?? null,
         subjectId: body.subjectId ?? null,
@@ -116,9 +116,9 @@ export class PilotService {
       },
     });
     const question = toQuestion(row);
-    publish(pilotChannel, { profileId }, { type: "question.created", question });
+    publish(pilotChannel, { userId }, { type: "question.created", question });
     // Fire-and-forget so a slow/failed push never delays the question write.
-    void this.push.sendToProfile(profileId, {
+    void this.push.sendToUser(userId, {
       title: "JobPilot needs you",
       body: row.prompt,
       url: row.deepLink ?? "/pilot",
@@ -127,50 +127,50 @@ export class PilotService {
     return question;
   }
 
-  async listQuestions(profileId: string, status?: QuestionStatus) {
+  async listQuestions(userId: string, status?: QuestionStatus) {
     const rows = await this.prisma.question.findMany({
-      where: { profileId, ...(status ? { status } : {}) },
+      where: { userId, ...(status ? { status } : {}) },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
     return rows.map(toQuestion);
   }
 
-  async answerQuestion(profileId: string, id: string, body: AnswerQuestionInput) {
+  async answerQuestion(userId: string, id: string, body: AnswerQuestionInput) {
     await findOwned(
       (where) => this.prisma.question.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Question",
     );
 
     // Status guard lives in the write: expiry publishes no SSE, so stale web cards and push
     // deep-links can still POST here - never resurrect an expired/cancelled question.
     const { count } = await this.prisma.question.updateMany({
-      where: { id, profileId, status: "open" },
+      where: { id, userId, status: "open" },
       data: { status: "answered", answer: body.answer, answeredAt: new Date() },
     });
     if (count === 0) throw conflict("Question is no longer open.");
 
     const row = await findOwned(
       (where) => this.prisma.question.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Question",
     );
     const question = toQuestion(row);
-    publish(pilotChannel, { profileId }, { type: "question.answered", question });
+    publish(pilotChannel, { userId }, { type: "question.answered", question });
     return question;
   }
 
   // ── Journal ───────────────────────────────────────────────────────────────────
 
-  async appendJournal(profileId: string, body: CreatePilotJournalInput) {
+  async appendJournal(userId: string, body: CreatePilotJournalInput) {
     const cycleEntries = body.entries.filter((e) => e.kind === "cycle").length;
     const now = new Date();
 
     // id/createdAt generated app-side so the rows are fully known in-hand for the SSE publishes below.
     const rows: PilotJournalEntryModel[] = body.entries.map((entry) => ({
       id: crypto.randomUUID(),
-      profileId,
+      userId,
       cycleId: body.cycleId ?? null,
       kind: entry.kind,
       summary: entry.summary,
@@ -186,8 +186,8 @@ export class PilotService {
       // A "cycle" entry marks a completed loop iteration; advance cycle accounting once per such entry.
       if (cycleEntries > 0) {
         await tx.pilotState.upsert({
-          where: { profileId },
-          create: { profileId, lastCycleAt: now, cycleCount: cycleEntries },
+          where: { userId },
+          create: { userId, lastCycleAt: now, cycleCount: cycleEntries },
           update: { lastCycleAt: now, cycleCount: { increment: cycleEntries } },
         });
       }
@@ -195,13 +195,13 @@ export class PilotService {
 
     const items = rows.map(toJournalEntry);
     for (const entry of items) {
-      publish(pilotChannel, { profileId }, { type: "journal.appended", entry });
+      publish(pilotChannel, { userId }, { type: "journal.appended", entry });
     }
     // System entries are how the terminal host surfaces watchdog kills/restarts ("pilot stopped
     // unexpectedly") - push them so the alert reaches the phone. Fire-and-forget off the hot path.
     for (const entry of items) {
       if (entry.kind === "system") {
-        void this.push.sendToProfile(profileId, {
+        void this.push.sendToUser(userId, {
           title: "Pilot alert",
           body: entry.summary,
           url: "/pilot",
@@ -212,9 +212,9 @@ export class PilotService {
     return { items };
   }
 
-  async listJournal(profileId: string, cursor: string | undefined, limit: number) {
+  async listJournal(userId: string, cursor: string | undefined, limit: number) {
     const rows = await this.prisma.pilotJournalEntry.findMany({
-      where: { profileId },
+      where: { userId },
       // id tiebreaks createdAt (batch appends share one timestamp) so cursor pages never skip rows.
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit + 1,
@@ -233,7 +233,7 @@ export class PilotService {
    * Streams the profile's entire journal as NDJSON (one entry per line, createdAt ascending),
    * pulling in cursor batches so the whole history is never materialized in memory at once.
    */
-  streamJournalExport(profileId: string): Response {
+  streamJournalExport(userId: string): Response {
     const prisma = this.prisma;
     const encoder = new TextEncoder();
     // id tiebreaks createdAt (batch appends share one timestamp) for a deterministic cursor walk.
@@ -244,7 +244,7 @@ export class PilotService {
       async pull(controller) {
         if (closed) return;
         const rows = await prisma.pilotJournalEntry.findMany({
-          where: { profileId },
+          where: { userId },
           orderBy: [{ createdAt: "asc" }, { id: "asc" }],
           take: EXPORT_BATCH,
           ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

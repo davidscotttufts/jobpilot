@@ -32,10 +32,10 @@ export interface AppliedCheckQuery {
 export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async list(profileId: string, filters: AppliedListFilters) {
+  async list(userId: string, filters: AppliedListFilters) {
     const { status, board, source, search } = filters;
 
-    const where: Prisma.ApplicationWhereInput = { profileId };
+    const where: Prisma.ApplicationWhereInput = { userId };
 
     if (status) {
       where.status = status;
@@ -68,7 +68,7 @@ export class ApplicationService {
     }));
   }
 
-  async get(profileId: string, id: string) {
+  async get(userId: string, id: string) {
     const row = await findOwned(
       (where) =>
         this.prisma.application.findFirst({
@@ -77,7 +77,7 @@ export class ApplicationService {
             events: { orderBy: { createdAt: "asc" } },
           },
         }),
-      { id, profileId },
+      { id, userId },
       "Application",
     );
 
@@ -94,10 +94,10 @@ export class ApplicationService {
     };
   }
 
-  async addEvent(profileId: string, id: string, input: { kind: "note"; notes: string }) {
+  async addEvent(userId: string, id: string, input: { kind: "note"; notes: string }) {
     await findOwned(
       (where) => this.prisma.application.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Application",
     );
     const event = await this.prisma.applicationEvent.create({
@@ -110,20 +110,20 @@ export class ApplicationService {
     };
   }
 
-  async remove(profileId: string, id: string) {
+  async remove(userId: string, id: string) {
     await findOwned(
       (where) => this.prisma.application.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Application",
     );
     await this.prisma.application.delete({ where: { id } });
     return { deleted: id };
   }
 
-  async transitionStatus(profileId: string, id: string, input: StatusTransitionInput) {
+  async transitionStatus(userId: string, id: string, input: StatusTransitionInput) {
     const existing = await findOwned(
       (where) => this.prisma.application.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Application",
     );
 
@@ -147,14 +147,14 @@ export class ApplicationService {
     return { id, status: toStatus };
   }
 
-  async check(profileId: string, query: AppliedCheckQuery) {
+  async check(userId: string, query: AppliedCheckQuery) {
     const targetUrl = query.url;
     const title = query.title;
     const company = query.company;
 
     if (targetUrl) {
       const exact = await this.prisma.application.findUnique({
-        where: { profileId_url: { profileId, url: targetUrl } },
+        where: { userId_url: { userId, url: targetUrl } },
       });
       if (exact) {
         return {
@@ -177,7 +177,7 @@ export class ApplicationService {
     if (title && company) {
       const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * 24 * 60 * 60 * 1000);
       const candidates = await this.prisma.application.findMany({
-        where: { profileId, appliedAt: { gte: cutoff } },
+        where: { userId, appliedAt: { gte: cutoff } },
         select: {
           id: true,
           url: true,

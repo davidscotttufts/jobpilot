@@ -53,7 +53,7 @@ export const campaignJobSchema = z.object({
 /** A campaign row with `config`/`summary` parsed and dates serialized (mirrors `CampaignRow`). */
 export const campaignSchema = z.object({
   campaignId: z.string(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   query: z.string(),
   source: campaignSourceSchema,
   status: campaignStatusSchema,
@@ -74,7 +74,7 @@ export const campaignListSchema = z.array(campaignSchema);
  */
 export const campaignCreatedSchema = z.object({
   campaignId: z.string(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   query: z.string(),
   source: campaignSourceSchema,
   status: campaignStatusSchema,

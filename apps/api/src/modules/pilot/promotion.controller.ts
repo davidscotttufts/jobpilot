@@ -9,7 +9,7 @@ import {
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { PromotionService } from "./promotion.service";
 
@@ -20,8 +20,8 @@ export const promotionController = new Elysia({
   name: "pilot-promotions",
   detail: { tags: ["Pilot"] },
 })
-  .use(profileGuard)
-  .post("/promotions", ({ profileId, body }) => promotions.createPromotion(profileId, body), {
+  .use(authGuard)
+  .post("/promotions", ({ user, body }) => promotions.createPromotion(user.id, body), {
     body: createPromotionSchema,
     beforeHandle: limitMutation,
     response: promotionSchema,
@@ -31,22 +31,18 @@ export const promotionController = new Elysia({
         "Agent creates a draft self-promotion post for a platform, notifies the user for review, and returns it.",
     },
   })
-  .get(
-    "/promotions",
-    ({ profileId, query }) => promotions.listPromotions(profileId, query.status),
-    {
-      query: promotionsQuerySchema,
-      response: promotionListSchema,
-      detail: {
-        summary: "List promotion posts",
-        description:
-          "Returns the profile's promotion posts newest-first, optionally filtered by status.",
-      },
+  .get("/promotions", ({ user, query }) => promotions.listPromotions(user.id, query.status), {
+    query: promotionsQuerySchema,
+    response: promotionListSchema,
+    detail: {
+      summary: "List promotion posts",
+      description:
+        "Returns the profile's promotion posts newest-first, optionally filtered by status.",
     },
-  )
+  })
   .patch(
     "/promotions/:id",
-    ({ profileId, params, body }) => promotions.patchPromotion(profileId, params.id, body),
+    ({ user, params, body }) => promotions.patchPromotion(user.id, params.id, body),
     {
       params: idParam,
       body: patchPromotionSchema,
@@ -61,7 +57,7 @@ export const promotionController = new Elysia({
   )
   .post(
     "/promotions/:id/result",
-    ({ profileId, params, body }) => promotions.recordPromotionResult(profileId, params.id, body),
+    ({ user, params, body }) => promotions.recordPromotionResult(user.id, params.id, body),
     {
       params: idParam,
       body: promotionResultSchema,

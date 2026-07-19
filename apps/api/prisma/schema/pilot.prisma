@@ -1,6 +1,6 @@
 model PilotState {
-  profileId             String    @id @map("profile_id")
-  profile               Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId                String    @id @map("user_id")
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   enabled               Boolean   @default(false)
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    String    @default("{}") @map("instructions_config")
@@ -15,8 +15,8 @@ model PilotState {
 
 model PilotLease {
   id          String    @id @default(uuid())
-  profileId   String    @map("profile_id")
-  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind        String
   subjectType String    @map("subject_type")
   subjectId   String    @map("subject_id")
@@ -27,14 +27,14 @@ model PilotLease {
   releasedAt  DateTime? @map("released_at")
   outcome     String?
 
-  @@index([profileId, expiresAt])
+  @@index([userId, expiresAt])
   @@map("pilot_leases")
 }
 
 model Question {
   id          String    @id @default(uuid())
-  profileId   String    @map("profile_id")
-  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   kind        String
   status      String    @default("open")
   subjectType String?   @map("subject_type")
@@ -47,14 +47,14 @@ model Question {
   expiresAt   DateTime? @map("expires_at")
   createdAt   DateTime  @default(now()) @map("created_at")
 
-  @@index([profileId, status])
+  @@index([userId, status])
   @@map("questions")
 }
 
 model PilotJournalEntry {
   id          String   @id @default(uuid())
-  profileId   String   @map("profile_id")
-  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycleId     String?  @map("cycle_id")
   kind        String
   summary     String
@@ -63,14 +63,14 @@ model PilotJournalEntry {
   subjectId   String?  @map("subject_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  @@index([profileId, createdAt])
+  @@index([userId, createdAt])
   @@map("pilot_journal_entries")
 }
 
 model PromotionPost {
   id           String    @id @default(uuid())
-  profileId    String    @map("profile_id")
-  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId       String    @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   platform     String // "hn-whoishiring" | "reddit:r/forhire" | "linkedin-post"
   target       String? // thread/subreddit URL when known
   title        String?
@@ -82,6 +82,6 @@ model PromotionPost {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  @@index([profileId, status])
+  @@index([userId, status])
   @@map("promotion_posts")
 }

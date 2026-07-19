@@ -1,22 +1,22 @@
 import { captchaSolveSchema } from "@jobpilot/contracts/captcha";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { captchaSolveResultSchema } from "./captcha.schema";
 import { CaptchaService } from "./captcha.service";
 
 const svc = container.resolve(CaptchaService);
 
-// Runs after profileGuard's derive, so `user` is in context - the policy is user-keyed.
+// Runs after authGuard's derive, so `user` is in context - the policy is user-keyed.
 const limitSolve = rateLimit(RATE_LIMITS.captchaSolve);
 
 export const captchaController = new Elysia({
   prefix: "/captcha",
   detail: { tags: ["Captcha"] },
 })
-  .use(profileGuard)
-  .post("/solve", ({ user, profileId, body }) => svc.solve(user.id, profileId, body), {
+  .use(authGuard)
+  .post("/solve", ({ user, body }) => svc.solve(user.id, body), {
     body: captchaSolveSchema,
     beforeHandle: limitSolve,
     response: captchaSolveResultSchema,

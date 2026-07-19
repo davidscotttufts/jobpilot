@@ -23,16 +23,16 @@ export class CampaignJobService {
     private readonly listings: JobListingIngestService,
   ) {}
 
-  async listJobs(profileId: string, campaignId: string) {
+  async listJobs(userId: string, campaignId: string) {
     const jobs = await this.prisma.job.findMany({
-      where: { campaignId, campaign: { profileId } },
+      where: { campaignId, campaign: { userId } },
       orderBy: { id: "asc" },
     });
     return jobs.map(toCampaignJobRow);
   }
 
-  async addJob(profileId: string, campaignId: string, body: AddCampaignJobInput) {
-    await ensureCampaignOwned(this.prisma, profileId, campaignId);
+  async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
+    await ensureCampaignOwned(this.prisma, userId, campaignId);
 
     const job = await this.prisma.job.create({
       data: {
@@ -56,7 +56,7 @@ export class CampaignJobService {
     });
 
     await this.prisma.queueEntry.updateMany({
-      where: { profileId, url: job.url, status: "pending" },
+      where: { userId, url: job.url, status: "pending" },
       data: { status: "consumed", consumedAt: new Date() },
     });
 
@@ -72,7 +72,7 @@ export class CampaignJobService {
     );
     publish(
       workspaceChannel,
-      { profileId },
+      { userId },
       {
         type: "campaignjob.created",
         campaignId,
@@ -83,10 +83,10 @@ export class CampaignJobService {
     return toCampaignJobRow(job);
   }
 
-  async patchJob(profileId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
+  async patchJob(userId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
     await findOwned(
       (where) => this.prisma.job.findFirst({ where, select: { campaignId: true } }),
-      { campaignId, key, campaign: { profileId } },
+      { campaignId, key, campaign: { userId } },
       "Campaign job",
     );
 
@@ -108,7 +108,7 @@ export class CampaignJobService {
     if (job.status === "applied" || job.status === "failed" || job.status === "skipped") {
       const queueStatus = job.status === "skipped" ? "skipped" : "consumed";
       await this.prisma.queueEntry.updateMany({
-        where: { profileId, url: job.url, status: "pending" },
+        where: { userId, url: job.url, status: "pending" },
         data: {
           status: queueStatus,
           consumedAt: queueStatus === "consumed" ? new Date() : null,
@@ -121,7 +121,7 @@ export class CampaignJobService {
     // the digest is the ingest's own job; duplicating that policy here would silently diverge.
     this.listings.ingestInBackground(job);
 
-    return this.emitJobUpdate(profileId, campaignId, key, job, patch.status);
+    return this.emitJobUpdate(userId, campaignId, key, job, patch.status);
   }
 
   /**
@@ -129,13 +129,9 @@ export class CampaignJobService {
    * lease can take it. Conflicts (409) when the row is no longer approved (lost the race).
    * Emits through patchJob's shared path so a claim looks identical to a manual status change.
    */
-  async claimJobForApply(
-    profileId: string,
-    campaignId: string,
-    key: string,
-  ): Promise<CampaignJobRow> {
+  async claimJobForApply(userId: string, campaignId: string, key: string): Promise<CampaignJobRow> {
     const claim = await this.prisma.job.updateMany({
-      where: { campaignId, key, status: "approved", campaign: { profileId } },
+      where: { campaignId, key, status: "approved", campaign: { userId } },
       data: { status: "applying" },
     });
     if (claim.count === 0) {
@@ -144,7 +140,7 @@ export class CampaignJobService {
     const job = await this.prisma.job.findUniqueOrThrow({
       where: { campaignId_key: { campaignId, key } },
     });
-    return this.emitJobUpdate(profileId, campaignId, key, job, "applying");
+    return this.emitJobUpdate(userId, campaignId, key, job, "applying");
   }
 
   /**
@@ -152,7 +148,7 @@ export class CampaignJobService {
    * Pass `summary` to reuse a transaction-computed one instead of re-querying.
    */
   private async emitJobUpdate(
-    profileId: string,
+    userId: string,
     campaignId: string,
     key: string,
     job: Job,
@@ -170,11 +166,7 @@ export class CampaignJobService {
       publish(campaignChannel, { campaignId }, { type: "progress", payload: progress });
     }
 
-    publish(
-      workspaceChannel,
-      { profileId },
-      { type: "campaignjob.updated", campaignId, key, status },
-    );
+    publish(workspaceChannel, { userId }, { type: "campaignjob.updated", campaignId, key, status });
 
     return toCampaignJobRow(job);
   }
@@ -185,7 +177,7 @@ export class CampaignJobService {
    * recomputes Campaign.summary from the post-update Job aggregates.
    */
   async recordJobResult(
-    profileId: string,
+    userId: string,
     campaignId: string,
     key: string,
     data: CampaignJobResultInput,
@@ -196,7 +188,7 @@ export class CampaignJobService {
           where,
           include: { campaign: { select: { source: true, summary: true } } },
         }),
-      { campaignId, key, campaign: { profileId } },
+      { campaignId, key, campaign: { userId } },
       "Campaign job",
     );
 
@@ -220,7 +212,7 @@ export class CampaignJobService {
 
       if (data.outcome === "applied") {
         const found = await tx.application.findUnique({
-          where: { profileId_url: { profileId, url: job.url } },
+          where: { userId_url: { userId, url: job.url } },
         });
 
         if (found) {
@@ -228,7 +220,7 @@ export class CampaignJobService {
         } else {
           application = await tx.application.create({
             data: {
-              profileId,
+              userId,
               url: job.url,
               title: job.title,
               company: job.company,
@@ -252,7 +244,7 @@ export class CampaignJobService {
 
       const queueStatus = data.outcome === "skipped" ? "skipped" : "consumed";
       await tx.queueEntry.updateMany({
-        where: { profileId, url: job.url, status: "pending" },
+        where: { userId, url: job.url, status: "pending" },
         data: {
           status: queueStatus,
           consumedAt: queueStatus === "consumed" ? new Date() : null,
@@ -265,7 +257,7 @@ export class CampaignJobService {
     });
 
     const campaignJob = await this.emitJobUpdate(
-      profileId,
+      userId,
       campaignId,
       key,
       result.job,
@@ -273,7 +265,7 @@ export class CampaignJobService {
       result.summary,
     );
     if (result.applicationCreated) {
-      publish(workspaceChannel, { profileId }, { type: "application.created", campaignId });
+      publish(workspaceChannel, { userId }, { type: "application.created", campaignId });
     }
 
     return {

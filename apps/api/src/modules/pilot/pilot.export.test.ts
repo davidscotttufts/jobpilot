@@ -10,7 +10,7 @@ const CHUNK = 2;
 function row(id: string, minute: number): Record<string, unknown> {
   return {
     id,
-    profileId: "p1",
+    userId: "p1",
     cycleId: null,
     kind: "action",
     summary: `entry ${id}`,

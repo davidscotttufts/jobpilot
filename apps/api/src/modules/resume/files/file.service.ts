@@ -22,8 +22,8 @@ import { findResume, MAX_RESUME_BYTES } from "../resume.utils";
 export class ResumeFileService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async renderPdf(profileId: string, id: string): Promise<Response> {
-    const resume = await findResume(this.prisma, profileId, id);
+  async renderPdf(userId: string, id: string): Promise<Response> {
+    const resume = await findResume(this.prisma, userId, id);
     return this.streamResumePdf(resume);
   }
 
@@ -62,8 +62,8 @@ export class ResumeFileService {
     throw notFound("Resume has no data or source PDF");
   }
 
-  async getSource(profileId: string, id: string): Promise<Response> {
-    const resume = await findResume(this.prisma, profileId, id);
+  async getSource(userId: string, id: string): Promise<Response> {
+    const resume = await findResume(this.prisma, userId, id);
     if (!resume.sourceFilename) {
       throw notFound("No source PDF uploaded");
     }
@@ -80,11 +80,11 @@ export class ResumeFileService {
   }
 
   async uploadSource(
-    profileId: string,
+    userId: string,
     id: string,
     file: File,
   ): Promise<{ id: string; sourceFilename: string }> {
-    const resume = await findResume(this.prisma, profileId, id);
+    const resume = await findResume(this.prisma, userId, id);
 
     if (file.size > MAX_RESUME_BYTES) {
       throw badRequest("Resume must be 5 MB or less");
@@ -111,8 +111,8 @@ export class ResumeFileService {
     return { id, sourceFilename: filename };
   }
 
-  async deleteSource(profileId: string, id: string): Promise<{ id: string }> {
-    const resume = await findResume(this.prisma, profileId, id);
+  async deleteSource(userId: string, id: string): Promise<{ id: string }> {
+    const resume = await findResume(this.prisma, userId, id);
 
     if (resume.sourceFilename) {
       await deleteResumeFile(resume.sourceFilename);

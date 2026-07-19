@@ -11,7 +11,7 @@ import { z } from "zod/v4";
 /** The nested contact on a networking message (mirrors the mapper's `NetworkingContactRow`). */
 export const networkingContactSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   name: z.string(),
   title: z.string().nullable(),
   company: z.string().nullable(),
@@ -36,7 +36,7 @@ export const networkingContactSchema = z.object({
  */
 export const networkingMessageSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   contactId: z.uuid(),
   campaignId: z.string().nullable(),
   channel: networkingChannelSchema,

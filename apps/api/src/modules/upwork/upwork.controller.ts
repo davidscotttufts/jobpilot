@@ -8,7 +8,7 @@ import {
 } from "@jobpilot/contracts/upwork";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { publish, sseStream } from "@/common/sse";
 import { idResponseSchema } from "@/types/response";
 import {
@@ -34,28 +34,28 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
         "Runs the deterministic, profile-independent Upwork client/job quality assessment and returns the quality score result.",
     },
   })
-  // --- profile-scoped ---
-  .use(profileGuard)
-  .get("/events", ({ profileId, headers }) => sseStream(upworkChannel, { profileId }, headers), {
+  // --- user-scoped ---
+  .use(authGuard)
+  .get("/events", ({ user, headers }) => sseStream(upworkChannel, { userId: user.id }, headers), {
     detail: {
       summary: "Stream Upwork events",
       description:
-        "Opens a Server-Sent Events stream that emits profile and proposal change events for the active profile.",
+        "Opens a Server-Sent Events stream that emits profile and proposal change events for the user.",
     },
   })
-  .get("/profile", ({ profileId }) => svc.getProfile(profileId), {
+  .get("/profile", ({ user }) => svc.getProfile(user.id), {
     response: upworkProfileResponseSchema,
     detail: {
       summary: "Get profile enhancement",
       description:
-        "Returns the profile-enhancement record for the active profile, or null if none exists yet.",
+        "Returns the profile-enhancement record for the user, or null if none exists yet.",
     },
   })
   .put(
     "/profile",
-    async ({ profileId, body }) => {
-      const profile = await svc.upsertProfile(profileId, body);
-      publish(upworkChannel, { profileId }, { type: "profile.updated" });
+    async ({ user, body }) => {
+      const profile = await svc.upsertProfile(user.id, body);
+      publish(upworkChannel, { userId: user.id }, { type: "profile.updated" });
       return profile;
     },
     {
@@ -68,7 +68,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       },
     },
   )
-  .get("/proposals", ({ profileId, query }) => svc.listProposals(profileId, query), {
+  .get("/proposals", ({ user, query }) => svc.listProposals(user.id, query), {
     query: proposalsQuery,
     response: upworkProposalListSchema,
     detail: {
@@ -79,9 +79,9 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   })
   .post(
     "/proposals",
-    async ({ profileId, body }) => {
-      const proposal = await svc.createProposal(profileId, body);
-      publish(upworkChannel, { profileId }, { type: "proposal.created", id: proposal.id });
+    async ({ user, body }) => {
+      const proposal = await svc.createProposal(user.id, body);
+      publish(upworkChannel, { userId: user.id }, { type: "proposal.created", id: proposal.id });
       return proposal;
     },
     {
@@ -94,7 +94,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       },
     },
   )
-  .get("/proposals/:id", ({ profileId, params }) => svc.getProposal(profileId, params.id), {
+  .get("/proposals/:id", ({ user, params }) => svc.getProposal(user.id, params.id), {
     params: idParam,
     response: upworkProposalSchema,
     detail: {
@@ -105,9 +105,9 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   })
   .patch(
     "/proposals/:id",
-    async ({ profileId, params, body }) => {
-      const proposal = await svc.updateProposal(profileId, params.id, body);
-      publish(upworkChannel, { profileId }, { type: "proposal.updated", id: params.id });
+    async ({ user, params, body }) => {
+      const proposal = await svc.updateProposal(user.id, params.id, body);
+      publish(upworkChannel, { userId: user.id }, { type: "proposal.updated", id: params.id });
       return proposal;
     },
     {
@@ -123,9 +123,9 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   )
   .delete(
     "/proposals/:id",
-    async ({ profileId, params }) => {
-      const result = await svc.deleteProposal(profileId, params.id);
-      publish(upworkChannel, { profileId }, { type: "proposal.deleted", id: params.id });
+    async ({ user, params }) => {
+      const result = await svc.deleteProposal(user.id, params.id);
+      publish(upworkChannel, { userId: user.id }, { type: "proposal.deleted", id: params.id });
       return result;
     },
     {

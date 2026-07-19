@@ -31,7 +31,7 @@ export function CampaignIdentityBanner(): ReactNode {
       <Typography variant="body2" sx={{ fontWeight: 600 }}>
         Applying as {name || "your profile"}
       </Typography>
-      <Chip size="small" label={profile.email} variant="outlined" />
+      <Chip size="small" label={profile.contactEmail} variant="outlined" />
     </Stack>
   );
 }

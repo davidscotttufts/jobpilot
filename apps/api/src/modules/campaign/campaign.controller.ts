@@ -6,7 +6,7 @@ import {
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard, requireVerifiedEmail } from "@/common/middleware";
+import { authGuard, requireVerifiedEmail } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import { idResponseSchema } from "@/types/response";
 import {
@@ -28,9 +28,9 @@ export const campaignController = new Elysia({
   prefix: "/campaigns",
   detail: { tags: ["Campaigns"] },
 })
-  .use(profileGuard)
+  .use(authGuard)
   // ── Collection ──────────────────────────────────────────────────────────────
-  .get("/", ({ profileId, query }) => svc.list(profileId, query), {
+  .get("/", ({ user, query }) => svc.list(user.id, query), {
     query: campaignsQuery,
     response: campaignListSchema,
     detail: {
@@ -41,9 +41,9 @@ export const campaignController = new Elysia({
   })
   .post(
     "/",
-    async ({ user, profileId, body }) => {
+    async ({ user, body }) => {
       await requireVerifiedEmail(user.id);
-      return svc.create(profileId, body);
+      return svc.create(user.id, body);
     },
     {
       body: createCampaignSchema,
@@ -56,7 +56,7 @@ export const campaignController = new Elysia({
     },
   )
   // ── Single campaign ───────────────────────────────────────────────────────────
-  .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
+  .get("/:id", ({ user, params }) => svc.get(user.id, params.id), {
     params: campaignParams,
     response: campaignWithJobsSchema,
     detail: {
@@ -65,7 +65,7 @@ export const campaignController = new Elysia({
         "Returns a single owned campaign with its jobs and a derived summary, or 404 if it is not owned by the profile.",
     },
   })
-  .patch("/:id", ({ profileId, params, body }) => svc.update(profileId, params.id, body), {
+  .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
     params: campaignParams,
     body: updateCampaignSchema,
     response: campaignSchema,
@@ -75,7 +75,7 @@ export const campaignController = new Elysia({
         "Updates a campaign's status, summary, config, or completion time, emits status/progress events, and returns the updated campaign.",
     },
   })
-  .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
+  .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: campaignParams,
     response: campaignDeletedSchema,
     detail: {
@@ -87,8 +87,8 @@ export const campaignController = new Elysia({
   // ── Events (SSE stream + event record) ────────────────────────────────────────
   .get(
     "/:id/events",
-    async ({ profileId, params, headers }) => {
-      await svc.ensureCampaignOwned(profileId, params.id);
+    async ({ user, params, headers }) => {
+      await svc.ensureCampaignOwned(user.id, params.id);
       return sseStream(campaignChannel, { campaignId: params.id }, headers);
     },
     {
@@ -102,7 +102,7 @@ export const campaignController = new Elysia({
   )
   .post(
     "/:id/events",
-    ({ profileId, params, body }) => svc.recordCampaignEvent(profileId, params.id, body),
+    ({ user, params, body }) => svc.recordCampaignEvent(user.id, params.id, body),
     {
       params: campaignParams,
       body: campaignEventSchema,

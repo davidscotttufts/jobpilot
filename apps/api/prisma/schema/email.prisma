@@ -1,7 +1,7 @@
 model EmailAccount {
   id             String    @id @default(uuid())
-  profileId      String    @unique @map("profile_id")
-  profile        Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId         String    @unique @map("user_id")
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider       String
   email          String
   accessToken    String?   @map("access_token")
@@ -21,8 +21,8 @@ model EmailAccount {
 // Per-user Google OAuth client; separate from EmailAccount so it pre-dates connection and survives disconnect.
 model EmailOAuthClient {
   id           String   @id @default(uuid())
-  profileId    String   @unique @map("profile_id")
-  profile      Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId       String   @unique @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider     String   @default("gmail")
   clientId     String   @map("client_id") // plaintext (semi-public)
   clientSecret String   @map("client_secret") // ciphertext (per-user DEK)

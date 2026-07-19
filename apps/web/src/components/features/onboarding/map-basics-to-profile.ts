@@ -4,7 +4,7 @@ import { normalizeLinkUrl } from "@jobpilot/contracts/utils/url";
 type ProfileTextFieldName =
   | "firstName"
   | "lastName"
-  | "email"
+  | "contactEmail"
   | "phone"
   | "website"
   | "linkedin"
@@ -24,7 +24,7 @@ export function applyBasicsToForm(form: ProfileFieldWriter, basics: ResumeBasics
 
   setIfEmpty(form, "firstName", firstName);
   setIfEmpty(form, "lastName", lastName);
-  setIfEmpty(form, "email", basics.email);
+  setIfEmpty(form, "contactEmail", basics.email);
   setIfEmpty(form, "phone", basics.phone);
   setIfEmpty(form, "website", basics.website && normalizeLinkUrl(basics.website));
   setIfEmpty(form, "linkedin", basics.linkedin && normalizeLinkUrl(basics.linkedin));

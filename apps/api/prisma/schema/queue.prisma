@@ -1,15 +1,15 @@
 model QueueEntry {
   id         String    @id @default(uuid())
-  profileId  String    @map("profile_id")
-  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   url        String
   note       String?
   status     String    @default("pending")
   createdAt  DateTime  @default(now()) @map("created_at")
   consumedAt DateTime? @map("consumed_at")
 
-  @@unique([profileId, url])
-  @@index([profileId, status])
+  @@unique([userId, url])
+  @@index([userId, status])
   @@index([status])
   @@map("queue_entries")
 }

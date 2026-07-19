@@ -21,10 +21,10 @@ export class EmailSyncService {
     private readonly crypto: CryptoService,
   ) {}
 
-  async syncInbox(userId: string, profileId: string) {
+  async syncInbox(userId: string) {
     let loaded: Awaited<ReturnType<typeof loadFreshAccount>>;
     try {
-      loaded = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
+      loaded = await loadFreshAccount(this.prisma, this.crypto, userId);
     } catch (e) {
       throw new HttpError(
         ErrorCodes.UNPROCESSABLE,
@@ -39,7 +39,7 @@ export class EmailSyncService {
     const { account: active, config } = loaded;
     const provider = getProvider(active.provider);
 
-    publish(inboxChannel, { profileId }, { type: "sync.started" });
+    publish(inboxChannel, { userId }, { type: "sync.started" });
 
     const result = await provider.syncMessages(config, active);
 
@@ -76,7 +76,7 @@ export class EmailSyncService {
     }
 
     // Flip any sent networking messages to "replied" when their reply just arrived.
-    await this.linkNetworkingReplies(profileId, insertedForLinking);
+    await this.linkNetworkingReplies(userId, insertedForLinking);
 
     await this.prisma.emailAccount.update({
       where: { id: active.id },
@@ -88,7 +88,7 @@ export class EmailSyncService {
 
     publish(
       inboxChannel,
-      { profileId },
+      { userId },
       {
         type: "sync.progress",
         fetched: result.fetched,
@@ -106,7 +106,7 @@ export class EmailSyncService {
    * Returns the number of networking messages newly marked replied.
    */
   private async linkNetworkingReplies(
-    profileId: string,
+    userId: string,
     messages: InboundForLinking[],
   ): Promise<number> {
     let linked = 0;
@@ -114,7 +114,7 @@ export class EmailSyncService {
     for (const m of messages) {
       if (m.threadId) {
         const byThread = await this.prisma.networkingMessage.updateMany({
-          where: { profileId, status: "sent", threadId: m.threadId },
+          where: { userId, status: "sent", threadId: m.threadId },
           data: { status: "replied", repliedAt: m.receivedAt },
         });
         linked += byThread.count;
@@ -123,12 +123,12 @@ export class EmailSyncService {
 
       if (m.fromAddress) {
         const contacts = await this.prisma.contact.findMany({
-          where: { profileId, email: m.fromAddress },
+          where: { userId, email: m.fromAddress },
           select: { id: true },
         });
         if (contacts.length > 0) {
           const byEmail = await this.prisma.networkingMessage.updateMany({
-            where: { profileId, status: "sent", contactId: { in: contacts.map((c) => c.id) } },
+            where: { userId, status: "sent", contactId: { in: contacts.map((c) => c.id) } },
             data: { status: "replied", repliedAt: m.receivedAt },
           });
           linked += byEmail.count;

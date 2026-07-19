@@ -14,7 +14,7 @@ const PROFILE_SCALAR_SELECT = {
   id: true,
   firstName: true,
   lastName: true,
-  email: true,
+  contactEmail: true,
   phone: true,
   website: true,
   linkedin: true,
@@ -45,16 +45,16 @@ const PROFILE_SCALAR_SELECT = {
 export class ProfileService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async get(profileId: string) {
+  async get(userId: string) {
     const profile = await findOwned(
-      (where) => this.prisma.profile.findFirst({ where, select: PROFILE_SCALAR_SELECT }),
-      { id: profileId },
+      (where) => this.prisma.user.findFirst({ where, select: PROFILE_SCALAR_SELECT }),
+      { id: userId },
       "Profile",
     );
 
     const [autoApply, primarySource, resumeRows, withContent, references, salaryPreferences] =
       await Promise.all([
-        this.prisma.autoApplySettings.findUnique({ where: { profileId } }),
+        this.prisma.autoApplySettings.findUnique({ where: { userId } }),
         profile.primaryResumeId
           ? this.prisma.resume.findUnique({
               where: { id: profile.primaryResumeId },
@@ -62,7 +62,7 @@ export class ProfileService {
             })
           : Promise.resolve(null),
         this.prisma.resume.findMany({
-          where: { profileId },
+          where: { userId },
           orderBy: { updatedAt: "desc" },
           select: {
             id: true,
@@ -73,11 +73,11 @@ export class ProfileService {
           },
         }),
         this.prisma.resume.findMany({
-          where: { profileId, content: { not: null } },
+          where: { userId, content: { not: null } },
           select: { id: true },
         }),
         this.prisma.reference.findMany({
-          where: { profileId },
+          where: { userId },
           orderBy: { position: "asc" },
           select: {
             id: true,
@@ -89,7 +89,7 @@ export class ProfileService {
           },
         }),
         this.prisma.salaryPreference.findMany({
-          where: { profileId },
+          where: { userId },
           orderBy: { position: "asc" },
           select: {
             id: true,
@@ -133,7 +133,7 @@ export class ProfileService {
     };
   }
 
-  async update(profileId: string, body: ProfileWithAutoApplyInput) {
+  async update(userId: string, body: ProfileWithAutoApplyInput) {
     const {
       autoApply,
       preferredLocations,
@@ -144,8 +144,8 @@ export class ProfileService {
     } = body;
     const preferredLocationsJson = JSON.stringify(preferredLocations);
 
-    await this.prisma.profile.update({
-      where: { id: profileId },
+    await this.prisma.user.update({
+      where: { id: userId },
       data: {
         ...profileFields,
         preferredLocations: preferredLocationsJson,
@@ -155,10 +155,10 @@ export class ProfileService {
 
     // Replace the reference and salary-preference sets wholesale - the settings form submits the full lists.
     await this.prisma.$transaction([
-      this.prisma.reference.deleteMany({ where: { profileId } }),
+      this.prisma.reference.deleteMany({ where: { userId } }),
       this.prisma.reference.createMany({
         data: references.map((r, i) => ({
-          profileId,
+          userId,
           name: r.name,
           relationship: r.relationship ?? null,
           company: r.company ?? null,
@@ -167,10 +167,10 @@ export class ProfileService {
           position: i,
         })),
       }),
-      this.prisma.salaryPreference.deleteMany({ where: { profileId } }),
+      this.prisma.salaryPreference.deleteMany({ where: { userId } }),
       this.prisma.salaryPreference.createMany({
         data: salaryPreferences.map((s, i) => ({
-          profileId,
+          userId,
           appliesTo: s.appliesTo,
           minAmount: s.minAmount ?? null,
           maxAmount: s.maxAmount ?? null,
@@ -183,27 +183,27 @@ export class ProfileService {
 
     if (autoApply) {
       await this.prisma.autoApplySettings.upsert({
-        where: { profileId },
-        create: { profileId, ...autoApply },
+        where: { userId },
+        create: { userId, ...autoApply },
         update: autoApply,
       });
     }
 
-    return { id: profileId };
+    return { id: userId };
   }
 
-  /** Point the profile at one of its own resumes (or clear it with `null`). */
-  async setPrimaryResume(profileId: string, resumeId: string | null) {
+  /** Point the user at one of their own resumes (or clear it with `null`). */
+  async setPrimaryResume(userId: string, resumeId: string | null) {
     if (resumeId !== null) {
       await findOwned(
         (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
-        { id: resumeId, profileId },
+        { id: resumeId, userId },
         "Resume",
       );
     }
 
-    await this.prisma.profile.update({
-      where: { id: profileId },
+    await this.prisma.user.update({
+      where: { id: userId },
       data: { primaryResumeId: resumeId },
     });
 

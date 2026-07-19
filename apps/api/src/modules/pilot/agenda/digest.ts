@@ -44,7 +44,7 @@ function composeDigestSummary(c: DigestCounts): string {
  */
 export async function writeDigestIfDue(
   { prisma, pilot, push }: DigestDeps,
-  profileId: string,
+  userId: string,
   now: Date,
   config: PilotInstructionsConfig,
   openQuestions: number,
@@ -56,9 +56,9 @@ export async function writeDigestIfDue(
     const dayStart = startOfDayInTz(now, tz);
     // No unique constraint backs the once-per-day rule; the lock is the only duplicate guard.
     await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${profileId}), hashtext('pilot-digest'))`;
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext('pilot-digest'))`;
       const alreadyWritten = await tx.pilotJournalEntry.count({
-        where: { profileId, kind: "digest", createdAt: { gte: dayStart } },
+        where: { userId, kind: "digest", createdAt: { gte: dayStart } },
       });
       if (alreadyWritten > 0) return;
 
@@ -71,17 +71,17 @@ export async function writeDigestIfDue(
         networkingReplies,
         promotionsPosted,
       ] = await Promise.all([
-        tx.application.count({ where: { profileId, appliedAt: { gte: windowStart } } }),
+        tx.application.count({ where: { userId, appliedAt: { gte: windowStart } } }),
         tx.job.count({
-          where: { status: "failed", campaign: { profileId }, createdAt: { gte: windowStart } },
+          where: { status: "failed", campaign: { userId }, createdAt: { gte: windowStart } },
         }),
         tx.job.count({
-          where: { status: "skipped", campaign: { profileId }, createdAt: { gte: windowStart } },
+          where: { status: "skipped", campaign: { userId }, createdAt: { gte: windowStart } },
         }),
-        tx.networkingMessage.count({ where: { profileId, sentAt: { gte: windowStart } } }),
-        tx.networkingMessage.count({ where: { profileId, repliedAt: { gte: windowStart } } }),
+        tx.networkingMessage.count({ where: { userId, sentAt: { gte: windowStart } } }),
+        tx.networkingMessage.count({ where: { userId, repliedAt: { gte: windowStart } } }),
         tx.promotionPost.count({
-          where: { profileId, status: "posted", postedAt: { gte: windowStart } },
+          where: { userId, status: "posted", postedAt: { gte: windowStart } },
         }),
       ]);
 
@@ -96,10 +96,10 @@ export async function writeDigestIfDue(
       };
       const summary = composeDigestSummary(counts);
       // Reuse the journal write path so SSE fires; then push the glanceable summary to the phone.
-      await pilot.appendJournal(profileId, {
+      await pilot.appendJournal(userId, {
         entries: [{ kind: "digest", summary, detail: { ...counts } as Record<string, unknown> }],
       });
-      void push.sendToProfile(profileId, {
+      void push.sendToUser(userId, {
         title: "Your Pilot's morning digest",
         body: summary,
         url: "/pilot",

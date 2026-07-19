@@ -8,7 +8,7 @@ import {
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { notFound } from "@/common/errors";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { PushService } from "@/common/push";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
@@ -17,7 +17,7 @@ const push = container.resolve(PushService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Push"] } })
-  .use(profileGuard)
+  .use(authGuard)
   .get("/vapid-key", () => ({ publicKey: push.publicKey }), {
     response: vapidKeySchema,
     detail: {
@@ -26,7 +26,7 @@ export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Pu
         "The application-server key the browser subscribes with, or null when push is unconfigured.",
     },
   })
-  .post("/subscriptions", ({ profileId, body }) => push.subscribe(profileId, body), {
+  .post("/subscriptions", ({ user, body }) => push.subscribe(user.id, body), {
     body: pushSubscriptionInputSchema,
     beforeHandle: limitMutation,
     response: pushSubscriptionSchema,
@@ -38,8 +38,8 @@ export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Pu
   })
   .delete(
     "/subscriptions",
-    async ({ profileId, body }) => {
-      const deleted = await push.unsubscribe(profileId, body.endpoint);
+    async ({ user, body }) => {
+      const deleted = await push.unsubscribe(user.id, body.endpoint);
       if (!deleted) {
         throw notFound("Subscription not found");
       }
@@ -55,7 +55,7 @@ export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Pu
       },
     },
   )
-  .get("/subscriptions", ({ profileId }) => push.list(profileId), {
+  .get("/subscriptions", ({ user }) => push.list(user.id), {
     response: pushSubscriptionListSchema,
     detail: {
       summary: "List push subscriptions",

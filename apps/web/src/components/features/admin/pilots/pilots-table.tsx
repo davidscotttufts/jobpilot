@@ -39,7 +39,7 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
         </TableHead>
         <TableBody>
           {pilots.map((pilot) => (
-            <TableRow key={pilot.profileId} hover>
+            <TableRow key={pilot.userId} hover>
               <TableCell sx={{ fontWeight: 600 }}>{pilot.userEmail}</TableCell>
               <TableCell>
                 <Chip

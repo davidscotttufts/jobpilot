@@ -30,7 +30,6 @@ export default async function AdminOverviewPage(): Promise<ReactElement> {
       hint: `${content.applicationsThisWeek} this week`,
     },
     { label: "Boards", value: content.boards, hint: `${content.boardLinks} user links` },
-    { label: "Profiles", value: content.profiles, hint: "onboarded" },
   ];
 
   return (

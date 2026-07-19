@@ -1,7 +1,7 @@
 model Contact {
   id        String  @id @default(uuid())
-  profileId String  @map("profile_id")
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name            String
   title           String?
@@ -25,15 +25,15 @@ model Contact {
 
   messages NetworkingMessage[]
 
-  @@index([profileId])
-  @@index([profileId, company])
+  @@index([userId])
+  @@index([userId, company])
   @@map("contacts")
 }
 
 model NetworkingMessage {
   id         String    @id @default(uuid())
-  profileId  String    @map("profile_id")
-  profile    Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId     String    @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   contactId  String    @map("contact_id")
   contact    Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   campaignId String?   @map("campaign_id")
@@ -53,7 +53,7 @@ model NetworkingMessage {
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  @@index([profileId])
+  @@index([userId])
   @@index([campaignId])
   @@index([contactId])
   @@index([threadId])

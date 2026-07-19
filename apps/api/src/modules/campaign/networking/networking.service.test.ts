@@ -23,7 +23,7 @@ function makePilot(journals: Record<string, unknown>[]): PilotService {
 function makeDb(over: Over) {
   const contact = {
     id: "ct1",
-    profileId: "p1",
+    userId: "p1",
     name: "Dana",
     title: null,
     company: "Acme",
@@ -42,7 +42,7 @@ function makeDb(over: Over) {
   };
   const base = {
     id: "m1",
-    profileId: "p1",
+    userId: "p1",
     contactId: "ct1",
     campaignId: "c1",
     linkedinKind: null,

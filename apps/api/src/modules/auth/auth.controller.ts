@@ -64,7 +64,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       detail: {
         summary: "Register a new account",
         description:
-          "Creates a new user with an empty 1:1 profile, sets access and refresh token cookies, and returns the public user with freshly issued tokens.",
+          "Creates a new user with empty profile fields, sets access and refresh token cookies, and returns the public user with freshly issued tokens.",
       },
     },
   )

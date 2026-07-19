@@ -8,7 +8,7 @@ const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async stats(profileId: string) {
+  async stats(userId: string) {
     const weekStart = startOfWeek();
     const timelineStart = startOfTimeline();
 
@@ -33,69 +33,69 @@ export class AnalyticsService {
       networkingTimelineRows,
       contactSourceRows,
     ] = await Promise.all([
-      this.prisma.application.count({ where: { profileId } }),
-      this.prisma.application.count({ where: { profileId, status: "applied" } }),
+      this.prisma.application.count({ where: { userId } }),
+      this.prisma.application.count({ where: { userId, status: "applied" } }),
       this.prisma.application.count({
-        where: { profileId, status: { notIn: [...NON_INTERVIEWING_STATUSES] } },
+        where: { userId, status: { notIn: [...NON_INTERVIEWING_STATUSES] } },
       }),
-      this.prisma.application.count({ where: { profileId, status: "offer" } }),
-      this.prisma.application.count({ where: { profileId, status: "rejected" } }),
-      this.prisma.queueEntry.count({ where: { profileId, status: "pending" } }),
+      this.prisma.application.count({ where: { userId, status: "offer" } }),
+      this.prisma.application.count({ where: { userId, status: "rejected" } }),
+      this.prisma.queueEntry.count({ where: { userId, status: "pending" } }),
       this.prisma.application.count({
-        where: { profileId, status: "applied", appliedAt: { gte: weekStart } },
+        where: { userId, status: "applied", appliedAt: { gte: weekStart } },
       }),
       this.prisma.application.count({
         where: {
-          profileId,
+          userId,
           status: { notIn: [...NON_INTERVIEWING_STATUSES] },
           appliedAt: { gte: weekStart },
         },
       }),
       this.prisma.application.count({
-        where: { profileId, status: "rejected", appliedAt: { gte: weekStart } },
+        where: { userId, status: "rejected", appliedAt: { gte: weekStart } },
       }),
       this.prisma.application.groupBy({
         by: ["status"],
-        where: { profileId },
+        where: { userId },
         _count: { _all: true },
       }),
       this.prisma.application.findMany({
-        where: { profileId, appliedAt: { gte: timelineStart } },
+        where: { userId, appliedAt: { gte: timelineStart } },
         select: { appliedAt: true },
       }),
       this.prisma.application.groupBy({
         by: ["board"],
-        where: { profileId, board: { not: null } },
+        where: { userId, board: { not: null } },
         _count: { _all: true },
         orderBy: { _count: { id: "desc" } },
         take: 5,
       }),
       this.prisma.job.groupBy({
         by: ["failReason"],
-        where: { failReason: { not: null }, campaign: { profileId } },
+        where: { failReason: { not: null }, campaign: { userId } },
         _count: { _all: true },
         orderBy: { _count: { id: "desc" } },
         take: 5,
       }),
       this.prisma.networkingMessage.groupBy({
         by: ["status"],
-        where: { profileId },
+        where: { userId },
         _count: { _all: true },
       }),
       this.prisma.networkingMessage.findMany({
-        where: { profileId },
+        where: { userId },
         select: { contactId: true },
         distinct: ["contactId"],
       }),
-      this.prisma.networkingMessage.count({ where: { profileId, sentAt: { gte: weekStart } } }),
-      this.prisma.networkingMessage.count({ where: { profileId, repliedAt: { gte: weekStart } } }),
+      this.prisma.networkingMessage.count({ where: { userId, sentAt: { gte: weekStart } } }),
+      this.prisma.networkingMessage.count({ where: { userId, repliedAt: { gte: weekStart } } }),
       this.prisma.networkingMessage.findMany({
-        where: { profileId, sentAt: { gte: timelineStart } },
+        where: { userId, sentAt: { gte: timelineStart } },
         select: { sentAt: true },
       }),
       this.prisma.contact.groupBy({
         by: ["discoverySource"],
-        where: { profileId, discoverySource: { not: null }, messages: { some: {} } },
+        where: { userId, discoverySource: { not: null }, messages: { some: {} } },
         _count: { _all: true },
         orderBy: { _count: { id: "desc" } },
         take: 5,

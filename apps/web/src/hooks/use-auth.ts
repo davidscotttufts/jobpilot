@@ -64,9 +64,9 @@ export function useAuth(): UseAuthResult {
   });
 
   return {
-    user: meQuery.data?.user,
+    user: meQuery.data,
     isLoading: meQuery.isLoading,
-    isAuthenticated: Boolean(meQuery.data?.user),
+    isAuthenticated: Boolean(meQuery.data),
     meQuery,
     login,
     register,

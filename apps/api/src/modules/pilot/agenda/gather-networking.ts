@@ -12,10 +12,10 @@ import type {
 /** Approved email drafts with a deliverable address, oldest first. LinkedIn drafts are never sends. */
 export async function gatherApprovedNetworking(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
 ): Promise<AgendaNetworkingSend[]> {
   const rows = await prisma.networkingMessage.findMany({
-    where: { profileId, channel: "email", status: "approved", contact: { email: { not: null } } },
+    where: { userId, channel: "email", status: "approved", contact: { email: { not: null } } },
     orderBy: { createdAt: "asc" },
     take: GATHER_CAP,
     select: {
@@ -41,13 +41,13 @@ export async function gatherApprovedNetworking(
 /** Sent emails past the followup window with no reply and no later message to the same contact. */
 export async function gatherFollowups(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaFollowup[]> {
   const cutoff = new Date(now.getTime() - config.networkingFollowupDays * DAY_MS);
   const candidates = await prisma.networkingMessage.findMany({
-    where: { profileId, channel: "email", repliedAt: null, sentAt: { not: null, lt: cutoff } },
+    where: { userId, channel: "email", repliedAt: null, sentAt: { not: null, lt: cutoff } },
     orderBy: { sentAt: "asc" },
     take: GATHER_CAP,
     select: {
@@ -88,12 +88,12 @@ export async function gatherFollowups(
 /** Approved posts whose schedule (if any) has arrived. */
 export async function gatherApprovedPromotions(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   now: Date,
 ): Promise<AgendaPromoPost[]> {
   const rows = await prisma.promotionPost.findMany({
     where: {
-      profileId,
+      userId,
       status: "approved",
       OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
     },
@@ -111,7 +111,7 @@ export async function gatherApprovedPromotions(
 /** Platforms whose newest non-declined post is older than their cadence (or which have none yet). */
 export async function duePlatforms(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaPromoPlatform[]> {
@@ -119,7 +119,7 @@ export async function duePlatforms(
   if (platforms.length === 0) return [];
   const posts = await prisma.promotionPost.findMany({
     where: {
-      profileId,
+      userId,
       status: { not: "declined" },
       platform: { in: platforms.map((p) => p.platform) },
     },

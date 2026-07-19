@@ -15,7 +15,7 @@ export const releasePilotLeaseSchema = z.object({
 
 export const pilotLeaseSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   kind: z.string(),
   subjectType: z.string(),
   subjectId: z.string(),

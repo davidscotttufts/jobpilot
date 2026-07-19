@@ -6,7 +6,6 @@ import { paginatedResponseSchema } from "@/types/response";
 
 /** A user as the admin table sees them: the public user plus activity and the caller's rights. */
 export const adminUserSchema = publicUserSchema.extend({
-  profileId: z.uuid().nullable(),
   name: z.string().nullable(),
   applicationCount: z.number().int(),
   lastActiveAt: z.date().nullable(),
@@ -19,7 +18,7 @@ export const adminUserPageSchema = paginatedResponseSchema(adminUserSchema);
 /** One Pilot in the admin fleet view: its owner, enablement, and cycle/question activity. */
 export const adminPilotSchema = z.object({
   userEmail: z.string(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   enabled: z.boolean(),
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
@@ -38,7 +37,6 @@ export const adminStatsSchema = z.object({
     active: z.number().int(),
   }),
   content: z.object({
-    profiles: z.number().int(),
     campaigns: z.number().int(),
     activeCampaigns: z.number().int(),
     applications: z.number().int(),

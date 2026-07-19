@@ -44,7 +44,7 @@ export const upworkProfileResponseSchema = upworkProfileSchema.nullable();
 /** A single proposal with decoded screening answers (`decodeUpworkProposal`). */
 export const upworkProposalSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   jobTitle: z.string(),
   clientName: z.string().nullable(),
   jobUrl: z.string().nullable(),

@@ -16,3 +16,43 @@ export function publicUser(user: User) {
     createdAt: user.createdAt,
   };
 }
+
+/**
+ * The signed-in user's own merged view (`GET /me`): account fields plus the
+ * applicant profile columns. `contactEmail` is the applicant address; `email`
+ * stays the login address. Secrets (passwordHash, wrappedDek) are never included.
+ */
+export function meUser(user: User) {
+  return {
+    ...publicUser(user),
+    username: user.username,
+    availability: user.availability,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    contactEmail: user.contactEmail,
+    phone: user.phone,
+    website: user.website,
+    linkedin: user.linkedin,
+    github: user.github,
+    street: user.street,
+    aptUnit: user.aptUnit,
+    city: user.city,
+    state: user.state,
+    zipCode: user.zipCode,
+    country: user.country,
+    usAuthorized: user.usAuthorized,
+    requiresSponsorship: user.requiresSponsorship,
+    visaStatus: user.visaStatus,
+    optExtension: user.optExtension,
+    willingToRelocate: user.willingToRelocate,
+    preferredLocations: user.preferredLocations,
+    eeoGender: user.eeoGender,
+    eeoRace: user.eeoRace,
+    eeoEthnicity: user.eeoEthnicity,
+    eeoHispanicOrLatino: user.eeoHispanicOrLatino,
+    eeoVeteranStatus: user.eeoVeteranStatus,
+    eeoDisabilityStatus: user.eeoDisabilityStatus,
+    primaryResumeId: user.primaryResumeId,
+    updatedAt: user.updatedAt,
+  };
+}

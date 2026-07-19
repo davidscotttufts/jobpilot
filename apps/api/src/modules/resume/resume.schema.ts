@@ -29,7 +29,7 @@ export const resumeListSchema = z.array(resumeSummarySchema);
 /** A single master resume with its structured content and source metadata. */
 export const resumeDetailSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   label: z.string(),
   content: resumeDataSchema.nullable(),
   version: z.number().int(),

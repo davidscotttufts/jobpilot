@@ -14,7 +14,8 @@ const USER_SELECT = {
   role: true,
   emailVerified: true,
   createdAt: true,
-  profile: { select: { id: true, firstName: true, lastName: true } },
+  firstName: true,
+  lastName: true,
 } satisfies Prisma.UserSelect;
 
 type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
@@ -33,7 +34,6 @@ export class AdminService {
       verifiedUsers,
       adminUsers,
       activeProfiles,
-      totalProfiles,
       totalCampaigns,
       activeCampaigns,
       applicationsThisWeek,
@@ -46,8 +46,8 @@ export class AdminService {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { emailVerified: true } }),
       this.prisma.user.count({ where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } } }),
-      // Active = the profile applied to something or moved a campaign inside the timeline window.
-      this.prisma.profile.count({
+      // Active = the user applied to something or moved a campaign inside the timeline window.
+      this.prisma.user.count({
         where: {
           OR: [
             { applications: { some: { appliedAt: { gte: timelineStart } } } },
@@ -55,7 +55,6 @@ export class AdminService {
           ],
         },
       }),
-      this.prisma.profile.count(),
       this.prisma.campaign.count(),
       this.prisma.campaign.count({ where: { status: "in_progress" } }),
       this.prisma.application.count({ where: { appliedAt: { gte: weekStart } } }),
@@ -85,7 +84,6 @@ export class AdminService {
         active: activeProfiles,
       },
       content: {
-        profiles: totalProfiles,
         campaigns: totalCampaigns,
         activeCampaigns,
         // `status` is non-nullable, so the groupBy already covers every application row.
@@ -110,35 +108,35 @@ export class AdminService {
     const { page, limit } = query;
     const [rows, total] = await Promise.all([
       this.prisma.pilotState.findMany({
-        orderBy: [{ lastCycleAt: { sort: "desc", nulls: "last" } }, { profileId: "asc" }],
+        orderBy: [{ lastCycleAt: { sort: "desc", nulls: "last" } }, { userId: "asc" }],
         skip: (page - 1) * limit,
         take: limit,
         select: {
-          profileId: true,
+          userId: true,
           enabled: true,
           lastCycleAt: true,
           cycleCount: true,
-          profile: { select: { user: { select: { email: true } } } },
+          user: { select: { email: true } },
         },
       }),
       this.prisma.pilotState.count(),
     ]);
 
-    const profileIds = rows.map((row) => row.profileId);
+    const userIds = rows.map((row) => row.userId);
     const questionRows = await this.prisma.question.groupBy({
-      by: ["profileId"],
-      where: { profileId: { in: profileIds }, status: "open" },
+      by: ["userId"],
+      where: { userId: { in: userIds }, status: "open" },
       _count: { _all: true },
     });
-    const openByProfile = new Map(questionRows.map((row) => [row.profileId, row._count._all]));
+    const openByUser = new Map(questionRows.map((row) => [row.userId, row._count._all]));
 
     const items = rows.map((row) => ({
-      userEmail: row.profile.user.email,
-      profileId: row.profileId,
+      userEmail: row.user.email,
+      userId: row.userId,
       enabled: row.enabled,
       lastCycleAt: row.lastCycleAt,
       cycleCount: row.cycleCount,
-      openQuestions: openByProfile.get(row.profileId) ?? 0,
+      openQuestions: openByUser.get(row.userId) ?? 0,
     }));
     return createPaginatedResponse(items, { page, limit, total });
   }
@@ -168,18 +166,17 @@ export class AdminService {
   /** Attach activity + the actor's rights. Three aggregates over the page's ids, never one per row. */
   private async project(actor: AuthUser, rows: AdminUserRow[]) {
     const userIds = rows.map((row) => row.id);
-    const profileIds = rows.map((row) => row.profile?.id).filter((id): id is string => Boolean(id));
 
     const [applicationRows, campaignRows, tokenRows] = await Promise.all([
       this.prisma.application.groupBy({
-        by: ["profileId"],
-        where: { profileId: { in: profileIds } },
+        by: ["userId"],
+        where: { userId: { in: userIds } },
         _count: { _all: true },
         _max: { appliedAt: true },
       }),
       this.prisma.campaign.groupBy({
-        by: ["profileId"],
-        where: { profileId: { in: profileIds } },
+        by: ["userId"],
+        where: { userId: { in: userIds } },
         _max: { updatedAt: true },
       }),
       // The agent PAT's last use is the truest "this account actually runs JobPilot" signal.
@@ -190,18 +187,18 @@ export class AdminService {
       }),
     ]);
 
-    const byApplication = new Map(applicationRows.map((row) => [row.profileId, row]));
-    const byCampaign = new Map(campaignRows.map((row) => [row.profileId, row._max.updatedAt]));
+    const byApplication = new Map(applicationRows.map((row) => [row.userId, row]));
+    const byCampaign = new Map(campaignRows.map((row) => [row.userId, row._max.updatedAt]));
     const byToken = new Map(tokenRows.map((row) => [row.userId, row._max.lastUsedAt]));
 
     return rows.map((row) => {
-      const application = row.profile ? byApplication.get(row.profile.id) : undefined;
+      const application = byApplication.get(row.id);
       const stamps = [
         application?._max.appliedAt,
-        row.profile ? byCampaign.get(row.profile.id) : undefined,
+        byCampaign.get(row.id),
         byToken.get(row.id),
       ].filter((date): date is Date => Boolean(date));
-      const name = `${row.profile?.firstName ?? ""} ${row.profile?.lastName ?? ""}`.trim();
+      const name = `${row.firstName} ${row.lastName}`.trim();
 
       return {
         id: row.id,
@@ -209,7 +206,6 @@ export class AdminService {
         role: row.role,
         emailVerified: row.emailVerified,
         createdAt: row.createdAt,
-        profileId: row.profile?.id ?? null,
         name: name || null,
         applicationCount: application?._count._all ?? 0,
         lastActiveAt: stamps.length

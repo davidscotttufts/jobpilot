@@ -1,9 +1,9 @@
 import type { Data } from "@jobpilot/api-client";
 import type { api } from "@/api/client";
 
-/** The current user + active profile, inferred from `GET /api/auth/me`. */
+/** The current user (flat: account + profile fields), inferred from `GET /api/auth/me`. */
 export type MeResponse = Data<typeof api.auth.me.get>;
-export type AuthUserDto = MeResponse["user"];
+export type AuthUserDto = MeResponse;
 
 /** Login/register response (tokens are ignored - auth rides the httpOnly cookie). */
 export type AuthSessionResponse = Data<typeof api.auth.login.post>;

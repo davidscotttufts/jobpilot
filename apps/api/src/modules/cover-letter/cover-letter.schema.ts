@@ -25,7 +25,7 @@ export const coverLetterListSchema = z.array(coverLetterSummarySchema);
 /** A single saved cover letter with its full plain-text body. */
 export const coverLetterDetailSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   jobUrl: z.string().nullable(),
   jobTitle: z.string().nullable(),
   company: z.string().nullable(),
@@ -41,7 +41,7 @@ export const coverLetterDetailSchema = z.object({
  */
 export const coverLetterCreatedSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   jobUrl: z.string().nullable(),
   jobTitle: z.string().nullable(),
   company: z.string().nullable(),

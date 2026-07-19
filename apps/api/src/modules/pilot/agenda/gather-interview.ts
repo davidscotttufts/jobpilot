@@ -12,10 +12,10 @@ const INTERVIEW_PREP_MARKER = "[interview-prep]";
  */
 export async function gatherInterviewReplies(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
 ): Promise<AgendaInterviewReply[]> {
   const apps = await prisma.application.findMany({
-    where: { profileId, status: "interviewing" },
+    where: { userId, status: "interviewing" },
     select: {
       id: true,
       company: true,
@@ -37,7 +37,7 @@ export async function gatherInterviewReplies(
   // Suppress any email that already has a reply draft question (open) or an approved one (answered).
   const questions = await prisma.question.findMany({
     where: {
-      profileId,
+      userId,
       subjectType: "email",
       subjectId: { in: candidates.map((c) => c.email.id) },
       status: { in: ["open", "answered"] },
@@ -63,11 +63,11 @@ export async function gatherInterviewReplies(
 /** Interviewing apps with no prep-sheet note yet, each carrying its campaign's resumeId when derivable. */
 export async function gatherInterviewPreps(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
 ): Promise<AgendaInterviewPrep[]> {
   const apps = await prisma.application.findMany({
     where: {
-      profileId,
+      userId,
       status: "interviewing",
       events: { none: { kind: "note", note: { startsWith: INTERVIEW_PREP_MARKER } } },
     },

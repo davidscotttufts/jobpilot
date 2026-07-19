@@ -11,10 +11,10 @@ import type { PrismaClient } from "@/generated/prisma/client";
  */
 export async function loadInstructionsConfig(
   prisma: Pick<PrismaClient, "pilotState">,
-  profileId: string,
+  userId: string,
 ): Promise<PilotInstructionsConfig> {
   const state = await prisma.pilotState.findUnique({
-    where: { profileId },
+    where: { userId },
     select: { instructionsConfig: true },
   });
   return pilotInstructionsConfigSchema.parse(JSON.parse(state?.instructionsConfig ?? "{}"));

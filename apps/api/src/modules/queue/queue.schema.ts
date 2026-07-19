@@ -8,7 +8,7 @@ export const queueListQuery = z.object({ status: z.string().trim().min(1).option
 /** A serialized queue entry (mirrors the service's `QueueEntryRow`). */
 export const queueEntrySchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   url: z.string(),
   note: z.string().nullable(),
   status: queueStatusSchema,

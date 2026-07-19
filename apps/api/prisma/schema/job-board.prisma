@@ -17,10 +17,10 @@ model JobBoard {
   @@map("job_boards")
 }
 
-// A profile's adoption of a global board: its credentials, ordering, and optional overrides.
+// A user's adoption of a global board: its credentials, ordering, and optional overrides.
 model ProfileJobBoard {
   id         String   @id @default(uuid())
-  profileId  String   @map("profile_id")
+  userId     String   @map("user_id")
   jobBoardId String   @map("job_board_id")
   email      String?
   // Encrypted under the user's DEK, like every other stored secret.
@@ -31,10 +31,10 @@ model ProfileJobBoard {
   sortOrder  Int      @default(0) @map("sort_order")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   jobBoard JobBoard @relation(fields: [jobBoardId], references: [id], onDelete: Cascade)
 
-  @@unique([profileId, jobBoardId])
-  @@index([profileId])
+  @@unique([userId, jobBoardId])
+  @@index([userId])
   @@map("profile_job_boards")
 }

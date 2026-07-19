@@ -29,7 +29,7 @@ export const createPilotJournalSchema = z.object({
 
 export const pilotJournalEntrySchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   cycleId: z.string().nullable(),
   kind: pilotJournalKindSchema,
   summary: z.string(),

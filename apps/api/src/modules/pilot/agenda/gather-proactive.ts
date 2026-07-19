@@ -23,9 +23,9 @@ const RETRY_MIN_FAILED = 3;
 /** Oldest-first pending queue entries (≤5) plus the total pending count. */
 export async function gatherQueueDrain(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
 ): Promise<AgendaQueueDrain> {
-  const where = { profileId, status: "pending" } as const;
+  const where = { userId, status: "pending" } as const;
   const [rows, pendingCount] = await Promise.all([
     prisma.queueEntry.findMany({
       where,
@@ -45,7 +45,7 @@ export async function gatherQueueDrain(
  */
 export async function gatherBoardHealth(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   parkedBoards: string[],
 ): Promise<AgendaBoardHealth[]> {
   const parked = new Set(parkedBoards);
@@ -53,7 +53,7 @@ export async function gatherBoardHealth(
     where: {
       status: { in: ["applied", "failed"] },
       board: { not: null },
-      campaign: { profileId },
+      campaign: { userId },
     },
     orderBy: { createdAt: "desc" },
     take: BOARD_HEALTH_SCAN,
@@ -143,7 +143,7 @@ async function topSkipReasonsByCampaign(
  */
 export async function gatherQuietCandidates(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   now: Date,
 ): Promise<{
   strategyReviews: AgendaStrategyReview[];
@@ -153,11 +153,11 @@ export async function gatherQuietCandidates(
   const since = new Date(now.getTime() - 7 * DAY_MS);
   const [campaigns, markers] = await Promise.all([
     prisma.campaign.findMany({
-      where: { profileId, status: "in_progress" },
+      where: { userId, status: "in_progress" },
       select: { campaignId: true, query: true, config: true, summary: true },
     }),
     prisma.pilotJournalEntry.findMany({
-      where: { profileId, kind: "action", createdAt: { gte: since } },
+      where: { userId, kind: "action", createdAt: { gte: since } },
       select: { subjectId: true, detail: true },
     }),
   ]);

@@ -1,7 +1,7 @@
 model CoverLetter {
-  id        String  @id @default(uuid())
-  profileId String  @map("profile_id")
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id       String @id @default(uuid())
+  userId   String @map("user_id")
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   jobUrl   String? @map("job_url")
   jobTitle String? @map("job_title")
@@ -11,6 +11,6 @@ model CoverLetter {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([profileId, createdAt])
+  @@index([userId, createdAt])
   @@map("cover_letters")
 }

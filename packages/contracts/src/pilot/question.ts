@@ -25,7 +25,7 @@ export const questionsQuerySchema = z.object({ status: questionStatusSchema.opti
 
 export const questionSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   kind: questionKindSchema,
   status: questionStatusSchema,
   subjectType: z.string().nullable(),

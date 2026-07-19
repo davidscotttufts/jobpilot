@@ -2,7 +2,7 @@ import { statusTransitionSchema } from "@jobpilot/contracts/application";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
 import {
@@ -24,8 +24,8 @@ export const applicationController = new Elysia({
   prefix: "/applied",
   detail: { tags: ["Applied"] },
 })
-  .use(profileGuard)
-  .get("/", ({ profileId, query }) => svc.list(profileId, query), {
+  .use(authGuard)
+  .get("/", ({ user, query }) => svc.list(user.id, query), {
     query: applicationListQuerySchema,
     response: applicationListSchema,
     detail: {
@@ -34,7 +34,7 @@ export const applicationController = new Elysia({
         "Returns the profile's applied jobs (up to 500, newest first), optionally filtered by status, board, source, or a search term matched against title, company, and URL.",
     },
   })
-  .get("/check", ({ profileId, query }) => svc.check(profileId, query), {
+  .get("/check", ({ user, query }) => svc.check(user.id, query), {
     query: applicationQuerySchema,
     response: applicationCheckSchema,
     detail: {
@@ -43,7 +43,7 @@ export const applicationController = new Elysia({
         "Checks whether the profile already applied to a job by exact URL or by a fuzzy title-and-company match within the dedupe window, returning whether a duplicate exists and the matching application when found.",
     },
   })
-  .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
+  .get("/:id", ({ user, params }) => svc.get(user.id, params.id), {
     params: idParam,
     response: applicationDetailSchema,
     detail: {
@@ -52,7 +52,7 @@ export const applicationController = new Elysia({
         "Returns a single owned application by id, including its activity events ordered chronologically, or 404 if it does not belong to the profile.",
     },
   })
-  .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
+  .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
     response: deletedResponseSchema,
     detail: {
@@ -61,21 +61,17 @@ export const applicationController = new Elysia({
         "Permanently deletes the owned application identified by id and returns the deleted id, or 404 if it does not belong to the profile.",
     },
   })
-  .post(
-    "/:id/status",
-    ({ profileId, params, body }) => svc.transitionStatus(profileId, params.id, body),
-    {
-      params: idParam,
-      body: statusTransitionSchema,
-      response: statusTransitionResultSchema,
-      detail: {
-        summary: "Transition application status",
-        description:
-          "Moves the owned application to the requested status, recording a status-change activity event and updating its rejection timestamp, then returns the new status (no-op if already in that status).",
-      },
+  .post("/:id/status", ({ user, params, body }) => svc.transitionStatus(user.id, params.id, body), {
+    params: idParam,
+    body: statusTransitionSchema,
+    response: statusTransitionResultSchema,
+    detail: {
+      summary: "Transition application status",
+      description:
+        "Moves the owned application to the requested status, recording a status-change activity event and updating its rejection timestamp, then returns the new status (no-op if already in that status).",
     },
-  )
-  .post("/:id/events", ({ profileId, params, body }) => svc.addEvent(profileId, params.id, body), {
+  })
+  .post("/:id/events", ({ user, params, body }) => svc.addEvent(user.id, params.id, body), {
     params: idParam,
     body: appendNoteSchema,
     beforeHandle: limitNote,

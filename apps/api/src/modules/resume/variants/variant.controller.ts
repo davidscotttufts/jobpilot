@@ -2,7 +2,7 @@ import { resumeVariantCreateSchema, resumeVariantPatchSchema } from "@jobpilot/c
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { tailorResumeSchema } from "../resume.schema";
 import { tailoredVariantSchema, variantDetailSchema, variantListSchema } from "./variant.schema";
@@ -14,9 +14,9 @@ export const resumeVariantController = new Elysia({
   name: "resume-variants",
   detail: { tags: ["Resumes"] },
 })
-  .use(profileGuard)
+  .use(authGuard)
   // variant PDF (cached, binary)
-  .get("/variants/:id/pdf", ({ profileId, params }) => svc.renderVariantPdf(profileId, params.id), {
+  .get("/variants/:id/pdf", ({ user, params }) => svc.renderVariantPdf(user.id, params.id), {
     params: idParam,
     detail: {
       summary: "Render variant PDF",
@@ -25,7 +25,7 @@ export const resumeVariantController = new Elysia({
     },
   })
   // variants for a resume: list / create
-  .get("/:id/variants", ({ profileId, params }) => svc.listVariants(profileId, params.id), {
+  .get("/:id/variants", ({ user, params }) => svc.listVariants(user.id, params.id), {
     params: idParam,
     response: variantListSchema,
     detail: {
@@ -34,24 +34,20 @@ export const resumeVariantController = new Elysia({
         "Returns all tailored variants belonging to the given master resume, ordered by most recently updated.",
     },
   })
-  .post(
-    "/:id/variants",
-    ({ profileId, params, body }) => svc.createVariant(profileId, params.id, body),
-    {
-      params: idParam,
-      body: resumeVariantCreateSchema,
-      response: idResponseSchema,
-      detail: {
-        summary: "Create resume variant",
-        description:
-          "Creates a tailored variant under the given master resume from explicit structured content and returns the new variant's id.",
-      },
+  .post("/:id/variants", ({ user, params, body }) => svc.createVariant(user.id, params.id, body), {
+    params: idParam,
+    body: resumeVariantCreateSchema,
+    response: idResponseSchema,
+    detail: {
+      summary: "Create resume variant",
+      description:
+        "Creates a tailored variant under the given master resume from explicit structured content and returns the new variant's id.",
     },
-  )
+  })
   // deterministic tailored variant from model hints
   .post(
     "/:id/tailor",
-    ({ profileId, params, body }) => svc.createTailoredVariant(profileId, params.id, body),
+    ({ user, params, body }) => svc.createTailoredVariant(user.id, params.id, body),
     {
       params: idParam,
       body: tailorResumeSchema,
@@ -64,7 +60,7 @@ export const resumeVariantController = new Elysia({
     },
   )
   // single variant CRUD
-  .get("/variants/:id", ({ profileId, params }) => svc.getVariant(profileId, params.id), {
+  .get("/variants/:id", ({ user, params }) => svc.getVariant(user.id, params.id), {
     params: idParam,
     response: variantDetailSchema,
     detail: {
@@ -73,21 +69,17 @@ export const resumeVariantController = new Elysia({
         "Returns a single tailored variant owned by the active profile, including its parsed content, diff notes, and rewrite audit.",
     },
   })
-  .patch(
-    "/variants/:id",
-    ({ profileId, params, body }) => svc.updateVariant(profileId, params.id, body),
-    {
-      params: idParam,
-      body: resumeVariantPatchSchema,
-      response: idResponseSchema,
-      detail: {
-        summary: "Update resume variant",
-        description:
-          "Partially updates a tailored variant's label, job URL, application link, content, or diff notes and returns the variant id.",
-      },
+  .patch("/variants/:id", ({ user, params, body }) => svc.updateVariant(user.id, params.id, body), {
+    params: idParam,
+    body: resumeVariantPatchSchema,
+    response: idResponseSchema,
+    detail: {
+      summary: "Update resume variant",
+      description:
+        "Partially updates a tailored variant's label, job URL, application link, content, or diff notes and returns the variant id.",
     },
-  )
-  .delete("/variants/:id", ({ profileId, params }) => svc.removeVariant(profileId, params.id), {
+  })
+  .delete("/variants/:id", ({ user, params }) => svc.removeVariant(user.id, params.id), {
     params: idParam,
     response: deletedResponseSchema,
     detail: {

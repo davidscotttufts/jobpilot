@@ -28,25 +28,25 @@ export class JobBoardService {
     };
   }
 
-  async list(userId: string, profileId: string) {
+  async list(userId: string) {
     const rows = await this.prisma.profileJobBoard.findMany({
-      where: { profileId },
+      where: { userId },
       include: { jobBoard: true },
       orderBy: { sortOrder: "asc" },
     });
     return Promise.all(rows.map((row) => this.project(userId, row)));
   }
 
-  /** Listed boards the profile has not linked yet - the picker in the add-board dialog. */
-  catalog(profileId: string) {
+  /** Listed boards the user has not linked yet - the picker in the add-board dialog. */
+  catalog(userId: string) {
     return this.prisma.jobBoard.findMany({
-      where: { listed: true, profiles: { none: { profileId } } },
+      where: { listed: true, profiles: { none: { userId } } },
       select: { id: true, name: true, domain: true, searchUrl: true, sortOrder: true },
       orderBy: { sortOrder: "asc" },
     });
   }
 
-  async create(userId: string, profileId: string, input: JobBoardInput) {
+  async create(userId: string, input: JobBoardInput) {
     // An unknown domain enters the catalog unlisted: admins see it, other users are not offered it.
     const board = await this.prisma.jobBoard.upsert({
       where: { domain: input.domain },
@@ -60,7 +60,7 @@ export class JobBoardService {
     });
     const row = await this.prisma.profileJobBoard.create({
       data: {
-        profileId,
+        userId,
         jobBoardId: board.id,
         // User-typed, so stored as overrides. Null (= inherit admin renames) is what seeded links get.
         name: input.name,
@@ -78,16 +78,16 @@ export class JobBoardService {
     return this.project(userId, row);
   }
 
-  private findLink(profileId: string, id: string) {
+  private findLink(userId: string, id: string) {
     return findOwned(
       (where) => this.prisma.profileJobBoard.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Board",
     );
   }
 
-  async update(userId: string, profileId: string, id: string, input: JobBoardPatch) {
-    await this.findLink(profileId, id);
+  async update(userId: string, id: string, input: JobBoardPatch) {
+    await this.findLink(userId, id);
     const row = await this.prisma.profileJobBoard.update({
       where: { id },
       data: {
@@ -103,9 +103,9 @@ export class JobBoardService {
     return this.project(userId, row);
   }
 
-  /** Unlinks the board from this profile. The global row survives - other users still use it. */
-  async remove(profileId: string, id: string) {
-    await this.findLink(profileId, id);
+  /** Unlinks the board from this user. The global row survives - other users still use it. */
+  async remove(userId: string, id: string) {
+    await this.findLink(userId, id);
     await this.prisma.profileJobBoard.delete({ where: { id } });
     return { deleted: id };
   }

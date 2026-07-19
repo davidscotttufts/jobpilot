@@ -21,8 +21,8 @@ export const PersonalSection = withForm({
             {(field) => <field.TextField label="Last name" />}
           </form.AppField>
         </Stack>
-        <form.AppField name="email">
-          {(field) => <field.TextField label="Email" type="email" />}
+        <form.AppField name="contactEmail">
+          {(field) => <field.TextField label="Contact email" type="email" />}
         </form.AppField>
         <form.AppField name="phone">{(field) => <field.Phone label="Phone" />}</form.AppField>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>

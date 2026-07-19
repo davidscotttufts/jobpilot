@@ -20,16 +20,17 @@ export const authSessionSchema = z.object({
 });
 
 /**
- * The raw `Profile` row returned alongside the user by `GET /me`.
- * The service returns the unmodified Prisma row, so `updatedAt` is a `Date`
- * (validated pre-serialization) and `preferredLocations` is the stored JSON string.
+ * The signed-in user's own merged view (mirrors `meUser`): account fields plus
+ * the applicant profile columns. `contactEmail` is the applicant address; `email`
+ * stays the login address. `updatedAt` is a `Date` (validated pre-serialization)
+ * and `preferredLocations` is the stored JSON string.
  */
-export const meProfileSchema = z.object({
-  id: z.uuid(),
-  userId: z.uuid(),
+export const meSchema = publicUserSchema.extend({
+  username: z.string(),
+  availability: z.string().nullable(),
   firstName: z.string(),
   lastName: z.string(),
-  email: z.string(),
+  contactEmail: z.string(),
   phone: z.string().nullable(),
   website: z.string().nullable(),
   linkedin: z.string().nullable(),
@@ -54,12 +55,6 @@ export const meProfileSchema = z.object({
   eeoDisabilityStatus: z.string().nullable(),
   primaryResumeId: z.uuid().nullable(),
   updatedAt: z.date(),
-});
-
-/** Current user plus their associated profile (mirrors `AuthService.me`). */
-export const meSchema = z.object({
-  user: publicUserSchema,
-  profile: meProfileSchema.nullable(),
 });
 
 /**

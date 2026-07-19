@@ -7,7 +7,7 @@ import {
 import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { portfolioSchema } from "@/modules/portfolio/portfolio.schema";
 import { PortfolioService } from "@/modules/portfolio/portfolio.service";
 import { idResponseSchema } from "@/types/response";
@@ -26,8 +26,8 @@ export const profileController = new Elysia({
   prefix: "/profile",
   detail: { tags: ["Profile"] },
 })
-  .use(profileGuard)
-  .get("/", ({ profileId }) => svc.get(profileId), {
+  .use(authGuard)
+  .get("/", ({ user }) => svc.get(user.id), {
     response: profileAggregateSchema,
     detail: {
       summary: "Get active profile",
@@ -35,7 +35,7 @@ export const profileController = new Elysia({
         "Returns the active profile aggregate, including its auto-apply settings, references, and resumes.",
     },
   })
-  .put("/", ({ profileId, body }) => svc.update(profileId, body), {
+  .put("/", ({ user, body }) => svc.update(user.id, body), {
     body: profileWithAutoApplySchema,
     response: idResponseSchema,
     detail: {
@@ -44,7 +44,7 @@ export const profileController = new Elysia({
         "Performs a full replace of the active profile and its auto-apply settings, returning the updated profile aggregate.",
     },
   })
-  .put("/primary-resume", ({ profileId, body }) => svc.setPrimaryResume(profileId, body.resumeId), {
+  .put("/primary-resume", ({ user, body }) => svc.setPrimaryResume(user.id, body.resumeId), {
     body: setPrimaryResumeSchema,
     response: primaryResumeSetSchema,
     detail: {

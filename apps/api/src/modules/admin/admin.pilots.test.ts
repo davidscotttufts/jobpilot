@@ -7,7 +7,7 @@ import { describe, expect, it } from "bun:test";
 
 function fakePrisma(
   states: Record<string, unknown>[],
-  questions: { profileId: string; _count: { _all: number } }[],
+  questions: { userId: string; _count: { _all: number } }[],
 ) {
   return {
     pilotState: {
@@ -24,21 +24,21 @@ describe("AdminService.listPilots", () => {
       fakePrisma(
         [
           {
-            profileId: "p1",
+            userId: "p1",
             enabled: true,
             lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
             cycleCount: 42,
-            profile: { user: { email: "alice@example.com" } },
+            user: { email: "alice@example.com" },
           },
           {
-            profileId: "p2",
+            userId: "p2",
             enabled: false,
             lastCycleAt: null,
             cycleCount: 0,
-            profile: { user: { email: "bob@example.com" } },
+            user: { email: "bob@example.com" },
           },
         ],
-        [{ profileId: "p1", _count: { _all: 2 } }],
+        [{ userId: "p1", _count: { _all: 2 } }],
       ),
     );
 
@@ -47,7 +47,7 @@ describe("AdminService.listPilots", () => {
     expect(page.items).toEqual([
       {
         userEmail: "alice@example.com",
-        profileId: "p1",
+        userId: "p1",
         enabled: true,
         lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
         cycleCount: 42,
@@ -55,7 +55,7 @@ describe("AdminService.listPilots", () => {
       },
       {
         userEmail: "bob@example.com",
-        profileId: "p2",
+        userId: "p2",
         enabled: false,
         lastCycleAt: null,
         cycleCount: 0,

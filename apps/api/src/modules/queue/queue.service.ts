@@ -20,16 +20,16 @@ function serializeQueueEntry(row: QueueEntry): QueueEntryRow {
 export class QueueService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  private findEntry(id: string, profileId: string) {
+  private findEntry(id: string, userId: string) {
     return findOwned(
       (where) => this.prisma.queueEntry.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Queue entry",
     );
   }
 
-  async list(profileId: string, status?: string): Promise<QueueEntryRow[]> {
-    const where: Prisma.QueueEntryWhereInput = { profileId };
+  async list(userId: string, status?: string): Promise<QueueEntryRow[]> {
+    const where: Prisma.QueueEntryWhereInput = { userId };
     if (status) {
       where.status = status;
     }
@@ -37,30 +37,30 @@ export class QueueService {
     return rows.map(serializeQueueEntry);
   }
 
-  async listPending(profileId: string): Promise<QueueEntryRow[]> {
+  async listPending(userId: string): Promise<QueueEntryRow[]> {
     const rows = await this.prisma.queueEntry.findMany({
-      where: { profileId, status: "pending" },
+      where: { userId, status: "pending" },
       orderBy: { createdAt: "asc" },
     });
     return rows.map(serializeQueueEntry);
   }
 
-  async add(profileId: string, input: AddQueueEntry) {
+  async add(userId: string, input: AddQueueEntry) {
     const created = await this.prisma.$transaction(
       input.urls.map((u) =>
         this.prisma.queueEntry.upsert({
-          where: { profileId_url: { profileId, url: u } },
-          create: { profileId, url: u, note: input.note ?? null, status: "pending" },
+          where: { userId_url: { userId, url: u } },
+          create: { userId, url: u, note: input.note ?? null, status: "pending" },
           update: { note: input.note ?? null, status: "pending" },
         }),
       ),
     );
-    publish(workspaceChannel, { profileId }, { type: "queue.updated" });
+    publish(workspaceChannel, { userId }, { type: "queue.updated" });
     return { inserted: created.length, items: created.map(serializeQueueEntry) };
   }
 
-  async patch(profileId: string, id: string, input: PatchQueueEntry): Promise<QueueEntryRow> {
-    await this.findEntry(id, profileId);
+  async patch(userId: string, id: string, input: PatchQueueEntry): Promise<QueueEntryRow> {
+    await this.findEntry(id, userId);
     const updated = await this.prisma.queueEntry.update({
       where: { id },
       data: {
@@ -71,8 +71,8 @@ export class QueueService {
     return serializeQueueEntry(updated);
   }
 
-  async remove(profileId: string, id: string) {
-    await this.findEntry(id, profileId);
+  async remove(userId: string, id: string) {
+    await this.findEntry(id, userId);
     await this.prisma.queueEntry.delete({ where: { id } });
     return { deleted: id };
   }

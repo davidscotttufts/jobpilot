@@ -12,8 +12,8 @@ export type PilotEvent =
  * Profile-scoped Pilot feed (journal entries, questions, state changes).
  * Parameter-free path; the server resolves the profile from the session.
  */
-export const pilotChannel = defineChannel<PilotEvent, void, { profileId: string }>({
+export const pilotChannel = defineChannel<PilotEvent, void, { userId: string }>({
   name: "pilot",
   path: () => "/api/pilot/events",
-  topic: ({ profileId }) => String(profileId),
+  topic: ({ userId }) => String(userId),
 });

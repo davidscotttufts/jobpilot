@@ -31,12 +31,12 @@ export class CampaignService {
    * threshold to `interrupted`, and revert their `applying` jobs to `approved`
    * so `/resume <campaignId>` can pick them up. Emits SSE per campaign.
    */
-  private async reconcileStaleCampaigns(profileId: string): Promise<number> {
+  private async reconcileStaleCampaigns(userId: string): Promise<number> {
     const cutoff = new Date(Date.now() - STALE_THRESHOLD_MS);
 
     const stale = await this.prisma.campaign.findMany({
       where: {
-        profileId,
+        userId,
         status: "in_progress",
         updatedAt: { lt: cutoff },
       },
@@ -66,7 +66,7 @@ export class CampaignService {
       );
       publish(
         workspaceChannel,
-        { profileId },
+        { userId },
         {
           type: "campaign.updated",
           campaignId: r.campaignId,
@@ -81,10 +81,10 @@ export class CampaignService {
 
   // ── Campaign list / create ───────────────────────────────────────────────────
 
-  async list(profileId: string, query: { status?: string; source?: string }) {
-    await this.reconcileStaleCampaigns(profileId);
+  async list(userId: string, query: { status?: string; source?: string }) {
+    await this.reconcileStaleCampaigns(userId);
 
-    const where: Prisma.CampaignWhereInput = { profileId };
+    const where: Prisma.CampaignWhereInput = { userId };
 
     if (query.status) where.status = query.status;
     if (query.source) where.source = query.source;
@@ -109,11 +109,11 @@ export class CampaignService {
     );
   }
 
-  async create(profileId: string, body: CreateCampaignInput) {
+  async create(userId: string, body: CreateCampaignInput) {
     const campaign = await this.prisma.campaign.create({
       data: {
         campaignId: body.campaignId,
-        profileId,
+        userId,
         query: body.query,
         source: body.source,
         config: JSON.stringify(body.config ?? {}),
@@ -138,8 +138,8 @@ export class CampaignService {
 
   // ── Single campaign get / patch / delete ─────────────────────────────────────
 
-  async get(profileId: string, id: string) {
-    await this.reconcileStaleCampaigns(profileId);
+  async get(userId: string, id: string) {
+    await this.reconcileStaleCampaigns(userId);
 
     const campaign = await findOwned(
       (where) =>
@@ -147,7 +147,7 @@ export class CampaignService {
           where,
           include: { jobs: { orderBy: { id: "asc" } } },
         }),
-      { campaignId: id, profileId },
+      { campaignId: id, userId },
       "Campaign",
     );
 
@@ -182,10 +182,10 @@ export class CampaignService {
     };
   }
 
-  async update(profileId: string, id: string, body: UpdateCampaignInput) {
+  async update(userId: string, id: string, body: UpdateCampaignInput) {
     const existing = await findOwned(
       (where) => this.prisma.campaign.findFirst({ where }),
-      { campaignId: id, profileId },
+      { campaignId: id, userId },
       "Campaign",
     );
 
@@ -217,7 +217,7 @@ export class CampaignService {
       );
       publish(
         workspaceChannel,
-        { profileId },
+        { userId },
         body.status === "completed"
           ? { type: "campaign.completed", campaignId: id }
           : {
@@ -254,48 +254,48 @@ export class CampaignService {
    * they (and campaign-only contacts) are deleted explicitly inside a transaction
    * before the campaign row. Synced EmailMessages are kept (matchedAppId SetNull).
    */
-  async remove(profileId: string, id: string) {
+  async remove(userId: string, id: string) {
     await findOwned(
       (where) => this.prisma.campaign.findFirst({ where }),
-      { campaignId: id, profileId },
+      { campaignId: id, userId },
       "Campaign",
     );
 
     await this.prisma.$transaction(async (tx) => {
       const contactIds = (
         await tx.networkingMessage.findMany({
-          where: { campaignId: id, profileId },
+          where: { campaignId: id, userId },
           select: { contactId: true },
         })
       ).map((m) => m.contactId);
 
       // Cascades ApplicationEvent / ResumeVariant; SetNull on EmailMessage & Contact links.
-      await tx.application.deleteMany({ where: { campaignId: id, profileId } });
-      await tx.networkingMessage.deleteMany({ where: { campaignId: id, profileId } });
+      await tx.application.deleteMany({ where: { campaignId: id, userId } });
+      await tx.networkingMessage.deleteMany({ where: { campaignId: id, userId } });
 
       // Only contacts left with no messages and no related application - i.e. ones
       // that existed solely for this campaign. Skips contacts referenced elsewhere.
       await tx.contact.deleteMany({
-        where: { id: { in: contactIds }, profileId, messages: { none: {} }, relatedAppId: null },
+        where: { id: { in: contactIds }, userId, messages: { none: {} }, relatedAppId: null },
       });
 
       // Cascades Job + CampaignEvent.
       await tx.campaign.delete({ where: { campaignId: id } });
     });
 
-    publish(workspaceChannel, { profileId }, { type: "campaign.deleted", campaignId: id });
+    publish(workspaceChannel, { userId }, { type: "campaign.deleted", campaignId: id });
     return { deleted: true, campaignId: id };
   }
 
   // ── Campaign events (SSE record) ─────────────────────────────────────────────
 
   /** Ownership check used before subscribing to a campaign's SSE feed. */
-  ensureCampaignOwned(profileId: string, campaignId: string): Promise<void> {
-    return ensureCampaignOwned(this.prisma, profileId, campaignId);
+  ensureCampaignOwned(userId: string, campaignId: string): Promise<void> {
+    return ensureCampaignOwned(this.prisma, userId, campaignId);
   }
 
-  async recordCampaignEvent(profileId: string, campaignId: string, event: CampaignEventInput) {
-    await this.ensureCampaignOwned(profileId, campaignId);
+  async recordCampaignEvent(userId: string, campaignId: string, event: CampaignEventInput) {
+    await this.ensureCampaignOwned(userId, campaignId);
 
     const created = await this.prisma.campaignEvent.create({
       data: { campaignId, type: event.type, payload: JSON.stringify(event.payload) },

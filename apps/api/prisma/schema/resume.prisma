@@ -1,7 +1,7 @@
 model Resume {
-  id        String  @id @default(uuid())
-  profileId String  @map("profile_id")
-  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   label String
 
@@ -13,12 +13,12 @@ model Resume {
   version Int     @default(1)
 
   variants   ResumeVariant[]
-  primaryFor Profile?        @relation("PrimaryResume")
+  primaryFor User?           @relation("PrimaryResume")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([profileId])
+  @@index([userId])
   @@map("resumes")
 }
 

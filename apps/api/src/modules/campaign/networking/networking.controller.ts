@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/networking";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard, requireVerifiedEmail } from "@/common/middleware";
+import { authGuard, requireVerifiedEmail } from "@/common/middleware";
 import { campaignParams, networkingMessageParams } from "../campaign.schema";
 import {
   networkingMessageListSchema,
@@ -20,8 +20,8 @@ export const campaignNetworkingController = new Elysia({
   name: "campaign-networking",
   detail: { tags: ["Campaigns"] },
 })
-  .use(profileGuard)
-  .get("/:id/networking", ({ profileId, params }) => svc.listNetworking(profileId, params.id), {
+  .use(authGuard)
+  .get("/:id/networking", ({ user, params }) => svc.listNetworking(user.id, params.id), {
     params: campaignParams,
     response: networkingMessageListSchema,
     detail: {
@@ -32,9 +32,9 @@ export const campaignNetworkingController = new Elysia({
   })
   .post(
     "/:id/networking",
-    async ({ user, profileId, params, body }) => {
+    async ({ user, params, body }) => {
       await requireVerifiedEmail(user.id);
-      return svc.addNetworking(profileId, params.id, body);
+      return svc.addNetworking(user.id, params.id, body);
     },
     {
       params: campaignParams,
@@ -49,8 +49,7 @@ export const campaignNetworkingController = new Elysia({
   )
   .patch(
     "/:id/networking/:messageId",
-    ({ profileId, params, body }) =>
-      svc.patchNetworking(profileId, params.id, params.messageId, body),
+    ({ user, params, body }) => svc.patchNetworking(user.id, params.id, params.messageId, body),
     {
       params: networkingMessageParams,
       body: patchNetworkingMessageSchema,
@@ -64,8 +63,8 @@ export const campaignNetworkingController = new Elysia({
   )
   .post(
     "/:id/networking/:messageId/result",
-    ({ profileId, params, body }) =>
-      svc.recordNetworkingResult(profileId, params.id, params.messageId, body),
+    ({ user, params, body }) =>
+      svc.recordNetworkingResult(user.id, params.id, params.messageId, body),
     {
       params: networkingMessageParams,
       body: networkingMessageResultSchema,

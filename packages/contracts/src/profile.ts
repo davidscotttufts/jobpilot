@@ -81,7 +81,7 @@ export type SalaryPreferenceInput = z.infer<typeof salaryPreferenceSchema>;
 export const profileSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
-  email: z.email(),
+  contactEmail: z.email(),
   phone: optionalPhoneSchema,
   website: optionalUrl,
   linkedin: optionalLinkedinUrl,
@@ -136,7 +136,7 @@ export type SetPrimaryResumeInput = z.infer<typeof setPrimaryResumeSchema>;
 export const PROFILE_DEFAULT_VALUES: ProfileWithAutoApplyInput = {
   firstName: "",
   lastName: "",
-  email: "",
+  contactEmail: "",
   phone: "",
   website: "",
   linkedin: "",

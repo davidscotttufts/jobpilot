@@ -25,10 +25,10 @@ interface MessageQuery {
 export class EmailService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listMessages(profileId: string, query: MessageQuery) {
+  async listMessages(userId: string, query: MessageQuery) {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
-    const where: Prisma.EmailMessageWhereInput = { account: { profileId } };
+    const where: Prisma.EmailMessageWhereInput = { account: { userId } };
 
     if (reviewStatus) {
       where.reviewStatus = reviewStatus;
@@ -65,7 +65,7 @@ export class EmailService {
     return rows.map((row) => serializeMessage(row));
   }
 
-  async getMessage(profileId: string, id: string) {
+  async getMessage(userId: string, id: string) {
     const row = await findOwned(
       (where) =>
         this.prisma.emailMessage.findFirst({
@@ -74,17 +74,17 @@ export class EmailService {
             matchedApp: { select: { id: true, title: true, company: true, status: true } },
           },
         }),
-      { id, account: { profileId } },
+      { id, account: { userId } },
       "Message",
     );
 
     return serializeMessage(row);
   }
 
-  async scanMessage(profileId: string, id: string, body: ScanMessageInput) {
+  async scanMessage(userId: string, id: string, body: ScanMessageInput) {
     await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where, select: { id: true } }),
-      { id, account: { profileId } },
+      { id, account: { userId } },
       "Message",
     );
 
@@ -110,15 +110,15 @@ export class EmailService {
 
     const message = serializeMessage(row);
 
-    publish(inboxChannel, { profileId }, { type: "message.scanned", id });
+    publish(inboxChannel, { userId }, { type: "message.scanned", id });
 
     return message;
   }
 
-  async denyMessage(profileId: string, id: string) {
+  async denyMessage(userId: string, id: string) {
     await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where, select: { id: true } }),
-      { id, account: { profileId } },
+      { id, account: { userId } },
       "Message",
     );
 
@@ -127,15 +127,15 @@ export class EmailService {
       data: { reviewStatus: "denied" },
     });
 
-    publish(inboxChannel, { profileId }, { type: "message.reviewed", id, status: "denied" });
+    publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "denied" });
 
     return { id, status: "denied" as const };
   }
 
-  async approveMessage(profileId: string, id: string, body: ApproveInput) {
+  async approveMessage(userId: string, id: string, body: ApproveInput) {
     const message = await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where }),
-      { id, account: { profileId } },
+      { id, account: { userId } },
       "Message",
     );
 
@@ -153,7 +153,7 @@ export class EmailService {
     }
 
     const app = await this.prisma.application.findFirst({
-      where: { id: message.matchedAppId, profileId },
+      where: { id: message.matchedAppId, userId },
     });
     if (!app) {
       throw notFound("Application not found");
@@ -173,7 +173,7 @@ export class EmailService {
       }),
     ]);
 
-    publish(inboxChannel, { profileId }, { type: "message.reviewed", id, status: "approved" });
+    publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "approved" });
 
     return { id, applicationId: app.id, status: inferred };
   }

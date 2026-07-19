@@ -20,11 +20,11 @@ export class ScoringService {
    * caller-provided profile overrides, and scores the job digest.
    */
   async scoreJobFit(
-    profileId: string,
+    userId: string,
     { digest, profile, resumeId }: ScoreJobFitInput,
   ): Promise<FitResult> {
-    // Prefer an explicit, owned resume override; otherwise the profile's primary.
-    const content = await this.resolveBaseResumeContent(profileId, resumeId);
+    // Prefer an explicit, owned resume override; otherwise the user's primary.
+    const content = await this.resolveBaseResumeContent(userId, resumeId);
 
     let derived = { techStack: [] as string[], yearsExperience: null as number | null };
 
@@ -47,24 +47,24 @@ export class ScoringService {
 
   /**
    * Resolve the scoring base resume's content in a single query per path: an
-   * owned `resumeId` override, else the profile's primary (via relation).
+   * owned `resumeId` override, else the user's primary (via relation).
    */
   private async resolveBaseResumeContent(
-    profileId: string,
+    userId: string,
     resumeId?: string,
   ): Promise<string | null> {
     if (resumeId) {
       const override = await this.prisma.resume.findFirst({
-        where: { id: resumeId, profileId },
+        where: { id: resumeId, userId },
         select: { content: true },
       });
       if (override) return override.content;
     }
 
-    const profile = await this.prisma.profile.findUnique({
-      where: { id: profileId },
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
       select: { primaryResume: { select: { content: true } } },
     });
-    return profile?.primaryResume?.content ?? null;
+    return user?.primaryResume?.content ?? null;
   }
 }

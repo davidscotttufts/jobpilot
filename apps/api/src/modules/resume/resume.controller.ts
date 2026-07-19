@@ -2,7 +2,7 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { resumeChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
 import { resumeFileController } from "./files/file.controller";
@@ -23,9 +23,9 @@ export const resumeController = new Elysia({
   prefix: "/resumes",
   detail: { tags: ["Resumes"] },
 })
-  .use(profileGuard)
+  .use(authGuard)
   // list
-  .get("/", ({ profileId }) => svc.list(profileId), {
+  .get("/", ({ user }) => svc.list(user.id), {
     response: resumeListSchema,
     detail: {
       summary: "List master resumes",
@@ -34,7 +34,7 @@ export const resumeController = new Elysia({
     },
   })
   // create (structured JSON)
-  .post("/", ({ profileId, body }) => svc.createJson(profileId, body), {
+  .post("/", ({ user, body }) => svc.createJson(user.id, body), {
     body: createResumeSchema,
     response: idResponseSchema,
     detail: {
@@ -46,9 +46,9 @@ export const resumeController = new Elysia({
   // create from uploaded source file (multipart)
   .post(
     "/upload",
-    async ({ profileId, request }) => {
+    async ({ user, request }) => {
       const { file, text } = await readUpload(request, "file", "label");
-      return svc.createFromUpload(profileId, file, text);
+      return svc.createFromUpload(user.id, file, text);
     },
     {
       response: idResponseSchema,
@@ -60,7 +60,7 @@ export const resumeController = new Elysia({
     },
   )
   // single resume CRUD
-  .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
+  .get("/:id", ({ user, params }) => svc.get(user.id, params.id), {
     params: idParam,
     response: resumeDetailSchema,
     detail: {
@@ -69,7 +69,7 @@ export const resumeController = new Elysia({
         "Returns a single master resume owned by the active profile, including its structured content, version, source-file metadata, and primary flag.",
     },
   })
-  .put("/:id", ({ profileId, params, body }) => svc.update(profileId, params.id, body), {
+  .put("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
     params: idParam,
     body: updateResumeSchema,
     response: resumeUpdatedSchema,
@@ -79,7 +79,7 @@ export const resumeController = new Elysia({
         "Updates a master resume's label and/or structured content, bumping the version when content changes, and returns the id and new version.",
     },
   })
-  .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
+  .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
     response: deletedResponseSchema,
     detail: {
@@ -91,8 +91,8 @@ export const resumeController = new Elysia({
   // resume content-change SSE stream
   .get(
     "/:id/events",
-    async ({ profileId, params, headers }) => {
-      await svc.assertResumeOwned(profileId, params.id);
+    async ({ user, params, headers }) => {
+      await svc.assertResumeOwned(user.id, params.id);
       return sseStream(resumeChannel, { resumeId: params.id }, headers);
     },
     {

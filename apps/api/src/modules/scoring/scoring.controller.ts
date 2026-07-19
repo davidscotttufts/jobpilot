@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { fitResultSchema, scoreFitSchema } from "./scoring.schema";
 import { ScoringService } from "./scoring.service";
 
@@ -10,8 +10,8 @@ export const scoringController = new Elysia({
   prefix: "/score-fit",
   detail: { tags: ["Scoring"] },
 })
-  .use(profileGuard)
-  .post("/", ({ profileId, body }) => scoringService.scoreJobFit(profileId, body), {
+  .use(authGuard)
+  .post("/", ({ user, body }) => scoringService.scoreJobFit(user.id, body), {
     body: scoreFitSchema,
     response: fitResultSchema,
     detail: {

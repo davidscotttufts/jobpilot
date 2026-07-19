@@ -11,8 +11,8 @@ enum ApplicationStatus {
 
 model Application {
   id        String   @id @default(uuid())
-  profileId String   @map("profile_id")
-  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   url       String
   title     String
   company   String
@@ -39,8 +39,8 @@ model Application {
   normalizedTitle   String @map("normalized_title")
   normalizedCompany String @map("normalized_company")
 
-  @@unique([profileId, url])
-  @@index([profileId])
+  @@unique([userId, url])
+  @@index([userId])
   @@index([normalizedTitle, normalizedCompany])
   @@index([appliedAt])
   @@index([campaignId])

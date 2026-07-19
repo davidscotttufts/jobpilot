@@ -38,18 +38,18 @@ export class CredentialService {
     };
   }
 
-  async list(userId: string, profileId: string) {
+  async list(userId: string) {
     const rows = await this.prisma.credential.findMany({
-      where: { profileId },
+      where: { userId },
       orderBy: { scope: "asc" },
     });
     return Promise.all(rows.map((row) => this.decryptRow(userId, row)));
   }
 
-  async create(userId: string, profileId: string, input: CredentialInput) {
+  async create(userId: string, input: CredentialInput) {
     const row = await this.prisma.credential.create({
       data: {
-        profileId,
+        userId,
         scope: input.scope,
         email: input.email,
         password: await this.crypto.encryptField(
@@ -67,16 +67,16 @@ export class CredentialService {
     return this.decryptRow(userId, row);
   }
 
-  private findCredential(profileId: string, id: string) {
+  private findCredential(userId: string, id: string) {
     return findOwned(
       (where) => this.prisma.credential.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Credential",
     );
   }
 
-  async update(userId: string, profileId: string, id: string, patch: CredentialPatch) {
-    await this.findCredential(profileId, id);
+  async update(userId: string, id: string, patch: CredentialPatch) {
+    await this.findCredential(userId, id);
     const row = await this.prisma.credential.update({
       where: { id },
       data: {
@@ -97,8 +97,8 @@ export class CredentialService {
     return this.decryptRow(userId, row);
   }
 
-  async remove(profileId: string, id: string) {
-    await this.findCredential(profileId, id);
+  async remove(userId: string, id: string) {
+    await this.findCredential(userId, id);
     await this.prisma.credential.delete({ where: { id } });
     return { deleted: id };
   }
@@ -123,15 +123,11 @@ export class CredentialService {
    * per-board override → credential scoped to the domain → credential scoped to "default".
    * Returns `null` when no stage yields a complete email + password pair.
    */
-  async resolveCredential(
-    userId: string,
-    profileId: string,
-    domain: string,
-  ): Promise<ResolvedCredential | null> {
+  async resolveCredential(userId: string, domain: string): Promise<ResolvedCredential | null> {
     const board = await this.toLogin(
       userId,
       await this.prisma.profileJobBoard.findFirst({
-        where: { profileId, jobBoard: { domain } },
+        where: { userId, jobBoard: { domain } },
         select: { email: true, password: true },
       }),
       SECRET_CONTEXTS.boardPassword,
@@ -141,7 +137,7 @@ export class CredentialService {
     }
 
     const creds = await this.prisma.credential.findMany({
-      where: { profileId, scope: { in: [domain, "default"] } },
+      where: { userId, scope: { in: [domain, "default"] } },
       select: { scope: true, email: true, password: true },
     });
 

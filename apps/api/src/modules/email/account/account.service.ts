@@ -16,8 +16,8 @@ export class EmailAccountService {
     private readonly crypto: CryptoService,
   ) {}
 
-  async accountStatus(profileId: string) {
-    const account = await this.prisma.emailAccount.findUnique({ where: { profileId } });
+  async accountStatus(userId: string) {
+    const account = await this.prisma.emailAccount.findUnique({ where: { userId } });
 
     if (!account) {
       return { connected: false as const, canSend: false };
@@ -32,19 +32,19 @@ export class EmailAccountService {
     };
   }
 
-  async disconnectAccount(profileId: string) {
-    await this.prisma.emailAccount.deleteMany({ where: { profileId } });
+  async disconnectAccount(userId: string) {
+    await this.prisma.emailAccount.deleteMany({ where: { userId } });
     return { disconnected: true };
   }
 
   /**
-   * Send an outbound email from the profile's connected mailbox. Used by the
+   * Send an outbound email from the user's connected mailbox. Used by the
    * networking skill (and the networking board's "approve & send" action). Refreshes
    * an expired token first and 4xxs with an actionable message when the account
    * lacks send scope (needs reconnecting).
    */
-  async send(userId: string, profileId: string, body: SendEmailInput) {
-    const loaded = await loadFreshAccount(this.prisma, this.crypto, userId, profileId);
+  async send(userId: string, body: SendEmailInput) {
+    const loaded = await loadFreshAccount(this.prisma, this.crypto, userId);
     if (!loaded) {
       throw new HttpError(ErrorCodes.NOT_FOUND, "No email account connected", 404);
     }
@@ -76,14 +76,13 @@ export class EmailAccountService {
 
   async buildAuthorizeUrl(
     userId: string,
-    profileId: string,
     providerName: string,
   ): Promise<{ authorizeUrl: string; state: string }> {
     if (providerName !== "gmail") {
       throw badRequest(`Unsupported provider: ${providerName}`);
     }
 
-    const config = await resolveOAuthClient(this.prisma, this.crypto, userId, profileId);
+    const config = await resolveOAuthClient(this.prisma, this.crypto, userId);
     const state = randomBytes(16).toString("hex");
     let authorizeUrl: string;
     try {
@@ -103,11 +102,10 @@ export class EmailAccountService {
     providerName: string;
     code: string;
     userId: string;
-    profileId: string;
   }): Promise<{ email: string }> {
-    const { providerName, code, userId, profileId } = input;
+    const { providerName, code, userId } = input;
     const provider = getProvider(providerName);
-    const config = await resolveOAuthClient(this.prisma, this.crypto, userId, profileId);
+    const config = await resolveOAuthClient(this.prisma, this.crypto, userId);
     const { tokens, email } = await provider.exchangeCode(config, code);
 
     const accessToken = await this.crypto.encryptFor(
@@ -128,8 +126,8 @@ export class EmailAccountService {
     };
 
     await this.prisma.emailAccount.upsert({
-      where: { profileId },
-      create: { profileId, ...fields },
+      where: { userId },
+      create: { userId, ...fields },
       update: fields,
     });
 
@@ -139,8 +137,8 @@ export class EmailAccountService {
   // ── OAuth client config (bring-your-own Google app) ─────────────────────────
 
   /** Config status for the email settings UI. Never returns the client secret. */
-  async getOAuthClient(profileId: string) {
-    const row = await this.prisma.emailOAuthClient.findUnique({ where: { profileId } });
+  async getOAuthClient(userId: string) {
+    const row = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });
     return {
       configured: row !== null,
       provider: row?.provider ?? "gmail",
@@ -151,13 +149,13 @@ export class EmailAccountService {
   }
 
   /** Create/update the client; a blank clientSecret keeps the stored one (required on first create). */
-  async upsertOAuthClient(userId: string, profileId: string, input: OAuthClientUpsertInput) {
+  async upsertOAuthClient(userId: string, input: OAuthClientUpsertInput) {
     const provider = input.provider ?? "gmail";
     if (provider !== "gmail") {
       throw badRequest(`Unsupported provider: ${provider}`);
     }
 
-    const existing = await this.prisma.emailOAuthClient.findUnique({ where: { profileId } });
+    const existing = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });
     const plainSecret = input.clientSecret?.trim();
 
     let clientSecret: string;
@@ -174,21 +172,21 @@ export class EmailAccountService {
     }
 
     await this.prisma.emailOAuthClient.upsert({
-      where: { profileId },
-      create: { profileId, provider, clientId: input.clientId, clientSecret },
+      where: { userId },
+      create: { userId, provider, clientId: input.clientId, clientSecret },
       update: { provider, clientId: input.clientId, clientSecret },
     });
 
-    return this.getOAuthClient(profileId);
+    return this.getOAuthClient(userId);
   }
 
   /** Remove the OAuth client. Blocked while a mailbox is still connected. */
-  async deleteOAuthClient(profileId: string) {
-    const account = await this.prisma.emailAccount.findUnique({ where: { profileId } });
+  async deleteOAuthClient(userId: string) {
+    const account = await this.prisma.emailAccount.findUnique({ where: { userId } });
     if (account) {
       throw conflict("Disconnect the mailbox before removing its OAuth client.");
     }
-    await this.prisma.emailOAuthClient.deleteMany({ where: { profileId } });
+    await this.prisma.emailOAuthClient.deleteMany({ where: { userId } });
     return { deleted: true };
   }
 }

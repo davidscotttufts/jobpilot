@@ -11,37 +11,34 @@ import {
   MenuItem,
   Tooltip,
 } from "@mui/material";
-import { useApiQuery } from "@/api/hooks";
-import { profileQueries } from "@/api/queries";
-import type { ProfileDto } from "@/api/types";
+import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
+import { useAuth } from "@/hooks/use-auth";
 
-function initials(p: ProfileDto): string {
-  const both = `${p.firstName?.[0] ?? ""}${p.lastName?.[0] ?? ""}`.trim();
+function initials(u: AuthUserDto): string {
+  const both = `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.trim();
   if (both) {
     return both.toUpperCase();
   }
-  return p.email?.[0]?.toUpperCase() ?? "?";
+  return u.email?.[0]?.toUpperCase() ?? "?";
 }
 
-function displayName(p: ProfileDto): string {
-  const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
-  return name || p.email || "Your profile";
+function displayName(u: AuthUserDto): string {
+  const name = `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim();
+  return name || u.email || "Your profile";
 }
 
 /**
  * Account avatar for the app rail. One profile per user, so this is an identity
- * + sign-out menu rather than a switcher. Reads the profile from `GET /profile`.
+ * + sign-out menu rather than a switcher. Shows the account's login email.
  */
 export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
-  const profileQuery = useApiQuery(profileQueries.detail(), { select: (data) => data.profile });
+  const { user } = useAuth();
 
-  const profile = profileQuery.data;
-
-  if (!profile) {
+  if (!user) {
     return null;
   }
 
@@ -50,9 +47,9 @@ export function AccountMenu(): ReactNode {
 
   return (
     <Box sx={{ pb: 1 }}>
-      <Tooltip title={displayName(profile)} placement="right">
+      <Tooltip title={displayName(user)} placement="right">
         <IconButton
-          aria-label={`Account: ${displayName(profile)}`}
+          aria-label={`Account: ${displayName(user)}`}
           aria-haspopup="menu"
           aria-controls={open ? "account-menu" : undefined}
           aria-expanded={open}
@@ -74,7 +71,7 @@ export function AccountMenu(): ReactNode {
               border: `1px solid ${theme.palette.line.borderHi}`,
             })}
           >
-            {initials(profile)}
+            {initials(user)}
           </Avatar>
         </IconButton>
       </Tooltip>
@@ -92,8 +89,8 @@ export function AccountMenu(): ReactNode {
       >
         <MenuItem disabled sx={{ opacity: "1 !important" }}>
           <ListItemText
-            primary={displayName(profile)}
-            secondary={profile.email || undefined}
+            primary={displayName(user)}
+            secondary={user.email || undefined}
             slotProps={{
               primary: { variant: "body2" },
               secondary: { variant: "caption" },

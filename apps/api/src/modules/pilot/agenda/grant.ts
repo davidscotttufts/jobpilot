@@ -8,13 +8,13 @@ import type { PrismaClient } from "@/generated/prisma/client";
  */
 export async function verifyGrant(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   kind: string,
   subjectId: string,
 ): Promise<void> {
   if (kind === "promo.post") {
     const post = await prisma.promotionPost.findFirst({
-      where: { id: subjectId, profileId, status: "approved" },
+      where: { id: subjectId, userId, status: "approved" },
       select: { id: true },
     });
     if (!post) throw conflict("Promotion post is no longer approved.");
@@ -22,7 +22,7 @@ export async function verifyGrant(
   }
   if (kind === "networking.send") {
     const message = await prisma.networkingMessage.findFirst({
-      where: { id: subjectId, profileId, status: "approved" },
+      where: { id: subjectId, userId, status: "approved" },
       select: { id: true },
     });
     if (!message) throw conflict("Networking message is no longer approved.");

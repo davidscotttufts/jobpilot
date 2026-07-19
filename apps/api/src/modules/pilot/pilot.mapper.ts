@@ -24,7 +24,7 @@ export function toPilotState(
   instructionsConfig: PilotInstructionsConfig,
 ): PilotState {
   return {
-    profileId: row.profileId,
+    userId: row.userId,
     enabled: row.enabled,
     instructionsGoals: row.instructionsGoals,
     instructionsConfig,
@@ -42,7 +42,7 @@ export function toPilotState(
 export function toQuestion(row: QuestionModel): Question {
   return {
     id: row.id,
-    profileId: row.profileId,
+    userId: row.userId,
     kind: row.kind as QuestionKind,
     status: row.status as QuestionStatus,
     subjectType: row.subjectType,
@@ -60,7 +60,7 @@ export function toQuestion(row: QuestionModel): Question {
 export function toJournalEntry(row: PilotJournalEntryModel): PilotJournalEntry {
   return {
     id: row.id,
-    profileId: row.profileId,
+    userId: row.userId,
     cycleId: row.cycleId,
     kind: row.kind as PilotJournalKind,
     summary: row.summary,
@@ -74,7 +74,7 @@ export function toJournalEntry(row: PilotJournalEntryModel): PilotJournalEntry {
 export function toPromotion(row: PromotionPostModel): Promotion {
   return {
     id: row.id,
-    profileId: row.profileId,
+    userId: row.userId,
     platform: row.platform,
     target: row.target,
     title: row.title,
@@ -91,7 +91,7 @@ export function toPromotion(row: PromotionPostModel): Promotion {
 export function toPilotLease(row: PilotLeaseModel): PilotLease {
   return {
     id: row.id,
-    profileId: row.profileId,
+    userId: row.userId,
     kind: row.kind,
     subjectType: row.subjectType,
     subjectId: row.subjectId,

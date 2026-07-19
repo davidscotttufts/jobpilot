@@ -90,10 +90,10 @@ describe("PushService subscribe", () => {
 
     expect(dto).toMatchObject({ id: "sub-new", endpoint: "https://push/abc" });
     expect(rec.upsertArgs?.where).toEqual({ endpoint: "https://push/abc" });
-    expect(rec.upsertArgs?.create).toMatchObject({ profileId: "p1", endpoint: "https://push/abc" });
+    expect(rec.upsertArgs?.create).toMatchObject({ userId: "p1", endpoint: "https://push/abc" });
   });
 
-  it("reassigns the endpoint's profileId on conflict (shared device)", async () => {
+  it("reassigns the endpoint's userId on conflict (shared device)", async () => {
     const { push, rec } = svc();
     await push.subscribe("p2", {
       endpoint: "https://push/abc",
@@ -101,7 +101,7 @@ describe("PushService subscribe", () => {
     });
 
     // The update branch must move an existing endpoint to the new owner.
-    expect(rec.upsertArgs?.update).toMatchObject({ profileId: "p2" });
+    expect(rec.upsertArgs?.update).toMatchObject({ userId: "p2" });
   });
 });
 
@@ -124,7 +124,7 @@ describe("PushService unsubscribe", () => {
   });
 });
 
-describe("PushService sendToProfile", () => {
+describe("PushService sendToUser", () => {
   it("sends nothing when unconfigured", async () => {
     const send = mock(async () => ({}) as never);
     webpush.sendNotification = send as unknown as typeof webpush.sendNotification;
@@ -133,7 +133,7 @@ describe("PushService sendToProfile", () => {
       { vapid: null },
     );
 
-    await push.sendToProfile("p1", { title: "t", body: "b" });
+    await push.sendToUser("p1", { title: "t", body: "b" });
     expect(send).not.toHaveBeenCalled();
   });
 
@@ -150,7 +150,7 @@ describe("PushService sendToProfile", () => {
     }) as unknown as typeof webpush.sendNotification;
 
     const { push, rec } = svc({ findMany: subs });
-    await push.sendToProfile("p1", { title: "t", body: "b", url: "/pilot" });
+    await push.sendToUser("p1", { title: "t", body: "b", url: "/pilot" });
 
     expect(rec.deletedIds).toEqual(["dead"]);
   });
@@ -165,7 +165,7 @@ describe("PushService sendToProfile", () => {
     const { push } = svc({
       findMany: [{ id: "s1", endpoint: "https://push/x", p256dh: "pub", auth: "sec" }],
     });
-    await push.sendToProfile("p1", { title: "t", body: "x".repeat(200) });
+    await push.sendToUser("p1", { title: "t", body: "x".repeat(200) });
 
     const payload = JSON.parse(sentBody) as { body: string };
     expect(payload.body.length).toBe(120);
@@ -181,7 +181,7 @@ describe("PushService sendToProfile", () => {
     const { push, rec } = svc({
       findMany: [{ id: "s1", endpoint: "https://push/x", p256dh: "pub", auth: "sec" }],
     });
-    await push.sendToProfile("p1", { title: "t", body: "b" });
+    await push.sendToUser("p1", { title: "t", body: "b" });
 
     expect(rec.deletedIds).toEqual([]);
     expect(errorSpy).toHaveBeenCalled();

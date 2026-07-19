@@ -10,7 +10,7 @@ import { z } from "zod/v4";
 /** A networking contact row as returned by the list route (dates stringified). */
 export const contactSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   name: z.string(),
   title: z.string().nullable(),
   company: z.string().nullable(),

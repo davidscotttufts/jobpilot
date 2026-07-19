@@ -14,7 +14,7 @@ export interface Recorder {
   leaseUpdates: { data: Record<string, unknown> }[];
   questionUpdates: { data: Record<string, unknown> }[];
   journals: Record<string, unknown>[];
-  pushes: { profileId: string; payload: PushPayload }[];
+  pushes: { userId: string; payload: PushPayload }[];
 }
 
 export interface Over {
@@ -250,11 +250,11 @@ export function makePilot(rec: Pick<Recorder, "journals">): PilotService {
   } as unknown as PilotService;
 }
 
-/** Fake PushService recording sendToProfile calls without any web-push/env dependency. */
+/** Fake PushService recording sendToUser calls without any web-push/env dependency. */
 export function makePush(rec: Pick<Recorder, "pushes">): PushService {
   return {
-    sendToProfile: async (profileId: string, payload: PushPayload) => {
-      rec.pushes.push({ profileId, payload });
+    sendToUser: async (userId: string, payload: PushPayload) => {
+      rec.pushes.push({ userId, payload });
     },
   } as unknown as PushService;
 }

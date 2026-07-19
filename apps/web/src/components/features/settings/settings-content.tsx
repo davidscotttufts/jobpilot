@@ -35,15 +35,12 @@ export function SettingsContent(): ReactElement {
 }
 
 function toFormValues(data: ProfileResponse): ProfileWithAutoApplyInput {
-  if (!data.profile) {
-    return PROFILE_DEFAULT_VALUES;
-  }
   const p = data.profile;
   const a = data.autoApply ?? PROFILE_DEFAULT_VALUES.autoApply!;
   return {
     firstName: p.firstName,
     lastName: p.lastName,
-    email: p.email,
+    contactEmail: p.contactEmail,
     phone: p.phone ?? "",
     website: p.website ?? "",
     linkedin: p.linkedin ?? "",

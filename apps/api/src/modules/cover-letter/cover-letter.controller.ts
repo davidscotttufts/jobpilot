@@ -2,7 +2,7 @@ import { coverLetterCreateSchema } from "@jobpilot/contracts/cover-letter";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { okResponseSchema } from "@/types/response";
 import {
   coverLetterCreatedSchema,
@@ -29,8 +29,8 @@ export const coverLetterController = new Elysia({
   prefix: "/cover-letters",
   detail: { tags: ["CoverLetters"] },
 })
-  .use(profileGuard)
-  .get("/", ({ profileId }) => svc.list(profileId), {
+  .use(authGuard)
+  .get("/", ({ user }) => svc.list(user.id), {
     response: coverLetterListSchema,
     detail: {
       summary: "List cover letters",
@@ -38,7 +38,7 @@ export const coverLetterController = new Elysia({
         "Returns the active profile's saved cover letters, newest first, as a metadata list without the letter body.",
     },
   })
-  .post("/", ({ profileId, body }) => svc.create(profileId, body), {
+  .post("/", ({ user, body }) => svc.create(user.id, body), {
     body: coverLetterCreateSchema,
     response: coverLetterCreatedSchema,
     detail: {
@@ -59,7 +59,7 @@ export const coverLetterController = new Elysia({
       },
     },
   )
-  .get("/:id", ({ profileId, params }) => svc.get(profileId, params.id), {
+  .get("/:id", ({ user, params }) => svc.get(user.id, params.id), {
     params: idParam,
     response: coverLetterDetailSchema,
     detail: {
@@ -68,7 +68,7 @@ export const coverLetterController = new Elysia({
         "Returns the full saved cover letter owned by the active profile, or a 404 if it does not exist.",
     },
   })
-  .delete("/:id", ({ profileId, params }) => svc.remove(profileId, params.id), {
+  .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
     response: okResponseSchema,
     detail: {
@@ -79,7 +79,7 @@ export const coverLetterController = new Elysia({
   })
   .get(
     "/:id/pdf",
-    async ({ profileId, params }) => pdfResponse(await svc.renderSavedPdf(profileId, params.id)),
+    async ({ user, params }) => pdfResponse(await svc.renderSavedPdf(user.id, params.id)),
     {
       params: idParam,
       detail: {

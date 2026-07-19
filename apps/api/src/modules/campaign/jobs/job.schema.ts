@@ -16,7 +16,7 @@ export const campaignJobListSchema = z.array(campaignJobSchema);
 export const campaignApplicationSchema = z
   .object({
     id: z.uuid(),
-    profileId: z.uuid(),
+    userId: z.uuid(),
     url: z.string(),
     title: z.string(),
     company: z.string(),

@@ -44,12 +44,12 @@ export class AgendaService {
     return { prisma: this.prisma, campaignJobs: this.campaignJobs };
   }
 
-  async compile(profileId: string) {
+  async compile(userId: string) {
     const now = new Date();
     // Config and the expiry sweep are independent; both must settle before the main batch.
     const [config] = await Promise.all([
-      loadInstructionsConfig(this.prisma, profileId),
-      runExpiry(this.jobDeps, profileId, now),
+      loadInstructionsConfig(this.prisma, userId),
+      runExpiry(this.jobDeps, userId, now),
     ]);
 
     const tz = config.activeHours?.tz;
@@ -71,46 +71,46 @@ export class AgendaService {
       queue,
       boardHealth,
     ] = await Promise.all([
-      this.prisma.question.count({ where: { profileId, status: "open" } }),
-      gatherAnsweredQuestions(this.prisma, profileId),
+      this.prisma.question.count({ where: { userId, status: "open" } }),
+      gatherAnsweredQuestions(this.prisma, userId),
       this.prisma.pilotLease.count({
-        where: { profileId, releasedAt: null, expiresAt: { gt: now } },
+        where: { userId, releasedAt: null, expiresAt: { gt: now } },
       }),
-      gatherApprovedJobs(this.prisma, profileId, config.parkedBoards),
-      countAppliedToday(this.prisma, profileId, now, tz),
-      gatherFinalizeCampaigns(this.prisma, profileId),
-      gatherInbox(this.prisma, profileId),
+      gatherApprovedJobs(this.prisma, userId, config.parkedBoards),
+      countAppliedToday(this.prisma, userId, now, tz),
+      gatherFinalizeCampaigns(this.prisma, userId),
+      gatherInbox(this.prisma, userId),
       // Networking off: skip its gathers (the builder gates too, but these are pure waste when disabled).
-      config.networkingEnabled ? gatherApprovedNetworking(this.prisma, profileId) : [],
-      config.networkingEnabled ? countSentToday(this.prisma, profileId, now, tz) : 0,
-      config.networkingEnabled ? gatherFollowups(this.prisma, profileId, config, now) : [],
-      gatherApprovedPromotions(this.prisma, profileId, now),
-      duePlatforms(this.prisma, profileId, config, now),
-      gatherInterviewReplies(this.prisma, profileId),
-      gatherInterviewPreps(this.prisma, profileId),
-      gatherQueueDrain(this.prisma, profileId),
-      gatherBoardHealth(this.prisma, profileId, config.parkedBoards),
+      config.networkingEnabled ? gatherApprovedNetworking(this.prisma, userId) : [],
+      config.networkingEnabled ? countSentToday(this.prisma, userId, now, tz) : 0,
+      config.networkingEnabled ? gatherFollowups(this.prisma, userId, config, now) : [],
+      gatherApprovedPromotions(this.prisma, userId, now),
+      duePlatforms(this.prisma, userId, config, now),
+      gatherInterviewReplies(this.prisma, userId),
+      gatherInterviewPreps(this.prisma, userId),
+      gatherQueueDrain(this.prisma, userId),
+      gatherBoardHealth(this.prisma, userId, config.parkedBoards),
     ]);
 
     // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
-    if (config.networkingEnabled) await attachWarmContacts(this.prisma, profileId, approvedJobs);
+    if (config.networkingEnabled) await attachWarmContacts(this.prisma, userId, approvedJobs);
 
     // Discovery only matters when the apply pipeline is empty; skip the lease lookups otherwise.
     const dueQueries =
-      approvedJobs.length === 0 ? await dueSavedSearches(this.prisma, profileId, config, now) : [];
+      approvedJobs.length === 0 ? await dueSavedSearches(this.prisma, userId, config, now) : [];
 
     // Quiet-agenda maintenance runs only when nothing apply/discover/queue-shaped is pending anyway,
     // so gather its candidates only then - the builder still gates authoritatively.
     const pipelineQuiet =
       approvedJobs.length === 0 && dueQueries.length === 0 && queue.pendingCount === 0;
     const quiet = pipelineQuiet
-      ? await gatherQuietCandidates(this.prisma, profileId, now)
+      ? await gatherQuietCandidates(this.prisma, userId, now)
       : { strategyReviews: [], rescanSkipped: [], retryFailed: [] };
 
     // Idempotent per tz-day; fire-and-forget so a slow push never delays the agenda response.
     void writeDigestIfDue(
       { prisma: this.prisma, pilot: this.pilot, push: this.push },
-      profileId,
+      userId,
       now,
       config,
       openQuestions,
@@ -144,8 +144,8 @@ export class AgendaService {
 
   // ── Leasing ──────────────────────────────────────────────────────────────────
 
-  async lease(profileId: string, itemId: string) {
-    const agenda = await this.compile(profileId);
+  async lease(userId: string, itemId: string) {
+    const agenda = await this.compile(userId);
     const item = agenda.items.find((i) => i.id === itemId);
     if (!item) {
       throw conflict("Agenda item is no longer available.");
@@ -154,7 +154,7 @@ export class AgendaService {
     // One active lease per subject: refuses a second worker taking the same item (409).
     const active = await this.prisma.pilotLease.findFirst({
       where: {
-        profileId,
+        userId,
         subjectType: item.subjectType,
         subjectId: item.subjectId,
         releasedAt: null,
@@ -167,21 +167,21 @@ export class AgendaService {
     }
 
     // Server-side grant gates: re-verify the row is still in a leasable state, ignoring agent claims.
-    await verifyGrant(this.prisma, profileId, item.kind, item.subjectId);
+    await verifyGrant(this.prisma, userId, item.kind, item.subjectId);
 
     const { campaignId, jobKey } = item.payload as { campaignId?: string; jobKey?: string };
     // Single-writer claim first: only one lease can flip approved->applying (409 on a lost race).
     const jobClaim =
       item.kind === "job.apply" && campaignId && jobKey ? { campaignId, jobKey } : null;
     if (jobClaim) {
-      await this.campaignJobs.claimJobForApply(profileId, jobClaim.campaignId, jobClaim.jobKey);
+      await this.campaignJobs.claimJobForApply(userId, jobClaim.campaignId, jobClaim.jobKey);
     }
 
     let lease: PilotLease;
     try {
       lease = await this.prisma.pilotLease.create({
         data: {
-          profileId,
+          userId,
           kind: item.kind,
           subjectType: item.subjectType,
           subjectId: item.subjectId,
@@ -192,7 +192,7 @@ export class AgendaService {
     } catch (err) {
       // A claim without a lease row would strand the job in applying; hand it back to the agenda.
       if (jobClaim) {
-        await revertJobToApproved(this.jobDeps, profileId, jobClaim.campaignId, jobClaim.jobKey);
+        await revertJobToApproved(this.jobDeps, userId, jobClaim.campaignId, jobClaim.jobKey);
       }
       throw err;
     }
@@ -200,11 +200,11 @@ export class AgendaService {
     return { ...toPilotLease(lease), payload: item.payload };
   }
 
-  async heartbeat(profileId: string, id: string) {
+  async heartbeat(userId: string, id: string) {
     const existing = await findOwned(
       (where) =>
         this.prisma.pilotLease.findFirst({ where, select: { id: true, releasedAt: true } }),
-      { id, profileId },
+      { id, userId },
       "Lease",
     );
     // A released lease must not get its TTL resurrected by a late worker heartbeat.
@@ -216,10 +216,10 @@ export class AgendaService {
     return toPilotLease(lease);
   }
 
-  async release(profileId: string, id: string, body: ReleasePilotLeaseInput) {
+  async release(userId: string, id: string, body: ReleasePilotLeaseInput) {
     const existing = await findOwned(
       (where) => this.prisma.pilotLease.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Lease",
     );
     // A released lease is terminal; a second release must not overwrite its recorded outcome.
@@ -229,7 +229,7 @@ export class AgendaService {
     const { campaignId, jobKey } = jobRef(parsed, existing.subjectId);
     // "abandoned" un-claims the work; the terminal result for done/failed arrives via the campaign result route.
     if (body.outcome === "abandoned" && existing.kind === "job.apply" && campaignId) {
-      await revertJobToApproved(this.jobDeps, profileId, campaignId, jobKey);
+      await revertJobToApproved(this.jobDeps, userId, campaignId, jobKey);
     }
 
     const payload = body.note

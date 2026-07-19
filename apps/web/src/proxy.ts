@@ -12,12 +12,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     fetch: { cache: "no-store" },
   });
 
-  // One call yields both the verified flag and the profile
+  // One flat object carries the verified flag, role, and profile fields
   const { data, error } = await api.auth.me.get();
 
   // Email verification is a non-blocking banner in-app, so it doesn't factor into routing.
-  const onboarded =
-    !error && data !== null && data.profile !== null && !isProfileEmpty(data.profile);
+  const onboarded = !error && data !== null && !isProfileEmpty(data);
 
   // The root is the public marketing landing: stay public for signed-out /
   // half-onboarded visitors, but bounce fully-onboarded users into the app.
@@ -33,12 +32,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Profile not filled in -> onboarding.
-  if (data.profile === null || isProfileEmpty(data.profile)) {
+  if (isProfileEmpty(data)) {
     return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
   // The /me call above already carried the role, so gating /admin here is free
-  if (request.nextUrl.pathname.startsWith("/admin") && !isAdminRole(data.user.role)) {
+  if (request.nextUrl.pathname.startsWith("/admin") && !isAdminRole(data.role)) {
     return NextResponse.redirect(new URL("/workspace", request.url));
   }
 

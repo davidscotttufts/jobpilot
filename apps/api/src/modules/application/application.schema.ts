@@ -29,7 +29,7 @@ export const appendNoteSchema = z.object({
 /** A full applied-job row (mirrors the `Application` Prisma model with dates stringified). */
 export const applicationSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   url: z.string(),
   title: z.string(),
   company: z.string(),

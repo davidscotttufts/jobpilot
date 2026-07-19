@@ -11,8 +11,8 @@ export type InboxEvent =
  * the server resolves the profile from the session. A constant topic would put every tenant on one
  * topic *and* one replay buffer (see the API's server.test.ts).
  */
-export const inboxChannel = defineChannel<InboxEvent, void, { profileId: string }>({
+export const inboxChannel = defineChannel<InboxEvent, void, { userId: string }>({
   name: "inbox",
   path: () => "/api/email/events",
-  topic: ({ profileId }) => String(profileId),
+  topic: ({ userId }) => String(userId),
 });

@@ -114,7 +114,7 @@ describe("recordJobResult", () => {
 
     expect(rec.applicationCreateCount).toBe(1);
     expect(rec.applicationCreate).toMatchObject({
-      profileId: PROFILE,
+      userId: PROFILE,
       url: baseJob.url,
       source: "auto-apply",
       normalizedTitle: normalizeJobTitle(baseJob.title),

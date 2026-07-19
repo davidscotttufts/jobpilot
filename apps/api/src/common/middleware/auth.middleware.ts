@@ -14,8 +14,7 @@ interface AuthContext {
 /**
  * Resolve the principal from a request: prefer `Authorization: Bearer` (web JWT
  * or the agent's PAT), then the httpOnly `accessToken` cookie. Returns null when
- * unauthenticated. Shared by authGuard and profileGuard so neither nests the
- * other (Elysia scoped derives don't propagate into a nested derive).
+ * unauthenticated.
  */
 export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise<AuthUser | null> {
   const authorization = headers.authorization;

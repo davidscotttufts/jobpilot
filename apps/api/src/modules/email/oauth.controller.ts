@@ -1,7 +1,7 @@
 import { oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { env } from "@/env";
 import { EmailAccountService } from "./account/account.service";
 import {
@@ -19,9 +19,9 @@ const OAUTH_COOKIE_PATH = "/api/email/oauth";
 export const emailOAuthController = new Elysia({
   detail: { tags: ["Email"] },
 })
-  .use(profileGuard)
+  .use(authGuard)
   // --- OAuth client config (bring-your-own Google app) -----------------------
-  .get("/oauth/client", ({ profileId }) => account.getOAuthClient(profileId), {
+  .get("/oauth/client", ({ user }) => account.getOAuthClient(user.id), {
     response: oauthClientStatusSchema,
     detail: {
       summary: "Get mailbox OAuth client config",
@@ -29,20 +29,16 @@ export const emailOAuthController = new Elysia({
         "Returns whether the profile has configured its own Google OAuth client, the client id, the redirect URI to register, and the requested scopes. Never returns the client secret.",
     },
   })
-  .put(
-    "/oauth/client",
-    ({ user, profileId, body }) => account.upsertOAuthClient(user.id, profileId, body),
-    {
-      body: oauthClientUpsertSchema,
-      response: oauthClientStatusSchema,
-      detail: {
-        summary: "Set mailbox OAuth client config",
-        description:
-          "Creates or updates the profile's Google OAuth client (encrypting the secret at rest). A blank client secret on edit keeps the stored one; it is required on first create.",
-      },
+  .put("/oauth/client", ({ user, body }) => account.upsertOAuthClient(user.id, body), {
+    body: oauthClientUpsertSchema,
+    response: oauthClientStatusSchema,
+    detail: {
+      summary: "Set mailbox OAuth client config",
+      description:
+        "Creates or updates the profile's Google OAuth client (encrypting the secret at rest). A blank client secret on edit keeps the stored one; it is required on first create.",
     },
-  )
-  .delete("/oauth/client", ({ profileId }) => account.deleteOAuthClient(profileId), {
+  })
+  .delete("/oauth/client", ({ user }) => account.deleteOAuthClient(user.id), {
     response: oauthClientDeletedSchema,
     detail: {
       summary: "Remove mailbox OAuth client config",
@@ -53,13 +49,9 @@ export const emailOAuthController = new Elysia({
   // --- Connect flow ----------------------------------------------------------
   .get(
     "/oauth/start",
-    async ({ user, profileId, query, cookie, redirect }) => {
+    async ({ user, query, cookie, redirect }) => {
       const providerName = query.provider ?? "gmail";
-      const { authorizeUrl, state } = await account.buildAuthorizeUrl(
-        user.id,
-        profileId,
-        providerName,
-      );
+      const { authorizeUrl, state } = await account.buildAuthorizeUrl(user.id, providerName);
 
       cookie.email_oauth_state!.set({
         value: state,
@@ -89,7 +81,7 @@ export const emailOAuthController = new Elysia({
   )
   .get(
     "/oauth/callback",
-    async ({ user, profileId, query, cookie, redirect }) => {
+    async ({ user, query, cookie, redirect }) => {
       // Clear the OAuth cookies and bounce back to the app, surfacing failures as a flag the UI toasts.
       const clearCookies = () => {
         cookie.email_oauth_state!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });
@@ -123,7 +115,6 @@ export const emailOAuthController = new Elysia({
           providerName,
           code: query.code,
           userId: user.id,
-          profileId,
         });
       } catch (e) {
         return fail(e instanceof Error ? e.message : "Failed to connect mailbox");

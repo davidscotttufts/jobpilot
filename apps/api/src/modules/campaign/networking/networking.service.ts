@@ -22,9 +22,9 @@ export class CampaignNetworkingService {
   ) {}
 
   /** List the campaign's networking messages (with their contacts) for the board. */
-  async listNetworking(profileId: string, campaignId: string) {
+  async listNetworking(userId: string, campaignId: string) {
     const messages = await this.prisma.networkingMessage.findMany({
-      where: { campaignId, profileId },
+      where: { campaignId, userId },
       include: { contact: true },
       orderBy: { id: "asc" },
     });
@@ -35,8 +35,8 @@ export class CampaignNetworkingService {
    * Add a discovered contact (or attach to an existing `contactId`) plus an
    * initial draft message to the campaign, then recompute the campaign summary.
    */
-  async addNetworking(profileId: string, campaignId: string, body: AddCampaignNetworkingInput) {
-    await ensureCampaignOwned(this.prisma, profileId, campaignId);
+  async addNetworking(userId: string, campaignId: string, body: AddCampaignNetworkingInput) {
+    await ensureCampaignOwned(this.prisma, userId, campaignId);
 
     const { contact, contactId, message } = body;
 
@@ -45,7 +45,7 @@ export class CampaignNetworkingService {
 
       if (resolvedContactId != null) {
         const existing = await tx.contact.findFirst({
-          where: { id: resolvedContactId, profileId },
+          where: { id: resolvedContactId, userId },
           select: { id: true },
         });
         if (!existing) {
@@ -53,14 +53,14 @@ export class CampaignNetworkingService {
         }
       } else if (contact) {
         const created = await tx.contact.create({
-          data: { profileId, ...createContactPayload(contact) },
+          data: { userId, ...createContactPayload(contact) },
         });
         resolvedContactId = created.id;
       }
 
       const networkingMessage = await tx.networkingMessage.create({
         data: {
-          profileId,
+          userId,
           contactId: resolvedContactId!,
           campaignId,
           channel: message.channel,
@@ -91,7 +91,7 @@ export class CampaignNetworkingService {
    * connection state. Terminal outcomes go through `recordNetworkingResult`.
    */
   async patchNetworking(
-    profileId: string,
+    userId: string,
     campaignId: string,
     messageId: string,
     body: PatchNetworkingMessageInput,
@@ -102,7 +102,7 @@ export class CampaignNetworkingService {
           where,
           select: { id: true, status: true, subject: true, body: true },
         }),
-      { id: messageId, campaignId, profileId },
+      { id: messageId, campaignId, userId },
       "Networking message",
     );
 
@@ -145,7 +145,7 @@ export class CampaignNetworkingService {
     const subjectChanged = fields.subject != null && fields.subject !== existing.subject;
     const bodyChanged = fields.body != null && fields.body !== existing.body;
     if (existing.status === "draft" && (subjectChanged || bodyChanged)) {
-      await this.pilot.appendJournal(profileId, {
+      await this.pilot.appendJournal(userId, {
         entries: [
           {
             kind: "correction",
@@ -191,14 +191,14 @@ export class CampaignNetworkingService {
    * the campaign summary. Mirrors campaigns/[id]/jobs/[key]/result.
    */
   async recordNetworkingResult(
-    profileId: string,
+    userId: string,
     campaignId: string,
     messageId: string,
     data: NetworkingMessageResultInput,
   ) {
     const existing = await findOwned(
       (where) => this.prisma.networkingMessage.findFirst({ where }),
-      { id: messageId, campaignId, profileId },
+      { id: messageId, campaignId, userId },
       "Networking message",
     );
 

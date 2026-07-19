@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { contactListSchema } from "./contact.schema";
 import { ContactService } from "./contact.service";
 
@@ -10,8 +10,8 @@ export const contactController = new Elysia({
   prefix: "/contacts",
   detail: { tags: ["Contacts"] },
 })
-  .use(profileGuard)
-  .get("/", ({ profileId }) => contactService.list(profileId), {
+  .use(authGuard)
+  .get("/", ({ user }) => contactService.list(user.id), {
     response: contactListSchema,
     detail: {
       summary: "List networking contacts",

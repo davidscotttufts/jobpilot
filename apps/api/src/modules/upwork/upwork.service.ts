@@ -39,8 +39,8 @@ export class UpworkService {
   }
 
   // ── Profile enhancement ────────────────────────────────────────────────────
-  async getProfile(profileId: string) {
-    const row = await this.prisma.upworkProfile.findUnique({ where: { profileId } });
+  async getProfile(userId: string) {
+    const row = await this.prisma.upworkProfile.findUnique({ where: { userId } });
     return row ? toUpworkProfileDto(row) : null;
   }
 
@@ -49,7 +49,7 @@ export class UpworkService {
    * written; portfolio arrays are JSON-encoded. Moving to `applied` stamps
    * `appliedAt` (set by the skill after it writes the live Upwork profile).
    */
-  async upsertProfile(profileId: string, input: UpdateUpworkProfileInput) {
+  async upsertProfile(userId: string, input: UpdateUpworkProfileInput) {
     const fields: UpworkProfileFields = {};
 
     if (input.currentTitle != null) fields.currentTitle = input.currentTitle;
@@ -72,8 +72,8 @@ export class UpworkService {
     }
 
     const row = await this.prisma.upworkProfile.upsert({
-      where: { profileId },
-      create: { profileId, ...fields },
+      where: { userId },
+      create: { userId, ...fields },
       update: fields,
     });
 
@@ -81,10 +81,10 @@ export class UpworkService {
   }
 
   // ── Proposals ──────────────────────────────────────────────────────────────
-  async listProposals(profileId: string, filters: { status?: string; search?: string }) {
+  async listProposals(userId: string, filters: { status?: string; search?: string }) {
     const { status, search } = filters;
 
-    const where: Prisma.UpworkProposalWhereInput = { profileId };
+    const where: Prisma.UpworkProposalWhereInput = { userId };
     if (status) {
       where.status = status;
     }
@@ -101,10 +101,10 @@ export class UpworkService {
     return proposals.map(decodeUpworkProposal);
   }
 
-  async createProposal(profileId: string, body: UpworkProposalInput) {
+  async createProposal(userId: string, body: UpworkProposalInput) {
     const proposal = await this.prisma.upworkProposal.create({
       data: {
-        profileId,
+        userId,
         jobTitle: body.jobTitle,
         clientName: body.clientName ?? null,
         jobUrl: body.jobUrl ?? null,
@@ -122,20 +122,20 @@ export class UpworkService {
     return decodeUpworkProposal(proposal);
   }
 
-  async getProposal(profileId: string, id: string) {
+  async getProposal(userId: string, id: string) {
     const proposal = await findOwned(
       (where) => this.prisma.upworkProposal.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Proposal",
     );
 
     return decodeUpworkProposal(proposal);
   }
 
-  async updateProposal(profileId: string, id: string, body: UpworkProposalPatch) {
+  async updateProposal(userId: string, id: string, body: UpworkProposalPatch) {
     const existing = await findOwned(
       (where) => this.prisma.upworkProposal.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Proposal",
     );
 
@@ -165,10 +165,10 @@ export class UpworkService {
     return decodeUpworkProposal(proposal);
   }
 
-  async deleteProposal(profileId: string, id: string) {
+  async deleteProposal(userId: string, id: string) {
     await findOwned(
       (where) => this.prisma.upworkProposal.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Proposal",
     );
 

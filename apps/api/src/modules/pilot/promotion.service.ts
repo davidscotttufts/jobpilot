@@ -23,10 +23,10 @@ export class PromotionService {
   ) {}
 
   /** Agent creates a draft post for review; notifies the user to look it over. */
-  async createPromotion(profileId: string, body: CreatePromotionInput) {
+  async createPromotion(userId: string, body: CreatePromotionInput) {
     const row = await this.prisma.promotionPost.create({
       data: {
-        profileId,
+        userId,
         platform: body.platform,
         target: body.target ?? null,
         title: body.title ?? null,
@@ -34,8 +34,8 @@ export class PromotionService {
       },
     });
     const promotion = toPromotion(row);
-    publish(pilotChannel, { profileId }, { type: "promotion.created", promotion });
-    void this.push.sendToProfile(profileId, {
+    publish(pilotChannel, { userId }, { type: "promotion.created", promotion });
+    void this.push.sendToUser(userId, {
       title: "Post draft ready for review",
       body: `${row.platform}: ${row.title ?? row.body}`,
       url: "/pilot",
@@ -44,9 +44,9 @@ export class PromotionService {
     return promotion;
   }
 
-  async listPromotions(profileId: string, status?: PromotionStatus) {
+  async listPromotions(userId: string, status?: PromotionStatus) {
     const rows = await this.prisma.promotionPost.findMany({
-      where: { profileId, ...(status ? { status } : {}) },
+      where: { userId, ...(status ? { status } : {}) },
       orderBy: { createdAt: "desc" },
       take: 200,
     });
@@ -54,10 +54,10 @@ export class PromotionService {
   }
 
   /** User edits a draft's title/body or moves it draft → approved | declined. Terminal posts are locked. */
-  async patchPromotion(profileId: string, id: string, body: PatchPromotionInput) {
+  async patchPromotion(userId: string, id: string, body: PatchPromotionInput) {
     const existing = await findOwned(
       (where) => this.prisma.promotionPost.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Promotion post",
     );
     if (PROMOTION_TERMINAL_STATUSES.includes(existing.status)) {
@@ -78,21 +78,21 @@ export class PromotionService {
       },
     });
     const promotion = toPromotion(row);
-    publish(pilotChannel, { profileId }, { type: "promotion.updated", promotion });
-    await this.captureCorrection(profileId, id, existing, body, row);
+    publish(pilotChannel, { userId }, { type: "promotion.updated", promotion });
+    await this.captureCorrection(userId, id, existing, body, row);
     return promotion;
   }
 
   /** A decline or a content edit of a draft is a user override; log it as a correction signal. */
   private async captureCorrection(
-    profileId: string,
+    userId: string,
     id: string,
     before: PromotionPostModel,
     body: PatchPromotionInput,
     after: PromotionPostModel,
   ): Promise<void> {
     if (body.status === "declined") {
-      await this.pilot.appendJournal(profileId, {
+      await this.pilot.appendJournal(userId, {
         entries: [
           {
             kind: "correction",
@@ -115,7 +115,7 @@ export class PromotionService {
     const bodyChanged = body.body !== undefined && body.body !== before.body;
     if (!titleChanged && !bodyChanged) return;
 
-    await this.pilot.appendJournal(profileId, {
+    await this.pilot.appendJournal(userId, {
       entries: [
         {
           kind: "correction",
@@ -134,16 +134,16 @@ export class PromotionService {
   }
 
   /** Agent records the terminal outcome after posting; stamps postedAt on success. */
-  async recordPromotionResult(profileId: string, id: string, body: PromotionResultInput) {
+  async recordPromotionResult(userId: string, id: string, body: PromotionResultInput) {
     await findOwned(
       (where) => this.prisma.promotionPost.findFirst({ where, select: { id: true } }),
-      { id, profileId },
+      { id, userId },
       "Promotion post",
     );
     // Approval gate lives in the write: a draft/declined post must never flip to posted, and an
     // already-terminal row must not be silently overwritten by a second result call.
     const { count } = await this.prisma.promotionPost.updateMany({
-      where: { id, profileId, status: "approved" },
+      where: { id, userId, status: "approved" },
       data: {
         status: body.outcome,
         postedUrl: body.outcome === "posted" ? (body.postedUrl ?? null) : undefined,
@@ -154,11 +154,11 @@ export class PromotionService {
 
     const row = await findOwned(
       (where) => this.prisma.promotionPost.findFirst({ where }),
-      { id, profileId },
+      { id, userId },
       "Promotion post",
     );
     const promotion = toPromotion(row);
-    publish(pilotChannel, { profileId }, { type: "promotion.updated", promotion });
+    publish(pilotChannel, { userId }, { type: "promotion.updated", promotion });
     return promotion;
   }
 }

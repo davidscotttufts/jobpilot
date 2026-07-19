@@ -17,10 +17,10 @@ import type {
 /** Answered questions not yet consumed by any lease, so a claimed answer never re-appears. */
 export async function gatherAnsweredQuestions(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
 ): Promise<AgendaQuestion[]> {
   const answered = await prisma.question.findMany({
-    where: { profileId, status: "answered" },
+    where: { userId, status: "answered" },
     // Newest first: consumed rows stay "answered" forever, so oldest-first would starve new answers.
     orderBy: { answeredAt: "desc" },
     take: GATHER_CAP,
@@ -37,7 +37,7 @@ export async function gatherAnsweredQuestions(
   // Only the answered ids can be consumed, so scope the lease lookup to them.
   const leases = await prisma.pilotLease.findMany({
     where: {
-      profileId,
+      userId,
       subjectType: "question",
       subjectId: { in: answered.map((e) => e.id) },
       // An expired/abandoned lease hands the answer back; active or completed leases consume it.
@@ -65,11 +65,11 @@ export async function gatherAnsweredQuestions(
 /** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. Parked boards excluded. */
 export async function gatherApprovedJobs(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   parkedBoards: string[] = [],
 ): Promise<AgendaApprovedJob[]> {
   const rows = await prisma.job.findMany({
-    where: { status: "approved", campaign: { profileId, status: "in_progress" } },
+    where: { status: "approved", campaign: { userId, status: "in_progress" } },
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
     select: {
@@ -113,11 +113,11 @@ export async function gatherApprovedJobs(
 /** In-progress campaigns with no active jobs left - ready to finalize. */
 export function gatherFinalizeCampaigns(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
 ): Promise<AgendaFinalizeCampaign[]> {
   return prisma.campaign.findMany({
     where: {
-      profileId,
+      userId,
       status: "in_progress",
       jobs: { none: { status: { in: [...CAMPAIGN_JOB_ACTIVE_STATUSES] } } },
     },
@@ -126,8 +126,8 @@ export function gatherFinalizeCampaigns(
 }
 
 /** Oldest-first ids (≤10) plus total count of unclassified synced mail - the scan-inbox predicate. */
-export async function gatherInbox(prisma: PrismaClient, profileId: string): Promise<AgendaInbox> {
-  const where = { account: { profileId }, classification: null, reviewStatus: "pending" } as const;
+export async function gatherInbox(prisma: PrismaClient, userId: string): Promise<AgendaInbox> {
+  const where = { account: { userId }, classification: null, reviewStatus: "pending" } as const;
   const [rows, count] = await Promise.all([
     prisma.emailMessage.findMany({
       where,
@@ -143,13 +143,13 @@ export async function gatherInbox(prisma: PrismaClient, profileId: string): Prom
 /** Attach same-company contacts (with an email) to jobs scoring at/above the warm-intro threshold. */
 export async function attachWarmContacts(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   approvedJobs: AgendaApprovedJob[],
 ): Promise<void> {
   const hot = approvedJobs.filter((j) => (j.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE && j.company);
   if (hot.length === 0) return;
   const contacts = await prisma.contact.findMany({
-    where: { profileId, email: { not: null }, company: { not: null } },
+    where: { userId, email: { not: null }, company: { not: null } },
     orderBy: { createdAt: "desc" },
     take: GATHER_CAP,
     select: { id: true, name: true, title: true, email: true, company: true },
@@ -169,7 +169,7 @@ export async function attachWarmContacts(
 /** Saved searches whose cadence has elapsed since their last released discovery lease. */
 export async function dueSavedSearches(
   prisma: PrismaClient,
-  profileId: string,
+  userId: string,
   config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaDueQuery[]> {
@@ -177,7 +177,7 @@ export async function dueSavedSearches(
   // One read for every discovery lease, reduced to the latest per query - avoids an N+1 findFirst.
   const leases = await prisma.pilotLease.findMany({
     where: {
-      profileId,
+      userId,
       kind: "search.discover",
       subjectId: { in: config.savedSearches.map((q) => q.query) },
     },

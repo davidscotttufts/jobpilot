@@ -7,13 +7,13 @@ import { describe, expect, it } from "bun:test";
 
 describe("findOwned", () => {
   it("returns the row when the finder yields one", async () => {
-    const row = { id: "abc", profileId: "p1" };
-    const found = await findOwned(async () => row, { id: "abc", profileId: "p1" }, "Credential");
+    const row = { id: "abc", userId: "p1" };
+    const found = await findOwned(async () => row, { id: "abc", userId: "p1" }, "Credential");
     expect(found).toBe(row);
   });
 
   it("passes the where clause through to the finder unchanged", async () => {
-    const where = { id: "abc", profileId: "p1" };
+    const where = { id: "abc", userId: "p1" };
     let seen: unknown;
     await findOwned(
       async (w) => {

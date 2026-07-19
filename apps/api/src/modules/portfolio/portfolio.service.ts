@@ -46,54 +46,49 @@ export class PortfolioService {
     const user = await this.prisma.user.findFirst({
       where,
       select: {
+        id: true,
         username: true,
         availability: true,
-        profile: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            website: true,
-            linkedin: true,
-            github: true,
-            city: true,
-            state: true,
-            primaryResumeId: true,
-          },
-        },
+        firstName: true,
+        lastName: true,
+        website: true,
+        linkedin: true,
+        github: true,
+        city: true,
+        state: true,
+        primaryResumeId: true,
       },
     });
 
-    if (!user?.profile) {
+    if (!user) {
       throw notFound(notFoundMessage);
     }
 
-    const { profile } = user;
     const start = this.heatmapStart();
 
     // Totals are counts (all-time); the heatmap only fetches rows inside its window, so row
     // transfer stays bounded to 365 days regardless of how long the account has been active.
     const [resume, applicationTotal, interviews, messageTotal, appliedDates, messages] =
       await Promise.all([
-        profile.primaryResumeId
+        user.primaryResumeId
           ? this.prisma.resume.findUnique({
-              where: { id: profile.primaryResumeId },
+              where: { id: user.primaryResumeId },
               select: { content: true },
             })
           : Promise.resolve(null),
-        this.prisma.application.count({ where: { profileId: profile.id } }),
+        this.prisma.application.count({ where: { userId: user.id } }),
         this.prisma.application.count({
-          where: { profileId: profile.id, status: { notIn: [...NON_INTERVIEWING_STATUSES] } },
+          where: { userId: user.id, status: { notIn: [...NON_INTERVIEWING_STATUSES] } },
         }),
         this.prisma.networkingMessage.count({
-          where: { profileId: profile.id, sentAt: { not: null } },
+          where: { userId: user.id, sentAt: { not: null } },
         }),
         this.prisma.application.findMany({
-          where: { profileId: profile.id, appliedAt: { gte: start } },
+          where: { userId: user.id, appliedAt: { gte: start } },
           select: { appliedAt: true },
         }),
         this.prisma.networkingMessage.findMany({
-          where: { profileId: profile.id, sentAt: { gte: start } },
+          where: { userId: user.id, sentAt: { gte: start } },
           select: { sentAt: true },
         }),
       ]);
@@ -107,9 +102,9 @@ export class PortfolioService {
 
     const content = this.parseResume(resume?.content ?? null);
     const username = user.username ?? "";
-    const displayName = `${profile.firstName} ${profile.lastName}`.trim() || username;
+    const displayName = `${user.firstName} ${user.lastName}`.trim() || username;
     const location =
-      [profile.city, profile.state].filter(Boolean).join(", ") || content?.basics.location || null;
+      [user.city, user.state].filter(Boolean).join(", ") || content?.basics.location || null;
 
     const cutoff = startOfDay(new Date()).getTime() - 29 * DAY_MS;
     const activityLast30 = perDay
@@ -125,12 +120,12 @@ export class PortfolioService {
       availability: parseAvailability(user.availability),
       summary: content?.summary?.trim() || null,
       links: {
-        website: profile.website || content?.basics.website || null,
-        linkedin: profile.linkedin || content?.basics.linkedin || null,
-        github: profile.github || content?.basics.github || null,
+        website: user.website || content?.basics.website || null,
+        linkedin: user.linkedin || content?.basics.linkedin || null,
+        github: user.github || content?.basics.github || null,
       },
       skills: content ? content.skills.flatMap((g) => g.items) : [],
-      primaryResumeId: profile.primaryResumeId ?? null,
+      primaryResumeId: user.primaryResumeId ?? null,
       perDay,
       stats: {
         applications: applicationTotal,
@@ -150,16 +145,17 @@ export class PortfolioService {
     }
 
     const users = await this.prisma.user.findMany({
-      where: { profile: { isNot: null } },
       select: {
+        id: true,
         username: true,
         availability: true,
-        profile: { select: { id: true, firstName: true, lastName: true, primaryResumeId: true } },
+        firstName: true,
+        lastName: true,
+        primaryResumeId: true,
       },
     });
 
-    const eligible = users.filter((u) => u.profile);
-    const profileIds = eligible.map((u) => u.profile!.id);
+    const userIds = users.map((u) => u.id);
 
     const gte =
       window === "all"
@@ -167,33 +163,29 @@ export class PortfolioService {
         : new Date(startOfDay(new Date()).getTime() - (WINDOW_DAYS[window] - 1) * DAY_MS);
     const [appRows, msgRows] = await Promise.all([
       this.prisma.application.groupBy({
-        by: ["profileId"],
-        where: { profileId: { in: profileIds }, ...(gte ? { appliedAt: { gte } } : {}) },
+        by: ["userId"],
+        where: { userId: { in: userIds }, ...(gte ? { appliedAt: { gte } } : {}) },
         _count: { _all: true },
       }),
       this.prisma.networkingMessage.groupBy({
-        by: ["profileId"],
-        where: { profileId: { in: profileIds }, sentAt: gte ? { gte } : { not: null } },
+        by: ["userId"],
+        where: { userId: { in: userIds }, sentAt: gte ? { gte } : { not: null } },
         _count: { _all: true },
       }),
     ]);
 
     const counts = new Map<string, number>();
-    for (const r of appRows)
-      counts.set(r.profileId, (counts.get(r.profileId) ?? 0) + r._count._all);
-    for (const r of msgRows)
-      counts.set(r.profileId, (counts.get(r.profileId) ?? 0) + r._count._all);
+    for (const r of appRows) counts.set(r.userId, (counts.get(r.userId) ?? 0) + r._count._all);
+    for (const r of msgRows) counts.set(r.userId, (counts.get(r.userId) ?? 0) + r._count._all);
 
-    const ranked = eligible
-      .map((u) => ({ u, activityCount: counts.get(u.profile!.id) ?? 0 }))
+    const ranked = users
+      .map((u) => ({ u, activityCount: counts.get(u.id) ?? 0 }))
       .filter((r) => r.activityCount > 0)
       .sort((a, b) => b.activityCount - a.activityCount)
       .slice(0, LEADERBOARD_CAP);
 
     // Headline only for the ranked subset - avoids parsing every user's resume JSON.
-    const resumeIds = ranked
-      .map((r) => r.u.profile!.primaryResumeId)
-      .filter((id): id is string => !!id);
+    const resumeIds = ranked.map((r) => r.u.primaryResumeId).filter((id): id is string => !!id);
     const resumes = resumeIds.length
       ? await this.prisma.resume.findMany({
           where: { id: { in: resumeIds } },
@@ -207,11 +199,8 @@ export class PortfolioService {
     const rows = ranked.map((r, i) => ({
       rank: i + 1,
       username: r.u.username ?? "",
-      displayName:
-        `${r.u.profile!.firstName} ${r.u.profile!.lastName}`.trim() || (r.u.username ?? ""),
-      headline: r.u.profile!.primaryResumeId
-        ? (headlineById.get(r.u.profile!.primaryResumeId) ?? null)
-        : null,
+      displayName: `${r.u.firstName} ${r.u.lastName}`.trim() || (r.u.username ?? ""),
+      headline: r.u.primaryResumeId ? (headlineById.get(r.u.primaryResumeId) ?? null) : null,
       availability: parseAvailability(r.u.availability),
       activityCount: r.activityCount,
     }));
@@ -223,7 +212,6 @@ export class PortfolioService {
 
   async sitemap(): Promise<{ username: string; updatedAt: Date }[]> {
     return this.prisma.user.findMany({
-      where: { profile: { isNot: null } },
       select: { username: true, updatedAt: true },
       take: 5000,
     });

@@ -15,7 +15,7 @@ function defined(data: Record<string, unknown>): Record<string, unknown> {
 
 const basePost = {
   id: "promo-1",
-  profileId: "p1",
+  userId: "p1",
   platform: "linkedin",
   target: null,
   title: "Shipped a thing",
@@ -44,7 +44,7 @@ function makeDeps(over: Record<string, unknown> = {}) {
     },
   };
   const push = {
-    sendToProfile: async (_p: string, _payload: PushPayload) => {},
+    sendToUser: async (_p: string, _payload: PushPayload) => {},
   } as unknown as PushService;
   const pilot = {
     appendJournal: async (_p: string, body: { entries: Record<string, unknown>[] }) => {

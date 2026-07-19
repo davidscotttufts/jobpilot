@@ -29,7 +29,7 @@ export const profileViewSchema = z.object({
   id: z.uuid(),
   firstName: z.string(),
   lastName: z.string(),
-  email: z.string(),
+  contactEmail: z.string(),
   phone: z.string().nullable(),
   website: z.string().nullable(),
   linkedin: z.string().nullable(),
@@ -61,7 +61,7 @@ export const profileViewSchema = z.object({
 /** Persisted auto-apply settings (mirrors the `AutoApplySettings` row). */
 export const autoApplySettingsViewSchema = z.object({
   id: z.uuid(),
-  profileId: z.uuid(),
+  userId: z.uuid(),
   minMatchScore: z.number().int(),
   maxApplicationsPerCampaign: z.number().int().nullable(),
   defaultStartDate: z.string(),

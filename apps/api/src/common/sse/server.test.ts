@@ -14,8 +14,8 @@ interface Frame {
 type Stream = AsyncGenerator<unknown, void, unknown>;
 
 /** The bus is process-wide and a topic's history outlives its last subscriber by 60s, so tests must
- *  not share profile ids or one test's events replay into the next. */
-const newProfileId = () => crypto.randomUUID();
+ *  not share user ids or one test's events replay into the next. */
+const newUserId = () => crypto.randomUUID();
 
 /**
  * Open a stream and drive it past its first `next()`.
@@ -25,8 +25,8 @@ const newProfileId = () => crypto.randomUUID();
  * yield is the `connected` control frame. Publish before that and `publish()` finds no topic and
  * drops the event.
  */
-async function open(profileId: string, lastEventId?: string): Promise<Stream> {
-  const stream = subscribe(inboxChannel, { profileId }, lastEventId) as Stream;
+async function open(userId: string, lastEventId?: string): Promise<Stream> {
+  const stream = subscribe(inboxChannel, { userId }, lastEventId) as Stream;
   const first = (await stream.next()).value as Frame;
   expect(first.event).toBe("connected");
   return stream;
@@ -42,20 +42,20 @@ async function closeAll(...streams: Stream[]): Promise<void> {
   await Promise.all(streams.map((s) => s.return()));
 }
 
-describe("inbox SSE channel is per-profile", () => {
-  it("does not deliver one profile's live events to another profile's subscriber", async () => {
-    const alice = newProfileId();
-    const bob = newProfileId();
+describe("inbox SSE channel is per-user", () => {
+  it("does not deliver one user's live events to another user's subscriber", async () => {
+    const alice = newUserId();
+    const bob = newUserId();
 
     const a = await open(alice);
     const b = await open(bob);
 
     try {
-      publish(inboxChannel, { profileId: alice }, { type: "message.scanned", id: "alice-secret" });
+      publish(inboxChannel, { userId: alice }, { type: "message.scanned", id: "alice-secret" });
 
       // Published after Alice's event, on Bob's own topic. Delivery per subscriber is FIFO, so any
       // leaked frame would necessarily sit *ahead* of this sentinel - ordering, not a timeout.
-      publish(inboxChannel, { profileId: bob }, { type: "message.scanned", id: "bob-sentinel" });
+      publish(inboxChannel, { userId: bob }, { type: "message.scanned", id: "bob-sentinel" });
 
       const firstOnBob = await nextFrame(b);
       expect(firstOnBob.data).toEqual({ type: "message.scanned", id: "bob-sentinel" });
@@ -68,18 +68,18 @@ describe("inbox SSE channel is per-profile", () => {
     }
   });
 
-  it("keeps the reconnect replay buffer per profile", async () => {
-    const alice = newProfileId();
-    const bob = newProfileId();
+  it("keeps the reconnect replay buffer per user", async () => {
+    const alice = newUserId();
+    const bob = newUserId();
 
     // Both topics need a live subscriber to exist at all - publish() no-ops on an unknown topic.
     const a = await open(alice);
     const b = await open(bob);
 
     try {
-      publish(inboxChannel, { profileId: alice }, { type: "message.scanned", id: "alice-1" });
-      publish(inboxChannel, { profileId: alice }, { type: "message.scanned", id: "alice-2" });
-      publish(inboxChannel, { profileId: bob }, { type: "message.scanned", id: "bob-1" });
+      publish(inboxChannel, { userId: alice }, { type: "message.scanned", id: "alice-1" });
+      publish(inboxChannel, { userId: alice }, { type: "message.scanned", id: "alice-2" });
+      publish(inboxChannel, { userId: bob }, { type: "message.scanned", id: "bob-1" });
 
       // A Bob client reconnecting with Last-Event-ID replays his topic's history. Under the old
       // constant topic there was one shared history and `alice-1` would replay here first.
@@ -93,7 +93,7 @@ describe("inbox SSE channel is per-profile", () => {
         // ended after exactly one entry - i.e. none of Alice's history was in it.
         publish(
           inboxChannel,
-          { profileId: bob },
+          { userId: bob },
           { type: "message.reviewed", id: "bob-2", status: "approved" },
         );
         const live = await nextFrame(reconnected);

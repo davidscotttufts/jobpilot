@@ -58,16 +58,12 @@ export class CaptchaService {
    * Resolve a CAPTCHA via the profile's configured solving service (2captcha / CapSolver)
    * and return the token to inject. Throws 404 when no key is configured, 502 on solver failure.
    */
-  async solve(
-    userId: string,
-    profileId: string,
-    input: CaptchaSolveInput,
-  ): Promise<CaptchaSolveResult> {
+  async solve(userId: string, input: CaptchaSolveInput): Promise<CaptchaSolveResult> {
     // try/finally rather than a lifecycle hook: no hook is guaranteed to run when the client aborts
     // mid-poll, and a leaked counter would lock this user out permanently.
     const release = acquireSlot(`captcha-solve:${userId}`, RATE_LIMITS.captchaSolve.maxInFlight);
     try {
-      const cred = await this.resolveServiceCredential(userId, profileId, input.provider);
+      const cred = await this.resolveServiceCredential(userId, input.provider);
       if (!cred) {
         throw notFound(
           "No captcha-solving service key configured. Add a 2captcha or CapSolver key in Settings.",
@@ -85,11 +81,10 @@ export class CaptchaService {
 
   private async resolveServiceCredential(
     userId: string,
-    profileId: string,
     provider?: ServiceProvider,
   ): Promise<{ provider: ServiceProvider; apiKey: string } | null> {
     const rows = await this.prisma.credential.findMany({
-      where: { profileId, scope: { in: [...SERVICE_PROVIDERS] }, NOT: { apiKey: null } },
+      where: { userId, scope: { in: [...SERVICE_PROVIDERS] }, NOT: { apiKey: null } },
     });
     // Honor an explicit provider; otherwise fall back in SERVICE_PROVIDERS preference order.
     const order: readonly ServiceProvider[] = provider ? [provider] : SERVICE_PROVIDERS;

@@ -1,7 +1,7 @@
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
-import { profileGuard } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { readUpload } from "../resume.upload";
 import { sourceDeletedSchema, sourceUploadedSchema } from "./file.schema";
 import { ResumeFileService } from "./file.service";
@@ -12,9 +12,9 @@ export const resumeFileController = new Elysia({
   name: "resume-files",
   detail: { tags: ["Resumes"] },
 })
-  .use(profileGuard)
+  .use(authGuard)
   // master resume PDF (cached, binary)
-  .get("/:id/pdf", ({ profileId, params }) => svc.renderPdf(profileId, params.id), {
+  .get("/:id/pdf", ({ user, params }) => svc.renderPdf(user.id, params.id), {
     params: idParam,
     detail: {
       summary: "Render resume PDF",
@@ -23,7 +23,7 @@ export const resumeFileController = new Elysia({
     },
   })
   // source file: stream / replace (multipart) / delete
-  .get("/:id/source", ({ profileId, params }) => svc.getSource(profileId, params.id), {
+  .get("/:id/source", ({ user, params }) => svc.getSource(user.id, params.id), {
     params: idParam,
     detail: {
       summary: "Stream resume source file",
@@ -33,9 +33,9 @@ export const resumeFileController = new Elysia({
   })
   .post(
     "/:id/source",
-    async ({ profileId, params, request }) => {
+    async ({ user, params, request }) => {
       const { file } = await readUpload(request, "file");
-      return svc.uploadSource(profileId, params.id, file);
+      return svc.uploadSource(user.id, params.id, file);
     },
     {
       params: idParam,
@@ -47,7 +47,7 @@ export const resumeFileController = new Elysia({
       },
     },
   )
-  .delete("/:id/source", ({ profileId, params }) => svc.deleteSource(profileId, params.id), {
+  .delete("/:id/source", ({ user, params }) => svc.deleteSource(user.id, params.id), {
     params: idParam,
     response: sourceDeletedSchema,
     detail: {

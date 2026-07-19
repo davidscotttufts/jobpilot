@@ -60,20 +60,20 @@ export class PushService {
 
   /** Upsert by endpoint. An endpoint can move between users (shared device), so a conflict reassigns it. */
   async subscribe(
-    profileId: string,
+    userId: string,
     input: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string },
   ) {
     return this.prisma.pushSubscription.upsert({
       where: { endpoint: input.endpoint },
       create: {
-        profileId,
+        userId,
         endpoint: input.endpoint,
         p256dh: input.keys.p256dh,
         auth: input.keys.auth,
         userAgent: input.userAgent ?? null,
       },
       update: {
-        profileId,
+        userId,
         p256dh: input.keys.p256dh,
         auth: input.keys.auth,
         userAgent: input.userAgent ?? null,
@@ -83,9 +83,9 @@ export class PushService {
   }
 
   /** Delete the caller's own subscription for this endpoint; returns the removed id (404 if not owned). */
-  async unsubscribe(profileId: string, endpoint: string): Promise<string | null> {
+  async unsubscribe(userId: string, endpoint: string): Promise<string | null> {
     const row = await this.prisma.pushSubscription.findFirst({
-      where: { profileId, endpoint },
+      where: { userId, endpoint },
       select: { id: true },
     });
     if (!row) {
@@ -95,9 +95,9 @@ export class PushService {
     return row.id;
   }
 
-  async list(profileId: string) {
+  async list(userId: string) {
     return this.prisma.pushSubscription.findMany({
-      where: { profileId },
+      where: { userId },
       orderBy: { createdAt: "desc" },
       select: { id: true, endpoint: true, userAgent: true, createdAt: true },
     });
@@ -105,22 +105,22 @@ export class PushService {
 
   /**
    * Fan a notification out to every one of the profile's subscriptions. Never throws: catches
-   * internally so a call-site `void push.sendToProfile(...)` cannot poison the request path. A
+   * internally so a call-site `void push.sendToUser(...)` cannot poison the request path. A
    * 404/410 prunes the dead subscription; other errors are logged and swallowed.
    */
-  async sendToProfile(profileId: string, payload: PushPayload): Promise<void> {
+  async sendToUser(userId: string, payload: PushPayload): Promise<void> {
     if (!this.isConfigured) {
       return;
     }
     try {
       const subs = await this.prisma.pushSubscription.findMany({
-        where: { profileId },
+        where: { userId },
         select: { id: true, endpoint: true, p256dh: true, auth: true },
       });
       const body = JSON.stringify({ ...payload, body: truncate(payload.body, PUSH_BODY_MAX) });
       await Promise.all(subs.map((sub) => this.deliver(sub, body)));
     } catch (err) {
-      console.error("[push] sendToProfile failed", err);
+      console.error("[push] sendToUser failed", err);
     }
   }
 
