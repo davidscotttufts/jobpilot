@@ -36,7 +36,8 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
     state.instructionsUpdatedAt !== null || state.instructionsGoals.trim() !== "";
 
   // "checking" counts as provisionally done so a set-up pilot doesn't flash the checklist on load.
-  if ((hostReady || health === "checking") && enabled && instructionsDone) {
+  // Instructions are optional (the pilot bootstraps its own goals/searches), so they never gate this.
+  if ((hostReady || health === "checking") && enabled) {
     return null;
   }
 
@@ -74,12 +75,12 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
     },
     {
       id: "instructions",
-      label: "Write instructions",
-      description: "Goals, caps, and saved searches steer every cycle.",
+      label: "Steer with goals (optional)",
+      description: "The pilot sets up its own goals and searches - write goals to steer it.",
       done: instructionsDone,
       action: (
         <LinkButton size="small" variant="outlined" href="/pilot/instructions">
-          Write instructions
+          Write goals
         </LinkButton>
       ),
     },
@@ -88,7 +89,7 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
   return (
     <SectionCard
       title="Set up the pilot"
-      description="Three steps before the pilot can work on its own."
+      description="Install the agent and enable the pilot - it handles the rest."
     >
       <Stack spacing={2}>
         {steps.map((step) => (

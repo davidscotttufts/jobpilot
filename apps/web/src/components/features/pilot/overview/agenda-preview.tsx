@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
-import type { AgendaItem } from "@jobpilot/contracts/pilot";
+import type { AgendaItem, AgendaResponse } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
 import {
   Box,
@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
@@ -40,7 +41,49 @@ const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
   "campaign.strategyReview": "Review campaign strategy",
   "job.rescanSkipped": "Rescan skipped jobs",
   "job.retryFailed": "Retry failed jobs",
+  "strategy.bootstrap": "Set up goals and saved searches",
 };
+
+interface AgendaEmptyProps {
+  reason: AgendaResponse["emptyReason"];
+  budget: AgendaResponse["budget"];
+  nextWakeAt: Date;
+}
+
+/** Explains an empty agenda; the reason is decided server-side (see AgendaResponse.emptyReason). */
+function AgendaEmpty(props: AgendaEmptyProps): ReactElement {
+  const { reason, budget, nextWakeAt } = props;
+  if (reason === "capReached") {
+    return (
+      <EmptyState
+        variant="inline"
+        title="Daily cap reached."
+        description={`Applied ${budget.appliedToday}/${budget.dailyApplyCap} - resets in ${formatTimeUntil(budget.resetsAt)}.`}
+      />
+    );
+  }
+  if (reason === "awaitingSetup") {
+    return (
+      <EmptyState
+        variant="inline"
+        title="Getting set up."
+        description="The pilot derives goals and saved searches from your profile - this finishes on an upcoming cycle."
+        action={
+          <LinkButton size="small" href="/pilot/instructions">
+            Edit instructions
+          </LinkButton>
+        }
+      />
+    );
+  }
+  return (
+    <EmptyState
+      variant="inline"
+      title="Agenda is clear."
+      description={`Next wake in ${formatTimeUntil(nextWakeAt)}.`}
+    />
+  );
+}
 
 /** Read-only peek at the next cycle's plan. Fetched once + manual refresh: agenda compiles are costly. */
 export function AgendaPreview(): ReactElement {
@@ -63,12 +106,12 @@ export function AgendaPreview(): ReactElement {
       </Stack>
     );
   } else {
-    const { items, generatedAt, nextWakeAt } = query.data;
+    const { items, generatedAt, nextWakeAt, budget, emptyReason } = query.data;
     const visible = items.slice(0, PREVIEW_COUNT);
     body = (
       <Stack spacing={2}>
         {visible.length === 0 ? (
-          <EmptyState variant="inline" title="Agenda is clear." />
+          <AgendaEmpty reason={emptyReason} budget={budget} nextWakeAt={nextWakeAt} />
         ) : (
           <Stack spacing={1.5} divider={<Divider />}>
             {visible.map((item, index) => (

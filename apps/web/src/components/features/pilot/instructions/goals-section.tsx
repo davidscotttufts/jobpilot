@@ -16,7 +16,7 @@ export const GoalsSection = withForm({
               multiline
               minRows={3}
               placeholder="e.g. Prioritize senior frontend roles at Series A-C startups, remote or NYC. Must sponsor F1/OPT. Skip crypto and agencies. Lead with my React and design-systems work."
-              helperText="Plain-language direction for the pilot: roles, priorities, constraints."
+              helperText="Plain-language direction: roles, priorities, constraints. The pilot derives its saved searches from this - leave it empty and it works from your resume instead."
             />
           )}
         </form.AppField>

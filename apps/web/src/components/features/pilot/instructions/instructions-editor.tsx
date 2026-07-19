@@ -1,8 +1,20 @@
 "use client";
 
-import type { ReactElement } from "react";
-import type { PilotInstructionsConfig, PilotState } from "@jobpilot/contracts/pilot";
-import { Box, Stack, Typography } from "@mui/material";
+import { type ReactElement, useState } from "react";
+import {
+  type PilotInstructionsConfig,
+  type PilotState,
+  pilotInstructionsConfigSchema,
+} from "@jobpilot/contracts/pilot";
+import { ExpandMore } from "@mui/icons-material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
@@ -12,7 +24,6 @@ import { SectionCard } from "@/components/ui/layout";
 import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
-import { ActiveHoursSection } from "./active-hours-section";
 import { BoardsSection } from "./boards-section";
 import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
 import { GoalsSection } from "./goals-section";
@@ -25,16 +36,22 @@ interface InstructionsEditorProps {
   state: PilotState;
 }
 
-/** Drives both the anchor nav and the rendered order - one list, so an id can't drift from its section. */
-const SECTIONS: (SectionAnchor & { Section: typeof GoalsSection })[] = [
-  { id: "goals", label: "Goals", Section: GoalsSection },
-  { id: "limits", label: "Operating limits", Section: LimitsSection },
-  { id: "active-hours", label: "Active hours", Section: ActiveHoursSection },
-  { id: "networking", label: "Networking", Section: NetworkingSection },
-  { id: "boards", label: "Boards", Section: BoardsSection },
-  { id: "searches", label: "Saved searches", Section: SearchesSection },
-  { id: "platforms", label: "Platforms", Section: PlatformsSection },
+/** Everything below Goals is optional tuning, collapsed behind one Advanced accordion. */
+const ADVANCED_SECTIONS: { id: string; Section: typeof GoalsSection }[] = [
+  { id: "limits", Section: LimitsSection },
+  { id: "networking", Section: NetworkingSection },
+  { id: "boards", Section: BoardsSection },
+  { id: "searches", Section: SearchesSection },
+  { id: "platforms", Section: PlatformsSection },
 ];
+
+const NAV_ANCHORS: SectionAnchor[] = [
+  { id: "goals", label: "Goals" },
+  { id: "advanced", label: "Advanced settings" },
+];
+
+/** A config indistinguishable from `{}` means the user never tuned anything - keep Advanced folded. */
+const DEFAULT_CONFIG_JSON = JSON.stringify(pilotInstructionsConfigSchema.parse({}));
 
 function toFormValues(state: PilotState): InstructionsFormValues {
   const c = state.instructionsConfig;
@@ -46,10 +63,6 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
     networkingEnabled: c.networkingEnabled,
-    activeHoursEnabled: Boolean(c.activeHours),
-    activeHoursStart: c.activeHours?.start ?? "09:00",
-    activeHoursEnd: c.activeHours?.end ?? "17:00",
-    activeHoursTz: c.activeHours?.tz ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
     networkingEmail: c.autonomy.networkingEmail,
     networkingLinkedIn: c.autonomy.networkingLinkedIn,
     boards: [...c.boards],
@@ -71,6 +84,10 @@ function toFormValues(state: PilotState): InstructionsFormValues {
 export function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
   const toast = useToast();
+  // Expanded when any advanced value was ever customized, so tuning stays visible to its owner.
+  const [advancedOpen, setAdvancedOpen] = useState(
+    () => JSON.stringify(state.instructionsConfig) !== DEFAULT_CONFIG_JSON,
+  );
 
   const save = useApiMutation<unknown, { goals: string; config: PilotInstructionsConfig }>(
     (body) => api.pilot.instructions.put(body),
@@ -91,13 +108,6 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         networkingEnabled: value.networkingEnabled,
         boards: value.boards,
         parkedBoards: value.parkedBoards,
-        activeHours: value.activeHoursEnabled
-          ? {
-              start: value.activeHoursStart,
-              end: value.activeHoursEnd,
-              tz: value.activeHoursTz,
-            }
-          : undefined,
         savedSearches: value.savedSearches.map((q) => ({
           query: q.query.trim(),
           board: q.board.trim() || undefined,
@@ -136,7 +146,10 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         form.handleSubmit();
       }}
     >
-      <SectionCard title="Instructions">
+      <SectionCard
+        title="Instructions"
+        description="Goals are all the pilot needs - it creates and maintains its saved searches from them. Everything below is optional tuning."
+      >
         <Box
           sx={{
             display: "flex",
@@ -145,15 +158,46 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
             alignItems: "flex-start",
           }}
         >
-          <SectionAnchorNav anchors={SECTIONS} />
+          <SectionAnchorNav anchors={NAV_ANCHORS} />
 
           <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
             <Stack spacing={3}>
-              {SECTIONS.map(({ id, Section }) => (
-                <Box key={id} data-section-id={id}>
-                  <Section form={form} />
-                </Box>
-              ))}
+              <Box data-section-id="goals">
+                <GoalsSection form={form} />
+              </Box>
+
+              <Box data-section-id="advanced">
+                <Accordion
+                  disableGutters
+                  elevation={0}
+                  expanded={advancedOpen}
+                  onChange={(_, open) => setAdvancedOpen(open)}
+                  sx={(theme) => ({
+                    border: `1px solid ${theme.palette.line.divider}`,
+                    borderRadius: theme.radii.md,
+                    "&::before": { display: "none" },
+                  })}
+                >
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                    <Stack spacing={0.25}>
+                      <Typography variant="subtitle2">Advanced settings</Typography>
+                      <Typography variant="captionMuted">
+                        Caps, networking, boards, saved searches, platforms - the defaults work for
+                        most people.
+                      </Typography>
+                    </Stack>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Stack spacing={3}>
+                      {ADVANCED_SECTIONS.map(({ id, Section }) => (
+                        <Box key={id} data-section-id={id}>
+                          <Section form={form} />
+                        </Box>
+                      ))}
+                    </Stack>
+                  </AccordionDetails>
+                </Accordion>
+              </Box>
             </Stack>
           </Box>
         </Box>

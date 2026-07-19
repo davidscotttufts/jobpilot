@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { EmptyState } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime } from "@/utils/format";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
@@ -75,7 +76,7 @@ export function NeedsAttention(): ReactElement {
   if (loading) {
     body = <LinearProgress />;
   } else if (count === 0) {
-    body = <Typography variant="body2Muted">Nothing needs your attention.</Typography>;
+    body = <EmptyState variant="inline" title="Nothing needs your attention." />;
   } else {
     body = (
       <Stack spacing={2}>

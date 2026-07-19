@@ -1,4 +1,3 @@
-import { HHMM_PATTERN } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
 export const instructionsFormSchema = z.object({
@@ -9,10 +8,6 @@ export const instructionsFormSchema = z.object({
   minScore: z.number().min(0).max(100),
   checkIntervalMinutes: z.number().int().min(1),
   networkingEnabled: z.boolean(),
-  activeHoursEnabled: z.boolean(),
-  activeHoursStart: z.string().regex(HHMM_PATTERN, "Use HH:MM"),
-  activeHoursEnd: z.string().regex(HHMM_PATTERN, "Use HH:MM"),
-  activeHoursTz: z.string(),
   networkingEmail: z.enum(["draft", "review", "auto"]),
   networkingLinkedIn: z.enum(["draft", "review"]),
   boards: z.array(z.string()),
@@ -46,10 +41,6 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   minScore: 60,
   checkIntervalMinutes: 30,
   networkingEnabled: false,
-  activeHoursEnabled: false,
-  activeHoursStart: "09:00",
-  activeHoursEnd: "17:00",
-  activeHoursTz: "UTC",
   networkingEmail: "review",
   networkingLinkedIn: "draft",
   boards: [],

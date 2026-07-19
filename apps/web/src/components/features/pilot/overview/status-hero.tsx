@@ -9,6 +9,7 @@ import { type PilotCycleStatus, providerDisplayName, type SessionStatus } from "
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
+import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../status";
 import type { PilotToggle } from "../use-pilot-toggle";
 
 interface StatusHeroProps {
@@ -90,6 +91,15 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
                 size="small"
               />
               {pilot?.conducting && <Chip color="info" label="Working" size="small" />}
+              {/* First-cycle feedback: right after Enable there is no history yet - say so instead of looking idle. */}
+              {enabled && state.cycleCount === 0 && !pilot?.conducting && (
+                <Chip
+                  color="info"
+                  variant="outlined"
+                  label={PILOT_STARTING_UP_LABEL}
+                  size="small"
+                />
+              )}
               {typeof pilot?.consecutiveTimeouts === "number" && pilot.consecutiveTimeouts > 0 && (
                 <Chip
                   color="warning"
@@ -101,11 +111,8 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
             </Stack>
 
             {/* The disabled + offline case is the setup checklist's job; only warn when cycles should be running. */}
-            {enabled && (health === "offline" || health === "uninstalled") && (
-              <Alert severity="warning">
-                Pilot is enabled but the terminal host is offline - start the JobPilot agent so
-                cycles can run.
-              </Alert>
+            {enabled && isHostOffline(health) && (
+              <Alert severity="warning">{PILOT_HOST_OFFLINE_MESSAGE}</Alert>
             )}
 
             <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", gap: 2 }}>

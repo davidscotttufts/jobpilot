@@ -23,14 +23,14 @@ export const SearchesSection = withForm({
     return (
       <FormSection
         title="Saved searches"
-        description="Job searches the pilot re-runs on a schedule to discover new roles."
+        description="The pilot creates and re-runs these from your goals. Add or edit only to override its choices."
       >
         <form.AppField name="savedSearches" mode="array">
           {(field) => (
             <InstructionsRowList
               count={field.state.value?.length ?? 0}
               keys={searchList.keys}
-              emptyText="No saved searches yet."
+              emptyText="None yet - the pilot will create them on its next quiet cycle."
               addLabel="Add search"
               removeAria={(i) => `Remove search ${i + 1}`}
               rowLabel={(i) => `Search ${i + 1}`}
