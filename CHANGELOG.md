@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.7] - 2026-07-19
+
+### Changed
+
+- The "outreach" feature is now called "networking" throughout the app, so the
+  labels, URLs, and agent workflows all use one consistent name.
+
 ## [2.1.6] - 2026-07-18
 
 ### Fixed
