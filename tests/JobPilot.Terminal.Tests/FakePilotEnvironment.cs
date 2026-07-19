@@ -79,6 +79,11 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
         RunningProvider = null;
     }
 
+    public void InterruptSession()
+    {
+        Actions.Add("interrupt");
+    }
+
     public Task PauseAsync(CancellationToken ct)
     {
         Actions.Add("pause");

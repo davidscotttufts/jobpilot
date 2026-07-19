@@ -95,7 +95,11 @@ public sealed class PilotConductor(PilotStore store, IPilotEnvironment env, ILog
             }
             catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested)
             {
-                // Pairing changed mid-iteration; the loop re-reads state next pass. The session is left intact.
+                // A disable aborts the in-flight turn; Conducting keeps Esc out of a user-driven mismatch session.
+                if (loop.Conducting && store.Current is not { Enabled: true })
+                {
+                    env.InterruptSession();
+                }
             }
             catch (OperationCanceledException)
             {

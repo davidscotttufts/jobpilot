@@ -51,6 +51,9 @@ public interface IPilotEnvironment
     /// <summary>Stops the active session so the next iteration restarts it.</summary>
     void StopSession();
 
+    /// <summary>Sends Esc to abort the agent's in-flight turn, leaving the session alive.</summary>
+    void InterruptSession();
+
     /// <summary>Polls briefly while conducting is paused (user-driven provider mismatch).</summary>
     Task PauseAsync(CancellationToken ct);
 

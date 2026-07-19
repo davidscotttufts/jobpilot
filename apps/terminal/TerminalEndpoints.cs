@@ -111,7 +111,7 @@ public static class TerminalEndpoints
 
         app.MapPost("/pilot/disable", (PilotStore store, PilotConductor pilot, SessionManager session, HostInstall install, ProtocolRegistrar registrar) =>
         {
-            // Keep the pairing and never kill a mid-cycle session; just stop driving it.
+            // Keep the pairing and the session; the conductor interrupts a mid-cycle turn and stops driving.
             store.SetEnabled(false);
             pilot.WakeUp();
             return TypedResults.Ok(CurrentStatus(session, install, registrar, pilot));

@@ -55,11 +55,51 @@ public sealed class PilotConductorTests : IDisposable
         await TestWait.Until(() => !conductor.BuildStatus().Conducting);
         var injectsAtDisable = env.Actions.Count(a => a == "inject-cycle");
 
-        // The paired session is left running; the conductor simply stops driving it.
+        // The paired session is left running, but the in-flight turn is interrupted so work actually stops.
         await Task.Delay(50);
         Assert.Equal(injectsAtDisable, env.Actions.Count(a => a == "inject-cycle"));
+        Assert.Contains("interrupt", env.Actions);
         Assert.DoesNotContain("stop", env.Actions);
         Assert.True(conductor.BuildStatus().Paired); // pairing is kept
+
+        await conductor.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task WakeUp_WhileStillEnabled_DoesNotInterruptTheSession()
+    {
+        await conductor.StartAsync(CancellationToken.None);
+
+        store.Save(TestPairing.Create());
+        conductor.WakeUp();
+        await TestWait.Until(() => env.Actions.Contains("await"));
+
+        conductor.WakeUp(); // e.g. a question was answered; the cycle restarts but the turn is not aborted
+
+        await TestWait.Until(() => env.Actions.Count(a => a == "inject-cycle") >= 2);
+        Assert.DoesNotContain("interrupt", env.Actions);
+
+        store.SetEnabled(false);
+        conductor.WakeUp();
+        await conductor.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task Disable_DoesNotInterrupt_WhilePausedOnProviderMismatch()
+    {
+        env.RunningProvider = "codex"; // the user drives the other provider; the pilot pairs claude
+        await conductor.StartAsync(CancellationToken.None);
+
+        store.Save(TestPairing.Create());
+        conductor.WakeUp();
+        await TestWait.Until(() => env.Actions.Contains("pause"));
+
+        store.SetEnabled(false);
+        conductor.WakeUp();
+
+        await TestWait.Until(() => !conductor.BuildStatus().Enabled);
+        await Task.Delay(50);
+        Assert.DoesNotContain("interrupt", env.Actions);
 
         await conductor.StopAsync(CancellationToken.None);
     }

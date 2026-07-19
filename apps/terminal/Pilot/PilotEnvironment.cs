@@ -123,6 +123,15 @@ public sealed class PilotEnvironment : IPilotEnvironment, IDisposable
 
     public void StopSession() => session.Stop();
 
+    // Esc is the interrupt key in both provider TUIs; at an idle prompt it is a harmless no-op.
+    public void InterruptSession()
+    {
+        if (session.State == SessionState.Running)
+        {
+            session.WriteInput([0x1b]);
+        }
+    }
+
     public Task PauseAsync(CancellationToken ct) => Task.Delay(MismatchPoll, ct);
 
     public async Task ReportSystemAsync(string summary)
