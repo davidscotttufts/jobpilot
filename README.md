@@ -23,10 +23,14 @@ JobPilot helps you search for roles, tailor resumes, submit applications, contac
 recruiters, and track the results. You can run one task at a time or enable the
 Pilot to work through a schedule and limits you define.
 
-The agent runs through your Claude Code or Codex subscription and uses a browser
-on your computer. The hosted dashboard stores your profile, resumes, campaigns,
-and application history. You can see what the agent is doing and step in when
-needed.
+> **Uses your subscription, not an AI API key.** Claude Code or Codex performs
+> the AI work, so JobPilot uses the limits included with your existing
+> subscription. You do not need to provide an Anthropic or OpenAI API key, and
+> JobPilot does not add a separate per-token AI charge.
+
+The agent runs on your computer and controls a local browser. The hosted
+dashboard stores your profile, resumes, campaigns, and application history. You
+can see what the agent is doing and step in when needed.
 
 ## What you can do
 
