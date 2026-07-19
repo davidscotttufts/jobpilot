@@ -9,6 +9,7 @@ import {
   Inbox,
   Insights,
   Lightbulb,
+  Public,
   Settings,
   SmartToy,
   type SvgIconComponent,
@@ -63,6 +64,7 @@ export const navGroups: NavGroup[] = [
         matchHrefs: ["/resumes", "/cover-letters"],
       },
       { label: "Boards", href: "/boards", icon: BusinessCenter },
+      { label: "Portfolio", href: "/settings/portfolio", icon: Public },
     ],
   },
 ];

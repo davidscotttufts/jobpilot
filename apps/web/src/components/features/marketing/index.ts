@@ -1,5 +1,6 @@
 export * from "./marketing-footer";
 export * from "./marketing-nav";
+export * from "./marketing-shell";
 export * from "./section";
 export * from "./section-eyebrow";
 export * from "./sections/board-strip";
@@ -13,3 +14,4 @@ export * from "./sections/live-jobs-strip";
 export * from "./sections/pilot";
 export * from "./sections/privacy-grid";
 export * from "./sections/product-tour";
+export * from "./sections/trending-users-strip";

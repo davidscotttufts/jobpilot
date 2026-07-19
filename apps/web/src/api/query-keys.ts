@@ -7,6 +7,13 @@ export const queryKeys = {
   profile: {
     all: ["profile"] as const,
     detail: () => [...queryKeys.profile.all, "detail"] as const,
+    portfolio: () => [...queryKeys.profile.all, "portfolio"] as const,
+    portfolioPreview: () => [...queryKeys.profile.all, "portfolio", "preview"] as const,
+  },
+
+  leaderboard: {
+    all: ["leaderboard"] as const,
+    list: (window: string) => [...queryKeys.leaderboard.all, window] as const,
   },
 
   credentials: {

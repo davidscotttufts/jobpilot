@@ -7,6 +7,7 @@ import { analyticsQueries } from "@/api/queries";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
+import { PortfolioRankChip } from "./portfolio-rank-chip";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
 
@@ -34,6 +35,7 @@ export function AnalyticsView(): ReactElement {
 
   return (
     <Stack spacing={3}>
+      <PortfolioRankChip />
       <Typography variant="overlineMuted">Applications</Typography>
       <AnalyticsStatTiles stats={stats} />
 

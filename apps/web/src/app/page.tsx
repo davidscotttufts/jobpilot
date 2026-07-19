@@ -15,6 +15,7 @@ import {
   Pilot,
   PrivacyGrid,
   ProductTour,
+  TrendingUsersStrip,
 } from "@/components/features/marketing";
 import { JsonLd } from "@/components/seo";
 import { faqPageLd, organizationLd, softwareApplicationLd, websiteLd } from "@/lib/structured-data";
@@ -46,6 +47,7 @@ export default function LandingPage(): ReactElement {
         <CampaignTypes />
 
         <LiveJobsStrip />
+        <TrendingUsersStrip />
 
         <ProductTour />
         <PrivacyGrid />

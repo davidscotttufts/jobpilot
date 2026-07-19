@@ -17,6 +17,21 @@ export const authQueries = {
 
 export const profileQueries = {
   detail: () => ({ queryKey: queryKeys.profile.detail(), queryFn: () => api.profile.get() }),
+  portfolio: () => ({
+    queryKey: queryKeys.profile.portfolio(),
+    queryFn: () => api.profile.portfolio.get(),
+  }),
+  portfolioPreview: () => ({
+    queryKey: queryKeys.profile.portfolioPreview(),
+    queryFn: () => api.profile.portfolio.preview.get(),
+  }),
+};
+
+export const leaderboardQueries = {
+  list: (window: "week" | "month" | "all") => ({
+    queryKey: queryKeys.leaderboard.list(window),
+    queryFn: () => api.public.portfolio.leaderboard.get({ query: { window } }),
+  }),
 };
 
 export const credentialQueries = {
