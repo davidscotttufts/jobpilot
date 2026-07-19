@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.5] - 2026-07-18
+
+### Added
+
+- Pilot features - an autonomous campaign mode where the agent scores, applies,
+  and reports on queued jobs with less hands-on steering.
+
+### Changed
+
+- New "J-bot" brand mark across the web app, with refreshed app icons and
+  realigned SEO metadata.
+- Documentation clarifies how JobPilot uses your Claude/Codex subscription and
+  when an AI key is required.
+
 ## [2.1.4] - 2026-07-15
 
 ### Changed
