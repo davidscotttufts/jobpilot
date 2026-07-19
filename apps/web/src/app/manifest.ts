@@ -3,14 +3,17 @@ import { surfaces } from "@/theme/palette";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "JobPilot - your AI job agent",
+    name: "JobPilot - your job search on autopilot",
     short_name: "JobPilot",
     description:
-      "Drive Claude Code or Codex on your own subscription to search job boards, tailor your resume, apply, and track every reply.",
+      "Write your goals once; JobPilot's local Pilot finds roles, tailors your resume, applies, and chases replies overnight - on your own Claude or Codex subscription.",
     start_url: "/",
     display: "standalone",
     background_color: surfaces.base,
     theme_color: surfaces.base,
-    icons: [{ src: "/icon.svg", type: "image/svg+xml", sizes: "any", purpose: "any" }],
+    icons: [
+      { src: "/icon.svg", type: "image/svg+xml", sizes: "any", purpose: "any" },
+      { src: "/icon-maskable.svg", type: "image/svg+xml", sizes: "any", purpose: "maskable" },
+    ],
   };
 }

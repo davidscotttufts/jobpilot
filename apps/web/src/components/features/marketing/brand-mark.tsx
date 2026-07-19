@@ -1,9 +1,9 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Link, Stack, Typography } from "@mui/material";
+import { Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { fontFamilies } from "@/theme";
+import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 
 interface BrandMarkProps {
   /** Hide the "JobPilot" wordmark and show only the badge. */
@@ -30,25 +30,7 @@ export function BrandMark(props: BrandMarkProps): ReactElement {
         "&:hover": { opacity: 0.85 },
       }}
     >
-      <Box
-        aria-hidden
-        sx={(theme) => ({
-          width: 32,
-          height: 32,
-          borderRadius: theme.radii.sm,
-          background: theme.gradients.reversed,
-          border: `1px solid ${theme.palette.accent.primary}`,
-          display: "grid",
-          placeItems: "center",
-          fontFamily: fontFamilies.display,
-          fontWeight: 700,
-          fontSize: 18,
-          lineHeight: 1,
-          color: "primary.contrastText",
-        })}
-      >
-        J
-      </Box>
+      <JobPilotMark size={32} />
       {!iconOnly && (
         <Typography variant="h3" sx={{ fontSize: "1.1rem", letterSpacing: "-0.01em" }}>
           JobPilot

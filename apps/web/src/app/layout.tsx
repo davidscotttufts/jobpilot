@@ -25,21 +25,24 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const title = "JobPilot - your job search on autopilot";
 const description =
-  "JobPilot drives Claude Code or Codex on your own subscription to search any job board - 12 built in - tailor your resume, apply, and track every reply from one dashboard.";
+  "Write your goals once and JobPilot's local Pilot runs your job search on its own - finding roles, tailoring your resume, applying, and chasing replies overnight on your own Claude Code or Codex subscription.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: { default: "JobPilot - your AI job agent", template: "%s · JobPilot" },
+  title: { default: title, template: "%s · JobPilot" },
   description,
   applicationName: "JobPilot",
   keywords: [
+    "autonomous job search",
     "AI job application",
     "job search agent",
+    "auto apply jobs",
     "Claude Code",
     "Codex",
     "resume tailoring",
-    "auto apply jobs",
+    "AI recruiter outreach",
     "Upwork proposals",
     "job board automation",
   ],
@@ -47,7 +50,9 @@ export const metadata: Metadata = {
   creator: "Sukhrob Ilyosbekov",
   category: "technology",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg" },
+  // apple-touch-icon comes from app/apple-icon.tsx (file convention); this covers the SVG favicon.
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], shortcut: "/icon.svg" },
+  appleWebApp: { capable: true, title: "JobPilot", statusBarStyle: "black-translucent" },
   robots: {
     index: true,
     follow: true,
@@ -58,12 +63,12 @@ export const metadata: Metadata = {
     url: "/",
     type: "website",
     locale: "en_US",
-    title: "JobPilot - your AI job agent",
+    title,
     description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "JobPilot - your AI job agent",
+    title,
     description,
   },
 };

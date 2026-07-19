@@ -3,9 +3,9 @@
 import { Fragment, type ReactElement, Suspense } from "react";
 import { alpha, Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
+import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { AccountMenu } from "@/components/features/profile";
 import { useAuth } from "@/hooks/use-auth";
-import { fontFamilies } from "@/theme";
 import { FeedbackMenu } from "./feedback-menu";
 import { NavGroup } from "./nav-group";
 import { APP_TITLE, footerNavGroups, RAIL_WIDTH, visibleNavGroups } from "./shell-config";
@@ -35,51 +35,20 @@ export function Rail(): ReactElement {
         href="/workspace"
         aria-label={`${APP_TITLE} home`}
         sx={(theme) => ({
-          position: "relative",
-          width: 36,
-          height: 36,
-          borderRadius: theme.radii.sm,
-          background: theme.gradients.reversed,
-          border: `1px solid ${theme.palette.accent.primary}`,
           display: "grid",
           placeItems: "center",
           textDecoration: "none",
-          overflow: "hidden",
+          borderRadius: theme.radii.sm,
           transition: theme.motion.standard,
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.4), 0 0 16px ${alpha(theme.palette.accent.primary, 0.25)}`,
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            inset: 0,
-            background:
-              "radial-gradient(circle at 30% 20%, rgba(255,255,255,0.4) 0%, transparent 55%)",
-            opacity: 0.8,
-            transition: theme.motion.standard,
-          },
+          filter: `drop-shadow(0 2px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 12px ${alpha(theme.palette.accent.primary, 0.22)})`,
           "&:hover": {
             transform: "translateY(-1px)",
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.3), 0 6px 18px rgba(0,0,0,0.5), 0 0 26px ${alpha(theme.palette.accent.primary, 0.5)}`,
-            "&::before": { opacity: 1 },
+            filter: `drop-shadow(0 6px 18px rgba(0,0,0,0.5)) drop-shadow(0 0 20px ${alpha(theme.palette.accent.primary, 0.45)})`,
           },
-          "&:focus-visible": { boxShadow: theme.shadows_custom.focus },
+          "&:focus-visible": { outline: "none", boxShadow: theme.shadows_custom.focus },
         })}
       >
-        <Box
-          component="span"
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            fontFamily: fontFamilies.display,
-            fontWeight: 700,
-            fontSize: 20,
-            lineHeight: 1,
-            letterSpacing: "-0.02em",
-            // Shorthand, not theme.palette.primary.contrastText (cssVariables SSR/client hash drift).
-            color: "primary.contrastText",
-          }}
-        >
-          J
-        </Box>
+        <JobPilotMark size={36} />
       </Box>
       <Box sx={{ flex: 1, width: "100%" }}>
         <Suspense fallback={null}>

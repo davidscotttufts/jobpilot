@@ -1,10 +1,10 @@
 import { ImageResponse } from "next/og";
+import { markDataUri } from "@/components/brand/mark-svg";
 import { accent, feedback, surfaces, textColors } from "@/theme/palette";
-import { gradients } from "@/theme/tokens";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "JobPilot - your AI job agent";
+export const alt = "JobPilot - your job search on autopilot";
 
 // Satori renders this - inline styles only, no MUI/emotion, every multi-child div is flex.
 export default function OpenGraphImage(): ImageResponse {
@@ -31,23 +31,8 @@ export default function OpenGraphImage(): ImageResponse {
         }}
       />
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 10,
-            background: gradients.reversed,
-            border: `1px solid ${accent.primary}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#FFFFFF",
-            fontSize: 34,
-            fontWeight: 700,
-          }}
-        >
-          J
-        </div>
+        {/* biome-ignore lint/performance/noImgElement: this is a next/og data-URI SVG, not a Next <Image>. */}
+        <img width={64} height={64} src={markDataUri(64)} alt="" />
         <div style={{ color: textColors.primary, fontSize: 40, fontWeight: 700 }}>JobPilot</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
@@ -60,11 +45,11 @@ export default function OpenGraphImage(): ImageResponse {
             letterSpacing: -2,
           }}
         >
-          Your AI job agent, running on your machine.
+          Your job search on autopilot, running on your machine.
         </div>
         <div style={{ color: textColors.secondary, fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
-          Search any job board, tailor your resume, apply, and track every reply - on your own
-          Claude or Codex subscription.
+          Write your goals once; the Pilot finds roles, tailors your resume, applies, and chases
+          replies overnight - on your own Claude or Codex subscription.
         </div>
       </div>
       <div style={{ display: "flex", color: textColors.disabled, fontSize: 24 }}>

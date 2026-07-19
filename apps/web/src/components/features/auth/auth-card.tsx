@@ -1,5 +1,6 @@
 import type { PropsWithChildren, ReactElement } from "react";
 import { Box, Card, CardContent, Container, Stack, Typography } from "@mui/material";
+import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 
 interface AuthCardProps extends PropsWithChildren {
   title: string;
@@ -26,12 +27,13 @@ export function AuthCard(props: AuthCardProps): ReactElement {
     >
       <Container maxWidth="xs">
         <Stack spacing={3}>
-          <Stack spacing={0.5} sx={{ textAlign: "center" }}>
+          <Stack spacing={1} sx={{ alignItems: "center", textAlign: "center" }}>
+            <JobPilotMark size={48} />
             <Typography variant="h1" sx={{ fontSize: "2rem", letterSpacing: "-0.035em" }}>
               JobPilot
             </Typography>
             <Typography variant="body2Muted">
-              Your local control center for AI-driven job applications
+              Your autonomous copilot for the whole job search
             </Typography>
           </Stack>
           <Card>
