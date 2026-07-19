@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.11] - 2026-07-19
+
+### Fixed
+
+- Disabling the pilot now interrupts the agent's in-flight cycle instead of
+  letting it keep working; the session stays alive and any leased job recovers
+  automatically.
+
 ## [2.1.10] - 2026-07-19
 
 ### Fixed
