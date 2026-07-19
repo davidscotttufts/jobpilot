@@ -45,7 +45,7 @@ public sealed class PilotStore
     public static string ResolvePath(HostInstall install)
     {
         var root = install.Paths?.WorkingDir ?? AppContext.BaseDirectory;
-        return Path.Combine(root, ".jobpilot", "pilot.json");
+        return Path.Combine(root, "pilot.json");
     }
 
     /// <summary>The current pairing, or null when unpaired or the stored file is unreadable.</summary>

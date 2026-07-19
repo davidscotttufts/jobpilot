@@ -13,7 +13,7 @@ public sealed class PilotConductorTests : IDisposable
 
     public PilotConductorTests()
     {
-        store = new PilotStore(Path.Combine(temp.Root, ".jobpilot", "pilot.json"), NullLogger<PilotStore>.Instance);
+        store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
         conductor = new PilotConductor(store, env, NullLogger<PilotConductor>.Instance);
     }
 

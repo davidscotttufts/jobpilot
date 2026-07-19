@@ -11,7 +11,7 @@ public sealed class PilotStoreTests : IDisposable
 
     public PilotStoreTests()
     {
-        path = Path.Combine(temp.Root, ".jobpilot", "pilot.json");
+        path = Path.Combine(temp.Root, "pilot.json");
     }
 
     public void Dispose() => temp.Dispose();

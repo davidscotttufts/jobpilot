@@ -161,7 +161,7 @@ public sealed class PilotEventListenerTests
         private Harness(HttpStatusCode status)
         {
             Handler = new FakeSseHandler { Status = status };
-            Store = new PilotStore(Path.Combine(temp.Root, ".jobpilot", "pilot.json"), NullLogger<PilotStore>.Instance);
+            Store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
             Conductor = new PilotConductor(Store, new FakePilotEnvironment(), NullLogger<PilotConductor>.Instance);
             Listener = new PilotEventListener(Store, Conductor, NullLogger<PilotEventListener>.Instance, new HttpClient(Handler));
         }
