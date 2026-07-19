@@ -42,7 +42,6 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 | todo | [Browser session vault](t4-session-vault.md) | encrypted cookie jars via DEK infra |
 | todo | [Salary benchmark & negotiation](t4-salary-benchmark.md) | digests → market benchmark → offer analysis |
 | todo | [Budget governor](t4-budget-governor.md) | token burn-down, auto-degrade (budget surface lands in the Pilot agenda from M1) |
-| todo | [Public "hire me" page](hire-me-page.md) | Pilot-maintained portfolio page; promo/outreach link target |
 
 ## Done
 
@@ -52,6 +51,7 @@ perpetually. Implementation runs on branch `feat/pilot` per the approved 2026-07
 | [API core tests](t1-api-core-tests.md) | 8 suites, recordJobResult via fake-prisma, no DB in CI (07-15) |
 | [Admin pages](t1-admin-pages.md) | 3-role ladder + adminGuard |
 | [Public jobs page](t3-public-jobs-page.md) | public /jobs, SEO funnel, tech facets (07-13) |
+| [Public "hire me" page](hire-me-page.md) | public /u/[username] portfolio + heatmap, /leaderboard, OG images (07-19) |
 
 ## Deferred / rejected
 
