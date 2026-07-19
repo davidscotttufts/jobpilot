@@ -11,6 +11,8 @@ export const PRIORITY = {
   inboxReview: 650,
   promoPost: 600,
   warmIntro: 550,
+  // Only fires on a quiet pipeline (no apply/discover/queue), so its exact rank is cosmetic.
+  strategyBootstrap: 520,
   discover: 500,
   followup: 400,
   strategyReview: 350,
@@ -40,6 +42,9 @@ export const MAX_FOLLOWUPS = 2;
 /** An interview invite is time-sensitive; reply to a couple per cycle, prep one, to stay focused. */
 export const MAX_INTERVIEW_REPLIES = 2;
 export const MAX_INTERVIEW_PREPS = 1;
+
+/** After any bootstrap lease, don't re-offer it for a day - stops a failing agent from looping. */
+export const BOOTSTRAP_RETRY_MS = 24 * 60 * 60 * 1000;
 
 /** Idle poll cadence has a floor so a tiny `checkIntervalMinutes` can't spin the loop. */
 export const MIN_IDLE_SLEEP_SECONDS = 30;

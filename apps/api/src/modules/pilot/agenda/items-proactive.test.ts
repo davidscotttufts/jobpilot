@@ -1,7 +1,7 @@
 // Pure builder behavior for the M4 proactive kinds through buildAgenda: queue.drain emission + rank,
 // board.health cap + rank, and quiet-agenda gating of strategyReview/rescan/retry. No Prisma, no env.
 import { buildAgenda } from "./build";
-import { base, boardHealth, cfg, job, strategyReview } from "./build.test-helpers";
+import { base, boardHealth, bootstrapCandidate, job, strategyReview } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda queue.drain", () => {
@@ -44,17 +44,6 @@ describe("buildAgenda queue.drain", () => {
     );
     const kinds = agenda.items.map((i) => i.kind);
     expect(kinds.indexOf("job.apply")).toBeLessThan(kinds.indexOf("queue.drain"));
-  });
-
-  it("gates queue.drain behind active hours", () => {
-    const agenda = buildAgenda(
-      base({
-        now: new Date("2026-07-15T03:00:00.000Z"),
-        config: cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } }),
-        queue: { entries: [{ id: "q1", url: "https://x/1" }], pendingCount: 1 },
-      }),
-    );
-    expect(agenda.items.some((i) => i.kind === "queue.drain")).toBe(false);
   });
 });
 
@@ -157,15 +146,29 @@ describe("buildAgenda quiet-agenda gating", () => {
       topSkipReasons: ["overqualified"],
     });
   });
+});
 
-  it("gates maintenance kinds behind active hours", () => {
+describe("buildAgenda strategy.bootstrap", () => {
+  it("emits one bootstrap item on a quiet agenda", () => {
+    const agenda = buildAgenda(base({ bootstrap: bootstrapCandidate() }));
+    const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
+    expect(item?.id).toBe("strategy.bootstrap");
+    expect(item?.subjectType).toBe("pilot");
+    expect(item?.priority).toBe(520);
+    expect(item?.title).toBe("Set up saved searches from your goals");
+    expect(item?.payload).toMatchObject({ hasGoals: true, boards: ["linkedin"] });
+  });
+
+  it("titles the goal-less variant from the profile", () => {
+    const agenda = buildAgenda(base({ bootstrap: bootstrapCandidate({ hasGoals: false }) }));
+    const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
+    expect(item?.title).toBe("Set up the pilot from your profile");
+  });
+
+  it("suppresses bootstrap when apply work is queued", () => {
     const agenda = buildAgenda(
-      base({
-        ...quietWork,
-        now: new Date("2026-07-15T03:00:00.000Z"),
-        config: cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } }),
-      }),
+      base({ bootstrap: bootstrapCandidate(), approvedJobs: [job("j1", 90)] }),
     );
-    expect(agenda.items).toHaveLength(0);
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
   });
 });

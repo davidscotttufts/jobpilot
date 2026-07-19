@@ -4,7 +4,7 @@ import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import { loadInstructionsConfig } from "../pilot.instructions";
+import { loadInstructions } from "../pilot.instructions";
 import { toPilotLease } from "../pilot.mapper";
 import { PilotService } from "../pilot.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
@@ -26,7 +26,12 @@ import {
   gatherApprovedPromotions,
   gatherFollowups,
 } from "./gather-networking";
-import { gatherBoardHealth, gatherQueueDrain, gatherQuietCandidates } from "./gather-proactive";
+import {
+  gatherBoardHealth,
+  gatherBootstrap,
+  gatherQueueDrain,
+  gatherQuietCandidates,
+} from "./gather-proactive";
 import { verifyGrant } from "./grant";
 
 const LEASE_TTL_MS = 15 * 60 * 1000;
@@ -47,12 +52,11 @@ export class AgendaService {
   async compile(userId: string) {
     const now = new Date();
     // Config and the expiry sweep are independent; both must settle before the main batch.
-    const [config] = await Promise.all([
-      loadInstructionsConfig(this.prisma, userId),
+    const [{ config, goals }] = await Promise.all([
+      loadInstructions(this.prisma, userId),
       runExpiry(this.jobDeps, userId, now),
     ]);
 
-    const tz = config.activeHours?.tz;
     const [
       openQuestions,
       answeredQuestions,
@@ -77,12 +81,12 @@ export class AgendaService {
         where: { userId, releasedAt: null, expiresAt: { gt: now } },
       }),
       gatherApprovedJobs(this.prisma, userId, config.parkedBoards),
-      countAppliedToday(this.prisma, userId, now, tz),
+      countAppliedToday(this.prisma, userId, now),
       gatherFinalizeCampaigns(this.prisma, userId),
       gatherInbox(this.prisma, userId),
       // Networking off: skip its gathers (the builder gates too, but these are pure waste when disabled).
       config.networkingEnabled ? gatherApprovedNetworking(this.prisma, userId) : [],
-      config.networkingEnabled ? countSentToday(this.prisma, userId, now, tz) : 0,
+      config.networkingEnabled ? countSentToday(this.prisma, userId, now) : 0,
       config.networkingEnabled ? gatherFollowups(this.prisma, userId, config, now) : [],
       gatherApprovedPromotions(this.prisma, userId, now),
       duePlatforms(this.prisma, userId, config, now),
@@ -103,16 +107,18 @@ export class AgendaService {
     // so gather its candidates only then - the builder still gates authoritatively.
     const pipelineQuiet =
       approvedJobs.length === 0 && dueQueries.length === 0 && queue.pendingCount === 0;
-    const quiet = pipelineQuiet
-      ? await gatherQuietCandidates(this.prisma, userId, now)
-      : { strategyReviews: [], rescanSkipped: [], retryFailed: [] };
+    const [quiet, bootstrap] = pipelineQuiet
+      ? await Promise.all([
+          gatherQuietCandidates(this.prisma, userId, now),
+          gatherBootstrap(this.prisma, userId, config, goals, now),
+        ])
+      : [{ strategyReviews: [], rescanSkipped: [], retryFailed: [] }, null];
 
-    // Idempotent per tz-day; fire-and-forget so a slow push never delays the agenda response.
+    // Idempotent per UTC day; fire-and-forget so a slow push never delays the agenda response.
     void writeDigestIfDue(
       { prisma: this.prisma, pilot: this.pilot, push: this.push },
       userId,
       now,
-      config,
       openQuestions,
     );
 
@@ -139,6 +145,7 @@ export class AgendaService {
       strategyReviews: quiet.strategyReviews,
       rescanSkipped: quiet.rescanSkipped,
       retryFailed: quiet.retryFailed,
+      bootstrap,
     });
   }
 

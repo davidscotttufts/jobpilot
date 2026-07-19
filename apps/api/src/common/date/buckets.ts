@@ -24,6 +24,16 @@ export function startOfTimeline(): Date {
   return d;
 }
 
+/** Next UTC midnight strictly after `now` - e.g. the daily apply budget's reset instant. */
+export function nextDayReset(now: Date): Date {
+  return new Date(startOfDay(now).getTime() + DAY_MS);
+}
+
+/** Minutes elapsed since UTC midnight for `now`. */
+export function minutesOfDay(now: Date): number {
+  return Math.floor((now.getTime() - startOfDay(now).getTime()) / 60_000);
+}
+
 /** Zero-filled day-by-day series of `days` days from `start`. Each `date` is UTC midnight, so clients must render it in UTC. */
 export function bucketPerDay(
   dates: Date[],

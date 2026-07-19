@@ -44,17 +44,11 @@ export class PilotService {
 
   /**
    * Full state DTO shared by every state-returning route: the persisted row plus
-   * today's tz-aware applied count. The tz lives in the row's config, so the count
-   * runs after the upsert rather than in parallel with it.
+   * today's applied count (UTC day).
    */
   private async toStateDto(userId: string, row: PilotStateModel) {
     const config = pilotInstructionsConfigSchema.parse(JSON.parse(row.instructionsConfig));
-    const appliedToday = await countAppliedToday(
-      this.prisma,
-      userId,
-      new Date(),
-      config.activeHours?.tz,
-    );
+    const appliedToday = await countAppliedToday(this.prisma, userId, new Date());
     return toPilotState(row, appliedToday, config);
   }
 

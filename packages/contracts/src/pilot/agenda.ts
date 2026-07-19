@@ -21,6 +21,8 @@ const AGENDA_ITEM_KINDS = [
   "campaign.strategyReview",
   "job.rescanSkipped",
   "job.retryFailed",
+  // Self-setup: derive goals/saved searches when the pipeline is empty and none exist.
+  "strategy.bootstrap",
 ] as const;
 const agendaItemKindSchema = z.enum(AGENDA_ITEM_KINDS);
 
@@ -35,6 +37,8 @@ const AGENDA_SUBJECT_TYPES = [
   "email",
   "queue",
   "board",
+  // The pilot's own instructions (strategy.bootstrap subjects itself, not a row).
+  "pilot",
 ] as const;
 const agendaSubjectTypeSchema = z.enum(AGENDA_SUBJECT_TYPES);
 
@@ -62,11 +66,19 @@ const agendaBudgetSchema = z.object({
   resetsAt: z.date(),
 });
 
+/**
+ * Why the agenda has no items, decided server-side so clients don't re-infer suppression rules:
+ * `capReached` (apply budget spent), `awaitingSetup` (no saved searches yet, bootstrap still
+ * pending), `clear` (everything's done). Null when the agenda is non-empty.
+ */
+const agendaEmptyReasonSchema = z.enum(["capReached", "awaitingSetup", "clear"]);
+
 export const agendaResponseSchema = z.object({
   generatedAt: z.date(),
   items: z.array(agendaItemSchema),
   counts: agendaCountsSchema,
   budget: agendaBudgetSchema,
+  emptyReason: agendaEmptyReasonSchema.nullable(),
   sleepSeconds: z.number(),
   nextWakeAt: z.date(),
 });

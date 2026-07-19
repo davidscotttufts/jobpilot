@@ -19,6 +19,7 @@ export interface Recorder {
 
 export interface Over {
   instructionsConfig?: string;
+  instructionsGoals?: string;
   expiredLeases?: Record<string, unknown>[];
   questionLeases?: { subjectId: string }[];
   expiredQuestions?: Record<string, unknown>[];
@@ -59,6 +60,9 @@ export interface Over {
   quietCampaigns?: Record<string, unknown>[];
   actionMarkers?: { subjectId: string | null; detail: string }[];
   skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
+  // Bootstrap wiring:
+  bootstrapLease?: { id: string } | null;
+  pilotBootstrapQuestion?: { id: string } | null;
 }
 
 /** A fake Prisma covering every query the agenda pipeline (expiry, gather, lease, digest) issues. */
@@ -80,7 +84,10 @@ export function makeAgendaDb(over: Over = {}) {
   const db = {
     pilotState: {
       upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
-      findUnique: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
+      findUnique: async () => ({
+        instructionsConfig: over.instructionsConfig ?? defaultConfig,
+        instructionsGoals: over.instructionsGoals ?? "",
+      }),
     },
     pilotLease: {
       findMany: async (args: { where: { subjectType?: string } }) =>
@@ -88,8 +95,11 @@ export function makeAgendaDb(over: Over = {}) {
           ? (over.questionLeases ?? [])
           : (over.expiredLeases ?? []),
       count: async () => over.activeLeases ?? 0,
-      // First arg = the per-subject uniqueness guard; question-consumed lookups reuse findMany.
-      findFirst: async () => over.activeLease ?? null,
+      // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
+      findFirst: async (a: { where: { kind?: string } }) =>
+        a.where.kind === "strategy.bootstrap"
+          ? (over.bootstrapLease ?? null)
+          : (over.activeLease ?? null),
       update: async (a: { data: Record<string, unknown> }) => {
         rec.leaseUpdates.push(a);
         // Full merged row so toPilotLease can map heartbeat/release results.
@@ -125,6 +135,7 @@ export function makeAgendaDb(over: Over = {}) {
     },
     question: {
       count: async () => 0,
+      findFirst: async () => over.pilotBootstrapQuestion ?? null,
       findMany: async (args: { where: { status?: string; subjectType?: string } }) =>
         args.where.subjectType === "email"
           ? (over.interviewQuestions ?? [])

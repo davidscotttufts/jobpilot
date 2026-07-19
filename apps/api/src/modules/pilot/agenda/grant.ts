@@ -5,6 +5,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
  * Grant gate for kinds whose leasability depends on a mutable row state the agent must
  * not be trusted to assert: a promo.post lease requires the post to still be `approved`,
  * a networking.send lease requires the message to still be `approved`. 409 otherwise.
+ * Config-derived kinds (e.g. strategy.bootstrap) have no row to verify and fall through.
  */
 export async function verifyGrant(
   prisma: PrismaClient,

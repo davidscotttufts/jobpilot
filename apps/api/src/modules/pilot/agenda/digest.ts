@@ -1,11 +1,9 @@
-import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
-import { DAY_MS } from "@/common/date/buckets";
+import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
 import type { PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotService } from "../pilot.service";
-import { minutesOfDay, startOfDayInTz } from "../pilot.time";
 
-/** The morning digest is composed once the tz-local clock passes this hour. */
+/** The morning digest is composed once the UTC clock passes this hour. */
 const DIGEST_HOUR = 7;
 
 /** Deps for writing the digest journal entry and pushing its summary. */
@@ -38,7 +36,7 @@ function composeDigestSummary(c: DigestCounts): string {
 }
 
 /**
- * Compose one "digest" journal entry summarizing the last 24h, once per tz-day after 07:00 local.
+ * Compose one "digest" journal entry summarizing the last 24h, once per UTC day after 07:00.
  * An advisory xact lock serializes concurrent compiles so the count-then-write can't double-fire.
  * Fire-and-forget at the call site, so it swallows its own errors and never rejects.
  */
@@ -46,14 +44,12 @@ export async function writeDigestIfDue(
   { prisma, pilot, push }: DigestDeps,
   userId: string,
   now: Date,
-  config: PilotInstructionsConfig,
   openQuestions: number,
 ): Promise<void> {
   try {
-    const tz = config.activeHours?.tz;
-    if (minutesOfDay(now, tz) < DIGEST_HOUR * 60) return;
+    if (minutesOfDay(now) < DIGEST_HOUR * 60) return;
 
-    const dayStart = startOfDayInTz(now, tz);
+    const dayStart = startOfDay(now);
     // No unique constraint backs the once-per-day rule; the lock is the only duplicate guard.
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext('pilot-digest'))`;

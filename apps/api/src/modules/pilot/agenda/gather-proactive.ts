@@ -1,13 +1,15 @@
 import { campaignSummarySchema } from "@jobpilot/contracts/campaign";
+import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "./campaign-config";
-import { BOARD_HEALTH_MIN_FAILURES } from "./constants";
+import { BOARD_HEALTH_MIN_FAILURES, BOOTSTRAP_RETRY_MS } from "./constants";
 import type {
   AgendaBoardHealth,
   AgendaQueueDrain,
   AgendaRescanSkipped,
   AgendaRetryFailed,
+  AgendaStrategyBootstrap,
   AgendaStrategyReview,
 } from "./types";
 
@@ -213,4 +215,39 @@ export async function gatherQuietCandidates(
   }
 
   return { strategyReviews, rescanSkipped, retryFailed };
+}
+
+/**
+ * Self-setup candidate: offered only while the config has zero saved searches (writing them
+ * naturally clears it). Suppressed by an open bootstrap question (the agent asked the user and
+ * must wait for the answer) and by any bootstrap lease in the last {@link BOOTSTRAP_RETRY_MS} -
+ * a server-side damper that holds even when the agent crashes without journaling.
+ */
+export async function gatherBootstrap(
+  prisma: PrismaClient,
+  userId: string,
+  config: PilotInstructionsConfig,
+  goals: string,
+  now: Date,
+): Promise<AgendaStrategyBootstrap | null> {
+  if (config.savedSearches.length > 0) return null;
+  const since = new Date(now.getTime() - BOOTSTRAP_RETRY_MS);
+  const [recentLease, openQuestion] = await Promise.all([
+    prisma.pilotLease.findFirst({
+      where: { userId, kind: "strategy.bootstrap", grantedAt: { gte: since } },
+      select: { id: true },
+    }),
+    prisma.question.findFirst({
+      where: { userId, subjectType: "pilot", subjectId: "bootstrap", status: "open" },
+      select: { id: true },
+    }),
+  ]);
+  if (recentLease || openQuestion) return null;
+  const trimmed = goals.trim();
+  return {
+    goals: trimmed,
+    hasGoals: trimmed.length > 0,
+    boards: config.boards,
+    minScore: config.minScore,
+  };
 }

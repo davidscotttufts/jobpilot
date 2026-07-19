@@ -1,4 +1,4 @@
-import { bucketPerDay, DAYS_IN_TIMELINE, startOfDay } from "./buckets";
+import { bucketPerDay, DAYS_IN_TIMELINE, minutesOfDay, nextDayReset, startOfDay } from "./buckets";
 import { describe, expect, it } from "bun:test";
 
 const iso = (d: Date): string => d.toISOString();
@@ -7,6 +7,26 @@ describe("startOfDay", () => {
   it("floors to UTC midnight regardless of the host timezone", () => {
     expect(iso(startOfDay(new Date("2026-06-14T23:59:59.999Z")))).toBe("2026-06-14T00:00:00.000Z");
     expect(iso(startOfDay(new Date("2026-06-14T00:00:00.000Z")))).toBe("2026-06-14T00:00:00.000Z");
+  });
+});
+
+describe("nextDayReset", () => {
+  it("returns the next UTC midnight", () => {
+    expect(nextDayReset(new Date("2026-07-15T12:34:56.000Z"))).toEqual(
+      new Date("2026-07-16T00:00:00.000Z"),
+    );
+  });
+
+  it("skips to the following midnight when now is exactly midnight", () => {
+    expect(nextDayReset(new Date("2026-07-15T00:00:00.000Z"))).toEqual(
+      new Date("2026-07-16T00:00:00.000Z"),
+    );
+  });
+});
+
+describe("minutesOfDay", () => {
+  it("counts minutes since UTC midnight", () => {
+    expect(minutesOfDay(new Date("2026-07-15T07:30:59.000Z"))).toBe(7 * 60 + 30);
   });
 });
 

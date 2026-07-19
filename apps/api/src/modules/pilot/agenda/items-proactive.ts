@@ -11,6 +11,7 @@ import type {
   AgendaQueueDrain,
   AgendaRescanSkipped,
   AgendaRetryFailed,
+  AgendaStrategyBootstrap,
   AgendaStrategyReview,
 } from "./types";
 
@@ -78,6 +79,29 @@ export function buildRescanSkippedItems(rescans: AgendaRescanSkipped[]): AgendaI
     subjectId: r.campaignId,
     payload: { campaignId: r.campaignId, skippedCount: r.skippedCount },
   }));
+}
+
+/** One self-setup item; the agent derives searches from goals (or goals from the resume, or asks). */
+export function buildBootstrapItem(bootstrap: AgendaStrategyBootstrap | null): AgendaItem[] {
+  if (!bootstrap) return [];
+  return [
+    {
+      id: "strategy.bootstrap",
+      kind: "strategy.bootstrap",
+      priority: PRIORITY.strategyBootstrap,
+      title: bootstrap.hasGoals
+        ? "Set up saved searches from your goals"
+        : "Set up the pilot from your profile",
+      subjectType: "pilot",
+      subjectId: "bootstrap",
+      payload: {
+        goals: bootstrap.goals,
+        hasGoals: bootstrap.hasGoals,
+        boards: bootstrap.boards,
+        minScore: bootstrap.minScore,
+      },
+    },
+  ];
 }
 
 /** At most one failed-jobs retry sweep per agenda. */

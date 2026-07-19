@@ -141,6 +141,14 @@ export interface AgendaRetryFailed {
   failedCount: number;
 }
 
+/** Empty pipeline + zero saved searches: the agent derives searches from goals (or goals from the resume). */
+export interface AgendaStrategyBootstrap {
+  goals: string;
+  hasGoals: boolean;
+  boards: string[];
+  minScore: number;
+}
+
 export interface AgendaInput {
   now: Date;
   config: PilotInstructionsConfig;
@@ -165,4 +173,5 @@ export interface AgendaInput {
   strategyReviews: AgendaStrategyReview[];
   rescanSkipped: AgendaRescanSkipped[];
   retryFailed: AgendaRetryFailed[];
+  bootstrap: AgendaStrategyBootstrap | null;
 }

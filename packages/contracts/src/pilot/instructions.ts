@@ -2,15 +2,6 @@ import { z } from "zod/v4";
 
 // ── Instructions ──────────────────────────────────────────────────────────────
 
-/** 24h wall-clock time. Exported so a form can't accept a value this config rejects. */
-export const HHMM_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-const pilotActiveHoursSchema = z.object({
-  start: z.string().regex(HHMM_PATTERN),
-  end: z.string().regex(HHMM_PATTERN),
-  tz: z.string(),
-});
-
 const pilotSavedSearchSchema = z.object({
   query: z.string().min(1),
   board: z.string().optional(),
@@ -44,7 +35,6 @@ export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
-  activeHours: pilotActiveHoursSchema.optional(),
   checkIntervalMinutes: z.number().int().default(30),
   savedSearches: z.array(pilotSavedSearchSchema).default([]),
   // Master switch: networking is opt-in. Off suppresses all networking work (compose, send, follow-up).

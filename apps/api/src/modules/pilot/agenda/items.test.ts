@@ -1,5 +1,5 @@
 // Per-item builder behavior (the M3 kinds) through buildAgenda: send/inbox/promo/followup/warmIntro
-// caps and active-hours gating. Pure: no Prisma, no env.
+// caps. Pure: no Prisma, no env.
 import { buildAgenda } from "./build";
 import { base, cfg, followup, job, prep, reply, send } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
@@ -165,22 +165,6 @@ describe("buildAgenda M3 kinds", () => {
     expect(agenda.items.filter((i) => i.kind === "promo.post")).toHaveLength(2);
     expect(agenda.items.filter((i) => i.kind === "promo.compose")).toHaveLength(1);
   });
-
-  it("gates all M3 kinds behind active hours", () => {
-    const hours = cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } });
-    const agenda = buildAgenda(
-      base({
-        now: new Date("2026-07-15T03:00:00.000Z"),
-        config: hours,
-        approvedNetworking: [send("m1")],
-        inbox: { messageIds: ["e1"], count: 1 },
-        approvedPromotions: [{ id: "p1", platform: "hn", target: null, title: null, body: "b" }],
-        followups: [followup("m9")],
-        duePlatforms: [{ platform: "v1" }],
-      }),
-    );
-    expect(agenda.items).toHaveLength(0);
-  });
 });
 
 describe("buildAgenda interview kinds", () => {
@@ -252,19 +236,6 @@ describe("buildAgenda interview kinds", () => {
       base({ interviewReplies: [reply("em1")], approvedJobs: [job("j1", 95)] }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual(["interview.reply", "job.apply"]);
-  });
-
-  it("gates interview kinds behind active hours", () => {
-    const hours = cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } });
-    const agenda = buildAgenda(
-      base({
-        now: new Date("2026-07-15T03:00:00.000Z"),
-        config: hours,
-        interviewReplies: [reply("em1")],
-        interviewPreps: [prep("app1")],
-      }),
-    );
-    expect(agenda.items).toHaveLength(0);
   });
 
   it("enriches the question.answered payload with subject and Q/A", () => {

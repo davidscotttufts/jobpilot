@@ -1,17 +1,15 @@
 ﻿// The morning-digest writer in isolation via writeDigestIfDue with fake Prisma/Pilot/Push deps - no
 // database. Loading the digest module transitively loads `@/env`, satisfied by the dummy env.
-import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import { makeAgendaDeps, type Over } from "./db.test-helpers";
 import { writeDigestIfDue } from "./digest";
 import { describe, expect, it, spyOn } from "bun:test";
 
-const config = pilotInstructionsConfigSchema.parse({});
 const MORNING = new Date("2026-07-15T08:00:00.000Z"); // past 07:00 UTC
 
 const run = (over: Over, now: Date, openQuestions: number) => {
   const { prisma, pilot, push, rec } = makeAgendaDeps(over);
   return {
-    write: () => writeDigestIfDue({ prisma, pilot, push }, "p1", now, config, openQuestions),
+    write: () => writeDigestIfDue({ prisma, pilot, push }, "p1", now, openQuestions),
     rec,
   };
 };
@@ -79,7 +77,7 @@ describe("AgendaService morning digest", () => {
     ).pilotJournalEntry.count = async () => {
       throw new Error("db down");
     };
-    await writeDigestIfDue({ prisma, pilot, push }, "p1", MORNING, config, 0);
+    await writeDigestIfDue({ prisma, pilot, push }, "p1", MORNING, 0);
     expect(rec.journals).toHaveLength(0);
     expect(rec.pushes).toHaveLength(0);
     expect(errorSpy).toHaveBeenCalled();

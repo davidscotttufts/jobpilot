@@ -332,3 +332,49 @@ describe("AgendaService quiet-agenda candidates", () => {
     expect(agenda.items.some((i) => i.kind === "campaign.strategyReview")).toBe(true);
   });
 });
+
+describe("AgendaService strategy.bootstrap", () => {
+  it("emits the bootstrap item with the goals when none of the guards trip", async () => {
+    const agenda = await service({
+      instructionsConfig: JSON.stringify({ boards: ["linkedin"], minScore: 70 }),
+      instructionsGoals: "Senior TS roles, remote",
+    }).compile("p1");
+    const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
+    expect(item?.subjectType).toBe("pilot");
+    expect(item?.subjectId).toBe("bootstrap");
+    expect(item?.payload).toEqual({
+      goals: "Senior TS roles, remote",
+      hasGoals: true,
+      boards: ["linkedin"],
+      minScore: 70,
+    });
+  });
+
+  it("marks hasGoals false when the goals are blank", async () => {
+    const agenda = await service({ instructionsGoals: "   " }).compile("p1");
+    const item = agenda.items.find((i) => i.kind === "strategy.bootstrap");
+    expect(item?.payload).toMatchObject({ goals: "", hasGoals: false });
+  });
+
+  it("suppresses bootstrap once a saved search exists", async () => {
+    const agenda = await service({
+      instructionsConfig: JSON.stringify({ savedSearches: [{ query: "react" }] }),
+    }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+  });
+
+  it("suppresses bootstrap while its question is open", async () => {
+    const agenda = await service({ pilotBootstrapQuestion: { id: "q1" } }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+  });
+
+  it("suppresses bootstrap after a recent bootstrap lease", async () => {
+    const agenda = await service({ bootstrapLease: { id: "l1" } }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+  });
+
+  it("suppresses bootstrap while the pipeline is busy", async () => {
+    const agenda = await service({ approvedJobs: [approvedJob()] }).compile("p1");
+    expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+  });
+});

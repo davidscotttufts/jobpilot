@@ -1,5 +1,5 @@
-// Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, active-hours
-// gating, budget, and sleep rules against hand-built inputs.
+// Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, budget,
+// empty-reason, and sleep rules against hand-built inputs.
 import { buildAgenda } from "./build";
 import { base, cfg, job } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
@@ -82,27 +82,23 @@ describe("buildAgenda budget / cap", () => {
   });
 });
 
-describe("buildAgenda active hours", () => {
-  const hours = cfg({ activeHours: { start: "09:00", end: "17:00", tz: "UTC" } });
-  const OUTSIDE = new Date("2026-07-15T03:00:00.000Z");
-
-  it("drops job.apply and discovery outside the window but keeps questions", () => {
-    const agenda = buildAgenda(
-      base({
-        now: OUTSIDE,
-        config: hours,
-        answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
-        approvedJobs: [job("j1", 90)],
-      }),
-    );
-    expect(agenda.items.map((i) => i.kind)).toEqual(["question.answered"]);
+describe("buildAgenda emptyReason", () => {
+  it("is null when the agenda has items", () => {
+    expect(buildAgenda(base({ approvedJobs: [job("j1", 80)] })).emptyReason).toBeNull();
   });
 
-  it("sleeps until the window opens when idle and outside hours", () => {
-    const agenda = buildAgenda(base({ now: OUTSIDE, config: hours }));
-    expect(agenda.items).toHaveLength(0);
-    expect(agenda.sleepSeconds).toBe(6 * 60 * 60); // 03:00 -> 09:00
-    expect(agenda.nextWakeAt).toEqual(new Date(OUTSIDE.getTime() + agenda.sleepSeconds * 1000));
+  it("is capReached when empty and the daily cap is spent", () => {
+    const agenda = buildAgenda(base({ config: cfg({ dailyApplyCap: 0 }) }));
+    expect(agenda.emptyReason).toBe("capReached");
+  });
+
+  it("is awaitingSetup when empty with no saved searches", () => {
+    expect(buildAgenda(base()).emptyReason).toBe("awaitingSetup");
+  });
+
+  it("is clear when empty but saved searches exist", () => {
+    const agenda = buildAgenda(base({ config: cfg({ savedSearches: [{ query: "golang" }] }) }));
+    expect(agenda.emptyReason).toBe("clear");
   });
 });
 
@@ -111,9 +107,9 @@ describe("buildAgenda sleep", () => {
     expect(buildAgenda(base({ approvedJobs: [job("j1", 80)] })).sleepSeconds).toBe(15);
   });
 
-  it("uses the check interval when idle within hours", () => {
-    expect(buildAgenda(base({ config: cfg({ checkIntervalMinutes: 30 }) })).sleepSeconds).toBe(
-      1800,
-    );
+  it("uses the check interval when idle", () => {
+    const agenda = buildAgenda(base({ config: cfg({ checkIntervalMinutes: 30 }) }));
+    expect(agenda.sleepSeconds).toBe(1800);
+    expect(agenda.nextWakeAt).toEqual(new Date(agenda.generatedAt.getTime() + 1800 * 1000));
   });
 });

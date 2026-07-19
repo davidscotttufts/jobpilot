@@ -11,7 +11,7 @@ import type { AgendaInput } from "./types";
 export const cfg = (over: Record<string, unknown> = {}): PilotInstructionsConfig =>
   pilotInstructionsConfigSchema.parse({ networkingEnabled: true, ...over });
 
-export const NOW = new Date("2026-07-15T12:00:00.000Z"); // noon UTC, inside a 09-17 window
+export const NOW = new Date("2026-07-15T12:00:00.000Z");
 
 export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   now: NOW,
@@ -36,6 +36,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   strategyReviews: [],
   rescanSkipped: [],
   retryFailed: [],
+  bootstrap: null,
   ...over,
 });
 
@@ -98,6 +99,14 @@ export const boardHealth = (board: string, over: Record<string, unknown> = {}) =
   consecutiveFailures: 3,
   recentFailReasons: ["captcha"],
   probeJob: { campaignId: "c1", jobKey: "j1", url: "https://x/j1" },
+  ...over,
+});
+
+export const bootstrapCandidate = (over: Record<string, unknown> = {}) => ({
+  goals: "Senior TypeScript roles, remote",
+  hasGoals: true,
+  boards: ["linkedin"],
+  minScore: 60,
   ...over,
 });
 
