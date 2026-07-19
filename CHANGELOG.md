@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.6] - 2026-07-18
+
+### Fixed
+
+- The terminal no longer auto-types the provider name ("claude" / "codex") as a
+  prompt when a session starts or restarts.
+
+### Changed
+
+- The Windows terminal executable now carries the J-bot app icon.
+
 ## [2.1.5] - 2026-07-18
 
 ### Added
