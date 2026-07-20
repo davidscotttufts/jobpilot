@@ -1,7 +1,7 @@
 import { type ReleasePilotLeaseInput } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
-import { conflict, findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
+import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
@@ -21,71 +21,78 @@ export class LeaseService {
   ) {}
 
   async lease(userId: string, agendaVersion: string, itemId: string) {
-    try {
-      const result = await this.prisma.$transaction(async (tx) => {
-        const now = new Date();
-        const locked = await tx.pilotState.updateMany({
-          where: {
-            userId,
-            enabled: true,
-            agendaVersion,
-            agendaExpiresAt: { gt: now },
-          },
-          data: { agendaVersion },
-        });
-        if (locked.count === 0) {
-          const current = await tx.pilotState.findUnique({
-            where: { userId },
-            select: { enabled: true },
-          });
-          if (!current?.enabled) throw conflict("Pilot is disabled.");
-          throw conflict("Agenda snapshot is stale; refresh it before leasing.");
-        }
-        const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
-        if (!state.agendaSnapshot) {
-          throw conflict("Agenda snapshot is stale; refresh it before leasing.");
-        }
-        const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
-          (candidate) => candidate.id === itemId,
-        );
-        if (!item) throw conflict("Agenda item is no longer available.");
-
-        await verifyGrant(tx, userId, item.kind, item.subjectId);
-        let claimedJob = null;
-        if (item.kind === "job.apply") {
-          claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
-            tx,
-            userId,
-            item.payload.campaignId,
-            item.payload.jobKey,
-          );
-        }
-        const lease = await tx.pilotLease.create({
-          data: {
-            userId,
-            kind: item.kind,
-            subjectType: item.subjectType,
-            subjectId: item.subjectId,
-            payload: toInputJson(item.payload),
-            expiresAt: new Date(now.getTime() + LEASE_TTL_MS),
-          },
-        });
-        return { lease, item, claimedJob };
-      });
-      if (result.claimedJob && result.item.kind === "job.apply") {
-        this.campaignJobs.publishClaimedJob(
+    const result = await this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const locked = await tx.pilotState.updateMany({
+        where: {
           userId,
-          result.item.payload.campaignId,
-          result.claimedJob,
+          enabled: true,
+          agendaVersion,
+          agendaExpiresAt: { gt: now },
+        },
+        data: { agendaVersion },
+      });
+      if (locked.count === 0) {
+        const current = await tx.pilotState.findUnique({
+          where: { userId },
+          select: { enabled: true },
+        });
+        if (!current?.enabled) throw conflict("Pilot is disabled.");
+        throw conflict("Agenda snapshot is stale; refresh it before leasing.");
+      }
+      const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
+      if (!state.agendaSnapshot) {
+        throw conflict("Agenda snapshot is stale; refresh it before leasing.");
+      }
+      const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
+        (candidate) => candidate.id === itemId,
+      );
+      if (!item) throw conflict("Agenda item is no longer available.");
+
+      // Safe as a read-then-write: the pilotState update above locks this user's row for the
+      // rest of the transaction, so concurrent lease() calls for one user serialize here.
+      const open = await tx.pilotLease.findFirst({
+        where: {
+          userId,
+          kind: item.kind,
+          subjectType: item.subjectType,
+          subjectId: item.subjectId,
+          releasedAt: null,
+        },
+        select: { id: true },
+      });
+      if (open) throw conflict("This item is already leased.");
+
+      await verifyGrant(tx, userId, item.kind, item.subjectId);
+      let claimedJob = null;
+      if (item.kind === "job.apply") {
+        claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
+          tx,
+          userId,
+          item.payload.campaignId,
+          item.payload.jobKey,
         );
       }
-      return toPilotLease(result.lease);
-    } catch (error) {
-      if (isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
-        throw conflict("This item is already leased.");
-      }
-      throw error;
+      const lease = await tx.pilotLease.create({
+        data: {
+          userId,
+          kind: item.kind,
+          subjectType: item.subjectType,
+          subjectId: item.subjectId,
+          payload: toInputJson(item.payload),
+          expiresAt: new Date(now.getTime() + LEASE_TTL_MS),
+        },
+      });
+      return { lease, item, claimedJob };
+    });
+    if (result.claimedJob && result.item.kind === "job.apply") {
+      this.campaignJobs.publishClaimedJob(
+        userId,
+        result.item.payload.campaignId,
+        result.claimedJob,
+      );
     }
+    return toPilotLease(result.lease);
   }
 
   async heartbeat(userId: string, id: string) {

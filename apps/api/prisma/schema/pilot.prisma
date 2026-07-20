@@ -74,6 +74,8 @@ model PilotLease {
 
   @@index([userId, expiresAt])
   @@index([userId, subjectType, subjectId])
+  // No @@unique on (userId, kind, subject): one lease per subject is an *open*-lease rule, and
+  // rows are kept as history for the retry damper. LeaseService enforces it in-transaction.
   @@map("pilot_leases")
 }
 

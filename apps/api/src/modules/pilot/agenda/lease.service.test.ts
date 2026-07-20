@@ -35,7 +35,7 @@ const snapshot: AgendaResponse = {
   nextWakeAt: new Date(now.getTime() + 30_000),
 };
 
-function setup(version = VERSION) {
+function setup(version = VERSION, openLease: { id: string } | null = null) {
   const creates: Record<string, unknown>[] = [];
   const locks: Record<string, unknown>[] = [];
   const db = {
@@ -58,6 +58,7 @@ function setup(version = VERSION) {
       }),
     },
     pilotLease: {
+      findFirst: async () => openLease,
       create: async ({ data }: { data: Record<string, unknown> }) => {
         creates.push(data);
         return {
@@ -99,6 +100,12 @@ describe("LeaseService snapshots", () => {
   it("rejects a stale agenda version before creating a lease", async () => {
     const { service, creates } = setup("d6579e89-e9af-4f83-a04e-7d2cfad07cf3");
     await expect(service.lease("u1", VERSION, "job.apply:c1:j1")).rejects.toThrow("stale");
+    expect(creates).toHaveLength(0);
+  });
+
+  it("rejects a subject that already holds an open lease", async () => {
+    const { service, creates } = setup(VERSION, { id: "held" });
+    await expect(service.lease("u1", VERSION, "job.apply:c1:j1")).rejects.toThrow("already leased");
     expect(creates).toHaveLength(0);
   });
 });
