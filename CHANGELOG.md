@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.13] - 2026-07-20
+
+### Added
+
+- Paused campaigns are surfaced in the pilot view, and campaign status changes
+  now record who or what made them.
+
+### Changed
+
+- The portfolio moved out of settings into its own page.
+- The campaign pipeline funnel was removed from the campaign view.
+- Database timestamp and id handling was normalized, with the migration history
+  squashed into a single baseline.
+
+### Fixed
+
+- Signed-in visitors are no longer redirected away from the landing page.
+- Leasing enforces a single open lease per subject, so two pilot cycles can no
+  longer claim the same work.
+- The campaign config write is guarded directly instead of checked beforehand,
+  closing a race between concurrent updates.
+
 ## [2.1.12] - 2026-07-20
 
 ### Added
