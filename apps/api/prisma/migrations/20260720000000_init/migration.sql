@@ -321,7 +321,7 @@ CREATE TABLE "jobs" (
     "description" TEXT,
     "digest" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "jobs_pkey" PRIMARY KEY ("id")
 );
@@ -379,8 +379,8 @@ CREATE TABLE "pilot_states" (
     "instructions_config" JSONB NOT NULL DEFAULT '{}',
     "instructions_updated_at" TIMESTAMP(3),
     "agenda_version" TEXT,
-    "agenda_generated_at" TIMESTAMPTZ(6),
-    "agenda_expires_at" TIMESTAMPTZ(6),
+    "agenda_generated_at" TIMESTAMP(3),
+    "agenda_expires_at" TIMESTAMP(3),
     "agenda_snapshot" JSONB,
     "last_cycle_at" TIMESTAMP(3),
     "cycle_count" INTEGER NOT NULL DEFAULT 0,
