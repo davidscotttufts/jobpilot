@@ -147,6 +147,8 @@ ALTER TABLE jobs ALTER COLUMN status TYPE "CampaignJobStatus" USING status::"Cam
 ALTER TABLE jobs ALTER COLUMN status SET DEFAULT 'pending';
 ALTER TABLE jobs ADD COLUMN updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
+-- Text defaults ('{}'::text etc.) cannot be auto-cast to jsonb; drop before the type change.
+ALTER TABLE pilot_states ALTER COLUMN instructions_config DROP DEFAULT;
 ALTER TABLE pilot_states ALTER COLUMN instructions_config TYPE jsonb USING instructions_config::jsonb;
 ALTER TABLE pilot_states ALTER COLUMN instructions_config SET DEFAULT '{}'::jsonb;
 ALTER TABLE pilot_states ADD COLUMN agenda_version text;
@@ -154,6 +156,7 @@ ALTER TABLE pilot_states ADD COLUMN agenda_generated_at timestamptz;
 ALTER TABLE pilot_states ADD COLUMN agenda_expires_at timestamptz;
 ALTER TABLE pilot_states ADD COLUMN agenda_snapshot jsonb;
 
+ALTER TABLE pilot_leases ALTER COLUMN payload DROP DEFAULT;
 ALTER TABLE pilot_leases ALTER COLUMN payload TYPE jsonb USING payload::jsonb;
 ALTER TABLE pilot_leases ALTER COLUMN payload SET DEFAULT '{}'::jsonb;
 ALTER TABLE pilot_leases ALTER COLUMN outcome TYPE "PilotLeaseOutcome" USING outcome::"PilotLeaseOutcome";
@@ -162,10 +165,12 @@ ALTER TABLE questions ALTER COLUMN kind TYPE "QuestionKind" USING kind::"Questio
 ALTER TABLE questions ALTER COLUMN status DROP DEFAULT;
 ALTER TABLE questions ALTER COLUMN status TYPE "QuestionStatus" USING status::"QuestionStatus";
 ALTER TABLE questions ALTER COLUMN status SET DEFAULT 'open';
+ALTER TABLE questions ALTER COLUMN options DROP DEFAULT;
 ALTER TABLE questions ALTER COLUMN options TYPE jsonb USING options::jsonb;
 ALTER TABLE questions ALTER COLUMN options SET DEFAULT '[]'::jsonb;
 
 ALTER TABLE pilot_journal_entries ALTER COLUMN kind TYPE "PilotJournalKind" USING kind::"PilotJournalKind";
+ALTER TABLE pilot_journal_entries ALTER COLUMN detail DROP DEFAULT;
 ALTER TABLE pilot_journal_entries ALTER COLUMN detail TYPE jsonb USING detail::jsonb;
 ALTER TABLE pilot_journal_entries ALTER COLUMN detail SET DEFAULT '{}'::jsonb;
 
