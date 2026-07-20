@@ -1,8 +1,11 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  // pg_trgm backs the job_listings trigram search indexes.
+  extensions = [pg_trgm]
 }

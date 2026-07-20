@@ -36,6 +36,10 @@ model JobListing {
   @@index([status, lastSeenAt])
   // `?tech=` is a `tech_stack @> ARRAY[..]` containment test - btree cannot serve it.
   @@index([techStack], type: Gin)
+  // Trigram indexes serve the `?q=` ILIKE '%term%' search.
+  @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_listings_title_trgm_idx")
+  @@index([company(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_listings_company_trgm_idx")
+  @@index([location(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_listings_location_trgm_idx")
   @@map("job_listings")
 }
 

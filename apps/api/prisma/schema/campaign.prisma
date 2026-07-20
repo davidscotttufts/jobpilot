@@ -13,7 +13,8 @@ enum CampaignStatus {
 }
 
 model Campaign {
-  campaignId  String         @id @default(uuid()) @map("campaign_id")
+  // DB-side default so raw SQL inserts (agent skills) get ids without Prisma.
+  campaignId  String         @id @default(dbgenerated("(gen_random_uuid())::text")) @map("campaign_id")
   userId      String         @map("user_id")
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   query       String

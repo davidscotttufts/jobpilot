@@ -30,7 +30,7 @@ model Job {
   description String?
   digest      String?
   createdAt   DateTime          @default(now()) @map("created_at")
-  updatedAt   DateTime          @updatedAt @map("updated_at")
+  updatedAt   DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@unique([campaignId, key])
   @@index([campaignId, status])
