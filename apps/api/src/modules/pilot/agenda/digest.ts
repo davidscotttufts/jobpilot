@@ -52,7 +52,8 @@ export async function writeDigestIfDue(
     const dayStart = startOfDay(now);
     // No unique constraint backs the once-per-day rule; the lock is the only duplicate guard.
     await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext('pilot-digest'))`;
+      // $executeRaw, not $queryRaw: the lock returns void and the pg adapter can't deserialize a void column.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}), hashtext('pilot-digest'))`;
       const alreadyWritten = await tx.pilotJournalEntry.count({
         where: { userId, kind: "digest", createdAt: { gte: dayStart } },
       });

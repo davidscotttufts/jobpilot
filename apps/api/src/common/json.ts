@@ -31,13 +31,20 @@ const DATE_KEYS = new Set([
   "resetsAt",
   "sentAt",
   "receivedAt",
+  "pausedAt",
 ]);
 
 /** Restores ISO date fields after reading typed JSON snapshots. */
 export function reviveJsonDates(value: unknown, key?: string): unknown {
-  if (value instanceof Date) return value;
-  if (typeof value === "string" && key && DATE_KEYS.has(key)) return new Date(value);
-  if (Array.isArray(value)) return value.map((child) => reviveJsonDates(child));
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === "string" && key && DATE_KEYS.has(key)) {
+    return new Date(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((child) => reviveJsonDates(child));
+  }
   if (value && typeof value === "object") {
     return Object.fromEntries(
       Object.entries(value).map(([childKey, child]) => [

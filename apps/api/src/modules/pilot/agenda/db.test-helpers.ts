@@ -304,6 +304,7 @@ export function makeAgendaDb(over: Over = {}) {
       findMany: async () => over.actionMarkers ?? [],
     },
     $queryRaw: async () => [],
+    $executeRaw: async () => 0,
     // Serialized like the advisory xact lock would, so concurrent digest writes queue up.
     $transaction: (cb: (tx: unknown) => Promise<unknown>) => {
       const run = txChain.then(() => cb(db));
