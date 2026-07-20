@@ -137,7 +137,7 @@ CREATE TABLE "api_tokens" (
 
 -- CreateTable
 CREATE TABLE "campaigns" (
-    "campaign_id" TEXT NOT NULL DEFAULT (gen_random_uuid())::text,
+    "campaign_id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "query" TEXT NOT NULL,
     "source" "CampaignSource" NOT NULL,
