@@ -21,16 +21,14 @@ export function TabStrip(props: TabStripProps): ReactElement {
     <Box
       component="nav"
       aria-label={ariaLabel}
-      sx={(theme) => ({
+      sx={{
         mb: 3,
         overflowX: "auto",
-        // overflow-x:auto forces computed overflow-y to auto too; keep it hidden so sub-pixel
-        // rounding can't spawn a phantom vertical scrollbar.
+        // overflow-x:auto computes overflow-y to auto too; sub-pixel rounding then adds a scrollbar.
         overflowY: "hidden",
-        // Divider as an inset shadow (not a border): it paints inside the padding box, so the
-        // active tab's 2px indicator covers it without a negative margin (= vertical overflow).
-        boxShadow: `inset 0 -1px 0 ${theme.palette.line.divider}`,
-      })}
+        // Inset shadow, not a border: paints inside the padding box so the active tab covers it.
+        boxShadow: "inset 0 -1px 0 var(--mui-palette-line-divider)",
+      }}
     >
       <Stack direction="row" spacing={1}>
         {tabs.map((tab) => (
