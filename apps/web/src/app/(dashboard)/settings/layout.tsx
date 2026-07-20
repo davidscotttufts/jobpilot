@@ -14,7 +14,7 @@ export default function SettingsLayout(props: SettingsLayoutProps): ReactElement
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Profile, work auth, auto-apply, email, and saved credentials."
+        description="Profile, work auth, auto-apply, email, notifications, and saved credentials."
       />
       <SettingsTabs />
       {children}

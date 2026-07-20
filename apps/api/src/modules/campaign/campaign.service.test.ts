@@ -43,16 +43,29 @@ describe("CampaignService", () => {
     expect(result.items[0]?.summary).toEqual(emptyJobSummary());
   });
 
-  it("applies an allowed status command", async () => {
+  it("applies an allowed status command with actor attribution", async () => {
     const { service, updates } = makeService();
-    const result = await service.commandStatus("u1", "c1", { status: "paused" });
-    expect(updates).toEqual([{ status: "paused", completedAt: null }]);
+    const result = await service.commandStatus("u1", "c1", {
+      status: "paused",
+      actor: "agent",
+      reason: "verification required",
+    });
+    expect(updates).toEqual([
+      {
+        status: "paused",
+        statusActor: "agent",
+        statusReason: "verification required",
+        completedAt: null,
+      },
+    ]);
     expect(result.status).toBe("paused");
   });
 
   it("rejects a transition away from a terminal status", async () => {
     const { service } = makeService({ ...row, status: "completed" });
-    await expect(service.commandStatus("u1", "c1", { status: "paused" })).rejects.toThrow();
+    await expect(
+      service.commandStatus("u1", "c1", { status: "paused", actor: "user" }),
+    ).rejects.toThrow();
   });
 
   it("keeps source-specific config invariants on full replacement", async () => {

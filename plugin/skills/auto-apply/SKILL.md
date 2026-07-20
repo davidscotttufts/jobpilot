@@ -165,7 +165,7 @@ jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", fail
 `needs_user` (route by `category`):
 
 - `category:"salary"` (no profile salary preference matched) → ask the user once, remember the answer for the campaign, and re-delegate 2.3 with `salaryExpectation` set.
-- `category:"verification"` → command the campaign to `paused` through `/status`, tell the user what's needed, and exit the loop (the worker left its tab open).
+- `category:"verification"` → command the campaign to `paused` through `/status` with `{"status":"paused","actor":"agent","reason":"<what's needed, e.g. LinkedIn 2FA>"}`, tell the user what's needed, and exit the loop (the worker left its tab open).
 - `category:"payment"` → never pay: POST `/result` `outcome:"failed"`, `failReason:"Payment required"`, and continue.
 
 Pace 3-5s before the next result.
@@ -199,6 +199,6 @@ Print a summary table, link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`, suggest 
 7. **Pace** 3-5s between submissions on the same domain.
 8. **Audit trail.** PATCH non-terminal transitions; POST `/result` for terminal outcomes.
 9. **Respect pause.** Re-read the campaign between jobs; `status === "paused"` → exit cleanly.
-10. **Missing resume file** → command the campaign to `paused` through `/status`, ask the user to re-upload.
+10. **Missing resume file** → command the campaign to `paused` through `/status` with `{"status":"paused","actor":"agent","reason":"Resume file missing"}`, ask the user to re-upload.
 11. **Eligibility** - follow 2.2a. Location/onsite, thin JDs, 1099 work, and below-your-level/seniority are never skip reasons; only a JD-stated citizenship/clearance requirement disqualifies.
 12. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason` (2.2a). No valid reason → not a skip.

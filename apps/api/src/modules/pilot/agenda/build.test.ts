@@ -1,7 +1,7 @@
 // Pure agenda orchestrator: no Prisma, no env. Priority ordering, cap suppression, budget,
 // empty-reason, and sleep rules against hand-built inputs.
 import { buildAgenda } from "./build";
-import { base, bootstrapCandidate, cfg, job } from "./build.test-helpers";
+import { base, bootstrapCandidate, cfg, job, pausedCampaign } from "./build.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {
@@ -84,6 +84,69 @@ describe("buildAgenda campaign.scorePending", () => {
     );
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(true);
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+  });
+});
+
+describe("buildAgenda campaign.reviewPaused", () => {
+  it("ranks above a perfect-score apply and queue.drain, below board health and answered questions", () => {
+    const agenda = buildAgenda(
+      base({
+        answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
+        approvedJobs: [job("j1", 100)],
+        pausedCampaigns: [pausedCampaign("c9")],
+        queue: { entries: [{ id: "q1", url: "https://x/q1" }], pendingCount: 1 },
+        boardHealth: [
+          {
+            board: "linkedin",
+            consecutiveFailures: 3,
+            recentFailReasons: ["captcha"],
+            probeJob: null,
+          },
+        ],
+      }),
+    );
+    expect(agenda.items.map((i) => i.kind)).toEqual([
+      "question.answered",
+      "board.health",
+      "campaign.reviewPaused",
+      "job.apply",
+      "queue.drain",
+    ]);
+  });
+
+  it("emits at most one paused review per agenda", () => {
+    const agenda = buildAgenda(
+      base({ pausedCampaigns: [pausedCampaign("c1"), pausedCampaign("c2")] }),
+    );
+    expect(agenda.items.filter((i) => i.kind === "campaign.reviewPaused")).toHaveLength(1);
+    expect(agenda.items[0].subjectId).toBe("c1");
+  });
+
+  it("still surfaces when the daily apply cap is reached", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ dailyApplyCap: 3 }),
+        appliedToday: 3,
+        approvedJobs: [job("j1", 90)],
+        pausedCampaigns: [pausedCampaign("c9")],
+      }),
+    );
+    expect(agenda.items.map((i) => i.kind)).toEqual(["campaign.reviewPaused"]);
+  });
+
+  it("survives the 10-item slice against a full apply pipeline", () => {
+    const many = Array.from({ length: 15 }, (_, i) => job(`j${i}`, 85 + (i % 10)));
+    const agenda = buildAgenda(
+      base({ approvedJobs: many, pausedCampaigns: [pausedCampaign("c9")] }),
+    );
+    expect(agenda.items).toHaveLength(10);
+    expect(agenda.items[0]).toMatchObject({
+      id: "campaign.reviewPaused:c9",
+      kind: "campaign.reviewPaused",
+      subjectType: "campaign",
+      subjectId: "c9",
+      payload: { campaignId: "c9", query: "react", board: null },
+    });
   });
 });
 

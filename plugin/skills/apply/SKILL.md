@@ -166,7 +166,7 @@ Use PATCH only for approval; record every skip through `/result`:
 - `go` → all qualified to `approved`
 - `go N,M` → selected to `approved`; rest to `skipped` (`"Not selected by user"`)
 - `remove N` → that job to `skipped` (`"Removed by user"`); re-present table
-- `stop` → POST `/api/campaigns/$CAMPAIGN_ID/status` with `{status:"paused"}` and stop
+- `stop` → POST `/api/campaigns/$CAMPAIGN_ID/status` with `{status:"paused", actor:"user", reason:"Stopped from the terminal"}` and stop
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \

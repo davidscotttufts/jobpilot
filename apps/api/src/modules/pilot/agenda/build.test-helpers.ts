@@ -24,6 +24,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   dueQueries: [],
   scorePending: [],
   finalizeCampaigns: [],
+  pausedCampaigns: [],
   inbox: { messageIds: [], count: 0 },
   approvedNetworking: [],
   networkingSentToday: 0,
@@ -108,6 +109,14 @@ export const bootstrapCandidate = (over: Record<string, unknown> = {}) => ({
   hasGoals: true,
   boards: ["linkedin"],
   minScore: 60,
+  ...over,
+});
+
+export const pausedCampaign = (campaignId: string, over: Record<string, unknown> = {}) => ({
+  campaignId,
+  query: "react",
+  board: null,
+  pausedAt: new Date("2026-07-14T12:00:00.000Z"),
   ...over,
 });
 

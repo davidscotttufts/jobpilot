@@ -63,6 +63,14 @@ export interface AgendaFinalizeCampaign {
   query: string;
 }
 
+/** A paused auto-apply campaign with no open/undecided review question - the review candidate. */
+export interface AgendaPausedCampaign {
+  campaignId: string;
+  query: string;
+  board: string | null;
+  pausedAt: Date;
+}
+
 /** An in-progress auto-apply campaign carrying discovered-but-unscored pending rows (≤5 sampled entries). */
 export interface AgendaScorePending {
   campaignId: string;
@@ -172,6 +180,8 @@ export interface AgendaInput {
   // Existing campaigns with unscored pending rows; emitted only when the apply pipeline is empty.
   scorePending: AgendaScorePending[];
   finalizeCampaigns: AgendaFinalizeCampaign[];
+  // Paused campaigns needing a resume-or-ask decision; emitted ungated so they can't be starved.
+  pausedCampaigns: AgendaPausedCampaign[];
   inbox: AgendaInbox;
   approvedNetworking: AgendaNetworkingSend[];
   networkingSentToday: number;

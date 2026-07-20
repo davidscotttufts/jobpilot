@@ -72,6 +72,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
         source: effective.mode,
         // resumeId is campaign-wide (mandatory for every mode), not mode-specific.
         config: { resumeId: effective.resumeId, ...buildCampaignConfig(effective) },
+        createdBy: "user",
       });
       const campaignId = campaign.campaignId;
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);

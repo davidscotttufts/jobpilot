@@ -7,6 +7,7 @@ import {
   buildFinalizeItems,
   buildJobApplyItems,
   buildQuestionItems,
+  buildReviewPausedItems,
   buildScorePendingItems,
   buildWarmIntroItems,
 } from "./items-jobs";
@@ -53,6 +54,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   if (!capReached) items.push(...buildJobApplyItems(input.approvedJobs));
   // Board health outranks apply work: a failing board should be probed before more attempts pile on.
   items.push(...buildBoardHealthItems(input.boardHealth));
+  // Ungated by cap/busy: a stranded paused campaign must surface regardless.
+  items.push(...buildReviewPausedItems(input.pausedCampaigns));
   items.push(...buildInterviewReplyItems(input.interviewReplies));
   items.push(...buildInterviewPrepItems(input.interviewPreps));
   // User-curated URLs are proactive apply work, ranked just under the scored apply queue.

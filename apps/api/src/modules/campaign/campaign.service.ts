@@ -80,6 +80,7 @@ export class CampaignService {
         query: body.query,
         source: toPrismaCampaignSource(body.source),
         config: body.config ?? {},
+        createdBy: body.createdBy,
       },
     });
     // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
@@ -100,6 +101,14 @@ export class CampaignService {
         "config.resumeId is required for search, auto-apply, and networking campaigns.",
       );
     }
+    // Whole-blob replace: without this guard the pilot's strategy review and a user edit
+    // silently clobber each other (last write wins).
+    if (
+      body.expectedUpdatedAt &&
+      existing.updatedAt.getTime() !== new Date(body.expectedUpdatedAt).getTime()
+    ) {
+      throw conflict("Campaign changed since it was fetched; re-fetch before updating config.");
+    }
     const campaign = await this.prisma.campaign.update({
       where: { campaignId: id },
       data: { config: body.config },
@@ -117,6 +126,8 @@ export class CampaignService {
       where: { campaignId: id, userId, status: existing.status },
       data: {
         status: body.status,
+        statusActor: body.actor,
+        statusReason: body.reason ?? null,
         completedAt: body.status === "completed" || body.status === "failed" ? new Date() : null,
       },
     });

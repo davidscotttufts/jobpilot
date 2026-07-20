@@ -34,8 +34,14 @@ export interface Over {
   scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
   // Prior campaign.scorePending leases, gating the per-campaign cooldown.
   scorePendingLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
+  // Paused-campaign review gather: paused auto-apply campaigns + their questions/lease dampers.
+  pausedCampaigns?: Record<string, unknown>[];
+  campaignQuestions?: { subjectId: string; status: string; answeredAt: Date | null }[];
+  pausedReviewLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
+  // Open job.apply leases protecting in-flight applies from the stale-`applying` sweep.
+  openApplyLeases?: Record<string, unknown>[];
   pilotEnabled?: boolean;
-  // verifyGrant's leasability check for campaign.scorePending (null = 409, no unscored rows left).
+  // verifyGrant's leasability check for campaign kinds (null = 409, the row left the leasable state).
   campaignFindFirst?: Record<string, unknown> | null;
   // Scored-but-pending rows swept by promoteScoredPendingJobs (job.findMany with a matchScore filter).
   scoredPendingJobs?: Record<string, unknown>[];
@@ -77,6 +83,184 @@ export interface Over {
   pilotBootstrapQuestion?: { id: string } | null;
 }
 
+// Per-model fakes, composed by makeAgendaDb. Each covers every query the agenda pipeline
+// (expiry, gather, lease, digest) issues against that model.
+
+function fakePilotState(over: Over) {
+  // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
+  const defaultConfig = { networkingEnabled: true };
+  return {
+    upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
+    findUnique: async () => ({
+      instructionsConfig: over.instructionsConfig ?? defaultConfig,
+      instructionsGoals: over.instructionsGoals ?? "",
+      enabled: over.pilotEnabled ?? true,
+    }),
+    update: async () => ({}),
+  };
+}
+
+function fakePilotLease(over: Over, rec: Recorder) {
+  return {
+    // The cooldown gathers read their own lease history by kind; the rest split on subjectType.
+    findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
+      if (args.where.kind === "campaign.scorePending") return over.scorePendingLeases ?? [];
+      if (args.where.kind === "campaign.reviewPaused") return over.pausedReviewLeases ?? [];
+      if (args.where.kind === "job.apply") return over.openApplyLeases ?? [];
+      if (args.where.subjectType === "question") return over.questionLeases ?? [];
+      return over.expiredLeases ?? [];
+    },
+    count: async () => over.activeLeases ?? 0,
+    // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
+    findFirst: async (a: { where: { kind?: string } }) =>
+      a.where.kind === "strategy.bootstrap"
+        ? (over.bootstrapLease ?? null)
+        : (over.activeLease ?? null),
+    update: async (a: { data: Record<string, unknown> }) => {
+      rec.leaseUpdates.push(a);
+      // Full merged row so toPilotLease can map heartbeat/release results.
+      return {
+        id: "lease-1",
+        kind: "job.apply",
+        subjectType: "job",
+        subjectId: "s1",
+        payload: "{}",
+        grantedAt: new Date(),
+        expiresAt: new Date(),
+        heartbeatAt: null,
+        releasedAt: null,
+        outcome: null,
+        ...a.data,
+      };
+    },
+    updateMany: async (a: { data: Record<string, unknown> }) => {
+      rec.leaseUpdates.push(a);
+      return { count: (over.expiredLeases ?? []).length };
+    },
+    create: async (a: { data: Record<string, unknown> }) => {
+      rec.leaseCreates.push(a.data);
+      return {
+        id: "lease-1",
+        grantedAt: new Date(),
+        heartbeatAt: null,
+        releasedAt: null,
+        outcome: null,
+        ...a.data,
+      };
+    },
+  };
+}
+
+function fakeQuestion(over: Over, rec: Recorder) {
+  return {
+    count: async () => 0,
+    findFirst: async () => over.pilotBootstrapQuestion ?? null,
+    findMany: async (args: { where: { status?: unknown; subjectType?: string } }) => {
+      if (args.where.subjectType === "campaign") return over.campaignQuestions ?? [];
+      if (args.where.subjectType === "email") return over.interviewQuestions ?? [];
+      if (args.where.status === "answered") return over.answered ?? [];
+      return over.expiredQuestions ?? [];
+    },
+    update: async (a: { data: Record<string, unknown> }) => {
+      rec.questionUpdates.push(a);
+      return {};
+    },
+    updateMany: async (a: { data: Record<string, unknown> }) => {
+      rec.questionUpdates.push(a);
+      return { count: (over.expiredQuestions ?? []).length };
+    },
+  };
+}
+
+function fakeJob(over: Over) {
+  return {
+    // A matchScore filter is the promote sweep (scored-pending rows); a status `in` filter is the
+    // board-health scan; everything else is the approved-job gather.
+    findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) => {
+      if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
+      if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];
+      return over.approvedJobs ?? [];
+    },
+    findFirst: async () => over.job ?? null,
+    update: async () => ({}),
+    updateMany: async () => ({ count: over.claimCount ?? 1 }),
+    findUniqueOrThrow: async () => over.job ?? approvedJob(),
+    // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
+    groupBy: async (a: { by: string[] }) => {
+      if (a.by.length === 1) return over.scorePendingCounts ?? [];
+      if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
+      if (over.quietJobCounts) return over.quietJobCounts;
+      if (!over.quietCampaigns?.length) return [];
+      return [
+        { campaignId: "c1", status: "applied", _count: { _all: 1 } },
+        { campaignId: "c1", status: "skipped", _count: { _all: 36 } },
+        { campaignId: "c1", status: "failed", _count: { _all: 3 } },
+      ];
+    },
+    count: async (a: { where: { status?: string } }) => {
+      if (a.where.status === "failed") return over.jobsFailed ?? 0;
+      if (a.where.status === "skipped") return over.jobsSkipped ?? 0;
+      return 0;
+    },
+  };
+}
+
+function fakeApplication(over: Over) {
+  return {
+    count: async (a: { where: Record<string, unknown> }) => {
+      if (over.digestApps != null && "appliedAt" in a.where && a.where.appliedAt != null) {
+        return over.digestApps;
+      }
+      return over.appliedToday ?? 0;
+    },
+    // The prep gather filters by an `events` none-clause; the reply gather does not - split on that.
+    findMany: async (a: { where: Record<string, unknown> }) => {
+      if (a.where.status !== "interviewing") return [];
+      return "events" in a.where ? (over.interviewPrepApps ?? []) : (over.interviewReplyApps ?? []);
+    },
+  };
+}
+
+function fakeCampaign(over: Over) {
+  return {
+    // Split campaign gathers: status paused (paused review) before source auto-apply
+    // (score-pending, which also sets that source), then the `OR` finalization clause,
+    // then the quiet-candidate gather.
+    findMany: async (a: {
+      where: { status?: string; source?: string; jobs?: unknown; OR?: unknown };
+    }) => {
+      if (a.where.status === "paused") return over.pausedCampaigns ?? [];
+      if (a.where.source === "auto_apply") return over.scorePendingCampaigns ?? [];
+      if ("OR" in a.where) return over.finalizeCampaigns ?? [];
+      return over.quietCampaigns ?? [];
+    },
+    findFirst: async () => over.campaignFindFirst ?? null,
+    update: async () => ({}),
+  };
+}
+
+function fakeNetworkingMessage(over: Over) {
+  return {
+    findMany: async (a: { where: Record<string, unknown> }) =>
+      a.where.status === "approved"
+        ? (over.approvedNetworking ?? [])
+        : (over.followupCandidates ?? []),
+    groupBy: async () => over.followupLatest ?? [],
+    count: async (a: { where: Record<string, unknown> }) =>
+      "repliedAt" in a.where ? (over.networkingReplies ?? 0) : (over.networkingSent ?? 0),
+    findFirst: async () => over.messageFindFirst ?? null,
+  };
+}
+
+function fakePromotionPost(over: Over) {
+  return {
+    findMany: async (a: { where: { status?: unknown } }) =>
+      a.where.status === "approved" ? (over.approvedPromotions ?? []) : (over.platformPosts ?? []),
+    count: async () => over.promotionsPosted ?? 0,
+    findFirst: async () => over.promoFindFirst ?? null,
+  };
+}
+
 /** A fake Prisma covering every query the agenda pipeline (expiry, gather, lease, digest) issues. */
 export function makeAgendaDb(over: Over = {}) {
   const rec: Recorder = {
@@ -91,144 +275,16 @@ export function makeAgendaDb(over: Over = {}) {
     pushes: [],
   };
 
-  // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
-  const defaultConfig = { networkingEnabled: true };
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
-    pilotState: {
-      upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
-      findUnique: async () => ({
-        instructionsConfig: over.instructionsConfig ?? defaultConfig,
-        instructionsGoals: over.instructionsGoals ?? "",
-        enabled: over.pilotEnabled ?? true,
-      }),
-      update: async () => ({}),
-    },
-    pilotLease: {
-      // The score-pending cooldown reads its own lease history by kind; the rest split on subjectType.
-      findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
-        if (args.where.kind === "campaign.scorePending") return over.scorePendingLeases ?? [];
-        return args.where.subjectType === "question"
-          ? (over.questionLeases ?? [])
-          : (over.expiredLeases ?? []);
-      },
-      count: async () => over.activeLeases ?? 0,
-      // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
-      findFirst: async (a: { where: { kind?: string } }) =>
-        a.where.kind === "strategy.bootstrap"
-          ? (over.bootstrapLease ?? null)
-          : (over.activeLease ?? null),
-      update: async (a: { data: Record<string, unknown> }) => {
-        rec.leaseUpdates.push(a);
-        // Full merged row so toPilotLease can map heartbeat/release results.
-        return {
-          id: "lease-1",
-          kind: "job.apply",
-          subjectType: "job",
-          subjectId: "s1",
-          payload: "{}",
-          grantedAt: new Date(),
-          expiresAt: new Date(),
-          heartbeatAt: null,
-          releasedAt: null,
-          outcome: null,
-          ...a.data,
-        };
-      },
-      updateMany: async (a: { data: Record<string, unknown> }) => {
-        rec.leaseUpdates.push(a);
-        return { count: (over.expiredLeases ?? []).length };
-      },
-      create: async (a: { data: Record<string, unknown> }) => {
-        rec.leaseCreates.push(a.data);
-        return {
-          id: "lease-1",
-          grantedAt: new Date(),
-          heartbeatAt: null,
-          releasedAt: null,
-          outcome: null,
-          ...a.data,
-        };
-      },
-    },
-    question: {
-      count: async () => 0,
-      findFirst: async () => over.pilotBootstrapQuestion ?? null,
-      findMany: async (args: { where: { status?: string; subjectType?: string } }) =>
-        args.where.subjectType === "email"
-          ? (over.interviewQuestions ?? [])
-          : args.where.status === "answered"
-            ? (over.answered ?? [])
-            : (over.expiredQuestions ?? []),
-      update: async (a: { data: Record<string, unknown> }) => {
-        rec.questionUpdates.push(a);
-        return {};
-      },
-      updateMany: async (a: { data: Record<string, unknown> }) => {
-        rec.questionUpdates.push(a);
-        return { count: (over.expiredQuestions ?? []).length };
-      },
-    },
-    job: {
-      // A matchScore filter is the promote sweep (scored-pending rows); a status `in` filter is the
-      // board-health scan; everything else is the approved-job gather.
-      findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) => {
-        if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
-        if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];
-        return over.approvedJobs ?? [];
-      },
-      findFirst: async () => over.job ?? null,
-      update: async () => ({}),
-      // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
-      updateMany: async () => ({ count: over.claimCount ?? 1 }),
-      findUniqueOrThrow: async () => over.job ?? approvedJob(),
-      groupBy: async (a: { by: string[] }) => {
-        if (a.by.length === 1) return over.scorePendingCounts ?? [];
-        if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
-        return (
-          over.quietJobCounts ??
-          (over.quietCampaigns?.length
-            ? [
-                { campaignId: "c1", status: "applied", _count: { _all: 1 } },
-                { campaignId: "c1", status: "skipped", _count: { _all: 36 } },
-                { campaignId: "c1", status: "failed", _count: { _all: 3 } },
-              ]
-            : [])
-        );
-      },
-      count: async (a: { where: { status?: string } }) =>
-        a.where.status === "failed"
-          ? (over.jobsFailed ?? 0)
-          : a.where.status === "skipped"
-            ? (over.jobsSkipped ?? 0)
-            : 0,
-    },
-    application: {
-      count: async (a: { where: Record<string, unknown> }) =>
-        over.digestApps != null && "appliedAt" in a.where && a.where.appliedAt != null
-          ? over.digestApps
-          : (over.appliedToday ?? 0),
-      // The prep gather filters by an `events` none-clause; the reply gather does not - split on that.
-      findMany: async (a: { where: Record<string, unknown> }) =>
-        a.where.status !== "interviewing"
-          ? []
-          : "events" in a.where
-            ? (over.interviewPrepApps ?? [])
-            : (over.interviewReplyApps ?? []),
-    },
-    campaign: {
-      // Split campaign gathers by source auto-apply (score-pending), an `OR` finalization
-      // clause, or the quiet-candidate gather.
-      findMany: async (a: {
-        where: { status?: string; source?: string; jobs?: unknown; OR?: unknown };
-      }) => {
-        if (a.where.source === "auto_apply") return over.scorePendingCampaigns ?? [];
-        if ("OR" in a.where) return over.finalizeCampaigns ?? [];
-        return over.quietCampaigns ?? [];
-      },
-      findFirst: async () => over.campaignFindFirst ?? null,
-      update: async () => ({}),
-    },
+    pilotState: fakePilotState(over),
+    pilotLease: fakePilotLease(over, rec),
+    question: fakeQuestion(over, rec),
+    job: fakeJob(over),
+    application: fakeApplication(over),
+    campaign: fakeCampaign(over),
+    networkingMessage: fakeNetworkingMessage(over),
+    promotionPost: fakePromotionPost(over),
     queueEntry: {
       findMany: async () => over.pendingQueue ?? [],
       count: async () => over.pendingQueueCount ?? 0,
@@ -238,25 +294,7 @@ export function makeAgendaDb(over: Over = {}) {
       findMany: async () => over.inboxIds ?? [],
       count: async () => over.inboxCount ?? 0,
     },
-    networkingMessage: {
-      findMany: async (a: { where: Record<string, unknown> }) =>
-        a.where.status === "approved"
-          ? (over.approvedNetworking ?? [])
-          : (over.followupCandidates ?? []),
-      groupBy: async () => over.followupLatest ?? [],
-      count: async (a: { where: Record<string, unknown> }) =>
-        "repliedAt" in a.where ? (over.networkingReplies ?? 0) : (over.networkingSent ?? 0),
-      findFirst: async () => over.messageFindFirst ?? null,
-    },
     contact: { findMany: async () => over.contacts ?? [] },
-    promotionPost: {
-      findMany: async (a: { where: { status?: unknown } }) =>
-        a.where.status === "approved"
-          ? (over.approvedPromotions ?? [])
-          : (over.platformPosts ?? []),
-      count: async () => over.promotionsPosted ?? 0,
-      findFirst: async () => over.promoFindFirst ?? null,
-    },
     pilotJournalEntry: {
       // Default 1 keeps the digest quiet in unrelated tests; adding this run's digest writes lets
       // the guard observe a concurrent writer's insert (the advisory-lock race test).

@@ -32,6 +32,15 @@ const GRANT_GATES: Record<string, GrantGate> = {
       })) != null,
     message: "Networking message is no longer approved.",
   },
+  "campaign.reviewPaused": {
+    // Only leasable while the campaign is still paused - a user resume/complete makes review moot.
+    verify: async (prisma, userId, subjectId) =>
+      (await prisma.campaign.findFirst({
+        where: { campaignId: subjectId, userId, status: "paused" },
+        select: { campaignId: true },
+      })) != null,
+    message: "Campaign is no longer paused.",
+  },
   "campaign.scorePending": {
     // Only leasable while the campaign is still in progress AND has at least one unscored pending row.
     verify: async (prisma, userId, subjectId) =>

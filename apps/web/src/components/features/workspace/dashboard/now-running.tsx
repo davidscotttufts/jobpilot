@@ -49,7 +49,8 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
   const p = progress(campaign);
 
   const pause = useApiMutation<{ campaignId: string; status: string }, void>(
-    () => api.campaigns({ id: campaign.campaignId }).status.post({ status: "paused" }),
+    () =>
+      api.campaigns({ id: campaign.campaignId }).status.post({ status: "paused", actor: "user" }),
     {
       successMessage: "Campaign paused",
       invalidate: invalidations.campaign,

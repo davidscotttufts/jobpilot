@@ -1,4 +1,5 @@
 import {
+  campaignActorSchema,
   campaignConfigSchema,
   campaignJobStatusSchema,
   campaignSourceSchema,
@@ -58,6 +59,9 @@ export const campaignSchema = z.object({
   query: z.string(),
   source: campaignSourceSchema,
   status: campaignStatusSchema,
+  createdBy: campaignActorSchema,
+  statusActor: campaignActorSchema.nullable(),
+  statusReason: z.string().nullable(),
   startedAt: z.date(),
   updatedAt: z.date(),
   completedAt: z.date().nullable(),

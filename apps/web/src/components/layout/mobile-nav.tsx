@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import { MoreHoriz } from "@mui/icons-material";
 import {
   Badge,
@@ -40,6 +40,15 @@ export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { user } = useAuth();
+
+  // Close the sheet after the route commit, not during the click: closing and navigating in the
+  // same event lets the route transition interrupt the Modal's exit, stranding the invisible
+  // backdrop / scroll-lock over the whole app (this persistent shell never unmounts it).
+  useEffect(() => {
+    if (pathname) {
+      setMoreOpen(false);
+    }
+  }, [pathname]);
   const { count: questionCount } = useOpenQuestions();
 
   // Derived per render, not at module scope: the visible set depends on the signed-in role.
@@ -114,13 +123,13 @@ export function MobileNav(): ReactElement {
       <Drawer anchor="bottom" open={moreOpen} onClose={() => setMoreOpen(false)}>
         {/* MenuList (not List): MUI 9 MenuItem throws without a MenuListContext. */}
         <MenuList sx={{ pb: 1 }}>
+          {/* No onClick close on nav items: the pathname effect closes after the commit. */}
           {moreItems.map((item) => (
             <ListItemButton
               key={item.href}
               component={Link}
               href={item.href as Route}
               selected={isNavEntryActive(pathname, item)}
-              onClick={() => setMoreOpen(false)}
             >
               <ListItemIcon sx={{ minWidth: 40 }}>
                 {badged(<item.icon fontSize="small" />, item.badge === "questions")}

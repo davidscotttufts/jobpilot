@@ -58,7 +58,7 @@ Command status back to `in_progress`:
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
   -H 'content-type: application/json' \
-  -d '{"status":"in_progress"}'
+  -d '{"status":"in_progress","actor":"agent"}'
 ```
 
 Read `config.maxApplications` from the campaign for the stop condition below:

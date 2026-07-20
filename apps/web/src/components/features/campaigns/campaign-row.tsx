@@ -16,6 +16,7 @@ import type { CampaignDto } from "@/api/types";
 import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "./campaign-status";
+import { PilotBadge } from "./pilot-badge";
 
 interface CampaignRowProps {
   campaign: CampaignDto;
@@ -52,6 +53,7 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
               label={CAMPAIGN_STATUS_LABEL[campaign.status]}
             />
             <Chip size="small" label={campaign.source} variant="outlined" />
+            <PilotBadge createdBy={campaign.createdBy} />
             <Box sx={{ flex: 1 }} />
             <Typography variant="captionMuted" noWrap>
               {formatRelativeTime(campaign.startedAt)}

@@ -1,9 +1,10 @@
 import type { AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
-import { MAX_WARM_INTROS, PRIORITY, WARM_INTRO_MIN_SCORE } from "./constants";
+import { MAX_PAUSED_REVIEWS, MAX_WARM_INTROS, PRIORITY, WARM_INTRO_MIN_SCORE } from "./constants";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
   AgendaFinalizeCampaign,
+  AgendaPausedCampaign,
   AgendaQuestion,
   AgendaScorePending,
 } from "./types";
@@ -107,6 +108,19 @@ export function buildScorePendingItems(campaigns: AgendaScorePending[]): AgendaI
     subjectType: "campaign",
     subjectId: c.campaignId,
     payload: { ...c },
+  }));
+}
+
+/** At most one paused-campaign review per agenda; always emitted (never cap/busy-gated). */
+export function buildReviewPausedItems(campaigns: AgendaPausedCampaign[]): AgendaItem[] {
+  return campaigns.slice(0, MAX_PAUSED_REVIEWS).map((c) => ({
+    id: `campaign.reviewPaused:${c.campaignId}`,
+    kind: "campaign.reviewPaused",
+    priority: PRIORITY.reviewPaused,
+    title: `Review paused campaign: ${c.query}`.slice(0, 200),
+    subjectType: "campaign",
+    subjectId: c.campaignId,
+    payload: { campaignId: c.campaignId, query: c.query, board: c.board, pausedAt: c.pausedAt },
   }));
 }
 

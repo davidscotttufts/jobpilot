@@ -12,17 +12,28 @@ enum CampaignStatus {
   failed
 }
 
+// Who performed an action: the user in the web UI, the terminal agent on their behalf,
+// or the autonomous pilot. Self-reported by callers (all run under the user's own PAT).
+enum CampaignActor {
+  user
+  agent
+  pilot
+}
+
 model Campaign {
-  campaignId  String         @id @default(uuid()) @map("campaign_id")
-  userId      String         @map("user_id")
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query       String
-  source      CampaignSource
-  status      CampaignStatus @default(in_progress)
-  startedAt   DateTime       @default(now()) @map("started_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-  completedAt DateTime?      @map("completed_at")
-  config      Json           @default("{}")
+  campaignId   String         @id @default(uuid()) @map("campaign_id")
+  userId       String         @map("user_id")
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query        String
+  source       CampaignSource
+  status       CampaignStatus @default(in_progress)
+  createdBy    CampaignActor  @default(user) @map("created_by")
+  statusActor  CampaignActor? @map("status_actor")
+  statusReason String?        @map("status_reason")
+  startedAt    DateTime       @default(now()) @map("started_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  completedAt  DateTime?      @map("completed_at")
+  config       Json           @default("{}")
 
   jobs               Job[]
   applications       Application[]

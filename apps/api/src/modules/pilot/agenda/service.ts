@@ -14,6 +14,7 @@ import { gatherBootstrap } from "./candidates-bootstrap";
 import { gatherFinalizeCampaigns } from "./candidates-finalize";
 import { gatherInbox } from "./candidates-inbox";
 import { gatherQuietCandidates } from "./candidates-maintenance";
+import { gatherPausedCampaigns } from "./candidates-paused";
 import { gatherAnsweredQuestions } from "./candidates-questions";
 import { gatherQueueDrain } from "./candidates-queue";
 import { writeDigestIfDue } from "./digest";
@@ -83,6 +84,7 @@ export class AgendaService {
       approvedJobs,
       appliedToday,
       finalizeCampaigns,
+      pausedCampaigns,
       inbox,
       approvedNetworking,
       networkingSentToday,
@@ -99,7 +101,8 @@ export class AgendaService {
       prisma.pilotLease.count({ where: { userId, releasedAt: null, expiresAt: { gt: now } } }),
       gatherApprovedJobs(prisma, userId, config.parkedBoards),
       countAppliedToday(prisma, userId, now),
-      gatherFinalizeCampaigns(prisma, userId),
+      gatherFinalizeCampaigns(prisma, userId, now),
+      gatherPausedCampaigns(prisma, userId, now, config.parkedBoards),
       gatherInbox(prisma, userId),
       config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
       config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
@@ -149,6 +152,7 @@ export class AgendaService {
       dueQueries,
       scorePending,
       finalizeCampaigns,
+      pausedCampaigns,
       inbox,
       approvedNetworking,
       networkingSentToday,

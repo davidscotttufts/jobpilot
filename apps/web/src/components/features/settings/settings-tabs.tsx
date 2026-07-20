@@ -5,6 +5,7 @@ const TABS: Tab[] = [
   { label: "Profile", href: "/settings/profile" },
   { label: "Portfolio", href: "/settings/portfolio" },
   { label: "Email", href: "/settings/email" },
+  { label: "Notifications", href: "/settings/notifications" },
   { label: "Credentials", href: "/settings/credentials" },
 ];
 

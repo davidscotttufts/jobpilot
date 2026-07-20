@@ -43,6 +43,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     () =>
       campaignResource.status.post({
         status: "paused" satisfies CampaignStatus,
+        actor: "user",
       }),
     {
       successMessage: "Campaign paused",
@@ -54,6 +55,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     () =>
       campaignResource.status.post({
         status: "completed" satisfies CampaignStatus,
+        actor: "user",
       }),
     {
       successMessage: "Campaign marked as done",

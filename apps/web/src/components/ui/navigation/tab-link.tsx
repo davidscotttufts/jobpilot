@@ -31,8 +31,8 @@ export function TabLink(props: TabLinkProps): ReactElement {
         fontWeight: 500,
         textDecoration: "none",
         color: active ? "accent.primary" : "text.secondary",
+        // Paints over the strip's inset-shadow divider (shadows render behind children).
         borderBottom: `2px solid ${active ? theme.palette.accent.primary : "transparent"}`,
-        marginBottom: "-1px", // overlap the strip's divider so the indicator sits on it
         transition: `color ${theme.motion.fast}, border-color ${theme.motion.fast}`,
         "&:hover": { color: active ? "accent.primary" : "text.primary" },
         "&:focus-visible": { outline: theme.shadows_custom.focus, outlineOffset: -2 },

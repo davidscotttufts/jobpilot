@@ -16,7 +16,7 @@ interface JobTransition {
   from: CampaignJobStatus;
   /** Status the job settles into; a concurrent writer landing here makes the command a no-op. */
   to: CampaignJobStatus;
-  /** Pre-existing status that means the command already ran. Null when it can never be a no-op —
+  /** Pre-existing status that means the command already ran. Null when it can never be a no-op -
    * a rescan of a still-skipped job must re-score it rather than short-circuit. */
   idempotentAt: CampaignJobStatus | null;
   data: Prisma.JobUpdateManyMutationInput;

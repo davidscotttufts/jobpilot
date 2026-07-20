@@ -55,6 +55,7 @@ export function AutoApplyStopPill(): ReactNode {
       }
       return api.campaigns({ id: active.campaignId }).status.post({
         status: "paused" satisfies CampaignStatus,
+        actor: "user",
       });
     },
     {

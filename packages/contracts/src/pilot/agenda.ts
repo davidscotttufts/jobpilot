@@ -6,6 +6,7 @@ const AGENDA_ITEM_KINDS = [
   "search.discover",
   "campaign.scorePending",
   "campaign.finalize",
+  "campaign.reviewPaused",
   "inbox.review",
   "networking.send",
   "networking.followup",
@@ -108,6 +109,17 @@ export const agendaLeaseFieldsSchema = z.discriminatedUnion("kind", [
     }),
   ),
   agendaItem("campaign.finalize", "campaign", z.object({ campaignId: z.string() })),
+  agendaItem(
+    "campaign.reviewPaused",
+    "campaign",
+    z.object({
+      campaignId: z.string(),
+      query: z.string(),
+      board: nullableString,
+      // The campaign's last status-transition time - approximates when it was paused.
+      pausedAt: z.date(),
+    }),
+  ),
   agendaItem(
     "inbox.review",
     "inbox",

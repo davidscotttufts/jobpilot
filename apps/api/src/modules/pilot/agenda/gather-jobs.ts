@@ -34,10 +34,12 @@ export async function gatherApprovedJobs(
       campaign: { select: { config: true } },
     },
   });
+
   // A parked board's jobs are excluded here; null-board jobs are never parked (park keys on board name).
   const parked = new Set(parkedBoards);
   // Jobs of the same campaign share one config; parse each campaign's JSON at most once.
   const configByCampaign = new Map<string, CampaignConfig>();
+
   return rows
     .filter((job) => !(job.board && parked.has(job.board)))
     .map((job) => {
@@ -61,7 +63,7 @@ export async function gatherApprovedJobs(
 }
 
 /** Newest lease per subject for one kind - one read instead of an N+1 findFirst per subject. */
-async function latestLeaseBySubject(
+export async function latestLeaseBySubject(
   prisma: PrismaClient,
   userId: string,
   kind: string,
@@ -73,7 +75,9 @@ async function latestLeaseBySubject(
     take: GATHER_CAP,
     select: { subjectId: true, grantedAt: true, releasedAt: true },
   });
+
   const latest = new Map<string, { grantedAt: Date; releasedAt: Date | null }>();
+
   for (const l of leases) {
     const prev = latest.get(l.subjectId);
     if (!prev || l.grantedAt > prev.grantedAt) {
@@ -81,6 +85,16 @@ async function latestLeaseBySubject(
     }
   }
   return latest;
+}
+
+/** An unreleased lease means the work is still running; a recently released one damps a re-run loop. */
+export function leaseDamped(
+  last: { releasedAt: Date | null } | undefined,
+  now: Date,
+  cooldownMs: number,
+): boolean {
+  if (!last) return false;
+  return last.releasedAt == null || now.getTime() - last.releasedAt.getTime() < cooldownMs;
 }
 
 /**
@@ -131,6 +145,7 @@ export async function gatherScorePendingCampaigns(
     },
     _count: { _all: true },
   });
+
   const countByCampaign = new Map(counts.map((r) => [r.campaignId, r._count._all]));
   const latest = await latestLeaseBySubject(
     prisma,
@@ -141,20 +156,13 @@ export async function gatherScorePendingCampaigns(
 
   const parked = new Set(parkedBoards);
   const out: AgendaScorePending[] = [];
+
   for (const c of campaigns) {
     const config = parseCampaignConfig(c.config);
     const board = config.board ?? null;
     // A campaign targeting a parked board is suppressed until the user un-parks it.
     if (board && parked.has(board)) continue;
-    // An open lease means a batch is still running; a recent one means we just scored what we could.
-    const last = latest.get(c.campaignId);
-    if (
-      last &&
-      (last.releasedAt == null ||
-        now.getTime() - last.releasedAt.getTime() < SCORE_PENDING_COOLDOWN_MS)
-    ) {
-      continue;
-    }
+    if (leaseDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS)) continue;
     out.push({
       campaignId: c.campaignId,
       query: c.query,
@@ -175,22 +183,33 @@ export async function attachWarmContacts(
   approvedJobs: AgendaApprovedJob[],
 ): Promise<void> {
   const hot = approvedJobs.filter((j) => (j.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE && j.company);
-  if (hot.length === 0) return;
+  if (hot.length === 0) {
+    return;
+  }
+
   const contacts = await prisma.contact.findMany({
     where: { userId, email: { not: null }, company: { not: null } },
     orderBy: { createdAt: "desc" },
     take: GATHER_CAP,
     select: { id: true, name: true, title: true, email: true, company: true },
   });
-  if (contacts.length === 0) return;
+
+  if (contacts.length === 0) {
+    return;
+  }
   const normalized = contacts.map((c) => ({ c, norm: normalizeCompanyName(c.company ?? "") }));
+
   for (const job of hot) {
     const target = normalizeCompanyName(job.company ?? "");
-    if (!target) continue;
+    if (!target) {
+      continue;
+    }
     const matches: WarmContact[] = normalized
       .filter(({ norm }) => norm.length > 0 && (norm.includes(target) || target.includes(norm)))
       .map(({ c }) => ({ id: c.id, name: c.name, title: c.title, email: c.email }));
-    if (matches.length > 0) job.warmContacts = matches;
+    if (matches.length > 0) {
+      job.warmContacts = matches;
+    }
   }
 }
 
@@ -214,13 +233,8 @@ export async function dueSavedSearches(
   for (const sq of config.savedSearches) {
     // A saved search targeting a parked board is suppressed until the user un-parks it.
     if (sq.board && parked.has(sq.board)) continue;
-    const last = latest.get(sq.query);
-    const cadenceMs = sq.cadenceHours * HOUR_MS;
-    // Due when never run, or the last run released longer ago than the cadence. An active
-    // (unreleased) discovery lease means it is in progress, so it is not due.
-    const isDue =
-      !last || (last.releasedAt != null && now.getTime() - last.releasedAt.getTime() >= cadenceMs);
-    if (isDue) due.push({ query: sq.query, board: sq.board, resumeId: sq.resumeId });
+    if (leaseDamped(latest.get(sq.query), now, sq.cadenceHours * HOUR_MS)) continue;
+    due.push({ query: sq.query, board: sq.board, resumeId: sq.resumeId });
   }
   return due;
 }

@@ -11,6 +11,10 @@ export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 export const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
+/** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
+export const CAMPAIGN_ACTORS = ["user", "agent", "pilot"] as const;
+export const campaignActorSchema = z.enum(CAMPAIGN_ACTORS);
+
 export const CAMPAIGN_JOB_STATUSES = [
   "pending",
   "approved",
@@ -77,6 +81,7 @@ export const createCampaignSchema = z
     query: z.string().min(1),
     source: campaignSourceSchema,
     config: campaignConfigSchema.optional(),
+    createdBy: campaignActorSchema.default("user"),
   })
   .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
     message: "config.resumeId is required for search, auto-apply, and networking campaigns.",
@@ -85,10 +90,15 @@ export const createCampaignSchema = z
 
 export const updateCampaignConfigSchema = z.object({
   config: campaignConfigSchema,
+  /** Optimistic-concurrency guard: 409 when the campaign changed since this timestamp. */
+  expectedUpdatedAt: z.iso.datetime().optional(),
 });
 
 export const campaignStatusCommandSchema = z.object({
   status: campaignStatusSchema,
+  actor: campaignActorSchema.default("user"),
+  /** Why the status changed (e.g. "verification required") - shown on the campaign header. */
+  reason: z.string().min(1).max(300).transform(cleanReplacementChars).optional(),
 });
 
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
@@ -190,3 +200,4 @@ export type PatchCampaignJobInput = z.infer<typeof patchCampaignJobSchema>;
 export type RescanCampaignJobInput = z.infer<typeof rescanCampaignJobSchema>;
 export type RetryCampaignJobInput = z.infer<typeof retryCampaignJobSchema>;
 export type CampaignSource = z.infer<typeof campaignSourceSchema>;
+export type CampaignActor = z.infer<typeof campaignActorSchema>;

@@ -18,6 +18,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
 import { urlBase64ToUint8Array } from "@/utils/base64";
@@ -124,16 +125,26 @@ export function PushSettings(): ReactNode {
     }
   };
 
-  if (vapidQuery.isLoading || !publicKey || supported === null) {
-    return null;
+  if (vapidQuery.isLoading || supported === null) {
+    return (
+      <SectionCard title="Notifications">
+        <LoadingSpinner />
+      </SectionCard>
+    );
   }
 
-  if (!supported) {
+  // No VAPID keys on the server = push disabled; say so instead of vanishing silently.
+  let unavailable: string | null = null;
+  if (!publicKey) {
+    unavailable = "aren't configured on this server";
+  } else if (!supported) {
+    unavailable = "aren't supported in this browser";
+  }
+  if (unavailable) {
     return (
       <SectionCard title="Notifications">
         <Typography variant="body2Muted">
-          Push notifications aren&apos;t supported in this browser, so Pilot alerts will only appear
-          while a tab is open.
+          Push notifications {unavailable}, so Pilot alerts will only appear while a tab is open.
         </Typography>
       </SectionCard>
     );

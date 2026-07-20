@@ -119,6 +119,7 @@ The lease payload is enriched: `{questionId, questionKind, subjectType, subjectI
 - **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
 - **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign from paginated campaign `.items` and `GET /api/campaigns/<id>/networking?page=1&limit=100` `.items`. `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
+- **`campaign`** → a `campaign.reviewPaused` answer; `subjectId` = the campaignId. `"Resume"` → `POST /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`; `"Complete campaign"` → same route with `completed`; `"Keep paused"` → journal only; free text → interpret as one of the three. Journal the outcome.
 - **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
 - **`pilot`** → the answer to a `strategy.bootstrap` question: treat the answer text as the goals. Derive 1-3 saved searches from it exactly as `strategy.bootstrap`, then ONE `PUT /api/pilot/instructions` writing `{goals: <answer>, config: <config + new savedSearches>}`. Journal both facts.
 
@@ -130,7 +131,7 @@ Run ONE bounded board search, modeled on the `search` skill (login per `../../sh
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" \
-    '{query:$q, source:"auto-apply", config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
+    '{query:$q, source:"auto-apply", createdBy:"pilot", config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
 CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
@@ -154,8 +155,31 @@ Journal like the other kinds: "Scored 5 unscored jobs for 'senior typescript rem
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/status" \
-  -H 'content-type: application/json' -d '{"status":"completed"}'
+  -H 'content-type: application/json' -d '{"status":"completed","actor":"pilot"}'
 ```
+
+### `campaign.reviewPaused`
+
+Payload `{campaignId, query, board, pausedAt}` - a stuck paused auto-apply campaign. No browser, no worker. `GET /api/campaigns/$CID`; classify from `statusActor`/`statusReason` (fallback: `/jobs/reasons` + recent journal): missing resume, verification wall, user pause, or unknown.
+
+- Missing resume and the file is restorable per `../../shared/setup.md` → resume:
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/status" \
+  -H 'content-type: application/json' -d '{"status":"in_progress","actor":"pilot"}'
+```
+
+- Anything else → ask; never silently override a user pause. `subjectType:"campaign"` + `subjectId` are load-bearing (suppress re-review while open, route the answer):
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg sid "$CID" --arg q "Campaign '$QUERY' is paused ($REASON). Resume it?" \
+    --arg dl "$JOBPILOT_WEB/campaigns/$CID" \
+    '{kind:"choice", subjectType:"campaign", subjectId:$sid, prompt:$q, options:["Resume","Keep paused","Complete campaign"], deepLink:$dl}')"
+```
+
+Journal the outcome: "Resumed campaign '<query>' - resume restored." / "Campaign '<query>' paused (<reason>) - asked whether to resume."
 
 ### `queue.drain`
 
@@ -187,11 +211,13 @@ The `board` answer is handled in `question.answered`.
 
 ### `campaign.strategyReview`
 
-Payload `{campaignId, query, config, counts, topSkipReasons}`. Quiet-agenda deep think, **no browser**. Reason over the yield: is the query too broad/narrow, `minScore` mistuned, skip reasons clustered? Decide ONE concrete adjustment (rewrite query and/or shift `minScore` by at most ±10 within [50,95]). Apply it and record the reasoning as a campaign event:
+Payload `{campaignId, query, config, counts, topSkipReasons}`. Quiet-agenda deep think, **no browser**. Reason over the yield: is the query too broad/narrow, `minScore` mistuned, skip reasons clustered? Decide ONE concrete adjustment (rewrite query and/or shift `minScore` by at most ±10 within [50,95]). Build `$UPDATED_CONFIG` from a fresh `GET /api/campaigns/$CID` and pass its `updatedAt` as the guard; a `409` = the user edited mid-review - re-fetch and re-decide once:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CID" \
-  -H 'content-type: application/json' -d "$(jq -n --argjson config "$UPDATED_CONFIG" '{config:$config}')"
+  -H 'content-type: application/json' \
+  -d "$(jq -n --argjson config "$UPDATED_CONFIG" --arg ts "$CAMPAIGN_UPDATED_AT" \
+    '{config:$config, expectedUpdatedAt:$ts}')"
 ```
 
 Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.

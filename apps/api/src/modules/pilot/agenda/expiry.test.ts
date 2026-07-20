@@ -5,6 +5,7 @@ import { describe, expect, it } from "bun:test";
 function setup(options: {
   leases?: Record<string, unknown>[];
   questions?: Record<string, unknown>[];
+  openApplyLeases?: Record<string, unknown>[];
 }) {
   const jobWrites: Record<string, unknown>[] = [];
   const queueWrites: Record<string, unknown>[] = [];
@@ -13,7 +14,9 @@ function setup(options: {
   let transactions = 0;
   const db = {
     pilotLease: {
-      findMany: async () => options.leases ?? [],
+      // The expired-lease scan has no kind filter; the stale-applying sweep reads open job.apply leases.
+      findMany: async (args: { where: { kind?: string } }) =>
+        args.where.kind === "job.apply" ? (options.openApplyLeases ?? []) : (options.leases ?? []),
       updateMany: async (args: Record<string, unknown>) => {
         leaseWrites.push(args);
         return { count: options.leases?.length ?? 0 };
@@ -88,7 +91,26 @@ describe("agenda expiry", () => {
     await state.run();
     expect(state.transactions).toBe(1);
     expect(state.questionWrites[0]).toMatchObject({ data: { status: "expired" } });
-    expect(state.jobWrites[0]).toMatchObject({ data: { status: "skipped" } });
+    const skip = state.jobWrites.find((w) => (w.data as { status?: string }).status === "skipped");
+    expect(skip).toMatchObject({ data: { status: "skipped" } });
     expect(state.queueWrites[0]).toMatchObject({ data: { status: "skipped" } });
+  });
+
+  it("reverts stale applying jobs while sparing ones under an open apply lease", async () => {
+    const state = setup({
+      openApplyLeases: [{ payload: { campaignId: "c1", jobKey: "held" } }],
+    });
+    await state.run();
+    const sweep = state.jobWrites.find(
+      (w) => (w.where as { status?: string }).status === "applying",
+    );
+    expect(sweep).toMatchObject({
+      where: {
+        status: "applying",
+        NOT: [{ campaignId: "c1", key: "held" }],
+        updatedAt: { lt: expect.any(Date) },
+      },
+      data: { status: "approved" },
+    });
   });
 });

@@ -5,7 +5,12 @@ import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
 import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
-import { CAMPAIGN_STATUS_COLOR, CAMPAIGN_STATUS_LABEL } from "../campaign-status";
+import {
+  CAMPAIGN_ACTOR_LABEL,
+  CAMPAIGN_STATUS_COLOR,
+  CAMPAIGN_STATUS_LABEL,
+} from "../campaign-status";
+import { PilotBadge } from "../pilot-badge";
 import { CampaignActionsBar } from "./actions-bar";
 import { CampaignIdentityBanner } from "./identity-banner";
 
@@ -18,6 +23,10 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
   const { campaign } = props;
   const cfg = campaign.config;
   const isAutoApply = campaign.source === "auto-apply";
+  const pausedBy = campaign.statusActor
+    ? `Paused by ${CAMPAIGN_ACTOR_LABEL[campaign.statusActor]}`
+    : "Paused";
+  const pausedReason = campaign.statusReason ? ` - ${campaign.statusReason}` : "";
 
   return (
     <Card>
@@ -54,6 +63,7 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               <Typography variant="body2Muted">
                 {campaign.source} · Started {formatRelativeTime(campaign.startedAt)} ago
               </Typography>
+              <PilotBadge createdBy={campaign.createdBy} />
               {cfg.board && <Chip size="small" label={`Board: ${cfg.board}`} variant="outlined" />}
               {!isAutoApply && typeof cfg.maxJobs === "number" && (
                 <Chip size="small" label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
@@ -73,7 +83,9 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
             <CampaignIdentityBanner />
 
             {campaign.status === "paused" && (
-              <Typography variant="captionMuted">Paused - resume to continue.</Typography>
+              <Typography variant="captionMuted">
+                {`${pausedBy}${pausedReason} · resume to continue.`}
+              </Typography>
             )}
           </Stack>
 
