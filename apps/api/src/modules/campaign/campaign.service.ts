@@ -101,18 +101,20 @@ export class CampaignService {
         "config.resumeId is required for search, auto-apply, and networking campaigns.",
       );
     }
-    // Whole-blob replace: without this guard the pilot's strategy review and a user edit
-    // silently clobber each other (last write wins).
-    if (
-      body.expectedUpdatedAt &&
-      existing.updatedAt.getTime() !== new Date(body.expectedUpdatedAt).getTime()
-    ) {
-      throw conflict("Campaign changed since it was fetched; re-fetch before updating config.");
-    }
-    const campaign = await this.prisma.campaign.update({
-      where: { campaignId: id },
+    // Whole-blob replace: guarded in the write, since a compare against `existing` leaves a
+    // window for the pilot's strategy review and a user edit to clobber each other.
+    const updated = await this.prisma.campaign.updateMany({
+      where: {
+        campaignId: id,
+        userId,
+        ...(body.expectedUpdatedAt && { updatedAt: new Date(body.expectedUpdatedAt) }),
+      },
       data: { config: body.config },
     });
+    if (updated.count === 0) {
+      throw conflict("Campaign changed since it was fetched; re-fetch before updating config.");
+    }
+    const campaign = await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } });
     return this.toRow(campaign);
   }
 

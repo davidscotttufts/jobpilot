@@ -17,12 +17,25 @@ const row = {
 
 function makeService(current = row) {
   const updates: Record<string, unknown>[] = [];
+  const wheres: Record<string, unknown>[] = [];
   const db = {
     campaign: {
       findMany: async () => [current],
       count: async () => 1,
       findFirst: async () => current,
-      updateMany: async ({ data }: { data: Record<string, unknown> }) => {
+      updateMany: async ({
+        where,
+        data,
+      }: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }) => {
+        wheres.push(where);
+        // Mirror the DB: a guarded column that doesn't match the row updates nothing.
+        const guard = where.updatedAt;
+        if (guard instanceof Date && guard.getTime() !== current.updatedAt.getTime()) {
+          return { count: 0 };
+        }
         updates.push(data);
         return { count: 1 };
       },
@@ -32,7 +45,7 @@ function makeService(current = row) {
     job: { groupBy: async () => [] },
     networkingMessage: { groupBy: async () => [], findMany: async () => [] },
   };
-  return { service: new CampaignService(db as unknown as PrismaClient), updates };
+  return { service: new CampaignService(db as unknown as PrismaClient), updates, wheres };
 }
 
 describe("CampaignService", () => {
@@ -73,5 +86,36 @@ describe("CampaignService", () => {
     await expect(service.updateConfig("u1", "c1", { config: {} })).rejects.toThrow(
       "config.resumeId is required",
     );
+  });
+
+  it("scopes a config write to the owner and the expected version", async () => {
+    const { service, wheres } = makeService();
+    await service.updateConfig("u1", "c1", {
+      config: { resumeId: "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e" },
+      expectedUpdatedAt: row.updatedAt.toISOString(),
+    });
+    expect(wheres.at(-1)).toEqual({
+      campaignId: "c1",
+      userId: "u1",
+      updatedAt: row.updatedAt,
+    });
+  });
+
+  it("rejects a config write whose expected version is stale", async () => {
+    const { service } = makeService();
+    await expect(
+      service.updateConfig("u1", "c1", {
+        config: { resumeId: "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e" },
+        expectedUpdatedAt: new Date(row.updatedAt.getTime() - 1000).toISOString(),
+      }),
+    ).rejects.toThrow("Campaign changed since it was fetched");
+  });
+
+  it("still scopes a config write to the owner when no version is expected", async () => {
+    const { service, wheres } = makeService();
+    await service.updateConfig("u1", "c1", {
+      config: { resumeId: "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e" },
+    });
+    expect(wheres.at(-1)).toEqual({ campaignId: "c1", userId: "u1" });
   });
 });
