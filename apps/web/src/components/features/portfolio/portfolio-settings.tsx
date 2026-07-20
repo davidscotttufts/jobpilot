@@ -9,14 +9,14 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { PortfolioSettingsDto } from "@/api/types";
-import { PortfolioView } from "@/components/features/portfolio";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
+import { PortfolioView } from "./portfolio-view";
 
 type Availability = PortfolioSettingsDto["availability"];
 
-export function PortfolioSection(): ReactElement {
+export function PortfolioSettings(): ReactElement {
   const settingsQuery = useApiQuery(userQueries.portfolio());
 
   if (!settingsQuery.data) {

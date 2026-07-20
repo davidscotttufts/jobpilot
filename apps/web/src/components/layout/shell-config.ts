@@ -64,7 +64,7 @@ export const navGroups: NavGroup[] = [
         matchHrefs: ["/resumes", "/cover-letters"],
       },
       { label: "Boards", href: "/boards", icon: BusinessCenter },
-      { label: "Portfolio", href: "/settings/portfolio", icon: Public },
+      { label: "Portfolio", href: "/portfolio", icon: Public },
     ],
   },
 ];

@@ -6,6 +6,5 @@ export * from "./eeo-section";
 export * from "./email-section";
 export * from "./oauth-client-card";
 export * from "./personal-section";
-export * from "./portfolio-section";
 export * from "./push-settings";
 export * from "./work-auth-section";

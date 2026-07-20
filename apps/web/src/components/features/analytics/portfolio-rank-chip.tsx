@@ -32,7 +32,7 @@ export function PortfolioRankChip(): ReactElement {
       )}
       <Chip
         component={Link}
-        href="/settings/portfolio"
+        href="/portfolio"
         clickable
         icon={<Share />}
         variant="outlined"
