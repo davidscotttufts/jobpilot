@@ -11,7 +11,6 @@ import { NetworkingBoard } from "@/components/features/networking";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
-import { PipelineFunnel } from "./detail/pipeline-funnel";
 import { CampaignReasonBreakdown } from "./detail/reason-breakdown";
 import { CampaignSummaryTiles } from "./detail/summary-tiles";
 
@@ -74,7 +73,6 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
     <Stack spacing={3}>
       <CampaignHeaderCard campaign={campaign} />
       <CampaignSummaryTiles campaign={campaign} />
-      <PipelineFunnel campaign={campaign} />
       <CampaignReasonBreakdown campaign={campaign} />
       <CampaignJobsPanel campaign={campaign} />
     </Stack>
