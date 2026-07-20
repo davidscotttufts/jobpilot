@@ -1,4 +1,4 @@
-import { CAMPAIGN_STATUSES, type CampaignStatus } from "@jobpilot/contracts/campaign";
+import type { CampaignJobStatus, CampaignStatus } from "@jobpilot/contracts/campaign";
 
 export const CAMPAIGN_STATUS_COLOR: Record<
   CampaignStatus,
@@ -17,7 +17,15 @@ export const CAMPAIGN_STATUS_LABEL: Record<CampaignStatus, string> = {
   failed: "failed",
 };
 
-export const CAMPAIGN_STATUS_OPTIONS = CAMPAIGN_STATUSES.map((value) => ({
-  value,
-  label: CAMPAIGN_STATUS_LABEL[value],
-}));
+export const CAMPAIGN_JOB_STATUS_COLOR: Record<
+  CampaignJobStatus,
+  "default" | "info" | "primary" | "success" | "error" | "warning"
+> = {
+  pending: "default",
+  approved: "info",
+  applying: "primary",
+  needs_user: "warning",
+  applied: "success",
+  failed: "error",
+  skipped: "warning",
+};

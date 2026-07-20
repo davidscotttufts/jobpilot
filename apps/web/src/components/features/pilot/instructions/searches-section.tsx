@@ -4,11 +4,10 @@ import { Grid, InputAdornment } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
-import { FormSection } from "@/components/ui/form";
+import { FieldRowList, FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { useKeyedList } from "@/hooks/use-keyed-list";
 import { INSTRUCTIONS_FORM_DEFAULTS } from "./form-schema";
-import { InstructionsRowList } from "./row-list";
 
 const EMPTY_SEARCH = { query: "", board: "", cadenceHours: 24, resumeId: undefined };
 
@@ -27,12 +26,11 @@ export const SearchesSection = withForm({
       >
         <form.AppField name="savedSearches" mode="array">
           {(field) => (
-            <InstructionsRowList
+            <FieldRowList
               count={field.state.value?.length ?? 0}
               keys={searchList.keys}
               emptyText="None yet - the pilot will create them on its next quiet cycle."
               addLabel="Add search"
-              removeAria={(i) => `Remove search ${i + 1}`}
               rowLabel={(i) => `Search ${i + 1}`}
               // useKeyedList appends a key when the tracked length grows.
               onAdd={() => field.pushValue({ ...EMPTY_SEARCH })}
@@ -86,7 +84,7 @@ export const SearchesSection = withForm({
                   </Grid>
                 </>
               )}
-            </InstructionsRowList>
+            </FieldRowList>
           )}
         </form.AppField>
       </FormSection>
