@@ -4,11 +4,12 @@
 import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import type { PilotService } from "../pilot.service";
+import type { PilotJournalService } from "../journal.service";
 
 export interface Recorder {
   patchJob: unknown[][];
   recordResult: unknown[][];
+  promoteScoredJobs: unknown[][];
   claimJobForApply: unknown[][];
   leaseCreates: Record<string, unknown>[];
   leaseUpdates: { data: Record<string, unknown> }[];
@@ -18,7 +19,7 @@ export interface Recorder {
 }
 
 export interface Over {
-  instructionsConfig?: string;
+  instructionsConfig?: unknown;
   instructionsGoals?: string;
   expiredLeases?: Record<string, unknown>[];
   questionLeases?: { subjectId: string }[];
@@ -28,6 +29,16 @@ export interface Over {
   appliedToday?: number;
   activeLeases?: number;
   finalizeCampaigns?: Record<string, unknown>[];
+  // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
+  scorePendingCampaigns?: Record<string, unknown>[];
+  scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
+  // Prior campaign.scorePending leases, gating the per-campaign cooldown.
+  scorePendingLeases?: { subjectId: string; grantedAt: Date; releasedAt: Date | null }[];
+  pilotEnabled?: boolean;
+  // verifyGrant's leasability check for campaign.scorePending (null = 409, no unscored rows left).
+  campaignFindFirst?: Record<string, unknown> | null;
+  // Scored-but-pending rows swept by promoteScoredPendingJobs (job.findMany with a matchScore filter).
+  scoredPendingJobs?: Record<string, unknown>[];
   job?: Record<string, unknown> | null;
   claimCount?: number;
   activeLease?: Record<string, unknown> | null;
@@ -58,7 +69,8 @@ export interface Over {
   pendingQueueCount?: number;
   boardHealthJobs?: Record<string, unknown>[];
   quietCampaigns?: Record<string, unknown>[];
-  actionMarkers?: { subjectId: string | null; detail: string }[];
+  quietJobCounts?: Record<string, unknown>[];
+  actionMarkers?: { subjectId: string | null; detail: unknown }[];
   skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
   // Bootstrap wiring:
   bootstrapLease?: { id: string } | null;
@@ -70,6 +82,7 @@ export function makeAgendaDb(over: Over = {}) {
   const rec: Recorder = {
     patchJob: [],
     recordResult: [],
+    promoteScoredJobs: [],
     claimJobForApply: [],
     leaseCreates: [],
     leaseUpdates: [],
@@ -79,7 +92,7 @@ export function makeAgendaDb(over: Over = {}) {
   };
 
   // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
-  const defaultConfig = '{"networkingEnabled":true}';
+  const defaultConfig = { networkingEnabled: true };
   let txChain: Promise<unknown> = Promise.resolve();
   const db = {
     pilotState: {
@@ -87,13 +100,18 @@ export function makeAgendaDb(over: Over = {}) {
       findUnique: async () => ({
         instructionsConfig: over.instructionsConfig ?? defaultConfig,
         instructionsGoals: over.instructionsGoals ?? "",
+        enabled: over.pilotEnabled ?? true,
       }),
+      update: async () => ({}),
     },
     pilotLease: {
-      findMany: async (args: { where: { subjectType?: string } }) =>
-        args.where.subjectType === "question"
+      // The score-pending cooldown reads its own lease history by kind; the rest split on subjectType.
+      findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
+        if (args.where.kind === "campaign.scorePending") return over.scorePendingLeases ?? [];
+        return args.where.subjectType === "question"
           ? (over.questionLeases ?? [])
-          : (over.expiredLeases ?? []),
+          : (over.expiredLeases ?? []);
+      },
       count: async () => over.activeLeases ?? 0,
       // Bootstrap-damper lookups filter on kind; everything else is the per-subject uniqueness guard.
       findFirst: async (a: { where: { kind?: string } }) =>
@@ -152,14 +170,32 @@ export function makeAgendaDb(over: Over = {}) {
       },
     },
     job: {
-      // Board-health scans applied/failed rows (status is an `in` filter); everything else is the approved gather.
-      findMany: async (a: { where: { status?: unknown } }) =>
-        a.where.status && typeof a.where.status === "object"
-          ? (over.boardHealthJobs ?? [])
-          : (over.approvedJobs ?? []),
+      // A matchScore filter is the promote sweep (scored-pending rows); a status `in` filter is the
+      // board-health scan; everything else is the approved-job gather.
+      findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) => {
+        if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
+        if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];
+        return over.approvedJobs ?? [];
+      },
       findFirst: async () => over.job ?? null,
       update: async () => ({}),
-      groupBy: async () => over.skipReasonRows ?? [],
+      // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
+      updateMany: async () => ({ count: over.claimCount ?? 1 }),
+      findUniqueOrThrow: async () => over.job ?? approvedJob(),
+      groupBy: async (a: { by: string[] }) => {
+        if (a.by.length === 1) return over.scorePendingCounts ?? [];
+        if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
+        return (
+          over.quietJobCounts ??
+          (over.quietCampaigns?.length
+            ? [
+                { campaignId: "c1", status: "applied", _count: { _all: 1 } },
+                { campaignId: "c1", status: "skipped", _count: { _all: 36 } },
+                { campaignId: "c1", status: "failed", _count: { _all: 3 } },
+              ]
+            : [])
+        );
+      },
       count: async (a: { where: { status?: string } }) =>
         a.where.status === "failed"
           ? (over.jobsFailed ?? 0)
@@ -181,14 +217,22 @@ export function makeAgendaDb(over: Over = {}) {
             : (over.interviewReplyApps ?? []),
     },
     campaign: {
-      // Finalize gather filters on a `jobs` none-clause; the quiet-candidate gather does not - split on that.
-      findMany: async (a: { where: Record<string, unknown> }) =>
-        "jobs" in a.where ? (over.finalizeCampaigns ?? []) : (over.quietCampaigns ?? []),
+      // Split campaign gathers by source auto-apply (score-pending), an `OR` finalization
+      // clause, or the quiet-candidate gather.
+      findMany: async (a: {
+        where: { status?: string; source?: string; jobs?: unknown; OR?: unknown };
+      }) => {
+        if (a.where.source === "auto_apply") return over.scorePendingCampaigns ?? [];
+        if ("OR" in a.where) return over.finalizeCampaigns ?? [];
+        return over.quietCampaigns ?? [];
+      },
+      findFirst: async () => over.campaignFindFirst ?? null,
       update: async () => ({}),
     },
     queueEntry: {
       findMany: async () => over.pendingQueue ?? [],
       count: async () => over.pendingQueueCount ?? 0,
+      updateMany: async () => ({ count: 1 }),
     },
     emailMessage: {
       findMany: async () => over.inboxIds ?? [],
@@ -242,6 +286,9 @@ export function makeCampaignJobs(rec: Recorder, over: Over = {}): CampaignJobSer
     recordJobResult: async (...a: unknown[]) => {
       rec.recordResult.push(a);
     },
+    promoteScoredJobs: async (...a: unknown[]) => {
+      rec.promoteScoredJobs.push(a);
+    },
     claimJobForApply: async (...a: unknown[]) => {
       rec.claimJobForApply.push(a);
       if ((over.claimCount ?? 1) === 0) {
@@ -251,14 +298,14 @@ export function makeCampaignJobs(rec: Recorder, over: Over = {}): CampaignJobSer
   } as unknown as CampaignJobService;
 }
 
-/** Fake PilotService recording journal appends (the digest write path). */
-export function makePilot(rec: Pick<Recorder, "journals">): PilotService {
+/** Fake PilotJournalService recording journal appends (the digest write path). */
+export function makePilot(rec: Pick<Recorder, "journals">): PilotJournalService {
   return {
     appendJournal: async (_p: string, body: { entries: Record<string, unknown>[] }) => {
       rec.journals.push(...body.entries);
       return { items: [] };
     },
-  } as unknown as PilotService;
+  } as unknown as PilotJournalService;
 }
 
 /** Fake PushService recording sendToUser calls without any web-push/env dependency. */
@@ -291,6 +338,6 @@ export const approvedJob = (over: Record<string, unknown> = {}) => ({
   digest: null,
   company: "Acme",
   matchScore: 80,
-  campaign: { config: "{}" },
+  campaign: { config: {} },
   ...over,
 });

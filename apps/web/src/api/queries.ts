@@ -1,4 +1,8 @@
-import type { CampaignSource, CampaignStatus } from "@jobpilot/contracts/campaign";
+import type {
+  CampaignJobStatus,
+  CampaignSource,
+  CampaignStatus,
+} from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
 import type { PromotionStatus, QuestionStatus } from "@jobpilot/contracts/pilot";
 import type { QueueStatus } from "@jobpilot/contracts/queue";
@@ -69,18 +73,47 @@ export const applicationQueries = {
   }),
 };
 
+/** Dashboard widgets read the campaign list unpaginated; this bounds that read. */
+const DEFAULT_CAMPAIGN_PAGE_SIZE = 100;
+
 export const campaignQueries = {
-  list: (filters: { status?: CampaignStatus; source?: CampaignSource } = {}) => ({
+  list: (
+    filters: {
+      page?: number;
+      limit?: number;
+      status?: CampaignStatus;
+      source?: CampaignSource;
+    } = {},
+  ) => ({
     queryKey: queryKeys.campaigns.list(filters),
-    queryFn: () => api.campaigns.get({ query: filters }),
+    queryFn: () =>
+      api.campaigns.get({ query: { page: 1, limit: DEFAULT_CAMPAIGN_PAGE_SIZE, ...filters } }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.campaigns.detail(id),
     queryFn: () => api.campaigns({ id }).get(),
   }),
+  /** One server-filtered page of a campaign's jobs; filters apply across the whole campaign. */
+  jobs: (
+    id: string,
+    params: { page: number; limit: number; status?: CampaignJobStatus; search?: string },
+  ) => ({
+    queryKey: queryKeys.campaigns.jobs(id, params),
+    queryFn: () => api.campaigns({ id }).jobs.get({ query: params }),
+  }),
+  /** Skip/fail reasons aggregated server-side, so counts cover every job rather than one page. */
+  reasons: (id: string) => ({
+    queryKey: queryKeys.campaigns.reasons(id),
+    queryFn: () => api.campaigns({ id }).jobs.reasons.get(),
+  }),
   networking: (campaignId: string) => ({
     queryKey: queryKeys.campaigns.networking(campaignId),
-    queryFn: () => api.campaigns({ id: campaignId }).networking.get(),
+    queryFn: async () => {
+      const result = await api.campaigns({ id: campaignId }).networking.get({
+        query: { page: 1, limit: 100 },
+      });
+      return { ...result, data: result.data?.items ?? null };
+    },
   }),
 };
 
@@ -149,7 +182,13 @@ export const PILOT_JOURNAL_PAGE_SIZE = 50;
 
 export const pilotQueries = {
   state: () => ({ queryKey: queryKeys.pilot.state(), queryFn: () => api.pilot.get() }),
-  agenda: () => ({ queryKey: queryKeys.pilot.agenda(), queryFn: () => api.pilot.agenda.get() }),
+  agenda: () => ({
+    queryKey: queryKeys.pilot.agenda(),
+    queryFn: async () => {
+      const result = await api.pilot.agenda.get();
+      return { ...result, data: result.data?.agenda ?? null };
+    },
+  }),
   journal: () => ({
     queryKey: queryKeys.pilot.journal(),
     queryFn: () => api.pilot.journal.get({ query: { limit: PILOT_JOURNAL_PAGE_SIZE } }),

@@ -13,6 +13,8 @@ export const PRIORITY = {
   warmIntro: 550,
   // Only fires on a quiet pipeline (no apply/discover/queue), so its exact rank is cosmetic.
   strategyBootstrap: 520,
+  // Scoring an existing campaign's pending rows outranks fresh discovery: finish what's found first.
+  scorePending: 510,
   discover: 500,
   followup: 400,
   strategyReview: 350,
@@ -27,11 +29,25 @@ export const MAX_BOARD_HEALTH = 1;
 export const MAX_STRATEGY_REVIEWS = 1;
 export const MAX_RESCAN_SKIPPED = 1;
 export const MAX_RETRY_FAILED = 1;
+export const MAX_PROMO_COMPOSE = 1;
+export const INBOX_BATCH = 10;
+export const QUEUE_BATCH = 5;
+export const REASON_CAP = 3;
 /** A board is unhealthy once its most recent apply outcomes are this many failures deep. */
 export const BOARD_HEALTH_MIN_FAILURES = 3;
 
 /** Row cap for unbounded gather/expiry scans, matching the module's take: 200 list precedent. */
 export const GATHER_CAP = 200;
+
+/** One score-pending cycle scores at most this many of a campaign's unscored rows (bounded per cycle). */
+export const SCORE_PENDING_BATCH = 5;
+
+/**
+ * Minimum gap between score-pending runs on one campaign. Rows nothing can score stay `matchScore: null`
+ * forever, so without a cooldown they would out-rank discovery every cycle; a backlog still drains at
+ * SCORE_PENDING_BATCH per hour, far above the pilot's apply rate.
+ */
+export const SCORE_PENDING_COOLDOWN_MS = 60 * 60 * 1000;
 
 export const MAX_ITEMS = 10;
 /** A job needs a strong match before its company is worth a warm-intro detour. */

@@ -11,6 +11,7 @@ import { NetworkingBoard } from "@/components/features/networking";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
+import { PipelineFunnel } from "./detail/pipeline-funnel";
 import { CampaignReasonBreakdown } from "./detail/reason-breakdown";
 import { CampaignSummaryTiles } from "./detail/summary-tiles";
 
@@ -28,10 +29,20 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
     campaignChannel,
     { campaignId },
     {
-      onMessage: () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
-      },
+      // Scoped per event type: a scoring pass emits one `job-update` per job, so a blanket
+      // `campaigns.all` here would refetch every cached list, page and aggregate on each one.
       on: {
+        progress: () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+        },
+        "job-update": () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.jobs(campaignId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.reasons(campaignId) });
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+        },
+        status: () => {
+          queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaignId) });
+        },
         "networking-update": () => {
           queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.networking(campaignId) });
         },
@@ -45,7 +56,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const campaign = detail.data;
 
-  if (campaign.source === "networking") {
+  if (campaign.summary.kind === "networking") {
     return (
       <Stack spacing={3}>
         <CampaignHeaderCard campaign={campaign} />
@@ -63,6 +74,7 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
     <Stack spacing={3}>
       <CampaignHeaderCard campaign={campaign} />
       <CampaignSummaryTiles campaign={campaign} />
+      <PipelineFunnel campaign={campaign} />
       <CampaignReasonBreakdown campaign={campaign} />
       <CampaignJobsPanel campaign={campaign} />
     </Stack>

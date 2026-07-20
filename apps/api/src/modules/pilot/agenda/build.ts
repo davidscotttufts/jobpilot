@@ -1,4 +1,4 @@
-import type { AgendaItem, AgendaResponse } from "@jobpilot/contracts/pilot";
+import type { AgendaContent, AgendaItem } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import { ACTIVE_SLEEP_SECONDS, MAX_ITEMS, MIN_IDLE_SLEEP_SECONDS } from "./constants";
 import { buildInterviewPrepItems, buildInterviewReplyItems } from "./items-interview";
@@ -7,6 +7,7 @@ import {
   buildFinalizeItems,
   buildJobApplyItems,
   buildQuestionItems,
+  buildScorePendingItems,
   buildWarmIntroItems,
 } from "./items-jobs";
 import { buildFollowupItems, buildInboxItem, buildNetworkingSendItems } from "./items-networking";
@@ -30,7 +31,7 @@ function agendaEmptyReason(
   itemCount: number,
   capReached: boolean,
   savedSearchCount: number,
-): AgendaResponse["emptyReason"] {
+): AgendaContent["emptyReason"] {
   if (itemCount > 0) return null;
   if (capReached) return "capReached";
   if (savedSearchCount === 0) return "awaitingSetup";
@@ -42,7 +43,7 @@ function agendaEmptyReason(
  * cap-suppression, budget, and sleep rules are unit-testable. Ranking lives in PRIORITY
  * (./constants).
  */
-export function buildAgenda(input: AgendaInput): AgendaResponse {
+export function buildAgenda(input: AgendaInput): AgendaContent {
   const { now, config } = input;
   const capReached = input.appliedToday >= config.dailyApplyCap;
   // Networking headroom is independent of the apply cap; it gates sends and followups alike.
@@ -61,8 +62,12 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
   items.push(...sendItems);
   items.push(...buildInboxItem(input.inbox));
   items.push(...buildPromoPostItems(input.approvedPromotions));
-  // Discovery only fills the pipeline when there is nothing approved left to apply to.
-  if (input.approvedJobs.length === 0) items.push(...buildDiscoverItems(input.dueQueries, config));
+  // Scoring an existing campaign's pending rows and fresh discovery both only matter when there is
+  // nothing approved left to apply to; scoring ranks first so found-but-unscored work finishes first.
+  if (input.approvedJobs.length === 0) {
+    items.push(...buildScorePendingItems(input.scorePending));
+    items.push(...buildDiscoverItems(input.dueQueries, config));
+  }
   // Followups spend the same send budget, so they only get the headroom the sends left over.
   const followupHeadroom = sendHeadroom - sendItems.length;
   if (followupHeadroom > 0)
@@ -71,7 +76,11 @@ export function buildAgenda(input: AgendaInput): AgendaResponse {
 
   // Quiet-agenda maintenance surfaces only when no apply / discover / queue work is queued.
   const busy = items.some(
-    (i) => i.kind === "job.apply" || i.kind === "search.discover" || i.kind === "queue.drain",
+    (i) =>
+      i.kind === "job.apply" ||
+      i.kind === "search.discover" ||
+      i.kind === "campaign.scorePending" ||
+      i.kind === "queue.drain",
   );
   if (!busy) {
     items.push(...buildBootstrapItem(input.bootstrap));

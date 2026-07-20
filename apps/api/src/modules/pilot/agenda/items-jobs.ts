@@ -5,6 +5,7 @@ import type {
   AgendaDueQuery,
   AgendaFinalizeCampaign,
   AgendaQuestion,
+  AgendaScorePending,
 } from "./types";
 
 /** Answered questions - the highest-priority "apply the user's answer" work. */
@@ -93,6 +94,19 @@ export function buildDiscoverItems(
     subjectType: "campaign",
     subjectId: q.query,
     payload: { query: q.query, board: q.board, resumeId: q.resumeId, minScore: config.minScore },
+  }));
+}
+
+/** Score an existing campaign's unscored pending rows; ranked above discovery, gated by the caller. */
+export function buildScorePendingItems(campaigns: AgendaScorePending[]): AgendaItem[] {
+  return campaigns.map((c) => ({
+    id: `campaign.scorePending:${c.campaignId}`,
+    kind: "campaign.scorePending",
+    priority: PRIORITY.scorePending,
+    title: `Score discovered jobs: ${c.query}`.slice(0, 200),
+    subjectType: "campaign",
+    subjectId: c.campaignId,
+    payload: { ...c },
   }));
 }
 

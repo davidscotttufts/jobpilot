@@ -142,8 +142,16 @@ export function DockPanel(): ReactElement {
                 <RestartAlt fontSize="sm" />
               </IconButton>
             </Tooltip>
-            <Tooltip title={`Stop ${providerLabel}`}>
-              <IconButton size="small" onClick={() => void stop()} aria-label="Stop">
+            <Tooltip title="Stop agent (closes the terminal app)">
+              <IconButton
+                size="small"
+                onClick={() => {
+                  beginPending("stopping");
+                  // A stop that left the host up has no "went down" edge to clear the card.
+                  void stop().then((down) => !down && beginPending(null));
+                }}
+                aria-label="Stop"
+              >
                 <StopCircle fontSize="sm" />
               </IconButton>
             </Tooltip>

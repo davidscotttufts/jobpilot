@@ -1,47 +1,52 @@
-﻿import type { ReleasePilotLeaseInput } from "@jobpilot/contracts/pilot";
+import { type AgendaResponse, agendaResponseSchema } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
-import { conflict, findOwned } from "@/common/errors";
+import { conflict } from "@/common/errors";
+import { reviveJsonDates, toInputJson } from "@/common/json";
 import { PushService } from "@/common/push";
-import { type PilotLease, PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
-import { toPilotLease } from "../pilot.mapper";
-import { PilotService } from "../pilot.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { buildAgenda } from "./build";
+import { gatherBoardHealth } from "./candidates-board";
+import { gatherBootstrap } from "./candidates-bootstrap";
+import { gatherFinalizeCampaigns } from "./candidates-finalize";
+import { gatherInbox } from "./candidates-inbox";
+import { gatherQuietCandidates } from "./candidates-maintenance";
+import { gatherAnsweredQuestions } from "./candidates-questions";
+import { gatherQueueDrain } from "./candidates-queue";
 import { writeDigestIfDue } from "./digest";
-import { jobRef, parsePayload, revertJobToApproved, runExpiry } from "./expiry";
+import { runExpiry } from "./expiry";
+import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
   attachWarmContacts,
   dueSavedSearches,
-  gatherAnsweredQuestions,
   gatherApprovedJobs,
-  gatherFinalizeCampaigns,
-  gatherInbox,
-} from "./gather";
-import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
+  gatherScorePendingCampaigns,
+} from "./gather-jobs";
 import {
   duePlatforms,
   gatherApprovedNetworking,
   gatherApprovedPromotions,
   gatherFollowups,
 } from "./gather-networking";
-import {
-  gatherBoardHealth,
-  gatherBootstrap,
-  gatherQueueDrain,
-  gatherQuietCandidates,
-} from "./gather-proactive";
-import { verifyGrant } from "./grant";
+import { promoteScoredPendingJobs } from "./promote";
 
-const LEASE_TTL_MS = 15 * 60 * 1000;
+export const AGENDA_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 
+/** Validates a stored agenda snapshot and restores its date fields. */
+export function parseAgendaSnapshot(value: unknown): AgendaResponse {
+  return agendaResponseSchema.parse(reviveJsonDates(value));
+}
+
+/** Reads immutable snapshots and explicitly refreshes the mutating agenda pipeline. */
 @singleton()
 export class AgendaService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly campaignJobs: CampaignJobService,
-    private readonly pilot: PilotService,
+    private readonly pilot: PilotJournalService,
     private readonly push: PushService,
   ) {}
 
@@ -49,14 +54,28 @@ export class AgendaService {
     return { prisma: this.prisma, campaignJobs: this.campaignJobs };
   }
 
-  async compile(userId: string) {
-    const now = new Date();
-    // Config and the expiry sweep are independent; both must settle before the main batch.
-    const [{ config, goals }] = await Promise.all([
-      loadInstructions(this.prisma, userId),
-      runExpiry(this.jobDeps, userId, now),
-    ]);
+  async getCurrent(userId: string) {
+    const state = await this.prisma.pilotState.findUnique({ where: { userId } });
+    if (!state?.enabled) throw conflict("Pilot is disabled.");
+    if (!state.agendaSnapshot || !state.agendaExpiresAt || state.agendaExpiresAt <= new Date()) {
+      return { agenda: null };
+    }
+    return { agenda: parseAgendaSnapshot(state.agendaSnapshot) };
+  }
 
+  async refresh(userId: string): Promise<AgendaResponse> {
+    const state = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { enabled: true },
+    });
+    if (!state?.enabled) throw conflict("Pilot is disabled.");
+
+    const now = new Date();
+    const { config, goals } = await loadInstructions(this.prisma, userId);
+    await runExpiry(this.prisma, userId, now);
+    await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);
+
+    const { prisma } = this;
     const [
       openQuestions,
       answeredQuestions,
@@ -75,54 +94,51 @@ export class AgendaService {
       queue,
       boardHealth,
     ] = await Promise.all([
-      this.prisma.question.count({ where: { userId, status: "open" } }),
-      gatherAnsweredQuestions(this.prisma, userId),
-      this.prisma.pilotLease.count({
-        where: { userId, releasedAt: null, expiresAt: { gt: now } },
-      }),
-      gatherApprovedJobs(this.prisma, userId, config.parkedBoards),
-      countAppliedToday(this.prisma, userId, now),
-      gatherFinalizeCampaigns(this.prisma, userId),
-      gatherInbox(this.prisma, userId),
-      // Networking off: skip its gathers (the builder gates too, but these are pure waste when disabled).
-      config.networkingEnabled ? gatherApprovedNetworking(this.prisma, userId) : [],
-      config.networkingEnabled ? countSentToday(this.prisma, userId, now) : 0,
-      config.networkingEnabled ? gatherFollowups(this.prisma, userId, config, now) : [],
-      gatherApprovedPromotions(this.prisma, userId, now),
-      duePlatforms(this.prisma, userId, config, now),
-      gatherInterviewReplies(this.prisma, userId),
-      gatherInterviewPreps(this.prisma, userId),
-      gatherQueueDrain(this.prisma, userId),
-      gatherBoardHealth(this.prisma, userId, config.parkedBoards),
+      prisma.question.count({ where: { userId, status: "open" } }),
+      gatherAnsweredQuestions(prisma, userId),
+      prisma.pilotLease.count({ where: { userId, releasedAt: null, expiresAt: { gt: now } } }),
+      gatherApprovedJobs(prisma, userId, config.parkedBoards),
+      countAppliedToday(prisma, userId, now),
+      gatherFinalizeCampaigns(prisma, userId),
+      gatherInbox(prisma, userId),
+      config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
+      config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
+      config.networkingEnabled ? gatherFollowups(prisma, userId, config, now) : [],
+      gatherApprovedPromotions(prisma, userId, now),
+      duePlatforms(prisma, userId, config, now),
+      gatherInterviewReplies(prisma, userId),
+      gatherInterviewPreps(prisma, userId),
+      gatherQueueDrain(prisma, userId),
+      gatherBoardHealth(prisma, userId, config.parkedBoards),
     ]);
 
-    // Warm-check join: attach same-company contacts to high-score jobs so the builder can offer a warm intro.
-    if (config.networkingEnabled) await attachWarmContacts(this.prisma, userId, approvedJobs);
-
-    // Discovery only matters when the apply pipeline is empty; skip the lease lookups otherwise.
-    const dueQueries =
-      approvedJobs.length === 0 ? await dueSavedSearches(this.prisma, userId, config, now) : [];
-
-    // Quiet-agenda maintenance runs only when nothing apply/discover/queue-shaped is pending anyway,
-    // so gather its candidates only then - the builder still gates authoritatively.
+    if (config.networkingEnabled) await attachWarmContacts(prisma, userId, approvedJobs);
+    const [dueQueries, scorePending] =
+      approvedJobs.length === 0
+        ? await Promise.all([
+            dueSavedSearches(prisma, userId, config, now),
+            gatherScorePendingCampaigns(prisma, userId, config.minScore, now, config.parkedBoards),
+          ])
+        : [[], []];
     const pipelineQuiet =
-      approvedJobs.length === 0 && dueQueries.length === 0 && queue.pendingCount === 0;
+      approvedJobs.length === 0 &&
+      dueQueries.length === 0 &&
+      scorePending.length === 0 &&
+      queue.pendingCount === 0;
     const [quiet, bootstrap] = pipelineQuiet
       ? await Promise.all([
-          gatherQuietCandidates(this.prisma, userId, now),
-          gatherBootstrap(this.prisma, userId, config, goals, now),
+          gatherQuietCandidates(prisma, userId, now),
+          gatherBootstrap(prisma, userId, config, goals, now),
         ])
       : [{ strategyReviews: [], rescanSkipped: [], retryFailed: [] }, null];
 
-    // Idempotent per UTC day; fire-and-forget so a slow push never delays the agenda response.
     void writeDigestIfDue(
-      { prisma: this.prisma, pilot: this.pilot, push: this.push },
+      { prisma, pilot: this.pilot, push: this.push },
       userId,
       now,
       openQuestions,
     );
-
-    return buildAgenda({
+    const content = buildAgenda({
       now,
       config,
       openQuestions,
@@ -131,6 +147,7 @@ export class AgendaService {
       approvedJobs,
       appliedToday,
       dueQueries,
+      scorePending,
       finalizeCampaigns,
       inbox,
       approvedNetworking,
@@ -147,106 +164,20 @@ export class AgendaService {
       retryFailed: quiet.retryFailed,
       bootstrap,
     });
-  }
-
-  // ── Leasing ──────────────────────────────────────────────────────────────────
-
-  async lease(userId: string, itemId: string) {
-    const agenda = await this.compile(userId);
-    const item = agenda.items.find((i) => i.id === itemId);
-    if (!item) {
-      throw conflict("Agenda item is no longer available.");
-    }
-
-    // One active lease per subject: refuses a second worker taking the same item (409).
-    const active = await this.prisma.pilotLease.findFirst({
-      where: {
-        userId,
-        subjectType: item.subjectType,
-        subjectId: item.subjectId,
-        releasedAt: null,
-        expiresAt: { gt: new Date() },
+    const agenda: AgendaResponse = {
+      ...content,
+      version: crypto.randomUUID(),
+      expiresAt: new Date(now.getTime() + AGENDA_SNAPSHOT_TTL_MS),
+    };
+    await prisma.pilotState.update({
+      where: { userId },
+      data: {
+        agendaVersion: agenda.version,
+        agendaGeneratedAt: agenda.generatedAt,
+        agendaExpiresAt: agenda.expiresAt,
+        agendaSnapshot: toInputJson(agenda),
       },
-      select: { id: true },
     });
-    if (active) {
-      throw conflict("This item is already leased.");
-    }
-
-    // Server-side grant gates: re-verify the row is still in a leasable state, ignoring agent claims.
-    await verifyGrant(this.prisma, userId, item.kind, item.subjectId);
-
-    const { campaignId, jobKey } = item.payload as { campaignId?: string; jobKey?: string };
-    // Single-writer claim first: only one lease can flip approved->applying (409 on a lost race).
-    const jobClaim =
-      item.kind === "job.apply" && campaignId && jobKey ? { campaignId, jobKey } : null;
-    if (jobClaim) {
-      await this.campaignJobs.claimJobForApply(userId, jobClaim.campaignId, jobClaim.jobKey);
-    }
-
-    let lease: PilotLease;
-    try {
-      lease = await this.prisma.pilotLease.create({
-        data: {
-          userId,
-          kind: item.kind,
-          subjectType: item.subjectType,
-          subjectId: item.subjectId,
-          payload: JSON.stringify(item.payload),
-          expiresAt: new Date(Date.now() + LEASE_TTL_MS),
-        },
-      });
-    } catch (err) {
-      // A claim without a lease row would strand the job in applying; hand it back to the agenda.
-      if (jobClaim) {
-        await revertJobToApproved(this.jobDeps, userId, jobClaim.campaignId, jobClaim.jobKey);
-      }
-      throw err;
-    }
-
-    return { ...toPilotLease(lease), payload: item.payload };
-  }
-
-  async heartbeat(userId: string, id: string) {
-    const existing = await findOwned(
-      (where) =>
-        this.prisma.pilotLease.findFirst({ where, select: { id: true, releasedAt: true } }),
-      { id, userId },
-      "Lease",
-    );
-    // A released lease must not get its TTL resurrected by a late worker heartbeat.
-    if (existing.releasedAt) throw conflict("Lease is already released.");
-    const lease = await this.prisma.pilotLease.update({
-      where: { id },
-      data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + LEASE_TTL_MS) },
-    });
-    return toPilotLease(lease);
-  }
-
-  async release(userId: string, id: string, body: ReleasePilotLeaseInput) {
-    const existing = await findOwned(
-      (where) => this.prisma.pilotLease.findFirst({ where }),
-      { id, userId },
-      "Lease",
-    );
-    // A released lease is terminal; a second release must not overwrite its recorded outcome.
-    if (existing.releasedAt) throw conflict("Lease is already released.");
-
-    const parsed = parsePayload(existing.payload);
-    const { campaignId, jobKey } = jobRef(parsed, existing.subjectId);
-    // "abandoned" un-claims the work; the terminal result for done/failed arrives via the campaign result route.
-    if (body.outcome === "abandoned" && existing.kind === "job.apply" && campaignId) {
-      await revertJobToApproved(this.jobDeps, userId, campaignId, jobKey);
-    }
-
-    const payload = body.note
-      ? JSON.stringify({ ...parsed, releaseNote: body.note })
-      : existing.payload;
-
-    const lease = await this.prisma.pilotLease.update({
-      where: { id },
-      data: { releasedAt: new Date(), outcome: body.outcome, payload },
-    });
-    return toPilotLease(lease);
+    return agenda;
   }
 }

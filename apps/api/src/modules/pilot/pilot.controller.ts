@@ -4,6 +4,7 @@ import {
   createPilotJournalSchema,
   createPilotLeaseSchema,
   createQuestionSchema,
+  currentAgendaResponseSchema,
   pilotJournalPageSchema,
   pilotJournalQuerySchema,
   pilotLeaseSchema,
@@ -22,13 +23,17 @@ import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
+import { LeaseService } from "./agenda/lease.service";
 import { AgendaService } from "./agenda/service";
-import { createPilotJournalResponseSchema } from "./pilot.schema";
+import { PilotJournalService } from "./journal.service";
+import { createPilotJournalResponseSchema, pilotActivityResponseSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 import { promotionController } from "./promotion.controller";
 
 const pilot = container.resolve(PilotService);
+const journal = container.resolve(PilotJournalService);
 const agenda = container.resolve(AgendaService);
+const leases = container.resolve(LeaseService);
 
 const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
@@ -41,7 +46,6 @@ export const pilotController = new Elysia({
   detail: { tags: ["Pilot"] },
 })
   .use(authGuard)
-  // ── State / instructions ──────────────────────────────────────────────────────
   .get("/", ({ user }) => pilot.getState(user.id), {
     response: pilotStateSchema,
     detail: {
@@ -67,28 +71,44 @@ export const pilotController = new Elysia({
       description: "Toggles the autonomous loop on or off and returns the updated state.",
     },
   })
-  // ── Agenda ────────────────────────────────────────────────────────────────────
-  .get("/agenda", ({ user }) => agenda.compile(user.id), {
+  .get("/agenda", ({ user }) => agenda.getCurrent(user.id), {
+    beforeHandle: limitAgenda,
+    response: currentAgendaResponseSchema,
+    detail: {
+      summary: "Get the current agenda snapshot",
+      description:
+        "Returns the current unexpired agenda snapshot without running expiry, promotion, digest, or any other mutation.",
+    },
+  })
+  .post("/agenda/refresh", ({ user }) => agenda.refresh(user.id), {
     beforeHandle: limitAgenda,
     response: agendaResponseSchema,
     detail: {
-      summary: "Compile the agenda",
+      summary: "Refresh the agenda snapshot",
       description:
-        "Runs lazy lease/question expiry, then returns the prioritized agenda, budget, counts, and sleep hint for the next cycle.",
+        "Runs lifecycle maintenance, compiles a typed agenda, persists a new expiring version, and returns that snapshot.",
     },
   })
-  // ── Leases ────────────────────────────────────────────────────────────────────
-  .post("/lease", ({ user, body }) => agenda.lease(user.id, body.itemId), {
+  .get("/activity", ({ user }) => pilot.getActivity(user.id), {
+    beforeHandle: limitAgenda,
+    response: pilotActivityResponseSchema,
+    detail: {
+      summary: "Pilot liveness activity",
+      description:
+        "Newest server-side agent activity (leases, journal, campaign/job writes) plus the active-lease count, so the terminal watchdog can tell a live long cycle from a real stall.",
+    },
+  })
+  .post("/leases", ({ user, body }) => leases.lease(user.id, body.agendaVersion, body.itemId), {
     body: createPilotLeaseSchema,
     beforeHandle: limitLease,
     response: pilotLeaseSchema,
     detail: {
       summary: "Lease an agenda item",
       description:
-        "Re-validates and leases an agenda item for 15 minutes, applying grant side effects. 409 if the item is no longer available.",
+        "Atomically claims an item from the supplied agenda version and creates its 15-minute lease; stale versions and races return 409.",
     },
   })
-  .post("/lease/:id/heartbeat", ({ user, params }) => agenda.heartbeat(user.id, params.id), {
+  .post("/leases/:id/heartbeat", ({ user, params }) => leases.heartbeat(user.id, params.id), {
     params: idParam,
     beforeHandle: limitLease,
     response: pilotLeaseSchema,
@@ -98,8 +118,8 @@ export const pilotController = new Elysia({
     },
   })
   .post(
-    "/lease/:id/release",
-    ({ user, params, body }) => agenda.release(user.id, params.id, body),
+    "/leases/:id/release",
+    ({ user, params, body }) => leases.release(user.id, params.id, body),
     {
       params: idParam,
       body: releasePilotLeaseSchema,
@@ -112,8 +132,7 @@ export const pilotController = new Elysia({
       },
     },
   )
-  // ── Journal ───────────────────────────────────────────────────────────────────
-  .post("/journal", ({ user, body }) => pilot.appendJournal(user.id, body), {
+  .post("/journal", ({ user, body }) => journal.appendJournal(user.id, body), {
     body: createPilotJournalSchema,
     beforeHandle: limitJournal,
     response: createPilotJournalResponseSchema,
@@ -123,7 +142,7 @@ export const pilotController = new Elysia({
         "Writes a batch of journal entries, advances cycle accounting on 'cycle' entries, and broadcasts each entry.",
     },
   })
-  .get("/journal", ({ user, query }) => pilot.listJournal(user.id, query.cursor, query.limit), {
+  .get("/journal", ({ user, query }) => journal.listJournal(user.id, query.cursor, query.limit), {
     query: pilotJournalQuerySchema,
     beforeHandle: limitAgenda,
     response: pilotJournalPageSchema,
@@ -133,7 +152,7 @@ export const pilotController = new Elysia({
     },
   })
   // Streams the whole history as NDJSON; no `response` schema (raw streaming Response).
-  .get("/journal/export", ({ user }) => pilot.streamJournalExport(user.id), {
+  .get("/journal/export", ({ user }) => journal.streamJournalExport(user.id), {
     beforeHandle: limitJournalExport,
     detail: {
       summary: "Export the journal",
@@ -141,7 +160,6 @@ export const pilotController = new Elysia({
         "Streams every journal entry as newline-delimited JSON (createdAt ascending) for offline analysis.",
     },
   })
-  // ── Questions ─────────────────────────────────────────────────────────────────
   .post("/questions", ({ user, body }) => pilot.createQuestion(user.id, body), {
     body: createQuestionSchema,
     beforeHandle: limitMutation,
@@ -173,9 +191,7 @@ export const pilotController = new Elysia({
       },
     },
   )
-  // ── Sub-domain controllers (promotions) ───────────────────────────────────────
   .use(promotionController)
-  // ── Events (SSE) ────────────────────────────────────────────────────────────────
   .get("/events", ({ user, headers }) => sseStream(pilotChannel, { userId: user.id }, headers), {
     detail: {
       summary: "Stream pilot events",

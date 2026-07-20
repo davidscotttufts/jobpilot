@@ -26,8 +26,8 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import { invalidations, queryKeys } from "@/api/query-keys";
-import type { CampaignDetailDto } from "@/api/types";
+import { invalidations } from "@/api/query-keys";
+import { type CampaignDetailDto, jobSummary } from "@/api/types";
 import { DropdownMenu, type DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -47,7 +47,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const stop = useApiMutation<unknown, void>(
     () =>
-      campaignResource.patch({
+      campaignResource.status.post({
         status: "paused" satisfies CampaignStatus,
       }),
     {
@@ -58,9 +58,8 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const complete = useApiMutation<unknown, void>(
     () =>
-      campaignResource.patch({
+      campaignResource.status.post({
         status: "completed" satisfies CampaignStatus,
-        completedAt: new Date().toISOString(),
       }),
     {
       successMessage: "Campaign marked as done",
@@ -72,8 +71,8 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const [minScore, setMinScore] = useState(campaign.config.minScore ?? 60);
 
   const rescan = useApiMutation<unknown, void>(
-    () => campaignResource.patch({ config: { minScore } }),
-    { invalidate: [queryKeys.campaigns.detail(campaign.campaignId), queryKeys.campaigns.all] },
+    () => campaignResource.patch({ config: { ...campaign.config, minScore } }),
+    { invalidate: invalidations.campaign },
   );
 
   const remove = useApiMutation<unknown, void>(() => campaignResource.delete(), {
@@ -82,11 +81,12 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     onSuccess: () => router.replace("/" as Route),
   });
 
-  const failedCount = campaign.jobs.filter((j) => j.status === "failed").length;
-  const skippedCount = campaign.summary.skipped;
+  const summary = jobSummary(campaign);
+  const failedCount = summary?.failed ?? 0;
+  const skippedCount = summary?.skipped ?? 0;
   const isInProgress = campaign.status === "in_progress";
   const isAutoApply = campaign.source === "auto-apply";
-  const isStopped = campaign.status === "paused" || campaign.status === "interrupted";
+  const isStopped = campaign.status === "paused";
   const hasActionItems =
     isStopped ||
     (agentAvailable && ((isAutoApply && failedCount > 0) || (!isInProgress && skippedCount > 0)));
@@ -95,7 +95,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     const confirmed = await confirm({
       title: "Mark campaign as done?",
       description:
-        "It stops counting as interrupted and won't be resumable. Use this for campaigns you stopped on purpose.",
+        "This closes the campaign permanently. Use it for campaigns you stopped on purpose.",
       confirmLabel: "Mark as done",
     });
     if (confirmed) {

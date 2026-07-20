@@ -2,8 +2,8 @@ using JobPilot.Terminal.Pilot;
 
 namespace JobPilot.Terminal.Tests;
 
-/// <summary>Scriptable <see cref="IPilotEnvironment"/> that records the actions the loop drives.</summary>
-internal sealed class FakePilotEnvironment : IPilotEnvironment
+/// <summary>Scriptable <see cref="IPilotRuntime"/> that records the actions the loop drives.</summary>
+internal sealed class FakePilotRuntime : IPilotRuntime
 {
     public List<string> Actions { get; } = [];
 
@@ -13,8 +13,29 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
     /// <summary>When true, ReportSystemAsync throws after recording, to prove a failed report never breaks a cycle.</summary>
     public bool ReportThrows { get; set; }
 
+    public bool BlockReport { get; set; }
+
+    public TaskCompletionSource ReportStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     /// <summary>Results returned by successive AwaitSentinelAsync calls; empty dequeues to a timeout.</summary>
     public Queue<PilotWaitResult> SentinelResults { get; } = new();
+
+    /// <summary>
+    /// Activity timestamps returned by successive GetLastActivityAsync calls; empty dequeues to
+    /// <see cref="DefaultActivity"/> (null by default, so the old ladder behavior stands). Probes are kept out of
+    /// <see cref="Actions"/> so existing sequence asserts remain stable.
+    /// </summary>
+    public Queue<DateTimeOffset?> ActivityResults { get; } = new();
+
+    /// <summary>Value returned by GetLastActivityAsync once <see cref="ActivityResults"/> is drained.</summary>
+    public DateTimeOffset? DefaultActivity { get; set; }
+
+    /// <summary>When true, GetLastActivityAsync throws, to prove a failed probe falls open to the ladder.</summary>
+    public bool ActivityThrows { get; set; }
+
+    public bool BlockActivity { get; set; }
+
+    public TaskCompletionSource ActivityStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public string? RunningProvider { get; set; }
 
@@ -90,14 +111,32 @@ internal sealed class FakePilotEnvironment : IPilotEnvironment
         return Task.CompletedTask;
     }
 
-    public Task ReportSystemAsync(string summary)
+    public async Task ReportSystemAsync(string summary, CancellationToken ct)
     {
         Reports.Add(summary);
+        ReportStarted.TrySetResult();
+        if (BlockReport)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        }
         if (ReportThrows)
         {
             throw new InvalidOperationException("simulated journal failure");
         }
-        return Task.CompletedTask;
+    }
+
+    public async Task<DateTimeOffset?> GetLastActivityAsync(CancellationToken ct)
+    {
+        ActivityStarted.TrySetResult();
+        if (BlockActivity)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        }
+        if (ActivityThrows)
+        {
+            throw new InvalidOperationException("simulated activity probe failure");
+        }
+        return ActivityResults.Count > 0 ? ActivityResults.Dequeue() : DefaultActivity;
     }
 
     private static async Task<PilotWaitResult> WaitForCancelAsync(CancellationToken ct)

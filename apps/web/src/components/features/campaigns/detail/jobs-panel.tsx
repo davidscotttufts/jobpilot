@@ -4,17 +4,19 @@ import { type ReactElement, useState } from "react";
 import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
+import type { GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { apiErrorMessage } from "@/api/error";
-import { useApiMutation } from "@/api/hooks";
-import { queryKeys } from "@/api/query-keys";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { campaignQueries } from "@/api/queries";
+import { invalidations } from "@/api/query-keys";
 import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
@@ -28,6 +30,9 @@ const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
   }));
 
 const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+const DEFAULT_PAGE_SIZE = 25;
+const SEARCH_DEBOUNCE_MS = 300;
 
 interface CampaignJobsPanelProps {
   campaign: CampaignDetailDto;
@@ -44,46 +49,61 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   const [statusFilter, setStatusFilter] = useState<CampaignJobStatus | null>(null);
   const [search, setSearch] = useState("");
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    page: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
   const isUpwork = campaign.config.board === UPWORK_DOMAIN;
 
-  const term = search.trim().toLowerCase();
-  const visible = campaign.jobs.filter(
-    (j) =>
-      (!statusFilter || j.status === statusFilter) &&
-      (!term || `${j.title} ${j.company}`.toLowerCase().includes(term)),
+  // Filters run server-side, so they cover the whole campaign rather than the loaded page.
+  const term = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
+  const jobs = useApiQuery(
+    campaignQueries.jobs(campaign.campaignId, {
+      page: paginationModel.page + 1,
+      limit: paginationModel.pageSize,
+      status: statusFilter ?? undefined,
+      search: term || undefined,
+    }),
   );
+  const visible = jobs.data?.items ?? [];
+  const total = jobs.data?.pagination.total ?? 0;
 
   // Re-apply / rescan drive the agent, so they're desktop-only.
   const canReapply = campaign.status !== "in_progress" && agentAvailable;
   const selected = canReapply
-    ? resolveSelectedRows(selection, campaign.jobs, visible).filter((j) => isReapplicable(j.status))
+    ? resolveSelectedRows(selection, visible).filter((j) => isReapplicable(j.status))
     : [];
   const selectedSkipped = selected.filter((j) => j.status === "skipped");
+  const selectedForReapply = selected.filter((job) => job.status !== "skipped");
   const hasFilters = statusFilter !== null || term !== "";
+
+  // Keeps the model's identity stable while typing, so the grid doesn't re-render per keystroke.
+  const resetPage = (): void => setPaginationModel((m) => (m.page === 0 ? m : { ...m, page: 0 }));
 
   const resetSelection = (): void => {
     setSelection(EMPTY_SELECTION);
-    queryClient.invalidateQueries({ queryKey: queryKeys.campaigns.detail(campaign.campaignId) });
+    for (const key of invalidations.campaign) queryClient.invalidateQueries({ queryKey: key });
   };
 
   const reapply = useApiMutation<number, void>(
     async () => {
       const results = await Promise.all(
-        selected.map((job) =>
-          api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key }).patch({
-            status: "approved",
-          }),
-        ),
+        selectedForReapply.map((job) => {
+          const endpoint = api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key });
+          if (job.status === "failed") return endpoint.retry.post({});
+          if (job.status === "approved") return Promise.resolve({ data: job, error: null });
+          return endpoint.patch({ status: "approved" });
+        }),
       );
       const failure = results.find((r) => r.error);
       return failure?.error
         ? { data: null, error: failure.error }
-        : { data: selected.length, error: null };
+        : { data: selectedForReapply.length, error: null };
     },
     {
-      invalidate: [queryKeys.campaigns.detail(campaign.campaignId)],
+      invalidate: invalidations.campaign,
       successMessage: (n) => `Re-applying ${plural(n, "job")}`,
       onSuccess: () => {
         void agent.injectSkill("apply", `campaign ${campaign.campaignId}`);
@@ -136,13 +156,19 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
           label="Status"
           value={statusFilter}
           options={STATUS_OPTIONS}
-          onChange={setStatusFilter}
+          onChange={(next) => {
+            setStatusFilter(next);
+            resetPage();
+          }}
         />
         <TextField
           size="small"
           label="Search title / company"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            resetPage();
+          }}
           sx={{ minWidth: 220 }}
         />
         {hasFilters && (
@@ -153,6 +179,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
             onClick={() => {
               setStatusFilter(null);
               setSearch("");
+              resetPage();
             }}
           >
             Clear
@@ -168,26 +195,30 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
             Rescan selected ({selectedSkipped.length})
           </Button>
         )}
-        {canReapply && selected.length > 0 && (
+        {canReapply && selectedForReapply.length > 0 && (
           <Button
             variant="contained"
             startIcon={<Replay fontSize="sm" />}
             disabled={reapply.isPending}
             onClick={() => reapply.mutate()}
           >
-            Re-apply selected ({selected.length})
+            Re-apply selected ({selectedForReapply.length})
           </Button>
         )}
-        <Typography variant="captionMuted">{plural(visible.length, "job")}</Typography>
+        <Typography variant="captionMuted">{plural(total, "job")}</Typography>
       </Stack>
       <CampaignJobsTable
         rows={visible}
+        loading={jobs.isLoading}
         onApplyJob={!isUpwork && agentAvailable ? applyJob : undefined}
         onDraftProposal={isUpwork && agentAvailable ? draftProposal : undefined}
         showReason={isUpwork}
         checkboxSelection={canReapply}
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}
+        rowCount={total}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
       />
     </SectionCard>
   );
