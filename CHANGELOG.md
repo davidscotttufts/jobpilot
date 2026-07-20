@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.12] - 2026-07-20
+
+### Added
+
+- Live pilot orchestration diagram on the overview, per-cycle timeline cards for
+  pilot activity, and a campaign pipeline funnel with a live stage pulse.
+- Scored pending jobs are auto-promoted, so a campaign no longer stalls waiting
+  for a manual approve after scoring.
+- Campaign jobs are paged and filtered server-side, with a skip/fail reason
+  breakdown that covers every job instead of the first page.
+- Batch scoring, lease heartbeats, and bounded discover cycles in the agent
+  skills, so long pilot runs stay within budget.
+- Human-friendly timestamps with timezone in the pilot logs.
+- Stopping the terminal from the dock now shuts the host app down cleanly.
+
+### Changed
+
+- Campaign summaries are now derived live from job rows instead of persisted
+  snapshots, and campaign/job/pilot columns moved to native enums and JSON with
+  a validated clean-break migration.
+- Campaign staleness detection is pilot-aware, self-heals, and uses a 15-minute
+  threshold.
+
+### Fixed
+
+- A job nothing could score (dead URL, login wall) re-won every pilot cycle and
+  permanently starved discovery; scoring is now rate-limited per campaign.
+- Bulk re-apply dropped selections made on other pages and reported partial
+  success as total failure.
+- Pilot sections no longer render a failed query as an empty state ("Nothing
+  needs your attention" while the pilot sat blocked on a question).
+- An overdue pilot wake time read as "wakes in 45m" instead of due now; dates
+  follow the user's locale again.
+- Watchdog escalation is gated on real API activity, with tighter stall
+  heuristics.
+- Disabling push notifications now removes the server-side subscription before
+  tearing down the local one, so re-enabling no longer orphans the old endpoint.
+- A failed host stop left the dock spinner up for the full 45-second timeout;
+  it now reports the failure.
+- Batched job promotion no longer exhausts the database connection pool.
+
 ## [2.1.11] - 2026-07-19
 
 ### Fixed
