@@ -47,7 +47,13 @@ const EnvSchema = z.object({
   // Web Push (VAPID). All three optional: unset silently disables push (never crashes startup).
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
-  VAPID_SUBJECT: z.string().optional(),
+  VAPID_SUBJECT: z
+    .string()
+    .refine(
+      (v) => v.startsWith("mailto:") || v.startsWith("https://"),
+      "must be a mailto: or https:// URL",
+    )
+    .optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
