@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { Box, Stack } from "@mui/material";
 import type { Route } from "next";
+import { theme } from "@/theme/theme";
 import { TabLink } from "./tab-link";
 
 export interface Tab {
@@ -27,7 +28,7 @@ export function TabStrip(props: TabStripProps): ReactElement {
         // overflow-x:auto computes overflow-y to auto too; sub-pixel rounding then adds a scrollbar.
         overflowY: "hidden",
         // Inset shadow, not a border: paints inside the padding box so the active tab covers it.
-        boxShadow: "inset 0 -1px 0 var(--mui-palette-line-divider)",
+        boxShadow: `inset 0 -1px 0 ${theme.palette.divider}`,
       }}
     >
       <Stack direction="row" spacing={1}>
