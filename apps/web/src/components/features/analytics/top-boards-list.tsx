@@ -31,9 +31,7 @@ export function TopBoardsList(props: TopBoardsListProps): ReactElement {
               return (
                 <Stack key={entry.label} spacing={0.5}>
                   <Stack direction="row" sx={{ justifyContent: "space-between" }}>
-                    <Typography variant="body2" sx={{ fontSize: "0.8125rem" }}>
-                      {entry.label}
-                    </Typography>
+                    <Typography variant="body1">{entry.label}</Typography>
                     <Typography variant="captionMuted">{entry.count}</Typography>
                   </Stack>
                   <LinearProgress
@@ -41,7 +39,7 @@ export function TopBoardsList(props: TopBoardsListProps): ReactElement {
                     value={pct}
                     sx={(t) => ({
                       height: 4,
-                      borderRadius: 2,
+                      borderRadius: t.radii.xs,
                       backgroundColor: t.palette.line.divider,
                       "& .MuiLinearProgress-bar": {
                         backgroundColor: t.palette.accent.primary,

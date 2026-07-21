@@ -26,6 +26,8 @@ const baseTheme = createTheme({
     line,
     stages,
   },
+  // Keep the sx multiplier at 1 so a `radii` token in sx means that many px, exactly as in
+  // styleOverrides. Component overrides pin the real radii (card md, dialog lg) explicitly.
   shape: { borderRadius: 1 },
   typography,
   gradients,

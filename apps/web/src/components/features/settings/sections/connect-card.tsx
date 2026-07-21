@@ -10,6 +10,7 @@ import { queryKeys } from "@/api/query-keys";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
+import { formatAbsoluteTime } from "@/utils/format";
 
 /**
  * Step 2 - connect / reconnect / disconnect the mailbox (gated on a saved
@@ -60,7 +61,7 @@ export function ConnectCard(): ReactElement {
   const configured = configQuery.data.configured;
 
   if (status.connected) {
-    const last = status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "never";
+    const last = status.lastSyncAt ? formatAbsoluteTime(status.lastSyncAt) : "never";
     return (
       <SectionCard
         title="Email integration"
@@ -68,9 +69,7 @@ export function ConnectCard(): ReactElement {
       >
         <Stack spacing={1.5}>
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {status.email}
-            </Typography>
+            <Typography variant="body2Strong">{status.email}</Typography>
             <Typography variant="captionMuted">
               {status.provider} · last synced {last}
             </Typography>

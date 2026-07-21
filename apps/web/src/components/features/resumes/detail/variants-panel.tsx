@@ -20,6 +20,7 @@ import { resumeQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { variantPdfUrl } from "@/api/resume-urls";
 import type { ResumeVariantListItem } from "@/api/types";
+import { RelativeTime } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
@@ -105,9 +106,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                     <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {v.label}
-                          </Typography>
+                          <Typography variant="body2Strong">{v.label}</Typography>
                           {v.applicationId && (
                             <Chip
                               label={`Application #${v.applicationId}`}
@@ -118,7 +117,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
                         </Stack>
                         <Typography variant="captionMuted">
                           {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
-                          {new Date(v.createdAt).toLocaleDateString()}
+                          <RelativeTime value={v.createdAt} />
                         </Typography>
                       </Box>
                       <IconButton

@@ -1,18 +1,21 @@
 "use client";
 
 import type { ReactElement } from "react";
+import type { CampaignActor } from "@jobpilot/contracts/campaign";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
-import { ColorChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
-import {
-  CAMPAIGN_ACTOR_LABEL,
-  CAMPAIGN_STATUS_COLOR,
-  CAMPAIGN_STATUS_LABEL,
-} from "../campaign-status";
+import { CampaignStatusChip } from "../campaign-status-chip";
 import { PilotBadge } from "../pilot-badge";
 import { CampaignActionsBar } from "./actions-bar";
 import { CampaignIdentityBanner } from "./identity-banner";
+
+/** Actor names as shown in status attributions ("Paused by you / the agent / the pilot"). */
+const CAMPAIGN_ACTOR_LABEL: Record<CampaignActor, string> = {
+  user: "you",
+  agent: "the agent",
+  pilot: "the pilot",
+};
 
 interface CampaignHeaderCardProps {
   campaign: CampaignDetailDto;
@@ -42,15 +45,8 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               spacing={1}
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
-              <ColorChip
-                value={campaign.status}
-                colors={CAMPAIGN_STATUS_COLOR}
-                label={CAMPAIGN_STATUS_LABEL[campaign.status]}
-              />
-              <Typography
-                variant="body1"
-                sx={{ fontWeight: 600, minWidth: 0, wordBreak: "break-word" }}
-              >
+              <CampaignStatusChip status={campaign.status} />
+              <Typography variant="body1Strong" sx={{ minWidth: 0, wordBreak: "break-word" }}>
                 {campaign.query}
               </Typography>
             </Stack>

@@ -3,12 +3,15 @@
 import { type ReactElement, useState } from "react";
 import type { CredentialInput } from "@jobpilot/contracts/credential";
 import { Add, Delete, Key, Lock } from "@mui/icons-material";
-import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { credentialQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CredentialDto } from "@/api/types";
+import { TooltipIconButton } from "@/components/ui/buttons";
+import { EmptyState } from "@/components/ui/data";
+import { ItemList, ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
@@ -50,8 +53,20 @@ export function CredentialsSection(): ReactElement {
   };
 
   const rows = credentials.data ?? [];
-  const logins = rows.filter((c) => !c.apiKey);
-  const services = rows.filter((c) => c.apiKey);
+  const groups = [
+    {
+      title: "Job board logins",
+      items: rows.filter((c) => !c.apiKey),
+      icon: <Lock fontSize="small" color="action" />,
+      secondary: (c: CredentialDto) => c.email ?? "",
+    },
+    {
+      title: "Captcha services",
+      items: rows.filter((c) => c.apiKey),
+      icon: <Key fontSize="small" color="action" />,
+      secondary: (c: CredentialDto) => `API key ••••${c.apiKey?.slice(-4) ?? ""}`,
+    },
+  ];
 
   return (
     <SectionCard
@@ -71,40 +86,35 @@ export function CredentialsSection(): ReactElement {
       {credentials.isLoading ? (
         <LoadingSpinner />
       ) : rows.length === 0 ? (
-        <Box sx={{ py: 3, textAlign: "center" }}>
-          <Typography variant="body2Muted">
-            No credentials yet. Add a &ldquo;default&rdquo; credential, or one per board domain
-            (e.g. <code>linkedin.com</code>).
-          </Typography>
-        </Box>
+        <EmptyState
+          variant="inline"
+          title="No credentials yet"
+          description="Add a “default” credential, or one per board domain (e.g. linkedin.com)."
+        />
       ) : (
         <Stack spacing={3}>
-          {logins.length > 0 && (
-            <CredentialGroup title="Job board logins">
-              {logins.map((c) => (
-                <CredentialRow
-                  key={c.id}
-                  credential={c}
-                  icon={<Lock fontSize="small" color="action" />}
-                  subtitle={c.email ?? ""}
-                  onDelete={() => void handleDelete(c)}
-                />
-              ))}
-            </CredentialGroup>
-          )}
-          {services.length > 0 && (
-            <CredentialGroup title="Captcha services">
-              {services.map((c) => (
-                <CredentialRow
-                  key={c.id}
-                  credential={c}
-                  icon={<Key fontSize="small" color="action" />}
-                  subtitle={`API key ••••${c.apiKey?.slice(-4) ?? ""}`}
-                  onDelete={() => void handleDelete(c)}
-                />
-              ))}
-            </CredentialGroup>
-          )}
+          {groups
+            .filter((group) => group.items.length > 0)
+            .map((group) => (
+              <CredentialGroup key={group.title} title={group.title}>
+                {group.items.map((c) => (
+                  <ItemRow
+                    key={c.id}
+                    icon={group.icon}
+                    primary={c.scope}
+                    secondary={group.secondary(c)}
+                    action={
+                      <TooltipIconButton
+                        title="Delete credential"
+                        onClick={() => void handleDelete(c)}
+                      >
+                        <Delete fontSize="small" />
+                      </TooltipIconButton>
+                    }
+                  />
+                ))}
+              </CredentialGroup>
+            ))}
         </Stack>
       )}
 
@@ -127,39 +137,10 @@ function CredentialGroup(props: CredentialGroupProps): ReactElement {
   const { title, children } = props;
   return (
     <Box>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+      <Typography variant="overlineMuted" sx={{ mb: 1 }}>
         {title}
       </Typography>
-      <Stack spacing={1}>{children}</Stack>
+      <ItemList>{children}</ItemList>
     </Box>
-  );
-}
-
-interface CredentialRowProps {
-  credential: CredentialDto;
-  icon: ReactElement;
-  subtitle: string;
-  onDelete: () => void;
-}
-
-function CredentialRow(props: CredentialRowProps): ReactElement {
-  const { credential, icon, subtitle, onDelete } = props;
-  return (
-    <Card>
-      <CardContent>
-        <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-          {icon}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              {credential.scope}
-            </Typography>
-            <Typography variant="captionMuted">{subtitle}</Typography>
-          </Box>
-          <IconButton onClick={onDelete} aria-label="Delete credential">
-            <Delete fontSize="small" />
-          </IconButton>
-        </Stack>
-      </CardContent>
-    </Card>
   );
 }

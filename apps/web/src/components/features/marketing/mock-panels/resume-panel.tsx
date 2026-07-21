@@ -28,7 +28,7 @@ function PagePreview(): ReactElement {
         width: 104,
         flexShrink: 0,
         aspectRatio: "3 / 4",
-        borderRadius: `${radii.xs}px`,
+        borderRadius: radii.xs,
         backgroundColor: editorial.paper,
         padding: 1.25,
         display: "flex",
@@ -61,7 +61,7 @@ export function ResumePanel(): ReactElement {
             <Box key={variant.name} sx={[panelCellSx, { padding: 1.25 }]}>
               <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between" }}>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography sx={{ fontSize: "0.75rem", fontWeight: 600 }} noWrap>
+                  <Typography variant="body2Strong" noWrap>
                     {variant.name}
                   </Typography>
                   <Typography variant="captionMuted" noWrap sx={{ display: "block" }}>

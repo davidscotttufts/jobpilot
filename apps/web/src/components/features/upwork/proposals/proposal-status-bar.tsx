@@ -3,10 +3,11 @@
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
-import { ColorChip } from "@/components/ui/display";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { OUTCOME_OPTIONS, STATUS_COLOR, STATUS_LABEL, STATUS_OPTIONS } from "./proposal-status";
+import { formatAbsoluteTime } from "@/utils/format";
+import { OUTCOME_OPTIONS, STATUS_OPTIONS } from "./proposal-status";
+import { ProposalStatusChip } from "./proposal-status-chip";
 
 interface ProposalStatusBarProps {
   proposal: UpworkProposalDto;
@@ -19,12 +20,7 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
   return (
     <SectionCard>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "center" }}>
-        <ColorChip
-          value={proposal.status}
-          colors={STATUS_COLOR}
-          label={STATUS_LABEL[proposal.status]}
-          size="medium"
-        />
+        <ProposalStatusChip status={proposal.status} size="medium" />
         <SelectField
           label="Status"
           value={proposal.status}
@@ -42,7 +38,7 @@ export function ProposalStatusBar(props: ProposalStatusBarProps): ReactElement {
         )}
         <Box sx={{ flex: 1 }} />
         <Typography variant="captionMuted">
-          Updated {new Date(proposal.updatedAt).toLocaleString()}
+          Updated {formatAbsoluteTime(proposal.updatedAt)}
         </Typography>
       </Stack>
     </SectionCard>

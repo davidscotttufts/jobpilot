@@ -35,7 +35,7 @@ function StageNode(props: NodeProps<StageFlowNode>): ReactElement {
             width: 160,
             px: 1.5,
             py: 1.25,
-            borderRadius: 2,
+            borderRadius: theme.radii.xs,
             backgroundColor: "background.paper",
             border: "1px solid",
             borderColor: active ? accent : "divider",
@@ -49,7 +49,7 @@ function StageNode(props: NodeProps<StageFlowNode>): ReactElement {
       >
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.25 }}>
           <PulseDot tone={muted ? "muted" : tone} size="sm" pulsing={active && !muted} />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+          <Typography variant="body1Strong" sx={{ lineHeight: 1.2 }}>
             {title}
           </Typography>
         </Stack>

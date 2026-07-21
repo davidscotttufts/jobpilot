@@ -22,6 +22,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
 import { resumePdfUrl } from "@/api/resume-urls";
+import { RelativeTime } from "@/components/ui/display";
 import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
@@ -126,9 +127,7 @@ export function ResumesList(): ReactElement {
                     sx={{ flex: 1, minWidth: 0, textDecoration: "none", color: "inherit" }}
                   >
                     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                      <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-                        {r.label}
-                      </Typography>
+                      <Typography variant="body1Strong">{r.label}</Typography>
                       {r.isPrimary && <Chip label="Primary" size="small" color="primary" />}
                       {!r.hasData && <Chip label="No structure" size="small" variant="outlined" />}
                       {r.variantCount > 0 && (
@@ -141,7 +140,7 @@ export function ResumesList(): ReactElement {
                     </Stack>
                     <Typography variant="captionMuted">
                       {r.sourceFilename ?? "no source PDF"} · updated{" "}
-                      {new Date(r.updatedAt).toLocaleDateString()}
+                      <RelativeTime value={r.updatedAt} />
                     </Typography>
                   </Box>
                   <IconButton

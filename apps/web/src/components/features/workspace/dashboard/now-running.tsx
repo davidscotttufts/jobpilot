@@ -12,6 +12,7 @@ import type { CampaignDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
 import { PulseDot } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
+import { radii } from "@/theme";
 
 /** Folds a campaign's summary into a single progress reading, type-aware. */
 function progress(campaign: CampaignDto): { value: number; label: string } {
@@ -62,7 +63,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
       <PulseDot tone="green" pulsing />
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "baseline" }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+          <Typography variant="body2Strong" noWrap>
             {campaign.query}
           </Typography>
           <Typography variant="captionMuted" noWrap>
@@ -72,7 +73,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
         <LinearProgress
           variant="determinate"
           value={Math.min(100, p.value)}
-          sx={{ mt: 0.75, borderRadius: 1 }}
+          sx={{ mt: 0.75, borderRadius: radii.xs }}
         />
       </Box>
       <LinkButton

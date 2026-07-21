@@ -6,7 +6,7 @@ import { Button, Chip, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
-import { ColorChip } from "@/components/ui/display";
+import { ColorChip, RelativeTime } from "@/components/ui/display";
 
 interface InboxTableProps {
   rows: ReadonlyArray<EmailMessageDto>;
@@ -39,7 +39,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       sortable: false,
       renderCell: (p) => (
         <Stack spacing={0} sx={{ height: "100%", justifyContent: "center", overflow: "hidden" }}>
-          <Typography variant="body2" noWrap sx={{ fontWeight: 600, lineHeight: 1.4 }}>
+          <Typography variant="body2Strong" noWrap sx={{ lineHeight: 1.4 }}>
             {p.row.fromName || p.row.fromAddress}
           </Typography>
           <Typography variant="captionMuted" noWrap sx={{ lineHeight: 1.4 }}>
@@ -117,7 +117,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       field: "receivedAt",
       headerName: "Received",
       width: 140,
-      valueFormatter: (v) => (v ? new Date(v as string).toLocaleString() : ""),
+      renderCell: (p) => <RelativeTime value={p.row.receivedAt} />,
     },
     // Scan action is agent-driven; omit the whole column when no handler is passed.
     ...(onScanMessage

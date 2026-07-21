@@ -70,23 +70,23 @@ export function AutoApplyStopPill(): ReactNode {
 
   return (
     <Paper
-      elevation={8}
+      variant="panel"
       sx={(t) => ({
         display: { xs: "none", md: "flex" },
         position: "fixed",
         bottom: 16,
         right: rightOffset,
         zIndex: t.zIndex.snackbar,
-        borderRadius: t.radii.md,
         padding: 1.5,
         backgroundColor: "background.paper",
-        border: `1px solid ${t.palette.line.divider}`,
+        // Paper only wires `elevation` up under variant="elevation"; a floating pill still needs lift.
+        boxShadow: t.shadows[8],
       })}
     >
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
         <Stack spacing={0}>
           <Typography variant="captionMuted">Auto-apply running</Typography>
-          <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }} noWrap>
+          <Typography variant="body2Strong" sx={{ maxWidth: 240 }} noWrap>
             {active.query}
           </Typography>
         </Stack>
