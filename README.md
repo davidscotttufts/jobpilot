@@ -130,7 +130,7 @@ In Codex, use `/skills` to browse installed skills. To run one directly, use the
 | `search`          | Search a board, rank results against your resume, save them for review.         |
 | `auto-apply`      | Search and apply autonomously, one job at a time, until done or capped.         |
 | `apply`           | Apply to one job (URL or pasted posting) with a fit review, or drain the queue. |
-| `resume`          | Resume an interrupted campaign and finish its remaining approved jobs.          |
+| `resume`          | Resume a paused campaign and finish its remaining approved jobs.                |
 | `networking`      | Find the hiring manager or recruiter and send a personalized message.           |
 | `cover-letter`    | Draft a natural, job-specific one-page cover letter.                            |
 | `interview`       | Build a prep sheet: behavioral, technical, system design, company.              |

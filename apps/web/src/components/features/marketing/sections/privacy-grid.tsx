@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Card, CardContent, Grid, Link, Stack, Typography } from "@mui/material";
 import { GITHUB_URL } from "@/lib/constants";
 import { Section } from "../section";
@@ -23,6 +23,27 @@ const FACTS = [
   },
 ];
 
+interface FactCardProps {
+  title: string;
+  children: ReactNode;
+}
+
+function FactCard(props: FactCardProps): ReactElement {
+  const { title, children } = props;
+  return (
+    <Card sx={{ height: "100%" }}>
+      <CardContent>
+        <Stack spacing={1}>
+          <Typography variant="h4" component="h3">
+            {title}
+          </Typography>
+          <Typography variant="body2Muted">{children}</Typography>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function PrivacyGrid(): ReactElement {
   return (
     <Section>
@@ -33,35 +54,18 @@ export function PrivacyGrid(): ReactElement {
       <Grid container spacing={2}>
         {FACTS.map((fact) => (
           <Grid key={fact.title} size={{ xs: 12, sm: 6 }}>
-            <Card sx={{ height: "100%" }}>
-              <CardContent>
-                <Stack spacing={1}>
-                  <Typography variant="h4" component="h3">
-                    {fact.title}
-                  </Typography>
-                  <Typography variant="body2Muted">{fact.body}</Typography>
-                </Stack>
-              </CardContent>
-            </Card>
+            <FactCard title={fact.title}>{fact.body}</FactCard>
           </Grid>
         ))}
         <Grid size={12}>
-          <Card>
-            <CardContent>
-              <Stack spacing={1}>
-                <Typography variant="h4" component="h3">
-                  MIT-licensed, one repository
-                </Typography>
-                <Typography variant="body2Muted">
-                  The dashboard, API, terminal host, and plugin are all{" "}
-                  <Link href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-                    public on GitHub
-                  </Link>
-                  .
-                </Typography>
-              </Stack>
-            </CardContent>
-          </Card>
+          <FactCard title="MIT-licensed, one repository">
+            The dashboard, API, terminal host, and plugin are all{" "}
+            {/* component="a": next/link is the theme's MuiLink default, wrong for an off-site URL. */}
+            <Link component="a" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
+              public on GitHub
+            </Link>
+            .
+          </FactCard>
         </Grid>
       </Grid>
     </Section>

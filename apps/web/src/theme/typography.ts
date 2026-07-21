@@ -138,8 +138,8 @@ export const typography: TypographyVariantsOptions = {
     fontFamily: fontFamilies.display,
     fontStretch: displayStretch,
     fontWeight: 700,
-    // Plain clamp() keeps this out of responsiveFontSizes; bounds track hero.tsx's h1 (2.25rem→3.25rem).
-    fontSize: "clamp(2.25rem, 1.6rem + 3vw, 3.25rem)",
+    // Plain clamp() keeps this out of responsiveFontSizes; bounds track hero.tsx's h1 (2rem→2.9rem).
+    fontSize: "clamp(2rem, 1.4rem + 2.4vw, 2.9rem)",
     lineHeight: 1.1,
     letterSpacing: "-0.025em",
   },

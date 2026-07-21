@@ -1,8 +1,6 @@
-"use client";
-
 import type { ReactElement } from "react";
 import { Box, Stack, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
+import { fontFamilies, line, radii, shadows } from "@/theme";
 
 /** A line in the faux agent transcript. `tone` maps to a brand status color. */
 interface Line {
@@ -47,24 +45,24 @@ const LINE_SX = {
 export function AgentTranscript(): ReactElement {
   return (
     <Box
-      sx={(theme) => ({
-        borderRadius: theme.radii.lg,
-        border: `1px solid ${theme.palette.line.border}`,
-        backgroundColor: theme.palette.surfaces.card,
-        boxShadow: theme.shadows_custom.lg,
+      sx={{
+        borderRadius: radii.lg,
+        border: `1px solid ${line.border}`,
+        backgroundColor: "surfaces.card",
+        boxShadow: shadows.lg,
         overflow: "hidden",
-      })}
+      }}
     >
       <Stack
         direction="row"
         spacing={0.75}
-        sx={(theme) => ({
+        sx={{
           alignItems: "center",
           paddingInline: 1.5,
           height: 36,
-          borderBottom: `1px solid ${theme.palette.line.divider}`,
-          backgroundColor: theme.palette.surfaces.elevated,
-        })}
+          borderBottom: `1px solid ${line.divider}`,
+          backgroundColor: "surfaces.elevated",
+        }}
       >
         {(["error.main", "warning.main", "success.main"] as const).map((c) => (
           <Box key={c} sx={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: c }} />
