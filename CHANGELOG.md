@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.14] - 2026-07-21
+
+### Added
+
+- A daily cleanup job trims accumulated history - pilot journal entries, released
+  claims, answered questions, expired tokens, and old application events - so the
+  database stops growing without bound.
+- The docs sidebar on phones becomes a collapsible section navigator that shows
+  the page you are on, replacing the scrolling pill row.
+
+### Changed
+
+- Pilot vocabulary is consistent everywhere: leases are claims, and stall/nudge/
+  watchdog are now stuck/check-in/orchestrator. Instruction cadence fields read
+  "Check every (hours)" and "Post every (days)".
+- The auto-apply stop pill is hidden on small screens.
+
+### Fixed
+
+- A cycle's completion is confirmed against the API, so garbled terminal output
+  can no longer stall the pilot; a wake that arrives mid-cycle no longer aborts it.
+- A crashed pilot cycle retries in two hours instead of pausing the campaign for
+  a full day.
+- The cleanup job no longer deletes rows the pilot still needs, and only runs
+  against production.
+- A burst of stuck signals can no longer burn an entire cycle's time budget at once.
+- Push notifications show the app icon.
+- Fixed pilot agenda snapshot and digest errors in production.
+- The retention sweep and the pilot activity check are indexed, so neither scans
+  whole tables.
+- `VAPID_SUBJECT` must now be a valid URL, caught at startup instead of at send time.
+- Corrected the tab strip shadow to use the theme palette.
+
 ## [2.1.13] - 2026-07-20
 
 ### Added
