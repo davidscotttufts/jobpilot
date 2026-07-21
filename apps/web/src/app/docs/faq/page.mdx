@@ -1,7 +1,8 @@
 import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("faq", {
-  description: "Common questions about JobPilot: the agent, boards, email, and your data.",
+  description:
+    "Common questions about JobPilot: the agent, the Pilot, boards, email, and your data.",
 });
 
 # FAQ
@@ -13,9 +14,9 @@ JobPilot ships no model keys and bills you for nothing.
 
 ## Where does the agent run?
 
-On your machine. The dashboard and API are hosted, but the terminal host,
-the AI session, and the Playwright browser all run locally - you can watch
-every action in the agent dock.
+On your machine. The dashboard and API are hosted, but the terminal host, the
+AI session, and the Playwright browser all run locally - you can watch every
+action in the agent dock.
 
 ## Which job boards are supported?
 
@@ -25,12 +26,57 @@ News "Who's Hiring", We Work Remotely, Remote OK, 4 Day Week, and Upwork.
 Add any other board from the boards page - the agent drives a real browser,
 so it isn't limited to a fixed list.
 
+## How many jobs does the Pilot apply to per day?
+
+Up to your daily apply cap, one application per cycle. The cap is enforced by
+the server, not just by the AI's instructions, so it holds even if a cycle
+goes off-script. The same is true of the networking cap.
+
+## How does the Pilot decide what to do first?
+
+The server ranks the agenda every cycle: your answered questions come first,
+then interview replies, then applications ordered by match score, then
+networking, then discovery of new postings. You steer it with your goals text
+and limits - see [the Pilot](/docs/pilot).
+
+## Does the Pilot ever send messages or post publicly without me?
+
+Only what you explicitly set to auto: applications within your cap, and
+networking emails if you chose the "auto" autonomy level. LinkedIn messages
+and public self-promotion posts always wait for your approval, and interview
+replies are always drafted for review - those rules are enforced server-side.
+
+## What happens if my computer sleeps or crashes mid-cycle?
+
+Nothing is lost. Each cycle does one unit of work and saves the result before
+moving on; work claimed by a crashed cycle times out and returns to the
+agenda. The host restarts cycles on its own after a reboot or wake.
+
+## Can I use JobPilot manually while the Pilot is running?
+
+Yes - campaigns and skills work as usual. If you launch a session with the
+other provider yourself, the Pilot pauses instead of fighting for the
+terminal and resumes when you're done.
+
+## Why does the journal show "cycles"?
+
+A cycle is one unit of autonomous work - one application, one inbox review,
+one search. The Activity tab's "By cycle" view groups the journal so you can
+see what each cycle did, its outcome, and how long it took.
+
+## How long do I have to answer a question?
+
+Most questions wait indefinitely - the related job is parked until you answer.
+The exception is a 2FA/login code, which expires after about five minutes;
+missing one just skips that job cleanly. Enable notifications to get questions
+as a push on your phone.
+
 ## Can JobPilot read and send email?
 
 Yes, through your own Google OAuth client - see
 [Email setup](/docs/email-setup). Reading powers the inbox and verification
 codes; sending powers networking. It can never delete mail, and it works
-without email too - you just lose those three features.
+without email too - you just lose those features.
 
 ## What about captchas?
 

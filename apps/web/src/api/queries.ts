@@ -4,7 +4,11 @@ import type {
   CampaignStatus,
 } from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
-import type { PilotQuestionStatus, PromotionStatus } from "@jobpilot/contracts/pilot";
+import type {
+  PilotJournalKind,
+  PilotQuestionStatus,
+  PromotionStatus,
+} from "@jobpilot/contracts/pilot";
 import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
@@ -189,10 +193,20 @@ export const pilotQueries = {
       return { ...result, data: result.data?.agenda ?? null };
     },
   }),
-  journal: () => ({
-    queryKey: queryKeys.pilot.journal(),
-    queryFn: () => api.pilot.journal.get({ query: { limit: PILOT_JOURNAL_PAGE_SIZE } }),
-  }),
+  // Sorted so the same filter set toggled in a different order shares one cache entry.
+  journal: (kinds: PilotJournalKind[] = []) => {
+    const filter = [...kinds].sort();
+    return {
+      queryKey: queryKeys.pilot.journal({ kinds: filter }),
+      queryFn: () =>
+        api.pilot.journal.get({
+          query: {
+            limit: PILOT_JOURNAL_PAGE_SIZE,
+            ...(filter.length > 0 ? { kinds: filter } : {}),
+          },
+        }),
+    };
+  },
   questions: (status?: PilotQuestionStatus) => ({
     queryKey: queryKeys.pilot.questions({ status: status ?? "all" }),
     queryFn: () => api.pilot.questions.get({ query: status ? { status } : {} }),

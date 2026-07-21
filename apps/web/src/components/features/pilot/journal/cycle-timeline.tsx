@@ -1,11 +1,16 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
+import {
+  type PilotJournalEntry,
+  type PilotJournalKind,
+  pilotCycleDetailSchema,
+} from "@jobpilot/contracts/pilot";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { Box, Chip, Collapse, Divider, Paper, Stack, Typography } from "@mui/material";
-import { RelativeTime } from "@/components/ui/display";
-import { formatSpanBetween } from "@/utils/format";
+import { ColorChip, RelativeTime } from "@/components/ui/display";
+import { CYCLE_STATUS_COLOR } from "@/lib/terminal";
+import { formatDuration, formatSpanBetween } from "@/utils/format";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 
 type Block =
@@ -69,10 +74,14 @@ function KindSummary(props: { entries: PilotJournalEntry[] }): ReactElement {
 function CycleCard(props: { entries: PilotJournalEntry[]; defaultOpen: boolean }): ReactElement {
   const { entries, defaultOpen } = props;
   const [open, setOpen] = useState(defaultOpen);
+
   // Entries arrive newest-first; the oldest anchors the cycle's start, and the body reads chronologically.
   const chronological = [...entries].reverse();
   const started = chronological[0]?.createdAt;
   const duration = cycleDuration(entries);
+  const cycleEntry = entries.find((entry) => entry.kind === "cycle");
+  // Older skills wrote `detail: {}`, so both fields stay optional even on a successful parse.
+  const detail = cycleEntry && pilotCycleDetailSchema.safeParse(cycleEntry.detail).data;
 
   return (
     <Paper variant="outlined" sx={{ p: 2 }}>
@@ -94,10 +103,16 @@ function CycleCard(props: { entries: PilotJournalEntry[]; defaultOpen: boolean }
         }}
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "baseline", flexWrap: "wrap" }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
             <Typography variant="body1Strong">Cycle</Typography>
+            {detail?.status && <ColorChip value={detail.status} colors={CYCLE_STATUS_COLOR} />}
             {started && <RelativeTime value={started} />}
             {duration && <Typography variant="captionMuted">· {duration}</Typography>}
+            {detail?.sleepSeconds != null && (
+              <Typography variant="captionMuted">
+                · sleeps {formatDuration(detail.sleepSeconds)}
+              </Typography>
+            )}
           </Stack>
           <Box sx={{ mt: 1 }}>
             <KindSummary entries={entries} />

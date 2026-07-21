@@ -114,7 +114,9 @@ export const queryKeys = {
     state: () => [...queryKeys.pilot.all, "state"] as const,
     // Mount-fetch + manual refresh only; PilotLive never invalidates this key (agenda compile is costly).
     agenda: () => [...queryKeys.pilot.all, "agenda"] as const,
-    journal: () => [...queryKeys.pilot.all, "journal"] as const,
+    journalAll: () => [...queryKeys.pilot.all, "journal"] as const,
+    journal: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.pilot.journalAll(), filters] as const,
     questionsAll: () => [...queryKeys.pilot.all, "questions"] as const,
     questions: (filters: Record<string, unknown> = {}) =>
       [...queryKeys.pilot.questionsAll(), filters] as const,

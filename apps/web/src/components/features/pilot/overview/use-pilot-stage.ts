@@ -1,13 +1,13 @@
 "use client";
 
 import type { PilotJournalKind } from "@jobpilot/contracts/pilot";
-import { useEffect, useState } from "react";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { formatTimeUntil, humanizeIsoInText } from "@/utils/format";
 import { isHostOffline } from "../host-status";
 import { useJournalLive } from "../journal/use-journal-live";
 import { usePilotStatus } from "./pilot-status-context";
+import { useNextWake } from "./use-next-wake";
 
 export type PilotStageNode = "orchestrator" | "agent" | "worker" | "results";
 type PilotStageMode = "off" | "offline" | "working" | "sleeping";
@@ -39,8 +39,7 @@ export interface PilotStage {
 /**
  * Derives the orchestration diagram's state from data the overview already holds -
  * pilot state, hoisted terminal health, the shared live journal buffer, and the
- * cached agenda query. Opens no new poller or SSE connection; a 30s tick keeps the
- * sleep countdown fresh.
+ * cached agenda query. Opens no new poller or SSE connection.
  */
 export function usePilotStage(): PilotStage {
   const { state, health, hostStatus } = usePilotStatus();
@@ -49,6 +48,8 @@ export function usePilotStage(): PilotStage {
   // the refcounted pilot SSE connection, so nothing new is fetched here.
   const journal = useApiQuery(pilotQueries.journal());
   const { entries: live } = useJournalLive();
+  // Shared with the status hero so the diagram and the card can't disagree on the countdown.
+  const nextWakeAt = useNextWake();
   // Same query key + staleTime as AgendaPreview, so this never triggers an extra compile.
   const agenda = useApiQuery(pilotQueries.agenda(), {
     staleTime: Number.POSITIVE_INFINITY,
@@ -72,19 +73,6 @@ export function usePilotStage(): PilotStage {
 
   const activeNode: PilotStageNode =
     mode === "working" && newest ? NODE_BY_KIND[newest.kind] : "orchestrator";
-
-  const nextWakeAt = agenda.data?.nextWakeAt ?? null;
-  const nextWakeMs = nextWakeAt?.getTime() ?? null;
-
-  // Only sleeping mode needs a fresh render for the countdown label; other modes have nothing to tick.
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (mode !== "sleeping" || nextWakeMs === null) {
-      return;
-    }
-    const id = setInterval(() => setTick((t) => t + 1), 30_000);
-    return () => clearInterval(id);
-  }, [mode, nextWakeMs]);
 
   const sleepLabel =
     mode === "sleeping" && nextWakeAt ? `wakes in ${formatTimeUntil(nextWakeAt)}` : null;

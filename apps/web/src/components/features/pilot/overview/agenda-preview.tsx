@@ -42,12 +42,11 @@ const AGENDA_KIND_LABELS: Record<AgendaItem["kind"], string> = {
 interface AgendaEmptyProps {
   reason: AgendaResponse["emptyReason"];
   budget: AgendaResponse["budget"];
-  nextWakeAt: Date;
 }
 
 /** Explains an empty agenda; the reason is decided server-side (see AgendaResponse.emptyReason). */
 function AgendaEmpty(props: AgendaEmptyProps): ReactElement {
-  const { reason, budget, nextWakeAt } = props;
+  const { reason, budget } = props;
   if (reason === "capReached") {
     return (
       <EmptyState
@@ -71,13 +70,8 @@ function AgendaEmpty(props: AgendaEmptyProps): ReactElement {
       />
     );
   }
-  return (
-    <EmptyState
-      variant="inline"
-      title="Agenda is clear."
-      description={`Next wake in ${formatTimeUntil(nextWakeAt)}.`}
-    />
-  );
+  // No description: the card's footer already carries the next-wake countdown.
+  return <EmptyState variant="inline" title="Agenda is clear." />;
 }
 
 /** Read-only peek at the next cycle's plan. Fetched once + manual refresh: agenda compiles are costly. */
@@ -125,11 +119,7 @@ export function AgendaPreview(): ReactElement {
         {agenda && (
           <Stack spacing={2}>
             {visible.length === 0 ? (
-              <AgendaEmpty
-                reason={agenda.emptyReason}
-                budget={agenda.budget}
-                nextWakeAt={agenda.nextWakeAt}
-              />
+              <AgendaEmpty reason={agenda.emptyReason} budget={agenda.budget} />
             ) : (
               <Stack spacing={1.5} divider={<Divider />}>
                 {visible.map((item, index) => (

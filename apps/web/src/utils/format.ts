@@ -49,6 +49,11 @@ export function formatSpanBetween(start: string | Date, end: string | Date): str
   return formatDistanceStrict(from, to, { locale: compactLocale });
 }
 
+/** Compact duration from a plain second count, e.g. `20m`. */
+export function formatDuration(seconds: number): string {
+  return formatSpanBetween(new Date(0), new Date(seconds * 1000));
+}
+
 /** Human-readable date in the viewer's locale, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) {

@@ -2,62 +2,70 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("pilot", {
   description:
-    "Run JobPilot autonomously: write your instructions, close the lid, answer questions from your phone, and wake to a journal.",
+    "Run JobPilot autonomously: write instructions once, answer the occasional question from your phone, wake to a journal.",
 });
 
 # The Pilot
 
-The Pilot is JobPilot's autonomous mode. Instead of running a skill each time,
-you write your **instructions** once - your goals and limits - and the local agent runs
-your search on its own: perpetual cycles that discover and score roles, apply,
-find warm intros before cold applies, send and follow up on networking, review
-recruiter replies, and draft interview replies, prep sheets, and self-promotion
-posts. It journals every action, sends the few decisions only you can make
-to your phone as questions, and keeps going overnight with the browser closed. You wake to a
-morning digest.
+The Pilot is JobPilot's autonomous mode. Write your **instructions** once - goals,
+limits, saved searches - and the local agent runs your whole search on its own:
+it discovers and scores roles, applies, finds warm intros, networks and follows
+up, reviews recruiter replies, and drafts interview replies, prep sheets, and
+self-promotion posts. Everything it does lands in a live journal; the few
+decisions only you can make arrive as one-tap questions, on your phone if you
+enable notifications.
 
-The Pilot **supersedes** the [campaign modes](/docs/campaigns-and-skills) - it
-runs all of them for you - but those skills stay available for hands-on work.
+The Pilot supersedes the [campaign modes](/docs/campaigns-and-skills) - it runs
+all of them for you - but those skills stay available for hands-on work.
+
+## How a cycle works
+
+The Pilot works in short, self-contained **cycles**:
+
+1. **Sense** - the server compiles a ranked agenda of everything worth doing
+   right now: your answers to act on, approved jobs, replies to review,
+   searches that are due.
+2. **Act** - the agent takes the top item and does exactly that one thing:
+   one application, one inbox review, one search.
+3. **Record** - the outcome is journaled and the agent sleeps - seconds when
+   work is queued, up to your check interval when idle.
+
+One item per cycle is deliberate. Every result is saved to the server before
+the next thing starts, so a crash, reboot, or closed lid never loses work - the
+next cycle picks up exactly where the last one stopped. A small orchestrator on
+your machine drives the loop, restarts stuck runs, and starts cycles on its own
+after a reboot, so no browser tab needs to stay open.
 
 ## Enabling it
 
 1. Make sure your local agent terminal is running (the dock in the dashboard's
-   bottom corner). If it's offline, install or start it first - see
-   [Getting started](/docs/getting-started).
-2. Open **Pilot** in the workspace.
-3. Write your instructions (below) and save them.
-4. Click **Enable**.
+   bottom corner) - see [Getting started](/docs/getting-started) if it's offline.
+2. Open **Pilot** in the workspace, write your instructions, and save.
+3. Click **Enable**.
 
-Enabling pairs your machine with the Pilot once, so you don't need a browser tab
-open after that: the local host self-starts cycles on boot, crash, or wake and
-drives the loop until you disable it.
+Enabling pairs your machine with the Pilot once; after that the host runs
+cycles on boot, crash, or wake until you disable it.
 
 ## Your instructions
 
-Your instructions are one small document that steers everything. Its fields:
+One small document steers everything:
 
-- **Goals** - plain-language direction: the roles you want, priorities, and
-  constraints (for example, "senior TypeScript remote, at least $150k, by
-  October").
-- **Operating limits** - daily apply cap, minimum match score, and how often the
-  Pilot checks for work. The Pilot runs around the clock.
-- **Networking** - off by default. Turn it on to let the Pilot reach out to
-  contacts at target companies, then set the daily cap, follow-up delay, and
-  per-channel autonomy. Email can be **draft** (compose only), **review** (ask
-  before each send), or **auto** (send within your cap). LinkedIn is always
-  review - the Pilot never sends an InMail on its own.
-- **Saved searches** - searches the Pilot re-runs on a schedule, so new
-  postings get scored and applied to without you starting a campaign.
-- **Platforms** - where the Pilot drafts self-promotion posts (a
-  "who wants to be hired" thread, a subreddit, a LinkedIn post) and how often.
-  Posts are always review-only.
+- **Goals** - plain-language direction: roles, priorities, constraints
+  ("senior TypeScript remote, at least $150k, by October").
+- **Operating limits** - daily apply cap, minimum match score, check interval.
+- **Networking** - off by default. When on: daily cap, follow-up delay, and
+  per-channel autonomy - email can be **draft**, **review**, or **auto**;
+  LinkedIn is always review.
+- **Saved searches** - re-run on a schedule so new postings get scored and
+  applied to automatically.
+- **Platforms** - where the Pilot drafts self-promotion posts. Posting is
+  always review-only.
 
-Soft judgment lives in your goals text; the caps are also enforced on the
-server, so the Pilot can never exceed them no matter how you word your instructions.
-Edit your instructions any time - even from your phone - and the change takes effect
-on the next cycle.
+Soft judgment lives in your goals text; the caps are enforced server-side, so
+the Pilot can never exceed them regardless of wording. Edit any time - changes
+take effect on the next cycle.
 
-## What it does on its own vs. what asks you
+## What runs on its own vs. what asks you
 
 | Runs on its own | Always asks you |
 | --- | --- |
@@ -73,45 +81,37 @@ changes an application's status without you.
 ## Questions and push notifications
 
 When the Pilot hits a decision only you can make, it posts a **question** - a
-one-decision card under **Needs attention** on the Pilot's Overview tab - and
-parks the related work until you answer. Answer, and the parked job or message
-resumes on the next cycle.
-
-To answer without watching the dashboard, turn on **Notifications** on the
-Pilot's Instructions tab for each device (including your phone). You'll get a web push when a
-question opens, even with the tab closed - tap it and answer the card. A 2FA
-code request self-expires after about five minutes; if you miss it, the Pilot
+one-decision card under **Needs attention** on the Overview tab - and parks the
+related work until you answer. Turn on **Notifications** (Instructions tab, per
+device) to get a web push when a question opens, even with the tab closed. A
+2FA request self-expires after about five minutes; if you miss it, the Pilot
 skips that job cleanly and moves on.
 
 ## The journal and morning digest
 
-Every action the Pilot takes lands in the **journal** - a live feed you can
-watch in real time ("Applied to Staff TypeScript Engineer at Acme - score 87",
-"Reviewed 7 replies - 1 interview invite", "Parked Stripe - needs your salary
-answer"). Once a day it rolls the last 24 hours into a **morning digest**:
-applications submitted, replies reviewed, networking messages sent, and questions waiting.
-
-The Pilot's **Activity** tab holds the full journal - filter it by kind, and
-use **Export** there to download the whole history as a file for your own
-records.
+Every action lands in the **journal** on the Activity tab - a live feed you can
+filter by kind or group **by cycle** to see what each cycle did, its outcome,
+and how long it took. The Overview tab shows the latest activity plus when the
+next cycle will wake. Once a day the last 24 hours roll into a **morning
+digest**: applications, replies reviewed, messages sent, questions waiting.
+**Export** downloads the full history as a file.
 
 ## Interview autonomy
 
 When a recruiter's reply is an interview invite, the Pilot drafts a short
-availability reply and posts it as an approval card - it never sends it for you.
-It also builds an interview **prep sheet** (behavioral, technical, system
-design, and company notes) and attaches it to the application, so it's ready
-when you approve the reply.
+availability reply and posts it as an approval card - it never sends on its
+own. It also builds a **prep sheet** (behavioral, technical, system design,
+company notes) and attaches it to the application.
 
 ## Troubleshooting
 
-- **Host offline** - the Pilot can't run without your local agent. Start it from
-  the dock; the Pilot resumes on its own once the host is back.
-- **Pilot paused after repeated stuck runs** - if runs keep getting stuck or
-  timing out, the host takes a break to protect your machine. Check the dock
-  terminal for what got stuck, then re-enable.
-- **A board keeps failing** - the Pilot probes it once, and if it still fails,
-  asks whether to park it. Parked boards are skipped until you clear them; the
-  rest of your search keeps running.
+- **Host offline** - start the agent from the dock; the Pilot resumes on its
+  own once the host is back.
+- **Pilot paused after repeated stuck runs** - the host takes a break to
+  protect your machine. Check the dock terminal for what got stuck, then
+  re-enable.
+- **A board keeps failing** - the Pilot probes it once, then asks whether to
+  park it. Parked boards are skipped until you clear them; everything else
+  keeps running.
 
 Next up: [Email setup](/docs/email-setup) so the Pilot can review your replies.

@@ -10,15 +10,20 @@ interface Recorder {
   journalCreates: Record<string, unknown>[];
   stateUpserts: { create: Record<string, unknown>; update: Record<string, unknown> }[];
   pushes: { userId: string; payload: PushPayload }[];
+  findManyWheres: Record<string, unknown>[];
 }
 
 function makeDb() {
-  const rec: Recorder = { journalCreates: [], stateUpserts: [], pushes: [] };
+  const rec: Recorder = { journalCreates: [], stateUpserts: [], pushes: [], findManyWheres: [] };
   const db = {
     pilotJournalEntry: {
       createMany: async (a: { data: Record<string, unknown>[] }) => {
         rec.journalCreates.push(...a.data);
         return { count: a.data.length };
+      },
+      findMany: async (a: { where: Record<string, unknown> }) => {
+        rec.findManyWheres.push(a.where);
+        return [];
       },
     },
     pilotState: {
@@ -61,6 +66,17 @@ describe("PilotJournalService append", () => {
 
     expect(rec.journalCreates).toHaveLength(1);
     expect(rec.stateUpserts).toHaveLength(0);
+  });
+
+  it("filters the list by kinds when given, and not otherwise", async () => {
+    const { svc, rec } = service();
+    await svc.listJournal("p1", undefined, 50, ["action", "cycle"]);
+    await svc.listJournal("p1", undefined, 50);
+    await svc.listJournal("p1", undefined, 50, []);
+
+    expect(rec.findManyWheres[0]).toEqual({ userId: "p1", kind: { in: ["action", "cycle"] } });
+    expect(rec.findManyWheres[1]).toEqual({ userId: "p1" });
+    expect(rec.findManyWheres[2]).toEqual({ userId: "p1" });
   });
 
   it("pushes an alert for a system entry but not for other kinds", async () => {

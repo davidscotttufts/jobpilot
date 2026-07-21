@@ -4,21 +4,18 @@ import type { ReactElement } from "react";
 import { Alert, Box, Button, Chip, Grid, LinearProgress, Stack, Typography } from "@mui/material";
 import { ColorChip, RelativeTime, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
-import { type PilotCycleStatus, providerDisplayName } from "@/lib/terminal";
+import { CYCLE_STATUS_COLOR, providerDisplayName } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
+import { formatTimeUntil } from "@/utils/format";
 import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../host-status";
 import { usePilotStatus } from "./pilot-status-context";
-
-const CYCLE_STATUS_COLOR: Record<PilotCycleStatus, "success" | "warning" | "error" | "default"> = {
-  ok: "success",
-  empty: "default",
-  error: "error",
-};
+import { useNextWake } from "./use-next-wake";
 
 /** State + controls on the left, today's budget on the right; the one card that answers "is it working?". */
 export function StatusHero(): ReactElement {
   const { state, toggle, health, hostStatus } = usePilotStatus();
   const confirm = useConfirm();
+  const nextWakeAt = useNextWake();
 
   const pilot = hostStatus?.pilot ?? null;
   const enabled = state.enabled;
@@ -132,6 +129,17 @@ export function StatusHero(): ReactElement {
                   )}
                 </Stack>
               </Box>
+              {/* Hidden mid-cycle: the "Working" chip already covers that state. */}
+              {enabled && nextWakeAt && !pilot?.conducting && (
+                <Box>
+                  <Typography variant="overlineMuted">Next wake</Typography>
+                  <Typography variant="body2">
+                    {nextWakeAt.getTime() <= Date.now()
+                      ? "due now"
+                      : `in ${formatTimeUntil(nextWakeAt)}`}
+                  </Typography>
+                </Box>
+              )}
             </Stack>
           </Stack>
         </Grid>

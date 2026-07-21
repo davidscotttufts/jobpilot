@@ -40,6 +40,13 @@ export const pilotJournalEntrySchema = z.object({
 export const pilotJournalQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  // `?kinds=a,b` reaches the handler as a string on some paths and a split array on others.
+  kinds: z
+    .preprocess(
+      (value) => (typeof value === "string" ? value.split(",") : value),
+      z.array(pilotJournalKindSchema),
+    )
+    .optional(),
 });
 
 export const pilotJournalPageSchema = z.object({
@@ -50,10 +57,12 @@ export const pilotJournalPageSchema = z.object({
 export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
 export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;
 export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
+export type PilotJournalPage = z.infer<typeof pilotJournalPageSchema>;
 
 /** Terminal outcome of one orchestrator cycle - the vocabulary shared by the journal detail and the host's sentinel. */
 export const PILOT_CYCLE_STATUSES = ["ok", "empty", "error"] as const;
 export const pilotCycleStatusSchema = z.enum(PILOT_CYCLE_STATUSES);
+export type PilotCycleStatus = z.infer<typeof pilotCycleStatusSchema>;
 
 // kind="cycle" entry `detail`: the skill's authoritative completion signal, read by the host as an API fallback when the sentinel is mangled.
 export const pilotCycleDetailSchema = z

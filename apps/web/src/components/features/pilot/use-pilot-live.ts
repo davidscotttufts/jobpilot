@@ -38,7 +38,7 @@ export function usePilotLive(): void {
   useEffect(() => {
     if (prevStatus.current === "reconnecting" && status === "open") {
       queryClient.invalidateQueries({ queryKey: queryKeys.pilot.state() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.journal() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.pilot.journalAll() });
       queryClient.invalidateQueries({ queryKey: queryKeys.pilot.questionsAll() });
       queryClient.invalidateQueries({ queryKey: queryKeys.pilot.promotionsAll() });
     }

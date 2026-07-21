@@ -141,15 +141,19 @@ export const pilotController = new Elysia({
         "Writes a batch of journal entries, advances cycle accounting on 'cycle' entries, and broadcasts each entry.",
     },
   })
-  .get("/journal", ({ user, query }) => journal.listJournal(user.id, query.cursor, query.limit), {
-    query: pilotJournalQuerySchema,
-    beforeHandle: limitAgenda,
-    response: pilotJournalPageSchema,
-    detail: {
-      summary: "List journal entries",
-      description: "Cursor-paginated journal history, newest first.",
+  .get(
+    "/journal",
+    ({ user, query }) => journal.listJournal(user.id, query.cursor, query.limit, query.kinds),
+    {
+      query: pilotJournalQuerySchema,
+      beforeHandle: limitAgenda,
+      response: pilotJournalPageSchema,
+      detail: {
+        summary: "List journal entries",
+        description: "Cursor-paginated journal history, newest first; optionally filtered by kind.",
+      },
     },
-  })
+  )
   // Streams the whole history as NDJSON; no `response` schema (raw streaming Response).
   .get("/journal/export", ({ user }) => journal.streamJournalExport(user.id), {
     beforeHandle: limitJournalExport,

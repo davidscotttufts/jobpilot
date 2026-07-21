@@ -95,10 +95,9 @@ first (`search`, `apply`) or proceeds on its own up to a cap you set
 ## The Pilot: fully autonomous mode
 
 Everything above still works by hand, but you can also hand the whole loop
-over. Write your instructions once - goals, daily caps, saved
-searches, how much autonomy to give networking, which platforms you're okay
-posting to - and the Pilot takes it from there, repeating one cycle forever
-while it's enabled:
+over. Write your instructions once - goals, daily caps, saved searches,
+networking autonomy, approved posting platforms - and the Pilot repeats one
+cycle forever while it's enabled:
 
 ```text
   sense ──► decide ──► act ──► record ──► exit
@@ -106,33 +105,27 @@ while it's enabled:
     └──── the orchestrator re-injects ◄───────┘
 ```
 
-- **Sense** - the agent asks the dashboard for its agenda: a prioritized list
-  compiled fresh from your data every time it's asked (jobs to apply to,
-  replies to review, follow-ups due, an interview invite awaiting a reply) -
-  there's no separate task queue or server-side cron job ticking in the
-  background.
+- **Sense** - the agent fetches its agenda: a prioritized list the server
+  compiles fresh from your data on every request (jobs to apply to, replies to
+  review, follow-ups due). There is no separate task queue or background cron.
 - **Decide** - it takes the single top item.
-- **Act** - it claims that item - a short-lived task claim with a built-in
-  timeout, so a crash never leaves work stuck halfway - then does the one
-  thing: apply to a job, send a networking follow-up, draft an interview
-  reply, and so on.
-- **Record** - every action lands in a live journal you can read like a diary
-  of what the agent did and why.
+- **Act** - it **claims** the item (a short-lived claim with a built-in
+  timeout) and does that one thing: apply to a job, send a follow-up, draft an
+  interview reply. The result is saved to the server before anything else
+  happens, so a crash mid-cycle loses nothing - the claim expires and the work
+  returns to the agenda.
+- **Record** - the action lands in the live journal.
 - **Exit** - the cycle prints a sentinel line (`[[JOBPILOT_CYCLE ...]]`) and
-  stops. A small **orchestrator** on your machine (the Pilot coordinator) drives
-  the loop from there: it reads the sentinel and starts the next run, also
-  confirming completion with the server so garbled terminal output can't be
-  mistaken for a stuck run. If a run goes quiet or gets stuck, the orchestrator
-  sends the agent a check-in reminder, then restarts the session if that
-  doesn't help - the claim's timeout makes sure any half-finished task is
-  picked back up.
+  stops. The **orchestrator** on your machine reads it, confirms completion
+  with the server (garbled terminal output can't fake a finish), and schedules
+  the next run. A quiet or stuck run gets a check-in reminder, then a session
+  restart; the claim timeout returns its work to the agenda either way.
 
-Two things make this run without a browser tab open: **one-time pairing**
-stores your login token securely with the host the first time you enable the
+Two things let this run without a browser tab open: **one-time pairing**
+stores your login token securely with the host when you first enable the
 Pilot, so it can start its own sessions after a reboot or crash; and a live
-SSE connection lets the dashboard push the agent an instant wake-up the
-moment something time-sensitive happens, instead of it waiting for the next
-scheduled check.
+SSE connection lets the dashboard wake the agent the moment something
+time-sensitive happens instead of waiting for the next scheduled check.
 
 Anything the Pilot isn't sure about - a salary question, an unexpected form
 field, an interview invite - is sent to your phone as a question, delivered

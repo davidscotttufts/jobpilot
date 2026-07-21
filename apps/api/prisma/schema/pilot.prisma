@@ -114,6 +114,7 @@ model PilotJournalEntry {
   createdAt   DateTime         @default(now()) @map("created_at")
 
   @@index([userId, createdAt])
+  @@index([userId, kind, createdAt])
   @@index([createdAt])
   @@map("pilot_journal_entries")
 }

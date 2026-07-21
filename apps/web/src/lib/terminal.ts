@@ -1,3 +1,5 @@
+import type { PilotCycleStatus } from "@jobpilot/contracts/pilot";
+
 export const TERMINAL_HTTP_URL = process.env.NEXT_PUBLIC_TERMINAL_URL ?? "http://localhost:4102";
 
 export const TERMINAL_WS_URL = `${TERMINAL_HTTP_URL.replace(/^http/, "ws")}/ws`;
@@ -7,8 +9,15 @@ export const TERMINAL_PROTOCOL_URL = "jobpilot://start";
 
 export type TerminalProviderId = "claude" | "codex";
 
-/** Outcome of the pilot's last orchestrator cycle, as reported by the host's /healthz. */
-export type PilotCycleStatus = "ok" | "empty" | "error";
+/** Shared chip colors for a cycle outcome (status hero, journal cycle cards). */
+export const CYCLE_STATUS_COLOR: Record<
+  PilotCycleStatus,
+  "success" | "warning" | "error" | "default"
+> = {
+  ok: "success",
+  empty: "default",
+  error: "error",
+};
 
 export interface TerminalProviderInfo {
   id: TerminalProviderId;

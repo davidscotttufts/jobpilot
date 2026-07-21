@@ -1,4 +1,4 @@
-import type { CreatePilotJournalInput } from "@jobpilot/contracts/pilot";
+import type { CreatePilotJournalInput, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { publishActivity, toActivityEntry, writeActivity } from "@/common/activity-log";
 import { PushService } from "@/common/push";
@@ -33,9 +33,14 @@ export class PilotJournalService {
     return { items };
   }
 
-  async listJournal(userId: string, cursor: string | undefined, limit: number) {
+  async listJournal(
+    userId: string,
+    cursor: string | undefined,
+    limit: number,
+    kinds?: PilotJournalKind[],
+  ) {
     const rows = await this.prisma.pilotJournalEntry.findMany({
-      where: { userId },
+      where: { userId, kind: kinds?.length ? { in: kinds } : undefined },
       // id tiebreaks createdAt (batch appends share one timestamp) so cursor pages never skip rows.
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit + 1,
