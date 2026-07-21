@@ -191,30 +191,46 @@ export function PushSettings(): ReactNode {
               <Stack
                 key={device.id}
                 direction="row"
-                spacing={1}
-                sx={{ alignItems: "center", justifyContent: "space-between" }}
+                spacing={1.5}
+                sx={{
+                  alignItems: "center",
+                  border: 1,
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  px: 1.5,
+                  py: 1,
+                }}
               >
-                <Box sx={{ minWidth: 0 }}>
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
                     <Typography variant="body2" noWrap>
                       {device.userAgent ?? "Unknown device"}
                     </Typography>
                     {device.endpoint === currentEndpoint && (
-                      <Chip label="This device" size="small" color="primary" />
+                      <Chip
+                        label="This device"
+                        size="small"
+                        color="primary"
+                        sx={{ flexShrink: 0 }}
+                      />
                     )}
                   </Stack>
                   <Typography variant="captionMuted">
                     Added {formatRelativeTime(device.createdAt)} ago
                   </Typography>
                 </Box>
+                {/* Tooltips need an enabled child for pointer events; `busy` disables the button. */}
                 <Tooltip title="Remove device">
-                  <IconButton
-                    size="small"
-                    disabled={busy}
-                    onClick={() => void removeDevice(device.endpoint)}
-                  >
-                    <Delete fontSize="sm" />
-                  </IconButton>
+                  <Box component="span" sx={{ display: "inline-flex", flexShrink: 0 }}>
+                    <IconButton
+                      size="small"
+                      disabled={busy}
+                      aria-label="Remove device"
+                      onClick={() => void removeDevice(device.endpoint)}
+                    >
+                      <Delete fontSize="sm" />
+                    </IconButton>
+                  </Box>
                 </Tooltip>
               </Stack>
             ))}

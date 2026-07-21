@@ -28,9 +28,14 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
     <Card variant="outlined">
       <CardContent>
         <Stack spacing={1.5}>
-          <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between" }}>
-            <Typography variant="subtitle2">{question.prompt}</Typography>
-            <Typography variant="captionMuted" sx={{ textTransform: "capitalize" }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
+            <Typography variant="subtitle2" sx={{ flex: 1, minWidth: 0 }}>
+              {question.prompt}
+            </Typography>
+            <Typography
+              variant="captionMuted"
+              sx={{ flexShrink: 0, textTransform: "capitalize", whiteSpace: "nowrap" }}
+            >
               {question.kind}
             </Typography>
           </Stack>
@@ -51,7 +56,9 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1}
-              sx={{ flexWrap: { sm: "wrap" }, gap: 1, alignItems: { xs: "stretch", sm: "center" } }}
+              // Sibling-margin spacing leaves wrapped rows flush against each other.
+              useFlexGap
+              sx={{ flexWrap: { sm: "wrap" }, alignItems: { xs: "stretch", sm: "center" } }}
             >
               {question.options.map((option) => (
                 <Button
@@ -70,7 +77,8 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1}
-              sx={{ alignItems: { xs: "stretch", sm: "flex-start" } }}
+              // Bottom edges line up: the textarea grows, the button keeps its own height.
+              sx={{ alignItems: { xs: "stretch", sm: "flex-end" } }}
             >
               <TextField
                 fullWidth
@@ -86,7 +94,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
                 size="small"
                 disabled={busy || freeText.trim().length === 0}
                 onClick={() => answer.mutate(freeText.trim())}
-                sx={{ width: { xs: "100%", sm: "auto" }, flexShrink: 0 }}
+                sx={{ width: { xs: "100%", sm: "auto" }, flexShrink: 0, minWidth: 88 }}
               >
                 Send
               </Button>
