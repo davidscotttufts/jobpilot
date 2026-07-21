@@ -9,6 +9,9 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: [...PUBLIC_ROUTES],
         disallow: [
+          "/admin",
+          "/pilot",
+          "/portfolio",
           "/workspace",
           "/campaigns",
           "/applications",

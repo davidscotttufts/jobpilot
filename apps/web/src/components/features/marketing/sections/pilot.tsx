@@ -3,6 +3,7 @@ import { alpha, Box, Container, Grid, Link, Stack, Typography } from "@mui/mater
 import { LinkButton } from "@/components/ui/buttons";
 import { accent, fontFamilies } from "@/theme";
 import { SectionEyebrow } from "../section-eyebrow";
+import { PilotCycle } from "./pilot-cycle";
 
 // A server component, so sx must stay a plain object - a `(theme) => …` callback
 // is a function, and functions cannot cross the RSC boundary.
@@ -15,20 +16,20 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Write your instructions",
-    body: "Goals, daily caps, saved searches, networking autonomy, promotion platforms. Write your goals once - the Pilot runs the search from there.",
+    title: "Set your instructions",
+    body: "What roles you want, how many applications a day, which searches to keep warm, how bold the recruiter outreach should be. Plain sentences, not config files.",
   },
   {
-    title: "Close the lid",
-    body: "The agent runs perpetual sense-decide-act cycles on your machine: it discovers and scores roles, finds warm intros before cold applies, sends and chases networking messages, and reviews recruiter replies - overnight, with the browser closed.",
+    title: "Let it work",
+    body: "The agent keeps working while you sleep: it finds and scores new roles, applies to the good matches, looks for someone to introduce you before applying cold, and nudges recruiters who went quiet.",
   },
   {
     title: "Answer from your phone",
-    body: "When it needs you - a salary answer, a login code, an InMail to approve - it reaches you as a one-tap card by web push. Answer from your phone and the parked work resumes.",
+    body: "When it hits something only you can answer - a salary question, a login code, a message it wants to send - you get a one-tap card by push. Answer it and the parked job picks back up.",
   },
   {
     title: "Wake to a journal",
-    body: "Every action lands in a live feed, rolled into a morning digest: applications submitted, replies reviewed, questions waiting. It never sends InMail or posts publicly without your approval, and hard caps are enforced server-side.",
+    body: "Every action lands in a live feed, rolled into a morning digest: applications sent, replies reviewed, questions waiting. Your daily limits are enforced by the dashboard itself, not just promised by the AI.",
   },
 ];
 
@@ -48,15 +49,22 @@ export function Pilot(): ReactElement {
         sx={{ position: "absolute", inset: 0, background: emberWash, pointerEvents: "none" }}
       />
       <Container maxWidth="lg" sx={{ position: "relative", paddingBlock: { xs: 7, md: 10 } }}>
-        <Stack spacing={2} sx={{ mb: 5, maxWidth: 620 }}>
-          <SectionEyebrow color="accent.primary">THE PILOT · AUTONOMOUS MODE</SectionEyebrow>
-          <Typography variant="h2">Write your goals once. Close the lid.</Typography>
-          <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-            The Pilot is JobPilot's flagship autonomous mode. You write your instructions; the local
-            agent runs your entire search on its own - review-gated, capped, and journaling every
-            move - so you wake to what it did instead of driving each step by hand.
-          </Typography>
-        </Stack>
+        <Grid container spacing={{ xs: 4, md: 6 }} sx={{ mb: 6, alignItems: "center" }}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Stack spacing={2}>
+              <SectionEyebrow color="accent.primary">THE PILOT · AUTONOMOUS MODE</SectionEyebrow>
+              <Typography variant="h2">Write your goals once. Close the lid.</Typography>
+              <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
+                The Pilot is JobPilot running unattended. You give it instructions and limits; it
+                works through your search on its own, asks when it's unsure, and keeps a journal you
+                can read over coffee - instead of you driving every step by hand.
+              </Typography>
+            </Stack>
+          </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <PilotCycle />
+          </Grid>
+        </Grid>
         <Grid container spacing={4}>
           {STEPS.map((step, i) => (
             <Grid key={step.title} size={{ xs: 12, sm: 6, md: 3 }}>

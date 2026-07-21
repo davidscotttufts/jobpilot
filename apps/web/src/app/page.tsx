@@ -15,7 +15,6 @@ import {
   Pilot,
   PrivacyGrid,
   ProductTour,
-  TrendingUsersStrip,
 } from "@/components/features/marketing";
 import { JsonLd } from "@/components/seo";
 import { faqPageLd, organizationLd, softwareApplicationLd, websiteLd } from "@/lib/structured-data";
@@ -25,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 const SOFTWARE_DESCRIPTION =
-  "JobPilot's local Pilot runs your job search autonomously on your own Claude Code or Codex subscription - finding roles, tailoring your resume, applying, sending networking messages, and reviewing recruiter replies, review-gated and journaled.";
+  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you - running locally on your own Claude Code or Codex subscription.";
 
 export default function LandingPage(): ReactElement {
   return (
@@ -45,12 +44,9 @@ export default function LandingPage(): ReactElement {
         <Pilot />
         <BoardStrip />
         <CampaignTypes />
-
-        <LiveJobsStrip />
-        <TrendingUsersStrip />
-
         <ProductTour />
         <PrivacyGrid />
+        <LiveJobsStrip />
         <HowItWorks />
         <Faq />
         <CtaBand />

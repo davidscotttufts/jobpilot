@@ -32,10 +32,10 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
         sx={{ mb: 4, alignItems: { sm: "flex-end" }, justifyContent: "space-between" }}
       >
         <Stack spacing={1}>
-          <SectionEyebrow>FRESH FROM THE FLEET</SectionEyebrow>
+          <SectionEyebrow>LIVE JOB INDEX</SectionEyebrow>
           <Typography variant="h2">Jobs the agents found this week.</Typography>
           <Typography variant="body2Muted">
-            Scraped across every board, deduped into one listing each.
+            Found across every board and deduped into one listing each.
           </Typography>
         </Stack>
         <LinkButton href="/jobs" variant="outlined">

@@ -14,7 +14,7 @@ const LINES: Line[] = [
   { text: "$ /jobpilot:auto-apply senior typescript remote", tone: "prompt" },
   { text: "✓ Signed in to linkedin.com", tone: "ok" },
   { text: "→ Scoring 24 roles against your resume", tone: "step" },
-  { text: "✓ Stripe · Senior Frontend Engineer - 92% match", tone: "ok" },
+  { text: "✓ Norlake · Senior Frontend Engineer - 92% match", tone: "ok" },
   { text: "→ Tailoring resume · drafting answers", tone: "step" },
   { text: "✓ Application submitted", tone: "ok" },
   { text: "→ 11 applied · 3 interviewing · pipeline updated", tone: "muted" },

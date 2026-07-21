@@ -14,4 +14,3 @@ export * from "./sections/live-jobs-strip";
 export * from "./sections/pilot";
 export * from "./sections/privacy-grid";
 export * from "./sections/product-tour";
-export * from "./sections/trending-users-strip";

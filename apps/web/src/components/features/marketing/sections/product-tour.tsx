@@ -17,22 +17,22 @@ interface TourRow {
 const ROWS: TourRow[] = [
   {
     eyebrow: "WORKSPACE",
-    title: "Every application, one funnel.",
-    body: "Six statuses from applied to offer, in a funnel you never fill in by hand. The agent reports each application as it lands, and analytics sit on top.",
+    title: "Your pipeline fills itself.",
+    body: "Six stages from applied to offer. The agent logs each application as it lands, so the funnel and its analytics stay current without a minute of data entry.",
     panel: <WorkspacePanel />,
     glow: alpha(accent.primary, 0.07),
   },
   {
     eyebrow: "INBOX",
-    title: "Replies land sorted.",
-    body: "JobPilot reads recruiter replies from your Gmail, classifies them, and matches each to an application. You approve the status move - nothing changes without you.",
+    title: "Recruiter replies, matched to the right application",
+    body: "JobPilot reads recruiter replies from your Gmail, classifies them, and pairs each with the application it belongs to. You approve the status move - nothing changes without you.",
     panel: <InboxPanel />,
     glow: alpha(accent.secondary, 0.07),
   },
   {
     eyebrow: "RESUME STUDIO",
-    title: "One resume, tailored per job.",
-    body: "Keep a base resume; the agent creates a tailored variant per application, rendered to PDF live. You always know which version went where.",
+    title: "Every job gets its own resume",
+    body: "Keep one base resume; the agent tailors a variant for each application and renders it to PDF live. You always know which version went where.",
     panel: <ResumePanel />,
     glow: alpha(feedback.success, 0.06),
   },

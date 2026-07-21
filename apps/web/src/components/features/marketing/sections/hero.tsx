@@ -39,16 +39,19 @@ export function Hero(): ReactElement {
       />
       <Container maxWidth="lg" sx={{ position: "relative", paddingBlock: { xs: 6, md: 10 } }}>
         <Grid container spacing={6} sx={{ alignItems: "center" }}>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={3}>
               <SectionEyebrow color="accent.primary">AUTONOMOUS · LOCAL-FIRST</SectionEyebrow>
-              <Typography variant="displayLg">
-                Your job search on autopilot, running on your machine.
+              <Typography
+                variant="displayLg"
+                sx={{ fontSize: "clamp(2rem, 1.4rem + 2.4vw, 2.9rem)", textWrap: "balance" }}
+              >
+                Job search on autopilot, on your machine.
               </Typography>
-              <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 520 }}>
-                Write your goals once and the Pilot runs the search on its own - discovering,
-                tailoring, applying, and following up on your Claude Code or Codex subscription.
-                Close the lid; wake to a journal of what it did.
+              <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 560 }}>
+                Tell JobPilot what you're looking for. It finds roles, tailors your resume, applies,
+                and messages recruiters - on the Claude or Codex subscription you already pay for.
+                Each morning, a journal of what it did.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
                 <LinkButton href="/install" variant="contained" size="large">
@@ -61,11 +64,11 @@ export function Hero(): ReactElement {
               <Typography
                 sx={{ fontFamily: fontFamilies.mono, fontSize: "0.75rem", color: "text.disabled" }}
               >
-                No API keys · Your Claude / Codex subscription does the work
+                No API keys · Runs on your Claude / Codex subscription
               </Typography>
             </Stack>
           </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
+          <Grid size={{ xs: 12, md: 5 }}>
             <AgentTranscript />
           </Grid>
         </Grid>

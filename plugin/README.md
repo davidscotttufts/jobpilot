@@ -1,0 +1,45 @@
+# JobPilot plugin
+
+The plugin that turns Claude Code or Codex into your job-search agent. One
+provider-neutral skill tree serves both: `search`, `auto-apply`, `apply`,
+`networking`, `cover-letter`, and the rest of the commands listed in the
+[root README](../README.md#skills).
+
+The agent runs on your own machine and your own Claude/Codex subscription. It
+drives a real browser, reads your profile and resumes from the
+[JobPilot dashboard](https://jobpilot.suxrobgm.net), and writes results back so
+your pipeline updates live.
+
+## Install
+
+**Claude Code** - run inside Claude Code:
+
+```text
+/plugin marketplace add https://github.com/suxrobgm/claude-plugins
+/plugin install jobpilot@sukhrob-claude-plugins
+/jobpilot:setup
+```
+
+**Codex** - run in a shell, then start a new session and run `$setup`:
+
+```text
+codex plugin marketplace add suxrobGM/codex-plugins
+codex plugin add jobpilot@sukhrob-codex-plugins
+```
+
+The `setup` skill installs the local terminal companion, starts the agent, and
+opens the dashboard. After that you can launch and control the agent from the
+dashboard's agent dock.
+
+## Layout
+
+- `skills/<name>/SKILL.md` - one workflow per directory; shared docs live in
+  `shared/` and are referenced by relative path so the same text serves both
+  providers.
+- `agents/*.md` - worker subagents that campaign skills delegate per-job work
+  to, keeping heavy browser output out of the main session.
+- `.mcp.json` - the Playwright MCP server the skills use to drive the browser.
+
+Edit skills here directly - there is no generation step. See the
+[development guide](../docs/development.md) for how the plugin is loaded and
+published.

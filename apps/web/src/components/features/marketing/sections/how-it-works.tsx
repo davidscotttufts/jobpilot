@@ -5,14 +5,14 @@ import { Section } from "../section";
 
 const STEPS = [
   {
-    title: "Install the plugin",
-    body: "Add JobPilot to the Claude Code or Codex subscription you already have - no API keys.",
-    snippet: "/plugin install jobpilot",
+    title: "Create your account",
+    body: "Sign up and upload your resume - onboarding turns it into the profile the agent scores and applies with.",
+    snippet: "jobpilot.suxrobgm.net/register",
   },
   {
-    title: "Run setup & sign up",
-    body: "The setup skill installs and starts your local agent. Sign up and onboarding builds your profile from your resume - what the agent scores and applies with.",
-    snippet: "/jobpilot:setup  ·  $setup",
+    title: "Install the plugin",
+    body: "Add JobPilot to the Claude Code or Codex subscription you already have - no API keys. The setup skill installs and starts the local agent.",
+    snippet: "/plugin install jobpilot  ·  /jobpilot:setup",
   },
   {
     title: "Run a campaign",

@@ -9,10 +9,14 @@ Technical reference for contributors. For the plain-language overview, see
 git clone https://github.com/suxrobgm/jobpilot.git
 cd jobpilot
 bun install
-bun run db:up    # starts the local PostgreSQL container (Docker)
 bun run db:setup # generates the Prisma client, runs migrations, seeds default data
 bun run dev      # web :4100 + api :4101 + terminal :4102
 ```
+
+There is no local database container: point `DATABASE_URL` in
+[apps/api/.env](../apps/api/.env) at a PostgreSQL you can reach - either one
+you run yourself or the remote database through the SSH tunnel described
+below - before running `db:setup`.
 
 Open `http://localhost:4100` and toggle the Terminal panel.
 

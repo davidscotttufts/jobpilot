@@ -4,7 +4,7 @@
 
 # JobPilot
 
-**Plan, run, and track your job search with Claude Code or Codex.**
+**An AI agent that applies to jobs for you - on the Claude or Codex subscription you already have.**
 
 [![Release](https://img.shields.io/github/v/release/suxrobGM/jobpilot?style=flat&color=FF6A3D)](https://github.com/suxrobGM/jobpilot/releases)
 [![CI](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml)
@@ -19,43 +19,46 @@
 
 ---
 
-JobPilot helps you search for roles, tailor resumes, submit applications, contact
-recruiters, and track the results. You can run one task at a time or enable the
-Pilot to work through a schedule and limits you define.
+Job searching is a second job: the same forms, the same tailoring, the same
+follow-ups, every day. JobPilot hands that work to an AI agent that runs on
+your own computer. It searches the boards, tailors your resume for each
+posting, fills out the applications, messages recruiters, and files every
+reply - while a hosted dashboard keeps score. It's free and MIT-licensed.
+
+<!-- TODO: dashboard screenshot -->
 
 > **Uses your subscription, not an AI API key.** Claude Code or Codex performs
 > the AI work, so JobPilot uses the limits included with your existing
 > subscription. You do not need to provide an Anthropic or OpenAI API key, and
 > JobPilot does not add a separate per-token AI charge.
 
-The agent runs on your computer and controls a local browser. The hosted
-dashboard stores your profile, resumes, campaigns, and application history. You
-can see what the agent is doing and step in when needed.
+The agent drives a real browser on your machine, logged in as you - so you can
+watch every click and step in whenever you like. The dashboard stores your
+profile, resumes, campaigns, and application history.
 
-## What you can do
+## What it does
 
-- **Search and review:** find jobs on supported boards, compare them with your
-  resume, and save the best matches for review.
-- **Apply:** submit one application or work through an approved queue. JobPilot
-  can fill forms, answer screening questions, and prepare job-specific resumes
-  and cover letters.
-- **Run auto-apply campaigns:** apply to matching jobs up to the score and volume
-  limits you set.
-- **Use the Pilot:** give JobPilot your goals - it sets up its own saved searches
-  and works through the next available task, keeping a journal of each action.
-  When it needs a decision, it asks you.
-- **Contact recruiters:** find a relevant contact, draft a tailored message, and
-  send it by email or LinkedIn.
-- **Track applications:** manage applications from initial submission through
-  interviews and offers, with pipeline and analytics views.
-- **Manage recruiter email:** connect Gmail to classify replies, match them to
-  applications, and suggest pipeline updates for your approval.
-- **Work with resumes and Upwork:** maintain resume variants, export PDFs, search
-  Upwork jobs, draft proposals, and improve your profile.
+- **Finds and applies to jobs.** Search any of the built-in boards - LinkedIn,
+  Indeed, Hiring Cafe, Wellfound, Y Combinator, HN Who's Hiring, We Work
+  Remotely, Remote OK, and more - or add your own. The agent scores each
+  posting against your resume, then applies one at a time or works through an
+  auto-apply campaign up to the limits you set. Screening questions, tailored
+  resumes, and cover letters included.
 
-JobPilot includes workflows for LinkedIn, Indeed, Hiring Cafe, Wellfound, Y
-Combinator, Hacker News Who's Hiring, We Work Remotely, Remote OK, and other
-boards. You can also add a custom board.
+- **Runs on its own with the Pilot.** Give it your goals and daily caps, and
+  the Pilot keeps the whole search moving - finding roles, applying, following
+  up - and asks you (by push notification) when only you can answer. You wake
+  up to a journal of what it did.
+
+- **Handles the people side.** It finds the recruiter or hiring manager behind
+  a posting and drafts a personal message for email or LinkedIn. Connect Gmail
+  and it also reads recruiter replies, matches them to your applications, and
+  proposes the pipeline update - you approve every move.
+
+- **Keeps everything tracked.** Applications flow from submitted to offer in
+  one pipeline with analytics on top. Resume variants are versioned and
+  exported to PDF, so you always know which resume went where. Upwork gets the
+  same treatment: job search, client-quality filters, and drafted proposals.
 
 ## Get started
 
@@ -122,33 +125,25 @@ $auto-apply senior typescript remote
 In Codex, use `/skills` to browse installed skills. To run one directly, use the
 `$<skill>` form, such as `$search` or `$setup`.
 
-| Skill               | Purpose                                                                         |
-| ------------------- | ------------------------------------------------------------------------------- |
-| **Pilot**           |                                                                                 |
-| `pilot`             | Run one Pilot cycle. The Pilot host calls this skill automatically.             |
-| **Campaigns**       |                                                                                 |
-| `search`            | Search a board, rank results against your resume, save them for review.         |
-| `auto-apply`        | Search and apply autonomously, one job at a time, until done or capped.         |
-| `apply`             | Apply to one job (URL or pasted posting) with a fit review, or drain the queue. |
-| `resume`            | Resume an interrupted campaign and finish its remaining approved jobs.          |
-| `rescan-skipped`    | Re-score a campaign's skipped jobs and promote the wrongly dropped ones.        |
-| `networking`        | Find the hiring manager or recruiter and send a personalized message.           |
-| **Writing**         |                                                                                 |
-| `cover-letter`      | Draft a natural, job-specific one-page cover letter.                            |
-| `interview`         | Build a prep sheet: behavioral, technical, system design, company.              |
-| `tailor-resume`     | Pick or create the best resume variant for a job (runs automatically).          |
-| `extract-resume`    | Parse an uploaded resume PDF into the structured editor.                        |
-| **Email**           |                                                                                 |
-| `scan-inbox`        | Classify new mail, match it to applications, propose stage moves.               |
-| `get-code`          | Pull the latest verification code or magic link for a board domain.             |
-| **Upwork**          |                                                                                 |
-| `upwork-search`     | Search Upwork, filter out low-quality clients, rank the rest.                   |
-| `upwork-proposal`   | Draft a short, targeted Upwork proposal.                                        |
-| `upwork-profile`    | Improve your Upwork overview and portfolio; writes back on approval.            |
-| **Setup & helpers** |                                                                                 |
-| `setup`             | Install, start, or update the local agent terminal.                             |
-| `solve-captcha`     | Solve captchas - free vision path first, token service fallback.                |
-| `humanizer`         | Make generated text sound more natural; used by the writing skills.             |
+| Skill             | Purpose                                                                         |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `search`          | Search a board, rank results against your resume, save them for review.         |
+| `auto-apply`      | Search and apply autonomously, one job at a time, until done or capped.         |
+| `apply`           | Apply to one job (URL or pasted posting) with a fit review, or drain the queue. |
+| `resume`          | Resume an interrupted campaign and finish its remaining approved jobs.          |
+| `networking`      | Find the hiring manager or recruiter and send a personalized message.           |
+| `cover-letter`    | Draft a natural, job-specific one-page cover letter.                            |
+| `interview`       | Build a prep sheet: behavioral, technical, system design, company.              |
+| `scan-inbox`      | Classify new mail, match it to applications, propose stage moves.               |
+| `get-code`        | Pull the latest verification code or magic link for a board domain.             |
+| `upwork-search`   | Search Upwork, filter out low-quality clients, rank the rest.                   |
+| `upwork-proposal` | Draft a short, targeted Upwork proposal.                                        |
+| `upwork-profile`  | Improve your Upwork overview and portfolio; writes back on approval.            |
+| `setup`           | Install, start, or update the local agent terminal.                             |
+
+A few more run on their own when needed - `pilot` (one autonomous cycle),
+`tailor-resume`, `extract-resume`, `solve-captcha`, `rescan-skipped`, and
+`humanizer` - see the [full catalog](https://jobpilot.suxrobgm.net/docs/campaigns-and-skills).
 
 Inbox scanning, verification codes, and networking emails require your own Google
 OAuth client. Follow the

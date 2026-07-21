@@ -17,7 +17,7 @@ export function Faq(): ReactElement {
   return (
     <Section maxWidth="md">
       <Stack spacing={1} sx={{ mb: 4 }}>
-        <Typography variant="h2">Questions, answered.</Typography>
+        <Typography variant="h2">Common questions</Typography>
         <Typography variant="body2Muted">
           More in the <Link href="/docs/faq">full FAQ</Link>.
         </Typography>
