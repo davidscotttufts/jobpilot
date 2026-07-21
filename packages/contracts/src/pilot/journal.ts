@@ -64,7 +64,10 @@ export const PILOT_CYCLE_STATUSES = ["ok", "empty", "error"] as const;
 export const pilotCycleStatusSchema = z.enum(PILOT_CYCLE_STATUSES);
 export type PilotCycleStatus = z.infer<typeof pilotCycleStatusSchema>;
 
-// kind="cycle" entry `detail`: the skill's authoritative completion signal, read by the host as an API fallback when the sentinel is mangled.
+/**
+ * `kind="cycle"` detail: the host's completion signal when the sentinel is mangled.
+ * Fields are optional because stall-recovery cycles usually omit them, and a strict parse would drop those.
+ */
 export const pilotCycleDetailSchema = z
   .object({
     status: pilotCycleStatusSchema.optional(),

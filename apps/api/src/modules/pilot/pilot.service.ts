@@ -127,14 +127,15 @@ export class PilotService {
       null,
     );
 
-    // Old skills wrote `detail: {}`; a parse miss yields null fields rather than throwing.
-    const detail = cycleEntry ? pilotCycleDetailSchema.safeParse(cycleEntry.detail) : null;
+    // Stall-recovery cycles routinely land with `detail: {}`, so missing fields null out here
+    // rather than throwing - the host still needs `completedAt` off such an entry.
+    const detail = cycleEntry && pilotCycleDetailSchema.safeParse(cycleEntry.detail).data;
     const lastCycle = cycleEntry
       ? {
           cycleId: cycleEntry.cycleId,
           completedAt: cycleEntry.createdAt,
-          status: detail?.success ? (detail.data.status ?? null) : null,
-          sleepSeconds: detail?.success ? (detail.data.sleepSeconds ?? null) : null,
+          status: detail?.status ?? null,
+          sleepSeconds: detail?.sleepSeconds ?? null,
         }
       : null;
 

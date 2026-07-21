@@ -166,7 +166,7 @@ describe("PilotService.getActivity lastCycle", () => {
     });
   });
 
-  it("nulls status and sleepSeconds when detail is malformed (old skills wrote {})", async () => {
+  it("nulls status and sleepSeconds for a detail-less cycle (the stall-recovery path)", async () => {
     const svc = activityService({ cycleId: null, createdAt: completedAt, detail: {} });
     const { lastCycle } = await svc.getActivity("p1");
     expect(lastCycle).toEqual({

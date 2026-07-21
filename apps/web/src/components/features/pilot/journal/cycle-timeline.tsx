@@ -24,13 +24,15 @@ type Block =
 function toBlocks(entries: PilotJournalEntry[]): Block[] {
   const blocks: Block[] = [];
   const indexByCycle = new Map<string, number>();
+
   for (const entry of entries) {
     if (!entry.cycleId) {
       blocks.push({ type: "entry", entry });
       continue;
     }
     const at = indexByCycle.get(entry.cycleId);
-    if (at === undefined) {
+
+    if (at == null) {
       indexByCycle.set(entry.cycleId, blocks.length);
       blocks.push({ type: "cycle", cycleId: entry.cycleId, entries: [entry] });
     } else {
@@ -80,7 +82,6 @@ function CycleCard(props: { entries: PilotJournalEntry[]; defaultOpen: boolean }
   const started = chronological[0]?.createdAt;
   const duration = cycleDuration(entries);
   const cycleEntry = entries.find((entry) => entry.kind === "cycle");
-  // Older skills wrote `detail: {}`, so both fields stay optional even on a successful parse.
   const detail = cycleEntry && pilotCycleDetailSchema.safeParse(cycleEntry.detail).data;
 
   return (
