@@ -12,24 +12,12 @@ your pipeline updates live.
 
 ## Install
 
-**Claude Code** - run inside Claude Code:
+The marketplace commands for Claude Code and Codex live in the
+[root README](../README.md#install-the-plugin).
 
-```text
-/plugin marketplace add https://github.com/suxrobgm/claude-plugins
-/plugin install jobpilot@sukhrob-claude-plugins
-/jobpilot:setup
-```
-
-**Codex** - run in a shell, then start a new session and run `$setup`:
-
-```text
-codex plugin marketplace add suxrobGM/codex-plugins
-codex plugin add jobpilot@sukhrob-codex-plugins
-```
-
-The `setup` skill installs the local terminal companion, starts the agent, and
-opens the dashboard. After that you can launch and control the agent from the
-dashboard's agent dock.
+Both providers finish by running the `setup` skill, which installs the local
+terminal companion, starts the agent, and opens the dashboard. After that you
+can launch and control the agent from the dashboard's agent dock.
 
 ## Layout
 

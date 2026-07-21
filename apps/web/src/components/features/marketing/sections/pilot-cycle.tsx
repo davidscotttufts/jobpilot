@@ -8,7 +8,7 @@ const STOPS = ["finds roles", "applies", "follows up", "asks you", "writes the j
 
 const CYCLE_MS = 7500;
 const STEP_MS = CYCLE_MS / STOPS.length;
-// Each stop owns an equal slice of the loop, and its pill is dark again by the end of that slice.
+// A stop's slice of the loop - its pill is dark again by the end of it.
 const STEP_PCT = +(100 / STOPS.length).toFixed(2);
 
 /** Position on the ring for stop `i`, starting at 12 o'clock, clockwise. */
@@ -20,9 +20,7 @@ function ringPosition(i: number): { left: string; top: string } {
   };
 }
 
-// A server component, so sx must stay a plain object - a `(theme) => …` callback
-// is a function, and functions cannot cross the RSC boundary.
-// The keyframes live on the ring rather than each pill so emotion emits them once.
+// Keyframes live on the ring, not each pill, so emotion emits them once.
 const ringSx = {
   position: "absolute",
   inset: { xs: "12%", sm: "8%" },

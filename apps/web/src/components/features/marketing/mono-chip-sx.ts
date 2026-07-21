@@ -1,11 +1,9 @@
 import { fontFamilies, line, radii } from "@/theme";
 
 /**
- * The outlined mono pill shared by the landing sections. Callers set `fontSize` - the ring
- * labels run smaller than the board chips so they fit inside the circle.
- *
- * A plain object, not a `SxProps` typed as a `(theme) => …` callback: the marketing sections
- * are server components and functions cannot cross the RSC boundary.
+ * The outlined mono pill shared by the landing sections. Callers set `fontSize` - ring labels
+ * run smaller than board chips to fit the circle. A plain object, not a `(theme) => …`
+ * callback: these sections are server components and functions can't cross the RSC boundary.
  */
 export const monoChipSx = {
   fontFamily: fontFamilies.mono,
