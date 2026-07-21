@@ -28,7 +28,7 @@ model UserJobBoard {
   // Null = inherit the global board's value.
   name       String?
   searchUrl  String?  @map("search_url")
-  sortOrder  Int      @default(0) @map("sort_order")
+  sortOrder  Int?     @map("sort_order")
   createdAt  DateTime @default(now()) @map("created_at")
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

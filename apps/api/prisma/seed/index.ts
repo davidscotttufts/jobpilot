@@ -2,7 +2,6 @@ import { db } from "@/common/database";
 import { seedJobBoards } from "./job-boards";
 import { seedJobListings } from "./job-listings";
 import { seedSuperAdmin } from "./super-admin";
-import { seedUserBoards } from "./user-boards";
 
 interface Seeder {
   fn: () => Promise<void>;
@@ -11,16 +10,11 @@ interface Seeder {
   optIn: boolean;
 }
 
-// Insertion order is run order: user-boards needs the catalog that job-boards seeds.
+// Insertion order is run order.
 const seeders = {
   "job-boards": {
     fn: seedJobBoards,
     description: "Seed the global job-board catalog",
-    optIn: false,
-  },
-  "user-boards": {
-    fn: seedUserBoards,
-    description: "Link every user to the default boards",
     optIn: false,
   },
   "super-admin": {

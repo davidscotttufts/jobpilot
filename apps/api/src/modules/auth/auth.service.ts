@@ -11,7 +11,7 @@ import {
 import { conflict, notFound, unauthorized } from "@/common/errors";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
-import { PrismaClient, type User } from "@/generated/prisma/client";
+import { PrismaClient, type User, UserRole } from "@/generated/prisma/client";
 import { meUser, principal, publicUser } from "./auth.mapper";
 
 const REFRESH_TTL_MS = durationToMs(env.REFRESH_TOKEN_EXPIRY, 30 * 86_400_000);
@@ -45,17 +45,18 @@ export class AuthService {
     if (existing) {
       throw conflict("Email already registered");
     }
-    const passwordHash = await hashPassword(input.password);
+
     // Dev signups skip the verification round-trip; elsewhere the controller emails the link.
     const autoVerified = env.NODE_ENV === "development";
-    // Granted here too, so a fresh DB works when the super admin registers after deploy.
-    const role = env.SUPER_ADMIN_EMAIL === input.email ? "SUPER_ADMIN" : "USER";
+    const role: UserRole = env.SUPER_ADMIN_EMAIL === input.email ? "SUPER_ADMIN" : "USER";
+    const passwordHash = await hashPassword(input.password);
+
     // An unseeded catalog yields zero links rather than a failed signup.
     const defaults = await this.prisma.jobBoard.findMany({
       where: { isDefault: true },
-      select: { id: true, sortOrder: true },
-      orderBy: { sortOrder: "asc" },
+      select: { id: true },
     });
+
     let user: User;
     try {
       user = await this.prisma.user.create({
@@ -67,12 +68,8 @@ export class AuthService {
           username: await this.uniqueUsername(),
           contactEmail: input.email,
           jobBoards: {
-            createMany: {
-              data: defaults.map((board) => ({
-                jobBoardId: board.id,
-                sortOrder: board.sortOrder,
-              })),
-            },
+            // Bare links: null overrides inherit the global name/searchUrl/sortOrder live.
+            createMany: { data: defaults.map((board) => ({ jobBoardId: board.id })) },
           },
         },
       });

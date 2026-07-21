@@ -10,7 +10,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Which job boards are supported?",
-    a: "Any board. Twelve come built in, from LinkedIn and Indeed to HN Who's Hiring and Upwork, and you can add any other board from the boards page - the agent drives a real browser, so it isn't limited to a fixed list.",
+    a: "Any board. Eleven come built in, from LinkedIn and Indeed to HN Who's Hiring and Upwork, and you can add any other board from the boards page - the agent drives a real browser, so it isn't limited to a fixed list.",
   },
   {
     q: "Can it read and send email?",

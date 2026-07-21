@@ -53,7 +53,7 @@ can see what the agent is doing and step in when needed.
 - **Work with resumes and Upwork:** maintain resume variants, export PDFs, search
   Upwork jobs, draft proposals, and improve your profile.
 
-JobPilot includes workflows for LinkedIn, Indeed, Glassdoor, Wellfound, Y
+JobPilot includes workflows for LinkedIn, Indeed, Hiring Cafe, Wellfound, Y
 Combinator, Hacker News Who's Hiring, We Work Remotely, Remote OK, and other
 boards. You can also add a custom board.
 

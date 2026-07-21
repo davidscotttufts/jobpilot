@@ -24,7 +24,7 @@ export class JobBoardService {
       searchUrl: row.searchUrl ?? row.jobBoard.searchUrl,
       email: row.email,
       password: await this.crypto.decryptField(userId, SECRET_CONTEXTS.boardPassword, row.password),
-      sortOrder: row.sortOrder,
+      sortOrder: row.sortOrder ?? row.jobBoard.sortOrder,
     };
   }
 
@@ -32,9 +32,10 @@ export class JobBoardService {
     const rows = await this.prisma.userJobBoard.findMany({
       where: { userId },
       include: { jobBoard: true },
-      orderBy: { sortOrder: "asc" },
     });
-    return Promise.all(rows.map((row) => this.project(userId, row)));
+    const boards = await Promise.all(rows.map((row) => this.project(userId, row)));
+    // Sorted here, not in SQL: the effective order coalesces the override with the global value.
+    return boards.sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
   /** Listed boards the user has not linked yet - the picker in the add-board dialog. */
