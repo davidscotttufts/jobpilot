@@ -3,7 +3,7 @@ using JobPilot.Terminal.Pilot;
 namespace JobPilot.Terminal.Tests;
 
 /// <summary>Shared arrange helpers for the PilotCycleRunner behavior tests, split across domain files.</summary>
-internal static class RunnerTest
+internal static class PilotCycleRunnerHarness
 {
     public static readonly PilotPairing Claude = TestPairing.Create();
 

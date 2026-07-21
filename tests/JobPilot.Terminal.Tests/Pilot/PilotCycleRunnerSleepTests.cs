@@ -1,6 +1,6 @@
 using JobPilot.Terminal.Pilot;
 using Xunit;
-using static JobPilot.Terminal.Tests.RunnerTest;
+using static JobPilot.Terminal.Tests.PilotCycleRunnerHarness;
 
 namespace JobPilot.Terminal.Tests;
 
