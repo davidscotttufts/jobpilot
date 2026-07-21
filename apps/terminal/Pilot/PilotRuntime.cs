@@ -14,11 +14,14 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
 
-    // Check-in and skip are graduated unstick directives; the skip forces the claimed task failed so the cycle moves on.
+    // Graduated unstick directives; skip also fails the claimed task. Both spell out the cycle detail - without it
+    // /api/pilot/activity can't read the entry as a completion.
     private const string CheckInCommand =
-        "Checking in: you appear stuck. Release your claim, journal the failure, and print the cycle sentinel.";
+        "Checking in: you appear stuck. Release your claim, journal the error batch (system + cycle with "
+        + "detail:{\"status\":\"error\",\"sleepSeconds\":300}), and print the error sentinel.";
     private const string SkipCommand =
-        "Stop the current action. Record the claimed task as failed, journal why, and print the cycle sentinel.";
+        "Stop the current action. Fail the claimed task, journal the error batch (system + cycle with "
+        + "detail:{\"status\":\"error\",\"sleepSeconds\":300}), and print the error sentinel.";
 
     private readonly SessionManager session;
     private readonly PilotStore store;
