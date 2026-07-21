@@ -62,12 +62,12 @@ profile, resumes, campaigns, and application history.
 
 ## Get started
 
-1. [Create an account](https://jobpilot.suxrobgm.net) and add your profile and
-   resume.
-2. Install the JobPilot plugin for Claude Code or Codex using the instructions
+1. Install the JobPilot plugin for Claude Code or Codex using the instructions
    below.
-3. Run the `setup` skill. It installs the local terminal companion, starts the
+2. Run the `setup` skill. It installs the local terminal companion, starts the
    agent, and opens the dashboard.
+3. [Create an account](https://jobpilot.suxrobgm.net) and complete onboarding -
+   the agent parses your uploaded resume into your profile.
 4. Start with a search campaign. Review the matches, then apply to selected jobs
    or create an auto-apply campaign.
 

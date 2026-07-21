@@ -24,30 +24,27 @@ once per user and takes about five minutes.
 3. In JobPilot, open **Settings → Email** and copy the **redirect URI** shown
    there; add it as an authorized redirect URI on your OAuth client.
 4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
-   screen. This lives at
+   screen, under
    [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes):
-   click **Add or remove scopes**, search for `gmail.readonly` and
-   `gmail.send`, tick both Gmail API rows, then **Save**. `readonly` lets
-   JobPilot track replies and read verification codes; `send` lets it send
-   networking emails and replies. Without `readonly` the Gmail API returns 403
-   "insufficient scopes"; without `send` the mailbox connects read-only and
-   networking can't send.
-5. Keep **your** app in Testing mode and add your Gmail address under
+   **Add or remove scopes**, search for each, tick both Gmail API rows, then
+   **Save**. `readonly` powers reply tracking and verification codes; `send`
+   powers networking email.
+5. Keep the app in Testing mode and add your Gmail address under
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
-   Because it's your own project with you as the sole test user, no
-   verification is required. Note: Testing-mode refresh tokens expire after
-   about 7 days, so you'll reconnect periodically - publish your own app
-   (still no verification under Google's 100-user test limit) to avoid that.
+   It's your own project with you as the only user, so Google verification is
+   never required. One catch: Testing-mode refresh tokens expire after about
+   7 days. If you'd rather not reconnect weekly, publish the app - still
+   verification-free under Google's 100-user test limit.
 6. Back in **Settings → Email**, paste your **Client ID** and **Client
    secret**, save, then **Connect Gmail**.
 
 ## What JobPilot can and can't do
 
-The scopes are `gmail.readonly` and `gmail.send`: JobPilot reads your mail
-and sends networking emails and replies on your behalf, but can never delete
-mail. Your client id and secret are stored encrypted per user - the secret
-never leaves the server - and the connected account is tied to your profile
-only.
+Read and send - nothing else. The two scopes above let JobPilot read your
+mail and send email on your behalf; deleting or modifying mail is outside
+what the token allows. Your client id and secret are stored encrypted per
+user - the secret never leaves the server - and the connected account is
+tied to your profile only.
 
 ## Troubleshooting
 

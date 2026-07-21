@@ -2,7 +2,7 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("getting-started", {
   description:
-    "Install the JobPilot plugin, run setup, create your account, and run your first campaign.",
+    "Install the JobPilot plugin, run setup, create your account, and launch your first campaign.",
 });
 
 # Getting started
@@ -18,51 +18,44 @@ machine. Setup takes about ten minutes.
 
 ## 1. Install the plugin
 
-JobPilot is a plugin for the Claude Code or Codex subscription you already
-have. Add it from a marketplace - the [install page](/install) has copy-paste
-commands for both providers. In Claude Code:
+Add the plugin to the provider you use - the [install page](/install) has
+copy-paste commands for both. In Claude Code:
 
 ```text
 /plugin marketplace add https://github.com/suxrobgm/claude-plugins
 /plugin install jobpilot@sukhrob-claude-plugins
 ```
 
-In Codex, add the plugin from a shell:
+In Codex, from a shell:
 
 ```text
 codex plugin marketplace add suxrobGM/codex-plugins
 codex plugin add jobpilot@sukhrob-codex-plugins
 ```
 
-The [install page](/install) also has a one-line installer for repairing the
-local terminal host. It does not replace the plugin installation required by
-Codex.
-
 ## 2. Run setup
 
-Start a new provider session, then run the `setup` skill. It installs and
-starts the local agent - a small terminal host that runs Claude Code or Codex
-for you - and signs it in as you automatically.
+Start a new provider session and run the `setup` skill - `/jobpilot:setup` in
+Claude Code, `$setup` in Codex. It installs the local terminal host, starts
+the agent, and opens the dashboard.
 
 ```text
 /jobpilot:setup
 $setup
 ```
 
-Use `/jobpilot:setup` in Claude Code or `$setup` in Codex. Codex also provides
-`/skills` as a picker for browsing installed skills; `/setup` is not a direct
-Codex skill command.
-
-The dashboard's agent dock (the terminal panel in the bottom corner) stays
-visible, so you can watch every step the agent takes. Pick your provider -
-Claude Code or Codex; you can switch any time.
+From here the agent dock - the terminal panel in the dashboard's bottom
+corner - shows everything the agent does, and you can switch providers there
+any time. If the terminal host ever breaks, the [install page](/install) has
+a one-line installer to repair it.
 
 ## 3. Create your account
 
 1. Go to [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign up.
 2. Verify your email address.
 3. Complete onboarding: fill in your profile and upload a resume PDF. The
-   profile powers form filling; the resume powers job scoring and tailoring.
+   running agent parses the resume into the structured editor; the profile
+   powers form filling, the resume powers job scoring and tailoring.
 
 Everything can be changed later under **Settings**.
 

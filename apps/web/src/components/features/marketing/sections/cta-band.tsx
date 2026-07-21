@@ -47,8 +47,8 @@ export function CtaBand(): ReactElement {
             Put your job search on autopilot.
           </Typography>
           <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 520 }}>
-            Free and open source. Create an account, install the agent, and run your first campaign
-            tonight.
+            Free and open source. Install the agent, create your account, and run your first
+            campaign tonight.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
             <LinkButton href="/install" variant="contained" size="large">

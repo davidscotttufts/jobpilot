@@ -16,9 +16,7 @@ campaigns. In Claude Code they're invoked as `/jobpilot:<skill>`, in Codex as
 $auto-apply senior typescript remote
 ```
 
-In Codex, `/skills` opens the installed-skill picker. Choose a JobPilot skill
-there or invoke it directly with `$<skill>`; Claude-style `/jobpilot:<skill>`
-commands are not available in Codex.
+(In Codex, `/skills` lists everything installed if you forget a name.)
 
 ## The four campaign modes
 
@@ -44,6 +42,7 @@ your approval.
 
 | Skill             | What it does                                                             |
 | ----------------- | ------------------------------------------------------------------------ |
+| `pilot`           | Run one [Pilot](/docs/pilot) cycle; the Pilot host invokes it on its own. |
 | `search`          | Search a board, rank results against your resume, save them for review.  |
 | `auto-apply`      | Search and apply autonomously until done, paused, or capped.             |
 | `apply`           | Apply to one job with a fit review, or drain the saved-URL queue.        |
@@ -68,9 +67,9 @@ handles captchas, and `humanizer` makes generated text read naturally.
 
 Every application has one of six statuses: **applied → screening →
 interviewing → offer**, with **rejected** and **withdrawn** as exits. The
-workspace rolls them into a funnel - Applied, Screening, Interviewing, Offer -
-with every application listed beneath it; each application page keeps a full
-activity timeline. Analytics aggregates the funnel across campaigns.
+workspace shows them as a funnel with every application listed beneath it,
+each application page keeps a full activity timeline, and analytics
+aggregates the funnel across campaigns.
 
 ## The inbox loop
 
