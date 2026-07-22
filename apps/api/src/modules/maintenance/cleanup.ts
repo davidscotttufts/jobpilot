@@ -9,57 +9,67 @@ import {
   journalOldWhere,
   promotionPostWhere,
   questionTerminalWhere,
+  type RetentionCutoffs,
   refreshTokenWhere,
   verificationTokenWhere,
 } from "./retention";
 
-export interface RetentionCounts {
-  journal: number;
-  journalDigests: number;
-  claims: number;
-  claimsDiscover: number;
-  questions: number;
-  verificationTokens: number;
-  refreshTokens: number;
-  promotions: number;
-  emailBodiesBlanked: number;
-  applicationEvents: number;
+interface RetentionRule {
+  key: string;
+  run: (db: PrismaClient, c: RetentionCutoffs) => Promise<{ count: number }>;
 }
+
+/** One entry per rule: the reported count key and the write are declared together, so they cannot drift apart. */
+const RULES = [
+  {
+    key: "journal",
+    run: (db, c) => db.pilotJournalEntry.deleteMany({ where: journalOldWhere(c) }),
+  },
+  {
+    key: "journalDigests",
+    run: (db, c) => db.pilotJournalEntry.deleteMany({ where: journalDigestOldWhere(c) }),
+  },
+  { key: "claims", run: (db, c) => db.pilotClaim.deleteMany({ where: claimReleasedWhere(c) }) },
+  {
+    key: "claimsDiscover",
+    run: (db, c) => db.pilotClaim.deleteMany({ where: claimDiscoverWhere(c) }),
+  },
+  {
+    key: "questions",
+    run: (db, c) => db.pilotQuestion.deleteMany({ where: questionTerminalWhere(c) }),
+  },
+  {
+    key: "verificationTokens",
+    run: (db, c) => db.verificationToken.deleteMany({ where: verificationTokenWhere(c) }),
+  },
+  {
+    key: "refreshTokens",
+    run: (db, c) => db.refreshToken.deleteMany({ where: refreshTokenWhere(c) }),
+  },
+  {
+    key: "promotions",
+    run: (db, c) => db.promotionPost.deleteMany({ where: promotionPostWhere(c) }),
+  },
+  {
+    key: "emailBodiesBlanked",
+    run: (db, c) => db.emailMessage.updateMany({ where: emailBodyWhere(c), data: { rawBody: "" } }),
+  },
+  {
+    key: "applicationEvents",
+    run: (db, c) => db.applicationEvent.deleteMany({ where: applicationEventWhere(c) }),
+  },
+] as const satisfies readonly RetentionRule[];
+
+export type RetentionCounts = Record<(typeof RULES)[number]["key"], number>;
 
 /** Runs every retention rule sequentially against the given client; accepts prisma as a param for testability. */
 export async function runRetentionCleanup(prisma: PrismaClient): Promise<RetentionCounts> {
   const c = cutoffs(new Date());
+  const counts = {} as RetentionCounts;
 
-  const journal = await prisma.pilotJournalEntry.deleteMany({ where: journalOldWhere(c) });
-  const journalDigests = await prisma.pilotJournalEntry.deleteMany({
-    where: journalDigestOldWhere(c),
-  });
-  const claims = await prisma.pilotClaim.deleteMany({ where: claimReleasedWhere(c) });
-  const claimsDiscover = await prisma.pilotClaim.deleteMany({ where: claimDiscoverWhere(c) });
-  const questions = await prisma.pilotQuestion.deleteMany({ where: questionTerminalWhere(c) });
-  const verificationTokens = await prisma.verificationToken.deleteMany({
-    where: verificationTokenWhere(c),
-  });
-  const refreshTokens = await prisma.refreshToken.deleteMany({ where: refreshTokenWhere(c) });
-  const promotions = await prisma.promotionPost.deleteMany({ where: promotionPostWhere(c) });
-  const emailBodiesBlanked = await prisma.emailMessage.updateMany({
-    where: emailBodyWhere(c),
-    data: { rawBody: "" },
-  });
-  const applicationEvents = await prisma.applicationEvent.deleteMany({
-    where: applicationEventWhere(c),
-  });
+  for (const rule of RULES) {
+    counts[rule.key] = (await rule.run(prisma, c)).count;
+  }
 
-  return {
-    journal: journal.count,
-    journalDigests: journalDigests.count,
-    claims: claims.count,
-    claimsDiscover: claimsDiscover.count,
-    questions: questions.count,
-    verificationTokens: verificationTokens.count,
-    refreshTokens: refreshTokens.count,
-    promotions: promotions.count,
-    emailBodiesBlanked: emailBodiesBlanked.count,
-    applicationEvents: applicationEvents.count,
-  };
+  return counts;
 }
