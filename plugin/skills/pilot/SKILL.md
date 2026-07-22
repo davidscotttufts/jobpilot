@@ -96,15 +96,15 @@ The `[interview-prep]` marker prefix is load-bearing - the server dedupes on it.
 
 ### `job.apply`
 
-Delegate ONE `job-worker` invocation in apply mode, same input JSON auto-apply builds (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../../shared/setup.md`) plus `claimId:$CLAIM_ID` (lets the worker heartbeat through a long apply), all read from the claim payload. Heartbeat once more when it returns:
+Delegate ONE `job-worker` invocation in apply mode - the input JSON from `../../shared/campaign-flow.md` (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../../shared/setup.md`) plus `claimId:$CLAIM_ID` (lets the worker heartbeat through a long apply), all read from the claim payload. Heartbeat once more when it returns:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims/$CLAIM_ID/heartbeat"
 ```
 
-Handle the four outcomes exactly as auto-apply's 2.4:
+Handle the four outcomes per `../../shared/campaign-flow.md` (Terminal result writes):
 
-- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` per `../../skills/auto-apply/SKILL.md` (2.4 payload shapes).
+- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` with the shared payload shapes.
 - `needs_user` → ask the user, then park the job:
 
 Pass the worker's `kind`, `question`, and `options` through verbatim (`options` defaults `[]`).

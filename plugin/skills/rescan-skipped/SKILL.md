@@ -10,10 +10,6 @@ Re-score a campaign's `skipped` jobs and set eligible ones to `approved`. **Neve
 
 ## Setup
 
-```bash
-JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
-```
-
 Follow `../../shared/setup.md`. Fetch the campaign: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/campaigns/<campaign-id>"`. Threshold = `config.minScore` (fallback `autoApply.minMatchScore`, else 60).
 
 ## Step 1: Select Targets

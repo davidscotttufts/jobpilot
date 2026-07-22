@@ -36,14 +36,8 @@ Extract role/skills, keywords, and preferences (hourly vs fixed, budget floor, c
 
 ### 3.1 Dedupe
 
-```bash
-URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
-TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
-COMPANY_ENCODED=$(jq -rn --arg v "<clientName>" '$v|@uri')
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
-```
-
-`.applied` → create the row as `pending`, POST `/jobs/<key>/result` with `{outcome:"skipped",skipReason:"Already applied (<kind>)"}`, then skip the rest.
+Run the applied-check (`../../shared/campaign-flow.md`) with `clientName` as the company.
+`.applied` → record the default already-applied skip, then skip the rest.
 
 ### 3.2 Client quality (smart filter)
 
@@ -107,10 +101,9 @@ Print a compact ranked table and link to `$JOBPILOT_WEB/campaigns/<campaign-id>`
 
 ## Rules
 
+The shared campaign rules (`../../shared/campaign-flow.md`) apply throughout. On top of them:
+
 1. **Recommend only.** Never click Submit/Apply, never spend connects. Generating a proposal is a separate, user-triggered step.
 2. **Smart filter, not blanket skip.** Drop only on a client-quality `skip` verdict, an applied dupe, or a JD-stated hard requirement. Below-level/thin-JD/contractor are never skips - that's the whole point of Upwork.
-3. **Account handling** - `../../shared/auth.md` (register if missing, forgot-password via `get-code`).
-4. **Never skip silently.** Every `skipped` write carries a non-empty `skipReason`.
-5. **Be honest about scores.** Label stretches as stretches.
 
 Read `../../shared/browser-tips.md` for large pages, Cloudflare/login walls, and snapshot best practices.

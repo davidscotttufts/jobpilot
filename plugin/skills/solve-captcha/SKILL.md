@@ -6,11 +6,7 @@ argument-hint: "[url | ref_or_description] (optional; a URL → navigate there f
 
 # Solve CAPTCHA
 
-Clear a CAPTCHA on the **current browser tab**. Return **solved** or **unsolved** (the caller falls back). Authorized use only - the user's own applications.
-
-```bash
-JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
-```
+Clear a CAPTCHA on the **current browser tab**. Return **solved** or **unsolved** (the caller falls back). Authorized use only - the user's own applications. `$JOBPILOT_API` / `$JOBPILOT_API_TOKEN` are injected by the terminal host.
 
 ## 1. Dispatch + identify
 

@@ -18,7 +18,6 @@ Search a single board (picked by the user when launching the campaign) and rank 
 3. Resolve the board:
 
    ```bash
-   JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
    curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq --arg d "<domain>" '.[] | select(.domain == $d)'
    ```
 
@@ -38,14 +37,9 @@ Extract title/role, keywords, location, other preferences (e.g. "no startups", "
 
 ## Phase 3: Exclude Previously Applied
 
-```bash
-URL_ENCODED=$(jq -rn --arg v "<job-url>" '$v|@uri')
-TITLE_ENCODED=$(jq -rn --arg v "<title>" '$v|@uri')
-COMPANY_ENCODED=$(jq -rn --arg v "<company>" '$v|@uri')
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/applied/check?url=$URL_ENCODED&title=$TITLE_ENCODED&company=$COMPANY_ENCODED"
-```
-
-If `.applied`, tag with "Previously Applied" (note `.match.kind`: `url` for exact, `fuzzy` with score for title+company). In Phase 5, create these rows as `pending`, then record `skipped` through `/jobs/<key>/result`; do not offer them for apply.
+Run the applied-check (`../../shared/campaign-flow.md`) per result. If `.applied`, tag with
+"Previously Applied" (note `.match.kind`). In Phase 5, create these rows as `pending`, then
+record `skipped` through `/jobs/<key>/result`; do not offer them for apply.
 
 ## Phase 4: Fit Review
 
@@ -85,10 +79,10 @@ Print a compact ranked table, then link to the campaign - nothing else:
 
 ## Rules
 
+The shared campaign rules (`../../shared/campaign-flow.md`) apply throughout. On top of them:
+
 1. **Exactly one board per campaign** - the `--board` flag is required and the skill targets only that board.
-2. **Account handling** - follow `../../shared/auth.md`. If login fails because the account doesn't exist, the auth flow registers one with the stored credentials.
-3. **Handle rate limiting** - if blocked, note it and continue.
-4. **Be honest about scores.** 50/100 is a stretch - label it as such.
-5. **Deduplicate** within the board.
+2. **Handle rate limiting** - if blocked, note it and continue.
+3. **Deduplicate** within the board.
 
 Read `../../shared/browser-tips.md` for large pages, popups, and browser best practices.

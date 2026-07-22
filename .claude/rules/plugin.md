@@ -15,8 +15,8 @@ generation step - edit here directly.
   `jobpilot`); `.mcp.json` - Playwright MCP wiring shared by both.
 - `skills/<name>/SKILL.md` - one hand-authored skill per directory.
 - `shared/*.md` - reference docs kept outside `skills/` so Codex doesn't expose them as skills:
-  `auth`, `browser-tips`, `digest-schema`, `eligibility`, `form-filling`, `setup`,
-  `untrusted-content`.
+  `auth`, `browser-tips`, `campaign-flow`, `digest-schema`, `eligibility`, `form-filling`,
+  `setup`, `untrusted-content`.
 - `agents/*.md` - worker subagents (`job-worker` score/apply, `networking-worker`
   discover/compose) that campaign skills delegate per-iteration so heavy browser/snapshot work
   stays out of the main context. The `.md` body is the single source of truth; Codex
