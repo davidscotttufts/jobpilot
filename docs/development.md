@@ -182,4 +182,6 @@ channels (`inbox`, `pipeline`, `resume`, `upwork`) follow the same pattern.
 loading: `/api/health` → `GET /api/profile` → `GET /api/credentials`; resumes
 via `data.defaultResumeAbsolutePath` or `GET /api/resumes/[id]/file`.
 `auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting
-browser behavior; the writing skills chain the `humanizer` skill by name.
+browser behavior; `campaign-flow.md` holds the campaign mechanics every apply
+skill shares (applied-check, result writes, worker input, rules); the writing
+skills chain the `humanizer` skill by name.
