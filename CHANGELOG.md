@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.16] - 2026-07-22
+
+### Changed
+
+- Each pilot cycle now starts from a clean provider conversation, so a long
+  run can no longer auto-compact mid-cycle and page content from one cycle
+  cannot linger into the next. Check-ins and skips still keep the context of
+  the cycle they are answering.
+
 ## [2.1.15] - 2026-07-22
 
 ### Added
