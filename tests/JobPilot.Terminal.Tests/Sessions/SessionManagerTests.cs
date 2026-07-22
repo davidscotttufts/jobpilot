@@ -24,7 +24,7 @@ public sealed class SessionManagerTests : IDisposable
             SharedSkillsDir = Path.Combine(temp.Root, "plugin", "skills"),
             ClaudePluginDir = Path.Combine(temp.Root, "plugin"),
         };
-        session = new SessionManager(pty, new HostInstall(paths), NullLogger<SessionManager>.Instance);
+        session = new SessionManager(pty, new HostInstall(paths), MakeCleaner(), NullLogger<SessionManager>.Instance);
     }
 
     public void Dispose()
@@ -32,6 +32,9 @@ public sealed class SessionManagerTests : IDisposable
         session.Dispose();
         temp.Dispose();
     }
+
+    private static ScratchCleaner MakeCleaner() =>
+        new(new HostInstall(paths: null), NullLogger<ScratchCleaner>.Instance);
 
     private void Start(string? provider = null) => session.Start(new SessionStartOptions(provider, 80, 24));
 
@@ -95,7 +98,10 @@ public sealed class SessionManagerTests : IDisposable
     public void Start_Throws_WhenTheInstallIsIncomplete()
     {
         using var broken = new SessionManager(
-            new FakePty(), new HostInstall(paths: null, pathsError: "no plugin tree"), NullLogger<SessionManager>.Instance);
+            new FakePty(),
+            new HostInstall(paths: null, pathsError: "no plugin tree"),
+            MakeCleaner(),
+            NullLogger<SessionManager>.Instance);
 
         var ex = Assert.Throws<InvalidOperationException>(() => broken.Start(new SessionStartOptions(null, 80, 24)));
         Assert.Contains("no plugin tree", ex.Message);

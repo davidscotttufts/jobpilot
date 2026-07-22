@@ -56,11 +56,8 @@ export interface AgendaDueQuery {
   query: string;
   board?: string;
   resumeId?: string;
-}
-
-export interface AgendaFinalizeCampaign {
-  campaignId: string;
-  query: string;
+  /** Existing in-progress campaign for this query - discovery reuses it instead of creating one. */
+  campaignId?: string;
 }
 
 /** A paused auto-apply campaign with no open/undecided review question - the review candidate. */
@@ -179,7 +176,6 @@ export interface AgendaInput {
   dueQueries: AgendaDueQuery[];
   // Existing campaigns with unscored pending rows; emitted only when the apply pipeline is empty.
   scorePending: AgendaScorePending[];
-  finalizeCampaigns: AgendaFinalizeCampaign[];
   // Paused campaigns needing a resume-or-ask decision; emitted ungated so they can't be starved.
   pausedCampaigns: AgendaPausedCampaign[];
   inbox: AgendaInbox;

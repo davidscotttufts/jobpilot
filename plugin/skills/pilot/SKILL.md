@@ -134,7 +134,7 @@ The claim payload is enriched: `{questionId, questionKind, subjectType, subjectI
 
 ### `search.discover`
 
-Run ONE bounded board search, modeled on the `search` skill (login per `../../shared/auth.md`). If the payload doesn't name an existing campaign, create one first:
+Run ONE bounded board search, modeled on the `search` skill (login per `../../shared/auth.md`). When the payload carries `campaignId`, reuse it (`CID=<payload.campaignId>`) - never create a second campaign for the same query. Only when `campaignId` is absent, create one first:
 
 ```bash
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
@@ -159,13 +159,6 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 ```
 
 Journal like the other kinds: "Scored 5 unscored jobs for 'senior typescript remote' - 3 now ≥ threshold, promote next cycle."
-
-### `campaign.finalize`
-
-```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CID/status" \
-  -H 'content-type: application/json' -d '{"status":"completed","actor":"pilot"}'
-```
 
 ### `campaign.reviewPaused`
 

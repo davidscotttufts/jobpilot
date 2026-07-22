@@ -5,7 +5,10 @@
 import { makeAgendaDeps, type Over } from "./db.test-helpers";
 import { AgendaService } from "./service";
 
-export const service = (over: Over = {}) => {
-  const { prisma, campaignJobs, pilot, push } = makeAgendaDeps(over);
-  return new AgendaService(prisma, campaignJobs, pilot, push);
+/** Builds the service plus the recorder for asserting on writes. */
+export const serviceWithRec = (over: Over = {}) => {
+  const { prisma, campaignJobs, pilot, push, rec } = makeAgendaDeps(over);
+  return { svc: new AgendaService(prisma, campaignJobs, pilot, push), rec };
 };
+
+export const service = (over: Over = {}) => serviceWithRec(over).svc;

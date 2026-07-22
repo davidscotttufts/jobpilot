@@ -22,7 +22,6 @@ describe("buildAgenda M3 kinds", () => {
         ],
         followups: [followup("m9")],
         duePlatforms: [{ platform: "reddit:r/forhire" }],
-        finalizeCampaigns: [{ campaignId: "c2", query: "react" }],
       }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual([
@@ -33,7 +32,6 @@ describe("buildAgenda M3 kinds", () => {
       "networking.warmIntro",
       "networking.followup",
       "promo.compose",
-      "campaign.finalize",
     ]);
   });
 

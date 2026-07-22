@@ -65,3 +65,39 @@ describe("AgendaService parkedBoards enforcement", () => {
     expect(discovered).toEqual(["golang"]);
   });
 });
+
+describe("AgendaService discover campaign reuse", () => {
+  const oneSearch = { savedSearches: [{ query: "react" }] };
+
+  const discoverPayload = (agenda: { items: { kind: string; payload: unknown }[] }) =>
+    agenda.items.find((i) => i.kind === "search.discover")?.payload as
+      | { campaignId?: string }
+      | undefined;
+
+  it("carries the existing in-progress campaign for the query", async () => {
+    const agenda = await service({
+      instructionsConfig: oneSearch,
+      dueQueryCampaigns: [{ campaignId: "c-old", query: "react" }],
+    }).refresh("p1");
+    expect(discoverPayload(agenda)?.campaignId).toBe("c-old");
+  });
+
+  it("prefers the newest campaign when several match the query", async () => {
+    const agenda = await service({
+      instructionsConfig: oneSearch,
+      // The gather orders by startedAt asc, so the later row is the newest and wins the overwrite.
+      dueQueryCampaigns: [
+        { campaignId: "c-old", query: "react" },
+        { campaignId: "c-new", query: "react" },
+      ],
+    }).refresh("p1");
+    expect(discoverPayload(agenda)?.campaignId).toBe("c-new");
+  });
+
+  it("omits campaignId when no in-progress campaign matches", async () => {
+    const agenda = await service({ instructionsConfig: oneSearch }).refresh("p1");
+    const payload = discoverPayload(agenda);
+    expect(payload).toBeDefined();
+    expect(payload?.campaignId).toBeUndefined();
+  });
+});

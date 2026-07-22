@@ -147,7 +147,9 @@ export async function gatherScorePendingCampaigns(
       },
     },
   });
-  if (campaigns.length === 0) return [];
+  if (campaigns.length === 0) {
+    return [];
+  }
 
   // One grouped count for every candidate's total unscored backlog, avoiding an N+1 per campaign.
   const counts = await prisma.job.groupBy({
@@ -174,9 +176,11 @@ export async function gatherScorePendingCampaigns(
   for (const c of campaigns) {
     const config = parseCampaignConfig(c.config);
     const board = config.board ?? null;
+
     // A campaign targeting a parked board is suppressed until the user un-parks it.
     if (board && parked.has(board)) continue;
     if (claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS)) continue;
+
     out.push({
       campaignId: c.campaignId,
       query: c.query,
@@ -235,20 +239,34 @@ export async function dueSavedSearches(
   now: Date,
 ): Promise<AgendaDueQuery[]> {
   if (config.savedSearches.length === 0) return [];
-  const latest = await latestClaimBySubject(
-    prisma,
-    userId,
-    "search.discover",
-    config.savedSearches.map((q) => q.query),
-  );
+  const queries = config.savedSearches.map((q) => q.query);
 
+  const [latest, existing] = await Promise.all([
+    latestClaimBySubject(prisma, userId, "search.discover", queries),
+    // Reuse each query's campaign so discovery doesn't spawn duplicates; the match mirrors the
+    // claim key (`search.discover:${query}`). All queries, not just due ones - same round-trip.
+    prisma.campaign.findMany({
+      where: { userId, status: "in_progress", source: "auto_apply", query: { in: queries } },
+      orderBy: { startedAt: "asc" },
+      select: { campaignId: true, query: true },
+    }),
+  ]);
+
+  // Ascending order ⇒ the newest campaign wins the overwrite.
+  const campaignByQuery = new Map(existing.map((c) => [c.query, c.campaignId]));
   const parked = new Set(config.parkedBoards);
   const due: AgendaDueQuery[] = [];
+
   for (const sq of config.savedSearches) {
     // A saved search targeting a parked board is suppressed until the user un-parks it.
     if (sq.board && parked.has(sq.board)) continue;
     if (claimDamped(latest.get(sq.query), now, sq.checkEveryHours * HOUR_MS)) continue;
-    due.push({ query: sq.query, board: sq.board, resumeId: sq.resumeId });
+    due.push({
+      query: sq.query,
+      board: sq.board,
+      resumeId: sq.resumeId,
+      campaignId: campaignByQuery.get(sq.query),
+    });
   }
   return due;
 }

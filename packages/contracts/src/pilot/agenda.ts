@@ -5,7 +5,6 @@ const AGENDA_ITEM_KINDS = [
   "job.apply",
   "search.discover",
   "campaign.scorePending",
-  "campaign.finalize",
   "campaign.reviewPaused",
   "inbox.review",
   "networking.send",
@@ -93,6 +92,8 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       board: optionalString,
       resumeId: optionalString,
       minScore: z.number(),
+      // Existing in-progress campaign for this query; the agent reuses it instead of creating one.
+      campaignId: optionalString,
     }),
   ),
   agendaItem(
@@ -108,7 +109,6 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       entries: z.array(z.object({ key: z.string(), url: z.string(), title: z.string() })),
     }),
   ),
-  agendaItem("campaign.finalize", "campaign", z.object({ campaignId: z.string() })),
   agendaItem(
     "campaign.reviewPaused",
     "campaign",

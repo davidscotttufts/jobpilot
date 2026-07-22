@@ -1,7 +1,7 @@
 // Campaign-level gathers through AgendaService.refresh (fake Prisma, no DB): score-pending
 // backlogs and the paused-campaign review.
 
-import { service } from "./compile.test-helpers";
+import { service, serviceWithRec } from "./compile.test-helpers";
 import { describe, expect, it } from "bun:test";
 
 describe("AgendaService campaign.scorePending", () => {
@@ -209,5 +209,29 @@ describe("AgendaService campaign.reviewPaused", () => {
       pausedCampaigns: [paused({ config: { board: "linkedin" } })],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(false);
+  });
+});
+
+describe("AgendaService idle-campaign finalize sweep", () => {
+  it("completes idle campaigns server-side, journals each, and emits no agenda item", async () => {
+    const { svc, rec } = serviceWithRec({
+      finalizeCampaigns: [{ campaignId: "c3", query: "react" }],
+    });
+    const agenda = await svc.refresh("p1");
+    expect(rec.campaignUpdates).toHaveLength(1);
+    expect(rec.campaignUpdates[0].where).toMatchObject({ campaignId: "c3", status: "in_progress" });
+    expect(rec.campaignUpdates[0].data).toMatchObject({
+      status: "completed",
+      statusActor: "pilot",
+    });
+    const journal = rec.journals.find((j) => j.kind === "action");
+    expect(journal).toMatchObject({ subjectType: "campaign", subjectId: "c3" });
+    expect(agenda.items.some((i) => i.subjectId === "c3")).toBe(false);
+  });
+
+  it("writes nothing when no campaign is idle", async () => {
+    const { svc, rec } = serviceWithRec();
+    await svc.refresh("p1");
+    expect(rec.campaignUpdates).toHaveLength(0);
   });
 });

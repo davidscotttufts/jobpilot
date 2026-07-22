@@ -3,7 +3,6 @@ import { MAX_PAUSED_REVIEWS, MAX_WARM_INTROS, PRIORITY, WARM_INTRO_MIN_SCORE } f
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
-  AgendaFinalizeCampaign,
   AgendaPausedCampaign,
   AgendaQuestion,
   AgendaScorePending,
@@ -94,7 +93,13 @@ export function buildDiscoverItems(
     title: `Discover: ${q.query}`,
     subjectType: "campaign",
     subjectId: q.query,
-    payload: { query: q.query, board: q.board, resumeId: q.resumeId, minScore: config.minScore },
+    payload: {
+      query: q.query,
+      board: q.board,
+      resumeId: q.resumeId,
+      minScore: config.minScore,
+      campaignId: q.campaignId,
+    },
   }));
 }
 
@@ -121,17 +126,5 @@ export function buildReviewPausedItems(campaigns: AgendaPausedCampaign[]): Agend
     subjectType: "campaign",
     subjectId: c.campaignId,
     payload: { campaignId: c.campaignId, query: c.query, board: c.board, pausedAt: c.pausedAt },
-  }));
-}
-
-export function buildFinalizeItems(campaigns: AgendaFinalizeCampaign[]): AgendaItem[] {
-  return campaigns.map((c) => ({
-    id: `campaign.finalize:${c.campaignId}`,
-    kind: "campaign.finalize",
-    priority: PRIORITY.finalize,
-    title: `Finalize campaign: ${c.query}`,
-    subjectType: "campaign",
-    subjectId: c.campaignId,
-    payload: { campaignId: c.campaignId },
   }));
 }

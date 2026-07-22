@@ -4,7 +4,6 @@ import { ACTIVE_SLEEP_SECONDS, MAX_ITEMS, MIN_IDLE_SLEEP_SECONDS } from "./const
 import { buildInterviewPrepItems, buildInterviewReplyItems } from "./items-interview";
 import {
   buildDiscoverItems,
-  buildFinalizeItems,
   buildJobApplyItems,
   buildQuestionItems,
   buildReviewPausedItems,
@@ -91,7 +90,6 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     items.push(...buildRescanSkippedItems(input.rescanSkipped));
     items.push(...buildRetryFailedItems(input.retryFailed));
   }
-  items.push(...buildFinalizeItems(input.finalizeCampaigns));
 
   // Opt-in networking: one category gate covers every `networking.*` kind by construction. `inbox.review`
   // is deliberately outside the namespace so mail triage (interview replies) survives networking being off.

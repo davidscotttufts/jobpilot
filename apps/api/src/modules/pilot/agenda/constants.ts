@@ -26,7 +26,6 @@ export const PRIORITY = {
   promoCompose: 300,
   rescanSkipped: 250,
   retryFailed: 240,
-  finalize: 100,
 } as const;
 
 /** Board health, strategy reviews, and skipped/failed sweeps are one-per-agenda so a cycle stays focused. */

@@ -13,6 +13,7 @@ export interface Recorder {
   claimJobForApply: unknown[][];
   claimCreates: Record<string, unknown>[];
   claimUpdates: { data: Record<string, unknown> }[];
+  campaignUpdates: { where: Record<string, unknown>; data: Record<string, unknown> }[];
   questionUpdates: { data: Record<string, unknown> }[];
   journals: Record<string, unknown>[];
   pushes: { userId: string; payload: PushPayload }[];
@@ -29,6 +30,8 @@ export interface Over {
   appliedToday?: number;
   activeClaims?: number;
   finalizeCampaigns?: Record<string, unknown>[];
+  // Existing in-progress campaigns matched by query for the discover-reuse lookup.
+  dueQueryCampaigns?: { campaignId: string; query: string }[];
   // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
   scorePendingCampaigns?: Record<string, unknown>[];
   scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
@@ -231,21 +234,26 @@ function fakeApplication(over: Over) {
   };
 }
 
-function fakeCampaign(over: Over) {
+function fakeCampaign(over: Over, rec: Recorder) {
   return {
-    // Split campaign gathers: status paused (paused review) before source auto-apply
-    // (score-pending, which also sets that source), then the `OR` finalization clause,
-    // then the quiet-candidate gather.
+    // Each gather is keyed on a field only it sets; finalize also filters `jobs`, so its `OR`
+    // branch precedes score-pending's.
     findMany: async (a: {
-      where: { status?: string; source?: string; jobs?: unknown; OR?: unknown };
+      where: { status?: string; source?: string; query?: unknown; jobs?: unknown; OR?: unknown };
     }) => {
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
-      if (a.where.source === "auto_apply") return over.scorePendingCampaigns ?? [];
+      if ("query" in a.where) return over.dueQueryCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
+      if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];
     },
     findFirst: async () => over.campaignFindFirst ?? null,
     update: async () => ({}),
+    // The finalize sweep's guarded completion write.
+    updateMany: async (a: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+      rec.campaignUpdates.push(a);
+      return { count: 1 };
+    },
   };
 }
 
@@ -280,6 +288,7 @@ export function makeAgendaDb(over: Over = {}) {
     claimJobForApply: [],
     claimCreates: [],
     claimUpdates: [],
+    campaignUpdates: [],
     questionUpdates: [],
     journals: [],
     pushes: [],
@@ -292,7 +301,7 @@ export function makeAgendaDb(over: Over = {}) {
     pilotQuestion: fakePilotQuestion(over, rec),
     job: fakeJob(over),
     application: fakeApplication(over),
-    campaign: fakeCampaign(over),
+    campaign: fakeCampaign(over, rec),
     networkingMessage: fakeNetworkingMessage(over),
     promotionPost: fakePromotionPost(over),
     queueEntry: {

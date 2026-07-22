@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Formats.Tar;
 using System.Globalization;
 using System.IO.Compression;
+using JobPilot.Terminal.Common;
 
 namespace JobPilot.Terminal.Updates;
 
@@ -159,25 +160,6 @@ public sealed class ReleaseInstaller(GitHubReleaseClient releases, ILogger<Relea
             }
         }
 
-        DeleteEmptyDirectories(installedPlugin);
-    }
-
-    private static void DeleteEmptyDirectories(string root)
-    {
-        // Deepest first so emptied parents follow their children.
-        foreach (var dir in Directory.GetDirectories(root, "*", SearchOption.AllDirectories)
-                     .OrderByDescending(d => d.Length))
-        {
-            try
-            {
-                if (!Directory.EnumerateFileSystemEntries(dir).Any())
-                {
-                    Directory.Delete(dir);
-                }
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-            }
-        }
+        DirectoryPrune.DeleteEmptyDirectories(installedPlugin);
     }
 }

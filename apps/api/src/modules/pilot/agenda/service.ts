@@ -11,7 +11,6 @@ import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { buildAgenda } from "./build";
 import { gatherBoardHealth } from "./candidates-board";
 import { gatherBootstrap } from "./candidates-bootstrap";
-import { gatherFinalizeCampaigns } from "./candidates-finalize";
 import { gatherInbox } from "./candidates-inbox";
 import { gatherQuietCandidates } from "./candidates-maintenance";
 import { gatherPausedCampaigns } from "./candidates-paused";
@@ -19,6 +18,7 @@ import { gatherAnsweredQuestions } from "./candidates-questions";
 import { gatherQueueDrain } from "./candidates-queue";
 import { writeDigestIfDue } from "./digest";
 import { runExpiry } from "./expiry";
+import { finalizeIdleCampaigns } from "./finalize";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
   attachWarmContacts,
@@ -73,8 +73,11 @@ export class AgendaService {
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
+
     await runExpiry(this.prisma, userId, now);
     await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);
+    // After promotion, so freshly-approved rows keep their campaign out of the idle sweep.
+    await finalizeIdleCampaigns({ prisma: this.prisma, pilot: this.pilot }, userId, now);
 
     const { prisma } = this;
     const [
@@ -83,7 +86,6 @@ export class AgendaService {
       activeClaims,
       approvedJobs,
       appliedToday,
-      finalizeCampaigns,
       pausedCampaigns,
       inbox,
       approvedNetworking,
@@ -101,7 +103,6 @@ export class AgendaService {
       prisma.pilotClaim.count({ where: { userId, releasedAt: null, expiresAt: { gt: now } } }),
       gatherApprovedJobs(prisma, userId, config.parkedBoards),
       countAppliedToday(prisma, userId, now),
-      gatherFinalizeCampaigns(prisma, userId, now),
       gatherPausedCampaigns(prisma, userId, now, config.parkedBoards),
       gatherInbox(prisma, userId),
       config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
@@ -115,7 +116,10 @@ export class AgendaService {
       gatherBoardHealth(prisma, userId, config.parkedBoards),
     ]);
 
-    if (config.networkingEnabled) await attachWarmContacts(prisma, userId, approvedJobs);
+    if (config.networkingEnabled) {
+      await attachWarmContacts(prisma, userId, approvedJobs);
+    }
+
     const [dueQueries, scorePending] =
       approvedJobs.length === 0
         ? await Promise.all([
@@ -123,11 +127,13 @@ export class AgendaService {
             gatherScorePendingCampaigns(prisma, userId, config.minScore, now, config.parkedBoards),
           ])
         : [[], []];
+
     const pipelineQuiet =
       approvedJobs.length === 0 &&
       dueQueries.length === 0 &&
       scorePending.length === 0 &&
       queue.pendingCount === 0;
+
     const [quiet, bootstrap] = pipelineQuiet
       ? await Promise.all([
           gatherQuietCandidates(prisma, userId, now),
@@ -141,6 +147,7 @@ export class AgendaService {
       now,
       openQuestions,
     );
+
     const content = buildAgenda({
       now,
       config,
@@ -151,7 +158,6 @@ export class AgendaService {
       appliedToday,
       dueQueries,
       scorePending,
-      finalizeCampaigns,
       pausedCampaigns,
       inbox,
       approvedNetworking,
@@ -168,11 +174,13 @@ export class AgendaService {
       retryFailed: quiet.retryFailed,
       bootstrap,
     });
+
     const agenda: AgendaResponse = {
       ...content,
       version: crypto.randomUUID(),
       expiresAt: new Date(now.getTime() + AGENDA_SNAPSHOT_TTL_MS),
     };
+
     await prisma.pilotState.update({
       where: { userId },
       data: {

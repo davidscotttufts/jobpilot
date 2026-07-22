@@ -16,6 +16,7 @@ public sealed class SessionManager : IDisposable
     private readonly IPty pty;
     private readonly ILogger<SessionManager> logger;
     private readonly HostInstall install;
+    private readonly ScratchCleaner scratch;
     private readonly Lock stateLock = new();
 
     private volatile SessionState state = SessionState.Stopped;
@@ -24,10 +25,11 @@ public sealed class SessionManager : IDisposable
     // A killed PTY can exit after its replacement starts, so only this generation may change session state.
     private int liveGeneration;
 
-    public SessionManager(IPty pty, HostInstall install, ILogger<SessionManager> logger)
+    public SessionManager(IPty pty, HostInstall install, ScratchCleaner scratch, ILogger<SessionManager> logger)
     {
         this.pty = pty;
         this.install = install;
+        this.scratch = scratch;
         this.logger = logger;
 
         pty.OutputReceived += OnPtyOutput;
@@ -76,7 +78,7 @@ public sealed class SessionManager : IDisposable
             }
 
             var workingDir = sessionPaths.WorkingDir;
-            PlaywrightScratchCleaner.Clean(workingDir, logger);
+            scratch.CleanSessionStart(workingDir);
             var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.ClaudePluginDir, workingDir);
 
             logger.LogInformation(

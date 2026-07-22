@@ -23,7 +23,7 @@ import {
   emptyNetworkingSummary,
   loadCampaignSummaries,
 } from "./campaign.summary";
-import { ensureCampaignOwned } from "./campaign.utils";
+import { ensureCampaignOwned, publishCampaignCompleted } from "./campaign.utils";
 
 function requireSummary(
   summaries: Awaited<ReturnType<typeof loadCampaignSummaries>>,
@@ -135,19 +135,25 @@ export class CampaignService {
     });
     if (updated.count === 0) throw conflict("Campaign status changed concurrently.");
     const campaign = await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } });
-    const source = toWireCampaignSource(campaign.source);
-    publish(
-      campaignChannel,
-      { campaignId: id },
-      { type: "status", payload: { status: body.status } },
-    );
-    publish(
-      workspaceChannel,
-      { userId },
-      body.status === "completed"
-        ? { type: "campaign.completed", campaignId: id }
-        : { type: "campaign.updated", campaignId: id, status: body.status, source },
-    );
+    if (body.status === "completed") {
+      publishCampaignCompleted(userId, id);
+    } else {
+      publish(
+        campaignChannel,
+        { campaignId: id },
+        { type: "status", payload: { status: body.status } },
+      );
+      publish(
+        workspaceChannel,
+        { userId },
+        {
+          type: "campaign.updated",
+          campaignId: id,
+          status: body.status,
+          source: toWireCampaignSource(campaign.source),
+        },
+      );
+    }
     return this.toRow(campaign);
   }
 

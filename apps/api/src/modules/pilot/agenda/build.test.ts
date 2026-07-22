@@ -5,21 +5,15 @@ import { base, bootstrapCandidate, cfg, job, pausedCampaign } from "./build.test
 import { describe, expect, it } from "bun:test";
 
 describe("buildAgenda priority", () => {
-  it("orders question.answered above job.apply above campaign.finalize", () => {
+  it("orders question.answered above job.apply", () => {
     const agenda = buildAgenda(
       base({
         answeredQuestions: [{ id: "e1", kind: "question", prompt: "Which start date?" }],
         approvedJobs: [job("j1", 80)],
-        finalizeCampaigns: [{ campaignId: "c2", query: "react" }],
       }),
     );
-    expect(agenda.items.map((i) => i.kind)).toEqual([
-      "question.answered",
-      "job.apply",
-      "campaign.finalize",
-    ]);
+    expect(agenda.items.map((i) => i.kind)).toEqual(["question.answered", "job.apply"]);
     expect(agenda.items[0].priority).toBeGreaterThan(agenda.items[1].priority);
-    expect(agenda.items[1].priority).toBeGreaterThan(agenda.items[2].priority);
   });
 
   it("orders question.answered above search.discover when the apply pipeline is empty", () => {

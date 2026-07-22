@@ -29,6 +29,8 @@ public static class HostingExtensions
         services.AddSingleton<ReleaseInstaller>();
         services.AddSingleton<HostUpdateService>();
         services.AddSingleton<IPty, PtyProcess>();
+        services.AddSingleton<ScratchCleaner>();
+        services.AddHostedService(sp => sp.GetRequiredService<ScratchCleaner>());
         services.AddSingleton<SessionManager>();
         services.AddSingleton<TerminalHub>();
         services.AddSingleton(sp => new PilotStore(
