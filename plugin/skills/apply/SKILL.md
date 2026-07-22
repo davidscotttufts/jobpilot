@@ -116,7 +116,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/queu
 ```bash
 CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
-  -d '{"query":"apply queue","source":"apply","config":{"minScore":6,"maxApplications":10}}')
+  -d "$(jq -n --argjson minScore <minMatchScore> \
+    '{query:"apply queue", source:"apply", config:{minScore:$minScore, maxApplications:10}}')")
 CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
@@ -153,7 +154,7 @@ It returns `{ outcome:"scored", jobKey, title, company, location, matchScore, co
 ```
 ## Batch Apply
 
-Visited <total> jobs. <qualified> qualify (score >= minMatchScore/100).
+Visited <total> jobs. <qualified> qualify (score >= minMatchScore, out of 100).
 
 | # | Score  | Title | Company | Location | Board |
 |---|--------|-------|---------|----------|-------|

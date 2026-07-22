@@ -10,7 +10,7 @@ Find Upwork jobs the user can win - qualify on fit **and** client quality, drop 
 
 ## Setup
 
-1. Follow `../../shared/setup.md`. ``$JOBPILOT_API` (injected by the terminal)`.
+1. Follow `../../shared/setup.md` (`$JOBPILOT_API` is injected by the terminal).
 2. Parse and strip the flags; the rest is the free-text query.
    - `--board upwork.com` - required.
    - `--max-jobs <N>` - cap on results to evaluate. Absent = unlimited (evaluate until results run dry).

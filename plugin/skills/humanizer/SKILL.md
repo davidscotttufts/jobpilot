@@ -1,6 +1,5 @@
 ---
 name: humanizer
-version: 2.4.0
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
@@ -236,11 +235,11 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 ### 13. Em Dash Overuse
 
-**Problem:** LLMs use em dashes (”) more than humans, mimicking "punchy" sales writing.
+**Problem:** LLMs use em dashes (—) more than humans, mimicking "punchy" sales writing.
 
 **Before:**
 
-> The term is primarily promoted by Dutch institutions”not by the people themselves. You don't say "Netherlands, Europe" as an address”yet this mislabeling continues”even in official documents.
+> The term is primarily promoted by Dutch institutions—not by the people themselves. You don't say "Netherlands, Europe" as an address—yet this mislabeling continues—even in official documents.
 
 **After:**
 
@@ -302,11 +301,11 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 ### 18. Curly Quotation Marks
 
-**Problem:** ChatGPT uses curly quotes (œ...) instead of straight quotes ("...").
+**Problem:** ChatGPT uses curly quotes (“...”) instead of straight quotes ("...").
 
 **Before:**
 
-> He said œthe project is on track but others disagreed.
+> He said “the project is on track” but others disagreed.
 
 **After:**
 
@@ -358,14 +357,14 @@ Avoiding AI patterns is only half the job. Sterile, voiceless writing is just as
 
 ### 22. Filler Phrases
 
-**Before After:**
+**Before → After:**
 
-- "In order to achieve this goal" "To achieve this"
-- "Due to the fact that it was raining" "Because it was raining"
-- "At this point in time" "Now"
-- "In the event that you need help" "If you need help"
-- "The system has the ability to process" "The system can process"
-- "It is important to note that the data shows" "The data shows"
+- "In order to achieve this goal" → "To achieve this"
+- "Due to the fact that it was raining" → "Because it was raining"
+- "At this point in time" → "Now"
+- "In the event that you need help" → "If you need help"
+- "The system has the ability to process" → "The system can process"
+- "It is important to note that the data shows" → "The data shows"
 
 ### 23. Excessive Hedging
 
@@ -481,7 +480,7 @@ Provide:
 
 > Great question! Here is an essay on this topic. I hope this helps!
 >
-> AI-assisted coding serves as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the evolution of software development. In today's rapidly evolving technological landscape, these groundbreaking tools”nestled at the intersection of research and practice”are reshaping how engineers ideate, iterate, and deliver, underscoring their vital role in modern workflows.
+> AI-assisted coding serves as an enduring testament to the transformative potential of large language models, marking a pivotal moment in the evolution of software development. In today's rapidly evolving technological landscape, these groundbreaking tools—nestled at the intersection of research and practice—are reshaping how engineers ideate, iterate, and deliver, underscoring their vital role in modern workflows.
 >
 > At its core, the value proposition is clear: streamlining processes, enhancing collaboration, and fostering alignment. It's not just about autocomplete; it's about unlocking creativity at scale, ensuring that organizations can remain agile while delivering seamless, intuitive, and powerful experiences to users. The tool serves as a catalyst. The assistant functions as a partner. The system stands as a foundation for innovation.
 >
@@ -491,9 +490,9 @@ Provide:
 > **Quality:** Output quality has been enhanced through improved training, contributing to higher standards.
 > **Adoption:** Usage continues to grow, reflecting broader industry trends.
 >
-> While specific details are limited based on available information, it could potentially be argued that these tools might have some positive effect. Despite challenges typical of emerging technologies”including hallucinations, bias, and accountability”the ecosystem continues to thrive. In order to fully realize this potential, teams must align with best practices.
+> While specific details are limited based on available information, it could potentially be argued that these tools might have some positive effect. Despite challenges typical of emerging technologies—including hallucinations, bias, and accountability—the ecosystem continues to thrive. In order to fully realize this potential, teams must align with best practices.
 >
-> In conclusion, the future looks bright. Exciting times lie ahead as we continue this journey toward excellence. Let me know if you™d like me to expand on any section!
+> In conclusion, the future looks bright. Exciting times lie ahead as we continue this journey toward excellence. Let me know if you’d like me to expand on any section!
 
 **Draft rewrite:**
 

@@ -14,13 +14,8 @@ Live view: `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Setup
 
-Follow `../../shared/setup.md` to load profile, resume,
-credentials. Check the web app is up:
-
-```bash
-JOBPILOT_API="${JOBPILOT_API:-https://jobpilot.suxrobgm.net}"
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/health" >/dev/null || { echo "JobPilot web is down. Start it with 'bun run dev'."; exit 1; }
-```
+Follow `../../shared/setup.md` to load profile, resume, credentials - its health check
+aborts with the standard message if the backend is unreachable.
 
 ## Phase 0: Resolve Campaign
 
@@ -69,7 +64,7 @@ MAX_APPS=$(echo "$CAMPAIGN" | jq -r '.config.maxApplications // empty')
 
 ## Phase 2: Replay Apply Loop
 
-For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending - the **same per-job flow as the apply skill's Phase 4**, delegated to the `job-worker` subagent one at a time:
+For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending - the **same per-job flow as the apply skill's Apply Loop**, delegated to the `job-worker` subagent one at a time:
 
 1. **Mark applying** - PATCH the job to `applying`.
 2. **Apply** - delegate to `job-worker` with `mode:"apply"`:

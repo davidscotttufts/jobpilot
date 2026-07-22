@@ -10,7 +10,7 @@ Two modes. Default (**generate**) drafts suggestions for review; **apply** (argu
 
 ## Setup
 
-Follow `../../shared/setup.md`. `Read` the resume at `primaryResumeSourceAbsolutePath` for identity, summary, experience, skills, and **projects** (the portfolio source). ``$JOBPILOT_API` (injected by the terminal)`. Log in to Upwork via `../../shared/auth.md`(resolve via`/api/credentials/resolve?domain=upwork.com`).
+Follow `../../shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `Read` the resume at `primaryResumeSourceAbsolutePath` for identity, summary, experience, skills, and **projects** (the portfolio source). Log in to Upwork via `../../shared/auth.md` (resolve via `/api/credentials/resolve?domain=upwork.com`).
 
 ## Mode: generate (default)
 
