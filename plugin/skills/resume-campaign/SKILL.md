@@ -1,10 +1,10 @@
 ---
-name: resume
+name: resume-campaign
 description: Resume a paused JobPilot campaign by id. Re-flips the campaign to in_progress and replays the apply loop on any remaining approved jobs without re-asking for fit confirmation.
 argument-hint: "<campaign-id>"
 ---
 
-# Resume - Continue a Paused Campaign
+# Resume Campaign - Continue a Paused Campaign
 
 Resumes a `paused` Campaign by replaying the apply loop on jobs that
 are still `approved` (or `pending` if approval was implicit). The user already

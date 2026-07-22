@@ -123,11 +123,11 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
     setRescanOpen(false);
   };
 
-  // Networking campaigns have no jobs to replay - re-run the networking skill instead of `resume`.
+  // Networking campaigns have no jobs to replay - re-run the networking skill instead of `resume-campaign`.
   const handleResume = (): void => {
     void (campaign.source === "networking"
       ? agent.injectSkill("networking", `--campaign ${campaign.campaignId}`)
-      : agent.injectSkill("resume", campaign.campaignId));
+      : agent.injectSkill("resume-campaign", campaign.campaignId));
   };
 
   const menuItems: DropdownMenuItem[] = [
