@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.19] - 2026-07-22
+
+### Removed
+
+- Parked boards are gone. Setting a board aside was rarely worth the extra
+  control, so the setting and its chips have been removed from Instructions -
+  to stop working a board, drop it from your Boards list instead. Any boards
+  you had parked are simply back in rotation.
+
+### Changed
+
+- When a board fails repeatedly the pilot still probes it once - usually that
+  re-establishes an expired login on the spot - but it no longer interrupts you
+  to ask whether to park it. It writes what it found to the journal and keeps
+  going.
+
 ## [2.1.18] - 2026-07-22
 
 ### Added
