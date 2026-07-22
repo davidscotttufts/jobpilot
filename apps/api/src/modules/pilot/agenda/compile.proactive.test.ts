@@ -74,14 +74,6 @@ describe("AgendaService board.health", () => {
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "board.health")).toBe(false);
   });
-
-  it("excludes a parked board from the health warning", async () => {
-    const agenda = await service({
-      instructionsConfig: { parkedBoards: ["linkedin"] },
-      boardHealthJobs: [failed("a"), failed("b"), failed("c")],
-    }).refresh("p1");
-    expect(agenda.items.some((i) => i.kind === "board.health")).toBe(false);
-  });
 });
 
 describe("AgendaService quiet-agenda candidates", () => {

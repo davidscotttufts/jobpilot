@@ -34,8 +34,6 @@ export const pilotInstructionsConfigSchema = z.object({
   networkingFollowupDays: z.number().int().default(5),
   // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
   promotion: pilotPromotionConfigSchema.default({ platforms: [], autonomy: "review" }),
-  // Boards the user agreed to park; agenda excludes their job.apply items and pilot searches.
-  parkedBoards: z.array(z.string()).default([]),
 });
 
 export const updatePilotInstructionsSchema = z.object({

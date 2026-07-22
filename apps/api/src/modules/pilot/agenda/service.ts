@@ -102,9 +102,9 @@ export class AgendaService {
       prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
       gatherAnsweredQuestions(prisma, userId),
       prisma.pilotClaim.count({ where: { userId, releasedAt: null, expiresAt: { gt: now } } }),
-      gatherApprovedJobs(prisma, userId, config.parkedBoards),
+      gatherApprovedJobs(prisma, userId),
       countAppliedToday(prisma, userId, now),
-      gatherPausedCampaigns(prisma, userId, now, config.parkedBoards),
+      gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),
       config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
       config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
@@ -114,7 +114,7 @@ export class AgendaService {
       gatherInterviewReplies(prisma, userId),
       gatherInterviewPreps(prisma, userId),
       gatherQueueDrain(prisma, userId),
-      gatherBoardHealth(prisma, userId, config.parkedBoards),
+      gatherBoardHealth(prisma, userId),
       prisma.pilotSearch.count({ where: { userId } }),
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
@@ -127,7 +127,7 @@ export class AgendaService {
       approvedJobs.length === 0
         ? await Promise.all([
             duePilotSearches(prisma, userId, config, now, appliedToday),
-            gatherScorePendingCampaigns(prisma, userId, config.minScore, now, config.parkedBoards),
+            gatherScorePendingCampaigns(prisma, userId, config.minScore, now),
           ])
         : [{ due: [], nextSearchRunAt: null }, []];
 

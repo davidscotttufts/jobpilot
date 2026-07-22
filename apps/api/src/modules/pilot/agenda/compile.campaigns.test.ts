@@ -78,22 +78,6 @@ describe("AgendaService campaign.scorePending", () => {
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(true);
   });
-
-  it("suppresses scorePending on a campaign whose config board is parked", async () => {
-    const agenda = await service({
-      instructionsConfig: { parkedBoards: ["linkedin"] },
-      scorePendingCampaigns: [
-        {
-          campaignId: "c1",
-          query: "react",
-          config: { board: "linkedin" },
-          jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
-        },
-      ],
-      scorePendingCounts: [{ campaignId: "c1", _count: { _all: 2 } }],
-    }).refresh("p1");
-    expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(false);
-  });
 });
 
 describe("AgendaService campaign.reviewPaused", () => {
@@ -199,14 +183,6 @@ describe("AgendaService campaign.reviewPaused", () => {
           outcome: "done",
         },
       ],
-    }).refresh("p1");
-    expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(false);
-  });
-
-  it("suppresses the review for a campaign whose config board is parked", async () => {
-    const agenda = await service({
-      instructionsConfig: { parkedBoards: ["linkedin"] },
-      pausedCampaigns: [paused({ config: { board: "linkedin" } })],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.reviewPaused")).toBe(false);
   });

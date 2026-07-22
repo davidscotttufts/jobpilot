@@ -14,11 +14,10 @@ import {
 } from "./constants";
 import type { AgendaApprovedJob, AgendaDueQuery, AgendaScorePending, WarmContact } from "./types";
 
-/** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. Parked boards excluded. */
+/** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. */
 export async function gatherApprovedJobs(
   prisma: PrismaClient,
   userId: string,
-  parkedBoards: string[],
 ): Promise<AgendaApprovedJob[]> {
   const rows = await prisma.job.findMany({
     where: { status: "approved", campaign: { userId, status: "in_progress" } },
@@ -37,31 +36,27 @@ export async function gatherApprovedJobs(
     },
   });
 
-  // A parked board's jobs are excluded here; null-board jobs are never parked (park keys on board name).
-  const parked = new Set(parkedBoards);
   // Jobs of the same campaign share one config; parse each campaign's JSON at most once.
   const configByCampaign = new Map<string, CampaignConfig>();
 
-  return rows
-    .filter((job) => !(job.board && parked.has(job.board)))
-    .map((job) => {
-      let cfg = configByCampaign.get(job.campaignId);
-      if (!cfg) {
-        cfg = parseCampaignConfig(job.campaign.config);
-        configByCampaign.set(job.campaignId, cfg);
-      }
-      return {
-        campaignId: job.campaignId,
-        key: job.key,
-        title: job.title,
-        url: job.url,
-        board: job.board,
-        digest: job.digest,
-        matchScore: job.matchScore,
-        resumeId: cfg.resumeId,
-        company: job.company,
-      };
-    });
+  return rows.map((job) => {
+    let cfg = configByCampaign.get(job.campaignId);
+    if (!cfg) {
+      cfg = parseCampaignConfig(job.campaign.config);
+      configByCampaign.set(job.campaignId, cfg);
+    }
+    return {
+      campaignId: job.campaignId,
+      key: job.key,
+      title: job.title,
+      url: job.url,
+      board: job.board,
+      digest: job.digest,
+      matchScore: job.matchScore,
+      resumeId: cfg.resumeId,
+      company: job.company,
+    };
+  });
 }
 
 export interface LatestClaim {
@@ -115,7 +110,7 @@ export function claimDamped(last: LatestClaim | undefined, now: Date, cooldownMs
 /**
  * In-progress auto-apply campaigns carrying discovered-but-unscored pending rows (`matchScore: null`) -
  * mid-batch abandonment or thin listings. Each carries ≤{@link SCORE_PENDING_BATCH} sampled entries plus
- * the total unscored count; parked-board campaigns are skipped (park keys on the campaign's config board).
+ * the total unscored count.
  *
  * Rate-limited per campaign off claim history, like {@link dueSavedSearches}: a row nothing can score
  * (dead URL, login wall) keeps `matchScore: null` forever, and scorePending outranks discovery - without
@@ -126,7 +121,6 @@ export async function gatherScorePendingCampaigns(
   userId: string,
   fallbackMinScore: number,
   now: Date,
-  parkedBoards: string[],
 ): Promise<AgendaScorePending[]> {
   const campaigns = await prisma.campaign.findMany({
     where: {
@@ -171,15 +165,12 @@ export async function gatherScorePendingCampaigns(
     campaigns.map((c) => c.campaignId),
   );
 
-  const parked = new Set(parkedBoards);
   const out: AgendaScorePending[] = [];
 
   for (const c of campaigns) {
     const config = parseCampaignConfig(c.config);
     const board = config.board ?? null;
 
-    // A campaign targeting a parked board is suppressed until the user un-parks it.
-    if (board && parked.has(board)) continue;
     if (claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS)) continue;
 
     out.push({
@@ -234,7 +225,7 @@ export async function attachWarmContacts(
 
 export interface DuePilotSearches {
   due: AgendaDueQuery[];
-  /** Earliest nextRunAt across live (non-parked) searches - the idle sleep clamps to it. */
+  /** Earliest nextRunAt across all searches - the idle sleep clamps to it. */
   nextSearchRunAt: Date | null;
 }
 
@@ -263,12 +254,9 @@ export async function duePilotSearches(
       lastRunAt: true,
     },
   });
-  const parked = new Set(config.parkedBoards);
-  // A search targeting a parked board is suppressed until the user un-parks it.
-  const live = rows.filter((r) => !(r.board && parked.has(r.board)));
-  if (live.length === 0) return { due: [], nextSearchRunAt: null };
+  if (rows.length === 0) return { due: [], nextSearchRunAt: null };
 
-  const ids = live.map((r) => r.id);
+  const ids = rows.map((r) => r.id);
   const [latest, existing] = await Promise.all([
     latestClaimBySubject(prisma, userId, "search.discover", ids),
     // Reuse each search's campaign so discovery doesn't spawn duplicates. Keyed by the search id the
@@ -283,9 +271,9 @@ export async function duePilotSearches(
 
   // Ascending order ⇒ the newest campaign wins the overwrite.
   const campaignBySearch = new Map(existing.map((c) => [c.pilotSearchId, c.campaignId]));
-  const claimable = (r: (typeof live)[number]) =>
+  const claimable = (r: (typeof rows)[number]) =>
     !claimDamped(latest.get(r.id), now, SEARCH_CLAIM_COOLDOWN_MS);
-  const toEntry = (r: (typeof live)[number]): AgendaDueQuery => ({
+  const toEntry = (r: (typeof rows)[number]): AgendaDueQuery => ({
     searchId: r.id,
     query: r.query,
     board: r.board ?? undefined,
@@ -293,16 +281,16 @@ export async function duePilotSearches(
     campaignId: campaignBySearch.get(r.id),
   });
 
-  // Rows arrive ordered by nextRunAt and `live` is an order-preserving filter, so the head is the earliest.
-  const nextSearchRunAt = live[0].nextRunAt;
+  // Rows arrive ordered by nextRunAt, so the head is the earliest.
+  const nextSearchRunAt = rows[0].nextRunAt;
 
-  const due = live.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
+  const due = rows.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
   if (due.length > 0) return { due, nextSearchRunAt };
 
   // Hungry override: cap unspent, so re-run the most-overdue search idle at least HUNGRY_RERUN_MS.
   if (appliedToday < config.dailyApplyCap) {
     const floor = now.getTime() - HUNGRY_RERUN_MS;
-    const hungry = live.find(
+    const hungry = rows.find(
       (r) => claimable(r) && (r.lastRunAt == null || r.lastRunAt.getTime() < floor),
     );
     if (hungry) return { due: [toEntry(hungry)], nextSearchRunAt };

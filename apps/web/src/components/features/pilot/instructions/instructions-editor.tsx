@@ -67,7 +67,6 @@ function toFormValues(state: PilotState): InstructionsFormValues {
     networkingEmail: c.autonomy.networkingEmail,
     networkingLinkedIn: c.autonomy.networkingLinkedIn,
     boards: [...c.boards],
-    parkedBoards: [...c.parkedBoards],
     promotionPlatforms: c.promotion.platforms.map((p) => ({
       platform: p.platform,
       target: p.target ?? "",
@@ -102,7 +101,6 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         checkIntervalMinutes: value.checkIntervalMinutes,
         networkingEnabled: value.networkingEnabled,
         boards: value.boards,
-        parkedBoards: value.parkedBoards,
         autonomy: {
           networkingEmail: value.networkingEmail,
           networkingLinkedIn: value.networkingLinkedIn,

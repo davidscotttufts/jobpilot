@@ -11,7 +11,6 @@ export const instructionsFormSchema = z.object({
   networkingEmail: z.enum(["draft", "review", "auto"]),
   networkingLinkedIn: z.enum(["draft", "review"]),
   boards: z.array(z.string()),
-  parkedBoards: z.array(z.string()),
   promotionPlatforms: z.array(
     z.object({
       platform: z.string().min(1, "Required"),
@@ -35,6 +34,5 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   networkingEmail: "review",
   networkingLinkedIn: "draft",
   boards: [],
-  parkedBoards: [],
   promotionPlatforms: [],
 };

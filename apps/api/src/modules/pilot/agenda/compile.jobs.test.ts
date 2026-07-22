@@ -1,5 +1,5 @@
 // Apply-pipeline gathers through AgendaService.refresh (fake Prisma, no DB): the warm-check
-// contact join and parked-board enforcement.
+// contact join and search due-selection.
 
 import { HOUR_MS } from "@/common/date/buckets";
 import { service } from "./compile.test-helpers";
@@ -39,34 +39,6 @@ describe("AgendaService warm-check join", () => {
       contacts: [insider],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
-  });
-});
-
-describe("AgendaService parkedBoards enforcement", () => {
-  it("excludes approved jobs on a parked board from job.apply", async () => {
-    const agenda = await service({
-      instructionsConfig: { parkedBoards: ["linkedin"] },
-      approvedJobs: [
-        approvedJob({ key: "on-parked", board: "linkedin" }),
-        approvedJob({ key: "on-live", board: "indeed" }),
-      ],
-    }).refresh("p1");
-    const applyKeys = agenda.items.filter((i) => i.kind === "job.apply").map((i) => i.subjectId);
-    expect(applyKeys).toEqual(["on-live"]);
-  });
-
-  it("excludes searches on a parked board from search.discover", async () => {
-    const agenda = await service({
-      instructionsConfig: { parkedBoards: ["linkedin"] },
-      pilotSearches: [
-        dueRow({ id: "s-react", query: "react", board: "linkedin" }),
-        dueRow({ id: "s-go", query: "golang", board: "indeed" }),
-      ],
-    }).refresh("p1");
-    const discovered = agenda.items
-      .filter((i) => i.kind === "search.discover")
-      .map((i) => (i.payload as { query: string }).query);
-    expect(discovered).toEqual(["golang"]);
   });
 });
 

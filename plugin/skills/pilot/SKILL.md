@@ -16,7 +16,7 @@ Follow `../../shared/setup.md` - health check `GET /api/health` first; abort wit
 CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || od -An -tx1 -N16 /dev/urandom | tr -d ' \n' | sed -E 's/^(.{8})(.{4})(.{4})(.{4})(.{12})$/\1-\2-\3-\4-\5/')
 ```
 
-Load the pilot state - later steps read its instructions (`autonomy`, `parkedBoards`). No run-state check here: the host gates the loop.
+Load the pilot state - later steps read its instructions (`autonomy`). No run-state check here: the host gates the loop.
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot"
@@ -131,7 +131,6 @@ The claim payload is enriched: `{questionId, questionKind, subjectType, subjectI
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
 - **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign from paginated campaign `.items` and `GET /api/campaigns/<id>/networking?page=1&limit=100` `.items`. `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
 - **`campaign`** → a `campaign.reviewPaused` answer; `subjectId` = the campaignId. `"Resume"` → `POST /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`; `"Complete campaign"` → same route with `completed`; `"Keep paused"` → journal only; free text → interpret as one of the three. Journal the outcome.
-- **`board`** → the answer to a `board.health` choice. `"Park board"` → `GET /api/pilot`, append the board (`subjectId`) to instructions `config.parkedBoards`, `PUT /api/pilot/instructions` with the updated config (user-approved change - allowed); `"Keep trying"` → journal only.
 
 ### `search.discover`
 
@@ -202,17 +201,7 @@ Delegate ONE `job-worker` batch score invocation over the entries (≤5): `{mode
 Payload `{board, consecutiveFailures, recentFailReasons, probeJob}` - the board is failing repeatedly. Run ONE diagnostic probe in careful mode: log in per `../../shared/auth.md` (this alone often reveals the cause - expired login, changed flow, bot wall). If `probeJob` is present, delegate ONE `job-worker` apply for it with full attention. Then:
 
 - Probe succeeds (login ok / job applied) → journal "Board <board> healthy again - probe applied/logged in cleanly." Done; the server's streak resets via the successful result.
-- Probe fails → POST a question and journal it:
-
-```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg sid "$BOARD" --arg q "$BOARD keeps failing ($REASONS). Park it?" \
-    --arg dl "$JOBPILOT_WEB/pilot" \
-    '{kind:"choice", subjectType:"board", subjectId:$sid, prompt:$q, options:["Park board","Keep trying"], deepLink:$dl}')"
-```
-
-The `board` answer is handled in `question.answered`.
+- Probe fails → journal the diagnosis, naming what the probe actually hit ("Board <board> still failing after probe - login page returns a bot wall."). Nothing to ask: the user reads it in the journal and fixes credentials or drops the board from their instructions themselves.
 
 ### `campaign.strategyReview`
 

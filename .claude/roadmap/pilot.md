@@ -135,6 +135,12 @@ zero skill invocations by the user, ever.
   health probe-or-park via parkedBoards, rescan/retry, queue drain), admin fleet view,
   correction capture + NDJSON journal export + frozen subjectKeys. All M1–M5 code-complete;
   the LIVE OVERNIGHT SMOKE TEST remains the outstanding gate before calling the Pilot done.
+- 2026-07-22 - Parked boards removed (low value, rarely used): `parkedBoards` dropped from the
+  instructions config (data migration `20260722160000_drop_parked_boards` strips the key), every
+  agenda gather stops filtering on it, and the instructions form loses its remove-only chips.
+  `board.health` keeps its diagnostic probe - a failure streak is usually an expired login the
+  probe re-establishes - but no longer asks a park question; a failed probe just journals what
+  it hit.
 - 2026-07-22 - Dynamic discovery overhaul (branch `feat/pilot-dynamic-discovery`, 32d570b →
   9d1747f; plan file `~/.claude/plans/okay-let-s-build-a-stateless-meerkat.md`): saved searches
   moved from instructions JSON to a pilot-owned `pilot_searches` table (CRUD + run-result
