@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.15] - 2026-07-22
+
+### Added
+
+- Cycle cards and the status hero show the cycle outcome and when the pilot
+  wakes next, and the orchestration diagram now reads the same source so the
+  two can no longer disagree.
+- The landing page gains an animated diagram of the pilot's sense/act/record
+  cycle, and the Pilot docs page is rebuilt around it with new FAQ entries on
+  caps, agenda ordering, crash recovery, and questions.
+
+### Changed
+
+- Idle campaigns are finalized during the pilot's agenda refresh instead of
+  waiting for an agent cycle that never came up in the queue.
+- Discovery reuses an in-progress campaign for a saved search instead of
+  spawning a duplicate one.
+- The default job boards shrink to LinkedIn, Indeed, Hiring Cafe, and We Work
+  Remotely - the only ones that ever produced jobs. The rest stay available in
+  the picker, except Glassdoor, which is gone. Removing a default board now
+  sticks, and board ordering follows the global list unless you override it.
+- The `resume` skill is now `resume-campaign`, so it no longer collides with
+  the resume-document skills in the picker.
+- Journal kind filters run on the server, so paging under a filter stays on one
+  stream.
+- Temporary agent scratch files are aged out on a 6-hourly sweep alongside the
+  Playwright ones.
+- A pass over the app's UI puts headings, status chips, dialogs, timestamps,
+  and page layout on shared primitives; every dashboard and admin page now has
+  its own browser-tab title. The push-settings device list is restyled.
+- Landing, README, and docs copy rewritten to read plainly, with the onboarding
+  order corrected to install - setup - account.
+
+### Fixed
+
+- Paging a filtered journal no longer skipped entries or jumped page sizes.
+- A stuck cycle now records what went wrong instead of an empty detail.
+- Auto-apply campaigns launched from the apply skill used a leftover 0-10 score
+  threshold instead of the configured minimum match score.
+- A public job listing rendered a mangled "ago Â· first found" separator.
+- Corner radii were tripled on several surfaces, long device and project titles
+  slid under their action buttons, and twelve labels rendered off the type
+  scale.
+
 ## [2.1.14] - 2026-07-21
 
 ### Added
