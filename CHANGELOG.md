@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.17] - 2026-07-22
+
+### Fixed
+
+- On Linux and macOS, the terminal host no longer dies when an agent process
+  exits: stopping an already-dead pty now counts as a clean stop, and a failing
+  read falls back to the normal end-of-output path instead of taking the whole
+  host down mid-pilot-run.
+
 ## [2.1.16] - 2026-07-22
 
 ### Changed
