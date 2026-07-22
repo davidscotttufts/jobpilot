@@ -14,8 +14,7 @@ public sealed class PtyProcess : IPty
 {
     static PtyProcess()
     {
-        // Attach to Pty.Net's assembly: that is where the missing bundled conpty.dll is imported.
-        // The static constructor also ensures SetDllImportResolver runs only once.
+        // Pty.Net's assembly imports the missing bundled conpty.dll; the static ctor registers the resolver once.
         if (OperatingSystem.IsWindows())
         {
             NativeLibrary.SetDllImportResolver(typeof(PtyProvider).Assembly, ResolveConPty);
@@ -31,10 +30,22 @@ public sealed class PtyProcess : IPty
     private static readonly TimeSpan EofExitGrace = TimeSpan.FromMilliseconds(500);
 
     private readonly Lock connectionLock = new();
+    private readonly Func<PtyOptions, IPtyConnection> spawner;
 
     private IPtyConnection? connection;
     private int generation;
     private int exitRaisedGeneration;
+
+    public PtyProcess()
+        : this(SpawnWithPtyNet)
+    {
+    }
+
+    // Test seam: production spawning goes through Pty.Net's static provider.
+    internal PtyProcess(Func<PtyOptions, IPtyConnection> spawner)
+    {
+        this.spawner = spawner;
+    }
 
     /// <inheritdoc />
     public event Action<byte[]>? OutputReceived;
@@ -58,8 +69,7 @@ public sealed class PtyProcess : IPty
         IPtyConnection spawned;
         try
         {
-            spawned = Task.Run(() => PtyProvider.SpawnAsync(BuildOptions(command, args, workingDirectory, cols, rows, environment), CancellationToken.None))
-                .GetAwaiter().GetResult();
+            spawned = spawner(BuildOptions(command, args, workingDirectory, cols, rows, environment));
         }
         catch (Exception ex)
         {
@@ -82,7 +92,6 @@ public sealed class PtyProcess : IPty
     /// <inheritdoc />
     public void Write(byte[] data)
     {
-        var gen = Volatile.Read(ref generation);
         var active = CurrentConnection();
         if (active is null)
         {
@@ -94,32 +103,60 @@ public sealed class PtyProcess : IPty
             active.WriterStream.Write(data, 0, data.Length);
             active.WriterStream.Flush();
         }
-        catch when (Volatile.Read(ref generation) != gen)
+        catch
         {
-            // The PTY was replaced during the write.
+            // The pty died (Unix reports EIO) or was replaced mid-write; the exit event owns the state.
         }
     }
 
     /// <inheritdoc />
-    public void Resize(int cols, int rows) => CurrentConnection()?.Resize(cols, rows);
+    public void Resize(int cols, int rows)
+    {
+        try
+        {
+            CurrentConnection()?.Resize(cols, rows);
+        }
+        catch
+        {
+            // Resizing a pty whose child just exited throws; a lost resize is harmless.
+        }
+    }
 
     /// <inheritdoc />
     public void Stop()
     {
-        IPtyConnection? doomed;
+        IPtyConnection? oldConnection;
         lock (connectionLock)
         {
             // Invalidate the read loop before closing its stream.
             Interlocked.Increment(ref generation);
-            doomed = connection;
+            oldConnection = connection;
             connection = null;
         }
 
-        doomed?.Kill(); // still raises ProcessExited, carrying the generation it was started with
-        doomed?.Dispose();
+        if (oldConnection is null)
+        {
+            return;
+        }
+
+        // On Unix, Kill (which Dispose also runs) throws ESRCH for an already-exited child; that
+        // is a successful stop, and Dispose must still run to release the streams.
+        BestEffort(oldConnection.Kill); // still raises ProcessExited with its own generation
+        BestEffort(oldConnection.Dispose);
     }
 
     public void Dispose() => Stop();
+
+    private static void BestEffort(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch
+        {
+        }
+    }
 
     private IPtyConnection? CurrentConnection()
     {
@@ -139,13 +176,7 @@ public sealed class PtyProcess : IPty
                 var bytesRead = active.ReaderStream.Read(buffer, 0, buffer.Length);
                 if (bytesRead <= 0)
                 {
-                    // EOF means the process died. Pty.Net's exit event can be missed when the process
-                    // dies before Start subscribes, so raise a fallback exit; NotifyExit dedupes.
-                    Thread.Sleep(EofExitGrace);
-                    if (Volatile.Read(ref generation) == gen)
-                    {
-                        NotifyExit(gen, TryGetExitCode(active));
-                    }
+                    RaiseFallbackExit(active, gen);
                     break;
                 }
 
@@ -157,6 +188,21 @@ public sealed class PtyProcess : IPty
         catch when (Volatile.Read(ref generation) != gen)
         {
             // Stop closed this generation's stream.
+        }
+        catch
+        {
+            // Unix pty reads fail with EIO instead of EOF once the child exits; escaping would kill the host.
+            RaiseFallbackExit(active, gen);
+        }
+    }
+
+    // Pty.Net's exit event can be missed when the process dies before Start subscribes; NotifyExit dedupes.
+    private void RaiseFallbackExit(IPtyConnection active, int gen)
+    {
+        Thread.Sleep(EofExitGrace);
+        if (Volatile.Read(ref generation) == gen)
+        {
+            NotifyExit(gen, TryGetExitCode(active));
         }
     }
 
@@ -181,6 +227,9 @@ public sealed class PtyProcess : IPty
             return -1;
         }
     }
+
+    private static IPtyConnection SpawnWithPtyNet(PtyOptions options) =>
+        Task.Run(() => PtyProvider.SpawnAsync(options, CancellationToken.None)).GetAwaiter().GetResult();
 
     private static PtyOptions BuildOptions(
         string command,
@@ -210,7 +259,6 @@ public sealed class PtyProcess : IPty
         return new PtyOptions
         {
             App = command,
-            // Args only - Pty.Net prepends App itself; duplicating it becomes a positional arg the CLI treats as a prompt.
             CommandLine = args,
             Cwd = workingDirectory,
             Cols = cols,
