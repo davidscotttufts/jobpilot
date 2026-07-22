@@ -39,7 +39,7 @@ public interface IPilotRuntime
     /// <summary>Waits for the freshly started CLI to become ready for input.</summary>
     Task WaitStartupGraceAsync(CancellationToken ct);
 
-    /// <summary>Injects the pilot skill command.</summary>
+    /// <summary>Resets the conversation context, then injects the pilot skill command.</summary>
     Task InjectCycleAsync(PilotPairing pairing, CancellationToken ct);
 
     /// <summary>Injects the one-shot check-in reminder that asks a seemingly stuck agent to release and move on.</summary>

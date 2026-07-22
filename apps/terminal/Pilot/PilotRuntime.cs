@@ -14,14 +14,19 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
 
-    // Graduated unstick directives; skip also fails the claimed task. Both spell out the cycle detail - without it
-    // /api/pilot/activity can't read the entry as a completion.
+    // Redraw time between /clear and the cycle inject landing on the fresh prompt.
+    private static readonly TimeSpan ClearSettle = TimeSpan.FromSeconds(2);
+
+    // Graduated unstick directives; skip also fails the claimed task. The shared tail spells out the cycle
+    // detail - without it /api/pilot/activity can't read the entry as a completion.
+    private const string ErrorExitDirective =
+        "journal the error batch (system + cycle with detail:{\"status\":\"error\",\"sleepSeconds\":300}), "
+        + "and print the error sentinel.";
+
     private const string CheckInCommand =
-        "Checking in: you appear stuck. Release your claim, journal the error batch (system + cycle with "
-        + "detail:{\"status\":\"error\",\"sleepSeconds\":300}), and print the error sentinel.";
+        "Checking in: you appear stuck. Release your claim, " + ErrorExitDirective;
     private const string SkipCommand =
-        "Stop the current action. Fail the claimed task, journal the error batch (system + cycle with "
-        + "detail:{\"status\":\"error\",\"sleepSeconds\":300}), and print the error sentinel.";
+        "Stop the current action. Fail the claimed task, " + ErrorExitDirective;
 
     private readonly SessionManager session;
     private readonly PilotStore store;
@@ -58,24 +63,29 @@ public sealed class PilotRuntime : IPilotRuntime, IDisposable
 
     public async Task InjectCycleAsync(PilotPairing pairing, CancellationToken ct)
     {
-        DrainSignals();  // Discard any signal buffered before this injection so the await only sees the new cycle.
+        // Cycles are stateless (state lives in the API): clearing first prevents mid-cycle auto-compaction
+        // and keeps untrusted page content from lingering across cycles.
+        await InjectAsync(TerminalProviders.ClearCommand, pairing.Provider, "clear", ct);
+        await Task.Delay(ClearSettle, ct);
+
+        DrainSignals();  // Discard signals buffered before this injection
         stuck.Reset();
         var command = TerminalProviders.FormatSkillCommand(pairing.Provider, PilotSkill);
         await InjectAsync(command, pairing.Provider, "cycle", ct);
     }
 
-    public Task InjectCheckInAsync(PilotPairing pairing, CancellationToken ct)
-    {
-        stuck.Reset();
-        DrainStuckSignals();
-        return InjectAsync(CheckInCommand, pairing.Provider, "check-in", ct);
-    }
+    public Task InjectCheckInAsync(PilotPairing pairing, CancellationToken ct) =>
+        InjectDirectiveAsync(CheckInCommand, "check-in", pairing, ct);
 
-    public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct)
+    public Task InjectSkipAsync(PilotPairing pairing, CancellationToken ct) =>
+        InjectDirectiveAsync(SkipCommand, "skip", pairing, ct);
+
+    // Ladder directives keep the stuck cycle's context - no clear, and racing sentinels survive the drain.
+    private Task InjectDirectiveAsync(string command, string what, PilotPairing pairing, CancellationToken ct)
     {
         stuck.Reset();
         DrainStuckSignals();
-        return InjectAsync(SkipCommand, pairing.Provider, "skip", ct);
+        return InjectAsync(command, pairing.Provider, what, ct);
     }
 
     private async Task InjectAsync(string command, string provider, string what, CancellationToken ct)

@@ -60,6 +60,9 @@ public static class TerminalProviders
         return string.IsNullOrEmpty(suffix) ? command : $"{command} {suffix}";
     }
 
+    /// <summary>Fresh-chat command (reset conversation context, same session); both provider TUIs accept it.</summary>
+    public const string ClearCommand = "/clear";
+
     /// <summary>Returns every supported provider.</summary>
     public static TerminalProviderInfo[] Supported() => SupportedProviders;
 
