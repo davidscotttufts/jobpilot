@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.18] - 2026-07-22
+
+### Added
+
+- The pilot now owns its searches. Instead of a saved-search list you edit, it
+  derives searches from your goals, tracks how many new jobs each one yields,
+  and re-checks a productive search every couple of hours while backing a dry
+  one off to 8, 24, then 48 hours. Discovery keeps paging a board until it hits
+  the run's new-jobs target rather than stopping after the first page.
+- The Instructions page lists those searches read-only - why the pilot created
+  each one, its yield, when it is next due, and whether it is backing off.
+
+### Changed
+
+- Goals are now required before the pilot can run, and they are its only
+  steering input: the resume-derived fallback and the goals question are gone.
+  The editor is larger, auto-expanding, and resizable to match.
+- Enable/disable is now start/stop end to end, and the local host checks with
+  the server before each cycle - stopped means it stands down, and an
+  unreachable API backs off instead of burning the cycle.
+
+### Fixed
+
+- A discovery campaign now tracks its search by id, so the pilot rewriting a
+  search's query no longer orphans the campaign and opens a duplicate, and two
+  searches sharing a query on different boards no longer collide.
+
 ## [2.1.17] - 2026-07-22
 
 ### Fixed
