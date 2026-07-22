@@ -22,6 +22,8 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   approvedJobs: [],
   appliedToday: 0,
   dueQueries: [],
+  awaitingSetup: true,
+  nextSearchRunAt: null,
   scorePending: [],
   pausedCampaigns: [],
   inbox: { messageIds: [], count: 0 },
@@ -105,9 +107,15 @@ export const boardHealth = (board: string, over: Record<string, unknown> = {}) =
 
 export const bootstrapCandidate = (over: Record<string, unknown> = {}) => ({
   goals: "Senior TypeScript roles, remote",
-  hasGoals: true,
   boards: ["linkedin"],
   minScore: 60,
+  ...over,
+});
+
+/** A due discovery entry; `searchId` is the PilotSearch row id (the item id + claim subject). */
+export const dueQuery = (query: string, over: Record<string, unknown> = {}) => ({
+  searchId: `s-${query}`,
+  query,
   ...over,
 });
 

@@ -22,7 +22,7 @@ import { finalizeIdleCampaigns } from "./finalize";
 import { gatherInterviewPreps, gatherInterviewReplies } from "./gather-interview";
 import {
   attachWarmContacts,
-  dueSavedSearches,
+  duePilotSearches,
   gatherApprovedJobs,
   gatherScorePendingCampaigns,
 } from "./gather-jobs";
@@ -57,7 +57,7 @@ export class AgendaService {
 
   async getCurrent(userId: string) {
     const state = await this.prisma.pilotState.findUnique({ where: { userId } });
-    if (!state?.enabled) throw conflict("Pilot is disabled.");
+    if (!state?.running) throw conflict("Pilot is stopped.");
     if (!state.agendaSnapshot || !state.agendaExpiresAt || state.agendaExpiresAt <= new Date()) {
       return { agenda: null };
     }
@@ -67,9 +67,9 @@ export class AgendaService {
   async refresh(userId: string): Promise<AgendaResponse> {
     const state = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { enabled: true },
+      select: { running: true },
     });
-    if (!state?.enabled) throw conflict("Pilot is disabled.");
+    if (!state?.running) throw conflict("Pilot is stopped.");
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
@@ -97,6 +97,7 @@ export class AgendaService {
       interviewPreps,
       queue,
       boardHealth,
+      searchCount,
     ] = await Promise.all([
       prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
       gatherAnsweredQuestions(prisma, userId),
@@ -114,19 +115,21 @@ export class AgendaService {
       gatherInterviewPreps(prisma, userId),
       gatherQueueDrain(prisma, userId),
       gatherBoardHealth(prisma, userId, config.parkedBoards),
+      prisma.pilotSearch.count({ where: { userId } }),
     ]);
+    const awaitingSetup = searchCount === 0 || goals.trim() === "";
 
     if (config.networkingEnabled) {
       await attachWarmContacts(prisma, userId, approvedJobs);
     }
 
-    const [dueQueries, scorePending] =
+    const [{ due: dueQueries, nextSearchRunAt }, scorePending] =
       approvedJobs.length === 0
         ? await Promise.all([
-            dueSavedSearches(prisma, userId, config, now),
+            duePilotSearches(prisma, userId, config, now, appliedToday),
             gatherScorePendingCampaigns(prisma, userId, config.minScore, now, config.parkedBoards),
           ])
-        : [[], []];
+        : [{ due: [], nextSearchRunAt: null }, []];
 
     const pipelineQuiet =
       approvedJobs.length === 0 &&
@@ -137,7 +140,7 @@ export class AgendaService {
     const [quiet, bootstrap] = pipelineQuiet
       ? await Promise.all([
           gatherQuietCandidates(prisma, userId, now),
-          gatherBootstrap(prisma, userId, config, goals, now),
+          gatherBootstrap(prisma, userId, config, goals, now, searchCount),
         ])
       : [{ strategyReviews: [], rescanSkipped: [], retryFailed: [] }, null];
 
@@ -157,6 +160,8 @@ export class AgendaService {
       approvedJobs,
       appliedToday,
       dueQueries,
+      awaitingSetup,
+      nextSearchRunAt,
       scorePending,
       pausedCampaigns,
       inbox,

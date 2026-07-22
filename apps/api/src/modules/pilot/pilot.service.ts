@@ -3,7 +3,6 @@ import {
   type CreatePilotQuestionInput,
   type PilotQuestionStatus,
   pilotCycleDetailSchema,
-  type SetPilotEnabledInput,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -11,11 +10,8 @@ import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
-import {
-  type PilotState as PilotStateModel,
-  Prisma,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
+import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
 import { parseInstructionsConfig } from "./pilot.instructions";
 import { toPilotQuestion, toPilotState } from "./pilot.mapper";
 import { countAppliedToday } from "./pilot.stats";
@@ -53,45 +49,58 @@ export class PilotService {
     return this.toStateDto(userId, row);
   }
 
+  private async readGoals(userId: string): Promise<string> {
+    const row = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { instructionsGoals: true },
+    });
+    return row?.instructionsGoals ?? "";
+  }
+
   async updateInstructions(userId: string, body: UpdatePilotInstructionsInput) {
+    // The searches were chosen for the old goals - a change makes them all due and clears backoff.
+    const goalsChanged = (await this.readGoals(userId)) !== body.goals;
+
+    const instructions = {
+      instructionsGoals: body.goals,
+      instructionsConfig: body.config,
+      instructionsUpdatedAt: new Date(),
+      ...AGENDA_SNAPSHOT_RESET,
+    };
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: {
-        userId,
-        instructionsGoals: body.goals,
-        instructionsConfig: body.config,
-        instructionsUpdatedAt: new Date(),
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
-      update: {
-        instructionsGoals: body.goals,
-        instructionsConfig: body.config,
-        instructionsUpdatedAt: new Date(),
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
+      create: { userId, ...instructions },
+      update: instructions,
     });
+    if (goalsChanged) {
+      await this.prisma.pilotSearch.updateMany({
+        where: { userId },
+        data: { emptyRuns: 0, nextRunAt: new Date() },
+      });
+    }
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;
   }
 
-  async setEnabled(userId: string, body: SetPilotEnabledInput) {
+  /** Start the loop. Goals are mandatory: the pilot has nothing to steer by without them. */
+  async start(userId: string) {
+    if ((await this.readGoals(userId)).trim() === "") {
+      throw conflict("Write the pilot's goals before starting it.");
+    }
+    return this.setRunning(userId, true);
+  }
+
+  /** Stop the loop. Never guards - a stopped pilot injects zero cycles. */
+  async stop(userId: string) {
+    return this.setRunning(userId, false);
+  }
+
+  private async setRunning(userId: string, running: boolean) {
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
-      create: { userId, enabled: body.enabled },
-      update: {
-        enabled: body.enabled,
-        agendaVersion: null,
-        agendaGeneratedAt: null,
-        agendaExpiresAt: null,
-        agendaSnapshot: Prisma.DbNull,
-      },
+      create: { userId, running },
+      update: { running, ...AGENDA_SNAPSHOT_RESET },
     });
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });
@@ -101,7 +110,7 @@ export class PilotService {
   /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stuck one. */
   async getActivity(userId: string) {
     // One read for the (few) unreleased claims covers both the newest claim timestamp and the count.
-    const [claims, journalAgg, campaignAgg, jobAgg, cycleEntry] = await Promise.all([
+    const [claims, journalAgg, campaignAgg, jobAgg, cycleEntry, state] = await Promise.all([
       this.prisma.pilotClaim.findMany({
         where: { userId, releasedAt: null },
         select: { grantedAt: true, heartbeatAt: true, expiresAt: true },
@@ -114,6 +123,7 @@ export class PilotService {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: { cycleId: true, createdAt: true, detail: true },
       }),
+      this.prisma.pilotState.findUnique({ where: { userId }, select: { running: true } }),
     ]);
 
     const times = [
@@ -144,6 +154,8 @@ export class PilotService {
     return {
       lastActivityAt,
       activeClaims: claims.filter((c) => c.expiresAt > now).length,
+      // No row yet means the pilot was never started, so the host's gate must read it as stopped.
+      running: state?.running ?? false,
       lastCycle,
     };
   }

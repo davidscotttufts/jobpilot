@@ -1,14 +1,15 @@
 import { type CampaignConfig } from "@jobpilot/contracts/campaign";
 import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
-import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import {
   CRASH_RETRY_MS,
   GATHER_CAP,
+  HUNGRY_RERUN_MS,
   SCORE_PENDING_BATCH,
   SCORE_PENDING_COOLDOWN_MS,
+  SEARCH_CLAIM_COOLDOWN_MS,
   WARM_INTRO_MIN_SCORE,
 } from "./constants";
 import type { AgendaApprovedJob, AgendaDueQuery, AgendaScorePending, WarmContact } from "./types";
@@ -231,42 +232,80 @@ export async function attachWarmContacts(
   }
 }
 
-/** Saved searches whose cadence has elapsed since their last released discovery claim. */
-export async function dueSavedSearches(
+export interface DuePilotSearches {
+  due: AgendaDueQuery[];
+  /** Earliest nextRunAt across live (non-parked) searches - the idle sleep clamps to it. */
+  nextSearchRunAt: Date | null;
+}
+
+/**
+ * Searches whose `nextRunAt` has come due, plus a hungry-override fallback when nothing is due but
+ * apply headroom remains. The claim damper is an in-flight/crash guard only; cadence lives in
+ * `nextRunAt`, owned by scheduleNextRun.
+ */
+export async function duePilotSearches(
   prisma: PrismaClient,
   userId: string,
   config: PilotInstructionsConfig,
   now: Date,
-): Promise<AgendaDueQuery[]> {
-  if (config.savedSearches.length === 0) return [];
-  const queries = config.savedSearches.map((q) => q.query);
+  appliedToday: number,
+): Promise<DuePilotSearches> {
+  const rows = await prisma.pilotSearch.findMany({
+    where: { userId },
+    orderBy: { nextRunAt: "asc" },
+    take: GATHER_CAP,
+    select: {
+      id: true,
+      query: true,
+      board: true,
+      resumeId: true,
+      nextRunAt: true,
+      lastRunAt: true,
+    },
+  });
+  const parked = new Set(config.parkedBoards);
+  // A search targeting a parked board is suppressed until the user un-parks it.
+  const live = rows.filter((r) => !(r.board && parked.has(r.board)));
+  if (live.length === 0) return { due: [], nextSearchRunAt: null };
 
+  const ids = live.map((r) => r.id);
   const [latest, existing] = await Promise.all([
-    latestClaimBySubject(prisma, userId, "search.discover", queries),
-    // Reuse each query's campaign so discovery doesn't spawn duplicates; the match mirrors the
-    // claim key (`search.discover:${query}`). All queries, not just due ones - same round-trip.
+    latestClaimBySubject(prisma, userId, "search.discover", ids),
+    // Reuse each search's campaign so discovery doesn't spawn duplicates. Keyed by the search id the
+    // campaign was created under, so rewriting a search's query can't orphan it. All searches, not
+    // just due ones - same round-trip.
     prisma.campaign.findMany({
-      where: { userId, status: "in_progress", source: "auto_apply", query: { in: queries } },
+      where: { userId, status: "in_progress", source: "auto_apply", pilotSearchId: { in: ids } },
       orderBy: { startedAt: "asc" },
-      select: { campaignId: true, query: true },
+      select: { campaignId: true, pilotSearchId: true },
     }),
   ]);
 
   // Ascending order ⇒ the newest campaign wins the overwrite.
-  const campaignByQuery = new Map(existing.map((c) => [c.query, c.campaignId]));
-  const parked = new Set(config.parkedBoards);
-  const due: AgendaDueQuery[] = [];
+  const campaignBySearch = new Map(existing.map((c) => [c.pilotSearchId, c.campaignId]));
+  const claimable = (r: (typeof live)[number]) =>
+    !claimDamped(latest.get(r.id), now, SEARCH_CLAIM_COOLDOWN_MS);
+  const toEntry = (r: (typeof live)[number]): AgendaDueQuery => ({
+    searchId: r.id,
+    query: r.query,
+    board: r.board ?? undefined,
+    resumeId: r.resumeId ?? undefined,
+    campaignId: campaignBySearch.get(r.id),
+  });
 
-  for (const sq of config.savedSearches) {
-    // A saved search targeting a parked board is suppressed until the user un-parks it.
-    if (sq.board && parked.has(sq.board)) continue;
-    if (claimDamped(latest.get(sq.query), now, sq.checkEveryHours * HOUR_MS)) continue;
-    due.push({
-      query: sq.query,
-      board: sq.board,
-      resumeId: sq.resumeId,
-      campaignId: campaignByQuery.get(sq.query),
-    });
+  // Rows arrive ordered by nextRunAt and `live` is an order-preserving filter, so the head is the earliest.
+  const nextSearchRunAt = live[0].nextRunAt;
+
+  const due = live.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
+  if (due.length > 0) return { due, nextSearchRunAt };
+
+  // Hungry override: cap unspent, so re-run the most-overdue search idle at least HUNGRY_RERUN_MS.
+  if (appliedToday < config.dailyApplyCap) {
+    const floor = now.getTime() - HUNGRY_RERUN_MS;
+    const hungry = live.find(
+      (r) => claimable(r) && (r.lastRunAt == null || r.lastRunAt.getTime() < floor),
+    );
+    if (hungry) return { due: [toEntry(hungry)], nextSearchRunAt };
   }
-  return due;
+  return { due: [], nextSearchRunAt };
 }

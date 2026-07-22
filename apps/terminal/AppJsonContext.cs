@@ -13,7 +13,7 @@ namespace JobPilot.Terminal;
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(StartSessionRequest))]
 [JsonSerializable(typeof(InjectRequest))]
-[JsonSerializable(typeof(PilotEnableRequest))]
+[JsonSerializable(typeof(PilotStartRequest))]
 [JsonSerializable(typeof(TerminalClientMessage))]
 [JsonSerializable(typeof(SessionStatus))]
 [JsonSerializable(typeof(PilotStatus))]

@@ -1,5 +1,6 @@
 // Fake-Prisma unit test for PilotService: the question lifecycle (journal lives in journal.service.test.ts).
 // Injects a fake Prisma directly (no database); publish() is a no-op without subscribers.
+import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import type { PushPayload } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { makePush } from "./agenda/db.test-helpers";
@@ -134,7 +135,10 @@ describe("PilotService questions", () => {
   });
 });
 
-function activityService(cycleEntry: Record<string, unknown> | null) {
+function activityService(
+  cycleEntry: Record<string, unknown> | null,
+  state: { running: boolean } | null = { running: true },
+) {
   const noMax = { _max: { createdAt: null, updatedAt: null } };
   const db = {
     pilotClaim: { findMany: async () => [] },
@@ -144,9 +148,97 @@ function activityService(cycleEntry: Record<string, unknown> | null) {
     },
     campaign: { aggregate: async () => noMax },
     job: { aggregate: async () => noMax },
+    pilotState: { findUnique: async () => state },
   };
   return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
 }
+
+function instructionsService(prevGoals: string) {
+  const rec = { searchResets: 0 };
+  const stateRow = (goals: string) => ({
+    userId: "p1",
+    running: false,
+    instructionsGoals: goals,
+    instructionsConfig: {},
+    instructionsUpdatedAt: new Date(),
+    lastCycleAt: null,
+    cycleCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  const db = {
+    pilotState: {
+      findUnique: async () => ({ instructionsGoals: prevGoals }),
+      upsert: async (a: { update: { instructionsGoals: string } }) =>
+        stateRow(a.update.instructionsGoals),
+    },
+    pilotSearch: {
+      updateMany: async () => {
+        rec.searchResets++;
+        return { count: 0 };
+      },
+    },
+    application: { count: async () => 0 },
+  };
+  return { svc: new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] })), rec };
+}
+
+describe("PilotService.updateInstructions", () => {
+  const body = (goals: string) => ({ goals, config: pilotInstructionsConfigSchema.parse({}) });
+
+  it("resets every search's scheduling when the goals change", async () => {
+    const { svc, rec } = instructionsService("old goals");
+    await svc.updateInstructions("p1", body("new goals"));
+    expect(rec.searchResets).toBe(1);
+  });
+
+  it("leaves searches untouched when the goals are unchanged", async () => {
+    const { svc, rec } = instructionsService("same goals");
+    await svc.updateInstructions("p1", body("same goals"));
+    expect(rec.searchResets).toBe(0);
+  });
+});
+
+function runStateService(goals: string) {
+  const stateRow = (running: boolean) => ({
+    userId: "p1",
+    running,
+    instructionsGoals: goals,
+    instructionsConfig: {},
+    instructionsUpdatedAt: new Date(),
+    lastCycleAt: null,
+    cycleCount: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  const db = {
+    pilotState: {
+      findUnique: async () => ({ instructionsGoals: goals }),
+      upsert: async (a: { update: { running: boolean } }) => stateRow(a.update.running),
+    },
+    application: { count: async () => 0 },
+  };
+  return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
+}
+
+describe("PilotService.start goals guard", () => {
+  it("rejects starting when the goals are empty", async () => {
+    const svc = runStateService("   ");
+    await expect(svc.start("p1")).rejects.toMatchObject({ status: 409 });
+  });
+
+  it("starts when the goals are non-empty", async () => {
+    const svc = runStateService("ship senior frontend roles");
+    const state = await svc.start("p1");
+    expect(state.running).toBe(true);
+  });
+
+  it("stops without guarding on empty goals", async () => {
+    const svc = runStateService("");
+    const state = await svc.stop("p1");
+    expect(state.running).toBe(false);
+  });
+});
 
 describe("PilotService.getActivity lastCycle", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");
@@ -181,5 +273,16 @@ describe("PilotService.getActivity lastCycle", () => {
     const svc = activityService(null);
     const { lastCycle } = await svc.getActivity("p1");
     expect(lastCycle).toBeNull();
+  });
+});
+
+describe("PilotService.getActivity running", () => {
+  it("carries the run-state the host's pre-inject gate reads", async () => {
+    expect((await activityService(null, { running: true }).getActivity("p1")).running).toBe(true);
+    expect((await activityService(null, { running: false }).getActivity("p1")).running).toBe(false);
+  });
+
+  it("reads a profile with no PilotState row as stopped", async () => {
+    expect((await activityService(null, null).getActivity("p1")).running).toBe(false);
   });
 });

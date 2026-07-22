@@ -7,8 +7,8 @@ export const metadata = buildDocsMetadata("pilot", {
 
 # The Pilot
 
-The Pilot is JobPilot's autonomous mode. Write your **instructions** once - goals,
-limits, saved searches - and the local agent runs your whole search on its own:
+The Pilot is JobPilot's autonomous mode. Write your **instructions** once - goals
+and limits - and the local agent runs your whole search on its own:
 it discovers and scores roles, applies, finds warm intros, networks and follows
 up, reviews recruiter replies, and drafts interview replies, prep sheets, and
 self-promotion posts. Everything it does lands in a live journal; the few
@@ -36,15 +36,15 @@ next cycle picks up exactly where the last one stopped. A small orchestrator on
 your machine drives the loop, restarts stuck runs, and starts cycles on its own
 after a reboot, so no browser tab needs to stay open.
 
-## Enabling it
+## Starting it
 
 1. Make sure your local agent terminal is running (the dock in the dashboard's
    bottom corner) - see [Getting started](/docs/getting-started) if it's offline.
 2. Open **Pilot** in the workspace, write your instructions, and save.
-3. Click **Enable**.
+3. Click **Start**.
 
-Enabling pairs your machine with the Pilot once; after that the host runs
-cycles on boot, crash, or wake until you disable it.
+Starting pairs your machine with the Pilot once; after that the host runs
+cycles on boot, crash, or wake until you stop it.
 
 ## Your instructions
 
@@ -56,8 +56,10 @@ One small document steers everything:
 - **Networking** - off by default. When on: daily cap, follow-up delay, and
   per-channel autonomy - email can be **draft**, **review**, or **auto**;
   LinkedIn is always review.
-- **Saved searches** - re-run on a schedule so new postings get scored and
-  applied to automatically.
+- **Searches** - the Pilot creates these from your goals and re-runs them on
+  demand: soon after a run that turns up new roles, backing off when a search
+  keeps coming up dry. The Instructions page shows them read-only, with each
+  one's recent yield and next check.
 - **Platforms** - where the Pilot drafts self-promotion posts. Posting is
   always review-only.
 
@@ -109,7 +111,7 @@ company notes) and attaches it to the application.
   own once the host is back.
 - **Pilot paused after repeated stuck runs** - the host takes a break to
   protect your machine. Check the dock terminal for what got stuck, then
-  re-enable.
+  start it again.
 - **A board keeps failing** - the Pilot probes it once, then asks whether to
   park it. Parked boards are skipped until you clear them; everything else
   keeps running.

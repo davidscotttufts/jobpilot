@@ -42,7 +42,7 @@ enum PromotionStatus {
 model PilotState {
   userId                String    @id @map("user_id")
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enabled               Boolean   @default(false)
+  running               Boolean   @default(false)
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at")
@@ -56,6 +56,31 @@ model PilotState {
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   @@map("pilot_states")
+}
+
+model PilotSearch {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query        String
+  board        String?
+  resumeId     String?   @map("resume_id")
+  // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
+  reason       String    @default("")
+  lastRunAt    DateTime? @map("last_run_at")
+  lastJobsSeen Int?      @map("last_jobs_seen")
+  lastNewJobs  Int?      @map("last_new_jobs")
+  // Consecutive runs with zero new jobs; drives the dry-search backoff, "backing off" >= 3.
+  emptyRuns    Int       @default(0) @map("empty_runs")
+  nextRunAt    DateTime  @default(now()) @map("next_run_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Campaigns this search spawned; a completed one is left behind when the next run opens a new campaign.
+  campaigns Campaign[]
+
+  @@index([userId, nextRunAt])
+  @@map("pilot_searches")
 }
 
 model PilotClaim {
