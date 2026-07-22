@@ -1,7 +1,7 @@
 ---
 name: auto-apply
 description: Search a job board and autonomously apply to matching jobs one at a time, until paused, exhausted, or the max-applications cap is hit.
-argument-hint: "<search_query --board <domain> [--min-score N] [--max-apps N]> OR 'resume' OR 'retry-failed <campaign-id>'"
+argument-hint: "<query> --board <domain> [--min-score N] [--max-apps N] | resume | retry-failed <campaign-id>"
 ---
 
 # Auto-apply - Search + Apply On Demand
@@ -75,11 +75,11 @@ If no row matches, command the campaign to `failed` with `POST /api/campaigns/$C
 1. `browser_navigate` to `searchUrl` (this is **tab 1** - keep it open for the whole campaign).
 2. Follow `../../shared/auth.md` - logs in, and **registers a new account when none exists, without asking**.
 3. Fill the search fields and submit.
-4. Take a `browser_snapshot` narrowed to the results list (per `../../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport - scroll/paginate per **Pagination & infinite scroll** in `../../shared/browser-tips.md` as the loop drains rows (see 2.5); never treat the first batch as all jobs.
+4. Take a `browser_snapshot` narrowed to the results list (per `../../shared/browser-tips.md`) to read `{ title, company, location, url }` per row. This is one viewport - scroll/paginate per **Pagination & infinite scroll** in `../../shared/browser-tips.md` as the loop drains rows (see **Stop Conditions**); never treat the first batch as all jobs.
 
 ## Phase 2: Apply Loop (on demand)
 
-Walk the tab-1 results top to bottom; at the last loaded row, scroll/page for more (1.2 step 4) before concluding. For each result:
+Walk the tab-1 results top to bottom; at the last loaded row, scroll/page for more (per **Pagination & infinite scroll** in `../../shared/browser-tips.md`) before concluding. For each result:
 
 ### 2.1 Pre-filter (no tab)
 
@@ -100,14 +100,21 @@ SCORE=$(echo "$FIT" | jq -r '.score')
 CONF=$(echo "$FIT" | jq -r '.confidence')
 ```
 
-If `CONF >= 0.7` and `SCORE` is at least 10 points from `minMatchScore` on either side, use it directly; otherwise rescore using `strongMatches`/`partialMatches`/`gaps`. A thin/generic row is **not** a skip. When a full posting read is genuinely needed, delegate the row to `job-worker` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation. The worker creates every row non-terminal, then sends ineligible outcomes to `/result`; eligible rows remain `pending`. PATCH an eligible row to `applying`, then go straight to apply (2.3).
+Branch on the result (eligibility per `../../shared/eligibility.md` - a thin/generic row is **not** a skip):
+
+- **Confident** - `CONF >= 0.7` and `SCORE` at least 10 points from `minMatchScore` on either side → use the score directly.
+- **Uncertain** → rescore yourself from `strongMatches`/`partialMatches`/`gaps`.
+- **Needs the full posting** → delegate the row to `job-worker` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation. The worker creates every row non-terminal and sends ineligible outcomes to `/result`; eligible rows remain `pending`. PATCH an eligible row to `applying`, then go straight to apply (2.3):
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
   -H 'content-type: application/json' -d '{"status":"applying"}'
 ```
 
-Otherwise (scoreable from the listing/tab-1 snapshot alone): below `minMatchScore` after a fair read → create as `pending`, POST `/result` with `outcome:"skipped"`, `skipReason:"Below minimum match score ($SCORE < $MIN_SCORE)"`, and move on (no tab). Otherwise add it as `applying` and apply (2.3):
+With a usable score from the listing/tab-1 snapshot alone:
+
+- **Below `minMatchScore` after a fair read** → create as `pending`, POST `/result` with `outcome:"skipped"`, `skipReason:"Below minimum match score ($SCORE < $MIN_SCORE)"`, and move on (no tab).
+- **Qualifies** → add it as `applying` and apply (2.3):
 
 ```bash
 DIGEST=<stringified digest>
@@ -118,10 +125,6 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
     --arg matchReason "<one line>" --argjson score <0-100> --arg digest "$DIGEST" --arg desc "<posting text, when read>" \
     '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"applying", digest:$digest, description:$desc}')"
 ```
-
-### 2.2a Eligibility - what is (and isn't) a skip
-
-Follow `../../shared/eligibility.md`.
 
 ### 2.3 Apply (delegate to `job-worker`)
 
