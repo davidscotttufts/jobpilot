@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.20] - 2026-07-22
+
+### Fixed
+
+- Jobs the pilot finds now reach the public jobs board. Discovery was saving them
+  without the tech-stack summary the index is built from, so almost nothing it
+  found appeared on /jobs.
+- Postings discovered before this fix stay missing until a later search finds
+  them again - their tech stack was never recorded.
+
 ## [2.1.19] - 2026-07-22
 
 ### Removed
