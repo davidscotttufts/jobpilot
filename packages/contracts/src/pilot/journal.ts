@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
 
 const PILOT_JOURNAL_KINDS = [
   "cycle",
@@ -37,22 +38,12 @@ export const pilotJournalEntrySchema = z.object({
   createdAt: z.date(),
 });
 
-export const pilotJournalQuerySchema = z.object({
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(50),
-  // `?kinds=a,b` reaches the handler as a string on some paths and a split array on others.
-  kinds: z
-    .preprocess(
-      (value) => (typeof value === "string" ? value.split(",") : value),
-      z.array(pilotJournalKindSchema),
-    )
-    .optional(),
+/** Cursor-paged, not offset: the feed grows at the head while the orchestrator runs. */
+export const pilotJournalQuerySchema = cursorQuerySchema.extend({
+  kinds: csvArray(pilotJournalKindSchema).optional(),
 });
 
-export const pilotJournalPageSchema = z.object({
-  items: z.array(pilotJournalEntrySchema),
-  nextCursor: z.string().nullable(),
-});
+export const pilotJournalPageSchema = cursorPageSchema(pilotJournalEntrySchema);
 
 export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
 export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;

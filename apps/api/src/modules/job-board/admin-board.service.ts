@@ -1,4 +1,5 @@
 import type { AdminBoardInput, AdminBoardPatch } from "@jobpilot/contracts/job-board";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
@@ -20,12 +21,30 @@ export class AdminBoardService {
     return { ...board, adoption: _count.userBoards };
   }
 
-  async list() {
-    const rows = await this.prisma.jobBoard.findMany({
-      include: WITH_ADOPTION,
-      orderBy: [{ listed: "desc" }, { sortOrder: "asc" }],
-    });
-    return rows.map((row) => this.project(row));
+  async list(query: PaginationQuery & { q?: string }) {
+    const where: Prisma.JobBoardWhereInput = query.q
+      ? {
+          OR: [
+            { name: { contains: query.q, mode: "insensitive" } },
+            { domain: { contains: query.q, mode: "insensitive" } },
+          ],
+        }
+      : {};
+
+    const [rows, total] = await Promise.all([
+      this.prisma.jobBoard.findMany({
+        where,
+        include: WITH_ADOPTION,
+        orderBy: [{ listed: "desc" }, { sortOrder: "asc" }],
+        ...pageSlice(query),
+      }),
+      this.prisma.jobBoard.count({ where }),
+    ]);
+    return paginate(
+      rows.map((row) => this.project(row)),
+      query,
+      total,
+    );
   }
 
   async create(input: AdminBoardInput) {

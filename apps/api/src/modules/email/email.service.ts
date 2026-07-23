@@ -5,6 +5,7 @@ import {
   type Classification,
   type ScanMessageInput,
 } from "@jobpilot/contracts/email";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
@@ -25,7 +26,7 @@ interface MessageQuery {
 export class EmailService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listMessages(userId: string, query: MessageQuery) {
+  async listMessages(userId: string, query: PaginationQuery & MessageQuery) {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
     const where: Prisma.EmailMessageWhereInput = { account: { userId } };
@@ -53,16 +54,23 @@ export class EmailService {
       ];
     }
 
-    const rows = await this.prisma.emailMessage.findMany({
-      where,
-      orderBy: { receivedAt: "desc" },
-      take: 200,
-      include: {
-        matchedApp: { select: { id: true, title: true, company: true, status: true } },
-      },
-    });
+    const [rows, total] = await Promise.all([
+      this.prisma.emailMessage.findMany({
+        where,
+        orderBy: { receivedAt: "desc" },
+        ...pageSlice(query),
+        include: {
+          matchedApp: { select: { id: true, title: true, company: true, status: true } },
+        },
+      }),
+      this.prisma.emailMessage.count({ where }),
+    ]);
 
-    return rows.map((row) => serializeMessage(row));
+    return paginate(
+      rows.map((row) => serializeMessage(row)),
+      query,
+      total,
+    );
   }
 
   async getMessage(userId: string, id: string) {

@@ -20,17 +20,15 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
-import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { EmptyState } from "@/components/ui/data";
 import { ExternalLink } from "@/components/ui/display";
 import { DropdownMenu } from "@/components/ui/feedback";
 import { SearchField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { usePagination } from "@/hooks/use-pagination";
 import { useConfirm } from "@/providers/confirm-provider";
 import { BoardFormDialog } from "./board-form-dialog";
 
-const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 200;
 
 export function BoardsContent(): ReactElement {
@@ -41,6 +39,12 @@ export function BoardsContent(): ReactElement {
   const confirm = useConfirm();
 
   const boards = useApiQuery(jobBoardQueries.list());
+  // Filtered here, not server-side: a profile's board list is bounded by the catalog.
+  const needle = search.trim().toLowerCase();
+  const rows = (boards.data ?? []).filter(
+    (b) =>
+      !needle || b.name.toLowerCase().includes(needle) || b.domain.toLowerCase().includes(needle),
+  );
 
   const update = useApiMutation<JobBoardDto, { id: string; patch: JobBoardPatch }>(
     ({ id, patch }) => api["job-boards"]({ id }).patch(patch),
@@ -71,28 +75,9 @@ export function BoardsContent(): ReactElement {
     }
   };
 
-  const allRows = boards.data ?? [];
-  const needle = search.trim().toLowerCase();
-
-  const filteredRows = allRows.filter((b) => {
-    if (
-      needle &&
-      !b.name.toLowerCase().includes(needle) &&
-      !b.domain.toLowerCase().includes(needle)
-    ) {
-      return false;
-    }
-
-    return true;
-  });
-
   const isAnyFilterActive = needle.length > 0;
-  const { page, setPage, pageCount, pageRows, total } = usePagination(filteredRows, PAGE_SIZE);
 
-  const handleResetFilters = (): void => {
-    setSearchDraft("");
-    setPage(1);
-  };
+  const handleResetFilters = (): void => setSearchDraft("");
 
   return (
     <>
@@ -105,10 +90,7 @@ export function BoardsContent(): ReactElement {
           <SearchField
             value={searchDraft}
             placeholder="Search name or domain"
-            onChange={(value) => {
-              setSearchDraft(value);
-              setPage(1);
-            }}
+            onChange={setSearchDraft}
           />
           {isAnyFilterActive && (
             <Button
@@ -122,10 +104,15 @@ export function BoardsContent(): ReactElement {
           )}
         </Stack>
 
-        {allRows.length === 0 ? (
-          <EmptyState variant="inline" title="No boards yet. Add one to let campaigns search it." />
-        ) : filteredRows.length === 0 ? (
-          <EmptyState variant="inline" title="No boards match the current filters." />
+        {rows.length === 0 ? (
+          <EmptyState
+            variant="inline"
+            title={
+              isAnyFilterActive
+                ? "No boards match the current filters."
+                : "No boards yet. Add one to let campaigns search it."
+            }
+          />
         ) : (
           <TableContainer>
             <Table size="small">
@@ -139,7 +126,7 @@ export function BoardsContent(): ReactElement {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {pageRows.map((b) => (
+                {rows.map((b) => (
                   <TableRow key={b.id} hover>
                     <TableCell sx={{ fontWeight: 600 }}>{b.name}</TableCell>
                     <TableCell>{b.domain}</TableCell>
@@ -187,14 +174,6 @@ export function BoardsContent(): ReactElement {
             </Table>
           </TableContainer>
         )}
-
-        <PaginationFooter
-          page={page}
-          pageCount={pageCount}
-          pageSize={PAGE_SIZE}
-          total={total}
-          onChange={setPage}
-        />
       </SectionCard>
 
       <BoardFormDialog

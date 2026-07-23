@@ -40,7 +40,7 @@ for i in 1 2 3 4 5 6; do
     --data-urlencode "classification=verification" \
     --data-urlencode "domainHint=$BOARD_DOMAIN" \
     --data-urlencode "since=$(date -u -d '5 minutes ago' +%FT%TZ 2>/dev/null || date -u -v-5M +%FT%TZ)")
-  COUNT=$(echo "$RESULT" | jq '. | length')
+  COUNT=$(echo "$RESULT" | jq '.items | length')
   if [ "$COUNT" -gt 0 ]; then break; fi
   sleep 5
 done
@@ -48,7 +48,7 @@ done
 
 If still nothing, also look for unclassified messages whose body matches the board domain (Gmail may have arrived but `scan-inbox` hasn't classified it yet). Classify inline:
 
-1. Read `data[0]` (most recent first).
+1. Read `.items[0]` (most recent first).
 2. Inspect `subject`, `fromAddress`, `snippet`, `rawBody`.
 3. If it's not a real verification for `$BOARD_DOMAIN`, print `{}` and exit.
 4. Extract:

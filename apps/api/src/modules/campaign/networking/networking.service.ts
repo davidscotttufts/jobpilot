@@ -7,6 +7,7 @@ import {
   isTerminalNetworkingStatus,
   NETWORKING_MESSAGE_TERMINAL_STATUSES,
 } from "@jobpilot/contracts/networking";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { publishActivity, writeActivity } from "@/common/activity-log";
@@ -14,7 +15,6 @@ import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { createContactPayload } from "@/modules/contact";
-import { createPaginatedResponse } from "@/types/response";
 import { toNetworkingMessageRow } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
@@ -24,20 +24,21 @@ import { ensureCampaignOwned } from "../campaign.utils";
 export class CampaignNetworkingService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listNetworking(userId: string, campaignId: string, query: { page: number; limit: number }) {
-    await ensureCampaignOwned(this.prisma, userId, campaignId);
+  async listNetworking(userId: string, campaignId: string, query: PaginationQuery) {
     const where = { campaignId, userId };
-    const [messages, total] = await Promise.all([
+    // The page is already ownership-scoped; the probe only separates 404 from an empty page, so
+    // it rides along rather than costing a round trip of its own.
+    const [, messages, total] = await Promise.all([
+      ensureCampaignOwned(this.prisma, userId, campaignId),
       this.prisma.networkingMessage.findMany({
         where,
         include: { contact: true },
         orderBy: { createdAt: "asc" },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
+        ...pageSlice(query),
       }),
       this.prisma.networkingMessage.count({ where }),
     ]);
-    return createPaginatedResponse(messages.map(toNetworkingMessageRow), { ...query, total });
+    return paginate(messages.map(toNetworkingMessageRow), query, total);
   }
 
   async addNetworking(userId: string, campaignId: string, body: AddCampaignNetworkingInput) {

@@ -9,13 +9,14 @@ import { INTERVIEW_STATUSES } from "../applications/funnel-bar";
 
 export function StatTiles(): ReactElement {
   const campaigns = useApiQuery(campaignQueries.list());
-  const applications = useApiQuery(applicationQueries.list());
+  // Counts come from the server aggregate, not a loaded page - these are whole-account totals.
+  const applications = useApiQuery(applicationQueries.summary());
 
   const rows = campaigns.data?.items ?? [];
-  const apps = applications.data ?? [];
+  const byStatus = applications.data?.byStatus;
 
   const active = rows.filter((c) => c.status === "in_progress" || c.status === "paused").length;
-  const interviewing = apps.filter((a) => INTERVIEW_STATUSES.has(a.status)).length;
+  const interviewing = INTERVIEW_STATUSES.reduce((n, s) => n + (byStatus?.[s] ?? 0), 0);
   const replies = rows.reduce(
     (n, c) => n + (c.summary.kind === "networking" ? c.summary.replied : 0),
     0,
@@ -27,7 +28,7 @@ export function StatTiles(): ReactElement {
         <StatCard label="Active campaigns" value={active} />
       </Grid>
       <Grid size={{ xs: 6, md: 3 }}>
-        <StatCard label="Applied" value={apps.length} />
+        <StatCard label="Applied" value={applications.data?.total ?? 0} />
       </Grid>
       <Grid size={{ xs: 6, md: 3 }}>
         <StatCard label="Interviewing" value={interviewing} />

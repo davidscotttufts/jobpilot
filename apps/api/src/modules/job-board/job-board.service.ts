@@ -28,6 +28,7 @@ export class JobBoardService {
     };
   }
 
+  /** Unpaginated: a profile's boards are bounded by the catalog, and selects read the whole list. */
   async list(userId: string) {
     const rows = await this.prisma.userJobBoard.findMany({
       where: { userId },

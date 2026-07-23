@@ -56,7 +56,7 @@ export function NeedsAttention(): ReactElement {
   const [userExpanded, setUserExpanded] = useState<string | null | undefined>(undefined);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const promotions = promotionsQuery.data ?? [];
+  const promotions = promotionsQuery.data?.items ?? [];
   const drafts = promotions.filter((p) => p.status === "draft");
   const history = promotions.filter((p) => p.status !== "draft");
   const loneDraftId = drafts.length === 1 ? (drafts[0]?.id ?? null) : null;

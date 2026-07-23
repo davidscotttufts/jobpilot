@@ -11,6 +11,7 @@ import { coverLetterQueries } from "@/api/queries";
 import type { CoverLetterListItem } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip, RelativeTime } from "@/components/ui/display";
+import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 
 const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "success"> = {
   manual: "default",
@@ -20,9 +21,10 @@ const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "
 
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
-  const lettersQuery = useApiQuery(coverLetterQueries.list());
+  const pagination = usePaginationParams();
+  const lettersQuery = useApiQuery(coverLetterQueries.list(pagination.query));
 
-  const rows = lettersQuery.data ?? [];
+  const rows = lettersQuery.data?.items ?? [];
 
   const columns: GridColDef<CoverLetterListItem>[] = [
     {
@@ -82,6 +84,7 @@ export function CoverLettersTable(): ReactElement {
       loading={lettersQuery.isLoading}
       getRowId={(row) => row.id}
       onRowClick={(row) => router.push(`/cover-letters/${row.id}` as Route)}
+      {...gridPagination(pagination, lettersQuery.data?.pagination)}
     />
   );
 }

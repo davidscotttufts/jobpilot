@@ -31,7 +31,7 @@ export const emailMessagesController = new Elysia({
     detail: {
       summary: "List inbox messages",
       description:
-        "Returns up to 200 of the profile's email messages, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
+        "Returns one page of the profile's email messages as `{ items, pagination }`, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
     },
   })
   .get("/messages/:id", ({ user, params }) => svc.getMessage(user.id, params.id), {

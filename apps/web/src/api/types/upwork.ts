@@ -2,7 +2,7 @@ import type { Body, Data } from "@jobpilot/api-client";
 import type { api } from "@/api/client";
 
 /** An Upwork proposal, inferred from `GET /api/upwork/proposals`. */
-export type UpworkProposalDto = Data<typeof api.upwork.proposals.get>[number];
+export type UpworkProposalDto = Data<typeof api.upwork.proposals.get>["items"][number];
 
 /** The Upwork profile-enhancement record, from `GET /api/upwork/profile`. */
 export type UpworkProfileDto = NonNullable<Data<typeof api.upwork.profile.get>>;

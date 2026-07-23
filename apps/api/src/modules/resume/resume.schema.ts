@@ -11,8 +11,6 @@ export const updateResumeSchema = z.object({
   content: resumeDataSchema.optional(),
 });
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
 /** A row in the master-resume list. */
 export const resumeSummarySchema = z.object({
   id: z.uuid(),

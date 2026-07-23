@@ -138,7 +138,7 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
 
           <Autocomplete<ApplicationDto>
             size="small"
-            options={appOptions.data ?? []}
+            options={appOptions.data?.items ?? []}
             getOptionLabel={(o) => `${o.title} ${o.company}`}
             value={matchedApp}
             onChange={(_, v) => {

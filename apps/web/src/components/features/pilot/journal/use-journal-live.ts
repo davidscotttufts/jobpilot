@@ -1,5 +1,6 @@
 "use client";
 
+import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
 import type {
   PilotJournalEntry,
   PilotJournalKind,
@@ -8,7 +9,6 @@ import type {
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
-import { PILOT_JOURNAL_PAGE_SIZE } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
 import { dedupeById } from "@/utils/array";
@@ -17,7 +17,7 @@ import { dedupeById } from "@/utils/array";
 const LIVE_CAP = 100;
 
 /** Roomy enough that the fetched page's tail (where `nextCursor` resumes) survives live prepends. */
-const CACHE_CAP = PILOT_JOURNAL_PAGE_SIZE + LIVE_CAP;
+const CACHE_CAP = DEFAULT_CURSOR_PAGE_SIZE + LIVE_CAP;
 
 /**
  * One buffer for every caller: the overview strip, the stage hook, and the feed all

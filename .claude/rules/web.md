@@ -47,6 +47,22 @@ the API (base URL from `src/api/base-url.ts`).
   `Typography`.
 - `Stack` rejects layout props like `flexWrap`/`alignItems` - put them in `sx`.
 
+## Pagination
+
+Never hand-roll a pager. Filter a short bare-array list (boards, resumes, credentials) in the
+browser; filter a paginated one server-side, since it only ever sees the page it was handed.
+
+- `usePaginationParams()` owns the page state (URL-backed). Spread its `query` into the
+  `*Queries.list(...)` factory; read rows from `data.items`. `prefix` namespaces a second pager
+  on one route; `navigate: true` for an RSC page, whose fetch needs a real navigation.
+- Controls: `<PaginationFooter pagination={data.pagination} …>`, or
+  `{...gridPagination(pagination, data?.pagination)}` on a `<DataTable>`, or
+  `<PaginationControls>` from an RSC page. Page sizes come from `PAGE_SIZE_OPTIONS`.
+- A filter change resets the page - the old offset means nothing under a new filter. Write
+  URL-backed filters through `setFilters({ … })`, which resets in the same URL update; a filter
+  setter plus a separate `setPage(1)` would start from the same snapshot and undo itself.
+- `/jobs` is the one exception: `JobPager` renders real `<a href>` paging for crawlers.
+
 ## The two TypeScript compilers (do not "clean this up")
 
 TypeScript 7 is the Go-native compiler and ships **no JS compiler API** (returns in 7.1). Next

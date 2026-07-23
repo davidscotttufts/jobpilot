@@ -1,3 +1,4 @@
+import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
 export const pdfRequestSchema = z.object({
@@ -5,7 +6,7 @@ export const pdfRequestSchema = z.object({
   name: z.string().optional(),
 });
 
-// ── Response schemas ──────────────────────────────────────────────────────────
+// Response schemas
 
 /** Where a cover letter originated (mirrors `coverLetterSourceSchema`). */
 const coverLetterSource = z.enum(["apply", "auto-apply", "manual"]);
@@ -20,7 +21,7 @@ export const coverLetterSummarySchema = z.object({
   createdAt: z.date(),
 });
 
-export const coverLetterListSchema = z.array(coverLetterSummarySchema);
+export const coverLetterListSchema = paginatedSchema(coverLetterSummarySchema);
 
 /** A single saved cover letter with its full plain-text body. */
 export const coverLetterDetailSchema = z.object({

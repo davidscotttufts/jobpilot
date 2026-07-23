@@ -7,8 +7,9 @@ import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
 import { ColorChip, RelativeTime } from "@/components/ui/display";
+import type { GridPaginationProps } from "@/hooks/use-pagination";
 
-interface InboxTableProps {
+interface InboxTableProps extends GridPaginationProps {
   rows: ReadonlyArray<EmailMessageDto>;
   loading?: boolean;
   onRowClick: (row: EmailMessageDto) => void;
@@ -28,7 +29,7 @@ const CLASS_COLORS: Record<
 };
 
 export function InboxTable(props: InboxTableProps): ReactElement {
-  const { rows, loading, onRowClick, onScanMessage } = props;
+  const { rows, loading, onRowClick, onScanMessage, ...pagination } = props;
 
   const columns: GridColDef<EmailMessageDto>[] = [
     {
@@ -155,6 +156,7 @@ export function InboxTable(props: InboxTableProps): ReactElement {
       loading={loading}
       rowHeight={60}
       onRowClick={onRowClick}
+      {...pagination}
     />
   );
 }

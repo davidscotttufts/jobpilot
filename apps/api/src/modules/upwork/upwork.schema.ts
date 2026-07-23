@@ -1,3 +1,4 @@
+import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import {
   portfolioProjectSchema,
   screeningAnswerSchema,
@@ -8,12 +9,10 @@ import {
 } from "@jobpilot/contracts/upwork";
 import { z } from "zod/v4";
 
-export const proposalsQuery = z.object({
+export const proposalsQuery = paginationQuerySchema.extend({
   status: z.string().trim().min(1).optional(),
   search: z.string().trim().min(1).optional(),
 });
-
-// ── Response schemas ──────────────────────────────────────────────────────────
 
 /** Deterministic client/job quality assessment result (`scoreUpworkClient`). */
 export const upworkQualityResultSchema = z.object({
@@ -62,4 +61,4 @@ export const upworkProposalSchema = z.object({
   submittedAt: z.date().nullable(),
 });
 
-export const upworkProposalListSchema = z.array(upworkProposalSchema);
+export const upworkProposalListSchema = paginatedSchema(upworkProposalSchema);

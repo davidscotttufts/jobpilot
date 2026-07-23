@@ -10,21 +10,26 @@ import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
+import { usePaginationParams } from "@/hooks/use-pagination";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 
-const GROUPS: ReadonlyArray<{ label: string; statuses: CampaignStatus[] }> = [
-  { label: "Active", statuses: ["in_progress", "paused"] },
-  { label: "Completed", statuses: ["completed", "failed"] },
-];
+/** Each group is its own server-filtered page, so neither can hide behind the other's rows. */
+const GROUPS = [
+  { key: "active", label: "Active", statuses: ["in_progress", "paused"] },
+  { key: "completed", label: "Completed", statuses: ["completed", "failed"] },
+] as const satisfies ReadonlyArray<{ key: string; label: string; statuses: CampaignStatus[] }>;
+
+const PAGE_SIZE = 10;
 
 export function CampaignGroups(): ReactElement {
   const router = useRouter();
   const { expand } = useAgentDock();
   const agentAvailable = useAgentAvailable();
-  const campaigns = useApiQuery(campaignQueries.list());
-  const rows = campaigns.data?.items ?? [];
+
+  const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
+  const isEmpty = groups.every((g) => !g.pagination?.total);
 
   const open = (c: CampaignDto): void => {
     router.push(`/campaigns/${encodeURIComponent(c.campaignId)}` as Route);
@@ -46,7 +51,7 @@ export function CampaignGroups(): ReactElement {
         )
       }
     >
-      {rows.length === 0 ? (
+      {isEmpty ? (
         <EmptyState
           variant="inline"
           title="No campaigns yet"
@@ -65,29 +70,49 @@ export function CampaignGroups(): ReactElement {
         />
       ) : (
         <Stack spacing={2}>
-          {GROUPS.map((group) => {
-            const items = rows.filter((c) => group.statuses.includes(c.status));
-            if (items.length === 0) {
-              return null;
-            }
-            return (
-              <Stack key={group.label} spacing={1}>
-                <Typography variant="overlineMuted">
-                  {group.label} · {items.length}
-                </Typography>
-                {items.map((c) => (
-                  <CampaignRow
-                    key={c.campaignId}
-                    campaign={c}
-                    onSelect={open}
-                    onOpenDetail={open}
+          {groups.map(
+            (group) =>
+              group.pagination &&
+              group.pagination.total > 0 && (
+                <Stack key={group.label} spacing={1}>
+                  <Typography variant="overlineMuted">
+                    {group.label} · {group.pagination.total}
+                  </Typography>
+                  {group.items.map((c) => (
+                    <CampaignRow
+                      key={c.campaignId}
+                      campaign={c}
+                      onSelect={open}
+                      onOpenDetail={open}
+                    />
+                  ))}
+                  <PaginationFooter
+                    pagination={group.pagination}
+                    onPageChange={group.setPage}
+                    onPageSizeChange={group.setPageSize}
                   />
-                ))}
-              </Stack>
-            );
-          })}
+                </Stack>
+              ),
+          )}
         </Stack>
       )}
     </SectionCard>
   );
+}
+
+/** One paginated status group, with its own `?activePage=` / `?completedPage=` params. */
+function useCampaignGroup(group: (typeof GROUPS)[number]) {
+  const { query, setPage, setPageSize } = usePaginationParams({
+    pageSize: PAGE_SIZE,
+    prefix: group.key,
+  });
+  const result = useApiQuery(campaignQueries.list({ ...query, status: [...group.statuses] }));
+
+  return {
+    label: group.label,
+    items: result.data?.items ?? [],
+    pagination: result.data?.pagination,
+    setPage,
+    setPageSize,
+  };
 }

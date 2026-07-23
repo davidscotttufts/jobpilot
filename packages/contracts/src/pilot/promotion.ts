@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { paginatedSchema, paginationQuerySchema } from "../pagination";
 import { webLinkSchema } from "./web-link";
 
 const PROMOTION_STATUSES = [
@@ -47,7 +48,9 @@ export const promotionResultSchema = z.object({
   note: z.string().optional(),
 });
 
-export const promotionsQuerySchema = z.object({ status: promotionStatusSchema.optional() });
+export const promotionsQuerySchema = paginationQuerySchema.extend({
+  status: promotionStatusSchema.optional(),
+});
 
 export const promotionSchema = z.object({
   id: z.uuid(),
@@ -64,7 +67,7 @@ export const promotionSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const promotionListSchema = z.array(promotionSchema);
+export const promotionListSchema = paginatedSchema(promotionSchema);
 
 export type PromotionStatus = z.infer<typeof promotionStatusSchema>;
 export type CreatePromotionInput = z.infer<typeof createPromotionSchema>;

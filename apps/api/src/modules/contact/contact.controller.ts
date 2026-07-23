@@ -1,3 +1,4 @@
+import { paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
@@ -11,10 +12,12 @@ export const contactController = new Elysia({
   detail: { tags: ["Contacts"] },
 })
   .use(authGuard)
-  .get("/", ({ user }) => contactService.list(user.id), {
+  .get("/", ({ user, query }) => contactService.list(user.id, query), {
+    query: paginationQuerySchema,
     response: contactListSchema,
     detail: {
       summary: "List networking contacts",
-      description: "Returns the active profile's networking contacts, ordered newest first.",
+      description:
+        "Returns one page of the active profile's networking contacts, ordered newest first, as `{ items, pagination }`.",
     },
   });

@@ -14,18 +14,19 @@ import { queryKeys } from "@/api/query-keys";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
-import { usePagination } from "@/hooks/use-pagination";
+import { usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
-import { formatRelativeTime } from "@/utils/format";
+import { formatRelativeTime, plural } from "@/utils/format";
 import { STATUS_OPTIONS } from "./proposal-status";
 import { ProposalStatusChip } from "./proposal-status-chip";
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 10;
 
 export function ProposalsList(): ReactElement {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<UpworkProposalStatus | null>(null);
+  const { query, setPage, setPageSize } = usePaginationParams({ pageSize: PAGE_SIZE });
 
   const invalidate = (): void => {
     queryClient.invalidateQueries({ queryKey: queryKeys.upworkProposals.all });
@@ -38,13 +39,13 @@ export function ProposalsList(): ReactElement {
     },
   });
 
-  const proposals = useApiQuery(upworkProposalQueries.list());
+  const proposals = useApiQuery(
+    upworkProposalQueries.list({ ...query, ...(statusFilter && { status: statusFilter }) }),
+  );
 
-  const allRows = proposals.data ?? [];
-  const filteredRows = allRows.filter((p) => !statusFilter || p.status === statusFilter);
-
+  const pageRows = proposals.data?.items ?? [];
+  const total = proposals.data?.pagination.total ?? 0;
   const hasFilters = statusFilter !== null;
-  const { page, setPage, pageCount, pageRows, total } = usePagination(filteredRows, PAGE_SIZE);
 
   const handleNavigate = (id: string): void => {
     router.push(`/upwork/${id}` as Route);
@@ -80,15 +81,18 @@ export function ProposalsList(): ReactElement {
           </Button>
         )}
         <Box sx={{ flex: 1 }} />
-        <Typography variant="captionMuted">
-          {filteredRows.length} {filteredRows.length === 1 ? "proposal" : "proposals"}
-        </Typography>
+        <Typography variant="captionMuted">{plural(total, "proposal")}</Typography>
       </Stack>
 
-      {allRows.length === 0 ? (
-        <EmptyState variant="inline" title="No proposals yet. Start one from “New proposal”." />
-      ) : filteredRows.length === 0 ? (
-        <EmptyState variant="inline" title="No proposals match the current filter." />
+      {pageRows.length === 0 ? (
+        <EmptyState
+          variant="inline"
+          title={
+            hasFilters
+              ? "No proposals match the current filter."
+              : "No proposals yet. Start one from “New proposal”."
+          }
+        />
       ) : (
         <Stack spacing={1}>
           {pageRows.map((p) => (
@@ -122,13 +126,13 @@ export function ProposalsList(): ReactElement {
         </Stack>
       )}
 
-      <PaginationFooter
-        page={page}
-        pageCount={pageCount}
-        pageSize={PAGE_SIZE}
-        total={total}
-        onChange={setPage}
-      />
+      {proposals.data && (
+        <PaginationFooter
+          pagination={proposals.data.pagination}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      )}
     </SectionCard>
   );
 }

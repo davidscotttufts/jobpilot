@@ -47,41 +47,5 @@ export const okResponseSchema = z.object({ ok: z.literal(true) });
 /** `{ message }` - message-only acknowledgement. */
 export const messageResponseSchema = z.object({ message: z.string() });
 
-// ── Pagination ────────────────────────────────────────────────────────────────
-
-/** Page metadata returned alongside a paginated collection. */
-export const paginationSchema = z.object({
-  /** Current page number, starting from 1. */
-  page: z.number().int(),
-  /** Number of items per page. */
-  limit: z.number().int(),
-  /** Total number of items across all pages. */
-  total: z.number().int(),
-  /** Total number of pages. */
-  totalPages: z.number().int(),
-});
-
-export type Pagination = z.infer<typeof paginationSchema>;
-
-/** Build a `{ items, pagination }` response schema for a given item schema. */
-export const paginatedResponseSchema = <T extends z.ZodType>(item: T) =>
-  z.object({ items: z.array(item), pagination: paginationSchema });
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  pagination: Pagination;
-}
-
-/** Assemble a paginated response, deriving `totalPages` from `total`/`limit`. */
-export function createPaginatedResponse<T>(
-  items: T[],
-  pagination: Omit<Pagination, "totalPages">,
-): PaginatedResponse<T> {
-  return {
-    items,
-    pagination: {
-      ...pagination,
-      totalPages: pagination.limit > 0 ? Math.ceil(pagination.total / pagination.limit) : 0,
-    },
-  };
-}
+// Pagination lives in `@jobpilot/contracts/pagination` - the web and the agent's skills need the
+// same envelope, and neither can import from `apps/api`.

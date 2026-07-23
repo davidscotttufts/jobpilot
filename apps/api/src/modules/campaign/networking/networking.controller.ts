@@ -3,10 +3,11 @@ import {
   networkingMessageResultSchema,
   patchNetworkingMessageSchema,
 } from "@jobpilot/contracts/networking";
+import { paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard, requireVerifiedEmail } from "@/common/middleware";
-import { campaignParams, networkingMessageParams, paginationQuery } from "../campaign.schema";
+import { campaignParams, networkingMessageParams } from "../campaign.schema";
 import {
   networkingMessageListSchema,
   networkingMessageResultResponseSchema,
@@ -27,7 +28,7 @@ export const campaignNetworkingController = new Elysia({
     ({ user, params, query }) => svc.listNetworking(user.id, params.id, query),
     {
       params: campaignParams,
-      query: paginationQuery,
+      query: paginationQuerySchema,
       response: networkingMessageListSchema,
       detail: {
         summary: "List networking messages",

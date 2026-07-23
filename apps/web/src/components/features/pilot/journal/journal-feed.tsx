@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
+import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
 import type {
   PilotJournalEntry,
   PilotJournalKind,
@@ -11,7 +12,7 @@ import { Box, Button, Chip, Divider, Stack, ToggleButton, ToggleButtonGroup } fr
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiQuery } from "@/api/hooks";
-import { PILOT_JOURNAL_PAGE_SIZE, pilotQueries } from "@/api/queries";
+import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { useToast } from "@/providers/notification-provider";
@@ -58,7 +59,7 @@ export function JournalFeed(): ReactElement {
       const { data, error } = await api.pilot.journal.get({
         query: {
           cursor: activeCursor,
-          limit: PILOT_JOURNAL_PAGE_SIZE,
+          limit: DEFAULT_CURSOR_PAGE_SIZE,
           ...(selectedKinds.length > 0 ? { kinds: selectedKinds } : {}),
         },
       });

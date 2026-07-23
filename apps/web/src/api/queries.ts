@@ -1,9 +1,15 @@
+import type { ApplicationFilters } from "@jobpilot/contracts/application";
 import type {
   CampaignJobStatus,
   CampaignSource,
   CampaignStatus,
 } from "@jobpilot/contracts/campaign";
 import type { ReviewStatus } from "@jobpilot/contracts/email";
+import {
+  DEFAULT_CURSOR_PAGE_SIZE,
+  MAX_PAGE_SIZE,
+  type PaginationQuery,
+} from "@jobpilot/contracts/pagination";
 import type {
   PilotJournalKind,
   PilotQuestionStatus,
@@ -12,6 +18,12 @@ import type {
 import type { QueueStatus } from "@jobpilot/contracts/queue";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
+
+/**
+ * A read that feeds a `<Select>` rather than a table wants the whole (small) collection, not a
+ * page of it. One page at the API's cap is that read - and it stays bounded.
+ */
+const OPTIONS_PAGE: PaginationQuery = { page: 1, limit: MAX_PAGE_SIZE };
 
 /**
  * Per-endpoint query defs: one (queryKey, queryFn) pair per read, mirroring the
@@ -63,9 +75,14 @@ export const jobBoardQueries = {
 };
 
 export const applicationQueries = {
-  list: () => ({
-    queryKey: queryKeys.applications.list({}),
-    queryFn: () => api.applied.get({ query: {} }),
+  list: (query: PaginationQuery & ApplicationFilters) => ({
+    queryKey: queryKeys.applications.list({ ...query }),
+    queryFn: () => api.applied.get({ query }),
+  }),
+  /** Whole-account totals per status - the funnel tiles must not be page-scoped. */
+  summary: (filters: Omit<ApplicationFilters, "status"> = {}) => ({
+    queryKey: queryKeys.applications.summary({ ...filters }),
+    queryFn: () => api.applied.summary.get({ query: filters }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.applications.detail(id),
@@ -73,25 +90,16 @@ export const applicationQueries = {
   }),
   search: (search: string) => ({
     queryKey: queryKeys.applications.search(search),
-    queryFn: () => api.applied.get({ query: search ? { search } : {} }),
+    queryFn: () => api.applied.get({ query: { ...OPTIONS_PAGE, ...(search && { search }) } }),
   }),
 };
 
-/** Dashboard widgets read the campaign list unpaginated; this bounds that read. */
-const DEFAULT_CAMPAIGN_PAGE_SIZE = 100;
-
 export const campaignQueries = {
   list: (
-    filters: {
-      page?: number;
-      limit?: number;
-      status?: CampaignStatus;
-      source?: CampaignSource;
-    } = {},
+    query: PaginationQuery & { status?: CampaignStatus[]; source?: CampaignSource } = OPTIONS_PAGE,
   ) => ({
-    queryKey: queryKeys.campaigns.list(filters),
-    queryFn: () =>
-      api.campaigns.get({ query: { page: 1, limit: DEFAULT_CAMPAIGN_PAGE_SIZE, ...filters } }),
+    queryKey: queryKeys.campaigns.list(query),
+    queryFn: () => api.campaigns.get({ query }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.campaigns.detail(id),
@@ -100,7 +108,7 @@ export const campaignQueries = {
   /** One server-filtered page of a campaign's jobs; filters apply across the whole campaign. */
   jobs: (
     id: string,
-    params: { page: number; limit: number; status?: CampaignJobStatus; search?: string },
+    params: PaginationQuery & { status?: CampaignJobStatus; search?: string },
   ) => ({
     queryKey: queryKeys.campaigns.jobs(id, params),
     queryFn: () => api.campaigns({ id }).jobs.get({ query: params }),
@@ -110,19 +118,17 @@ export const campaignQueries = {
     queryKey: queryKeys.campaigns.reasons(id),
     queryFn: () => api.campaigns({ id }).jobs.reasons.get(),
   }),
-  networking: (campaignId: string) => ({
-    queryKey: queryKeys.campaigns.networking(campaignId),
-    queryFn: async () => {
-      const result = await api.campaigns({ id: campaignId }).networking.get({
-        query: { page: 1, limit: 100 },
-      });
-      return { ...result, data: result.data?.items ?? null };
-    },
+  networking: (campaignId: string, query: PaginationQuery = OPTIONS_PAGE) => ({
+    queryKey: queryKeys.campaigns.networking(campaignId, query),
+    queryFn: () => api.campaigns({ id: campaignId }).networking.get({ query }),
   }),
 };
 
 export const contactQueries = {
-  list: () => ({ queryKey: queryKeys.contacts.list(), queryFn: () => api.contacts.get() }),
+  list: (query: PaginationQuery) => ({
+    queryKey: queryKeys.contacts.list(query),
+    queryFn: () => api.contacts.get({ query }),
+  }),
 };
 
 export const queueQueries = {
@@ -141,10 +147,12 @@ export const emailQueries = {
     queryKey: queryKeys.email.oauthClient(),
     queryFn: () => api.email.oauth.client.get(),
   }),
-  messages: (filter: InboxFilter) => ({
-    queryKey: queryKeys.email.messages({ filter }),
+  messages: (filter: InboxFilter, page: PaginationQuery) => ({
+    queryKey: queryKeys.email.messages({ filter, ...page }),
     queryFn: () =>
-      api.email.messages.get({ query: filter === "all" ? {} : { reviewStatus: filter } }),
+      api.email.messages.get({
+        query: { ...page, ...(filter === "all" ? {} : { reviewStatus: filter }) },
+      }),
   }),
   message: (messageId: string) => ({
     queryKey: queryKeys.email.message(messageId),
@@ -153,9 +161,9 @@ export const emailQueries = {
 };
 
 export const upworkProposalQueries = {
-  list: () => ({
-    queryKey: queryKeys.upworkProposals.list(),
-    queryFn: () => api.upwork.proposals.get(),
+  list: (query: PaginationQuery & { status?: string }) => ({
+    queryKey: queryKeys.upworkProposals.list(query),
+    queryFn: () => api.upwork.proposals.get({ query }),
   }),
   detail: (id: string) => ({
     queryKey: queryKeys.upworkProposals.detail(id),
@@ -171,18 +179,15 @@ export const upworkProfileQueries = {
 };
 
 export const coverLetterQueries = {
-  list: () => ({
-    queryKey: queryKeys.coverLetters.list(),
-    queryFn: () => api["cover-letters"].get(),
+  list: (query: PaginationQuery) => ({
+    queryKey: queryKeys.coverLetters.list(query),
+    queryFn: () => api["cover-letters"].get({ query }),
   }),
 };
 
 export const analyticsQueries = {
   stats: () => ({ queryKey: queryKeys.analytics.stats(), queryFn: () => api.analytics.get() }),
 };
-
-/** Journal page size; shared by the first-page query and the load-more fetch. */
-export const PILOT_JOURNAL_PAGE_SIZE = 50;
 
 export const pilotQueries = {
   state: () => ({ queryKey: queryKeys.pilot.state(), queryFn: () => api.pilot.get() }),
@@ -205,7 +210,7 @@ export const pilotQueries = {
       queryFn: () =>
         api.pilot.journal.get({
           query: {
-            limit: PILOT_JOURNAL_PAGE_SIZE,
+            limit: DEFAULT_CURSOR_PAGE_SIZE,
             ...(filter.length > 0 ? { kinds: filter } : {}),
           },
         }),
@@ -215,9 +220,9 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.questions({ status: status ?? "all" }),
     queryFn: () => api.pilot.questions.get({ query: status ? { status } : {} }),
   }),
-  promotions: (status?: PromotionStatus) => ({
-    queryKey: queryKeys.pilot.promotions({ status: status ?? "all" }),
-    queryFn: () => api.pilot.promotions.get({ query: status ? { status } : {} }),
+  promotions: (status?: PromotionStatus, page: PaginationQuery = OPTIONS_PAGE) => ({
+    queryKey: queryKeys.pilot.promotions({ status: status ?? "all", ...page }),
+    queryFn: () => api.pilot.promotions.get({ query: { ...page, ...(status && { status }) } }),
   }),
   pushKey: () => ({
     queryKey: queryKeys.pilot.pushKey(),

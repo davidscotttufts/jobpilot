@@ -1,10 +1,10 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import type { Route } from "next";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { SearchField } from "@/components/ui/form";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { usePaginationParams } from "@/hooks/use-pagination";
 
 const DEBOUNCE_MS = 200;
 
@@ -15,27 +15,18 @@ interface AdminSearchFieldProps {
 /** The debounced draft lands in `?q=`, which re-runs the page's server fetch. */
 export function AdminSearchField(props: AdminSearchFieldProps): ReactElement {
   const { placeholder } = props;
-  const router = useRouter();
-  const params = useSearchParams();
-  const applied = params.get("q") ?? "";
+  const applied = useSearchParams().get("q") ?? "";
+  // The admin tables are RSC pages, so the param has to be written as a real navigation.
+  const { setFilters } = usePaginationParams({ navigate: true });
 
   const [draft, setDraft] = useState(applied);
   const search = useDebouncedValue(draft, DEBOUNCE_MS);
 
   useEffect(() => {
-    if (search === applied) {
-      return;
+    if (search !== applied) {
+      setFilters({ q: search });
     }
-    const next = new URLSearchParams(params.toString());
-    if (search) {
-      next.set("q", search);
-    } else {
-      next.delete("q");
-    }
-    // A new query invalidates the current offset.
-    next.delete("page");
-    router.replace(`?${next.toString()}` as Route, { scroll: false });
-  }, [search, applied, params, router]);
+  }, [search, applied, setFilters]);
 
   return <SearchField value={draft} placeholder={placeholder} onChange={setDraft} />;
 }

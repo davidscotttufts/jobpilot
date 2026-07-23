@@ -1,4 +1,3 @@
-export { AdminPagination } from "./admin-pagination";
 export { AdminSearchField } from "./admin-search-field";
 export { AdminTabs } from "./admin-tabs";
 export { AddBoardButton } from "./boards/add-board-button";

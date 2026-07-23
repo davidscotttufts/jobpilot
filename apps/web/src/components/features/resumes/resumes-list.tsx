@@ -28,6 +28,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useSseChannel } from "@/lib/sse/client";
 import { useToast } from "@/providers/notification-provider";
+import { plural } from "@/utils/format";
 import { NewResumeDialog } from "./new-resume-dialog";
 
 /** Invisible per-resume SSE subscriber: refetches the list when content or variants change. */
@@ -99,7 +100,7 @@ export function ResumesList(): ReactElement {
           Start blank
         </Button>
         <Typography variant="captionMuted" sx={{ ml: "auto" }}>
-          {rows.length} resume{rows.length === 1 ? "" : "s"}
+          {plural(rows.length, "resume")}
         </Typography>
       </Stack>
 

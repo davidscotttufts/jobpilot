@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { paginationQuerySchema } from "./pagination";
 
 export const JOB_LISTING_STATUSES = ["published", "hidden"] as const;
 export const jobListingStatusSchema = z.enum(JOB_LISTING_STATUSES);
@@ -17,9 +18,9 @@ export function serializeTechParam(values: string[]): string {
 }
 
 /** Public /jobs filters. Every param is crawlable as a query string, so all are optional. */
-export const jobListingQuerySchema = z.object({
+export const jobListingQuerySchema = paginationQuerySchema.extend({
+  // Only `page` is re-declared: the crawler cap above is specific to this route.
   page: z.coerce.number().int().min(1).max(JOB_LISTING_MAX_PAGE).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
   /** Free text over title + company. */
   q: z.string().trim().min(1).optional(),
   location: z.string().trim().min(1).optional(),

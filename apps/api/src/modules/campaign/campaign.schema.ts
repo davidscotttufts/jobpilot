@@ -6,25 +6,21 @@ import {
   campaignStatusSchema,
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
+import { csvArray, paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
-import { paginatedResponseSchema } from "@/types/response";
 
 export const campaignParams = z.object({ id: z.uuid() });
 export const campaignJobParams = z.object({ id: z.uuid(), key: z.string() });
 export const networkingMessageParams = z.object({ id: z.uuid(), messageId: z.uuid() });
 
-export const paginationQuery = z.object({
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(25),
-});
-
-export const campaignsQuery = paginationQuery.extend({
-  status: campaignStatusSchema.optional(),
+export const campaignsQuery = paginationQuerySchema.extend({
+  // The workspace pages Active (in_progress+paused) and Completed as two separate lists.
+  status: csvArray(campaignStatusSchema).optional(),
   source: campaignSourceSchema.optional(),
 });
 
 /** Jobs list filters. Applied server-side so a page reflects the whole campaign, not one page of it. */
-export const campaignJobsQuery = paginationQuery.extend({
+export const campaignJobsQuery = paginationQuerySchema.extend({
   status: campaignJobStatusSchema.optional(),
   search: z.string().trim().min(1).optional(),
 });
@@ -69,5 +65,5 @@ export const campaignSchema = z.object({
   summary: campaignSummarySchema,
 });
 
-export const campaignListSchema = paginatedResponseSchema(campaignSchema);
+export const campaignListSchema = paginatedSchema(campaignSchema);
 export const campaignDeletedSchema = z.object({ deleted: z.boolean(), campaignId: z.uuid() });

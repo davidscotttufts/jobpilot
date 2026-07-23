@@ -78,7 +78,7 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
     },
   );
 
-  const messages = messagesQuery.data ?? [];
+  const messages = messagesQuery.data?.items ?? [];
   const canSend = accountQuery.data?.canSend ?? false;
   const openMessage = messages.find((m) => m.id === openId) ?? null;
   const selectedIds = resolveSelectedRows(selection, messages)

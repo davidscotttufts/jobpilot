@@ -40,6 +40,8 @@ export const queryKeys = {
     all: ["applications"] as const,
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.applications.all, "list", filters] as const,
+    summary: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.applications.all, "summary", filters] as const,
     detail: (id: string) => [...queryKeys.applications.all, "detail", id] as const,
     search: (term: string) => [...queryKeys.applications.all, "search", term] as const,
   },
@@ -57,13 +59,14 @@ export const queryKeys = {
     jobs: (campaignId: string, filters: Record<string, unknown> = {}) =>
       [...queryKeys.campaigns.all, "jobs", campaignId, filters] as const,
     reasons: (campaignId: string) => [...queryKeys.campaigns.all, "reasons", campaignId] as const,
-    networking: (campaignId: string) =>
-      [...queryKeys.campaigns.all, "networking", campaignId] as const,
+    networking: (campaignId: string, filters: Record<string, unknown> = {}) =>
+      [...queryKeys.campaigns.all, "networking", campaignId, filters] as const,
   },
 
   contacts: {
     all: ["contacts"] as const,
-    list: () => [...queryKeys.contacts.all, "list"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.contacts.all, "list", filters] as const,
   },
 
   queue: {
@@ -105,7 +108,8 @@ export const queryKeys = {
 
   coverLetters: {
     all: ["cover-letters"] as const,
-    list: () => [...queryKeys.coverLetters.all, "list"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.coverLetters.all, "list", filters] as const,
     detail: (id: string) => [...queryKeys.coverLetters.all, "detail", id] as const,
   },
 

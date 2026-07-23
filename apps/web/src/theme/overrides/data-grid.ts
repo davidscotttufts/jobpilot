@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@jobpilot/contracts/pagination";
 import type { Components, Theme } from "@mui/material/styles";
 import type {} from "@mui/x-data-grid/themeAugmentation";
 
@@ -5,8 +6,8 @@ export const dataGridOverrides: Components<Theme>["MuiDataGrid"] = {
   defaultProps: {
     autoHeight: true,
     disableRowSelectionOnClick: true,
-    pageSizeOptions: [10, 25, 50, 100],
-    initialState: { pagination: { paginationModel: { pageSize: 25 } } },
+    pageSizeOptions: [...PAGE_SIZE_OPTIONS],
+    initialState: { pagination: { paginationModel: { pageSize: DEFAULT_PAGE_SIZE } } },
   },
   styleOverrides: {
     root: ({ theme }) => ({

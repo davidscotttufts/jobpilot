@@ -4,27 +4,28 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
-import { AdminListingsTable, AdminPagination, AdminSearchField } from "@/components/features/admin";
+import { AdminListingsTable, AdminSearchField } from "@/components/features/admin";
+import { PaginationControls } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { pageParam } from "@/utils/search-params";
-
-const PAGE_SIZE = 20;
+import { type PaginationSearchParams, paginationQuery } from "@/utils/search-params";
 
 export const metadata: Metadata = { title: "Listings" };
 
 interface AdminListingsPageProps {
-  searchParams: Promise<{ page?: string; q?: string }>;
+  searchParams: Promise<PaginationSearchParams & { q?: string }>;
 }
 
-/** Moderation for the public job index. Unlike the catalog, this table is server-paginated. */
+/** Moderation for the public job index. */
 export default async function AdminListingsPage(
   props: AdminListingsPageProps,
 ): Promise<ReactElement> {
-  const { page, q } = await props.searchParams;
-  const currentPage = pageParam(page);
+  const search = await props.searchParams;
 
   const { data } = await api.admin.listings.get({
-    query: { page: currentPage, limit: PAGE_SIZE, ...(q?.trim() && { q: q.trim() }) },
+    query: {
+      ...paginationQuery(search),
+      ...(search.q?.trim() && { q: search.q.trim() }),
+    },
     ...(await getFetchOptions()),
   });
 
@@ -43,12 +44,7 @@ export default async function AdminListingsPage(
 
       <AdminListingsTable listings={data.items} />
 
-      <AdminPagination
-        page={data.pagination.page}
-        pageCount={data.pagination.totalPages}
-        pageSize={data.pagination.limit}
-        total={data.pagination.total}
-      />
+      <PaginationControls pagination={data.pagination} />
     </SectionCard>
   );
 }

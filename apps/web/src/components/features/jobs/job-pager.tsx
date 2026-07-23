@@ -1,20 +1,23 @@
 import type { ReactNode } from "react";
+import type { Pagination } from "@jobpilot/contracts/pagination";
 import { Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { LinkButton } from "@/components/ui/buttons";
 import { jobsHref } from "./jobs-href";
 
 interface JobPagerProps {
-  page: number;
-  totalPages: number;
-  total: number;
+  pagination: Pagination;
   /** The current query, minus `page` - preserved so paging keeps the active filters. */
   params: Record<string, string>;
 }
 
-/** Real `<a href>` paging, not a client pager - a crawler cannot click a React handler. */
+/**
+ * Real `<a href>` paging, not the shared `PaginationFooter` - a crawler cannot click a React
+ * handler, and a rows-per-page control would multiply the crawlable URLs for one index.
+ */
 export function JobPager(props: JobPagerProps): ReactNode {
-  const { page, totalPages, total, params } = props;
+  const { pagination, params } = props;
+  const { page, totalPages, total } = pagination;
   if (totalPages <= 1) {
     return null;
   }

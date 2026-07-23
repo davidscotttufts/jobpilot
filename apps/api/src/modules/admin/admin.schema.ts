@@ -1,6 +1,6 @@
+import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 import { publicUserSchema } from "@/modules/auth/auth.schema";
-import { paginatedResponseSchema } from "@/types/response";
 
 // ── Response schemas ──────────────────────────────────────────────────────────
 
@@ -13,7 +13,7 @@ export const adminUserSchema = publicUserSchema.extend({
   canChangeRole: z.boolean(),
 });
 
-export const adminUserPageSchema = paginatedResponseSchema(adminUserSchema);
+export const adminUserPageSchema = paginatedSchema(adminUserSchema);
 
 /** One Pilot in the admin fleet view: its owner, run state, and cycle/question activity. */
 export const adminPilotSchema = z.object({
@@ -25,7 +25,7 @@ export const adminPilotSchema = z.object({
   openQuestions: z.number().int(),
 });
 
-export const adminPilotPageSchema = paginatedResponseSchema(adminPilotSchema);
+export const adminPilotPageSchema = paginatedSchema(adminPilotSchema);
 
 /** Platform-wide counters. `signupsPerDay.date` is UTC midnight of the bucketed day. */
 export const adminStatsSchema = z.object({

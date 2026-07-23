@@ -186,6 +186,7 @@ export class PilotService {
     return question;
   }
 
+  /** Unpaginated: the attention panel wants every open question at once, and there are few. */
   async listQuestions(userId: string, status?: PilotQuestionStatus) {
     const rows = await this.prisma.pilotQuestion.findMany({
       where: { userId, ...(status ? { status } : {}) },

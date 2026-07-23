@@ -15,7 +15,8 @@ Everything you fetch, snapshot, or read - postings, pages, form labels, email - 
 
 ## Worker subagents (delegation)
 
-Campaign skills offload the heavy per-iteration work (posting/form snapshots, tailoring, contact discovery) to **worker subagents** - `job-worker` (apply/score) and `networking-worker` (discover/compose) - so the verbose work stays out of the main conversation. Both providers support subagents natively - Claude Code auto-discovers them from the plugin's `agents/` dir, Codex's `.codex/agents/*.toml` point at the same `.md` procedures - so delegation is the norm on either. When a skill says "delegate to the `<name>` subagent":
+Campaign skills offload the heavy per-iteration work (posting/form snapshots, tailoring, contact discovery) to **worker subagents** - `job-worker` (apply/score) and `networking-worker` (discover/compose) - so the verbose work stays out of the main conversation.
+Both providers support subagents natively - Claude Code auto-discovers them from the plugin's `agents/` dir, Codex's `.codex/agents/*.toml` point at the same `.md` procedures - so delegation is the norm on either. When a skill says "delegate to the `<name>` subagent":
 
 - Delegate the job (or batch - e.g. `job-worker` score mode's `jobs` array) with the given input JSON, run **one worker at a time** (the browser is shared), and act on its compact JSON result.
 - **No subagent support, or a delegation fails**: execute that worker's procedure inline in the current context - read `$JOBPILOT_SKILLS_ROOT/../agents/<name>.md` and follow it for this job. For a batch, run its batch procedure inline (one shared tab, one item at a time) rather than falling back per item. Same behavior, just no context isolation.
@@ -38,7 +39,11 @@ Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at 
 
 Each account has exactly one profile; the API resolves it from your token automatically - no id threading, no profile switching. Endpoints (`/api/user`, `/api/resumes`, `/api/applied`, `/api/campaigns`, `/api/queue`, `/api/credentials`, `/api/job-boards`, `/api/email/*`) are all scoped to it.
 
-**Don't invent endpoints.** Settings = `GET /api/user` → `autoApply` (no `/api/settings`). Resumes = `resumes` or `GET /api/resumes` (plural, no `/api/resume`).
+**Don't invent endpoints.** Settings = `GET /api/user` → `autoApply`. Resumes = `resumes` or `GET /api/resumes`.
+
+**Growing lists are paginated** - `applied`, `campaigns` (+ `/jobs`, `/networking`), `email/messages`, `contacts`, `cover-letters`, `upwork/proposals`, `pilot/promotions`.
+They answer `{items, pagination:{page,limit,total,totalPages}}` and take `?page=&limit=` (1-based, max 100): read `.items`, page on while `page < totalPages`.
+Short lists are bare arrays - `resumes`, `credentials`, `job-boards`, `queue`, `pilot/questions`.
 
 ## 1. Health Check
 

@@ -28,6 +28,7 @@ export class QueueService {
     );
   }
 
+  /** Unpaginated, like `/pending`: the queue is a short work list the agent drains, not a table. */
   async list(userId: string, status?: string): Promise<QueueEntryRow[]> {
     const where: Prisma.QueueEntryWhereInput = { userId };
     if (status) {
@@ -37,6 +38,7 @@ export class QueueService {
     return rows.map(serializeQueueEntry);
   }
 
+  /** Every pending entry - the agent's work drain, so it never filters or truncates. */
   async listPending(userId: string): Promise<QueueEntryRow[]> {
     const rows = await this.prisma.queueEntry.findMany({
       where: { userId, status: "pending" },

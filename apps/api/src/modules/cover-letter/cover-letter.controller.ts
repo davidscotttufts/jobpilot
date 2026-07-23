@@ -1,4 +1,5 @@
 import { coverLetterCreateSchema } from "@jobpilot/contracts/cover-letter";
+import { paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
@@ -30,12 +31,13 @@ export const coverLetterController = new Elysia({
   detail: { tags: ["CoverLetters"] },
 })
   .use(authGuard)
-  .get("/", ({ user }) => svc.list(user.id), {
+  .get("/", ({ user, query }) => svc.list(user.id, query), {
+    query: paginationQuerySchema,
     response: coverLetterListSchema,
     detail: {
       summary: "List cover letters",
       description:
-        "Returns the active profile's saved cover letters, newest first, as a metadata list without the letter body.",
+        "Returns one page of the active profile's saved cover letters, newest first, as `{ items, pagination }` - metadata only, without the letter body.",
     },
   })
   .post("/", ({ user, body }) => svc.create(user.id, body), {

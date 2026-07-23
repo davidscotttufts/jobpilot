@@ -38,6 +38,7 @@ export class CredentialService {
     };
   }
 
+  /** Unpaginated: an account stores a handful of logins, keyed by board domain plus a default. */
   async list(userId: string) {
     const rows = await this.prisma.credential.findMany({
       where: { userId },

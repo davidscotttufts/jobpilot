@@ -37,7 +37,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/messages?reviewStatus=pending&classification=null"
 ```
 
-If `data` is empty: **"Inbox is already reviewed. Nothing new to classify."** and exit.
+Both list routes answer `{items, pagination}`; read `.items`. If it is empty: **"Inbox is already reviewed. Nothing new to classify."** and exit.
 
 The rest of the skill runs over whatever you fetched. A re-scan overwrites the classification and resets `reviewStatus`, but never undoes an approved status move.
 
@@ -70,10 +70,10 @@ For `interviewing | rejected | offer`:
 
    ```bash
    curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" --data-urlencode "search=<company-or-from-domain>" \
-     -G "$JOBPILOT_API/api/applied"
+     -G "$JOBPILOT_API/api/applied?limit=100"
    ```
 
-2. Score each against `fromName` / `fromDomain` / `subject`. Pick the best if score ≥ 0.7 (0–1).
+2. Score each of `.items` against `fromName` / `fromDomain` / `subject`. Pick the best if score ≥ 0.7 (0–1).
 3. If nothing scores well enough - or the email only _mentions_ the company rather than addressing the user's application - leave `matchedAppId` and `matchScore` as `null`.
 
 For `verification`: do NOT propose a match. `get-code` handles those.

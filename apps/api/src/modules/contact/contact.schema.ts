@@ -3,9 +3,10 @@ import {
   contactEmailSourceSchema,
   contactLinkedinConnectionSchema,
 } from "@jobpilot/contracts/networking";
+import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-// ── Response schemas ──────────────────────────────────────────────────────────
+// Response schemas
 
 /** A networking contact row as returned by the list route (dates stringified). */
 export const contactSchema = z.object({
@@ -29,4 +30,4 @@ export const contactSchema = z.object({
 });
 
 /** The active profile's contacts, newest first. */
-export const contactListSchema = z.array(contactSchema);
+export const contactListSchema = paginatedSchema(contactSchema);

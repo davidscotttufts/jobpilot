@@ -1,4 +1,5 @@
 import type { CoverLetterCreate, CoverLetterSource } from "@jobpilot/contracts/cover-letter";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf";
@@ -24,18 +25,23 @@ export interface CoverLetterPdf {
 export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /** The active profile's cover letters, newest first (no body - list payload). */
-  async list(userId: string) {
-    const rows = await this.prisma.coverLetter.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      select: LIST_SELECT,
-    });
-    return rows.map((row) => ({
-      ...row,
-      source: row.source as CoverLetterSource,
-      createdAt: row.createdAt,
-    }));
+  /** One page of the active profile's cover letters, newest first (no body - list payload). */
+  async list(userId: string, query: PaginationQuery) {
+    const where = { userId };
+    const [rows, total] = await Promise.all([
+      this.prisma.coverLetter.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        ...pageSlice(query),
+        select: LIST_SELECT,
+      }),
+      this.prisma.coverLetter.count({ where }),
+    ]);
+    return paginate(
+      rows.map((row) => ({ ...row, source: row.source as CoverLetterSource })),
+      query,
+      total,
+    );
   }
 
   create(userId: string, data: CoverLetterCreate) {

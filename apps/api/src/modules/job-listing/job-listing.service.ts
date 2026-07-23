@@ -3,10 +3,10 @@ import type {
   JobListingQuery,
   JobListingStatus,
 } from "@jobpilot/contracts/job-listing";
+import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { createPaginatedResponse } from "@/types/response";
 import {
   groupTechFacets,
   resolveTechFilter,
@@ -69,17 +69,14 @@ export class JobListingService {
 
   /** Public list. Always scoped to published rows - hidden ones exist only for admins. */
   async list(query: JobListingQuery) {
-    const { page, limit, total, rows } = await this.query(
-      { ...query, status: "published" },
-      SUMMARY_SELECT,
-    );
-    return createPaginatedResponse(rows.map(withSourceCount), { page, limit, total });
+    const { total, rows } = await this.query({ ...query, status: "published" }, SUMMARY_SELECT);
+    return paginate(rows.map(withSourceCount), query, total);
   }
 
   /** Moderation list. The only caller that may see hidden rows. */
   async listForAdmin(query: AdminJobListingQuery) {
-    const { page, limit, total, rows } = await this.query(query, ADMIN_SELECT);
-    return createPaginatedResponse(rows.map(withSourceCount), { page, limit, total });
+    const { total, rows } = await this.query(query, ADMIN_SELECT);
+    return paginate(rows.map(withSourceCount), query, total);
   }
 
   /** The tech option list behind the `?tech=` filter, most common first. */
@@ -122,21 +119,19 @@ export class JobListingService {
   }
 
   private async query<T extends Prisma.JobListingSelect>(query: AdminJobListingQuery, select: T) {
-    const { page, limit } = query;
     const where = await this.where(query);
 
     const [rows, total] = await Promise.all([
       this.prisma.jobListing.findMany({
         where,
         orderBy: { lastSeenAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
+        ...pageSlice(query),
         select,
       }),
       this.prisma.jobListing.count({ where }),
     ]);
 
-    return { page, limit, total, rows };
+    return { total, rows };
   }
 
   private async where(query: AdminJobListingQuery): Promise<Prisma.JobListingWhereInput> {

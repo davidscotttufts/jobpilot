@@ -1,3 +1,4 @@
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import type {
   UpdateUpworkProfileInput,
   UpworkClient,
@@ -81,24 +82,33 @@ export class UpworkService {
   }
 
   // ── Proposals ──────────────────────────────────────────────────────────────
-  async listProposals(userId: string, filters: { status?: string; search?: string }) {
-    const { status, search } = filters;
+  async listProposals(
+    userId: string,
+    query: PaginationQuery & { status?: string; search?: string },
+  ) {
+    const { status, search } = query;
 
     const where: Prisma.UpworkProposalWhereInput = { userId };
     if (status) {
       where.status = status;
     }
     if (search) {
-      where.OR = [{ jobTitle: { contains: search } }, { clientName: { contains: search } }];
+      where.OR = [
+        { jobTitle: { contains: search, mode: "insensitive" } },
+        { clientName: { contains: search, mode: "insensitive" } },
+      ];
     }
 
-    const proposals = await this.prisma.upworkProposal.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
-      take: 500,
-    });
+    const [proposals, total] = await Promise.all([
+      this.prisma.upworkProposal.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        ...pageSlice(query),
+      }),
+      this.prisma.upworkProposal.count({ where }),
+    ]);
 
-    return proposals.map(decodeUpworkProposal);
+    return paginate(proposals.map(decodeUpworkProposal), query, total);
   }
 
   async createProposal(userId: string, body: UpworkProposalInput) {

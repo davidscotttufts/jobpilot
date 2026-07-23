@@ -32,13 +32,13 @@ export const promotionController = new Elysia({
         "Agent creates a draft self-promotion post for a platform, notifies the user for review, and returns it.",
     },
   })
-  .get("/promotions", ({ user, query }) => promotions.listPromotions(user.id, query.status), {
+  .get("/promotions", ({ user, query }) => promotions.listPromotions(user.id, query), {
     query: promotionsQuerySchema,
     response: promotionListSchema,
     detail: {
       summary: "List promotion posts",
       description:
-        "Returns the profile's promotion posts newest-first, optionally filtered by status.",
+        "Returns one page of the profile's promotion posts as `{ items, pagination }`, newest first, optionally filtered by status.",
     },
   })
   .patch(

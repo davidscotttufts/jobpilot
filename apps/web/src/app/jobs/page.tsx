@@ -111,12 +111,7 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
           </Grid>
         ))}
       </Grid>
-      <JobPager
-        page={data.pagination.page}
-        totalPages={data.pagination.totalPages}
-        total={data.pagination.total}
-        params={filters}
-      />
+      <JobPager pagination={data.pagination} params={filters} />
     </Stack>
   );
 }

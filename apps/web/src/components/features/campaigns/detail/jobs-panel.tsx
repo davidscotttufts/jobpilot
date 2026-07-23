@@ -4,7 +4,7 @@ import { type ReactElement, useRef, useState } from "react";
 import { CAMPAIGN_JOB_STATUSES, type CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Autorenew, Clear, Replay } from "@mui/icons-material";
 import { Box, Button, Stack, TextField, Typography } from "@mui/material";
-import type { GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import type { CampaignDetailDto, CampaignJobDto } from "@/api/types";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { plural } from "@/utils/format";
@@ -30,7 +31,6 @@ const STATUS_OPTIONS: ReadonlyArray<SelectFieldOption<CampaignJobStatus>> =
     label: s,
   }));
 
-const DEFAULT_PAGE_SIZE = 25;
 const SEARCH_DEBOUNCE_MS = 300;
 
 interface CampaignJobsPanelProps {
@@ -48,10 +48,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   const [statusFilter, setStatusFilter] = useState<CampaignJobStatus | null>(null);
   const [search, setSearch] = useState("");
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    page: 0,
-    pageSize: DEFAULT_PAGE_SIZE,
-  });
+  const pagination = usePaginationParams({ prefix: "jobs" });
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
   const isUpwork = campaign.config.board === UPWORK_DOMAIN;
@@ -60,8 +57,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const term = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const jobs = useApiQuery(
     campaignQueries.jobs(campaign.campaignId, {
-      page: paginationModel.page + 1,
-      limit: paginationModel.pageSize,
+      ...pagination.query,
       status: statusFilter ?? undefined,
       search: term || undefined,
     }),
@@ -87,8 +83,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const selectedForReapply = selected.filter((job) => job.status !== "skipped");
   const hasFilters = statusFilter !== null || term !== "";
 
-  // Keeps the model's identity stable while typing, so the grid doesn't re-render per keystroke.
-  const resetPage = (): void => setPaginationModel((m) => (m.page === 0 ? m : { ...m, page: 0 }));
+  const resetPage = (): void => pagination.setPage(1);
 
   const resetSelection = (): void => {
     setSelection(EMPTY_SELECTION);
@@ -229,9 +224,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
         checkboxSelection={canReapply}
         rowSelectionModel={selection}
         onRowSelectionModelChange={setSelection}
-        rowCount={total}
-        paginationModel={paginationModel}
-        onPaginationModelChange={setPaginationModel}
+        {...gridPagination(pagination, jobs.data?.pagination)}
       />
     </SectionCard>
   );

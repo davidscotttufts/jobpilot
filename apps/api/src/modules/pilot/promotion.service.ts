@@ -1,3 +1,4 @@
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import type {
   CreatePromotionInput,
   PatchPromotionInput,
@@ -45,13 +46,17 @@ export class PromotionService {
     return promotion;
   }
 
-  async listPromotions(userId: string, status?: PromotionStatus) {
-    const rows = await this.prisma.promotionPost.findMany({
-      where: { userId, ...(status ? { status } : {}) },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-    });
-    return rows.map(toPromotion);
+  async listPromotions(userId: string, query: PaginationQuery & { status?: PromotionStatus }) {
+    const where = { userId, ...(query.status ? { status: query.status } : {}) };
+    const [rows, total] = await Promise.all([
+      this.prisma.promotionPost.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        ...pageSlice(query),
+      }),
+      this.prisma.promotionPost.count({ where }),
+    ]);
+    return paginate(rows.map(toPromotion), query, total);
   }
 
   /** User edits a draft's title/body or moves it draft → approved | declined. Terminal posts are locked. */

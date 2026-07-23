@@ -18,18 +18,17 @@ import { findResume, MAX_RESUME_BYTES } from "./resume.utils";
 export class ResumeService {
   constructor(private readonly prisma: PrismaClient) {}
 
+  /** Unpaginated: an account holds a handful of master resumes, and selects read the whole list. */
   async list(userId: string) {
-    const profile = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { primaryResumeId: true },
-    });
+    const [profile, resumes] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId }, select: { primaryResumeId: true } }),
+      this.prisma.resume.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        include: { _count: { select: { variants: true } } },
+      }),
+    ]);
     const primaryId = profile?.primaryResumeId ?? null;
-
-    const resumes = await this.prisma.resume.findMany({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      include: { _count: { select: { variants: true } } },
-    });
 
     return resumes
       .map((r) => ({

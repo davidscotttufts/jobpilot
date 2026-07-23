@@ -74,7 +74,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     detail: {
       summary: "List proposals",
       description:
-        "Returns the active profile's Upwork proposals, optionally filtered by status and a search term over job title and client name.",
+        "Returns one page of the active profile's Upwork proposals as `{ items, pagination }`, newest-updated first, optionally filtered by status and a search term over job title and client name.",
     },
   })
   .post(

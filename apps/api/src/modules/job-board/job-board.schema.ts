@@ -1,6 +1,10 @@
+import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-// ── Response schemas ──────────────────────────────────────────────────────────
+/** The admin catalog is searchable by name or domain; the filter runs server-side, not per page. */
+export const adminBoardListQuery = paginationQuerySchema.extend({
+  q: z.string().trim().min(1).optional(),
+});
 
 /** A profile's board: the link flattened onto its global row. `id` is the link's, not the board's. */
 export const jobBoardRecordSchema = z.object({
@@ -42,4 +46,4 @@ export const adminBoardRecordSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const adminBoardListSchema = z.array(adminBoardRecordSchema);
+export const adminBoardListSchema = paginatedSchema(adminBoardRecordSchema);

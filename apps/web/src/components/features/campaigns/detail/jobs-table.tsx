@@ -3,9 +3,10 @@
 import type { ReactElement } from "react";
 import type { CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { Button, Link } from "@mui/material";
-import type { GridColDef, GridPaginationModel, GridRowSelectionModel } from "@mui/x-data-grid";
+import type { GridColDef, GridRowSelectionModel } from "@mui/x-data-grid";
 import type { CampaignJobDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
+import type { GridPaginationProps } from "@/hooks/use-pagination";
 import { CampaignJobStatusChip } from "../campaign-status-chip";
 
 /** Statuses that can still be applied to from the campaigns detail page. */
@@ -18,7 +19,7 @@ export function isReapplicable(status: CampaignJobStatus): boolean {
   return status !== "applied" && status !== "applying";
 }
 
-interface CampaignJobsTableProps {
+interface CampaignJobsTableProps extends GridPaginationProps {
   rows: ReadonlyArray<CampaignJobDto>;
   loading?: boolean;
   /** When provided, applicable rows get an "Apply" action that calls this. */
@@ -31,10 +32,6 @@ interface CampaignJobsTableProps {
   checkboxSelection?: boolean;
   rowSelectionModel?: GridRowSelectionModel;
   onRowSelectionModelChange?: (model: GridRowSelectionModel) => void;
-  /** Server-side paging: total row count across the whole campaign, not just `rows`. */
-  rowCount: number;
-  paginationModel: GridPaginationModel;
-  onPaginationModelChange: (model: GridPaginationModel) => void;
 }
 
 export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
@@ -47,9 +44,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
     checkboxSelection,
     rowSelectionModel,
     onRowSelectionModelChange,
-    rowCount,
-    paginationModel,
-    onPaginationModelChange,
+    ...pagination
   } = props;
   const columns: GridColDef<CampaignJobDto>[] = [
     {
@@ -139,10 +134,7 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       onRowSelectionModelChange={onRowSelectionModelChange}
       isRowSelectable={(row) => isReapplicable(row.status)}
       keepNonExistentRowsSelected
-      paginationMode="server"
-      rowCount={rowCount}
-      paginationModel={paginationModel}
-      onPaginationModelChange={onPaginationModelChange}
+      {...pagination}
     />
   );
 }

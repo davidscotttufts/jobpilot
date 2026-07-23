@@ -8,7 +8,7 @@ export type EmailAccountStatus = Data<typeof api.email.account.get>;
 export type OAuthClientStatus = Data<typeof api.email.oauth.client.get>;
 
 /** An inbox message, from `GET /api/email/messages`. */
-export type EmailMessageDto = Data<typeof api.email.messages.get>[number];
+export type EmailMessageDto = Data<typeof api.email.messages.get>["items"][number];
 
 /** A single inbox message with its matched application, from `GET /api/email/messages/:id`. */
 export type EmailMessageDetailDto = Data<ReturnType<typeof api.email.messages>["get"]>;

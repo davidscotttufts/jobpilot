@@ -26,6 +26,20 @@ export const statusTransitionSchema = z.object({
   note: z.string().optional().nullable(),
 });
 
+/** The sentinel `?campaignId=` value meaning "applications not attributed to any campaign". */
+export const SINGLE_APPLY_CAMPAIGN = "none";
+
+/** Every filter the workspace applies, so a page reflects the whole account rather than itself. */
+export const applicationFilterSchema = z.object({
+  status: statusSchema.optional(),
+  board: z.string().trim().min(1).optional(),
+  source: z.string().trim().min(1).optional(),
+  search: z.string().trim().min(1).optional(),
+  /** A campaign id, or {@link SINGLE_APPLY_CAMPAIGN} for rows with no campaign. */
+  campaignId: z.string().trim().min(1).optional(),
+});
+
+export type ApplicationFilters = z.infer<typeof applicationFilterSchema>;
 export type ApplicationStatus = z.infer<typeof statusSchema>;
 export type ApplicationSource = z.infer<typeof sourceSchema>;
 export type ApplicationEventKind = z.infer<typeof applicationEventKindSchema>;

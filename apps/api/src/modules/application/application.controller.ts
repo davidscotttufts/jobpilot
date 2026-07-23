@@ -1,4 +1,4 @@
-import { statusTransitionSchema } from "@jobpilot/contracts/application";
+import { applicationFilterSchema, statusTransitionSchema } from "@jobpilot/contracts/application";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
@@ -13,6 +13,7 @@ import {
   applicationListQuerySchema,
   applicationListSchema,
   applicationQuerySchema,
+  applicationSummarySchema,
   statusTransitionResultSchema,
 } from "./application.schema";
 import { ApplicationService } from "./application.service";
@@ -31,7 +32,16 @@ export const applicationController = new Elysia({
     detail: {
       summary: "List applications",
       description:
-        "Returns the profile's applied jobs (up to 500, newest first), optionally filtered by status, board, source, or a search term matched against title, company, and URL.",
+        "Returns one page of the profile's applied jobs (newest first) as `{ items, pagination }`, optionally filtered by status, board, source, campaign (`none` for single applies), or a search term matched against title, company, and URL.",
+    },
+  })
+  .get("/summary", ({ user, query }) => svc.summary(user.id, query), {
+    query: applicationFilterSchema.omit({ status: true }),
+    response: applicationSummarySchema,
+    detail: {
+      summary: "Application totals by status",
+      description:
+        "Returns the profile's application count grouped by status across every row matching the given filters, so funnel tallies cover the whole account rather than one page.",
     },
   })
   .get("/check", ({ user, query }) => svc.check(user.id, query), {

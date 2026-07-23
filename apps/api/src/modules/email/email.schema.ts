@@ -1,8 +1,9 @@
 import { statusSchema } from "@jobpilot/contracts/application";
 import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
+import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-export const messagesQuery = z.object({
+export const messagesQuery = paginationQuerySchema.extend({
   reviewStatus: z.string().optional(),
   classification: z.string().optional(),
   since: z.string().optional(),
@@ -90,7 +91,7 @@ export const emailMessageSchema = z.object({
 });
 
 /** List of serialized inbox messages (`svc.listMessages`). */
-export const emailMessageListSchema = z.array(emailMessageSchema);
+export const emailMessageListSchema = paginatedSchema(emailMessageSchema);
 
 /** Result of denying a message (`svc.denyMessage`). */
 export const messageDeniedSchema = z.object({

@@ -1,6 +1,6 @@
 import { jobListingStatusSchema } from "@jobpilot/contracts/job-listing";
+import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
-import { paginatedResponseSchema } from "@/types/response";
 
 /** Where one posting was seen. Board + link only - never who found it. */
 export const jobListingSourceSchema = z.object({
@@ -32,7 +32,7 @@ export const jobListingSchema = jobListingSummarySchema.extend({
   sources: z.array(jobListingSourceSchema),
 });
 
-export const jobListingPageSchema = paginatedResponseSchema(jobListingSummarySchema);
+export const jobListingPageSchema = paginatedSchema(jobListingSummarySchema);
 
 /** The `?tech=` option list: what the index actually contains, so the filter can't be guessed wrong. */
 export const jobListingFacetsSchema = z.object({
@@ -49,4 +49,4 @@ export const adminJobListingSchema = jobListingSummarySchema.extend({
   createdAt: z.date(),
 });
 
-export const adminJobListingPageSchema = paginatedResponseSchema(adminJobListingSchema);
+export const adminJobListingPageSchema = paginatedSchema(adminJobListingSchema);

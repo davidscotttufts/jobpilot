@@ -5,7 +5,11 @@ import { container } from "@/common/di";
 import { requireRole } from "@/common/middleware";
 import { deletedResponseSchema } from "@/types/response";
 import { AdminBoardService } from "./admin-board.service";
-import { adminBoardListSchema, adminBoardRecordSchema } from "./job-board.schema";
+import {
+  adminBoardListQuery,
+  adminBoardListSchema,
+  adminBoardRecordSchema,
+} from "./job-board.schema";
 
 const svc = container.resolve(AdminBoardService);
 
@@ -15,12 +19,13 @@ export const adminBoardController = new Elysia({
   detail: { tags: ["Admin"] },
 })
   .use(requireRole("ADMIN"))
-  .get("/", () => svc.list(), {
+  .get("/", ({ query }) => svc.list(query), {
+    query: adminBoardListQuery,
     response: adminBoardListSchema,
     detail: {
       summary: "List catalog boards",
       description:
-        "Returns every board in the global catalog, listed ones first, each with the number of profiles that linked it.",
+        "Returns one page of the global board catalog as `{ items, pagination }`, listed boards first, each with the number of profiles that linked it, optionally filtered by a name/domain search term.",
     },
   })
   .post("/", ({ body }) => svc.create(body), {

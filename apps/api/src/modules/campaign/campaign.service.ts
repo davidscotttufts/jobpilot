@@ -5,6 +5,7 @@ import type {
   UpdateCampaignConfigInput,
 } from "@jobpilot/contracts/campaign";
 import { campaignConfigSupportsSource } from "@jobpilot/contracts/campaign";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
@@ -15,7 +16,6 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { createPaginatedResponse } from "@/types/response";
 import { toCampaignRow, toPrismaCampaignSource, toWireCampaignSource } from "./campaign.mapper";
 import {
   deriveCampaignSummary,
@@ -48,28 +48,28 @@ export class CampaignService {
 
   async list(
     userId: string,
-    query: { page: number; limit: number; status?: CampaignStatus; source?: CampaignSource },
+    query: PaginationQuery & { status?: CampaignStatus[]; source?: CampaignSource },
   ) {
     const where: Prisma.CampaignWhereInput = {
       userId,
-      status: query.status,
+      status: query.status?.length ? { in: query.status } : undefined,
       source: query.source ? toPrismaCampaignSource(query.source) : undefined,
     };
     const [campaigns, total] = await Promise.all([
       this.prisma.campaign.findMany({
         where,
         orderBy: { startedAt: "desc" },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
+        ...pageSlice(query),
       }),
       this.prisma.campaign.count({ where }),
     ]);
     const summaries = await loadCampaignSummaries(this.prisma, campaigns);
-    return createPaginatedResponse(
+    return paginate(
       campaigns.map((campaign) =>
         toCampaignRow(campaign, requireSummary(summaries, campaign.campaignId)),
       ),
-      { page: query.page, limit: query.limit, total },
+      query,
+      total,
     );
   }
 

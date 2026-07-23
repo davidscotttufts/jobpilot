@@ -1,11 +1,11 @@
 import type { AdminPilotQuery, AdminUserQuery } from "@jobpilot/contracts/admin";
+import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { singleton } from "tsyringe";
 import type { AuthUser } from "@/common/auth";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { createPaginatedResponse } from "@/types/response";
 
 /** The columns every admin user row is built from - shared by the list and the role mutation. */
 const USER_SELECT = {
@@ -105,12 +105,10 @@ export class AdminService {
 
   /** The Pilot fleet: one row per PilotState, joined to its owner's email and open-question count. */
   async listPilots(query: AdminPilotQuery) {
-    const { page, limit } = query;
     const [rows, total] = await Promise.all([
       this.prisma.pilotState.findMany({
         orderBy: [{ lastCycleAt: { sort: "desc", nulls: "last" } }, { userId: "asc" }],
-        skip: (page - 1) * limit,
-        take: limit,
+        ...pageSlice(query),
         select: {
           userId: true,
           running: true,
@@ -138,11 +136,11 @@ export class AdminService {
       cycleCount: row.cycleCount,
       openQuestions: openByUser.get(row.userId) ?? 0,
     }));
-    return createPaginatedResponse(items, { page, limit, total });
+    return paginate(items, query, total);
   }
 
   async listUsers(actor: AuthUser, query: AdminUserQuery) {
-    const { page, limit, search, role } = query;
+    const { search, role } = query;
     const where: Prisma.UserWhereInput = {
       ...(search && { email: { contains: search, mode: "insensitive" } }),
       ...(role && { role }),
@@ -152,15 +150,14 @@ export class AdminService {
       this.prisma.user.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
+        ...pageSlice(query),
         select: USER_SELECT,
       }),
       this.prisma.user.count({ where }),
     ]);
 
     const items = await this.project(actor, rows);
-    return createPaginatedResponse(items, { page, limit, total });
+    return paginate(items, query, total);
   }
 
   /** Attach activity + the actor's rights. Three aggregates over the page's ids, never one per row. */

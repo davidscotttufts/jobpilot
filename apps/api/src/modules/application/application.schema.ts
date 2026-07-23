@@ -1,16 +1,15 @@
 import {
   applicationEventKindSchema,
   applicationEventSourceSchema,
+  applicationFilterSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
+import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-export const applicationListQuerySchema = z.object({
-  status: statusSchema.optional(),
-  board: z.string().trim().min(1).optional(),
-  source: z.string().trim().min(1).optional(),
-  search: z.string().trim().min(1).optional(),
-});
+export const applicationListQuerySchema = paginationQuerySchema.extend(
+  applicationFilterSchema.shape,
+);
 
 export const applicationQuerySchema = z.object({
   url: z.string().trim().min(1).optional(),
@@ -24,7 +23,7 @@ export const appendNoteSchema = z.object({
   notes: z.string().min(1),
 });
 
-// ── Response schemas ──────────────────────────────────────────────────────────
+// Response schemas
 
 /** A full applied-job row (mirrors the `Application` Prisma model with dates stringified). */
 export const applicationSchema = z.object({
@@ -49,7 +48,16 @@ export const applicationSchema = z.object({
   normalizedCompany: z.string(),
 });
 
-export const applicationListSchema = z.array(applicationSchema);
+export const applicationListSchema = paginatedSchema(applicationSchema);
+
+/**
+ * Per-status totals across every application matching the filters *except* `status` - the funnel
+ * tiles and the workspace stat tiles read these, so their counts are not page-scoped.
+ */
+export const applicationSummarySchema = z.object({
+  total: z.number().int(),
+  byStatus: z.record(statusSchema, z.number().int()),
+});
 
 /** An activity-timeline event (mirrors the `ApplicationEvent` Prisma model with dates stringified). */
 export const applicationEventSchema = z.object({

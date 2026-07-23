@@ -7,12 +7,14 @@ import { useApiQuery } from "@/api/hooks";
 import { contactQueries } from "@/api/queries";
 import type { ContactDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
+import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { NetworkingConnectionChip } from "./networking-status-chip";
 
 export function ContactsTable(): ReactElement {
-  const contactsQuery = useApiQuery(contactQueries.list());
+  const pagination = usePaginationParams();
+  const contactsQuery = useApiQuery(contactQueries.list(pagination.query));
 
-  const rows = contactsQuery.data ?? [];
+  const rows = contactsQuery.data?.items ?? [];
 
   const columns: GridColDef<ContactDto>[] = [
     {
@@ -59,6 +61,7 @@ export function ContactsTable(): ReactElement {
       loading={contactsQuery.isLoading}
       getRowId={(row) => row.id}
       autoHeight
+      {...gridPagination(pagination, contactsQuery.data?.pagination)}
     />
   );
 }

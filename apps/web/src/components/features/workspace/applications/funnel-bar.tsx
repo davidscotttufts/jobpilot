@@ -14,18 +14,8 @@ export const FUNNEL_GROUPS = [
 
 export type FunnelKey = (typeof FUNNEL_GROUPS)[number]["key"];
 
-const FUNNEL_KEYS = new Set<string>(FUNNEL_GROUPS.map((g) => g.key));
-
-/** Returns the funnel bucket for a status, or null for closed-out statuses (rejected/withdrawn). */
-export function groupForStatus(status: string): FunnelKey | null {
-  return FUNNEL_KEYS.has(status) ? (status as FunnelKey) : null;
-}
-
 /** Statuses that mean an application is actively interviewing (past applied, not yet offer/closed). */
-export const INTERVIEW_STATUSES: ReadonlySet<string> = new Set<FunnelKey>([
-  "screening",
-  "interviewing",
-]);
+export const INTERVIEW_STATUSES = ["screening", "interviewing"] as const satisfies FunnelKey[];
 
 interface FunnelBarProps {
   counts: Record<FunnelKey, number>;

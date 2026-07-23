@@ -22,10 +22,11 @@ Commands (`bun --cwd=apps/api run …`): `dev` / `start` / `build` (compiles to 
   `findOwned` ownership-or-404), `middleware` (`authGuard` - the single auth gate),
   `rate-limit` (token-bucket + `RATE_LIMITS` policy table + `acquireSlot`; attach one
   `rateLimit(policy)` per route as a `beforeHandle`), `auth`, `sse`, `pdf`, `storage`, `plugins`.
-- `types/response.ts` - the error envelope (`errorResponseSchema`/`httpErrorResponses`),
+- `types/response.ts` - the error envelope (`errorResponseSchema`/`httpErrorResponses`) and the
   success envelopes (`idResponseSchema`, `deletedResponseSchema`, `okResponseSchema`,
-  `messageResponseSchema`), and pagination helpers. Import as `@/types/response` (the web
-  mirrors this alias).
+  `messageResponseSchema`). Import as `@/types/response` (the web mirrors this alias). Pagination
+  is **not** here - it lives in `@jobpilot/contracts/pagination`, which the web and the agent's
+  skills also read.
 
 ## Routes
 
@@ -46,6 +47,22 @@ To add one, invoke the `add-api-route` skill. The rules it encodes:
 - Error responses are declared once, globally: `app.ts` applies
   `.guard({ as: "scoped", response: httpErrorResponses })` to the `/api` group - never repeat
   error responses per route.
+
+## Pagination
+
+Paginate a list that **grows with usage** (applications, inbox mail, contacts, cover letters,
+proposals, campaigns + jobs) through `@jobpilot/contracts/pagination`. One capped by a small
+real-world limit stays a bare `z.array(...)` - resumes, credentials, job boards, the queue, open
+questions, sitemaps, aggregates, `/queue/pending`, `/auth/tokens`, `/push/subscriptions`.
+
+- Query `paginationQuerySchema.extend({ …filters })` (`csvArray(item)` for a repeatable `?x=a,b` filter), response `paginatedSchema(item)`, 
+  service `...pageSlice(query)` + `count(where)` -> `paginate(rows, query, total)`. Never a hand-written `skip`/`take`.
+- Filter and sort in **SQL**. A browser-side filter or a post-fetch `.sort()` only ever covers
+  the page it was handed.
+- Page-scoped totals are a bug: counts shown beside a filter come from a `groupBy`
+  (`/applied/summary`, `campaignSummary.byStatus`, `/jobs/reasons`).
+- Cursor paging (`cursorPageSchema`/`cursorPage`) is for append-only live feeds only, where
+  offset drifts as rows are prepended. The pilot journal is the sole user.
 
 ## Traps
 

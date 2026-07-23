@@ -1,11 +1,11 @@
 import { statusSchema } from "@jobpilot/contracts/application";
 import { campaignJobReasonSchema, campaignSummarySchema } from "@jobpilot/contracts/campaign";
+import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
-import { paginatedResponseSchema } from "@/types/response";
 import { campaignJobSchema } from "../campaign.schema";
 
 /** A list of campaign jobs (the `listJobs` route). */
-export const campaignJobListSchema = paginatedResponseSchema(campaignJobSchema);
+export const campaignJobListSchema = paginatedSchema(campaignJobSchema);
 
 /** Every skip/fail reason for a campaign with its count (the `listJobReasons` route). */
 export const campaignJobReasonListSchema = z.array(campaignJobReasonSchema);

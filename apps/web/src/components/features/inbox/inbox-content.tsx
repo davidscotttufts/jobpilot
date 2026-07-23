@@ -9,6 +9,7 @@ import { emailQueries, type InboxFilter } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data/empty-state";
+import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
 import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { InboxTable } from "./inbox-table";
@@ -26,7 +27,10 @@ export function InboxContent(): ReactElement {
 
   const connected = account.data?.connected === true;
 
-  const messages = useApiQuery(emailQueries.messages(filter), { enabled: connected });
+  const pagination = usePaginationParams();
+  const messages = useApiQuery(emailQueries.messages(filter, pagination.query), {
+    enabled: connected,
+  });
 
   useSseChannel(inboxChannel, null, {
     enabled: connected,
@@ -55,13 +59,20 @@ export function InboxContent(): ReactElement {
 
   return (
     <Stack spacing={2}>
-      <InboxToolbar filter={filter} onFilterChange={setFilter} />
+      <InboxToolbar
+        filter={filter}
+        onFilterChange={(next) => {
+          setFilter(next);
+          pagination.setPage(1);
+        }}
+      />
       {messages.isLoading ? (
         <LinearProgress />
       ) : (
         <InboxTable
-          rows={messages.data ?? []}
+          rows={messages.data?.items ?? []}
           loading={messages.isFetching}
+          {...gridPagination(pagination, messages.data?.pagination)}
           onRowClick={(row) => setSelectedId(row.id)}
           onScanMessage={
             agentAvailable

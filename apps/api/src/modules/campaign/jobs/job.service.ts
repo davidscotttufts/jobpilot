@@ -8,13 +8,13 @@ import type {
   RescanCampaignJobInput,
   RetryCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Job, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { JobListingPublisher } from "@/modules/job-listing";
-import { createPaginatedResponse } from "@/types/response";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
 import { writeJobRescan, writeJobRetry } from "./job-commands";
@@ -49,9 +49,8 @@ export class CampaignJobService {
   async listJobs(
     userId: string,
     campaignId: string,
-    query: { page: number; limit: number; status?: CampaignJobStatus; search?: string },
+    query: PaginationQuery & { status?: CampaignJobStatus; search?: string },
   ) {
-    await ensureCampaignOwned(this.prisma, userId, campaignId);
     const where: Prisma.JobWhereInput = {
       campaignId,
       campaign: { userId },
@@ -65,16 +64,14 @@ export class CampaignJobService {
           }
         : {}),
     };
-    const [jobs, total] = await Promise.all([
-      this.prisma.job.findMany({
-        where,
-        orderBy: { createdAt: "asc" },
-        skip: (query.page - 1) * query.limit,
-        take: query.limit,
-      }),
+    // The page is already ownership-scoped; the probe only separates 404 from an empty page, so
+    // it rides along rather than costing a round trip of its own.
+    const [, jobs, total] = await Promise.all([
+      ensureCampaignOwned(this.prisma, userId, campaignId),
+      this.prisma.job.findMany({ where, orderBy: { createdAt: "asc" }, ...pageSlice(query) }),
       this.prisma.job.count({ where }),
     ]);
-    return createPaginatedResponse(jobs, { ...query, total });
+    return paginate(jobs, query, total);
   }
 
   /** Skip/fail reasons grouped by frequency across every job, so the breakdown is not page-scoped. */

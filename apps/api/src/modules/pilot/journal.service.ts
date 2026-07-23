@@ -1,3 +1,4 @@
+import { cursorPage } from "@jobpilot/contracts/pagination";
 import type { CreatePilotJournalInput, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { publishActivity, toActivityEntry, writeActivity } from "@/common/activity-log";
@@ -43,16 +44,13 @@ export class PilotJournalService {
       where: { userId, kind: kinds?.length ? { in: kinds } : undefined },
       // id tiebreaks createdAt (batch appends share one timestamp) so cursor pages never skip rows.
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      // The extra row is what proves more exist; `cursorPage` trims it back off.
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
-    const hasMore = rows.length > limit;
-    const page = hasMore ? rows.slice(0, limit) : rows;
-    return {
-      items: page.map(toActivityEntry),
-      nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
-    };
+    const { items, nextCursor } = cursorPage(rows, limit);
+    return { items: items.map(toActivityEntry), nextCursor };
   }
 
   /**

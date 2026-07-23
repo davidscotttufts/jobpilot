@@ -5,6 +5,8 @@ import type {
   ApplicationStatus,
   StatusTransitionInput,
 } from "@jobpilot/contracts/application";
+import { SINGLE_APPLY_CAMPAIGN, STATUSES } from "@jobpilot/contracts/application";
+import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
@@ -20,6 +22,7 @@ export interface AppliedListFilters {
   board?: string;
   source?: string;
   search?: string;
+  campaignId?: string;
 }
 
 export interface AppliedCheckQuery {
@@ -32,40 +35,69 @@ export interface AppliedCheckQuery {
 export class ApplicationService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async list(userId: string, filters: AppliedListFilters) {
-    const { status, board, source, search } = filters;
+  async list(userId: string, query: PaginationQuery & AppliedListFilters) {
+    const where = this.where(userId, query);
 
-    const where: Prisma.ApplicationWhereInput = { userId };
+    const [rows, total] = await Promise.all([
+      this.prisma.application.findMany({
+        where,
+        orderBy: { appliedAt: "desc" },
+        ...pageSlice(query),
+      }),
+      this.prisma.application.count({ where }),
+    ]);
 
-    if (status) {
-      where.status = status;
-    }
-    if (board) {
-      where.board = board;
-    }
-    if (source) {
-      where.source = source;
-    }
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { company: { contains: search } },
-        { url: { contains: search } },
-      ];
-    }
+    return paginate(
+      rows.map((r) => ({ ...r, source: r.source as ApplicationSource })),
+      query,
+      total,
+    );
+  }
 
-    const rows = await this.prisma.application.findMany({
+  /**
+   * Per-status totals for the funnel tiles. `status` is deliberately excluded from the `where`:
+   * the tiles have to keep showing every bucket's size while one of them is selected.
+   */
+  async summary(userId: string, filters: Omit<AppliedListFilters, "status">) {
+    const where = this.where(userId, filters);
+    const rows = await this.prisma.application.groupBy({
+      by: ["status"],
       where,
-      orderBy: { appliedAt: "desc" },
-      take: 500,
+      _count: { _all: true },
     });
 
-    return rows.map((r) => ({
-      ...r,
-      source: r.source as ApplicationSource,
-      appliedAt: r.appliedAt,
-      rejectedAt: r.rejectedAt,
-    }));
+    // Every status seeded to 0, so a funnel tile for an empty bucket still renders a number.
+    const byStatus = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<
+      ApplicationStatus,
+      number
+    >;
+    let total = 0;
+    for (const row of rows) {
+      byStatus[row.status as ApplicationStatus] = row._count._all;
+      total += row._count._all;
+    }
+    return { total, byStatus };
+  }
+
+  private where(userId: string, filters: AppliedListFilters): Prisma.ApplicationWhereInput {
+    const { status, board, source, search, campaignId } = filters;
+
+    return {
+      userId,
+      ...(status && { status }),
+      ...(board && { board }),
+      ...(source && { source }),
+      ...(campaignId && {
+        campaignId: campaignId === SINGLE_APPLY_CAMPAIGN ? null : campaignId,
+      }),
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { company: { contains: search, mode: "insensitive" } },
+          { url: { contains: search, mode: "insensitive" } },
+        ],
+      }),
+    };
   }
 
   async get(userId: string, id: string) {
