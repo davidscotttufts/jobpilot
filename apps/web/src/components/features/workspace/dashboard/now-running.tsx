@@ -27,8 +27,6 @@ function progress(campaign: CampaignDto): { value: number; label: string } {
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  // Filtered in SQL: picking the running ones out of an unfiltered page missed any campaign
-  // that had fallen past the page's end.
   const campaigns = useApiQuery(campaignQueries.list({ ...OPTIONS_PAGE, status: ["in_progress"] }));
   const running = campaigns.data?.items ?? [];
 
