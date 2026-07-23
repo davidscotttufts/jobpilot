@@ -43,7 +43,7 @@ export const BOARD_HEALTH_MIN_FAILURES = 3;
 /** Row cap for unbounded gather/expiry scans, matching the module's take: 200 list precedent. */
 export const GATHER_CAP = 200;
 
-/** One score-pending cycle scores at most this many of a campaign's unscored rows (bounded per cycle). */
+/** One score-pending cycle visits at most this many of a campaign's rows (bounded per cycle). */
 export const SCORE_PENDING_BATCH = 5;
 
 /**

@@ -1,16 +1,16 @@
 import { db } from "@/common/database";
 import { container } from "@/common/di";
-import { JobListingIngestService } from "@/modules/job-listing";
+import { JobListingPublisher } from "@/modules/job-listing";
 
 const BATCH = 500;
 
 /**
  * Backfill the public index from existing jobs; write-through only sees jobs found after the
- * deploy. Runs the same ingest as the live path, so the two cannot drift. Idempotent - re-running
- * only refreshes.
+ * deploy. Runs the same publisher as the live path, so the two cannot drift. Idempotent -
+ * re-running only refreshes.
  */
 export async function seedJobListings(): Promise<void> {
-  const ingest = container.resolve(JobListingIngestService);
+  const publisher = container.resolve(JobListingPublisher);
   const counts = { scanned: 0, created: 0, merged: 0, refreshed: 0, skipped: 0, failed: 0 };
   let cursor: string | undefined;
 
@@ -43,7 +43,7 @@ export async function seedJobListings(): Promise<void> {
     for (const job of jobs) {
       try {
         // Sequential: concurrent upserts of one posting would contend on the same row.
-        counts[await ingest.ingest(job)]++;
+        counts[await publisher.publish(job)]++;
       } catch (error) {
         // One bad row must not abort a backfill of thousands.
         counts.failed++;

@@ -1,6 +1,6 @@
 import { type CampaignConfig } from "@jobpilot/contracts/campaign";
 import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import {
@@ -107,14 +107,20 @@ export function claimDamped(last: LatestClaim | undefined, now: Date, cooldownMs
   return now.getTime() - last.releasedAt.getTime() < cap;
 }
 
+/** Pending rows a worker must open the posting for: never scored, or scored off a results row and
+ *  left without the digest the public index needs. Terminal rows are out - PATCH refuses them. */
+const NEEDS_WORKER_VISIT = {
+  status: "pending",
+  OR: [{ matchScore: null }, { digest: null }],
+} satisfies Prisma.JobWhereInput;
+
 /**
- * In-progress auto-apply campaigns carrying discovered-but-unscored pending rows (`matchScore: null`) -
- * mid-batch abandonment or thin listings. Each carries ≤{@link SCORE_PENDING_BATCH} sampled entries plus
- * the total unscored count.
+ * In-progress auto-apply campaigns carrying rows matching {@link NEEDS_WORKER_VISIT}. Each carries
+ * ≤{@link SCORE_PENDING_BATCH} sampled entries plus the total backlog count.
  *
- * Rate-limited per campaign off claim history, like {@link dueSavedSearches}: a row nothing can score
- * (dead URL, login wall) keeps `matchScore: null` forever, and scorePending outranks discovery - without
- * a cooldown that one row would re-win every cycle and starve discovery permanently.
+ * Rate-limited per campaign off claim history, like {@link dueSavedSearches}: a row nothing can visit
+ * (dead URL, login wall) stays a candidate forever, and scorePending outranks discovery - without a
+ * cooldown that one row would re-win every cycle and starve discovery permanently.
  */
 export async function gatherScorePendingCampaigns(
   prisma: PrismaClient,
@@ -127,7 +133,7 @@ export async function gatherScorePendingCampaigns(
       userId,
       status: "in_progress",
       source: "auto_apply",
-      jobs: { some: { status: "pending", matchScore: null } },
+      jobs: { some: NEEDS_WORKER_VISIT },
     },
     take: GATHER_CAP,
     select: {
@@ -135,7 +141,7 @@ export async function gatherScorePendingCampaigns(
       query: true,
       config: true,
       jobs: {
-        where: { status: "pending", matchScore: null },
+        where: NEEDS_WORKER_VISIT,
         orderBy: { createdAt: "asc" },
         take: SCORE_PENDING_BATCH,
         select: { key: true, url: true, title: true },
@@ -146,14 +152,10 @@ export async function gatherScorePendingCampaigns(
     return [];
   }
 
-  // One grouped count for every candidate's total unscored backlog, avoiding an N+1 per campaign.
+  // One grouped count for every candidate's total backlog, avoiding an N+1 per campaign.
   const counts = await prisma.job.groupBy({
     by: ["campaignId"],
-    where: {
-      campaignId: { in: campaigns.map((c) => c.campaignId) },
-      status: "pending",
-      matchScore: null,
-    },
+    where: { campaignId: { in: campaigns.map((c) => c.campaignId) }, ...NEEDS_WORKER_VISIT },
     _count: { _all: true },
   });
 

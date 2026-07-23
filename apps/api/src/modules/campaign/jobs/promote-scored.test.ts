@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { JobListingIngestService } from "@/modules/job-listing";
+import type { JobListingPublisher } from "@/modules/job-listing";
 import { CampaignJobService } from "./job.service";
 import { describe, expect, it } from "bun:test";
 
@@ -33,7 +33,7 @@ function setup() {
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  const listings = { ingestInBackground: () => undefined } as unknown as JobListingIngestService;
+  const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
   return {
     service: new CampaignJobService(db as unknown as PrismaClient, listings),
     jobUpdates,

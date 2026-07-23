@@ -14,6 +14,8 @@ export interface Recorder {
   claimCreates: Record<string, unknown>[];
   claimUpdates: { data: Record<string, unknown> }[];
   campaignUpdates: { where: Record<string, unknown>; data: Record<string, unknown> }[];
+  /** Every campaign.findMany where-clause, so a gather's predicate itself can be asserted on. */
+  campaignQueries: Record<string, unknown>[];
   questionUpdates: { data: Record<string, unknown> }[];
   journals: Record<string, unknown>[];
   pushes: { userId: string; payload: PushPayload }[];
@@ -258,6 +260,7 @@ function fakeCampaign(over: Over, rec: Recorder) {
     findMany: async (a: {
       where: { status?: string; source?: string; query?: unknown; jobs?: unknown; OR?: unknown };
     }) => {
+      rec.campaignQueries.push(a.where);
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
       if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
@@ -306,6 +309,7 @@ export function makeAgendaDb(over: Over = {}) {
     claimCreates: [],
     claimUpdates: [],
     campaignUpdates: [],
+    campaignQueries: [],
     questionUpdates: [],
     journals: [],
     pushes: [],

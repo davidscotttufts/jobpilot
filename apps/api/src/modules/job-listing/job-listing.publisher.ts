@@ -4,37 +4,38 @@ import { logger } from "@/common/logger";
 import { PrismaClient } from "@/generated/prisma/client";
 import { buildListingDraft, type ListingDraft, type ListingSourceJob } from "./listing-draft";
 
-/** What an upsert did. The backfill reports on these; the write-through path ignores them. */
-export type IngestOutcome = "created" | "merged" | "refreshed" | "skipped";
+/** What a publish did. The seed reports on these; the write-through callers ignore them. */
+export type PublishOutcome = "created" | "merged" | "refreshed" | "skipped";
 
-/** Ingest is fire-and-forget, so nothing throttles it - without a ceiling a burst of job PATCHes
+/** Publishing is fire-and-forget, so nothing throttles it - without a ceiling a burst of job writes
  *  would let background work monopolize the pool and stall the request handlers sharing it. */
 const MAX_CONCURRENT = 4;
 
 /** Past this the producer is hopelessly ahead; drop rather than grow the queue without bound. */
 const MAX_QUEUED = 500;
 
+/** Publishes a campaign `Job` to the public job index, deduped across every user's campaigns. */
 @singleton()
-export class JobListingIngestService {
+export class JobListingPublisher {
   private active = 0;
   private readonly waiting: (() => void)[] = [];
 
   constructor(private readonly prisma: PrismaClient) {}
 
   /** A listing is a derived artifact, so a failure here must never fail the agent's job write. */
-  ingestInBackground(job: ListingSourceJob): void {
+  publishInBackground(job: ListingSourceJob): void {
     if (this.waiting.length >= MAX_QUEUED) {
-      // Recoverable: the next scrape or the backfill re-creates it.
-      logger.warn({ url: job.url }, "job-listing ingest queue full, dropping");
+      // Recoverable: the next scrape of the same posting publishes it.
+      logger.warn({ url: job.url }, "job-listing publish queue full, dropping");
       return;
     }
-    void this.ingest(job).catch((error) => {
-      logger.error({ err: error, url: job.url }, "job-listing ingest failed");
+    void this.publish(job).catch((error) => {
+      logger.error({ err: error, url: job.url }, "job-listing publish failed");
     });
   }
 
-  /** A job with no parsed techStack drafts to null and costs nothing - callers need not pre-filter. */
-  async ingest(job: ListingSourceJob): Promise<IngestOutcome> {
+  /** A job too thin to publish drafts to null and costs nothing - callers need not pre-filter. */
+  async publish(job: ListingSourceJob): Promise<PublishOutcome> {
     const draft = buildListingDraft(job);
     if (!draft) {
       return "skipped";
@@ -74,7 +75,7 @@ export class JobListingIngestService {
    * and it held a pooled connection across every round-trip. The unique constraints are what make
    * concurrent agents converge - so let them, and retry the insert that loses the race.
    */
-  private async upsert(draft: ListingDraft, retry = true): Promise<IngestOutcome> {
+  private async upsert(draft: ListingDraft, retry = true): Promise<PublishOutcome> {
     const now = new Date();
     const { board, url, ...listing } = draft;
     const source = { board, url, lastSeenAt: now };

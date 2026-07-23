@@ -117,7 +117,7 @@ export function buildDiscoverItems(
   }));
 }
 
-/** Score an existing campaign's unscored pending rows; ranked above discovery, gated by the caller. */
+/** Score and enrich an existing campaign's pending rows; ranked above discovery, gated by the caller. */
 export function buildScorePendingItems(campaigns: AgendaScorePending[]): AgendaItem[] {
   return campaigns.map((c) => ({
     id: `campaign.scorePending:${c.campaignId}`,

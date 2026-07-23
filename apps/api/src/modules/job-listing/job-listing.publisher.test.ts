@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { JobListingIngestService } from "./job-listing.ingest";
+import { JobListingPublisher } from "./job-listing.publisher";
 import type { ListingSourceJob } from "./listing-draft";
 import { describe, expect, it } from "bun:test";
 
@@ -77,20 +77,20 @@ function fakePrisma(options: FakeOptions = {}) {
   };
 }
 
-describe("ingest", () => {
+describe("publish", () => {
   it("skips a job the quality gate rejects, without touching the database", async () => {
     const fake = fakePrisma();
-    const svc = new JobListingIngestService(fake.prisma);
+    const svc = new JobListingPublisher(fake.prisma);
 
-    expect(await svc.ingest({ ...job("https://x.com/1"), digest: null })).toBe("skipped");
+    expect(await svc.publish({ ...job("https://x.com/1"), digest: null })).toBe("skipped");
     expect(fake.calls).toEqual([]);
   });
 
   it("creates a listing for an unseen posting", async () => {
     const fake = fakePrisma();
-    const svc = new JobListingIngestService(fake.prisma);
+    const svc = new JobListingPublisher(fake.prisma);
 
-    expect(await svc.ingest(job("https://x.com/1"))).toBe("created");
+    expect(await svc.publish(job("https://x.com/1"))).toBe("created");
     expect(fake.calls).toContain("listing.create");
   });
 
@@ -98,10 +98,10 @@ describe("ingest", () => {
   // both miss the lookup and both insert. The unique constraint is what makes them converge.
   it("retries once when another agent wins the insert race, and converges", async () => {
     const fake = fakePrisma({ raceOnFirstCreate: true });
-    const svc = new JobListingIngestService(fake.prisma);
+    const svc = new JobListingPublisher(fake.prisma);
 
     // Second pass re-reads; the fake still reports "not found", so it re-creates rather than throw.
-    expect(await svc.ingest(job("https://x.com/1"))).toBe("created");
+    expect(await svc.publish(job("https://x.com/1"))).toBe("created");
     expect(fake.calls.filter((c) => c === "listing.create")).toHaveLength(2);
   });
 
@@ -118,17 +118,17 @@ describe("ingest", () => {
       },
     } as unknown as PrismaClient;
 
-    expect(new JobListingIngestService(always).ingest(job("https://x.com/1"))).rejects.toThrow();
+    expect(new JobListingPublisher(always).publish(job("https://x.com/1"))).rejects.toThrow();
   });
 });
 
 describe("concurrency ceiling", () => {
-  it("never runs more than 4 ingests at once, and queues the rest", async () => {
+  it("never runs more than 4 publishes at once, and queues the rest", async () => {
     const fake = fakePrisma({ gate: { hold: true } });
-    const svc = new JobListingIngestService(fake.prisma);
+    const svc = new JobListingPublisher(fake.prisma);
 
-    // 12 concurrent ingests against a gate that holds every query open.
-    const all = Array.from({ length: 12 }, (_, i) => svc.ingest(job(`https://x.com/${i}`)));
+    // 12 concurrent publishes against a gate that holds every query open.
+    const all = Array.from({ length: 12 }, (_, i) => svc.publish(job(`https://x.com/${i}`)));
 
     // Let the held queries drain in waves until everything completes.
     for (let i = 0; i < 40; i++) {
@@ -137,7 +137,7 @@ describe("concurrency ceiling", () => {
     }
     await Promise.all(all);
 
-    // The gate counts queries in flight; with a ceiling of 4 ingests it can never exceed 4.
+    // The gate counts queries in flight; with a ceiling of 4 publishes it can never exceed 4.
     expect(fake.peak()).toBeLessThanOrEqual(4);
   });
 });

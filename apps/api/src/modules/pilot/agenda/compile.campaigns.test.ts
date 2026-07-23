@@ -78,6 +78,21 @@ describe("AgendaService campaign.scorePending", () => {
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "campaign.scorePending")).toBe(true);
   });
+
+  // Gate on matchScore alone and a row scored off the results page never gains a digest.
+  it("claims rows missing either a score or a digest", async () => {
+    const { svc, rec } = serviceWithRec(scorePendingOver);
+    await svc.refresh("p1");
+
+    // The finalize sweep filters `jobs` too; only score-pending's clause carries no top-level OR.
+    const gather = rec.campaignQueries.find((w) => "jobs" in w && !("OR" in w)) as {
+      jobs: { some: Record<string, unknown> };
+    };
+    expect(gather.jobs.some).toMatchObject({
+      status: "pending",
+      OR: [{ matchScore: null }, { digest: null }],
+    });
+  });
 });
 
 describe("AgendaService campaign.reviewPaused", () => {

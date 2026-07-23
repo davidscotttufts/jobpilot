@@ -52,6 +52,14 @@ same posting. ✅ All three verified live.
     a lone `?tech=React` arrives as `string`, so the contract must accept a union of both. It only
     surfaced at runtime - the Zod schema typechecked fine against a `string`-only shape.
 
+- **2026-07-22 - the index went dry when the pilot took over discovery.** Listings/day fell
+  42 → 14 → 1 → 0 while jobs/day rose to 239. `search.discover` scores off the results page and
+  saved no digest, so only 17 of 415 pilot jobs cleared the gate; `campaign.scorePending` gathered
+  on `matchScore: null`, which a scored row never is, so nothing backfilled them. Another 42 were
+  saved as `digest: ""` by `jq --arg` on an unset variable. Fixed four ways: discovery saves its
+  digest, scorePending also takes `digest IS NULL`, `rescanJob` publishes, and the contract rejects
+  a non-object digest. Terminal digest-less rows are unrecoverable - only a re-scrape indexes them.
+
 - **`?tech=` stays case-insensitive without a schema migration.** Prisma's array `hasSome` is exact,
   and the agent writes whatever casing the posting used. Rather than add a normalized column, the
   service caches one tech *vocabulary* (`unnest(tech_stack)` grouped by `lower()`, 10 min TTL) and

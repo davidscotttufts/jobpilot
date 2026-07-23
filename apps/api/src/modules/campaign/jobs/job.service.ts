@@ -13,7 +13,7 @@ import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Job, type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { JobListingIngestService } from "@/modules/job-listing";
+import { JobListingPublisher } from "@/modules/job-listing";
 import { createPaginatedResponse } from "@/types/response";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
@@ -32,7 +32,7 @@ const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[
 
 type JobTransaction = Pick<Prisma.TransactionClient, "job">;
 
-export interface ScoredJobPromotion {
+interface ScoredJobPromotion {
   key: string;
   matchScore: number;
   threshold: number;
@@ -43,7 +43,7 @@ export interface ScoredJobPromotion {
 export class CampaignJobService {
   constructor(
     private readonly prisma: PrismaClient,
-    private readonly listings: JobListingIngestService,
+    private readonly listings: JobListingPublisher,
   ) {}
 
   async listJobs(
@@ -139,7 +139,7 @@ export class CampaignJobService {
       return created;
     });
 
-    this.listings.ingestInBackground(job);
+    this.listings.publishInBackground(job);
     this.publishJob(userId, campaignId, job, "added");
     return job;
   }
@@ -186,7 +186,7 @@ export class CampaignJobService {
       });
     });
 
-    this.listings.ingestInBackground(job);
+    this.listings.publishInBackground(job);
     const statusChanged = !!patch.status && patch.status !== existing.status;
     this.publishStatusChange(userId, campaignId, {
       job,
@@ -206,6 +206,11 @@ export class CampaignJobService {
 
   async rescanJob(userId: string, campaignId: string, key: string, body: RescanCampaignJobInput) {
     const result = await writeJobRescan(this.prisma, userId, campaignId, key, body);
+    // A rescan opens the posting, so it is often the first write carrying a publishable digest.
+    if (result.changed) {
+      this.listings.publishInBackground(result.job);
+    }
+
     this.publishStatusChange(userId, campaignId, result);
     return result.job;
   }
@@ -284,8 +289,11 @@ export class CampaignJobService {
               },
         });
         jobs.push(...updated);
-        if (!group.approved) skippedUrls.push(...updated.map((job) => job.url));
+        if (!group.approved) {
+          skippedUrls.push(...updated.map((job) => job.url));
+        }
       }
+
       if (skippedUrls.length) {
         await tx.queueEntry.updateMany({
           where: { userId, url: { in: skippedUrls }, status: "pending" },
@@ -296,7 +304,9 @@ export class CampaignJobService {
     });
 
     if (result.jobs.length === 0) return;
-    for (const job of result.jobs) this.publishJob(userId, campaignId, job, "updated");
+    for (const job of result.jobs) {
+      this.publishJob(userId, campaignId, job, "updated");
+    }
     publish(campaignChannel, { campaignId }, { type: "progress", payload: result.summary });
   }
 

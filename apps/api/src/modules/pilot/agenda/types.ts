@@ -70,7 +70,8 @@ export interface AgendaPausedCampaign {
   pausedAt: Date;
 }
 
-/** An in-progress auto-apply campaign carrying discovered-but-unscored pending rows (≤5 sampled entries). */
+/** An in-progress auto-apply campaign carrying pending rows still missing a score or a digest
+ * (≤5 sampled entries). */
 export interface AgendaScorePending {
   campaignId: string;
   query: string;
@@ -179,7 +180,8 @@ export interface AgendaInput {
   awaitingSetup: boolean;
   // Earliest nextRunAt across live searches; the idle sleep clamps to it so a backed-off pilot wakes on time.
   nextSearchRunAt: Date | null;
-  // Existing campaigns with unscored pending rows; emitted only when the apply pipeline is empty.
+  // Existing campaigns with pending rows lacking a score or digest; emitted only when the apply
+  // pipeline is empty.
   scorePending: AgendaScorePending[];
   // Paused campaigns needing a resume-or-ask decision; emitted ungated so they can't be starved.
   pausedCampaigns: AgendaPausedCampaign[];
