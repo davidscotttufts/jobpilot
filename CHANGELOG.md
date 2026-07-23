@@ -7,12 +7,12 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Older drafts and running campaigns no longer drop off "Needs attention" and
-  "Now running" once you have a lot of history.
+  "Now running" once have a lot of history.
 - Choosing a board past page 1 dropped the filter instead of applying it.
 
 ### Changed
 
-- Every paginated list now pages the same way, so filtering always returns you
+- Every paginated list now pages the same way, so filtering always returns
   to page 1.
 
 ## [2.1.20] - 2026-07-22
