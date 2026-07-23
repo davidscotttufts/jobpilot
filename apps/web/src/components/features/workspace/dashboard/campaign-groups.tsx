@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { Add } from "@mui/icons-material";
 import { Button, Stack, Typography } from "@mui/material";
@@ -70,33 +70,45 @@ export function CampaignGroups(): ReactElement {
         />
       ) : (
         <Stack spacing={2}>
-          {groups.map(
-            (group) =>
-              group.pagination &&
-              group.pagination.total > 0 && (
-                <Stack key={group.label} spacing={1}>
-                  <Typography variant="overlineMuted">
-                    {group.label} · {group.pagination.total}
-                  </Typography>
-                  {group.items.map((c) => (
-                    <CampaignRow
-                      key={c.campaignId}
-                      campaign={c}
-                      onSelect={open}
-                      onOpenDetail={open}
-                    />
-                  ))}
-                  <PaginationFooter
-                    pagination={group.pagination}
-                    onPageChange={group.setPage}
-                    onPageSizeChange={group.setPageSize}
-                  />
-                </Stack>
-              ),
-          )}
+          {groups.map((group) => (
+            <CampaignGroupSection key={group.label} group={group} onOpen={open} />
+          ))}
         </Stack>
       )}
     </SectionCard>
+  );
+}
+
+interface CampaignGroupSectionProps {
+  group: ReturnType<typeof useCampaignGroup>;
+  onOpen: (campaign: CampaignDto) => void;
+}
+
+function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
+  const { group, onOpen } = props;
+  const { pagination } = group;
+
+  if (!pagination?.total) {
+    return null;
+  }
+
+  return (
+    <Stack spacing={1}>
+      <Typography variant="overlineMuted">
+        {group.label} · {pagination.total}
+      </Typography>
+      {group.items.map((c) => (
+        <CampaignRow key={c.campaignId} campaign={c} onSelect={onOpen} onOpenDetail={onOpen} />
+      ))}
+      {/* The group heading already carries the total, so a one-page footer is noise. */}
+      {pagination.totalPages > 1 && (
+        <PaginationFooter
+          pagination={pagination}
+          onPageChange={group.setPage}
+          onPageSizeChange={group.setPageSize}
+        />
+      )}
+    </Stack>
   );
 }
 
