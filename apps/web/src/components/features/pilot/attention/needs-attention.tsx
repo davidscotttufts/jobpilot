@@ -51,25 +51,30 @@ export function NeedsAttention(): ReactElement {
   const questionsQuery = useOpenQuestions();
   const { questions } = questionsQuery;
   // PilotLive already invalidates promotions on SSE events; no subscription needed here.
-  const promotionsQuery = useApiQuery(pilotQueries.promotions());
+  // Drafts are filtered server-side: splitting one unfiltered page in the browser let a stale
+  // draft fall off the end once enough newer posts piled up, and this card must not miss one.
+  const draftsQuery = useApiQuery(pilotQueries.promotions("draft"));
+  // History is informational, so it stays best-effort at a single page.
+  const historyQuery = useApiQuery(pilotQueries.promotions());
   // `undefined` = no user choice yet, so a lone draft starts expanded.
   const [userExpanded, setUserExpanded] = useState<string | null | undefined>(undefined);
   const [historyOpen, setHistoryOpen] = useState(false);
 
-  const promotions = promotionsQuery.data?.items ?? [];
-  const drafts = promotions.filter((p) => p.status === "draft");
-  const history = promotions.filter((p) => p.status !== "draft");
+  const drafts = draftsQuery.data?.items ?? [];
+  const history = (historyQuery.data?.items ?? []).filter((p) => p.status !== "draft");
   const loneDraftId = drafts.length === 1 ? (drafts[0]?.id ?? null) : null;
   const expandedId = userExpanded === undefined ? loneDraftId : userExpanded;
   const count = questions.length + drafts.length;
-  const loading = questionsQuery.isLoading || promotionsQuery.isLoading;
+  const loading = questionsQuery.isLoading || draftsQuery.isLoading;
   // Either query failing must not render as "nothing needs your attention" - this is
-  // the one card whose whole job is to not miss things.
-  const isError = questionsQuery.isError || promotionsQuery.isError;
+  // the one card whose whole job is to not miss things. History is exempt: it is a
+  // record of finished work, so losing it hides nothing actionable.
+  const isError = questionsQuery.isError || draftsQuery.isError;
 
   const retry = (): void => {
     questionsQuery.refetch();
-    void promotionsQuery.refetch();
+    void draftsQuery.refetch();
+    void historyQuery.refetch();
   };
 
   return (

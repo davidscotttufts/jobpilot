@@ -6,7 +6,7 @@ import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { campaignQueries } from "@/api/queries";
+import { campaignQueries, OPTIONS_PAGE } from "@/api/queries";
 import { invalidations } from "@/api/query-keys";
 import type { CampaignDto } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
@@ -27,8 +27,10 @@ function progress(campaign: CampaignDto): { value: number; label: string } {
 
 /** Live strip of in-progress campaigns. Renders nothing when nothing is running. */
 export function NowRunning(): ReactNode {
-  const campaigns = useApiQuery(campaignQueries.list());
-  const running = (campaigns.data?.items ?? []).filter((c) => c.status === "in_progress");
+  // Filtered in SQL: picking the running ones out of an unfiltered page missed any campaign
+  // that had fallen past the page's end.
+  const campaigns = useApiQuery(campaignQueries.list({ ...OPTIONS_PAGE, status: ["in_progress"] }));
+  const running = campaigns.data?.items ?? [];
 
   if (running.length === 0) {
     return null;

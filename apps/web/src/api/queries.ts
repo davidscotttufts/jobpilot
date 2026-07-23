@@ -21,9 +21,10 @@ import { queryKeys } from "@/api/query-keys";
 
 /**
  * A read that feeds a `<Select>` rather than a table wants the whole (small) collection, not a
- * page of it. One page at the API's cap is that read - and it stays bounded.
+ * page of it. One page at the API's cap is that read - and it stays bounded. Pass it explicitly
+ * when the read is "everything matching this filter" rather than a pager's page.
  */
-const OPTIONS_PAGE: PaginationQuery = { page: 1, limit: MAX_PAGE_SIZE };
+export const OPTIONS_PAGE: PaginationQuery = { page: 1, limit: MAX_PAGE_SIZE };
 
 /**
  * Per-endpoint query defs: one (queryKey, queryFn) pair per read, mirroring the
