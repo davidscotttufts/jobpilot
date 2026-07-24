@@ -1,6 +1,7 @@
 enum VerificationTokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+  EMAIL_CHANGE
 
   @@map("verification_token_type")
 }
@@ -13,6 +14,8 @@ model VerificationToken {
   userId     String                @map("user_id")
   type       VerificationTokenType
   tokenHash  String                @unique @map("token_hash")
+  // EMAIL_CHANGE only: the pending address, applied when the link is clicked.
+  newEmail   String?               @map("new_email")
   expiresAt  DateTime              @map("expires_at")
   consumedAt DateTime?             @map("consumed_at")
   createdAt  DateTime              @default(now()) @map("created_at")
@@ -38,6 +41,32 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+enum OAuthProvider {
+  GOOGLE
+  GITHUB
+
+  @@map("oauth_provider")
+}
+
+// A linked sign-in identity. No provider tokens stored, so no secrets here.
+model OAuthAccount {
+  id                String        @id @default(uuid())
+  userId            String        @map("user_id")
+  provider          OAuthProvider
+  providerAccountId String        @map("provider_account_id")
+  // Provider-reported address at link time; informational only.
+  email             String?
+  createdAt         DateTime      @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  // One identity per provider per user - keeps link/unlink UI unambiguous.
+  @@unique([userId, provider])
+  @@index([userId])
+  @@map("oauth_accounts")
 }
 
 // The local agent's credential: a long-lived, revocable PAT. PATs are hash-only;

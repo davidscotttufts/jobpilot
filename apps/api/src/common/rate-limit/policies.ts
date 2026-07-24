@@ -45,6 +45,18 @@ export const RATE_LIMITS = {
   /** Cheap and cookie-driven; exists only so a broken client retry loop can't spin the DB. */
   refresh: { key: byIp, limit: 60, windowMs: 15 * MINUTE },
 
+  /** OAuth start + callback: public redirects, so keyed by IP; loose enough for retries. */
+  oauthStart: { key: byIp, limit: 20, windowMs: 15 * MINUTE },
+
+  /** Caps a stolen session brute-forcing the current password. */
+  passwordChange: { key: byUser, limit: 10, windowMs: HOUR },
+
+  /** Sends mail to an arbitrary address the caller typed, so tight like emailResend. */
+  emailChange: { key: byUser, limit: 3, windowMs: HOUR },
+
+  /** Magic-link consumption; same shape as passwordReset (high-entropy token, DB-cost cap). */
+  emailChangeConfirm: { key: byIp, limit: 10, windowMs: HOUR },
+
   /** The only unauthenticated route that does real work: a cache miss re-renders the PDF. The uuid is
    *  the capability token, so this caps how fast a leaked link can be replayed - a recruiter opening
    *  and reloading the link a few times never trips it. */

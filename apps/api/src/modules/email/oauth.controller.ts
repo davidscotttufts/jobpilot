@@ -1,5 +1,6 @@
 import { oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { Elysia } from "elysia";
+import { oauthStateCookies } from "@/common/auth";
 import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { env } from "@/env";
@@ -14,6 +15,7 @@ import {
 const account = container.resolve(EmailAccountService);
 
 const OAUTH_COOKIE_PATH = "/api/email/oauth";
+const STATE_COOKIES = { state: "email_oauth_state", companion: "email_oauth_provider" };
 
 /** Bring-your-own Google OAuth client config + the connect (authorize/callback) flow. */
 export const emailOAuthController = new Elysia({
@@ -54,21 +56,7 @@ export const emailOAuthController = new Elysia({
       const providerName = query.provider ?? "gmail";
       const { authorizeUrl, state } = await account.buildAuthorizeUrl(user.id, providerName);
 
-      cookie.email_oauth_state!.set({
-        value: state,
-        httpOnly: true,
-        sameSite: "lax",
-        path: OAUTH_COOKIE_PATH,
-        maxAge: 600,
-      });
-      cookie.email_oauth_provider!.set({
-        value: providerName,
-        httpOnly: true,
-        sameSite: "lax",
-        path: OAUTH_COOKIE_PATH,
-        maxAge: 600,
-      });
-
+      oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH).set(state, providerName);
       return redirect(authorizeUrl);
     },
     {
@@ -84,12 +72,9 @@ export const emailOAuthController = new Elysia({
     "/oauth/callback",
     async ({ user, query, cookie, redirect }) => {
       // Clear the OAuth cookies and bounce back to the app, surfacing failures as a flag the UI toasts.
-      const clearCookies = () => {
-        cookie.email_oauth_state!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });
-        cookie.email_oauth_provider!.set({ value: "", path: OAUTH_COOKIE_PATH, maxAge: 0 });
-      };
+      const stateCookies = oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH);
       const back = (params: string) => {
-        clearCookies();
+        stateCookies.clear();
         return redirect(`${env.APP_URL}/inbox?${params}`);
       };
       const fail = (reason: string) =>
@@ -102,12 +87,8 @@ export const emailOAuthController = new Elysia({
         return fail("Missing code or state");
       }
 
-      const expectedState = cookie.email_oauth_state?.value;
-      const providerName =
-        (typeof cookie.email_oauth_provider?.value === "string"
-          ? cookie.email_oauth_provider.value
-          : undefined) ?? "gmail";
-      if (!expectedState || expectedState !== query.state) {
+      const providerName = stateCookies.companion() ?? "gmail";
+      if (stateCookies.state() !== query.state) {
         return fail("OAuth state mismatch");
       }
 

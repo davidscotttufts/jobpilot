@@ -5,6 +5,7 @@ import { type RegisterInput, RegisterSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useAuth } from "@/hooks/use-auth";
+import { OAuthButtons } from "./oauth-buttons";
 
 const DEFAULT_VALUES: RegisterInput = { email: "", password: "" };
 
@@ -57,6 +58,8 @@ export function RegisterForm(): ReactElement {
             {register.isPending ? "Creating account…" : "Create account"}
           </form.SubmitButton>
         </form.AppForm>
+
+        <OAuthButtons />
 
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
           Already have an account?{" "}

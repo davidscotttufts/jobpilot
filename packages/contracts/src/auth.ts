@@ -41,9 +41,40 @@ export const ResetPasswordSchema = z.object({
   password: PasswordSchema,
 });
 
+/** Wire values for sign-in providers (lowercase; the API maps to the Prisma enum). */
+export const OAuthProviderSchema = z.enum(["google", "github"]);
+
+/** Machine reasons the OAuth callback can redirect back with (`?oauth=error&reason=`).
+ *  Other reasons are provider prose (e.g. GitHub's error_description) shown as-is. */
+export const OAUTH_ERROR_REASONS = [
+  "provider_not_configured",
+  "email_unverified",
+  "access_denied",
+] as const;
+export type OAuthErrorReason = (typeof OAUTH_ERROR_REASONS)[number];
+
+/** currentPassword is required by the service iff the account has one; "" counts as absent. */
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().optional(),
+  newPassword: PasswordSchema,
+});
+
+export const ChangeEmailSchema = z.object({
+  newEmail: z.email(),
+  currentPassword: z.string().optional(),
+});
+
+export const ConfirmEmailChangeSchema = z.object({
+  token: z.string().min(1),
+});
+
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
 export type ApiTokenCreateInput = z.infer<typeof ApiTokenCreateSchema>;
 export type VerifyEmailInput = z.infer<typeof VerifyEmailSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
+export type OAuthProviderInput = z.infer<typeof OAuthProviderSchema>;
+export type ChangePasswordInput = z.infer<typeof ChangePasswordSchema>;
+export type ChangeEmailInput = z.infer<typeof ChangeEmailSchema>;
+export type ConfirmEmailChangeInput = z.infer<typeof ConfirmEmailChangeSchema>;

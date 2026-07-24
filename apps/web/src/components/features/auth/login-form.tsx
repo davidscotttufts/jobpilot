@@ -5,10 +5,17 @@ import { type LoginInput, LoginSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useAuth } from "@/hooks/use-auth";
+import { OAuthButtons } from "./oauth-buttons";
 
 const DEFAULT_VALUES: LoginInput = { email: "", password: "" };
 
-export function LoginForm(): ReactElement {
+interface LoginFormProps {
+  /** Failure copy from an OAuth callback redirect, shown above the form. */
+  oauthError?: string;
+}
+
+export function LoginForm(props: LoginFormProps): ReactElement {
+  const { oauthError } = props;
   const { login } = useAuth();
 
   const form = useAppForm({
@@ -27,6 +34,7 @@ export function LoginForm(): ReactElement {
       }}
     >
       <Stack spacing={2.5}>
+        {oauthError && !login.error && <Alert severity="error">{oauthError}</Alert>}
         {login.error && <Alert severity="error">{login.error.message}</Alert>}
 
         <form.AppField name="email">
@@ -58,6 +66,8 @@ export function LoginForm(): ReactElement {
             {login.isPending ? "Signing in…" : "Sign in"}
           </form.SubmitButton>
         </form.AppForm>
+
+        <OAuthButtons />
 
         <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
           No account?{" "}

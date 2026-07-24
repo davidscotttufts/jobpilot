@@ -15,3 +15,9 @@ export type VerifyEmailResponse = Data<typeof api.auth.email.verify.post>;
 export type ResendVerificationResponse = Data<typeof api.auth.email.resend.post>;
 export type ForgotPasswordResponse = Data<typeof api.auth.password.forgot.post>;
 export type ResetPasswordResponse = Data<typeof api.auth.password.reset.post>;
+
+/** Account security responses (password/email change, provider unlink). */
+export type ChangePasswordResponse = Data<typeof api.auth.password.change.post>;
+export type ChangeEmailResponse = Data<typeof api.auth.email.change.post>;
+export type ConfirmEmailChangeResponse = Data<typeof api.auth.email.change.confirm.post>;
+export type UnlinkOAuthResponse = Data<ReturnType<typeof api.auth.oauth>["delete"]>;

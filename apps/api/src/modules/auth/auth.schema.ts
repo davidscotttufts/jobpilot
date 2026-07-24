@@ -1,7 +1,22 @@
+import { OAuthProviderSchema } from "@jobpilot/contracts";
 import { roleSchema } from "@jobpilot/contracts/role";
 import { z } from "zod/v4";
 
-// ── Response schemas ──────────────────────────────────────────────────────────
+// Request schemas (OAuth sign-in flow)
+
+export const oauthProviderParams = z.object({ provider: OAuthProviderSchema });
+
+export const oauthStartQuery = z.object({
+  intent: z.enum(["login", "link"]).default("login"),
+});
+
+export const oauthCallbackQuery = z.object({
+  code: z.string().optional(),
+  state: z.string().optional(),
+  error: z.string().optional(),
+});
+
+// Response schemas
 
 /** The public-safe view of a user (mirrors `publicUser`); `createdAt` is stringified. */
 export const publicUserSchema = z.object({
@@ -26,6 +41,9 @@ export const authSessionSchema = z.object({
  * and `preferredLocations` is the stored JSON string.
  */
 export const meSchema = publicUserSchema.extend({
+  // Sign-in methods for the account security page; the hash itself never leaves the API.
+  hasPassword: z.boolean(),
+  providers: z.array(z.enum(["google", "github"])),
   username: z.string(),
   availability: z.string().nullable(),
   firstName: z.string(),

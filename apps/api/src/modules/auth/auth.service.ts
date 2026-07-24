@@ -9,6 +9,7 @@ import {
   verifyPassword,
 } from "@/common/auth";
 import { conflict, notFound, unauthorized } from "@/common/errors";
+import { normalizeEmail } from "@/common/utils/email";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
 import { PrismaClient, type User, UserRole } from "@/generated/prisma/client";
@@ -36,20 +37,33 @@ export class AuthService {
   }
 
   /** Build the standard auth response: public user + a fresh token pair. */
-  private async session(user: User) {
+  async issueSession(user: User) {
     return { user: publicUser(user), ...(await this.issueTokens(user)) };
   }
 
   async register(input: RegisterInput) {
-    const existing = await this.prisma.user.findUnique({ where: { email: input.email } });
+    // Dev signups skip the verification round-trip; elsewhere the controller emails the link.
+    const user = await this.createUserAccount({
+      email: input.email,
+      passwordHash: await hashPassword(input.password),
+      emailVerified: env.NODE_ENV === "development",
+    });
+    return this.issueSession(user);
+  }
+
+  /** Shared by password registration and OAuth signup (null hash, provider-verified email). */
+  async createUserAccount(input: {
+    email: string;
+    passwordHash: string | null;
+    emailVerified: boolean;
+  }): Promise<User> {
+    const email = normalizeEmail(input.email);
+    const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw conflict("Email already registered");
     }
 
-    // Dev signups skip the verification round-trip; elsewhere the controller emails the link.
-    const autoVerified = env.NODE_ENV === "development";
-    const role: UserRole = env.SUPER_ADMIN_EMAIL === input.email ? "SUPER_ADMIN" : "USER";
-    const passwordHash = await hashPassword(input.password);
+    const role: UserRole = env.SUPER_ADMIN_EMAIL?.toLowerCase() === email ? "SUPER_ADMIN" : "USER";
 
     // An unseeded catalog yields zero links rather than a failed signup.
     const defaults = await this.prisma.jobBoard.findMany({
@@ -57,16 +71,15 @@ export class AuthService {
       select: { id: true },
     });
 
-    let user: User;
     try {
-      user = await this.prisma.user.create({
+      return await this.prisma.user.create({
         data: {
-          email: input.email,
-          passwordHash,
+          email,
+          passwordHash: input.passwordHash,
           role,
-          emailVerified: autoVerified,
+          emailVerified: input.emailVerified,
           username: await this.uniqueUsername(),
-          contactEmail: input.email,
+          contactEmail: email,
           jobBoards: {
             // Bare links: null overrides inherit the global name/searchUrl/sortOrder live.
             createMany: { data: defaults.map((board) => ({ jobBoardId: board.id })) },
@@ -80,7 +93,6 @@ export class AuthService {
       }
       throw error;
     }
-    return this.session(user);
   }
 
   /** A random username not already taken. The unique constraint is the final backstop. */
@@ -97,11 +109,14 @@ export class AuthService {
   }
 
   async login(input: LoginInput) {
-    const user = await this.prisma.user.findUnique({ where: { email: input.email } });
-    if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
+    const user = await this.prisma.user.findUnique({
+      where: { email: normalizeEmail(input.email) },
+    });
+    // Null hash = OAuth-only account; the generic message keeps that unenumerable.
+    if (!user?.passwordHash || !(await verifyPassword(input.password, user.passwordHash))) {
       throw unauthorized("Invalid email or password");
     }
-    return this.session(user);
+    return this.issueSession(user);
   }
 
   /** Validate + rotate a refresh token; revoke the old one. */
@@ -123,7 +138,7 @@ export class AuthService {
       where: { id: record.id },
       data: { revokedAt: new Date() },
     });
-    return this.session(user);
+    return this.issueSession(user);
   }
 
   async logout(rawRefresh: string): Promise<void> {
@@ -137,7 +152,12 @@ export class AuthService {
   }
 
   async me(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { oauthAccounts: { select: { provider: true } } },
+      // One joined statement - the proxy hits /me on every gated navigation.
+      relationLoadStrategy: "join",
+    });
     if (!user) {
       throw notFound("User not found");
     }

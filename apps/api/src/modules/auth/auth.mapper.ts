@@ -1,5 +1,6 @@
 import type { AuthUser } from "@/common/auth";
-import type { User } from "@/generated/prisma/client";
+import type { OAuthProvider, User } from "@/generated/prisma/client";
+import { wireProvider } from "./oauth-providers";
 
 /** The principal carried on a request (authGuard derive, access-token subject). */
 export function principal(user: User): AuthUser {
@@ -22,9 +23,12 @@ export function publicUser(user: User) {
  * applicant profile columns. `contactEmail` is the applicant address; `email`
  * stays the login address. Secrets (passwordHash, wrappedDek) are never included.
  */
-export function meUser(user: User) {
+export function meUser(user: User & { oauthAccounts: { provider: OAuthProvider }[] }) {
   return {
     ...publicUser(user),
+    // Existence only - the hash itself never leaves the service layer.
+    hasPassword: user.passwordHash !== null,
+    providers: user.oauthAccounts.map((a) => wireProvider(a.provider)),
     username: user.username,
     availability: user.availability,
     firstName: user.firstName,

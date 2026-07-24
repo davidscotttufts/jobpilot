@@ -37,6 +37,14 @@ const EnvSchema = z.object({
   // app); only this shared callback is configured here - users register it in their own client.
   GOOGLE_OAUTH_REDIRECT_URI: z.string().default("http://localhost:4101/api/email/oauth/callback"),
 
+  // Google/GitHub sign-in clients (distinct from the per-user Gmail client); unset = disabled.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GITHUB_CLIENT_ID: z.string().optional(),
+  GITHUB_CLIENT_SECRET: z.string().optional(),
+  // Public API origin for sign-in callbacks: `${base}/api/auth/oauth/{provider}/callback`.
+  AUTH_OAUTH_REDIRECT_BASE: z.string().default("http://localhost:4101"),
+
   // Transactional email (Resend). Optional: when unset, the app logs the email
   // body (incl. magic links) instead of sending - fine for local dev.
   RESEND_API_KEY: z.string().optional(),
