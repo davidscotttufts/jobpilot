@@ -30,17 +30,24 @@ type OAuth2Client = InstanceType<typeof google.auth.OAuth2>;
 /** Scope that grants outbound send. Absent ⇒ the account must be reconnected. */
 export const GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send";
 
+/** Scope that grants mailbox reads - the one scope a connection is useless without. */
+export const GMAIL_READ_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+
 /** Scopes requested at consent; surfaced in the email settings UI. */
-export const GMAIL_SCOPES = [
-  "https://www.googleapis.com/auth/gmail.readonly",
-  GMAIL_SEND_SCOPE,
-  "openid",
-  "email",
-];
+export const GMAIL_SCOPES = [GMAIL_READ_SCOPE, GMAIL_SEND_SCOPE, "openid", "email"];
+
+function grants(scope: string | null | undefined, required: string): boolean {
+  return !!scope && scope.split(/\s+/).includes(required);
+}
 
 /** Whether a stored, space-separated `scope` string grants send access. */
 export function scopeCanSend(scope: string | null | undefined): boolean {
-  return !!scope && scope.split(/\s+/).includes(GMAIL_SEND_SCOPE);
+  return grants(scope, GMAIL_SEND_SCOPE);
+}
+
+/** Whether a stored, space-separated `scope` string grants mailbox reads. */
+export function scopeCanRead(scope: string | null | undefined): boolean {
+  return grants(scope, GMAIL_READ_SCOPE);
 }
 
 export class GmailProvider implements EmailProvider {

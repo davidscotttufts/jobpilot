@@ -3,10 +3,16 @@ import type { OAuthClientUpsertInput } from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/networking";
 import { singleton } from "tsyringe";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
-import { badRequest, conflict, ErrorCodes, HttpError } from "@/common/errors";
+import { badRequest, conflict, ErrorCodes, HttpError, unprocessable } from "@/common/errors";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import { accountCanSend, GMAIL_SCOPES, getProvider } from "../gmail.provider";
+import {
+  accountCanSend,
+  GMAIL_READ_SCOPE,
+  GMAIL_SCOPES,
+  getProvider,
+  scopeCanRead,
+} from "../gmail.provider";
 import { loadFreshAccount, resolveOAuthClient } from "./account.utils";
 
 @singleton()
@@ -107,6 +113,13 @@ export class EmailAccountService {
     const provider = getProvider(providerName);
     const config = await resolveOAuthClient(this.prisma, this.crypto, userId);
     const { tokens, email } = await provider.exchangeCode(config, code);
+
+    // Granular consent can drop a scope silently; storing that grant 403s every later sync.
+    if (!scopeCanRead(tokens.scope)) {
+      throw unprocessable(
+        `Google did not grant ${GMAIL_READ_SCOPE}. Reconnect and allow every requested permission.`,
+      );
+    }
 
     const accessToken = await this.crypto.encryptFor(
       userId,
