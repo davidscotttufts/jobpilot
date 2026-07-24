@@ -9,7 +9,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { UnlinkOAuthResponse } from "@/api/types";
 import { OAUTH_PROVIDERS, oauthStartUrl, resolveOauthReason } from "@/components/features/auth";
 import { SectionCard } from "@/components/ui/layout/section-card";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 import { useConfirm } from "@/providers/confirm-provider";
 
 interface ConnectedAccountsCardProps {
@@ -21,7 +21,7 @@ interface ConnectedAccountsCardProps {
 
 export function ConnectedAccountsCard(props: ConnectedAccountsCardProps): ReactElement {
   const { oauthResult, provider, reason } = props;
-  const { user } = useAuth();
+  const { user } = useSession();
   const confirm = useConfirm();
 
   const linked = user?.providers ?? [];

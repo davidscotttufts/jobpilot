@@ -5,13 +5,13 @@ import { alpha, Box, Divider, Stack } from "@mui/material";
 import NextLink from "next/link";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 import { AccountMenu } from "@/components/features/profile";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 import { FeedbackMenu } from "./feedback-menu";
 import { NavGroup } from "./nav-group";
 import { APP_TITLE, footerNavGroups, RAIL_WIDTH, visibleNavGroups } from "./shell-config";
 
 export function Rail(): ReactElement {
-  const { user } = useAuth();
+  const { user } = useSession();
   const groups = visibleNavGroups(user?.role);
   const footerGroups = visibleNavGroups(user?.role, footerNavGroups);
 

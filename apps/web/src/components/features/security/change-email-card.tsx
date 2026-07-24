@@ -8,13 +8,13 @@ import { useApiMutation } from "@/api/hooks";
 import type { ChangeEmailResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 
 const DEFAULT_VALUES: ChangeEmailInput = { newEmail: "", currentPassword: "" };
 
 /** Two-step change: a confirmation link goes to the new address; nothing switches until clicked. */
 export function ChangeEmailCard(): ReactElement {
-  const { user } = useAuth();
+  const { user } = useSession();
 
   const changeEmail = useApiMutation<ChangeEmailResponse, ChangeEmailInput>(
     (body) => api.auth.email.change.post(body),

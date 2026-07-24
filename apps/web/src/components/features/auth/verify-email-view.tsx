@@ -6,7 +6,7 @@ import { Alert, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ResendVerificationResponse, VerifyEmailResponse } from "@/api/types";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthActions, useSession } from "@/hooks/use-auth";
 import { MagicLinkView } from "./magic-link-view";
 
 interface VerifyEmailViewProps {
@@ -45,7 +45,8 @@ function VerifyTokenView(props: { token: string }): ReactElement {
 }
 
 function VerifyGateView(): ReactElement {
-  const { user, logout } = useAuth();
+  const { user } = useSession();
+  const { logout } = useAuthActions();
   const resendVerification = useApiMutation<ResendVerificationResponse, void>(() =>
     api.auth.email.resend.post(),
   );

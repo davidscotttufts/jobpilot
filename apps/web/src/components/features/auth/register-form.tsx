@@ -4,13 +4,13 @@ import type { ReactElement } from "react";
 import { type RegisterInput, RegisterSchema } from "@jobpilot/contracts/auth";
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuthActions } from "@/hooks/use-auth";
 import { OAuthButtons } from "./oauth-buttons";
 
 const DEFAULT_VALUES: RegisterInput = { email: "", password: "" };
 
 export function RegisterForm(): ReactElement {
-  const { register } = useAuth();
+  const { register } = useAuthActions();
 
   const form = useAppForm({
     defaultValues: DEFAULT_VALUES,

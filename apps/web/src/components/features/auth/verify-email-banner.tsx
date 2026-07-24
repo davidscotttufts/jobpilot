@@ -5,14 +5,14 @@ import { Alert, Button } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ResendVerificationResponse } from "@/api/types";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 
 /**
  * Non-blocking nudge for signed-in, unverified users. Applying and networking are
  * gated server-side until the address is verified; everything else works.
  */
 export function VerifyEmailBanner(): ReactElement | null {
-  const { user } = useAuth();
+  const { user } = useSession();
   const [dismissed, setDismissed] = useState(false);
   const resend = useApiMutation<ResendVerificationResponse, void>(
     () => api.auth.email.resend.post(),

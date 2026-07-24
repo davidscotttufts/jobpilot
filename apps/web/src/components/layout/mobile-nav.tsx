@@ -18,7 +18,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useOpenQuestions } from "@/components/features/pilot/attention/use-open-questions";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 import {
   feedbackLinks,
   footerNavGroups,
@@ -39,7 +39,7 @@ const LABEL_SIZE = "0.6875rem";
 export function MobileNav(): ReactElement {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const { user } = useAuth();
+  const { user } = useSession();
 
   // Close the sheet after the route commit, not during the click: closing and navigating in the
   // same event lets the route transition interrupt the Modal's exit, stranding the invisible

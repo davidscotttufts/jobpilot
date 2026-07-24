@@ -9,13 +9,13 @@ import { queryKeys } from "@/api/query-keys";
 import type { ChangePasswordResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 
 const DEFAULT_VALUES: ChangePasswordInput = { currentPassword: "", newPassword: "" };
 
 /** Change, or first-set for OAuth-only accounts. */
 export function ChangePasswordCard(): ReactElement {
-  const { user } = useAuth();
+  const { user } = useSession();
   const hasPassword = user?.hasPassword ?? true;
 
   const changePassword = useApiMutation<ChangePasswordResponse, ChangePasswordInput>(

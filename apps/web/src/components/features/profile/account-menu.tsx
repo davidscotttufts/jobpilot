@@ -17,7 +17,7 @@ import type { Route } from "next";
 import NextLink from "next/link";
 import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 
 function initials(u: AuthUserDto): string {
   const both = `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.trim();
@@ -40,7 +40,7 @@ export function AccountMenu(): ReactNode {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const open = Boolean(anchor);
 
-  const { user } = useAuth();
+  const { user } = useSession();
 
   if (!user) {
     return null;

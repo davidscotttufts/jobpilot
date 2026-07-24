@@ -8,7 +8,7 @@ import { useApiQuery } from "@/api/hooks";
 import { credentialQueries, emailQueries, userQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/hooks/use-auth";
 
 interface ChecklistItem {
   key: string;
@@ -23,7 +23,7 @@ interface ChecklistItem {
  * the pipeline until every item is done, then disappears.
  */
 export function ProfileChecklistCard(): ReactElement | null {
-  const { user } = useAuth();
+  const { user } = useSession();
   const profileQuery = useApiQuery(userQueries.detail());
   const emailQuery = useApiQuery(emailQueries.account());
   const credentialsQuery = useApiQuery(credentialQueries.list());
