@@ -2,6 +2,7 @@ import type { AgendaResponse } from "@jobpilot/contracts/pilot";
 import type { PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { PilotJournalService } from "../journal.service";
 import { AgendaService } from "./service";
 import { describe, expect, it } from "bun:test";
@@ -35,6 +36,7 @@ function service(row: Record<string, unknown> | null) {
       {} as CampaignJobService,
       {} as PilotJournalService,
       {} as PushService,
+      {} as EmailSyncService,
     ),
     reads: () => reads,
   };

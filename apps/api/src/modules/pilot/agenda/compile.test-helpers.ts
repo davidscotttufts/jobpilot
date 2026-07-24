@@ -7,8 +7,8 @@ import { AgendaService } from "./service";
 
 /** Builds the service plus the recorder for asserting on writes. */
 export const serviceWithRec = (over: Over = {}) => {
-  const { prisma, campaignJobs, pilot, push, rec } = makeAgendaDeps(over);
-  return { svc: new AgendaService(prisma, campaignJobs, pilot, push), rec };
+  const { prisma, campaignJobs, pilot, push, emailSync, rec } = makeAgendaDeps(over);
+  return { svc: new AgendaService(prisma, campaignJobs, pilot, push, emailSync), rec };
 };
 
 export const service = (over: Over = {}) => serviceWithRec(over).svc;

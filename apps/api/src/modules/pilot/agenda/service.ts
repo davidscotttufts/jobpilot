@@ -5,6 +5,7 @@ import { reviveJsonDates, toInputJson } from "@/common/json";
 import { PushService } from "@/common/push";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
@@ -16,6 +17,7 @@ import { gatherQuietCandidates } from "./candidates-maintenance";
 import { gatherPausedCampaigns } from "./candidates-paused";
 import { gatherAnsweredQuestions } from "./candidates-questions";
 import { gatherQueueDrain } from "./candidates-queue";
+import { INBOX_SYNC_STALE_MS } from "./constants";
 import { writeDigestIfDue } from "./digest";
 import { runExpiry } from "./expiry";
 import { finalizeIdleCampaigns } from "./finalize";
@@ -49,6 +51,7 @@ export class AgendaService {
     private readonly campaignJobs: CampaignJobService,
     private readonly pilot: PilotJournalService,
     private readonly push: PushService,
+    private readonly emailSync: EmailSyncService,
   ) {}
 
   private get jobDeps() {
@@ -73,6 +76,9 @@ export class AgendaService {
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
+
+    // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.
+    await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
 
     await runExpiry(this.prisma, userId, now);
     await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);

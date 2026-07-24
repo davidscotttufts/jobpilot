@@ -35,6 +35,13 @@ export const MAX_RESCAN_SKIPPED = 1;
 export const MAX_RETRY_FAILED = 1;
 export const MAX_PROMO_COMPOSE = 1;
 export const INBOX_BATCH = 10;
+
+/**
+ * Gmail-pull throttle for refresh. Matches the default check interval: idle cycles always sync,
+ * busy cycles (15s sleeps) don't pull every refresh.
+ */
+export const INBOX_SYNC_STALE_MS = 30 * 60 * 1000;
+
 export const QUEUE_BATCH = 5;
 export const REASON_CAP = 3;
 /** A board is unhealthy once its most recent apply outcomes are this many failures deep. */

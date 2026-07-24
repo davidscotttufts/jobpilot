@@ -2,6 +2,7 @@ import { inboxChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { CryptoService } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
+import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { loadFreshAccount } from "../account/account.utils";
@@ -20,6 +21,35 @@ export class EmailSyncService {
     private readonly prisma: PrismaClient,
     private readonly crypto: CryptoService,
   ) {}
+
+  /**
+   * Best-effort pull for the pilot's agenda compile: skips when no account is connected or the
+   * last sync is fresher than `staleMs`, and swallows failures - a broken mailbox must never
+   * block the agenda.
+   */
+  async syncIfStale(userId: string, staleMs: number, now: Date): Promise<void> {
+    const account = await this.prisma.emailAccount.findUnique({
+      where: { userId },
+      select: { lastSyncAt: true },
+    });
+
+    if (!account) {
+      return;
+    }
+
+    const syncedRecently =
+      account.lastSyncAt !== null && now.getTime() - account.lastSyncAt.getTime() < staleMs;
+
+    if (syncedRecently) {
+      return;
+    }
+
+    try {
+      await this.syncInbox(userId);
+    } catch (err) {
+      logger.error({ err, userId }, "Pilot inbox sync failed");
+    }
+  }
 
   async syncInbox(userId: string) {
     let loaded: Awaited<ReturnType<typeof loadFreshAccount>>;

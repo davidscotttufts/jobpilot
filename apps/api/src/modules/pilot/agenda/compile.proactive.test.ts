@@ -1,7 +1,8 @@
 // Proactive/maintenance gathers through AgendaService.refresh (fake Prisma, no DB): promotion
 // cadence, queue drain, board health, quiet-agenda candidates, and strategy bootstrap.
 
-import { service } from "./compile.test-helpers";
+import { service, serviceWithRec } from "./compile.test-helpers";
+import { INBOX_SYNC_STALE_MS } from "./constants";
 import { approvedJob, pilotSearchRow } from "./db.test-helpers";
 import { describe, expect, it } from "bun:test";
 
@@ -183,5 +184,13 @@ describe("AgendaService strategy.bootstrap", () => {
       approvedJobs: [approvedJob()],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "strategy.bootstrap")).toBe(false);
+  });
+});
+
+describe("AgendaService inbox sync", () => {
+  it("triggers one throttled mail pull per refresh so inbox.review sees new mail", async () => {
+    const { svc, rec } = serviceWithRec();
+    await svc.refresh("p1");
+    expect(rec.inboxSyncs).toEqual([{ userId: "p1", staleMs: INBOX_SYNC_STALE_MS }]);
   });
 });

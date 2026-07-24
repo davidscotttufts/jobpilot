@@ -4,6 +4,7 @@
 import type { PushPayload, PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import type { EmailSyncService } from "@/modules/email/sync/sync.service";
 import type { PilotJournalService } from "../journal.service";
 
 export interface Recorder {
@@ -19,6 +20,7 @@ export interface Recorder {
   questionUpdates: { data: Record<string, unknown> }[];
   journals: Record<string, unknown>[];
   pushes: { userId: string; payload: PushPayload }[];
+  inboxSyncs: { userId: string; staleMs: number }[];
 }
 
 export interface Over {
@@ -313,6 +315,7 @@ export function makeAgendaDb(over: Over = {}) {
     questionUpdates: [],
     journals: [],
     pushes: [],
+    inboxSyncs: [],
   };
 
   let txChain: Promise<unknown> = Promise.resolve();
@@ -388,6 +391,15 @@ export function makePilot(rec: Pick<Recorder, "journals">): PilotJournalService 
   } as unknown as PilotJournalService;
 }
 
+/** Fake EmailSyncService recording syncIfStale calls; the agenda never awaits a real Gmail pull. */
+export function makeEmailSync(rec: Pick<Recorder, "inboxSyncs">): EmailSyncService {
+  return {
+    syncIfStale: async (userId: string, staleMs: number) => {
+      rec.inboxSyncs.push({ userId, staleMs });
+    },
+  } as unknown as EmailSyncService;
+}
+
 /** Fake PushService recording sendToUser calls without any web-push/env dependency. */
 export function makePush(rec: Pick<Recorder, "pushes">): PushService {
   return {
@@ -405,6 +417,7 @@ export function makeAgendaDeps(over: Over = {}) {
     campaignJobs: makeCampaignJobs(rec, over),
     pilot: makePilot(rec),
     push: makePush(rec),
+    emailSync: makeEmailSync(rec),
     rec,
   };
 }
