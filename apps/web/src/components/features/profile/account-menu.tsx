@@ -1,16 +1,20 @@
 "use client";
 
 import { type MouseEvent, type ReactNode, useState } from "react";
+import { Security } from "@mui/icons-material";
 import {
   Avatar,
   Box,
   Divider,
   IconButton,
+  ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
   Tooltip,
 } from "@mui/material";
+import type { Route } from "next";
+import NextLink from "next/link";
 import type { AuthUserDto } from "@/api/types";
 import { LogoutMenuItem } from "@/components/features/auth";
 import { useAuth } from "@/hooks/use-auth";
@@ -98,6 +102,12 @@ export function AccountMenu(): ReactNode {
           />
         </MenuItem>
         <Divider />
+        <MenuItem component={NextLink} href={"/account/security" as Route} onClick={handleClose}>
+          <ListItemIcon sx={{ minWidth: 32 }}>
+            <Security fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary="Account security" />
+        </MenuItem>
         <LogoutMenuItem onClick={handleClose} />
       </Menu>
     </Box>

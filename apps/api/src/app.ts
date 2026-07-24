@@ -8,7 +8,7 @@ import { env } from "@/env";
 import { adminController } from "@/modules/admin";
 import { analyticsController } from "@/modules/analytics";
 import { applicationController } from "@/modules/application";
-import { authController } from "@/modules/auth";
+import { authController, authOAuthController, securityController } from "@/modules/auth";
 import {
   campaignController,
   campaignJobController,
@@ -67,6 +67,8 @@ const app = new Elysia()
   .group("/api", (api) =>
     api
       .use(authController)
+      .use(securityController)
+      .use(authOAuthController)
       .use(healthController)
       .use(jobBoardController)
       .use(credentialController)

@@ -1,13 +1,13 @@
 "use client";
 
-import { type ReactElement, useEffect, useRef } from "react";
+import type { ReactElement } from "react";
 import type { VerifyEmailInput } from "@jobpilot/contracts/auth";
-import { Alert, Box, Button, CircularProgress, Link, Stack, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { Alert, Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { ResendVerificationResponse, VerifyEmailResponse } from "@/api/types";
 import { useAuth } from "@/hooks/use-auth";
+import { MagicLinkView } from "./magic-link-view";
 
 interface VerifyEmailViewProps {
   /** Present when the user arrived from a verification magic link. */
@@ -27,59 +27,20 @@ export function VerifyEmailView(props: VerifyEmailViewProps): ReactElement {
 
 function VerifyTokenView(props: { token: string }): ReactElement {
   const { token } = props;
-  const router = useRouter();
   const verifyEmail = useApiMutation<VerifyEmailResponse, VerifyEmailInput>((body) =>
     api.auth.email.verify.post(body),
   );
-  const fired = useRef(false);
-
-  useEffect(() => {
-    // Fire once - the token is single-use, so a strict-mode double-invoke would
-    // make the second call fail against an already-consumed token.
-    if (fired.current) {
-      return;
-    }
-    fired.current = true;
-    verifyEmail.mutate({ token });
-  }, [token, verifyEmail]);
-
-  if (verifyEmail.isError) {
-    return (
-      <Stack spacing={2.5}>
-        <Alert severity="error">{verifyEmail.error!.message}</Alert>
-        <Typography variant="body2Muted">
-          This link may have expired or already been used.
-        </Typography>
-        <Typography variant="body2Muted" sx={{ textAlign: "center" }}>
-          <Link href="/login" color="primary">
-            Back to sign in
-          </Link>
-        </Typography>
-      </Stack>
-    );
-  }
-
-  if (verifyEmail.isSuccess) {
-    return (
-      <Stack spacing={2.5}>
-        <Alert severity="success">Your email is verified.</Alert>
-        <Button
-          onClick={() => router.push("/workspace")}
-          variant="contained"
-          size="large"
-          fullWidth
-        >
-          Continue
-        </Button>
-      </Stack>
-    );
-  }
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 3, gap: 2 }}>
-      <CircularProgress size={20} />
-      <Typography variant="body2Muted">Verifying your email…</Typography>
-    </Box>
+    <MagicLinkView
+      token={token}
+      mutation={verifyEmail}
+      pendingText="Verifying your email…"
+      successText="Your email is verified."
+      successLabel="Continue"
+      successHref="/workspace"
+      errorHint="This link may have expired or already been used."
+    />
   );
 }
 

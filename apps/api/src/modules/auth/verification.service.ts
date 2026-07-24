@@ -1,8 +1,10 @@
 import { createElement } from "react";
 import { inject, singleton } from "tsyringe";
 import { generateOpaqueToken, hashPassword, hashToken } from "@/common/auth";
-import { badRequest, notFound } from "@/common/errors";
+import { badRequest, conflict, notFound } from "@/common/errors";
 import {
+  EmailChangeEmail,
+  emailChangeEmailSubject,
   MAILER,
   type Mailer,
   PasswordResetEmail,
@@ -10,16 +12,19 @@ import {
   VerificationEmail,
   verificationEmailSubject,
 } from "@/common/mail";
+import { normalizeEmail } from "@/common/utils/email";
 import { env } from "@/env";
 import { PrismaClient, VerificationTokenType } from "@/generated/prisma/client";
+import { revokeRefreshTokens } from "./revoke-refresh-tokens";
 
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
+const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 /**
- * Magic-link flows built on single-use `VerificationToken`s: email confirmation
- * and password reset. Only token hashes are stored; the raw token travels in the
- * emailed link.
+ * Magic-link flows built on single-use `VerificationToken`s: email confirmation,
+ * password reset, and email change. Only token hashes are stored; the raw token
+ * travels in the emailed link.
  */
 @singleton()
 export class VerificationService {
@@ -28,17 +33,24 @@ export class VerificationService {
     @inject(MAILER) private readonly mailer: Mailer,
   ) {}
 
-  /** Issue a single-use, expiring token of the given type; only its hash is stored. */
+  /** Issue a single-use, expiring token; only its hash is stored. */
   private async issueToken(
     userId: string,
     type: VerificationTokenType,
     ttlMs: number,
+    newEmail?: string,
   ): Promise<string> {
     const raw = generateOpaqueToken();
     // Supersede any prior unconsumed token of the same type so only the latest link works.
     await this.prisma.verificationToken.deleteMany({ where: { userId, type, consumedAt: null } });
     await this.prisma.verificationToken.create({
-      data: { userId, type, tokenHash: hashToken(raw), expiresAt: new Date(Date.now() + ttlMs) },
+      data: {
+        userId,
+        type,
+        tokenHash: hashToken(raw),
+        newEmail,
+        expiresAt: new Date(Date.now() + ttlMs),
+      },
     });
     return raw;
   }
@@ -99,7 +111,7 @@ export class VerificationService {
 
   /** Send a password-reset link. Always succeeds - never reveals whether the email exists. */
   async requestPasswordReset(email: string): Promise<{ ok: true }> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
     if (user) {
       const raw = await this.issueToken(
         user.id,
@@ -127,10 +139,55 @@ export class VerificationService {
         data: { consumedAt: new Date() },
       }),
       // Force re-login everywhere - a reset implies the old sessions may be compromised.
-      this.prisma.refreshToken.updateMany({
-        where: { userId: record.userId, revokedAt: null },
-        data: { revokedAt: new Date() },
+      revokeRefreshTokens(this.prisma, record.userId),
+    ]);
+    return { ok: true };
+  }
+
+  /** Mail an email-change confirmation link to the NEW address. */
+  async sendEmailChangeEmail(userId: string, newEmail: string): Promise<void> {
+    const raw = await this.issueToken(
+      userId,
+      VerificationTokenType.EMAIL_CHANGE,
+      EMAIL_CHANGE_TTL_MS,
+      newEmail,
+    );
+    const link = `${env.APP_URL}/confirm-email-change?token=${raw}`;
+    await this.mailer.send({
+      to: newEmail,
+      subject: emailChangeEmailSubject,
+      react: createElement(EmailChangeEmail, { link }),
+    });
+  }
+
+  /** The link from the new mailbox switches the login email and forces re-login. */
+  async confirmEmailChange(rawToken: string): Promise<{ ok: true }> {
+    const record = await this.findValidToken(rawToken, VerificationTokenType.EMAIL_CHANGE);
+    if (!record.newEmail) {
+      throw badRequest("Invalid or expired token");
+    }
+    // The address may have been registered since the request.
+    const taken = await this.prisma.user.findUnique({
+      where: { email: record.newEmail },
+      select: { id: true },
+    });
+
+    if (taken) {
+      throw conflict("Email already in use");
+    }
+
+    await this.prisma.$transaction([
+      // Clicking the link proves control of the new mailbox, so it arrives verified.
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { email: record.newEmail, emailVerified: true },
       }),
+      this.prisma.verificationToken.update({
+        where: { id: record.id },
+        data: { consumedAt: new Date() },
+      }),
+      // The login identifier changed - force re-login everywhere.
+      revokeRefreshTokens(this.prisma, record.userId),
     ]);
     return { ok: true };
   }
