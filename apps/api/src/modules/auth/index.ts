@@ -1,3 +1,3 @@
 export { authController } from "./auth.controller";
-export { authOAuthController } from "./oauth.controller";
+export { authProvidersController } from "./providers.controller";
 export { securityController } from "./security.controller";

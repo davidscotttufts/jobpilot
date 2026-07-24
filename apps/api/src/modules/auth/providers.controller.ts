@@ -11,17 +11,17 @@ import { OAuthService } from "./oauth.service";
 
 const oauthService = container.resolve(OAuthService);
 
-const OAUTH_COOKIE_PATH = "/api/auth/oauth";
+const OAUTH_COOKIE_PATH = "/api/auth/providers";
 const STATE_COOKIES = { state: "auth_oauth_state", companion: "auth_oauth_intent" };
 const limitOAuth = rateLimit(RATE_LIMITS.oauthStart);
 
 /** Google/GitHub sign-in, sign-up, and account linking with the shared app clients. */
-export const authOAuthController = new Elysia({
-  prefix: "/auth/oauth",
+export const authProvidersController = new Elysia({
+  prefix: "/auth/providers",
   detail: { tags: ["Auth"] },
 })
   .get(
-    "/:provider/start",
+    "/:provider/authorize",
     async ({ params, query, headers, cookie, redirect }) => {
       const principal = await resolveAuthUser({ headers, cookie });
 

@@ -33,7 +33,7 @@ export class OAuthService {
     return {
       clientId,
       clientSecret,
-      redirectUri: `${env.AUTH_OAUTH_REDIRECT_BASE}/api/auth/oauth/${provider}/callback`,
+      redirectUri: `${env.AUTH_OAUTH_REDIRECT_BASE}/api/auth/providers/${provider}/callback`,
     };
   }
 

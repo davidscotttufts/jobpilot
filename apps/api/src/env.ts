@@ -42,7 +42,7 @@ const EnvSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
-  // Public API origin for sign-in callbacks: `${base}/api/auth/oauth/{provider}/callback`.
+  // Public API origin for sign-in callbacks: `${base}/api/auth/providers/{provider}/callback`.
   AUTH_OAUTH_REDIRECT_BASE: z.string().default("http://localhost:4101"),
 
   // Transactional email (Resend). Optional: when unset, the app logs the email

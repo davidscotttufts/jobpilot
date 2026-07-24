@@ -9,7 +9,8 @@ export const OAUTH_PROVIDERS: ReadonlyArray<{ id: OAuthProviderInput; label: str
 
 /** API endpoint that starts the OAuth redirect flow (assign to window.location.href). */
 export function oauthStartUrl(provider: OAuthProviderInput, intent?: "link"): string {
-  return `${API_BASE_URL}/api/auth/oauth/${provider}/start${intent ? `?intent=${intent}` : ""}`;
+  const base = `${API_BASE_URL}/api/auth/providers/${provider}/authorize`;
+  return intent ? `${base}?intent=${intent}` : base;
 }
 
 /** Copy for every contract slug (Record over the union so a new slug fails the build);

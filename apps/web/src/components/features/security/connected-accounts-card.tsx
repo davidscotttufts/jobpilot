@@ -29,7 +29,7 @@ export function ConnectedAccountsCard(props: ConnectedAccountsCardProps): ReactE
   const lastMethod = !hasPassword && linked.length === 1;
 
   const unlink = useApiMutation<UnlinkOAuthResponse, OAuthProviderInput>(
-    (p) => api.auth.oauth({ provider: p }).delete(),
+    (p) => api.auth.providers({ provider: p }).delete(),
     { successMessage: "Account unlinked", invalidate: [queryKeys.auth.me()] },
   );
 

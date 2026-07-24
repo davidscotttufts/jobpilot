@@ -5,7 +5,7 @@ import { describe, expect, it } from "bun:test";
 const config: OAuthProviderConfig = {
   clientId: "client-id",
   clientSecret: "client-secret",
-  redirectUri: "http://localhost:4101/api/auth/oauth/github/callback",
+  redirectUri: "http://localhost:4101/api/auth/providers/github/callback",
 };
 
 function email(overrides: Partial<GithubEmail>): GithubEmail {
