@@ -15,8 +15,8 @@ public class InstallPathsTests
         var paths = InstallPaths.ResolveFrom([temp.Root]);
 
         Assert.Equal(temp.Root, paths.WorkingDir);
-        Assert.Equal(Path.Combine(temp.Root, "plugin", "skills"), paths.SharedSkillsDir);
-        Assert.Equal(Path.Combine(temp.Root, "plugin"), paths.ClaudePluginDir);
+        Assert.Equal(Path.Combine(temp.Root, "plugin"), paths.PluginDir);
+        Assert.Equal(Path.Combine(temp.Root, "plugin", "skills"), paths.SkillsDir);
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class InstallPathsTests
     }
 
     [Theory]
-    [InlineData("shared/setup.md")]
+    [InlineData("skills/_shared/setup.md")]
     [InlineData("skills/auto-apply/SKILL.md")]
     [InlineData(".claude-plugin/plugin.json")]
     [InlineData(".codex-plugin/plugin.json")]
