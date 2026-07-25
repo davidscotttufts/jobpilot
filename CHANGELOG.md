@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.22] - 2026-07-25
+
+### Added
+
+- Sign in and sign up with Google or GitHub, and link either provider to an
+  existing account. Linking only proceeds on a provider-verified email.
+- Account security page: set or change your password, change your login email
+  through a confirmation link sent to the new mailbox, and see, link, or unlink
+  connected accounts. Changing a password signs out your other sessions.
+
+### Fixed
+
+- Connecting a mailbox without granting Gmail read access is now rejected at the
+  point you can act on it, instead of failing later as a repeating sync error.
+- The pilot pulls new mail before gathering its inbox agenda, so it sees mail
+  that arrived without a manual sync.
+- The login and register pages no longer fire a session lookup that could only
+  fail.
+
+### Changed
+
+- Login emails are stored lowercase, so a difference in casing can no longer
+  split one mailbox across two accounts. Existing emails were migrated.
+- Sign-in OAuth routes moved from `/api/auth/oauth/*` to `/api/auth/providers/*`.
+  Mailbox authorization keeps `/api/email/oauth/*`.
+- Plugin shared reference docs moved into `skills/_shared/`, so agents resolve
+  them without walking out of the skills tree.
+
 ## [2.1.21] - 2026-07-23
 
 ### Fixed
