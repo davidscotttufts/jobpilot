@@ -14,6 +14,10 @@ generation step - edit here directly.
 - `.claude-plugin/plugin.json` & `.codex-plugin/plugin.json` - provider manifests (both name it
   `jobpilot`); `.mcp.json` - Playwright MCP wiring shared by both.
 - `skills/<name>/SKILL.md` - one hand-authored skill per directory.
+- Resume skills split by who writes what: `extract-resume` parses the PDF faithfully and chains
+  `review-resume` on a first extraction; `review-resume` saves one `Suggested rewrite` variant to
+  accept or discard, never touching a base; `tailor-resume` owns per-job variants and
+  `--aggressive`, guarded in `apps/api/src/modules/resume/structure.ts`.
 - `skills/_shared/*.md` - reference docs: `auth`, `browser-tips`, `campaign-flow`,
   `digest-schema`, `eligibility`, `form-filling`, `setup`, `untrusted-content`. The directory has
   no `SKILL.md`, so neither provider lists it as a skill - both discover skills by finding
@@ -27,6 +31,13 @@ generation step - edit here directly.
 
 ## Writing skills
 
+- `skills/humanizer/` is vendored from [blader/humanizer](https://github.com/blader/humanizer) (MIT,
+  its own `LICENSE`). To sync: `curl -fsSL https://raw.githubusercontent.com/blader/humanizer/main/SKILL.md`,
+  diff against the pinned `metadata.version`, then re-apply the JobPilot additions - `allowed-tools`,
+  the job-application paragraph and voice subsections under `PERSONALITY AND SOUL`, the PTY note in
+  the em-dash pattern, patterns 34-36, and the worked example. Upstream renumbers freely, so cite
+  patterns by title, never by number. Writing skills invoke it in **embedded mode** (final text
+  only) - the default emits draft + audit + final, which is noise inside an apply flow.
 - Provider-neutral: reference sibling skills by name ("invoke the `tailor-resume` skill"), never
   provider-specific command tokens; shared docs by relative path (`../_shared/<doc>.md`).
   Claude-only frontmatter (`allowed-tools`) is fine - Codex ignores unknown keys.

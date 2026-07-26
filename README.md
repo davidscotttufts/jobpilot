@@ -142,7 +142,7 @@ In Codex, use `/skills` to browse installed skills. To run one directly, use the
 | `setup`           | Install, start, or update the local agent terminal.                             |
 
 A few more run on their own when needed - `pilot` (one autonomous cycle),
-`tailor-resume`, `extract-resume`, `solve-captcha`, `rescan-skipped`, and
+`tailor-resume`, `extract-resume`, `review-resume`, `solve-captcha`, `rescan-skipped`, and
 `humanizer` - see the [full catalog](https://jobpilot.suxrobgm.net/docs/campaigns-and-skills).
 
 Inbox scanning, verification codes, and networking emails require your own Google
@@ -161,6 +161,7 @@ it.
 
 ## License
 
-MIT. The shared humanizer skill is based on the bundled upstream humanizer
-package under [plugin/skills/humanizer/](plugin/skills/humanizer/), which ships
-with its own LICENSE file.
+MIT. The shared humanizer skill is vendored from
+[blader/humanizer](https://github.com/blader/humanizer) (MIT) under
+[plugin/skills/humanizer/](plugin/skills/humanizer/), which ships with its own
+LICENSE file.

@@ -32,7 +32,7 @@ Multi-modal, never LinkedIn's own search. Sweep and cross-reference; pick the be
 
 ## Step 2: Compose
 
-Invoke `tailor-resume` for the role to surface 1-2 proof points (shapes the body even if no resume is attached), then `humanizer` for tone. Plain ASCII only (the terminal mangles non-ASCII). Short, direct, one real detail, no template tells. Per channel:
+Invoke `tailor-resume` for the role to surface 1-2 proof points (shapes the body even if no resume is attached), then `humanizer` in embedded mode for tone. Plain ASCII only (the terminal mangles non-ASCII). Short, direct, one real detail, no template tells. Per channel:
 
 - Email: short subject + body, one proof point, soft ask; append `resumeUrl` (skip a `localhost` URL).
 - LinkedIn connect note (free, not yet connected): <= 300 chars, no link.

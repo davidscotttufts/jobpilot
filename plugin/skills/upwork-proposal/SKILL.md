@@ -52,7 +52,7 @@ If the posting has screening questions, answer each one short, direct, and speci
 
 ## Step 6: Apply Humanizer
 
-Invoke the `humanizer` skill on the full text.
+Invoke the `humanizer` skill on the full text in **embedded mode** (final rewrite only).
 
 ## Step 7: Persist to JobPilot
 

@@ -16,11 +16,25 @@ Follow `../_shared/setup.md` to load profile and resume. Then `Read` the resume 
 
 From the argument, identify: company + what they do, role title and level, key responsibilities, required/preferred qualifications, tech stack and domain, culture cues.
 
-## Step 2: Select Relevant Experience
+## Step 2: Read Your Last 5 Letters
+
+Do not skip. Letters that are individually fine and collectively identical are what reads as AI - not word choice.
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/cover-letters?page=1&pageSize=5" | jq -r '.items[].id'
+```
+
+The list is metadata only, so `GET /api/cover-letters/<id>` each for the body. No history (first letter, or the call fails) → Step 3.
+
+Note three things: which experience each one **led** with, every metric phrasing, and each closing sentence. They become the constraints in Step 3.
+
+## Step 3: Select Relevant Experience
 
 From the resume, pick the most relevant: 2–3 work experiences, 2–3 projects, research (if AI/ML/CV), education (if relevant to level).
 
-## Step 3: Write
+**Apply rules 14-16 here**, against Step 2's letters. Rotating the lead is a selection decision - make it before drafting, not by patching a draft that already opened with the usual paragraph.
+
+## Step 4: Write
 
 **Header** - values strictly from `user.*`, never from the resume file (resumes carry stale addresses). Omit any line whose fields are empty:
 
@@ -53,11 +67,13 @@ Best regards,
 [Full Name]
 ```
 
-## Step 4: Apply Humanizer
+## Step 5: Apply Humanizer
 
-Invoke the `humanizer` skill on the full text. The final output must read as written by a real person.
+Invoke the `humanizer` skill on the full text in **embedded mode** - final rewrite only, no draft or audit bullets.
 
-## Step 5: Save to History
+Then re-check against Step 2's letters: no shared sentence, different lead, different closing. The humanizer sees one document at a time, so this check is yours.
+
+## Step 6: Save to History
 
 Persist the final letter so it's reviewable in the web app. Best-effort - if the call fails, continue:
 
@@ -84,6 +100,12 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 11. **Match tone.** Startup → conversational; enterprise/gov → formal.
 12. **No fabrication.** Only reference projects/skills from the resume.
 13. **First person** as the candidate.
+
+### Anti-repetition (against Step 2's letters)
+
+14. **Rotate the lead.** Don't open with the experience either of the last two letters opened with, unless the JD makes it the only honest choice (a healthcare role genuinely wants the healthcare project). A recruiter comparing two of your letters is comparing openings.
+15. **No sentence reused verbatim**, metric phrasings included. A reused number is fine; a reused *sentence about* it is the tell. Rephrase the result or lead with a different one.
+16. **Vary the closing and the shape.** No repeated closing, and never "how this maps to/onto <Company>". Move the company mention too - same skeleton with different nouns is still a template.
 
 ## Output
 
