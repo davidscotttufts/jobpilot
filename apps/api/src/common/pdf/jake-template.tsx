@@ -195,6 +195,8 @@ function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
   const showDescription =
     !!entry.description && normalizeText(entry.description) !== normalizeText(keywordsLine);
 
+  const dates = dateRange(entry.start, entry.end);
+
   return (
     <View style={styles.entryBlock} wrap={false}>
       <View style={styles.entryHeaderRow}>
@@ -207,6 +209,7 @@ function ProjectEntry(props: { entry: ResumeProject }): ReactElement {
             {entry.url.replace(/^https?:\/\//, "")}
           </Link>
         )}
+        {dates && <Text style={[styles.entryRight, { marginLeft: 8 }]}>{dates}</Text>}
       </View>
       {entry.keywords.length > 0 && <Text style={styles.projectKeywords}>{keywordsLine}</Text>}
       {showDescription && <Text style={styles.projectDescription}>{entry.description}</Text>}

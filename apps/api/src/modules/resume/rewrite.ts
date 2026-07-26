@@ -1,5 +1,6 @@
 import type { ResumeData } from "@jobpilot/contracts/resume";
 import { expandSynonyms, normalizePhrase } from "@/modules/scoring/keyword-normalize";
+import type { StructureAudit } from "./structure";
 
 /**
  * Controlled bullet rewording. The base resume's `experience[].bullets` are the
@@ -30,6 +31,8 @@ export interface EntryRewriteAudit {
 /** Persisted shape for `ResumeVariant.rewrites` (stringified JSON). */
 export interface VariantRewriteAudit {
   experience: EntryRewriteAudit[];
+  /** Present only for aggressive-mode variants that restructured sections. */
+  structure?: StructureAudit;
 }
 
 export interface RewriteValidation {

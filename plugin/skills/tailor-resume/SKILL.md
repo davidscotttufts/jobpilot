@@ -1,7 +1,7 @@
 ---
 name: tailor-resume
 description: Choose the best existing resume base/variant for a job, or create a new tailored variant when nothing fits.
-argument-hint: "<digest-json | job-url | pasted-jd-text> [--base <resumeId>]"
+argument-hint: "<digest-json | job-url | pasted-jd-text> [--base <resumeId>] [--aggressive]"
 ---
 
 # Tailor Resume - Reuse or Create
@@ -65,28 +65,40 @@ Refetch the base row afterward - Step 5 needs the saved `content`. If extract-re
 
 Skip this step when `hasData: true`.
 
+**Check `profileMismatches` on the base response.** Non-empty means the recruiter reads one address and the form submits another. Echo once, don't block the apply:
+
+> ⚠ resume disagrees with your profile: {field} says "{resume}", profile says "{profile}". Fix at $JOBPILOT_WEB/resumes/{baseId}
+
 ## Step 4: Decide Reuse vs Create
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
-For each variant, fetch `GET /api/resumes/variants/<id>` and compute `reuseScore` (0-100). Variants failing the role-family gate (different family AND not adjacent) score 0.
+**Shortlist first.** Rank the list response by title similarity and fetch `GET /api/resumes/variants/<id>` for the **top 5** only - a base with 60 variants would otherwise cost 60 fetches per job.
+
+Compute `reuseScore` (0-100) for the shortlist. Variants failing the role-family gate (different family AND not adjacent) score 0. Skip `Suggested rewrite` variants - they are not tailored for any job.
 
 | Component            | Max | Calculation                                                                                          |
 | -------------------- | --- | ---------------------------------------------------------------------------------------------------- |
 | Keyword coverage     | 40  | `40 × matched/10` of `JD.keywords` across skills + project keywords + summary + bullets.             |
-| Title similarity     | 15  | `15 ×` Jaccard token overlap of `JD.title` vs `variant.label`, stripping `engineer/senior/the/at/-`. |
+| Title similarity     | 20  | `20 ×` Jaccard token overlap of `JD.title` vs `variant.label`, stripping `engineer/senior/the/at/-`. |
 | Responsibility cover | 15  | `15 × matched/5` of `JD.responsibilityTerms` in summary + bullets.                                   |
 | Seniority alignment  | 15  | Exact 15; one step off (mid↔senior, senior↔staff) 8; further 0.                                      |
 | Domain match         | 5   | `JD.domain` appears in summary or any bullet.                                                        |
-| Recency              | 10  | ≤30d 10; ≤90d 7; ≤180d 4; else 0.                                                                    |
+| Recency              | 5   | ≤180d 5; else 0.                                                                                     |
 
 Pick the highest scorer:
 
-- **≥75** → reuse.
-- **60-74** → reuse, echo a one-line caveat naming the weakest component.
-- **<60** or no variant passes the gate → Step 5.
+- **≥60** → reuse.
+- **45-59** → reuse, echo a one-line caveat naming the weakest component.
+- **<45** or no variant passes the gate → Step 5.
+
+**Hard cap.** At **≥15** variants on a base, reuse the best scorer passing the role-family gate whatever it scored, and say so:
+
+> Reusing variant {id} (score {n}/100) - {baseId} is at {count} variants. Prune at $JOBPILOT_WEB/resumes/{baseId} to allow new ones.
+
+Reuse is the default; creating is the exception. A variant is a near-duplicate of its base with reordered bullets, so a fresh one gains little at unbounded cost. Recency contributes almost nothing on purpose - decaying a good variant's score is what turns every application into a new row.
 
 On reuse:
 
@@ -103,8 +115,7 @@ The server does all structural rewriting (skill ordering, bullet ranking) determ
 - **`emphasizedTech`** - 4-8 lowercase tech terms from `JD.keywords` to surface first in skill groups.
 - **`jobKeywords`** - optional, ~10 terms; defaults to `emphasizedTech`. Ranks experience/project bullets.
 - **`label`** - `"{Company} - {Title}"` (short).
-- **`jobUrl`** - when the argument was a URL or digest carried one.
-- **`applicationId`** - when the JD URL matches an existing Application (`GET /api/applied/check?url=…` → `.match.application.id`).
+- **`jobUrl`** - when the argument was a URL or the digest carried one. Always send it: the server links the variant to its Application from this url once the apply reports a result, and without it the variant can never be tied to an outcome.
 - **`diffNotes`** - 1-3 sentences on what was emphasized and why.
 
 ### Optional - reword recent bullets
@@ -133,3 +144,47 @@ Response `{ id, pdfUrl, rewordedBullets, flags }`. Echo:
 > $JOBPILOT_API{pdfUrl}
 
 If `flags` is non-empty, append: `⚠ verify - not elsewhere in your resume: {flags}`.
+
+## Step 5b: Aggressive Mode
+
+Send `mode: "aggressive"` when reordering alone can't fix the gap: the base's role family doesn't match the JD, no variant scored above 40 in Step 4, or `--aggressive` was passed. Otherwise stay conservative - a close-fitting base gains nothing and aggressive leaves more to defend in an interview.
+
+Unlocks:
+
+- **`headline`** - retargets `basics.headline`.
+- **Every entry rewordable.** `rewordTopN` is ignored; any `entryIndex` is in-window.
+- **`structure`**:
+  - **`entryOrder`** - permutation of the surviving indices.
+  - **`dropEntries`** - at most half, never all.
+  - **`mergeEntries`** - `[{ into, from[], company?, title? }]`. Concatenates bullets. Use on short or overlapping roles - overlapping dates read as an error. `company` must be a merged employer or an umbrella name (`Independent / Contract`, `Freelance`, `Self-employed`, `Independent Software Development`).
+  - **`promoteProjects`** - `{ projects[], company?, title? }`. Lifts projects onto the timeline, turning a gap between jobs into visible work. Umbrella `company` only.
+  - **`projectOrder`** - listed projects move to the front, rest keep their order.
+
+**Indices refer to the base resume**, never an intermediate state. Server order: merge, drop, promote, reorder.
+
+### What the server refuses (422)
+
+Aggressive changes presentation, not facts:
+
+- A number in `tailored` that isn't in its `original` - same guard as conservative mode.
+- A merged date range - **there is no field for one.** The server derives start/end from the merged roles, so a range collapses but never widens.
+- An employer that is neither a merged company nor an umbrella name.
+- Promoting a project with no `start`. Add dates to the base first (`PUT /api/resumes/{id}`).
+- Dropping every entry, or more than half.
+
+A `title` sharing no word with the original is allowed but **flagged** (`retitled: "X" -> "Y"`). Echo flags - they are what you'll be asked about in an interview.
+
+```bash
+curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+  -H 'content-type: application/json' \
+  -d "$(jq -n --arg label "<Company> - <Title>" \
+                --arg summary "<retargeted summary>" \
+                --arg headline "<retargeted headline>" \
+                --argjson tech '["pytorch","computer vision","python"]' \
+                --argjson structure '{"mergeEntries":[{"into":2,"from":[3],"company":"Independent / Contract"}],"promoteProjects":{"projects":[4]},"entryOrder":[0,1,2]}' \
+    '{mode:"aggressive", label:$label, summary:$summary, headline:$headline,
+      emphasizedTech:$tech, jobKeywords:$tech, structure:$structure,
+      diffNotes:"Merged two overlapping 2020-21 roles; promoted the CV research project; led with ML."}')"
+```
+
+The variant's `rewrites` audit records every structural change, so `GET /api/resumes/variants/{id}` shows exactly what moved.

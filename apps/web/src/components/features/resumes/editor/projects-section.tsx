@@ -48,7 +48,26 @@ export function ProjectsSection(props: ProjectsSectionProps): ReactElement {
                 onChange={(e) => onUpdate({ ...entry, url: e.target.value })}
               />
             </Grid>
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <TextField
+                fullWidth
+                label="Start"
+                placeholder="Jan 2024"
+                helperText="Enables promoting to experience"
+                value={entry.start ?? ""}
+                onChange={(e) => onUpdate({ ...entry, start: e.target.value })}
+              />
+            </Grid>
+            <Grid size={{ xs: 6, sm: 3 }}>
+              <TextField
+                fullWidth
+                label="End"
+                placeholder="Present"
+                value={entry.end ?? ""}
+                onChange={(e) => onUpdate({ ...entry, end: e.target.value })}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 fullWidth
                 label="Description"

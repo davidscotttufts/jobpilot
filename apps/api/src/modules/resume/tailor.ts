@@ -3,6 +3,8 @@ import { expandSynonyms, normalizePhrase } from "@/modules/scoring/keyword-norma
 
 export interface TailorOptions {
   summary?: string;
+  /** Aggressive mode only - retargets `basics.headline`. */
+  headline?: string;
   emphasizedTech?: string[];
   jobKeywords?: string[];
   maxBulletsPerEntry?: number;
@@ -110,6 +112,9 @@ export function tailorBase(base: ResumeData, opts: TailorOptions): ResumeData {
 
   return {
     ...base,
+    basics: opts.headline?.trim()
+      ? { ...base.basics, headline: opts.headline.trim() }
+      : base.basics,
     summary: opts.summary?.trim() ? opts.summary.trim() : base.summary,
     skills,
     experience,
