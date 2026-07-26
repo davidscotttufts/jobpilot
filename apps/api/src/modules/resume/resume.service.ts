@@ -12,6 +12,7 @@ import {
 } from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "./backfill-ids";
+import { findProfileMismatches } from "./consistency";
 import { findResume, MAX_RESUME_BYTES } from "./resume.utils";
 
 @singleton()
@@ -95,11 +96,22 @@ export class ResumeService {
   }
 
   async get(userId: string, id: string) {
-    const profile = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { primaryResumeId: true },
-    });
-    const resume = await findResume(this.prisma, userId, id);
+    const [profile, resume] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          primaryResumeId: true,
+          city: true,
+          state: true,
+          contactEmail: true,
+          phone: true,
+          linkedin: true,
+          github: true,
+          website: true,
+        },
+      }),
+      findResume(this.prisma, userId, id),
+    ]);
 
     let content: ResumeData | null = null;
 
@@ -125,6 +137,8 @@ export class ResumeService {
       sourceMimeType: resume.sourceMimeType,
       sourceSizeBytes: resume.sourceSizeBytes,
       isPrimary: profile?.primaryResumeId === resume.id,
+      // Served here rather than behind its own route: every reader of the contact block needs it.
+      profileMismatches: profile ? findProfileMismatches(content?.basics, profile) : [],
       createdAt: resume.createdAt,
       updatedAt: resume.updatedAt,
     };
