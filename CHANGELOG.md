@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.24] - 2026-07-26
+
+### Changed
+
+- Resume tailoring is always aggressive now - there is no conservative mode to
+  choose. Every request opens all entries to rewording and accepts structure and
+  headline changes, so results no longer depend on which mode was picked.
+
+### Fixed
+
+- The resume mismatch card linked to `/profile`, which 404s. It now opens
+  `/settings/profile`.
+
 ## [2.1.23] - 2026-07-26
 
 ### Added
