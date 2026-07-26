@@ -97,6 +97,14 @@ export async function writeJobResult(
             },
           })
         : null;
+    // tailor-resume runs before this row exists, so the variant cannot carry an applicationId at
+    // creation - link it here by the url it recorded.
+    if (application) {
+      await tx.resumeVariant.updateMany({
+        where: { jobUrl: job.url, applicationId: null, resume: { userId } },
+        data: { applicationId: application.id },
+      });
+    }
     const queueStatus = data.outcome === "skipped" ? "skipped" : "consumed";
     await tx.queueEntry.updateMany({
       where: { userId, url: job.url, status: "pending" },

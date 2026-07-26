@@ -32,6 +32,7 @@ function setup() {
   let application: Record<string, unknown> | null = null;
   let applicationUpserts = 0;
   const queueWrites: Record<string, unknown>[] = [];
+  const variantLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const campaign = { source: "auto_apply" as const };
   const db = {
     job: {
@@ -64,6 +65,15 @@ function setup() {
         return application;
       },
     },
+    resumeVariant: {
+      updateMany: async (args: {
+        where: Record<string, unknown>;
+        data: Record<string, unknown>;
+      }) => {
+        variantLinks.push(args);
+        return { count: 1 };
+      },
+    },
     queueEntry: {
       updateMany: async ({ data }: { data: Record<string, unknown> }) => {
         queueWrites.push(data);
@@ -82,6 +92,7 @@ function setup() {
       return applicationUpserts;
     },
     queueWrites,
+    variantLinks,
   };
 }
 
@@ -98,6 +109,33 @@ describe("CampaignJobService terminal results", () => {
     });
     expect(state.queueWrites[0]).toMatchObject({ status: "consumed" });
     expect(result.summary).toMatchObject({ kind: "jobs", applied: 1 });
+  });
+
+  it("links the job's tailored resume variants to the new application", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+    });
+    // The only thing tying a variant to an outcome. Scoped by owner+url, fills an unset link only.
+    expect(state.variantLinks).toHaveLength(1);
+    expect(state.variantLinks[0]).toMatchObject({
+      where: {
+        jobUrl: "https://example.test/jobs/1",
+        applicationId: null,
+        resume: { userId: "u1" },
+      },
+      data: { applicationId: "app1" },
+    });
+  });
+
+  it("does not link variants when the job was not applied to", async () => {
+    const state = setup();
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "skipped",
+      skipReason: "Already applied (url)",
+    });
+    expect(state.variantLinks).toHaveLength(0);
   });
 
   it("returns the same result idempotently without a second application upsert", async () => {
