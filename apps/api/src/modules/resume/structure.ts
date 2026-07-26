@@ -1,4 +1,4 @@
-// Structural rewriting for aggressive mode: reorder, drop, merge entries, promote projects.
+// Structural rewriting: reorder, drop, merge entries, promote projects.
 // Bullet ranking is `tailor.ts`, rewording is `rewrite.ts`; this moves whole sections.
 //
 // What keeps it honest: the model picks *which* entries combine, the server derives every date and

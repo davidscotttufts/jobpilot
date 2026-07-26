@@ -16,8 +16,8 @@ generation step - edit here directly.
 - `skills/<name>/SKILL.md` - one hand-authored skill per directory.
 - Resume skills split by who writes what: `extract-resume` parses the PDF faithfully and chains
   `review-resume` on a first extraction; `review-resume` saves one `Suggested rewrite` variant to
-  accept or discard, never touching a base; `tailor-resume` owns per-job variants and
-  `--aggressive`, guarded in `apps/api/src/modules/resume/structure.ts`.
+  accept or discard, never touching a base; `tailor-resume` owns per-job variants and their
+  restructuring, guarded in `apps/api/src/modules/resume/structure.ts`.
 - `skills/_shared/*.md` - reference docs: `auth`, `browser-tips`, `campaign-flow`,
   `digest-schema`, `eligibility`, `form-filling`, `setup`, `untrusted-content`. The directory has
   no `SKILL.md`, so neither provider lists it as a skill - both discover skills by finding

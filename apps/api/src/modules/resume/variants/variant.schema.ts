@@ -31,7 +31,7 @@ export const entryRewriteAuditSchema = z.object({
   bullets: z.array(bulletRewriteAuditSchema),
 });
 
-/** Structural changes applied by an aggressive-mode variant (mirrors `StructureAudit`). */
+/** Structural changes applied by a variant (mirrors `StructureAudit`). */
 export const structureAuditSchema = z.object({
   merged: z.array(
     z.object({

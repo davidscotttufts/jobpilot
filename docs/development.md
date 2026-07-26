@@ -200,10 +200,10 @@ The resume skills form a chain, one rule each:
   base and deletes the variant in one transaction - so the suggestion is never
   applied while still being offered. The stored source PDF is the way back.
 - `tailor-resume` owns per-job variants: base selection, the reuse-vs-create
-  score, and `--aggressive`, which opens every entry to rewording and enables
-  `structure` (reorder, drop, merge, promote projects).
+  score, rewording any entry, and `structure` (reorder, drop, merge, promote
+  projects).
 
 The guards in `apps/api/src/modules/resume/structure.ts` are the design: the
 model picks *which* entries combine, the server derives every date and
 whitelists umbrella employer names, so no request can add an employer or widen a
-range. The numbers guard in `rewrite.ts` applies in both modes.
+range. The numbers guard in `rewrite.ts` covers every reworded bullet.

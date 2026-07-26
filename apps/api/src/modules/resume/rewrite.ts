@@ -3,11 +3,9 @@ import { expandSynonyms, normalizePhrase } from "@/modules/scoring/keyword-norma
 import type { StructureAudit } from "./structure";
 
 /**
- * Controlled bullet rewording. The base resume's `experience[].bullets` are the
- * master bullet set (source of truth). The model may submit reworded versions
- * for the most-recent roles only; this module validates each rewrite against its
- * master original so the model can rephrase/re-emphasize real accomplishments
- * but never fabricate numbers, scope, or tech.
+ * Controlled bullet rewording. `experience[].bullets` on the base is the master set; every rewrite
+ * is checked against its original so the model can rephrase real accomplishments but never
+ * fabricate numbers, scope, or tech.
  */
 
 export interface BulletRewriteInput {
@@ -31,7 +29,7 @@ export interface EntryRewriteAudit {
 /** Persisted shape for `ResumeVariant.rewrites` (stringified JSON). */
 export interface VariantRewriteAudit {
   experience: EntryRewriteAudit[];
-  /** Present only for aggressive-mode variants that restructured sections. */
+  /** Present only for variants that restructured sections. */
   structure?: StructureAudit;
 }
 
@@ -136,15 +134,13 @@ export function driftFlags(tailored: string, original: string, corpus: string): 
 }
 
 /**
- * Validate model-authored bullet rewrites against the base resume. Hard guards
- * (any failure rejects the whole request): the original must match a real bullet
- * of an in-window entry, with no duplicates, and the tailored text may not
- * introduce a number absent from its original. Drift is recorded as soft flags.
+ * Hard guards, any failure rejecting the whole request: the original must be a real bullet of an
+ * existing entry, unrewritten so far, and the tailored text may not introduce a number absent from
+ * it. Drift is recorded as soft flags.
  */
 export function validateRewrites(
   base: ResumeData,
   rewrites: BulletRewriteInput[],
-  rewordTopN: number,
 ): RewriteValidation {
   const violations: string[] = [];
   const audit: EntryRewriteAudit[] = [];
@@ -157,12 +153,6 @@ export function validateRewrites(
 
     if (entryIndex < 0 || entryIndex >= experience.length) {
       violations.push(`Experience entry ${entryIndex} does not exist.`);
-      continue;
-    }
-    if (entryIndex >= rewordTopN) {
-      violations.push(
-        `Experience entry ${entryIndex} is outside the rewordable window (top ${rewordTopN} most-recent roles).`,
-      );
       continue;
     }
 

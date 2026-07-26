@@ -6,7 +6,7 @@ import type {
 import { resumeChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import type { z } from "zod/v4";
-import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
+import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf";
 import { publish } from "@/common/sse";
 import {
@@ -20,31 +20,14 @@ import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { backfillResumeIds } from "../backfill-ids";
 import { streamFile } from "../resume.stream";
 import { findResume } from "../resume.utils";
-import { type VariantRewriteAudit, validateRewrites } from "../rewrite";
-import { applyStructure, type StructureAudit, type StructureInput } from "../structure";
-import { tailorBase } from "../tailor";
+import type { VariantRewriteAudit } from "../rewrite";
 import { notProtectedVariant } from "./prunable";
+import { buildTailoredVariant, type TailorVariantBody } from "./tailor-variant";
 import type { pruneVariantsQuerySchema } from "./variant.schema";
 
 type ResumeVariantCreateInput = z.infer<typeof resumeVariantCreateSchema>;
 type ResumeVariantPatch = z.infer<typeof resumeVariantPatchSchema>;
 type PruneVariantsQuery = z.infer<typeof pruneVariantsQuerySchema>;
-
-export interface TailorVariantBody {
-  label: string;
-  jobUrl?: string | null;
-  applicationId?: string | null;
-  mode?: "conservative" | "aggressive";
-  summary?: string;
-  headline?: string;
-  emphasizedTech?: string[];
-  jobKeywords?: string[];
-  diffNotes?: string | null;
-  maxBulletsPerEntry?: number;
-  rewordTopN?: number;
-  structure?: StructureInput;
-  bulletRewrites?: { entryIndex: number; bullets: { original: string; tailored: string }[] }[];
-}
 
 interface TailoredVariantResult {
   id: string;
@@ -69,12 +52,37 @@ export class ResumeVariantService {
     );
   }
 
-  async listVariants(userId: string, resumeId: string) {
-    await findOwned(
+  private ownResume(userId: string, resumeId: string) {
+    return findOwned(
       (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
       { id: resumeId, userId },
       "Resume",
     );
+  }
+
+  /** The link is the record of what was sent - a dangling id 404s rather than storing null. */
+  private async assertApplicationExists(applicationId: string | null | undefined): Promise<void> {
+    if (!applicationId) {
+      return;
+    }
+
+    const app = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      select: { id: true },
+    });
+    if (!app) {
+      throw notFound("Application not found");
+    }
+  }
+
+  /** Follows every delete path: the cache would otherwise keep files no request can reach. */
+  private async afterVariantsDeleted(resumeId: string, ...ids: string[]): Promise<void> {
+    await deleteGeneratedVariantFiles(...ids);
+    publish(resumeChannel, { resumeId }, { type: "variant.deleted", resumeId, variantIds: ids });
+  }
+
+  async listVariants(userId: string, resumeId: string) {
+    await this.ownResume(userId, resumeId);
 
     const variants = await this.prisma.resumeVariant.findMany({
       where: { resumeId },
@@ -97,21 +105,8 @@ export class ResumeVariantService {
     resumeId: string,
     body: ResumeVariantCreateInput,
   ): Promise<{ id: string }> {
-    await findOwned(
-      (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
-      { id: resumeId, userId },
-      "Resume",
-    );
-
-    if (body.applicationId) {
-      const app = await this.prisma.application.findUnique({
-        where: { id: body.applicationId },
-        select: { id: true },
-      });
-      if (!app) {
-        throw notFound("Application not found");
-      }
-    }
+    await this.ownResume(userId, resumeId);
+    await this.assertApplicationExists(body.applicationId);
 
     const variant = await this.prisma.resumeVariant.create({
       data: {
@@ -174,13 +169,7 @@ export class ResumeVariantService {
   async removeVariant(userId: string, id: string): Promise<{ deleted: string }> {
     const variant = await this.findVariant(userId, id);
     await this.prisma.resumeVariant.delete({ where: { id } });
-    // Otherwise the cache keeps a file no request can reach, until the TTL sweep collects it.
-    await deleteGeneratedVariantFiles(id);
-    publish(
-      resumeChannel,
-      { resumeId: variant.resumeId },
-      { type: "variant.deleted", resumeId: variant.resumeId, variantIds: [id] },
-    );
+    await this.afterVariantsDeleted(variant.resumeId, id);
     return { deleted: id };
   }
 
@@ -202,15 +191,12 @@ export class ResumeVariantService {
       this.prisma.resumeVariant.delete({ where: { id } }),
     ]);
 
-    // Otherwise the cache keeps a file no request can reach, until the TTL sweep collects it.
-    await deleteGeneratedVariantFiles(id);
-
     publish(
       resumeChannel,
       { resumeId },
       { type: "content.updated", resumeId, version: updated.version },
     );
-    publish(resumeChannel, { resumeId }, { type: "variant.deleted", resumeId, variantIds: [id] });
+    await this.afterVariantsDeleted(resumeId, id);
 
     return { id: updated.id, version: updated.version };
   }
@@ -224,11 +210,7 @@ export class ResumeVariantService {
     resumeId: string,
     query: PruneVariantsQuery,
   ): Promise<{ deleted: number }> {
-    await findOwned(
-      (where) => this.prisma.resume.findFirst({ where, select: { id: true } }),
-      { id: resumeId, userId },
-      "Resume",
-    );
+    await this.ownResume(userId, resumeId);
 
     const where: Prisma.ResumeVariantWhereInput = {
       resumeId,
@@ -251,19 +233,13 @@ export class ResumeVariantService {
 
     const ids = candidates.map((variant) => variant.id);
     const result = await this.prisma.resumeVariant.deleteMany({ where: { id: { in: ids } } });
-    await deleteGeneratedVariantFiles(...ids);
-
-    publish(resumeChannel, { resumeId }, { type: "variant.deleted", resumeId, variantIds: ids });
+    await this.afterVariantsDeleted(resumeId, ...ids);
 
     return { deleted: result.count };
   }
 
   async renderVariantPdf(userId: string, variantId: string): Promise<Response> {
-    const variant = await findOwned(
-      (where) => this.prisma.resumeVariant.findFirst({ where }),
-      { id: variantId, resume: { userId } },
-      "Variant",
-    );
+    const variant = await this.findVariant(userId, variantId);
 
     await ensureGeneratedDir();
     const cachePath = generatedVariantPath(variant.id, variant.updatedAt.getTime());
@@ -275,10 +251,8 @@ export class ResumeVariantService {
   }
 
   /**
-   * Create a tailored resume variant from model-authored hints. The model
-   * never writes structured ResumeData - just a tailored `summary` and a
-   * small `emphasizedTech`/`jobKeywords` array. The server applies a
-   * deterministic ranking against the base content.
+   * Create a tailored variant from model-authored hints. The model writes prose and hint arrays,
+   * never structured ResumeData - `buildTailoredVariant` applies them and rejects invented facts.
    */
   async createTailoredVariant(
     userId: string,
@@ -288,77 +262,12 @@ export class ResumeVariantService {
     const base = await findResume(this.prisma, userId, resumeId);
 
     if (!base.content) {
-      throw new HttpError(
-        ErrorCodes.UNPROCESSABLE,
-        "Base resume has no structured content. Run extract-resume first.",
-        422,
-      );
+      throw unprocessable("Base resume has no structured content. Run extract-resume first.");
     }
-
-    if (body.applicationId) {
-      const app = await this.prisma.application.findUnique({
-        where: { id: body.applicationId },
-        select: { id: true },
-      });
-      if (!app) {
-        throw notFound("Application not found");
-      }
-    }
+    await this.assertApplicationExists(body.applicationId);
 
     const { content: parsedBase } = backfillResumeIds(JSON.parse(base.content) as ResumeData);
-    const aggressive = body.mode === "aggressive";
-
-    // First, so rewrites and ranking see the entries the plan produced. All-or-nothing: a
-    // partially-applied restructure is a resume nobody asked for.
-    let baseContent = parsedBase;
-    let structureAudit: StructureAudit | null = null;
-    if (aggressive && body.structure) {
-      const restructured = applyStructure(parsedBase, body.structure);
-      if (!restructured.ok) {
-        throw new HttpError(
-          ErrorCodes.UNPROCESSABLE,
-          "Structure validation failed",
-          422,
-          restructured.violations,
-        );
-      }
-      baseContent = restructured.content;
-      structureAudit = restructured.audit;
-    }
-
-    // Aggressive widens the window only; the numbers guard in validateRewrites is unchanged.
-    const rewordTopN = aggressive ? (baseContent.experience?.length ?? 0) : (body.rewordTopN ?? 2);
-    const rewrites = body.bulletRewrites ?? [];
-    const validation = validateRewrites(baseContent, rewrites, rewordTopN);
-
-    if (!validation.ok) {
-      throw new HttpError(
-        ErrorCodes.UNPROCESSABLE,
-        "Rewrite validation failed",
-        422,
-        validation.violations,
-      );
-    }
-
-    const tailored = tailorBase(baseContent, {
-      summary: body.summary,
-      headline: aggressive ? body.headline : undefined,
-      emphasizedTech: body.emphasizedTech,
-      jobKeywords: body.jobKeywords,
-      maxBulletsPerEntry: body.maxBulletsPerEntry,
-      bulletRewrites: validation.map,
-      rewordTopN,
-    });
-
-    const rewordedBullets = validation.audit.reduce((n, e) => n + e.bullets.length, 0);
-    const flags = [
-      ...validation.audit.flatMap((e) => e.bullets.flatMap((b) => b.flags)),
-      ...(structureAudit?.flags ?? []),
-    ];
-    const audit =
-      rewordedBullets > 0 || structureAudit
-        ? { experience: validation.audit, ...(structureAudit && { structure: structureAudit }) }
-        : null;
+    const tailored = buildTailoredVariant(parsedBase, body);
 
     const variant = await this.prisma.resumeVariant.create({
       data: {
@@ -366,9 +275,9 @@ export class ResumeVariantService {
         label: body.label,
         jobUrl: body.jobUrl ?? null,
         applicationId: body.applicationId ?? null,
-        content: JSON.stringify(tailored),
+        content: JSON.stringify(tailored.content),
         diffNotes: body.diffNotes ?? null,
-        rewrites: audit ? JSON.stringify(audit) : null,
+        rewrites: tailored.audit ? JSON.stringify(tailored.audit) : null,
       },
     });
 
@@ -381,8 +290,8 @@ export class ResumeVariantService {
     return {
       id: variant.id,
       pdfUrl: `/api/resumes/variants/${variant.id}/pdf`,
-      rewordedBullets,
-      flags,
+      rewordedBullets: tailored.rewordedBullets,
+      flags: tailored.flags,
     };
   }
 }

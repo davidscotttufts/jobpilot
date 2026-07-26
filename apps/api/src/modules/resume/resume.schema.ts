@@ -54,9 +54,8 @@ export const resumeUpdatedSchema = z.object({
 });
 
 /**
- * Structural changes, aggressive mode only. Every index refers to the *base* resume, so a plan
- * stays readable without simulating intermediate states. Dates and umbrella employer names are
- * derived or whitelisted server-side - see `structure.ts`.
+ * Structural changes. Every index refers to the *base* resume, so a plan needs no simulation of
+ * intermediate states. Dates and employer names are derived or whitelisted in `structure.ts`.
  */
 export const resumeStructureSchema = z.object({
   entryOrder: z.array(z.number().int().min(0)).optional(),
@@ -90,20 +89,12 @@ export const tailorResumeSchema = z.object({
   label: z.string().min(1),
   jobUrl: z.url().optional().nullable(),
   applicationId: z.uuid().optional().nullable(),
-  /**
-   * `conservative` (default) reorders skills and rewords the top `rewordTopN` roles - the original
-   * behaviour, unchanged. `aggressive` opens every entry to rewording and enables `structure` and
-   * `headline`. It does not relax the fact guards: the numbers check applies identically in both.
-   */
-  mode: z.enum(["conservative", "aggressive"]).default("conservative"),
   summary: z.string().optional(),
   headline: z.string().optional(),
   emphasizedTech: z.array(z.string()).optional(),
   jobKeywords: z.array(z.string()).optional(),
   diffNotes: z.string().optional().nullable(),
   maxBulletsPerEntry: z.number().int().min(1).max(20).optional(),
-  /** Ignored in aggressive mode, where every entry is in-window. */
-  rewordTopN: z.number().int().min(0).max(3).optional(),
   structure: resumeStructureSchema.optional(),
   bulletRewrites: z
     .array(

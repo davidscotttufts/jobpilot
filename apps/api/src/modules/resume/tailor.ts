@@ -3,18 +3,13 @@ import { expandSynonyms, normalizePhrase } from "@/modules/scoring/keyword-norma
 
 export interface TailorOptions {
   summary?: string;
-  /** Aggressive mode only - retargets `basics.headline`. */
+  /** Retargets `basics.headline`. */
   headline?: string;
   emphasizedTech?: string[];
   jobKeywords?: string[];
   maxBulletsPerEntry?: number;
-  /**
-   * Validated bullet rewrites, keyed `entryIndex → (trimmed original → tailored)`.
-   * Only applied to entries within `rewordTopN`. Produced by `validateRewrites`.
-   */
+  /** From `validateRewrites`, keyed `entryIndex → (trimmed original → tailored)`. */
   bulletRewrites?: Map<number, Map<string, string>>;
-  /** How many of the most-recent experience entries may be reworded. Default 2. */
-  rewordTopN?: number;
 }
 
 function matchesAny(text: string, terms: string[]): boolean {
@@ -68,11 +63,8 @@ function reorderSkillGroups(skills: ResumeSkillGroup[], emphasized: string[]): R
 }
 
 /**
- * Deterministic resume tailoring. Takes the base resume and a small set of
- * model-authored hints; returns a new ResumeData with skills reordered to
- * surface emphasized tech, bullets sorted by job-keyword overlap, and the
- * summary spliced if provided. The model never authors structured JSON -
- * just `summary` prose and a few hint arrays.
+ * Deterministic tailoring: skills reordered to surface emphasized tech, bullets sorted by
+ * job-keyword overlap, summary and headline spliced when given.
  */
 export function tailorBase(base: ResumeData, opts: TailorOptions): ResumeData {
   const emphasized = (opts.emphasizedTech ?? []).map((t) => t.trim()).filter(Boolean);
@@ -92,14 +84,11 @@ export function tailorBase(base: ResumeData, opts: TailorOptions): ResumeData {
       .map((entry) => entry.bullet);
   };
 
-  const rewordTopN = Math.max(0, opts.rewordTopN ?? 2);
-
   const experience = (base.experience ?? []).map((entry, index) => {
     let bullets = entry.bullets ?? [];
-    const entryRewrites = index < rewordTopN ? opts.bulletRewrites?.get(index) : undefined;
+    const entryRewrites = opts.bulletRewrites?.get(index);
     if (entryRewrites) {
-      // Reword from the master set before ranking; only bullets whose original
-      // text matches a validated rewrite key are replaced, the rest pass through.
+      // Reword from the master set before ranking; unmatched bullets pass through.
       bullets = bullets.map((b) => entryRewrites.get(b.trim()) ?? b);
     }
     return { ...entry, bullets: sortBullets(bullets) };
