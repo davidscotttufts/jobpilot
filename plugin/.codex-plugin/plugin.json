@@ -1,6 +1,6 @@
 {
   "name": "jobpilot",
-  "version": "2.1.22",
+  "version": "2.1.23",
   "description": "Codex skills and Playwright MCP wiring for JobPilot job applications.",
   "author": {
     "name": "JobPilot"

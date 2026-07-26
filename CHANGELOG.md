@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.23] - 2026-07-26
+
+### Added
+
+- Uploading a resume now produces a `Suggested rewrite` you can review, then
+  Apply or Discard from the dashboard. Your uploaded PDF is left untouched, so
+  it is always the way back.
+- Aggressive tailoring can restructure a resume, not just reword it: it reorders
+  and merges overlapping entries and promotes project work onto the timeline.
+  Employer text and every date are derived from your base resume, never invented,
+  and a plan that would gut your history is refused.
+- The resume view flags a contact header that contradicts your profile - an old
+  city, a second email, a bare handle where the profile has a full URL - before
+  applications go out. Formatting differences alone are not a conflict.
+- Job scoring now reports the eligibility bar a posting actually states, so a
+  citizenship or clearance requirement is named as itself instead of appearing as
+  `No visa sponsorship` or being missed entirely.
+- Bulk pruning of tailored resume variants, plus a nightly 30-day sweep of the
+  tail. Neither touches a variant that was sent with an application or one still
+  awaiting your review. Deleting a variant also drops its cached PDF.
+- A tailored variant is now linked to the application it was sent with, so you
+  can tell which resume went to which company. Existing variants were backfilled
+  by matching job URL.
+
+### Changed
+
+- A rejection email that clearly matches one of your applications now updates
+  that application as soon as it is scanned, instead of waiting in the review
+  queue. Only rejections auto-apply - interview and offer replies still wait for
+  you - and a status you set by hand always wins. The already-classified backlog
+  was applied the same way.
+
 ## [2.1.22] - 2026-07-25
 
 ### Added
