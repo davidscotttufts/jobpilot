@@ -12,7 +12,9 @@ import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
+import { AUTO_REJECTION_FROM_STATUSES, isAutoRejection } from "./auto-rejection";
 import { serializeMessage } from "./email.mapper";
+import { emailStatusNote, verdictOps } from "./verdict";
 
 interface MessageQuery {
   reviewStatus?: string;
@@ -89,14 +91,40 @@ export class EmailService {
     return serializeMessage(row);
   }
 
-  async scanMessage(userId: string, id: string, body: ScanMessageInput) {
-    await findOwned(
-      (where) => this.prisma.emailMessage.findFirst({ where, select: { id: true } }),
-      { id, account: { userId } },
-      "Message",
-    );
+  /**
+   * A confidently-matched rejection applies without asking: 100+ applications produce more
+   * rejections than anyone clicks through, and a stale funnel is the result. See `auto-rejection`.
+   */
+  private async resolveAutoRejection(
+    userId: string,
+    body: ScanMessageInput,
+  ): Promise<{ applicationId: string; fromStatus: ApplicationStatus } | null> {
+    if (!isAutoRejection(body)) {
+      return null;
+    }
 
-    const row = await this.prisma.emailMessage.update({
+    const app = await this.prisma.application.findFirst({
+      where: { id: body.matchedAppId, userId, status: { in: [...AUTO_REJECTION_FROM_STATUSES] } },
+      select: { id: true, status: true },
+    });
+
+    return app ? { applicationId: app.id, fromStatus: app.status } : null;
+  }
+
+  async scanMessage(userId: string, id: string, body: ScanMessageInput) {
+    // Independent reads: the auto-rejection lookup is scoped to the user itself, so it needs no
+    // ownership result to be safe.
+    const [existing, autoRejection] = await Promise.all([
+      findOwned(
+        (where) =>
+          this.prisma.emailMessage.findFirst({ where, select: { id: true, subject: true } }),
+        { id, account: { userId } },
+        "Message",
+      ),
+      this.resolveAutoRejection(userId, body),
+    ]);
+
+    const update = this.prisma.emailMessage.update({
       where: { id },
       data: {
         classification: body.classification,
@@ -104,8 +132,10 @@ export class EmailService {
         reasoning: body.reasoning,
         matchedAppId: body.matchedAppId,
         matchScore: body.matchScore,
-        appliedStatus: body.appliedStatus,
-        reviewStatus: body.reviewStatus,
+        // Applied below, so the row is already reviewed and carries the status it applied -
+        // leaving it "auto" would re-offer it.
+        appliedStatus: autoRejection ? "rejected" : body.appliedStatus,
+        reviewStatus: autoRejection ? "approved" : body.reviewStatus,
         verificationCode: body.verificationCode,
         verificationLink: body.verificationLink,
         verificationDomain: body.verificationDomain,
@@ -116,9 +146,27 @@ export class EmailService {
       },
     });
 
+    // Batched, not interactive: a half-applied rejection is the stale-funnel bug, but the common
+    // scan carries no transition and shouldn't pay for a round-trip-per-statement transaction.
+    const [row] = autoRejection
+      ? await this.prisma.$transaction([
+          update,
+          ...statusChangeOps(this.prisma, {
+            applicationId: autoRejection.applicationId,
+            fromStatus: autoRejection.fromStatus,
+            toStatus: "rejected",
+            source: "email",
+            note: emailStatusNote(existing.subject),
+          }),
+        ])
+      : [await update];
+
     const message = serializeMessage(row);
 
     publish(inboxChannel, { userId }, { type: "message.scanned", id });
+    if (autoRejection) {
+      publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "approved" });
+    }
 
     return message;
   }
@@ -167,19 +215,16 @@ export class EmailService {
       throw notFound("Application not found");
     }
 
-    await this.prisma.$transaction([
-      ...statusChangeOps(this.prisma, {
+    await this.prisma.$transaction(
+      verdictOps(this.prisma, {
+        messageId: id,
         applicationId: app.id,
         fromStatus: app.status,
         toStatus: inferred,
-        source: "email",
-        note: body.note ?? `From email: ${message.subject}`,
+        subject: message.subject,
+        note: body.note,
       }),
-      this.prisma.emailMessage.update({
-        where: { id },
-        data: { reviewStatus: "approved", appliedStatus: inferred },
-      }),
-    ]);
+    );
 
     publish(inboxChannel, { userId }, { type: "message.reviewed", id, status: "approved" });
 

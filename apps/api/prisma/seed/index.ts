@@ -1,6 +1,8 @@
 import { db } from "@/common/database";
 import { seedJobBoards } from "./job-boards";
 import { seedJobListings } from "./job-listings";
+import { seedRejectionStatuses } from "./rejection-statuses";
+import { seedResumeVariantApplications } from "./resume-variant-applications";
 import { seedSuperAdmin } from "./super-admin";
 
 interface Seeder {
@@ -25,6 +27,16 @@ const seeders = {
   "job-listings": {
     fn: seedJobListings,
     description: "Backfill the public job index from existing jobs",
+    optIn: true,
+  },
+  "resume-variant-apps": {
+    fn: seedResumeVariantApplications,
+    description: "Link pre-existing resume variants to their applications by job url",
+    optIn: true,
+  },
+  "rejection-statuses": {
+    fn: seedRejectionStatuses,
+    description: "Apply already-classified rejection emails to their application statuses",
     optIn: true,
   },
 } as const satisfies Record<string, Seeder>;

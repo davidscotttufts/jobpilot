@@ -6,7 +6,7 @@ argument-hint: "[message-id] - omit to scan all pending unscanned; pass an id to
 
 # Scan Inbox - Review Pending Email
 
-Classify recent email and link each thread to an existing `Application` when there's a confident match. This skill does **not** write `ApplicationEvent` rows or mutate `Application.status` - the user approves from `/inbox`, that's where state changes happen.
+Classify recent email and link each thread to an existing `Application` when there's a confident match. This skill does **not** write `ApplicationEvent` rows or mutate `Application.status` directly - the user approves from `/inbox`. One server-side exception: a `rejected` classification sent with `reviewStatus: "auto"` is applied on arrival (see Phase 4 rules).
 
 ## Setup
 
@@ -108,7 +108,8 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API
 Rules:
 
 - Default `reviewStatus = "pending"` - human must Approve.
-- `reviewStatus = "auto"` only when `confidence ≥ 0.95` AND `matchedAppId` is set. This is a UI hint only - no `ApplicationEvent` is written here.
+- `reviewStatus = "auto"` only when `confidence ≥ 0.95` AND `matchedAppId` is set.
+- **`auto` on a `rejected` message is applied by the server** - it moves the Application and writes the `ApplicationEvent`. Still write no status moves here; just classify honestly, because `auto` now has an effect. On every other classification `auto` stays a UI hint and the human approves in `/inbox`. `interviewing` and `offer` are never auto-applied - they need a reply.
 
 ## Phase 5: Summary
 
