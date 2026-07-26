@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { ELIGIBILITY_RESTRICTION_KINDS } from "./eligibility";
 
 export const jobDigestSchema = z.object({
   title: z.string().optional().default(""),
@@ -15,6 +16,8 @@ export type JobDigest = z.infer<typeof jobDigestSchema>;
 export const fitProfileSchema = z.object({
   techStack: z.array(z.string()).default([]),
   yearsExperience: z.number().int().min(0).max(50).nullable().default(null),
+  /** Defaults from the profile; only then does the posting's work-authorization language matter. */
+  requiresSponsorship: z.boolean().default(false),
 });
 
 export type FitProfile = z.infer<typeof fitProfileSchema>;
@@ -26,8 +29,6 @@ export const scoreFitSchema = z.object({
   resumeId: z.uuid().optional(),
 });
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
 /** Deterministic keyword-overlap fit result returned by `scoreJobFit`. */
 export const fitResultSchema = z.object({
   score: z.number(),
@@ -35,4 +36,7 @@ export const fitResultSchema = z.object({
   strongMatches: z.array(z.string()),
   partialMatches: z.array(z.string()),
   gaps: z.array(z.string()),
+  eligibilityBlocked: z
+    .object({ kind: z.enum(ELIGIBILITY_RESTRICTION_KINDS), evidence: z.string() })
+    .optional(),
 });

@@ -1,3 +1,4 @@
+import { detectEligibilityRestrictions, type EligibilityRestriction } from "./eligibility";
 import { expandSynonyms, normalizeKeyword } from "./keyword-normalize";
 import type { FitProfile, JobDigest } from "./scoring.schema";
 
@@ -7,6 +8,11 @@ export interface FitResult {
   strongMatches: string[];
   partialMatches: string[];
   gaps: string[];
+  /**
+   * Set when the posting states a bar this candidate cannot clear. Kept out of `score` so a
+   * 90-point tech match still reads as 90 and the skip reason stays the real one.
+   */
+  eligibilityBlocked?: EligibilityRestriction;
 }
 
 const normalizedHas = (set: Set<string>, term: string): boolean =>
@@ -81,11 +87,23 @@ export function scoreFit(digest: JobDigest, profile: FitProfile): FitResult {
     confidence += 0.2;
   }
 
+  const restrictions = detectEligibilityRestrictions(
+    digest.descriptionExcerpt,
+    ...(digest.requirements ?? []),
+    ...(digest.responsibilities ?? []),
+  );
+  // A sponsorship bar is only this candidate's problem when they need sponsorship; a stated
+  // citizenship or clearance requirement bars anyone who lacks it, so it is never gated.
+  const blocked = restrictions.find(
+    (restriction) => restriction.kind !== "sponsorship" || profile.requiresSponsorship,
+  );
+
   return {
     score,
     confidence: Math.round(confidence * 100) / 100,
     strongMatches,
     partialMatches: partialMatches.filter((t) => !strongMatches.includes(t)),
     gaps,
+    ...(blocked && { eligibilityBlocked: blocked }),
   };
 }
