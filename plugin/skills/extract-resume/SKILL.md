@@ -81,6 +81,8 @@ If `FORCE`, proceed and overwrite.
     description?: string,        // one prose line; omit if there's only a tech-stack line
     bullets:     string[],
     keywords:    string[],       // the tech-stack line (e.g. "Next.js, Prisma, Docker")
+    start?:      string,         // only if the PDF states it; same format as experience dates
+    end?:        string,         // "Present" if ongoing
   }>,
   skills: Array<{
     group: string,              // e.g. "Languages"
@@ -102,6 +104,8 @@ Hard rules:
 - **Do not invent** roles, bullets, dates, or skills. Missing section → `[]` (or omit optional field).
 - Keep the PDF's date display format. Do not normalize to ISO.
 - Current role → `end: "Present"` (or omit).
+- Project dates: copy when the PDF shows them, omit otherwise - never infer a range. They let
+  `tailor-resume` promote a project onto the timeline, so a guess becomes a fabricated range.
 - Skills: keep the PDF's grouping if present; flat list → single group `"Skills"`.
 - Strip leading bullet glyphs (•, ▪, –) from bullet text; keep the rest unchanged.
 - A project's tech-stack line goes in `keywords` only - never copy it into `description`.
@@ -119,7 +123,13 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/a
 
 Where `resume.json` looks like `{"content": {"basics": {...}, "experience": [...], ...}}`. On 422, read the issue list, fix the field, retry once.
 
-## Step 6: Report
+## Step 6: Suggest Improvements
+
+**Only on a first extraction** (`content` was `null` in Step 1): invoke the `review-resume` skill for `$RESUME_ID`. This step is faithful to the PDF, so it carries over every weakness in it; that skill proposes a stronger version for the user to accept or discard.
+
+Skip on `--force` - the user re-parsed to recover what the PDF says, and a rewrite proposal fights that.
+
+## Step 7: Report
 
 > Extracted resume {id} ({label}) → version {n}.
 > Review at <$JOBPILOT_WEB/resumes/{id}>.

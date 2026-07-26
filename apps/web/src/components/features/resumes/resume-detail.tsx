@@ -11,7 +11,9 @@ import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 import { ResumeHeaderBar } from "./detail/header-bar";
 import { ResumePdfPreview } from "./detail/pdf-preview";
+import { ProfileMismatchCard } from "./detail/profile-mismatch-card";
 import { SourceUploadCard } from "./detail/source-upload-card";
+import { SuggestedRewriteCard } from "./detail/suggested-rewrite-card";
 import { VariantsPanel } from "./detail/variants-panel";
 import { ResumeEditor } from "./editor/resume-editor";
 
@@ -40,6 +42,9 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
         "variant.created": () => {
           void queryClient.invalidateQueries({ queryKey: queryKeys.resume.variants(resumeId) });
         },
+        "variant.deleted": () => {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.resume.variants(resumeId) });
+        },
       },
     },
   );
@@ -52,6 +57,8 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
     <Stack direction={isDesktop ? "row" : "column"} spacing={3} sx={{ alignItems: "flex-start" }}>
       <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
         <ResumeHeaderBar resume={resume} />
+        <ProfileMismatchCard mismatches={resume.profileMismatches} />
+        <SuggestedRewriteCard resumeId={resumeId} />
         <SourceUploadCard resume={resume} />
         <ResumeEditor key={resume.version} resumeId={resumeId} initialData={initialData} />
         <VariantsPanel resumeId={resumeId} resumeLabel={resume.label} />

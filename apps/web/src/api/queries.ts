@@ -69,6 +69,10 @@ export const resumeQueries = {
     queryKey: queryKeys.resume.variants(resumeId),
     queryFn: () => api.resumes({ id: resumeId }).variants.get(),
   }),
+  variantDetail: (id: string) => ({
+    queryKey: queryKeys.resume.variantDetail(id),
+    queryFn: () => api.resumes.variants({ id }).get(),
+  }),
 };
 
 export const jobBoardQueries = {

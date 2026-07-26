@@ -1,11 +1,21 @@
-import { resumeVariantCreateSchema, resumeVariantPatchSchema } from "@jobpilot/contracts/resume";
+import {
+  PROTECTED_VARIANT_LABELS,
+  resumeVariantCreateSchema,
+  resumeVariantPatchSchema,
+} from "@jobpilot/contracts/resume";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { deletedResponseSchema, idResponseSchema } from "@/types/response";
-import { tailorResumeSchema } from "../resume.schema";
-import { tailoredVariantSchema, variantDetailSchema, variantListSchema } from "./variant.schema";
+import { resumeUpdatedSchema, tailorResumeSchema } from "../resume.schema";
+import {
+  prunedResponseSchema,
+  pruneVariantsQuerySchema,
+  tailoredVariantSchema,
+  variantDetailSchema,
+  variantListSchema,
+} from "./variant.schema";
 import { ResumeVariantService } from "./variant.service";
 
 const svc = container.resolve(ResumeVariantService);
@@ -88,4 +98,27 @@ export const resumeVariantController = new Elysia({
       description:
         "Deletes a tailored variant owned by the active profile and returns the deleted variant id.",
     },
-  });
+  })
+  .post("/variants/:id/apply", ({ user, params }) => svc.applyVariant(user.id, params.id), {
+    params: idParam,
+    response: resumeUpdatedSchema,
+    detail: {
+      summary: "Apply resume variant",
+      description:
+        "Writes the variant's content onto its master resume, bumping the resume's version, then deletes the variant. One transaction, so a suggested rewrite is never applied while still being offered. Returns the resume id and its new version.",
+    },
+  })
+  // bulk prune - registered after /variants/:id so the static segment cannot shadow it
+  .delete(
+    "/:id/variants",
+    ({ user, params, query }) => svc.pruneVariants(user.id, params.id, query),
+    {
+      params: idParam,
+      query: pruneVariantsQuerySchema,
+      response: prunedResponseSchema,
+      detail: {
+        summary: "Prune resume variants",
+        description: `Bulk-deletes accumulated variants under a master resume and returns how many were removed. Filters: \`before\` (created before an instant), \`keep\` (retain the N newest matches), \`unlinkedOnly\` (default true - skip variants linked to an application). Variants labelled ${PROTECTED_VARIANT_LABELS.map((label) => `'${label}'`).join(" or ")} are never pruned.`,
+      },
+    },
+  );

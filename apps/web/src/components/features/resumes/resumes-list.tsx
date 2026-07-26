@@ -27,6 +27,7 @@ import { FileUpload } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
 import { useSseChannel } from "@/lib/sse/client";
+import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { plural } from "@/utils/format";
 import { NewResumeDialog } from "./new-resume-dialog";
@@ -48,6 +49,8 @@ function ResumeEventsSubscriber({ resumeId }: { resumeId: string }): ReactNode {
 
 export function ResumesList(): ReactElement {
   const toast = useToast();
+  const agent = useAgent();
+  const agentAvailable = useAgentAvailable();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const list = useApiQuery(resumeQueries.list());
@@ -55,6 +58,13 @@ export function ResumesList(): ReactElement {
   const upload = useApiMutation<{ id: string }, File>((file) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",
     invalidate: invalidations.resume,
+    onSuccess: ({ id }) => {
+      // Same chain as onboarding: parse, then extract-resume follows up with a suggested rewrite.
+      // Desktop-only, so on mobile the upload waits for a desktop session - as onboarding does.
+      if (agentAvailable) {
+        void agent.injectSkill("extract-resume", id);
+      }
+    },
   });
 
   const setPrimary = useApiMutation<{ primaryResumeId: string | null }, string>(

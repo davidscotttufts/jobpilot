@@ -100,6 +100,38 @@ the same plugin.
 Uploaded PDFs and generated variants are stored by the hosted API, tied to
 your account. The structured resume content is editable in the resume studio.
 
+## Does the agent change my resume?
+
+Not on its own. Two things touch resume content, both needing your click:
+
+- After an upload, `review-resume` proposes a rewrite and lists every change.
+  Nothing applies until you press **Apply**, and your PDF is never modified -
+  re-extracting restores the original text.
+- Per job, `tailor-resume` creates a **variant** and leaves your base alone. With
+  `--aggressive` it also reorders, merges, or drops entries and promotes projects
+  onto the timeline - still on a variant.
+
+Neither can invent an employer, date, or number. The server rejects a reworded
+bullet containing a figure absent from the original, derives merged date ranges
+from the roles being merged, and refuses to promote an undated project. Anything
+it can't verify comes back flagged.
+
+## Why am I getting rejections with no interviews?
+
+Check how fast they arrive. Anything inside a day is an automated screen, not a
+person judging your resume - usually work authorization, location, or a
+years-of-experience question. What moves the number more than another resume
+edit:
+
+- **Check the sponsorship question.** If you need sponsorship, most enterprise
+  employers filter on it before a human reads anything. The agent skips postings
+  that say so outright; most enforce it silently.
+- **Lower the volume, raise the fit.** Fifty applications to employers that
+  filter you out is fifty rejections, not fifty chances.
+- **Use `networking`.** A referral routes around the automated screen entirely.
+- **Connect your mailbox** so rejections land on your pipeline and your response
+  rate becomes a number you can watch.
+
 ## How do I delete my data?
 
 Delete your account under settings. That destroys your per-user encryption

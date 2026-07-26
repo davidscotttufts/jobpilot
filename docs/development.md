@@ -180,9 +180,30 @@ channels (`inbox`, `pipeline`, `resume`, `upwork`) follow the same pattern.
 ### Skills layer
 
 `plugin/skills/_shared/setup.md` is the single source of truth for config
-loading: `/api/health` → `GET /api/profile` → `GET /api/credentials`; resumes
-via `data.defaultResumeAbsolutePath` or `GET /api/resumes/[id]/file`.
-`auth.md`, `form-filling.md`, and `browser-tips.md` cover cross-cutting
-browser behavior; `campaign-flow.md` holds the campaign mechanics every apply
-skill shares (applied-check, result writes, worker input, rules); the writing
-skills chain the `humanizer` skill by name.
+loading: `/api/health` → `GET /api/user` (the bare payload, no `data.` wrapper)
+→ `GET /api/credentials/resolve?domain=…`; resumes via
+`primaryResumeSourceAbsolutePath` or `GET /api/resumes/[id]/pdf`. `auth.md`,
+`form-filling.md`, and `browser-tips.md` cover cross-cutting browser behavior;
+`campaign-flow.md` holds the campaign mechanics every apply skill shares
+(applied-check, result writes, worker input, rules); the writing skills chain
+the `humanizer` skill by name, in **embedded mode** so only the final text comes
+back.
+
+The resume skills form a chain, one rule each:
+
+- `extract-resume` parses the PDF into `ResumeData` verbatim - no improvements,
+  no invented fields. Chains `review-resume` on a *first* extraction only;
+  `--force` skips it, since the user asked for what the PDF says.
+- `review-resume` writes one `Suggested rewrite` variant whose `diffNotes` list
+  every change. It never touches a base; the dashboard's Apply action does that
+  via `POST /api/resumes/variants/[id]/apply`, which copies the content onto the
+  base and deletes the variant in one transaction - so the suggestion is never
+  applied while still being offered. The stored source PDF is the way back.
+- `tailor-resume` owns per-job variants: base selection, the reuse-vs-create
+  score, and `--aggressive`, which opens every entry to rewording and enables
+  `structure` (reorder, drop, merge, promote projects).
+
+The guards in `apps/api/src/modules/resume/structure.ts` are the design: the
+model picks *which* entries combine, the server derives every date and
+whitelists umbrella employer names, so no request can add an employer or widen a
+range. The numbers guard in `rewrite.ts` applies in both modes.

@@ -56,6 +56,13 @@ run one, the agent:
 - drives a real browser to do the work (search, log in, fill forms),
 - writes the results back, so your pipeline updates in real time.
 
+Three skills handle resumes. `extract-resume` parses your PDF exactly as
+written, `review-resume` proposes an improved rewrite that waits for your
+approval, and `tailor-resume` makes a per-job copy - a **variant** - leaving
+your base alone. None can add an employer, date, or metric that isn't already in
+your resume: the dashboard enforces that server-side instead of trusting the
+model, and flags whatever it can't verify.
+
 The same plugin works in both Claude Code and Codex - install it in whichever
 one you use.
 

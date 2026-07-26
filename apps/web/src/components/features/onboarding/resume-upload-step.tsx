@@ -88,6 +88,7 @@ export const ResumeUploadStep = withForm({
         applyBasicsToForm(form, basics);
       }
       setState("done");
+      // extract-resume chains review-resume itself, so onboarding never waits on the suggestion.
       onContinue();
     }, [resume.data, state, form, onContinue]);
 
