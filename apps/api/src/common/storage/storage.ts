@@ -46,8 +46,8 @@ export async function deleteResumeFile(filename: string): Promise<void> {
   await tryUnlink(resumePath(filename));
 }
 
-/** Unlinks files in a directory that match a given prefix and suffix. */
-async function unlinkMatching(dir: string, prefix: string, suffix: string): Promise<void> {
+/** Unlinks files in a directory matching any of the prefixes plus the suffix, in one scan. */
+async function unlinkMatching(dir: string, prefixes: string[], suffix: string): Promise<void> {
   let entries: string[];
   try {
     entries = await readdir(dir);
@@ -60,17 +60,22 @@ async function unlinkMatching(dir: string, prefix: string, suffix: string): Prom
 
   await Promise.all(
     entries
-      .filter((name) => name.startsWith(prefix) && name.endsWith(suffix))
+      .filter((name) => name.endsWith(suffix) && prefixes.some((p) => name.startsWith(p)))
       .map((name) => tryUnlink(path.join(dir, name))),
   );
 }
 
 export function deleteGeneratedResumeFiles(resumeId: string): Promise<void> {
-  return unlinkMatching(GENERATED_DIR, `master-${resumeId}-`, ".pdf");
+  return unlinkMatching(GENERATED_DIR, [`master-${resumeId}-`], ".pdf");
 }
 
-export function deleteGeneratedVariantFiles(variantId: string): Promise<void> {
-  return unlinkMatching(GENERATED_DIR, `variant-${variantId}-`, ".pdf");
+/** Takes every id at once: one call per variant would re-scan the shared cache dir each time. */
+export function deleteGeneratedVariantFiles(...variantIds: string[]): Promise<void> {
+  return unlinkMatching(
+    GENERATED_DIR,
+    variantIds.map((id) => `variant-${id}-`),
+    ".pdf",
+  );
 }
 
 interface ResumeArtifactRefs {
@@ -84,7 +89,7 @@ export async function deleteAllResumeArtifacts(refs: ResumeArtifactRefs): Promis
   await Promise.all([
     sourceFilename ? deleteResumeFile(sourceFilename) : Promise.resolve(),
     deleteGeneratedResumeFiles(resumeId),
-    ...variantIds.map((id) => deleteGeneratedVariantFiles(id)),
+    deleteGeneratedVariantFiles(...variantIds),
   ]);
 }
 

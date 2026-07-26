@@ -1,6 +1,8 @@
 // Retention windows + where-clause builders. No runtime env/db imports: CI runs `bun test` with neither.
+
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
+import { notProtectedVariant } from "@/modules/resume/variants/prunable";
 
 export const RETENTION_DAYS = {
   journal: 30,
@@ -16,6 +18,9 @@ export const RETENTION_DAYS = {
   promotion: 30,
   emailBody: 60,
   applicationEvent: 90,
+  // The reuse gate keeps the count down; this collects the tail. Under the scorer's 180d recency
+  // floor, so a swept variant is one it had already stopped preferring.
+  resumeVariant: 30,
 } as const;
 
 export type RetentionCutoffs = Record<keyof typeof RETENTION_DAYS, Date>;
@@ -81,6 +86,16 @@ export function emailBodyWhere(c: RetentionCutoffs): Prisma.EmailMessageWhereInp
   // Blank, never delete: rawBody powers the inbox dialog (falls back to snippet) and re-sync dedupe.
   // Scanned only: the inbox review queue has no age bound, so an old unscanned message still needs its body.
   return { receivedAt: { lt: c.emailBody }, rawBody: { not: "" }, scannedAt: { not: null } };
+}
+
+export function resumeVariantWhere(c: RetentionCutoffs): Prisma.ResumeVariantWhereInput {
+  // Unlinked only: a linked variant is the record of what was sent, and the only way to correlate a
+  // resume change with an outcome. Reserved labels are excluded - a suggestion is pending review.
+  return {
+    createdAt: { lt: c.resumeVariant },
+    applicationId: null,
+    ...notProtectedVariant,
+  };
 }
 
 export function applicationEventWhere(c: RetentionCutoffs): Prisma.ApplicationEventWhereInput {

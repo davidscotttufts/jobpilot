@@ -1,9 +1,11 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { Delete, OpenInNew, Search } from "@mui/icons-material";
+import { isProtectedVariantLabel } from "@jobpilot/contracts/resume";
+import { CleaningServices, Delete, OpenInNew, Search } from "@mui/icons-material";
 import {
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
@@ -45,6 +47,14 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
     },
   );
 
+  const prune = useApiMutation<{ deleted: number }, void>(
+    () => api.resumes({ id: resumeId }).variants.delete(undefined, { query: {} }),
+    {
+      successMessage: "Unused variants pruned",
+      invalidate: [queryKeys.resume.variants(resumeId)],
+    },
+  );
+
   const handleDelete = async (variant: ResumeVariantListItem): Promise<void> => {
     const confirmed = await confirm({
       title: "Delete variant?",
@@ -58,6 +68,22 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
   };
 
   const variants = query.data ?? [];
+  const prunable = variants.filter(
+    (v) => v.applicationId === null && !isProtectedVariantLabel(v.label),
+  );
+
+  const handlePrune = async (): Promise<void> => {
+    const confirmed = await confirm({
+      title: `Prune ${prunable.length} unused variant${prunable.length === 1 ? "" : "s"}?`,
+      description:
+        "Deletes every variant not linked to an application. Variants you actually applied with are kept, as are pending suggestions. This cannot be undone.",
+      confirmLabel: "Prune",
+      destructive: true,
+    });
+    if (confirmed) {
+      prune.mutate();
+    }
+  };
   const term = search.trim().toLowerCase();
   const filtered = term
     ? variants.filter(
@@ -70,7 +96,23 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
     <SectionCard
       title="Tailored variants"
       description={`AI-generated copies of "${resumeLabel}" tailored to specific jobs. Bases are not modified.`}
-      actions={<TailorForJobButton />}
+      actions={
+        <Stack direction="row" spacing={1}>
+          {prunable.length > 0 && (
+            <Button
+              size="small"
+              variant="outlined"
+              color="inherit"
+              startIcon={<CleaningServices />}
+              disabled={prune.isPending}
+              onClick={() => void handlePrune()}
+            >
+              Prune {prunable.length} unused
+            </Button>
+          )}
+          <TailorForJobButton />
+        </Stack>
+      }
     >
       {query.isLoading ? (
         <Skeleton variant="rounded" height={64} />

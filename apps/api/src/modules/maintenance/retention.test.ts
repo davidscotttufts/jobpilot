@@ -11,6 +11,7 @@ import {
   questionTerminalWhere,
   RETENTION_DAYS,
   refreshTokenWhere,
+  resumeVariantWhere,
   verificationTokenWhere,
 } from "./retention";
 import { describe, expect, it } from "bun:test";
@@ -33,6 +34,7 @@ describe("cutoffs", () => {
     expect(c.promotion).toEqual(daysBefore(RETENTION_DAYS.promotion));
     expect(c.emailBody).toEqual(daysBefore(RETENTION_DAYS.emailBody));
     expect(c.applicationEvent).toEqual(daysBefore(RETENTION_DAYS.applicationEvent));
+    expect(c.resumeVariant).toEqual(daysBefore(RETENTION_DAYS.resumeVariant));
   });
 });
 
@@ -123,5 +125,20 @@ describe("where-builders", () => {
         (applicationEventWhere(c).application as { status: { in: string[] } }).status.in,
       ).not.toContain(live);
     }
+  });
+
+  it("resumeVariantWhere never matches a variant linked to an application", () => {
+    // Sweeping a linked variant destroys the record of what was actually sent.
+    expect(resumeVariantWhere(c).applicationId).toBeNull();
+  });
+
+  it("resumeVariantWhere spares reserved labels", () => {
+    // Sweeping a pending suggestion answers the accept-or-discard question for the user.
+    expect(resumeVariantWhere(c).NOT).toEqual([{ label: { startsWith: "Suggested rewrite" } }]);
+  });
+
+  it("sweeps variants only after the reuse scorer has stopped preferring them", () => {
+    // Past the scorer's 180d floor this would delete still-reusable variants, pushing creation up.
+    expect(RETENTION_DAYS.resumeVariant).toBeLessThanOrEqual(180);
   });
 });

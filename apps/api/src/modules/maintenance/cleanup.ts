@@ -11,6 +11,7 @@ import {
   questionTerminalWhere,
   type RetentionCutoffs,
   refreshTokenWhere,
+  resumeVariantWhere,
   verificationTokenWhere,
 } from "./retention";
 
@@ -57,6 +58,10 @@ const RULES = [
   {
     key: "applicationEvents",
     run: (db, c) => db.applicationEvent.deleteMany({ where: applicationEventWhere(c) }),
+  },
+  {
+    key: "resumeVariants",
+    run: (db, c) => db.resumeVariant.deleteMany({ where: resumeVariantWhere(c) }),
   },
 ] as const satisfies readonly RetentionRule[];
 

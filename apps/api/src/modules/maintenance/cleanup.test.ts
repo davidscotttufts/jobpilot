@@ -33,6 +33,7 @@ function fakePrisma() {
     promotionPost: model("promotionPost", 8),
     emailMessage: model("emailMessage", 9),
     applicationEvent: model("applicationEvent", 10),
+    resumeVariant: model("resumeVariant", 11),
   };
 
   return { db: db as unknown as PrismaClient, calls };
@@ -80,6 +81,11 @@ describe("runRetentionCleanup", () => {
       application: { status: { in: ["rejected", "withdrawn"] } },
     });
 
+    // resume_variants: only ones nothing points at, and never a reserved label.
+    expect(calls.resumeVariant).toHaveLength(1);
+    expect(calls.resumeVariant?.[0]?.where).toMatchObject({ applicationId: null });
+    expect(JSON.stringify(calls.resumeVariant?.[0]?.where)).toContain("Suggested rewrite");
+
     expect(counts).toEqual({
       journal: 1,
       journalDigests: 2,
@@ -91,6 +97,7 @@ describe("runRetentionCleanup", () => {
       promotions: 8,
       emailBodiesBlanked: 9,
       applicationEvents: 10,
+      resumeVariants: 11,
     });
   });
 });

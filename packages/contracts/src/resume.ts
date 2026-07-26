@@ -32,6 +32,11 @@ export const resumeProjectSchema = z.object({
   description: z.string().optional(),
   bullets: z.array(z.string()).default([]),
   keywords: z.array(z.string()).default([]),
+  // Free-text like the experience dates ("Jan 2025", "2024", "Present"). Optional because most
+  // resumes list projects undated - but a project can only be promoted onto the experience
+  // timeline if it has a real range, so filling these in is what unlocks that.
+  start: z.string().optional(),
+  end: z.string().optional(),
 });
 
 export const resumeSkillGroupSchema = z.object({
@@ -89,3 +94,17 @@ export const EMPTY_RESUME_DATA: ResumeData = {
   skills: [],
   education: [],
 };
+
+// Variant labels that carry meaning beyond "a tailored copy", so sweeps must leave them alone and
+// the reuse scorer must skip them. Shared so the prune endpoint, the retention cron, and the web
+// panel agree - a prefix known to one and not the others deletes the thing it was meant to protect.
+
+/** An agent-authored rewrite awaiting the user's accept or discard. */
+export const SUGGESTED_REWRITE_LABEL = "Suggested rewrite";
+
+export const PROTECTED_VARIANT_LABELS = [SUGGESTED_REWRITE_LABEL] as const;
+
+/** Whether a variant label is reserved, and so exempt from pruning and reuse scoring. */
+export function isProtectedVariantLabel(label: string): boolean {
+  return PROTECTED_VARIANT_LABELS.some((reserved) => label.startsWith(reserved));
+}
