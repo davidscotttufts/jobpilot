@@ -40,7 +40,7 @@ Why the split? Three reasons:
 
 ### 1. The dashboard (the website)
 
-The hosted web app at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net).
+The website at [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net).
 This is where your data lives: your profile, resumes and tailored variants,
 campaigns, the application pipeline, recruiter inbox, networking contacts, and
 analytics. It also has a built-in terminal panel (the "agent dock") where you
@@ -144,8 +144,8 @@ even if a cycle goes off-script.
 
 ## Where your data lives
 
-- **Profile, resumes, applications, campaigns** are stored by the hosted
-  dashboard, in your account.
+- **Profile, resumes, applications, campaigns** are stored in your JobPilot
+  account on the web.
 - **Secrets are encrypted per user.** Job-board passwords and tokens are
   stored encrypted with a key unique to your account.
 - **Browsing happens only on your machine.** The cloud never logs into job

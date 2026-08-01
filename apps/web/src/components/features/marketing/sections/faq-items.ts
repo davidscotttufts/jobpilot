@@ -10,7 +10,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Where does the agent run?",
-    a: "On your computer. The dashboard is hosted, but the AI session and the browser doing the actual applying run locally - you can watch it work and stop it at any point.",
+    a: "On your computer. Your dashboard lives on the web, but the AI session and the browser doing the actual applying run locally - you can watch it work and stop it at any point.",
   },
   {
     q: "Which job boards are supported?",

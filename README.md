@@ -25,7 +25,8 @@ Job searching is a second job. The same forms, the same resume tweaks, the same
 follow-ups, every single day. JobPilot gives that job to an AI agent that runs
 on your own computer. You tell it what you're looking for. It searches the
 boards, tailors your resume for each posting, fills out the forms, submits,
-messages recruiters, and files every reply. A hosted dashboard keeps score.
+messages recruiters, and files every reply. Your dashboard on the web keeps
+score.
 
 > **No API keys. No per-token bills.** The agent runs inside Claude Code or
 > Codex, so all AI work comes out of the subscription you already pay for.

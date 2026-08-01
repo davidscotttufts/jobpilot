@@ -21,10 +21,10 @@ export default function DocsIndexPage(): ReactElement {
           JobPilot docs
         </Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 560 }}>
-          JobPilot is an AI agent for your job search. The dashboard is hosted; the agent runs on
-          your machine, on your own Claude Code or Codex subscription, and drives a real browser to
-          search boards, tailor your resume, apply, and follow up. These guides cover setup and
-          everyday use.
+          JobPilot is an AI agent for your job search. Your dashboard lives on the web; the agent
+          runs on your machine, on your own Claude Code or Codex subscription, and drives a real
+          browser to search boards, tailor your resume, apply, and follow up. These guides cover
+          setup and everyday use.
         </Typography>
       </Stack>
       <DocsIndexCards />
