@@ -79,8 +79,8 @@ export function InstallGuide(): ReactElement {
       <InstallStep number={2} title="Run setup">
         <Typography variant="body2Muted">
           {provider === "claude"
-            ? "In the same Claude Code session, run the setup skill. It installs and starts the local JobPilot agent for you."
-            : "Start a new Codex session and run $setup. You can also find it in the /skills picker."}
+            ? "In the same Claude Code session, run the setup skill. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type - everything else runs from the dashboard."
+            : "Start a new Codex session and run $setup. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type - everything else runs from the dashboard."}
         </Typography>
         <CopyField
           value={SETUP_COMMANDS[provider]}

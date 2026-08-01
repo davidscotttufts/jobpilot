@@ -54,8 +54,8 @@ agenda. The host restarts cycles on its own after a reboot or wake.
 
 ## Can I use JobPilot manually while the Pilot is running?
 
-Yes - campaigns and skills work as usual. If you launch a session with the
-other provider yourself, the Pilot pauses instead of fighting for the
+Yes - campaigns and dashboard actions work as usual. If you launch a session
+with the other provider yourself, the Pilot pauses instead of fighting for the
 terminal and resumes when you're done.
 
 ## Why does the journal show "cycles"?
@@ -88,7 +88,9 @@ uses a 2Captcha or CapSolver key if you've added one under
 
 When a new version ships, the dashboard shows an update banner in the agent
 dock. Follow it - the flow updates the host and plugin, and on Claude Code
-reloads plugins without restarting your session.
+reloads plugins without restarting your session. Re-running `setup` does the
+same thing: on an existing install it upgrades the terminal host to the
+latest release.
 
 ## Can I switch between Claude Code and Codex?
 

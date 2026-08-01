@@ -9,7 +9,7 @@ interface Mode {
   tag: string;
   title: string;
   body: string;
-  command: string;
+  action: string;
   tone: "info" | "accent" | "success" | "warning";
 }
 
@@ -18,28 +18,28 @@ const MODES: Mode[] = [
     tag: "search",
     title: "Search",
     body: "Find and score roles against your resume across every board.",
-    command: "/jobpilot:search · $search",
+    action: "New campaign → Search only",
     tone: "info",
   },
   {
     tag: "auto-apply",
     title: "Auto-apply",
     body: "Let the agent apply to your high-match roles on its own.",
-    command: "/jobpilot:auto-apply · $auto-apply",
+    action: "New campaign → Auto-apply",
     tone: "accent",
   },
   {
     tag: "apply",
     title: "Apply",
     body: "Queue specific URLs and apply one by one, tailored each time.",
-    command: "/jobpilot:apply · $apply <url>",
+    action: "Workspace → Apply all",
     tone: "success",
   },
   {
     tag: "networking",
     title: "Networking",
     body: "Find the hiring manager and message them by email or LinkedIn.",
-    command: "/jobpilot:networking · $networking",
+    action: "New campaign → Networking",
     tone: "warning",
   },
 ];
@@ -51,11 +51,11 @@ export function CampaignTypes(): ReactElement {
   return (
     <Section>
       <Stack spacing={1.5} sx={{ mb: 4, maxWidth: 620 }}>
-        <SectionEyebrow>MANUAL MODES</SectionEyebrow>
+        <SectionEyebrow>HANDS-ON MODES</SectionEyebrow>
         <Typography variant="h2">Prefer to drive? Four hands-on modes.</Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-          The Pilot runs all of these for you. Reach for them directly when you want to steer a
-          single search, application, or message by hand.
+          The Pilot runs all of these for you. Reach for them yourself when you want to steer a
+          single search, application, or message.
         </Typography>
       </Stack>
       <Grid container spacing={2}>
@@ -111,7 +111,7 @@ export function CampaignTypes(): ReactElement {
                       },
                     ]}
                   >
-                    {mode.command}
+                    {mode.action}
                   </Box>
                 </CardContent>
               </Card>
@@ -120,7 +120,7 @@ export function CampaignTypes(): ReactElement {
         })}
       </Grid>
       <Typography variant="body2Muted" sx={{ mt: 3 }}>
-        Every mode is a skill you can also run by hand from the agent -{" "}
+        Each one starts from a button in the dashboard and runs in the agent dock -{" "}
         <Link href="/docs/campaigns-and-skills">see the docs</Link>.
       </Typography>
     </Section>

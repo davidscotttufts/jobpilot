@@ -16,8 +16,8 @@ const STEPS = [
   },
   {
     title: "Run a campaign",
-    body: "Launch the agent from the dashboard dock. Start with a search, graduate to auto-apply.",
-    snippet: "/jobpilot:auto-apply  ·  $auto-apply",
+    body: "Everything after setup is a button in the dashboard. Start with a search, graduate to auto-apply.",
+    snippet: "New campaign  ·  Search → Auto-apply",
   },
 ];
 

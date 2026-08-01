@@ -22,7 +22,7 @@ Add the plugin to the provider you use - the [install page](/install) has
 copy-paste commands for both. In Claude Code:
 
 ```text
-/plugin marketplace add https://github.com/suxrobgm/claude-plugins
+/plugin marketplace add https://github.com/suxrobGM/claude-plugins
 /plugin install jobpilot@sukhrob-claude-plugins
 ```
 
@@ -37,7 +37,8 @@ codex plugin add jobpilot@sukhrob-codex-plugins
 
 Start a new provider session and run the `setup` skill - `/jobpilot:setup` in
 Claude Code, `$setup` in Codex. It installs the local terminal host, starts
-the agent, and opens the dashboard.
+the agent, and opens the dashboard. Run it again any time: when a host is
+already installed, `setup` upgrades it to the latest release instead.
 
 ```text
 /jobpilot:setup
@@ -69,27 +70,18 @@ Everything can be changed later under **Settings**.
 
 ## 4. Run your first campaign
 
-Start gentle: search first, apply after review.
+`setup` is the only command you type. From here on you drive the agent from
+the dashboard, and it works in the dock while you watch.
 
-```text
-/jobpilot:search senior typescript remote
-$search senior typescript remote
-```
+Start gentle: search first, apply after review. Press **New campaign**, enter
+what you're looking for, pick a board, and choose **Search only**. The agent
+searches, scores each role against your resume, and saves the matches to the
+campaign. Review the ranked list, then approve the ones worth applying to.
 
-The agent searches the board you pick, scores each role against your resume,
-and saves the matches to a campaign. Review the ranked list, then let it
-apply to the ones you approve.
-
-Once you trust the scoring, go autonomous:
-
-```text
-/jobpilot:auto-apply senior typescript remote
-$auto-apply senior typescript remote
-```
-
-Auto-apply searches, scores, and applies one job at a time until the board
-is exhausted, you pause it, or it reaches your application cap (set under
-**Settings → Profile**).
+Once you trust the scoring, create a campaign with **Auto-apply** instead. It
+searches, scores, and applies one job at a time until the board is exhausted,
+you pause it, or it reaches your application cap (set under **Settings →
+Profile**).
 
 Every application lands in your workspace, where it moves from applied to
 offer. Next up: [Campaigns & skills](/docs/campaigns-and-skills).
