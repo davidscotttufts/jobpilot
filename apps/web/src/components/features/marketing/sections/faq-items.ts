@@ -9,6 +9,10 @@ export const FAQ_ITEMS = [
     a: "No. The agent runs inside Claude Code or Codex, so the AI work comes out of the subscription you already pay for. There's nothing to top up and no per-token bill from us.",
   },
   {
+    q: "Which AI model should I use?",
+    a: "A mid-tier one: Claude Sonnet 5 or GPT 5.6 Terra. Avoid top-tier models like Claude Opus 5 - applying to jobs is reading postings and filling forms, not hard reasoning, so the top tier eats your weekly usage limits far faster without applying to more jobs. Set it in your provider: /model in Claude Code.",
+  },
+  {
     q: "Where does the agent run?",
     a: "On your computer. Your dashboard lives on the web, but the AI session and the browser doing the actual applying run locally - you can watch it work and stop it at any point.",
   },

@@ -15,7 +15,9 @@
 
 [**Open JobPilot →**](https://jobpilot.suxrobgm.net) &nbsp;·&nbsp; [Docs](https://jobpilot.suxrobgm.net/docs) &nbsp;·&nbsp; [How it works](docs/architecture.md) &nbsp;·&nbsp; [Changelog](CHANGELOG.md)
 
-[![Watch the teaser](docs/images/teaser.gif)](docs/images/teaser.mp4)
+[![Watch the teaser](docs/images/teaser.gif)](apps/web/public/teaser.mp4)
+
+*[Watch it full size →](https://jobpilot.suxrobgm.net#see-it-run)*
 
 </div>
 
@@ -68,6 +70,11 @@ read the journal in the morning.
    resume - the agent parses it into your profile.
 4. Launch your first search campaign. Review the matches, then apply to the
    ones you like or let an auto-apply campaign work through them.
+
+> **Pick a mid-tier model** - Claude Sonnet 5 or GPT 5.6 Terra (`/model` in
+> Claude Code). Top-tier models eat your weekly usage limits far faster
+> without applying to more jobs.
+> [Why](https://jobpilot.suxrobgm.net/docs/faq).
 
 ### Install the plugin
 

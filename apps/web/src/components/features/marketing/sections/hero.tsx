@@ -37,7 +37,15 @@ export function Hero(): ReactElement {
           pointerEvents: "none",
         }}
       />
-      <Container maxWidth="lg" sx={{ position: "relative", paddingBlock: { xs: 6, md: 10 } }}>
+      {/* Light bottom padding: the hero runs into the teaser rather than sitting a section apart. */}
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: "relative",
+          paddingTop: { xs: 6, md: 10 },
+          paddingBottom: { xs: 2, md: 3 },
+        }}
+      >
         <Grid container spacing={6} sx={{ alignItems: "center" }}>
           <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={3}>
