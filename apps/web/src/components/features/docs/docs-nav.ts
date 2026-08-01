@@ -21,7 +21,8 @@ export const DOCS_NAV: DocsNavEntry[] = [
   {
     title: "The Pilot",
     href: "/docs/pilot",
-    description: "Autonomous mode: write your instructions, close the lid, wake to a journal.",
+    description:
+      "Autonomous mode: write your instructions once and read the journal in the morning.",
   },
   {
     title: "Email setup",

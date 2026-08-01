@@ -27,7 +27,8 @@ export function Teaser(): ReactElement {
         <SectionEyebrow color="accent.primary">SEE IT RUN</SectionEyebrow>
         <Typography variant="h2">Forty seconds of the agent working.</Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-          No mockups: a real cycle, a real application form, and a real pipeline filling up.
+          Nothing here is a mockup: it's one real cycle, a real application form, and the pipeline
+          filling up.
         </Typography>
       </Stack>
 

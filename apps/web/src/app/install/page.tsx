@@ -12,7 +12,7 @@ import {
 export const metadata: Metadata = {
   title: "Install JobPilot",
   description:
-    "Add the JobPilot plugin to Claude Code or Codex, run setup, and create your account - the agent does the rest.",
+    "Add the JobPilot plugin to Claude Code or Codex, run setup, and create your account. The agent does the rest.",
   alternates: { canonical: "/install" },
 };
 

@@ -10,26 +10,26 @@ A campaign is one run of the agent against a goal: find jobs, apply to them,
 or reach the people hiring. Skills are the units of work the agent performs.
 
 You don't type skill names. After `setup`, every skill is dispatched by an
-action in the dashboard - creating a campaign, applying to a job, scanning
-your inbox - and the agent carries it out in the dock while you watch.
+action in the dashboard (creating a campaign, applying to a job, scanning your
+inbox) and the agent carries it out in the dock while you watch.
 
 ## The four campaign modes
 
-**Search** - the agent searches a board and scores every role against your
+**Search.** The agent searches a board and scores every role against your
 resume, but doesn't apply. You review the ranked list on the campaign page
 and approve the ones worth applying to. Best when you're starting out or
 picky about targets.
 
-**Auto-apply** - the agent searches, scores, and applies on its own, one job
+**Auto-apply.** The agent searches, scores, and applies on its own, one job
 at a time, skipping weak matches and jobs you already applied to. It stops
 when the board is exhausted, you pause it, or it hits your application cap.
 Best once you trust the scoring.
 
-**Apply** - one job at a time. Add a job URL to your workspace queue and press
+**Apply.** One job at a time. Add a job URL to your workspace queue and press
 apply; the agent reviews fit, tailors your resume, and applies. **Apply all**
 drains the whole queue, one job at a time.
 
-**Networking** - the agent finds the hiring manager or recruiter behind a role
+**Networking.** The agent finds the hiring manager or recruiter behind a role
 and drafts a personalized email or LinkedIn message. Nothing is sent without
 your approval.
 
@@ -60,14 +60,15 @@ one, `get-code` pulls verification codes from your mailbox during logins,
 `solve-captcha` handles captchas, and `humanizer` keeps generated text reading
 naturally.
 
-The one command you run yourself is `setup` - `/jobpilot:setup` in Claude
+The one command you run yourself is `setup`: `/jobpilot:setup` in Claude
 Code, `$setup` in Codex. It installs and starts the local agent terminal, and
 upgrades it to the latest release when one is already installed.
 
-After an upload the agent parses your resume, then proposes an improved version -
-rewritten summary, stronger bullets, tidier skill groups. It appears on the
-resume page with a list of every change, and nothing applies until you press
-Apply. Your PDF is never modified, so you can always re-extract from it.
+After an upload the agent parses your resume, then proposes an improved
+version with a rewritten summary, stronger bullets, and tidier skill groups.
+It appears on the resume page with a list of every change, and nothing applies
+until you press Apply. Your PDF is never modified, so you can always
+re-extract from it.
 
 ## Statuses
 
@@ -81,19 +82,20 @@ aggregates the funnel across campaigns.
 
 With [email connected](/docs/email-setup), the `scan-inbox` skill reads new
 mail, classifies each message (interview request, rejection, offer, ...), and
-matches it to an application. Proposed status moves appear in your inbox page -
+matches it to an application. Proposed status moves appear in your inbox page;
 approve one and the application updates. Nothing changes status without you.
 
 ## Recovering a campaign
 
 Both live on the campaign page:
 
-- **Paused?** Press **Resume** (`resume-campaign`). It picks the apply loop
-  back up on the remaining approved jobs without re-asking anything.
-- **Skipped too much?** Press **Rescan skipped** (`rescan-skipped`). It
+- If a campaign is paused, press **Resume** (`resume-campaign`). It picks the
+  apply loop back up on the remaining approved jobs without re-asking
+  anything.
+- If it skipped too much, press **Rescan skipped** (`rescan-skipped`). It
   re-scores the campaign's skipped jobs and promotes the ones dropped for bad
-  reasons - a sparse job description, a mislabeled location - back to approved.
-  You can also select individual skipped rows and rescan just those.
+  reasons, such as a sparse job description or a mislabeled location, back to
+  approved. You can also select individual skipped rows and rescan just those.
 
 ## Upwork
 

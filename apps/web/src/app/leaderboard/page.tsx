@@ -7,7 +7,7 @@ import { LeaderboardView } from "@/components/features/portfolio";
 export const metadata: Metadata = {
   title: "Trending users",
   description:
-    "The most active JobPilot users - ranked by applications sent and networking outreach. Discover who's on the hunt.",
+    "The most active JobPilot users, ranked by applications sent and networking outreach.",
   alternates: { canonical: "/leaderboard" },
 };
 

@@ -17,7 +17,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: "Set your instructions",
-    body: "What roles you want, how many applications a day, which searches to keep warm, how bold the recruiter outreach should be. Plain sentences, not config files.",
+    body: "What roles you want, how many applications a day, which searches to keep warm, how bold the recruiter outreach should be. You write it in plain sentences rather than a config file.",
   },
   {
     title: "Let it work",
@@ -25,11 +25,11 @@ const STEPS: Step[] = [
   },
   {
     title: "Answer from your phone",
-    body: "When it hits something only you can answer - a salary question, a login code, a message it wants to send - you get a one-tap card by push. Answer it and the parked job picks back up.",
+    body: "When it hits something only you can answer (a salary question, a login code, a message it wants to send) you get a one-tap card by push. Answer it and the parked job picks back up.",
   },
   {
     title: "Wake to a journal",
-    body: "Every action lands in a live feed, rolled into a morning digest: applications sent, replies reviewed, questions waiting. Your daily limits are enforced by the dashboard itself, not just promised by the AI.",
+    body: "Every action lands in a live feed, rolled into a morning digest: applications sent, replies reviewed, questions waiting. The dashboard itself enforces your daily limits, so they hold even if a cycle goes off-script.",
   },
 ];
 
@@ -57,7 +57,7 @@ export function Pilot(): ReactElement {
               <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
                 The Pilot is JobPilot running unattended. You give it instructions and limits; it
                 works through your search on its own, asks when it's unsure, and keeps a journal you
-                can read over coffee - instead of you driving every step by hand.
+                can read over coffee, so you never have to drive every step by hand.
               </Typography>
             </Stack>
           </Grid>

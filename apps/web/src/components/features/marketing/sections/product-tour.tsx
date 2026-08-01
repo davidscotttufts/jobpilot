@@ -19,14 +19,14 @@ const ROWS: TourRow[] = [
   {
     eyebrow: "WORKSPACE",
     title: "Your pipeline fills itself.",
-    body: "Six stages from applied to offer. The agent logs each application as it lands, so the funnel and its analytics stay current without a minute of data entry.",
+    body: "Six stages from applied to offer. The agent logs each application as it lands, so the funnel and its analytics stay current without you entering anything by hand.",
     panel: <WorkspacePanel />,
     glow: alpha(accent.primary, 0.07),
   },
   {
     eyebrow: "INBOX",
     title: "Recruiter replies, matched to the right application",
-    body: "JobPilot reads recruiter replies from your Gmail, classifies them, and pairs each with the application it belongs to. You approve the status move - nothing changes without you.",
+    body: "JobPilot reads recruiter replies from your Gmail, classifies them, and pairs each with the application it belongs to. You approve the status move; nothing changes without you.",
     panel: <InboxPanel />,
     glow: alpha(accent.secondary, 0.07),
   },
@@ -39,7 +39,7 @@ const ROWS: TourRow[] = [
   },
   {
     eyebrow: "UPWORK",
-    title: "Freelance without the lottery.",
+    title: "Only the Upwork jobs worth bidding on.",
     body: "Client-quality filters drop low hire rates and empty spend histories before ranking what's left. Proposals and profile improvements are drafted for your approval.",
     panel: <UpworkPanel />,
     glow: alpha(accent.primary, 0.07),

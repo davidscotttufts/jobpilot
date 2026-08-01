@@ -13,10 +13,10 @@ bun run db:setup # generates the Prisma client, runs migrations, seeds default d
 bun run dev      # web :4100 + api :4101 + terminal :4102
 ```
 
-There is no local database container: point `DATABASE_URL` in
-[apps/api/.env](../apps/api/.env) at a PostgreSQL you can reach - either one
-you run yourself or the remote database through the SSH tunnel described
-below - before running `db:setup`.
+There is no local database container. Before running `db:setup`, point
+`DATABASE_URL` in [apps/api/.env](../apps/api/.env) at a PostgreSQL you can
+reach, either one you run yourself or the remote database through the SSH
+tunnel described below.
 
 Open `http://localhost:4100` and toggle the Terminal panel.
 
@@ -39,16 +39,16 @@ via a bastion.
 
 ## Repository layout
 
-- [apps/web/](../apps/web/) - hosted Next.js dashboard (dev `:4100`).
-- [apps/api/](../apps/api/) - hosted Bun + Elysia + Prisma API; owns all state
+- [apps/web/](../apps/web/): hosted Next.js dashboard (dev `:4100`).
+- [apps/api/](../apps/api/): hosted Bun + Elysia + Prisma API; owns all state
   (dev `:4101`, Swagger at `/swagger`).
-- [apps/terminal/](../apps/terminal/) - .NET host that runs on each user's
+- [apps/terminal/](../apps/terminal/): .NET host that runs on each user's
   machine and bridges one Claude Code / Codex PTY to the dashboard
   (dev `:4102`).
-- [plugin/](../plugin/) - one provider-neutral plugin for both Claude Code and
-  Codex: skills, worker subagents, and the Playwright MCP config. No build
-  step.
-- [packages/](../packages/) - shared Zod contracts and the typed Eden Treaty
+- [plugin/](../plugin/): one provider-neutral plugin for both Claude Code and
+  Codex, holding skills, worker subagents, and the Playwright MCP config. No
+  build step.
+- [packages/](../packages/): shared Zod contracts and the typed Eden Treaty
   API client.
 
 ## Tech stack
@@ -96,21 +96,21 @@ flowchart LR
 
 ### Components
 
-- **[apps/web/](../apps/web/)** - Next.js UI: pipeline, campaigns with live
-  per-job progress, inbox, networking, resume studio, Upwork, analytics,
-  settings, and the agent dock (an xterm.js panel that installs, launches,
-  and monitors the local agent). Browser and server both call the API
-  directly via `API_BASE_URL` - no proxy.
-- **[apps/api/](../apps/api/)** - Elysia + Prisma; owns all state. Typed
+- **[apps/web/](../apps/web/)**: Next.js UI covering the pipeline, campaigns
+  with live per-job progress, inbox, networking, resume studio, Upwork,
+  analytics, settings, and the agent dock (an xterm.js panel that installs,
+  launches, and monitors the local agent). Browser and server both call the
+  API directly via `API_BASE_URL`, with no proxy in between.
+- **[apps/api/](../apps/api/)**: Elysia + Prisma; owns all state. Typed
   `/api/*` surface, Swagger at `/swagger`, Prisma schema split per domain
   under `apps/api/prisma/schema/`.
-- **[apps/terminal/](../apps/terminal/)** - ASP.NET Core minimal API owning
+- **[apps/terminal/](../apps/terminal/)**: ASP.NET Core minimal API owning
   one provider PTY (ConPTY via Quick.PtyNet), bridged to the web's xterm.js
   over WebSocket. Endpoints: `POST /sessions/start`, `POST /sessions/inject`,
   `DELETE /sessions/current`, `GET /healthz`, `GET /ws`. `/sessions/start`
   takes the user's terminal token and spawns the provider with
   `JOBPILOT_API_TOKEN`, `JOBPILOT_API`, `JOBPILOT_WEB` (plus
-  `JOBPILOT_SKILLS_ROOT` / `JOBPILOT_WORKSPACE_ROOT` for wrappers) - skills
+  `JOBPILOT_SKILLS_ROOT` / `JOBPILOT_WORKSPACE_ROOT` for wrappers), so skills
   authenticate with zero manual setup.
 
 One Terminal instance owns one PTY. It survives tab close (reopening the
@@ -124,16 +124,16 @@ finishes with `/reload-plugins` on Claude.
 
 [plugin/](../plugin/) is one provider-neutral tree, no generation step:
 
-- `skills/<name>/SKILL.md` - one workflow per directory; shared docs in
+- `skills/<name>/SKILL.md`: one workflow per directory; shared docs in
   `skills/_shared/` (no `SKILL.md`, so neither provider lists them as skills).
   Skills reference siblings by name and shared docs by relative path
   (`../_shared/<doc>.md`), so the same text serves both providers.
-- `agents/*.md` - worker subagents (`job-worker`, `networking-worker`) that
+- `agents/*.md`: worker subagents (`job-worker`, `networking-worker`) that
   campaign skills delegate per-iteration work to, isolating heavy browser
   output. Claude auto-discovers them; [.codex/agents/](../.codex/agents/)
   point at the same `.md` bodies. Runtimes without subagents run inline.
-- `.mcp.json` - Playwright MCP server.
-- `.claude-plugin/plugin.json` + `.codex-plugin/plugin.json` - provider
+- `.mcp.json`: Playwright MCP server.
+- `.claude-plugin/plugin.json` + `.codex-plugin/plugin.json`: provider
   manifests (Codex ignores Claude-only frontmatter like `allowed-tools`).
 
 The terminal launches `claude --plugin-dir plugin` or
@@ -148,9 +148,8 @@ Standalone installs come from the
 [codex-plugins](https://github.com/suxrobGM/codex-plugins) marketplaces,
 synced from `plugin/` on each release tag: Claude receives the setup bootstrap
 and Codex receives the full skill tree, its `_shared/` references, and MCP
-configuration. Root
-`.claude/settings.json` grants the permissions the skills need - the plugin
-owns behavior, the repo owns trust policy.
+configuration. Root `.claude/settings.json` grants the permissions the skills
+need: the plugin owns behavior, the repo owns trust policy.
 
 ### Apply lifecycle
 
@@ -191,13 +190,14 @@ back.
 
 The resume skills form a chain, one rule each:
 
-- `extract-resume` parses the PDF into `ResumeData` verbatim - no improvements,
-  no invented fields. Chains `review-resume` on a *first* extraction only;
-  `--force` skips it, since the user asked for what the PDF says.
+- `extract-resume` parses the PDF into `ResumeData` verbatim, improving
+  nothing and inventing no fields. Chains `review-resume` on a *first*
+  extraction only; `--force` skips it, since the user asked for what the PDF
+  says.
 - `review-resume` writes one `Suggested rewrite` variant whose `diffNotes` list
   every change. It never touches a base; the dashboard's Apply action does that
   via `POST /api/resumes/variants/[id]/apply`, which copies the content onto the
-  base and deletes the variant in one transaction - so the suggestion is never
+  base and deletes the variant in one transaction, so the suggestion is never
   applied while still being offered. The stored source PDF is the way back.
 - `tailor-resume` owns per-job variants: base selection, the reuse-vs-create
   score, rewording any entry, and `structure` (reorder, drop, merge, promote

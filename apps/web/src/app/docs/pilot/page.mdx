@@ -2,37 +2,37 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("pilot", {
   description:
-    "Run JobPilot autonomously: write instructions once, answer the occasional question from your phone, wake to a journal.",
+    "Run JobPilot autonomously: write instructions once, answer the occasional question from your phone, and read the journal in the morning.",
 });
 
 # The Pilot
 
-The Pilot is JobPilot's autonomous mode. Write your **instructions** once - goals
-and limits - and the local agent runs your whole search on its own:
+The Pilot is JobPilot's autonomous mode. Write your **instructions** once
+(goals and limits) and the local agent runs your whole search on its own:
 it discovers and scores roles, applies, finds warm intros, networks and follows
 up, reviews recruiter replies, and drafts interview replies, prep sheets, and
 self-promotion posts. Everything it does lands in a live journal; the few
 decisions only you can make arrive as one-tap questions, on your phone if you
 enable notifications.
 
-The Pilot supersedes the [campaign modes](/docs/campaigns-and-skills) - it runs
-all of them for you - but every dashboard action stays available for hands-on
+The Pilot supersedes the [campaign modes](/docs/campaigns-and-skills) and runs
+all of them for you, but every dashboard action stays available for hands-on
 work.
 
 ## How a cycle works
 
 The Pilot works in short, self-contained **cycles**:
 
-1. **Sense** - the server compiles a ranked agenda of everything worth doing
+1. **Sense.** The server compiles a ranked agenda of everything worth doing
    right now: your answers to act on, approved jobs, replies to review,
    searches that are due.
-2. **Act** - the agent takes the top item and does exactly that one thing:
+2. **Act.** The agent takes the top item and does exactly that one thing:
    one application, one inbox review, one search.
-3. **Record** - the outcome is journaled and the agent sleeps - seconds when
-   work is queued, up to your check interval when idle.
+3. **Record.** The outcome is journaled and the agent sleeps, for seconds when
+   work is queued or up to your check interval when idle.
 
 One item per cycle is deliberate. Every result is saved to the server before
-the next thing starts, so a crash, reboot, or closed lid never loses work - the
+the next thing starts, so a crash, reboot, or closed lid never loses work; the
 next cycle picks up exactly where the last one stopped. A small orchestrator on
 your machine drives the loop, restarts stuck runs, and starts cycles on its own
 after a reboot, so no browser tab needs to stay open.
@@ -40,7 +40,7 @@ after a reboot, so no browser tab needs to stay open.
 ## Starting it
 
 1. Make sure your local agent terminal is running (the dock in the dashboard's
-   bottom corner) - see [Getting started](/docs/getting-started) if it's offline.
+   bottom corner). See [Getting started](/docs/getting-started) if it's offline.
 2. Open **Pilot** in the workspace, write your instructions, and save.
 3. Click **Start**.
 
@@ -51,22 +51,22 @@ cycles on boot, crash, or wake until you stop it.
 
 One small document steers everything:
 
-- **Goals** - plain-language direction: roles, priorities, constraints
+- **Goals.** Plain-language direction: roles, priorities, constraints
   ("senior TypeScript remote, at least $150k, by October").
-- **Operating limits** - daily apply cap, minimum match score, check interval.
-- **Networking** - off by default. When on: daily cap, follow-up delay, and
-  per-channel autonomy - email can be **draft**, **review**, or **auto**;
-  LinkedIn is always review.
-- **Searches** - the Pilot creates these from your goals and re-runs them on
-  demand: soon after a run that turns up new roles, backing off when a search
-  keeps coming up dry. The Instructions page shows them read-only, with each
-  one's recent yield and next check.
-- **Platforms** - where the Pilot drafts self-promotion posts. Posting is
+- **Operating limits.** Daily apply cap, minimum match score, check interval.
+- **Networking.** Off by default. When on, you set a daily cap, a follow-up
+  delay, and per-channel autonomy: email can be **draft**, **review**, or
+  **auto**, while LinkedIn is always review.
+- **Searches.** The Pilot creates these from your goals and re-runs them on
+  demand, soon after a run that turns up new roles and less often once a
+  search keeps coming up dry. The Instructions page shows them read-only, with
+  each one's recent yield and next check.
+- **Platforms.** Where the Pilot drafts self-promotion posts. Posting is
   always review-only.
 
 Soft judgment lives in your goals text; the caps are enforced server-side, so
-the Pilot can never exceed them regardless of wording. Edit any time - changes
-take effect on the next cycle.
+the Pilot can never exceed them regardless of wording. Edit any time, and
+changes take effect on the next cycle.
 
 ## What runs on its own vs. what asks you
 
@@ -76,15 +76,15 @@ take effect on the next cycle.
 | Sends networking emails you set to auto, within your cap | Salary and screening questions on an application |
 | Follows up on networking messages per your autonomy setting | Sending a LinkedIn InMail |
 | Reviews recruiter replies in your inbox (proposes moves) | Posting any self-promotion publicly |
-| Drafts everything - emails, follow-ups, interview replies, prep sheets, posts | Parking a board that keeps failing |
+| Drafts emails, follow-ups, interview replies, prep sheets, and posts | Parking a board that keeps failing |
 
 Anything in the right column surfaces as a question. Nothing sends, posts, or
 changes an application's status without you.
 
 ## Questions and push notifications
 
-When the Pilot hits a decision only you can make, it posts a **question** - a
-one-decision card under **Needs attention** on the Overview tab - and parks the
+When the Pilot hits a decision only you can make, it posts a **question**, a
+one-decision card under **Needs attention** on the Overview tab, and parks the
 related work until you answer. Turn on **Notifications** (Instructions tab, per
 device) to get a web push when a question opens, even with the tab closed. A
 2FA request self-expires after about five minutes; if you miss it, the Pilot
@@ -92,7 +92,7 @@ skips that job cleanly and moves on.
 
 ## The journal and morning digest
 
-Every action lands in the **journal** on the Activity tab - a live feed you can
+Every action lands in the **journal** on the Activity tab, a live feed you can
 filter by kind or group **by cycle** to see what each cycle did, its outcome,
 and how long it took. The Overview tab shows the latest activity plus when the
 next cycle will wake. Once a day the last 24 hours roll into a **morning
@@ -102,19 +102,19 @@ digest**: applications, replies reviewed, messages sent, questions waiting.
 ## Interview autonomy
 
 When a recruiter's reply is an interview invite, the Pilot drafts a short
-availability reply and posts it as an approval card - it never sends on its
+availability reply and posts it as an approval card; it never sends on its
 own. It also builds a **prep sheet** (behavioral, technical, system design,
 company notes) and attaches it to the application.
 
 ## Troubleshooting
 
-- **Host offline** - start the agent from the dock; the Pilot resumes on its
+- **Host offline.** Start the agent from the dock. The Pilot resumes on its
   own once the host is back.
-- **Pilot paused after repeated stuck runs** - the host takes a break to
+- **Pilot paused after repeated stuck runs.** The host takes a break to
   protect your machine. Check the dock terminal for what got stuck, then
   start it again.
-- **A board keeps failing** - the Pilot probes it once and journals what it
-  found (usually an expired login it re-establishes on the spot). Everything
+- **A board keeps failing.** The Pilot probes it once and journals what it
+  found, usually an expired login it re-establishes on the spot. Everything
   else keeps running either way.
 
 Next up: [Email setup](/docs/email-setup) so the Pilot can review your replies.

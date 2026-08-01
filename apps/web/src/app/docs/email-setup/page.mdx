@@ -6,15 +6,14 @@ export const metadata = buildDocsMetadata("email-setup", {
 
 # Email setup
 
-Connecting email powers three things: the inbox (recruiter replies are
-classified and matched to applications), verification codes (the agent reads
-sign-in codes during applies), and networking (messages are sent from your own
-address).
+Connecting email powers the inbox (recruiter replies are classified and
+matched to applications), verification codes (the agent reads sign-in codes
+during applies), and networking (messages are sent from your own address).
 
-JobPilot connects to Gmail with **your own** Google OAuth client - it ships
-no shared client, so nothing about your mail passes through anyone else's
-Google app, and no Google verification or security audit is needed. Setup is
-once per user and takes about five minutes.
+JobPilot connects to Gmail with **your own** Google OAuth client. It ships no
+shared client, so nothing about your mail passes through anyone else's Google
+app, and no Google verification or security audit is needed. Setup is once per
+user and takes about five minutes.
 
 ## Create your OAuth client
 
@@ -33,32 +32,32 @@ once per user and takes about five minutes.
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
    It's your own project with you as the only user, so Google verification is
    never required. One catch: Testing-mode refresh tokens expire after about
-   7 days. If you'd rather not reconnect weekly, publish the app - still
+   7 days. If you'd rather not reconnect weekly, publish the app, which stays
    verification-free under Google's 100-user test limit.
 6. Back in **Settings → Email**, paste your **Client ID** and **Client
    secret**, save, then **Connect Gmail**.
 
 ## What JobPilot can and can't do
 
-Read and send - nothing else. The two scopes above let JobPilot read your
-mail and send email on your behalf; deleting or modifying mail is outside
-what the token allows. Your client id and secret are stored encrypted per
-user - the secret never leaves the server - and the connected account is
+JobPilot can read mail and send it, and nothing more. The two scopes above let
+it read your mail and send email on your behalf; deleting or modifying mail is
+outside what the token allows. Your client id and secret are stored encrypted
+per user (the secret never leaves the server) and the connected account is
 tied to your profile only.
 
 ## Troubleshooting
 
 - **"Access blocked: app has not completed the Google verification
-  process"** - your Gmail isn't on the Test users list. Add it under
+  process".** Your Gmail isn't on the Test users list. Add it under
   **Audience → Test users**.
-- **403 "Request had insufficient authentication scopes"** - a required
+- **403 "Request had insufficient authentication scopes".** A required
   Gmail scope isn't on the consent screen. Add both under **Data access**,
   then disconnect and reconnect in **Settings → Email** so a new token with
   the right scopes is issued.
-- **Mailbox connects read-only / networking can't send** - the token was
+- **Mailbox connects read-only, or networking can't send.** The token was
   issued without `gmail.send`. Add the scope under **Data access**, then use
   **Reconnect to enable sending** in **Settings → Email**.
-- **Google 500 after publishing** - you published an app that uses a
+- **Google 500 after publishing.** You published an app that uses a
   sensitive scope. Go back to Testing mode under
   **Audience → Publishing status → Back to testing**.
 

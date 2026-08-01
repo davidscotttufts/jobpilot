@@ -61,7 +61,7 @@ export function InstallGuide(): ReactElement {
         </Tabs>
         <Typography variant="body2Muted">
           {provider === "claude"
-            ? "Run these in any Claude Code session - the CLI, the desktop app, or the VS Code extension."
+            ? "Run these in any Claude Code session: the CLI, the desktop app, or the VS Code extension."
             : "Run these in a shell where the Codex CLI is installed."}
         </Typography>
         <Stack spacing={1}>
@@ -79,8 +79,8 @@ export function InstallGuide(): ReactElement {
       <InstallStep number={2} title="Run setup">
         <Typography variant="body2Muted">
           {provider === "claude"
-            ? "In the same Claude Code session, run the setup skill. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type - everything else runs from the dashboard."
-            : "Start a new Codex session and run $setup. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type - everything else runs from the dashboard."}
+            ? "In the same Claude Code session, run the setup skill. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type; everything else runs from the dashboard."
+            : "Start a new Codex session and run $setup. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type; everything else runs from the dashboard."}
         </Typography>
         <CopyField
           value={SETUP_COMMANDS[provider]}
@@ -91,8 +91,8 @@ export function InstallGuide(): ReactElement {
 
       <InstallStep number={3} title="Create your account">
         <Typography variant="body2Muted">
-          Sign up, upload a resume, and launch the agent from the dashboard - it signs in as you
-          automatically. Your first campaign is one command away.
+          Sign up, upload a resume, and launch the agent from the dashboard, where it signs in as
+          you automatically. Your first campaign starts from a button there.
         </Typography>
         <LinkButton href="/register" variant="contained" size="large" sx={{ alignSelf: "start" }}>
           Create account

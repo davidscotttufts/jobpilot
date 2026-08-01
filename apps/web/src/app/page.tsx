@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 const SOFTWARE_DESCRIPTION =
-  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you - running locally on your own Claude Code or Codex subscription.";
+  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you. It runs locally on your own Claude Code or Codex subscription.";
 
 export default function LandingPage(): ReactElement {
   return (

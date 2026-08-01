@@ -52,7 +52,7 @@ export function CampaignTypes(): ReactElement {
     <Section>
       <Stack spacing={1.5} sx={{ mb: 4, maxWidth: 620 }}>
         <SectionEyebrow>HANDS-ON MODES</SectionEyebrow>
-        <Typography variant="h2">Prefer to drive? Four hands-on modes.</Typography>
+        <Typography variant="h2">Four modes for driving it yourself.</Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
           The Pilot runs all of these for you. Reach for them yourself when you want to steer a
           single search, application, or message.
@@ -120,8 +120,8 @@ export function CampaignTypes(): ReactElement {
         })}
       </Grid>
       <Typography variant="body2Muted" sx={{ mt: 3 }}>
-        Each one starts from a button in the dashboard and runs in the agent dock -{" "}
-        <Link href="/docs/campaigns-and-skills">see the docs</Link>.
+        Each one starts from a button in the dashboard and runs in the agent dock.{" "}
+        <Link href="/docs/campaigns-and-skills">See the docs</Link>.
       </Typography>
     </Section>
   );

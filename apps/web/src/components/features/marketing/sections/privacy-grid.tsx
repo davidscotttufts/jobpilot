@@ -49,7 +49,7 @@ export function PrivacyGrid(): ReactElement {
     <Section>
       <Stack spacing={1} sx={{ mb: 4 }}>
         <SectionEyebrow>TRUST</SectionEyebrow>
-        <Typography variant="h2">Free, open source, and yours.</Typography>
+        <Typography variant="h2">Free, open source, and yours to run.</Typography>
       </Stack>
       <Grid container spacing={2}>
         {FACTS.map((fact) => (

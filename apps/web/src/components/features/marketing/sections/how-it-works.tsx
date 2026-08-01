@@ -6,12 +6,12 @@ import { Section } from "../section";
 const STEPS = [
   {
     title: "Install the plugin",
-    body: "Add JobPilot to the Claude Code or Codex subscription you already have - no API keys. The setup skill installs and starts the local agent.",
+    body: "Add JobPilot to the Claude Code or Codex subscription you already have; it needs no API keys of its own. The setup skill installs and starts the local agent.",
     snippet: "/plugin install jobpilot  ·  /jobpilot:setup",
   },
   {
     title: "Create your account",
-    body: "Sign up and upload your resume - the agent parses it into the profile it scores and applies with.",
+    body: "Sign up and upload your resume. The agent parses it into the profile it scores and applies with.",
     snippet: "jobpilot.suxrobgm.net/register",
   },
   {
@@ -29,7 +29,7 @@ export function HowItWorks(): ReactElement {
     >
       <Section>
         <Typography variant="h2" sx={{ mb: 4 }}>
-          From zero to applied in three steps.
+          From install to your first application.
         </Typography>
         <Grid container spacing={4}>
           {STEPS.map((step, i) => (

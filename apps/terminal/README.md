@@ -1,4 +1,4 @@
-# JobPilot Terminal Host
+# JobPilot terminal host
 
 The terminal host is a local .NET process that exposes one Claude Code or Codex PTY to the web app. It owns no
 cloud application state; it launches the provider with the authenticated JobPilot API environment and relays raw

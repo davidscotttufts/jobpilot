@@ -4,7 +4,7 @@
 
 # JobPilot
 
-**An AI agent that applies to jobs for you - on the Claude or Codex subscription you already have.**
+**An AI agent that applies to jobs for you, on the Claude or Codex subscription you already have.**
 
 [![Release](https://img.shields.io/github/v/release/suxrobGM/jobpilot?style=flat&color=FF6A3D)](https://github.com/suxrobGM/jobpilot/releases)
 [![CI](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml/badge.svg)](https://github.com/suxrobGM/jobpilot/actions/workflows/ci.yml)
@@ -23,42 +23,41 @@
 
 ---
 
-Job searching is a second job. The same forms, the same resume tweaks, the same
-follow-ups, every single day. JobPilot gives that job to an AI agent that runs
-on your own computer. You tell it what you're looking for. It searches the
+Applying to jobs eats hours: the same forms, the same resume tweaks, the same
+follow-ups, day after day. JobPilot hands that work to an AI agent running on
+your own computer. You tell it what you're looking for, and it searches the
 boards, tailors your resume for each posting, fills out the forms, submits,
-messages recruiters, and files every reply. Your dashboard on the web keeps
-score.
+messages recruiters, and files every reply. The dashboard on the web tracks
+where each application stands.
 
-> **No API keys. No per-token bills.** The agent runs inside Claude Code or
-> Codex, so all AI work comes out of the subscription you already pay for.
+> No API keys, no per-token bills. The agent runs inside Claude Code or Codex,
+> so all AI work comes out of the subscription you already pay for.
 
-And you never lose sight of it: the agent drives a real browser on your
-machine, logged in as you. You can watch every click, or close the lid and
-read the journal in the morning.
+The agent drives a real browser on your machine, logged in as you, so you can
+watch every click if you want to. Or close the lid and read the journal in the
+morning.
 
 ## What it does
 
-- **Applies while you do something else.** Point it at LinkedIn, Indeed,
-  Hiring Cafe, and more - or add your own board. It scores every posting against your resume,
-  then applies one at a time or works through an auto-apply campaign, up to
-  the limits you set. Screening questions, tailored resumes, and cover
-  letters included.
+- Point it at LinkedIn, Indeed, Hiring Cafe, and more, or add your own board.
+  It scores every posting against your resume, then applies one at a time or
+  works through an auto-apply campaign, up to the limits you set. Screening
+  questions, tailored resumes, and cover letters are part of that.
 
-- **Runs itself with the Pilot.** Write your goals once and set a daily cap.
-  The Pilot keeps the search moving on its own - finding roles, applying,
-  following up - and sends you a push notification when a question only you
-  can answer. You wake up to a journal of what it did overnight.
+- The Pilot runs the search unattended. Write your goals once, set a daily
+  cap, and it keeps finding roles, applying, and following up on its own. When
+  something comes up that only you can answer, it sends a push notification.
+  Otherwise you read the journal in the morning.
 
-- **Talks to the humans too.** It finds the recruiter or hiring manager
-  behind a posting and drafts a personal message for email or LinkedIn.
-  Connect Gmail and it reads replies, matches them to your applications, and
-  proposes the next move - you approve every send.
+- It finds the recruiter or hiring manager behind a posting and drafts a
+  personal message for email or LinkedIn. Connect Gmail and it reads replies,
+  matches them to your applications, and proposes the next move. You approve
+  every send.
 
-- **Tracks everything.** One pipeline from submitted to offer, with
-  analytics on top. Every resume variant is versioned and exported to PDF,
-  so you always know which resume went where. Upwork gets the same
-  treatment: search, client-quality filters, and drafted proposals.
+- Applications move through one pipeline from submitted to offer, with
+  analytics on top. Every resume variant is versioned and exported to PDF, so
+  you always know which resume went where. Upwork works the same way: search,
+  client-quality filters, and drafted proposals.
 
 ## Get started
 
@@ -66,14 +65,14 @@ read the journal in the morning.
 2. Run the `setup` skill. It installs the local terminal companion (or
    upgrades it to the latest release if you already have one), starts the
    agent, and opens the dashboard.
-3. [Create an account](https://jobpilot.suxrobgm.net) and upload your
-   resume - the agent parses it into your profile.
+3. [Create an account](https://jobpilot.suxrobgm.net) and upload your resume.
+   The agent parses it into your profile.
 4. Launch your first search campaign. Review the matches, then apply to the
    ones you like or let an auto-apply campaign work through them.
 
-> **Pick a mid-tier model** - Claude Sonnet 5 or GPT 5.6 Terra (`/model` in
-> Claude Code). Top-tier models eat your weekly usage limits far faster
-> without applying to more jobs.
+> Pick a mid-tier model: Claude Sonnet 5 or GPT 5.6 Terra (`/model` in Claude
+> Code). Top-tier models eat your weekly usage limits far faster without
+> applying to more jobs.
 > [Why](https://jobpilot.suxrobgm.net/docs/faq).
 
 ### Install the plugin
@@ -131,7 +130,7 @@ For a guided walkthrough, see the
 
 ## Skills
 
-There is one command you ever type yourself:
+There is only one command you type yourself:
 
 ```text
 /jobpilot:setup     # Claude Code
@@ -140,7 +139,7 @@ $setup              # Codex
 
 It installs the local terminal companion, starts the agent, and opens the
 dashboard. If the companion is already installed, `setup` upgrades it to the
-latest release instead - so run it again any time to update or repair the
+latest release instead, so run it again any time to update or repair the
 install.
 
 Everything else happens from the dashboard. Click an action and JobPilot hands
@@ -178,11 +177,11 @@ connect it.
 
 ## Documentation
 
-- [User documentation](https://jobpilot.suxrobgm.net/docs) - setup,
-  campaigns, skills, email, credentials, and common questions.
-- [How JobPilot works](docs/architecture.md) - a non-technical overview of
-  the dashboard, local agent, and terminal companion.
-- [Development guide](docs/development.md) - local setup, repository layout,
+- [User documentation](https://jobpilot.suxrobgm.net/docs): setup, campaigns,
+  skills, email, credentials, and common questions.
+- [How JobPilot works](docs/architecture.md): a non-technical overview of the
+  dashboard, local agent, and terminal companion.
+- [Development guide](docs/development.md): local setup, repository layout,
   technical architecture, and contribution notes.
 
 ## License

@@ -35,7 +35,7 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
           <SectionEyebrow>LIVE JOB INDEX</SectionEyebrow>
           <Typography variant="h2">Jobs the agents found this week.</Typography>
           <Typography variant="body2Muted">
-            Found across every board and deduped into one listing each.
+            The agents found these across every board and deduped them into one listing each.
           </Typography>
         </Stack>
         <LinkButton href="/jobs" variant="outlined">

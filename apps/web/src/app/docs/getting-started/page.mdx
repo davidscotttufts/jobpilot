@@ -13,12 +13,12 @@ your own machine. Setup takes about ten minutes.
 ## What you need
 
 - A [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex)
-  subscription. The agent runs on it - JobPilot needs no API keys.
+  subscription. The agent runs on it, so JobPilot needs no API keys.
 - Windows, macOS, or Linux.
 
 ## 1. Install the plugin
 
-Add the plugin to the provider you use - the [install page](/install) has
+Add the plugin to the provider you use. The [install page](/install) has
 copy-paste commands for both. In Claude Code:
 
 ```text
@@ -35,7 +35,7 @@ codex plugin add jobpilot@sukhrob-codex-plugins
 
 ## 2. Run setup
 
-Start a new provider session and run the `setup` skill - `/jobpilot:setup` in
+Start a new provider session and run the `setup` skill: `/jobpilot:setup` in
 Claude Code, `$setup` in Codex. It installs the local terminal host, starts
 the agent, and opens the dashboard. Run it again any time: when a host is
 already installed, `setup` upgrades it to the latest release instead.
@@ -45,12 +45,12 @@ already installed, `setup` upgrades it to the latest release instead.
 $setup
 ```
 
-From here the agent dock - the terminal panel in the dashboard's bottom
-corner - shows everything the agent does, and you can switch providers there
-any time. If the terminal host ever breaks, the [install page](/install) has
-a one-line installer to repair it.
+From here the agent dock (the terminal panel in the dashboard's bottom corner)
+shows everything the agent does, and you can switch providers there any time.
+If the terminal host ever breaks, the [install page](/install) has a one-line
+installer to repair it.
 
-> Pick a mid-tier model - Claude Sonnet 5 or GPT 5.6 Terra (`/model` in Claude
+> Pick a mid-tier model: Claude Sonnet 5 or GPT 5.6 Terra (`/model` in Claude
 > Code). Top-tier models eat your weekly usage limits far faster without
 > applying to more jobs. [Why](/docs/faq).
 
@@ -61,16 +61,16 @@ a one-line installer to repair it.
 3. Complete onboarding: fill in your profile and upload a resume PDF. The
    running agent parses the resume into the structured editor; the profile
    powers form filling, the resume powers job scoring and tailoring.
-4. Check the suggested rewrite. The agent proposes an improved version - sharper
-   summary, outcome-first bullets, tidier skill groups - and lists every change.
+4. Check the suggested rewrite. The agent proposes an improved version (sharper
+   summary, outcome-first bullets, tidier skill groups) and lists every change.
    Nothing applies until you press **Apply**, and your PDF is never modified, so
    re-extracting always gets you back to the original.
 
 Everything can be changed later under **Settings**.
 
 > Keep your profile address and resume header in agreement. Recruiters read the
-> resume, but application forms and cover-letter headers come from your profile -
-> the resume page flags any disagreement.
+> resume, but application forms and cover-letter headers come from your profile,
+> and the resume page flags any disagreement.
 
 ## 4. Run your first campaign
 
