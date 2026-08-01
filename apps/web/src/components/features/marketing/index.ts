@@ -3,6 +3,7 @@ export * from "./marketing-nav";
 export * from "./marketing-shell";
 export * from "./section";
 export * from "./section-eyebrow";
+export * from "./section-glow";
 export * from "./sections/board-strip";
 export * from "./sections/campaign-types";
 export * from "./sections/cta-band";

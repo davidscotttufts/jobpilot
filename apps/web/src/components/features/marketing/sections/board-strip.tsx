@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import { Box, Container, Stack, Typography } from "@mui/material";
 import { accent } from "@/theme";
-import { monoChipSx } from "../mono-chip-sx";
 
 const BOARDS = [
   "LinkedIn",
@@ -17,7 +16,7 @@ const BOARDS = [
   "Upwork",
 ];
 
-const chipSx = { ...monoChipSx, fontSize: { xs: "0.75rem", md: "0.8125rem" } } as const;
+const chipSx = { fontSize: { xs: "0.75rem", md: "0.8125rem" } } as const;
 
 /**
  * The seeded boards as mono chips - the agent's territory, machine voice - with an
@@ -45,12 +44,12 @@ export function BoardStrip(): ReactElement {
             }}
           >
             {BOARDS.map((board) => (
-              <Typography key={board} component="span" sx={chipSx}>
+              <Typography key={board} variant="monoChip" sx={chipSx}>
                 {board}
               </Typography>
             ))}
             <Typography
-              component="span"
+              variant="monoChip"
               sx={[
                 chipSx,
                 {

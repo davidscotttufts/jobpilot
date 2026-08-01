@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import { fontFamilies, line, radii, shadows } from "@/theme";
+import { Box, Card, Stack, Typography } from "@mui/material";
+import { fontFamilies, line } from "@/theme";
 
 /** A line in the faux agent transcript. `tone` maps to a brand status color. */
 interface Line {
@@ -44,15 +44,7 @@ const LINE_SX = {
  */
 export function AgentTranscript(): ReactElement {
   return (
-    <Box
-      sx={{
-        borderRadius: radii.lg,
-        border: `1px solid ${line.border}`,
-        backgroundColor: "surfaces.card",
-        boxShadow: shadows.lg,
-        overflow: "hidden",
-      }}
-    >
+    <Card variant="showcase">
       <Stack
         direction="row"
         spacing={0.75}
@@ -81,6 +73,6 @@ export function AgentTranscript(): ReactElement {
           </Typography>
         ))}
       </Stack>
-    </Box>
+    </Card>
   );
 }

@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import { alpha, Box, Typography } from "@mui/material";
 import { accent, fontFamilies, line } from "@/theme";
-import { monoChipSx } from "../mono-chip-sx";
 
 // One label per stop, in loop order - plain visitor language, no internal Pilot vocabulary.
 const STOPS = ["finds roles", "applies", "follows up", "asks you", "writes the journal"];
@@ -36,7 +35,6 @@ const ringSx = {
 } as const;
 
 const stopSx = {
-  ...monoChipSx,
   position: "absolute",
   transform: "translate(-50%, -50%)",
   fontSize: { xs: "0.6875rem", sm: "0.75rem" },
@@ -84,13 +82,13 @@ export function PilotCycle(): ReactElement {
       </Box>
       <Box sx={ringSx}>
         {STOPS.map((label, i) => (
-          <Box
+          <Typography
             key={label}
-            component="span"
+            variant="monoChip"
             sx={[stopSx, { ...ringPosition(i), animationDelay: `${i * STEP_MS}ms` }]}
           >
             {label}
-          </Box>
+          </Typography>
         ))}
       </Box>
     </Box>

@@ -53,6 +53,15 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
         borderColor: `${theme.palette.accent.primary}59`,
       }),
     },
+    {
+      props: { variant: "showcase" },
+      style: ({ theme }) => ({
+        borderRadius: theme.radii.lg,
+        boxShadow: theme.shadows_custom.lg,
+        // Every caller clips to the radius - panel chrome, transcript rows, video.
+        overflow: "hidden",
+      }),
+    },
   ],
 };
 

@@ -39,6 +39,7 @@ declare module "@mui/material/styles" {
     captionMuted: CSSProperties;
     overline: CSSProperties;
     overlineMuted: CSSProperties;
+    monoChip: CSSProperties;
     statValue: CSSProperties;
     statLabel: CSSProperties;
     body1Strong: CSSProperties;
@@ -52,6 +53,7 @@ declare module "@mui/material/styles" {
     captionMuted?: CSSProperties;
     overline?: CSSProperties;
     overlineMuted?: CSSProperties;
+    monoChip?: CSSProperties;
     statValue?: CSSProperties;
     statLabel?: CSSProperties;
     body1Strong?: CSSProperties;
@@ -68,6 +70,7 @@ declare module "@mui/material/Typography" {
     captionMuted: true;
     overline: true;
     overlineMuted: true;
+    monoChip: true;
     statValue: true;
     statLabel: true;
     body1Strong: true;
@@ -99,5 +102,7 @@ declare module "@mui/material/Paper" {
     accent: true;
     /** Bordered, radius-md surface for inline panels and framed blocks. */
     panel: true;
+    /** Raised radius-lg frame for the landing page's showcase surfaces. */
+    showcase: true;
   }
 }

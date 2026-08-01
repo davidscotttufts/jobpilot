@@ -2,15 +2,16 @@
 
 import { type ReactElement, useRef, useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
-import { alpha, Box, IconButton, Stack, Typography } from "@mui/material";
-import { accent, fontFamilies, line, radii, shadows } from "@/theme";
+import { alpha, Box, Card, IconButton, Stack, Typography } from "@mui/material";
+import { accent, line, surfaces } from "@/theme";
 import { Section } from "../section";
 import { SectionEyebrow } from "../section-eyebrow";
+import { SectionGlow } from "../section-glow";
 
 const POSTER = "/teaser-poster.jpg";
 const SOURCE = "/teaser.mp4";
 
-/** Poster + `preload="none"`: the 3 MB cut costs nothing until asked for, and never becomes the LCP. */
+/** Poster + `preload="none"`: the 3 MB cut costs nothing until a visitor asks for it. */
 export function Teaser(): ReactElement {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
@@ -21,7 +22,7 @@ export function Teaser(): ReactElement {
   };
 
   return (
-    <Section id="see-it-run" sx={{ paddingTop: { xs: 3, md: 4 } }}>
+    <Section id="see-it-run" tightTop>
       <Stack spacing={1.5} sx={{ mb: 3, maxWidth: 620 }}>
         <SectionEyebrow color="accent.primary">SEE IT RUN</SectionEyebrow>
         <Typography variant="h2">Forty seconds of the agent working.</Typography>
@@ -31,25 +32,8 @@ export function Teaser(): ReactElement {
       </Stack>
 
       <Box sx={{ position: "relative" }}>
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: { xs: "-48px 0", md: -56 },
-            background: `radial-gradient(ellipse 60% 60% at 50% 50%, ${alpha(accent.primary, 0.09)}, transparent 70%)`,
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          sx={{
-            position: "relative",
-            borderRadius: radii.lg,
-            border: `1px solid ${line.border}`,
-            backgroundColor: "surfaces.card",
-            boxShadow: shadows.lg,
-            overflow: "hidden",
-          }}
-        >
+        <SectionGlow color={alpha(accent.primary, 0.09)} spread={56} />
+        <Card variant="showcase" sx={{ position: "relative" }}>
           <Box
             component="video"
             ref={videoRef}
@@ -70,7 +54,7 @@ export function Teaser(): ReactElement {
                 display: "grid",
                 placeItems: "center",
                 // The poster is a busy UI screenshot; the play button needs a strong scrim.
-                background: `radial-gradient(ellipse 45% 55% at 50% 50%, ${alpha("#0B0B0A", 0.72)}, ${alpha("#0B0B0A", 0.5)} 70%)`,
+                background: `radial-gradient(ellipse 45% 55% at 50% 50%, ${alpha(surfaces.base, 0.72)}, ${alpha(surfaces.base, 0.5)} 70%)`,
               }}
             >
               <IconButton
@@ -99,25 +83,22 @@ export function Teaser(): ReactElement {
 
               {/* Corner pill, not under the button, where it would collide with the poster's UI. */}
               <Typography
+                variant="monoChip"
                 sx={{
                   position: "absolute",
                   left: { xs: 12, md: 16 },
                   bottom: { xs: 12, md: 16 },
-                  fontFamily: fontFamilies.mono,
                   fontSize: "0.6875rem",
                   color: "common.white",
-                  backgroundColor: alpha("#0B0B0A", 0.7),
-                  border: `1px solid ${line.divider}`,
-                  borderRadius: radii.pill,
-                  paddingInline: 1.25,
-                  paddingBlock: 0.5,
+                  borderColor: line.divider,
+                  backgroundColor: alpha(surfaces.base, 0.7),
                 }}
               >
                 40s · no sound
               </Typography>
             </Box>
           )}
-        </Box>
+        </Card>
       </Box>
     </Section>
   );

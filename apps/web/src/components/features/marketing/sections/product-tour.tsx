@@ -4,6 +4,7 @@ import { accent, feedback } from "@/theme";
 import { InboxPanel, ResumePanel, UpworkPanel, WorkspacePanel } from "../mock-panels";
 import { Section } from "../section";
 import { SectionEyebrow } from "../section-eyebrow";
+import { SectionGlow } from "../section-glow";
 
 interface TourRow {
   eyebrow: string;
@@ -67,16 +68,7 @@ export function ProductTour(): ReactElement {
               </Stack>
             </Grid>
             <Grid size={{ xs: 12, md: 7 }} sx={{ position: "relative" }}>
-              <Box
-                aria-hidden
-                sx={{
-                  position: "absolute",
-                  // Zero horizontal bleed on mobile - it widens the page and causes sideways scroll.
-                  inset: { xs: "-48px 0", md: -48 },
-                  background: `radial-gradient(ellipse 60% 60% at 50% 50%, ${row.glow}, transparent 70%)`,
-                  pointerEvents: "none",
-                }}
-              />
+              <SectionGlow color={row.glow} />
               <Box sx={{ position: "relative" }}>{row.panel}</Box>
             </Grid>
           </Grid>

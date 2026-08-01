@@ -1,23 +1,29 @@
 import type { ReactElement, ReactNode } from "react";
-import { Container, type SxProps, type Theme } from "@mui/material";
+import { Container } from "@mui/material";
 
 interface SectionProps {
   children: ReactNode;
   /** Container width; prose-heavy sections (FAQ) use "md". */
   maxWidth?: "md" | "lg";
   id?: string;
-  /** Override the default rhythm - e.g. a lighter `paddingTop` to hug the section above. */
-  sx?: SxProps<Theme>;
+  /**
+   * Trim the top padding so this section reads as one thought with the one above it,
+   * instead of sitting a full rhythm apart. Only the lower section owns the pairing.
+   */
+  tightTop?: boolean;
 }
 
 /** Shared vertical rhythm for the landing sections. */
 export function Section(props: SectionProps): ReactElement {
-  const { children, maxWidth = "lg", id, sx } = props;
+  const { children, maxWidth = "lg", id, tightTop } = props;
   return (
     <Container
       id={id}
       maxWidth={maxWidth}
-      sx={[{ paddingBlock: { xs: 7, md: 10 } }, ...(Array.isArray(sx) ? sx : [sx])]}
+      sx={{
+        paddingTop: tightTop ? { xs: 3, md: 4 } : { xs: 7, md: 10 },
+        paddingBottom: { xs: 7, md: 10 },
+      }}
     >
       {children}
     </Container>

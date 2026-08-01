@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
-import { Box, Stack, type SxProps, type Theme, Typography } from "@mui/material";
-import { fontFamilies, line, radii, shadows } from "@/theme";
+import { Box, Card, Stack, type SxProps, type Theme, Typography } from "@mui/material";
+import { fontFamilies, line, radii } from "@/theme";
 
 interface PanelFrameProps {
   /** Mono window-title label, e.g. "pipeline". */
@@ -12,16 +12,7 @@ interface PanelFrameProps {
 export function PanelFrame(props: PanelFrameProps): ReactElement {
   const { label, children } = props;
   return (
-    <Box
-      aria-hidden
-      sx={{
-        borderRadius: radii.lg,
-        border: `1px solid ${line.border}`,
-        backgroundColor: "surfaces.card",
-        boxShadow: shadows.lg,
-        overflow: "hidden",
-      }}
-    >
+    <Card aria-hidden variant="showcase">
       <Stack
         direction="row"
         spacing={0.75}
@@ -41,7 +32,7 @@ export function PanelFrame(props: PanelFrameProps): ReactElement {
         </Typography>
       </Stack>
       <Box sx={{ padding: 2 }}>{children}</Box>
-    </Box>
+    </Card>
   );
 }
 

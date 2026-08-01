@@ -1,5 +1,6 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
-import { textColors } from "./palette";
+import { line, surfaces, textColors } from "./palette";
+import { radii } from "./tokens";
 
 export const fontFamilies = {
   body: 'var(--font-archivo), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
@@ -104,6 +105,19 @@ export const typography: TypographyVariantsOptions = {
     fontSize: "0.6875rem",
     letterSpacing: "0",
     color: textColors.secondary,
+  },
+  // Outlined mono pill. Callers set `fontSize` - ring labels run smaller than board chips.
+  monoChip: {
+    fontFamily: fontFamilies.mono,
+    fontSize: "0.75rem",
+    lineHeight: 1.55,
+    display: "inline-block",
+    whiteSpace: "nowrap",
+    padding: "4px 10px",
+    borderRadius: radii.pill,
+    color: textColors.secondary,
+    border: `1px solid ${line.border}`,
+    backgroundColor: surfaces.elevated,
   },
   statValue: {
     fontFamily: fontFamilies.mono,
