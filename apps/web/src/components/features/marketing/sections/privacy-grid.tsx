@@ -58,7 +58,7 @@ export function PrivacyGrid(): ReactElement {
           </Grid>
         ))}
         <Grid size={12}>
-          <FactCard title="MIT-licensed, one repository">
+          <FactCard title="Open source">
             The dashboard, API, terminal host, and plugin are all{" "}
             {/* component="a": next/link is the theme's MuiLink default, wrong for an off-site URL. */}
             <Link component="a" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
