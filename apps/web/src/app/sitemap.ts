@@ -20,7 +20,7 @@ async function jobEntries(): Promise<MetadataRoute.Sitemap> {
   }
 }
 
-/** Every published portfolio, so the /u/[username] pages are indexable. */
+/** Every portfolio, so the /u/[username] pages are indexable. */
 async function portfolioEntries(): Promise<MetadataRoute.Sitemap> {
   try {
     const { data } = await api.public.portfolio.sitemap.get();

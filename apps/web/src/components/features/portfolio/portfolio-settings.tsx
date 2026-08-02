@@ -1,9 +1,9 @@
 "use client";
 
-import { type ReactElement, useEffect, useState } from "react";
-import { usernameSchema } from "@jobpilot/contracts/user";
+import type { ReactElement } from "react";
+import { type PortfolioSettingsPatch, usernameSchema } from "@jobpilot/contracts/user";
 import { OpenInNew } from "@mui/icons-material";
-import { Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { userQueries } from "@/api/queries";
@@ -11,10 +11,16 @@ import { queryKeys } from "@/api/query-keys";
 import type { PortfolioSettingsDto } from "@/api/types";
 import { CopyField } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
+import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
+import { toPortfolioFormValues } from "./portfolio-form-values";
 import { PortfolioView } from "./portfolio-view";
+import { PortfolioVisibilityCard } from "./portfolio-visibility-card";
 
-type Availability = PortfolioSettingsDto["availability"];
+const AVAILABILITY_ITEMS = [
+  { value: "open", label: "Open to work" },
+  { value: "not_looking", label: "Not looking" },
+] as const;
 
 export function PortfolioSettings(): ReactElement {
   const settingsQuery = useApiQuery(userQueries.portfolio());
@@ -36,89 +42,79 @@ interface PortfolioFormProps {
 
 function PortfolioForm(props: PortfolioFormProps): ReactElement {
   const { settings } = props;
-  const [username, setUsername] = useState(settings.username);
-  const [available, setAvailable] = useState<boolean | null>(null);
 
-  const usernameError = username.length > 0 ? usernameSchema.safeParse(username).error : undefined;
-  const validUsername = !usernameError;
+  const save = useApiMutation((body: PortfolioSettingsPatch) => api.user.portfolio.patch(body), {
+    successMessage: "Portfolio settings saved",
+    invalidate: [queryKeys.user.portfolio(), queryKeys.user.portfolioPreview()],
+  });
 
-  // Live availability check; skips the caller's own current username (always "free").
-  useEffect(() => {
-    if (usernameError || username === settings.username) {
-      setAvailable(null);
-      return;
-    }
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      const { data } = await api.user.portfolio.available.get({ query: { username } });
-      if (!cancelled) setAvailable(data?.available ?? null);
-    }, 350);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [username, usernameError, settings.username]);
-
-  const save = useApiMutation(
-    (body: { username?: string; availability?: Availability }) => api.user.portfolio.patch(body),
-    {
-      successMessage: "Portfolio settings saved",
-      invalidate: [queryKeys.user.portfolio(), queryKeys.user.portfolioPreview()],
+  const form = useAppForm({
+    defaultValues: toPortfolioFormValues(settings),
+    onSubmit: async ({ value }) => {
+      const { availability, ...rest } = value;
+      await save.mutateAsync({ ...rest, availability: availability === "" ? null : availability });
     },
-  );
+  });
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const publicUrl = `${origin}/u/${settings.username}`;
-  const usernameTaken = available === false;
-
-  const usernameHelp = (): string => {
-    if (!validUsername) return usernameError?.issues[0]?.message ?? "";
-    if (usernameTaken) return "That username is already taken.";
-    if (available === true) return "Available!";
-    return "Your page lives at /u/<username>.";
-  };
 
   return (
-    <Stack spacing={3}>
+    <Stack
+      component="form"
+      spacing={3}
+      onSubmit={(e) => {
+        e.preventDefault();
+        void form.handleSubmit();
+      }}
+    >
       <SectionCard
         title="Public portfolio"
         description="Your always-on hire-me page, built from your active resume and job-search activity. Pick a memorable username to share it."
       >
         <Stack spacing={2.5}>
-          <TextField
-            label="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase())}
-            fullWidth
-            error={!validUsername || usernameTaken}
-            helperText={usernameHelp()}
-          />
-
-          <TextField
-            select
-            label="Availability"
-            value={settings.availability ?? "unset"}
-            onChange={(e) => {
-              const value = e.target.value;
-              save.mutate({ availability: value === "unset" ? null : (value as Availability) });
+          <form.AppField
+            name="username"
+            validators={{
+              onChange: usernameSchema,
+              onChangeAsyncDebounceMs: 350,
+              // The caller's own username always reads as free, so skip the round trip.
+              onChangeAsync: async ({ value }) => {
+                if (value === settings.username) return undefined;
+                const { data } = await api.user.portfolio.available.get({
+                  query: { username: value },
+                });
+                return data?.available ? undefined : "That username is already taken.";
+              },
             }}
-            fullWidth
           >
-            <MenuItem value="unset">Not shown</MenuItem>
-            <MenuItem value="open">Open to work</MenuItem>
-            <MenuItem value="not_looking">Not looking</MenuItem>
-          </TextField>
+            {(field) => (
+              <field.TextField
+                label="Username"
+                transform={(v) => v.toLowerCase()}
+                helperText="Your page lives at /u/<username>."
+              />
+            )}
+          </form.AppField>
+
+          <form.AppField name="availability">
+            {(field) => (
+              <field.Select
+                label="Availability"
+                items={AVAILABILITY_ITEMS}
+                optional
+                emptyLabel="Not shown"
+                helperText="Shown as a badge on your page."
+              />
+            )}
+          </form.AppField>
 
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
-            <Button
-              variant="contained"
-              disabled={
-                !validUsername || usernameTaken || username === settings.username || save.isPending
-              }
-              onClick={() => save.mutate({ username })}
-            >
-              Save username
-            </Button>
+            <form.AppForm>
+              <form.SubmitButton disabled={save.isPending}>
+                {save.isPending ? "Saving" : "Save settings"}
+              </form.SubmitButton>
+            </form.AppForm>
             <Button
               component="a"
               href={publicUrl}
@@ -134,6 +130,8 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
           <CopyField value={publicUrl} copyMessage="Portfolio link copied" />
         </Stack>
       </SectionCard>
+
+      <PortfolioVisibilityCard form={form} />
 
       <SectionCard
         title="Preview"

@@ -10,26 +10,33 @@ interface PortfolioStatsRowProps {
 interface Tile {
   label: string;
   value: string | number;
+  hint?: string;
   accent?: "success" | "warning";
 }
 
-/** Compact tile row above the heatmap - turns the grid into a story, not decoration. */
 export function PortfolioStatsRow(props: PortfolioStatsRowProps): ReactElement {
   const { stats } = props;
   const tiles: Tile[] = [
-    { label: "Applications", value: stats.applications },
+    {
+      label: "Applications",
+      value: stats.applications,
+      hint: `${stats.activityLast30} in the last 30 days`,
+    },
     { label: "Interviewing", value: stats.interviews, accent: "warning" },
     { label: "Messages sent", value: stats.messagesSent },
-    { label: "Last 30 days", value: stats.activityLast30 },
-    { label: "Current streak", value: `${stats.currentStreak}d`, accent: "success" },
-    { label: "Longest streak", value: `${stats.longestStreak}d` },
+    {
+      label: "Current streak",
+      value: `${stats.currentStreak}d`,
+      hint: `longest ${stats.longestStreak}d`,
+      accent: "success",
+    },
   ];
 
   return (
     <Grid container spacing={1.5}>
       {tiles.map((tile) => (
-        <Grid key={tile.label} size={{ xs: 6, sm: 4, md: 2 }}>
-          <StatTile label={tile.label} value={tile.value} accent={tile.accent} />
+        <Grid key={tile.label} size={{ xs: 6, md: 3 }}>
+          <StatTile label={tile.label} value={tile.value} hint={tile.hint} accent={tile.accent} />
         </Grid>
       ))}
     </Grid>
