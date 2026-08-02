@@ -19,6 +19,7 @@ const baseTheme = createTheme({
       primary: textColors.primary,
       secondary: textColors.secondary,
       disabled: textColors.disabled,
+      prose: textColors.prose,
     },
     divider: line.divider,
     surfaces,

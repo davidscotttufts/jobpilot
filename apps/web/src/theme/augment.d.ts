@@ -2,6 +2,27 @@ import type { CSSProperties } from "react";
 import type { accent, line, stages, surfaces } from "./palette";
 import type { controlHeights, gradients, iconSizes, motion, radii, shadows } from "./tokens";
 
+/** Single list of custom variants; the three MUI interfaces below all derive from it. */
+interface CustomTypographyVariants {
+  body1Muted: CSSProperties;
+  body2Muted: CSSProperties;
+  captionMuted: CSSProperties;
+  overline: CSSProperties;
+  overlineMuted: CSSProperties;
+  monoChip: CSSProperties;
+  statValue: CSSProperties;
+  statLabel: CSSProperties;
+  body1Strong: CSSProperties;
+  body2Strong: CSSProperties;
+  displayLg: CSSProperties;
+  displayMd: CSSProperties;
+  docsBody: CSSProperties;
+  docsH1: CSSProperties;
+  docsH2: CSSProperties;
+  docsH3: CSSProperties;
+  docsH4: CSSProperties;
+}
+
 declare module "@mui/material/styles" {
   interface Palette {
     surfaces: typeof surfaces;
@@ -33,66 +54,16 @@ declare module "@mui/material/styles" {
     controlHeights?: typeof controlHeights;
   }
 
-  interface TypographyVariants {
-    body1Muted: CSSProperties;
-    body2Muted: CSSProperties;
-    captionMuted: CSSProperties;
-    overline: CSSProperties;
-    overlineMuted: CSSProperties;
-    monoChip: CSSProperties;
-    statValue: CSSProperties;
-    statLabel: CSSProperties;
-    body1Strong: CSSProperties;
-    body2Strong: CSSProperties;
-    displayLg: CSSProperties;
-    displayMd: CSSProperties;
-    docsBody: CSSProperties;
-    docsH1: CSSProperties;
-    docsH2: CSSProperties;
-    docsH3: CSSProperties;
-    docsH4: CSSProperties;
-  }
-  interface TypographyVariantsOptions {
-    body1Muted?: CSSProperties;
-    body2Muted?: CSSProperties;
-    captionMuted?: CSSProperties;
-    overline?: CSSProperties;
-    overlineMuted?: CSSProperties;
-    monoChip?: CSSProperties;
-    statValue?: CSSProperties;
-    statLabel?: CSSProperties;
-    body1Strong?: CSSProperties;
-    body2Strong?: CSSProperties;
-    displayLg?: CSSProperties;
-    displayMd?: CSSProperties;
-    docsBody?: CSSProperties;
-    docsH1?: CSSProperties;
-    docsH2?: CSSProperties;
-    docsH3?: CSSProperties;
-    docsH4?: CSSProperties;
+  interface TypographyVariants extends CustomTypographyVariants {}
+  interface TypographyVariantsOptions extends Partial<CustomTypographyVariants> {}
+
+  interface TypeText {
+    prose: string;
   }
 }
 
 declare module "@mui/material/Typography" {
-  interface TypographyPropsVariantOverrides {
-    body1Muted: true;
-    body2Muted: true;
-    captionMuted: true;
-    overline: true;
-    overlineMuted: true;
-    monoChip: true;
-    statValue: true;
-    statLabel: true;
-    body1Strong: true;
-    body2Strong: true;
-    displayLg: true;
-    displayMd: true;
-    docsBody: true;
-    docsH1: true;
-    docsH2: true;
-    docsH3: true;
-    docsH4: true;
-  }
+  interface TypographyPropsVariantOverrides extends Record<keyof CustomTypographyVariants, true> {}
 }
 
 declare module "@mui/material/SvgIcon" {
