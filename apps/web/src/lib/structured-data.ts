@@ -67,6 +67,8 @@ export interface JobPostingLdInput {
   employmentType: string | null;
   descriptionExcerpt: string | null;
   techStack: readonly string[];
+  responsibilities: readonly string[];
+  yearsExperience: number | null;
   /** Eden hands back a `Date`; a string is accepted so callers never have to re-wrap it. */
   firstSeenAt: Date | string;
   slug: string;
@@ -85,6 +87,13 @@ export function jobPostingLd(job: JobPostingLdInput): object {
     ...(job.employmentType && { employmentType: job.employmentType }),
     ...(job.salary && { baseSalary: job.salary }),
     ...(job.techStack.length > 0 && { skills: job.techStack.join(", ") }),
+    ...(job.responsibilities.length > 0 && { responsibilities: job.responsibilities.join(" ") }),
+    ...(job.yearsExperience && {
+      experienceRequirements: {
+        "@type": "OccupationalExperienceRequirements",
+        monthsOfExperience: job.yearsExperience * 12,
+      },
+    }),
     ...(job.remote && { jobLocationType: "TELECOMMUTE" }),
     ...(job.location && {
       jobLocation: {

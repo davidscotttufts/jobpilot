@@ -27,8 +27,11 @@ export const jobListingSummarySchema = z.object({
   sourceCount: z.number().int(),
 });
 
-/** The detail view adds the board links themselves. */
+/** The detail view adds the board links and the digest fields the list has no room for. */
 export const jobListingSchema = jobListingSummarySchema.extend({
+  requirements: z.array(z.string()),
+  responsibilities: z.array(z.string()),
+  yearsExperience: z.number().int().nullable(),
   sources: z.array(jobListingSourceSchema),
 });
 

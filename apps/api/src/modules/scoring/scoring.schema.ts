@@ -1,13 +1,16 @@
 import { z } from "zod/v4";
 import { ELIGIBILITY_RESTRICTION_KINDS } from "./eligibility";
 
+/** Above this the digest is quoting a salary or a year, not counting experience. */
+export const MAX_YEARS_EXPERIENCE = 50;
+
 export const jobDigestSchema = z.object({
   title: z.string().optional().default(""),
   company: z.string().optional().default(""),
   techStack: z.array(z.string()).optional().default([]),
   requirements: z.array(z.string()).optional().default([]),
   responsibilities: z.array(z.string()).optional().default([]),
-  yearsExperience: z.number().int().min(0).max(50).nullable().optional(),
+  yearsExperience: z.number().int().min(0).max(MAX_YEARS_EXPERIENCE).nullable().optional(),
   descriptionExcerpt: z.string().optional().default(""),
 });
 
@@ -15,7 +18,7 @@ export type JobDigest = z.infer<typeof jobDigestSchema>;
 
 export const fitProfileSchema = z.object({
   techStack: z.array(z.string()).default([]),
-  yearsExperience: z.number().int().min(0).max(50).nullable().default(null),
+  yearsExperience: z.number().int().min(0).max(MAX_YEARS_EXPERIENCE).nullable().default(null),
   /** Defaults from the profile; only then does the posting's work-authorization language matter. */
   requiresSponsorship: z.boolean().default(false),
 });

@@ -32,9 +32,12 @@ const SUMMARY_SELECT = {
   _count: { select: { sources: true } },
 } satisfies Prisma.JobListingSelect;
 
-/** The detail page is the only view that needs the board links themselves. */
+/** The detail page is the only view that needs the board links and the long-form digest fields. */
 const DETAIL_SELECT = {
   ...SUMMARY_SELECT,
+  requirements: true,
+  responsibilities: true,
+  yearsExperience: true,
   sources: {
     select: { board: true, url: true, lastSeenAt: true },
     orderBy: { lastSeenAt: "desc" },

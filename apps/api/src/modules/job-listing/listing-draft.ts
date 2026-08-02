@@ -5,9 +5,14 @@
  */
 
 import { z } from "zod/v4";
+import { MAX_YEARS_EXPERIENCE } from "@/modules/scoring/scoring.schema";
 import { canonicalizeUrl, dedupeKey, listingSlug, normalizeListingLocation } from "./dedupe";
 
 const MAX_EXCERPT = 600;
+
+/** Bullets are scraped text landing in a public payload, so both dimensions are capped. */
+const MAX_BULLETS = 12;
+const MAX_BULLET_LENGTH = 300;
 
 /**
  * Looser than scoring's `jobDigestSchema`, which strips the posting-shaped keys
@@ -20,6 +25,9 @@ const digestSchema = z.object({
   salary: z.string().optional(),
   employmentType: z.string().optional(),
   remote: z.boolean().optional(),
+  requirements: z.array(z.string()).optional(),
+  responsibilities: z.array(z.string()).optional(),
+  yearsExperience: z.number().optional(),
 });
 
 /** The subset of a `Job` a listing may read. Anything user-identifying is absent by design. */
@@ -46,6 +54,9 @@ export interface ListingDraft {
   employmentType: string | null;
   techStack: string[];
   descriptionExcerpt: string | null;
+  requirements: string[];
+  responsibilities: string[];
+  yearsExperience: number | null;
   board: string | null;
   url: string;
 }
@@ -68,11 +79,28 @@ function clean(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+function truncate(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max).trimEnd()}…` : value;
+}
+
 function excerpt(value: string | null): string | null {
-  if (!value) {
+  return value ? truncate(value, MAX_EXCERPT) : null;
+}
+
+function bullets(values: string[] | undefined): string[] {
+  return (values ?? [])
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .slice(0, MAX_BULLETS)
+    .map((v) => truncate(v, MAX_BULLET_LENGTH));
+}
+
+function yearsExperience(value: number | undefined): number | null {
+  if (value === undefined || !Number.isFinite(value)) {
     return null;
   }
-  return value.length > MAX_EXCERPT ? `${value.slice(0, MAX_EXCERPT).trimEnd()}…` : value;
+  const years = Math.trunc(value);
+  return years > 0 && years <= MAX_YEARS_EXPERIENCE ? years : null;
 }
 
 /**
@@ -108,6 +136,9 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     employmentType: clean(job.type) ?? clean(digest.employmentType),
     techStack,
     descriptionExcerpt: excerpt(clean(digest.descriptionExcerpt) ?? clean(job.description)),
+    requirements: bullets(digest.requirements),
+    responsibilities: bullets(digest.responsibilities),
+    yearsExperience: yearsExperience(digest.yearsExperience),
     // Lowercased so the `?board=` filter is an indexed equality hit, not an ILIKE scan.
     board: clean(job.board)?.toLowerCase() ?? null,
     url: canonicalizeUrl(url),

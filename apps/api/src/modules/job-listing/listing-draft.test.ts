@@ -73,6 +73,43 @@ describe("projection", () => {
     expect(excerpt.endsWith("…")).toBe(true);
   });
 
+  it("carries the digest's requirements, responsibilities and years of experience", () => {
+    const raw = JSON.stringify({
+      techStack: ["Go"],
+      requirements: ["  5 years of Go  ", "", "Kubernetes"],
+      responsibilities: ["Ship services"],
+      yearsExperience: 5,
+    });
+    const draft = buildListingDraft(job({ digest: raw }));
+    expect(draft?.requirements).toEqual(["5 years of Go", "Kubernetes"]);
+    expect(draft?.responsibilities).toEqual(["Ship services"]);
+    expect(draft?.yearsExperience).toBe(5);
+  });
+
+  it("defaults the digest bullets to empty rather than undefined", () => {
+    const draft = buildListingDraft(job({ digest: JSON.stringify({ techStack: ["Go"] }) }));
+    expect(draft?.requirements).toEqual([]);
+    expect(draft?.responsibilities).toEqual([]);
+    expect(draft?.yearsExperience).toBeNull();
+  });
+
+  it("caps how many bullets and how long each one can be", () => {
+    const raw = JSON.stringify({
+      techStack: ["Go"],
+      requirements: Array.from({ length: 30 }, (_, i) => `req ${i}`),
+      responsibilities: ["y".repeat(500)],
+    });
+    const draft = buildListingDraft(job({ digest: raw }));
+    expect(draft?.requirements).toHaveLength(12);
+    expect(draft?.responsibilities[0]?.length).toBeLessThanOrEqual(301);
+    expect(draft?.responsibilities[0]?.endsWith("…")).toBe(true);
+  });
+
+  it.each([[0], [-3], [80]])("drops an out-of-range yearsExperience of %p", (years) => {
+    const raw = JSON.stringify({ techStack: ["Go"], yearsExperience: years });
+    expect(buildListingDraft(job({ digest: raw }))?.yearsExperience).toBeNull();
+  });
+
   it("gives two reposts of one posting the same dedupe key but different source urls", () => {
     const a = buildListingDraft(job({ url: "https://linkedin.com/jobs/1", board: "linkedin.com" }));
     const b = buildListingDraft(

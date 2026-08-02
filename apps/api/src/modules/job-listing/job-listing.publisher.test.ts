@@ -16,11 +16,14 @@ interface FakeOptions {
   raceOnFirstCreate?: boolean;
   /** Resolves each call only when the returned trigger is fired, so overlap is observable. */
   gate?: { hold: true };
+  /** Report the url as already known, so publish takes the enrich path instead of creating. */
+  seenUrl?: boolean;
 }
 
 /** Stand-in for Prisma: records calls and can simulate the concurrent-insert race. */
 function fakePrisma(options: FakeOptions = {}) {
   const calls: string[] = [];
+  const updates: Record<string, unknown>[] = [];
   const pending: (() => void)[] = [];
   let creates = 0;
   let concurrent = 0;
@@ -40,7 +43,7 @@ function fakePrisma(options: FakeOptions = {}) {
     jobListingSource: {
       findUnique: async () => {
         calls.push("source.findUnique");
-        return settle(null);
+        return settle(options.seenUrl ? { listingId: "l1" } : null);
       },
       update: async () => settle(undefined),
     },
@@ -49,8 +52,9 @@ function fakePrisma(options: FakeOptions = {}) {
         calls.push("listing.findUnique");
         return settle(null);
       },
-      update: async () => {
+      update: async ({ data }: { data: Record<string, unknown> }) => {
         calls.push("listing.update");
+        updates.push(data);
         return settle(undefined);
       },
       create: async () => {
@@ -68,6 +72,7 @@ function fakePrisma(options: FakeOptions = {}) {
   return {
     prisma,
     calls,
+    updates,
     flush: () => {
       for (const resolve of pending.splice(0)) {
         resolve();
@@ -119,6 +124,36 @@ describe("publish", () => {
     } as unknown as PrismaClient;
 
     expect(new JobListingPublisher(always).publish(job("https://x.com/1"))).rejects.toThrow();
+  });
+});
+
+describe("enrich", () => {
+  const withDigest = (extra: Record<string, unknown>): ListingSourceJob => ({
+    ...job("https://x.com/1"),
+    digest: JSON.stringify({ techStack: ["Go"], ...extra }),
+  });
+
+  it("writes the digest fields when the scrape has them", async () => {
+    const fake = fakePrisma({ seenUrl: true });
+    await new JobListingPublisher(fake.prisma).publish(
+      withDigest({ requirements: ["Go"], responsibilities: ["Ship"], yearsExperience: 4 }),
+    );
+
+    expect(fake.updates[0]).toMatchObject({
+      requirements: ["Go"],
+      responsibilities: ["Ship"],
+      yearsExperience: 4,
+    });
+  });
+
+  it("leaves the digest fields untouched when a thinner scrape omits them", async () => {
+    const fake = fakePrisma({ seenUrl: true });
+    await new JobListingPublisher(fake.prisma).publish(withDigest({}));
+
+    const data = fake.updates[0] ?? {};
+    expect(data).not.toHaveProperty("requirements");
+    expect(data).not.toHaveProperty("responsibilities");
+    expect(data).not.toHaveProperty("yearsExperience");
   });
 });
 
