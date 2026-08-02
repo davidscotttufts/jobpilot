@@ -10,4 +10,4 @@ export * from "./portfolio-form-values";
 export * from "./portfolio-settings";
 export * from "./portfolio-stats";
 export * from "./portfolio-view";
-export * from "./portfolio-visibility-card";
+export * from "./portfolio-visibility-fields";

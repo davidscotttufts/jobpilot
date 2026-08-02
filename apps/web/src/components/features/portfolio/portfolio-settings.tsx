@@ -15,7 +15,7 @@ import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { toPortfolioFormValues } from "./portfolio-form-values";
 import { PortfolioView } from "./portfolio-view";
-import { PortfolioVisibilityCard } from "./portfolio-visibility-card";
+import { PortfolioVisibilityFields } from "./portfolio-visibility-fields";
 
 const AVAILABILITY_ITEMS = [
   { value: "open", label: "Open to work" },
@@ -109,6 +109,8 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
             )}
           </form.AppField>
 
+          <PortfolioVisibilityFields form={form} />
+
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1 }}>
             <form.AppForm>
               <form.SubmitButton disabled={save.isPending}>
@@ -130,8 +132,6 @@ function PortfolioForm(props: PortfolioFormProps): ReactElement {
           <CopyField value={publicUrl} copyMessage="Portfolio link copied" />
         </Stack>
       </SectionCard>
-
-      <PortfolioVisibilityCard form={form} />
 
       <SectionCard
         title="Preview"
