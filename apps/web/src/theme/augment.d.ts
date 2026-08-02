@@ -46,6 +46,8 @@ declare module "@mui/material/styles" {
     body2Strong: CSSProperties;
     displayLg: CSSProperties;
     displayMd: CSSProperties;
+    docsBody: CSSProperties;
+    docsBodyMuted: CSSProperties;
   }
   interface TypographyVariantsOptions {
     body1Muted?: CSSProperties;
@@ -60,6 +62,8 @@ declare module "@mui/material/styles" {
     body2Strong?: CSSProperties;
     displayLg?: CSSProperties;
     displayMd?: CSSProperties;
+    docsBody?: CSSProperties;
+    docsBodyMuted?: CSSProperties;
   }
 }
 
@@ -77,6 +81,8 @@ declare module "@mui/material/Typography" {
     body2Strong: true;
     displayLg: true;
     displayMd: true;
+    docsBody: true;
+    docsBodyMuted: true;
   }
 }
 

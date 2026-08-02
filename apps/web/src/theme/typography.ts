@@ -166,4 +166,12 @@ export const typography: TypographyVariantsOptions = {
     lineHeight: 1.15,
     letterSpacing: "-0.02em",
   },
+  // Prose for /docs
+  docsBody: { fontFamily: fontFamilies.body, fontSize: "0.9375rem", lineHeight: 1.7 },
+  docsBodyMuted: {
+    fontFamily: fontFamilies.body,
+    fontSize: "0.9375rem",
+    lineHeight: 1.7,
+    color: textColors.secondary,
+  },
 };

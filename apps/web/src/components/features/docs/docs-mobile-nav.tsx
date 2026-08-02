@@ -89,8 +89,7 @@ export function DocsMobileNav(): ReactElement {
                 aria-current={active ? "page" : undefined}
                 sx={(t) => ({
                   display: "block",
-                  fontSize: "0.8125rem",
-                  fontWeight: active ? 600 : 400,
+                  ...(active ? t.typography.body1Strong : t.typography.body1),
                   paddingBlock: 1,
                   paddingInline: 1.75,
                   borderLeft: 2,

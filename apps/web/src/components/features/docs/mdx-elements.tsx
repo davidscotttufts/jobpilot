@@ -5,24 +5,14 @@ import { Box, Divider, Link, Paper, Typography } from "@mui/material";
 import type { Route } from "next";
 import { fontFamilies } from "@/theme";
 
-// Docs body copy runs larger than the app chrome (theme body1 is dashboard-tuned).
-const bodyText = { fontSize: "0.9375rem", lineHeight: 1.7 } as const;
-
 const listSx = { mt: 0, mb: 2, pl: 3, "& > li + li": { mt: 0.75 } } as const;
 
 export function DocsH1(props: ComponentProps<"h1">): ReactElement {
-  return <Typography variant="h1" component="h1" sx={{ mb: 2, fontSize: "2rem" }} {...props} />;
+  return <Typography variant="h1" component="h1" sx={{ mb: 2 }} {...props} />;
 }
 
 export function DocsH2(props: ComponentProps<"h2">): ReactElement {
-  return (
-    <Typography
-      variant="h2"
-      component="h2"
-      sx={{ mt: 6, mb: 1.5, fontSize: "1.5rem" }}
-      {...props}
-    />
-  );
+  return <Typography variant="h2" component="h2" sx={{ mt: 6, mb: 1.5 }} {...props} />;
 }
 
 export function DocsH3(props: ComponentProps<"h3">): ReactElement {
@@ -34,7 +24,7 @@ export function DocsH4(props: ComponentProps<"h4">): ReactElement {
 }
 
 export function DocsP(props: ComponentProps<"p">): ReactElement {
-  return <Typography component="p" sx={{ mb: 2, ...bodyText }} {...props} />;
+  return <Typography variant="docsBody" component="p" sx={{ mb: 2 }} {...props} />;
 }
 
 export function DocsLink(props: ComponentProps<"a">): ReactElement {
@@ -64,7 +54,13 @@ export function DocsOl(props: ComponentProps<"ol">): ReactElement {
 }
 
 export function DocsLi(props: ComponentProps<"li">): ReactElement {
-  return <Box component="li" sx={{ ...bodyText, "& > p": { mb: 1 } }} {...props} />;
+  return (
+    <Box
+      component="li"
+      sx={(theme) => ({ ...theme.typography.docsBody, "& > p": { mb: 1 } })}
+      {...props}
+    />
+  );
 }
 
 export function DocsCode(props: ComponentProps<"code">): ReactElement {
@@ -73,6 +69,7 @@ export function DocsCode(props: ComponentProps<"code">): ReactElement {
       component="code"
       sx={(theme) => ({
         fontFamily: fontFamilies.mono,
+        // Relative on purpose: inline code has to track whatever line it sits in.
         fontSize: "0.85em",
         paddingInline: 0.6,
         paddingBlock: 0.1,
@@ -90,14 +87,13 @@ export function DocsPre(props: ComponentProps<"pre">): ReactElement {
     <Paper
       component="pre"
       variant="panel"
-      sx={{
+      sx={(theme) => ({
         margin: 0,
         marginBottom: 2,
         padding: 2,
         overflowX: "auto",
+        ...theme.typography.body1,
         fontFamily: fontFamilies.mono,
-        fontSize: "0.8125rem",
-        lineHeight: 1.6,
         // Undo the inline-code chrome inside fenced blocks.
         "& code": {
           border: 0,
@@ -106,7 +102,7 @@ export function DocsPre(props: ComponentProps<"pre">): ReactElement {
           backgroundColor: "transparent",
           fontSize: "inherit",
         },
-      }}
+      })}
       {...props}
     />
   );
@@ -137,11 +133,10 @@ export function DocsTable(props: ComponentProps<"table">): ReactElement {
         sx={(theme) => ({
           width: "100%",
           borderCollapse: "collapse",
-          fontSize: "0.875rem",
-          lineHeight: 1.6,
+          ...theme.typography.body1,
           "& th": {
             textAlign: "left",
-            fontWeight: 600,
+            fontWeight: theme.typography.body1Strong.fontWeight,
             padding: theme.spacing(1, 1.5),
             borderBottom: `1px solid ${theme.palette.line.border}`,
             whiteSpace: "nowrap",

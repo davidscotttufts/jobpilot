@@ -20,18 +20,17 @@ function SidebarLink(props: SidebarLinkProps): ReactElement {
       href={href}
       underline="none"
       aria-current={active ? "page" : undefined}
-      sx={{
+      sx={(theme) => ({
         display: "block",
         whiteSpace: "nowrap",
-        fontSize: "0.8125rem",
+        ...(active ? theme.typography.body1Strong : theme.typography.body1),
         paddingBlock: 0.75,
         paddingInline: 1.5,
         color: active ? "text.primary" : "text.secondary",
-        fontWeight: active ? 600 : 400,
         borderLeft: 2,
         borderLeftColor: active ? "accent.primary" : "line.divider",
         "&:hover": { color: "text.primary" },
-      }}
+      })}
     >
       {label}
     </Link>
