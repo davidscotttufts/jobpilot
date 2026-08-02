@@ -12,7 +12,7 @@ import { useToast } from "@/providers/notification-provider";
 export interface PilotControls {
   provider: TerminalProviderId;
   /** True while a start/stop round-trip is in flight. */
-  busy: boolean;
+  isLoading: boolean;
   start: () => Promise<void>;
   stop: () => Promise<void>;
 }
@@ -39,7 +39,7 @@ function describeHostError(error: unknown): string {
 export function usePilotControls(): PilotControls {
   const toast = useToast();
   const queryClient = useQueryClient();
-  const [busy, setBusy] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { provider } = useAgentDock();
 
   const refreshState = (): void => {
@@ -47,7 +47,7 @@ export function usePilotControls(): PilotControls {
   };
 
   const start = async (): Promise<void> => {
-    setBusy(true);
+    setIsLoading(true);
     try {
       const { data, error } = await api.auth.tokens.terminal.post();
       if (error || !data) {
@@ -70,12 +70,12 @@ export function usePilotControls(): PilotControls {
     } catch (error) {
       toast.error(describeHostError(error));
     } finally {
-      setBusy(false);
+      setIsLoading(false);
     }
   };
 
   const stop = async (): Promise<void> => {
-    setBusy(true);
+    setIsLoading(true);
     try {
       const { error } = await api.pilot.stop.post();
       if (error) {
@@ -92,9 +92,9 @@ export function usePilotControls(): PilotControls {
         toast.warning(`Pilot stopped on the server. ${describeHostError(error)}`);
       }
     } finally {
-      setBusy(false);
+      setIsLoading(false);
     }
   };
 
-  return { provider, busy, start, stop };
+  return { provider, isLoading, start, stop };
 }

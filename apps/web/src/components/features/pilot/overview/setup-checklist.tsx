@@ -67,7 +67,7 @@ export function PilotSetupChecklist(): ReactNode {
         <Button
           size="small"
           variant="contained"
-          disabled={controls.busy || !hostReady || !goalsDone}
+          disabled={controls.isLoading || !hostReady || !goalsDone}
           onClick={() => void controls.start()}
         >
           Start

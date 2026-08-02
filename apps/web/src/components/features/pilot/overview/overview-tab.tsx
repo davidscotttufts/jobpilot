@@ -18,7 +18,7 @@ import { StatusHero } from "./status-hero";
 export function OverviewTab(): ReactElement {
   // Controls + health are hoisted so the hero and the checklist share one host poll.
   const controls = usePilotControls();
-  const { health, status } = useTerminalHealth(controls.busy);
+  const { health, status } = useTerminalHealth(controls.isLoading);
   const stateQuery = useApiQuery(pilotQueries.state(), {
     errorMessage: "Failed to load pilot state",
   });

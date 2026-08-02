@@ -47,7 +47,7 @@ export function StatusHero(): ReactElement {
           <Button
             color="error"
             variant="outlined"
-            disabled={controls.busy}
+            disabled={controls.isLoading}
             onClick={() => void stopWithConfirm()}
           >
             Stop
@@ -58,7 +58,7 @@ export function StatusHero(): ReactElement {
             <Box component="span" sx={{ display: "inline-flex" }}>
               <Button
                 variant="contained"
-                disabled={controls.busy || health !== "reachable" || goalsEmpty}
+                disabled={controls.isLoading || health !== "reachable" || goalsEmpty}
                 onClick={() => void controls.start()}
               >
                 Start

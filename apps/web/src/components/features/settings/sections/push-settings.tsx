@@ -30,7 +30,7 @@ export function PushSettings(): ReactNode {
   const [supported, setSupported] = useState<boolean | null>(null);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [currentEndpoint, setCurrentEndpoint] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const vapidQuery = useApiQuery(pilotQueries.pushKey());
   const publicKey = vapidQuery.data?.publicKey ?? null;
@@ -80,7 +80,7 @@ export function PushSettings(): ReactNode {
     if (!publicKey) {
       return;
     }
-    setBusy(true);
+    setIsLoading(true);
     try {
       const reg = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
@@ -102,12 +102,12 @@ export function PushSettings(): ReactNode {
       toast.error("Could not enable notifications on this device.");
     } finally {
       setPermission(Notification.permission);
-      setBusy(false);
+      setIsLoading(false);
     }
   };
 
   const removeDevice = async (endpoint: string): Promise<void> => {
-    setBusy(true);
+    setIsLoading(true);
     try {
       // Server first: unsubscribing locally mints a new endpoint on re-enable, so a
       // failure after the local teardown would orphan the row and keep pushing to it.
@@ -121,7 +121,7 @@ export function PushSettings(): ReactNode {
     } catch {
       toast.error("Could not remove that device.");
     } finally {
-      setBusy(false);
+      setIsLoading(false);
     }
   };
 
@@ -167,7 +167,7 @@ export function PushSettings(): ReactNode {
         control={
           <Switch
             checked={thisDeviceOn}
-            disabled={busy || thisDeviceOn}
+            disabled={isLoading || thisDeviceOn}
             onChange={() => void enable()}
           />
         }
@@ -211,7 +211,7 @@ export function PushSettings(): ReactNode {
                     <TooltipIconButton
                       title="Remove device"
                       size="small"
-                      disabled={busy}
+                      disabled={isLoading}
                       onClick={() => void removeDevice(device.endpoint)}
                     >
                       <Delete fontSize="sm" />

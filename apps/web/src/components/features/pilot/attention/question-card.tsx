@@ -22,7 +22,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
   );
 
   const hasOptions = question.options.length > 0;
-  const busy = answer.isPending;
+  const isLoading = answer.isPending;
 
   return (
     <Card variant="outlined">
@@ -65,7 +65,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
                   key={option}
                   variant="outlined"
                   size="small"
-                  disabled={busy}
+                  disabled={isLoading}
                   onClick={() => answer.mutate(option)}
                   sx={{ width: { xs: "100%", sm: "auto" } }}
                 >
@@ -92,7 +92,7 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
               <Button
                 variant="contained"
                 size="small"
-                disabled={busy || freeText.trim().length === 0}
+                disabled={isLoading || freeText.trim().length === 0}
                 onClick={() => answer.mutate(freeText.trim())}
                 sx={{ width: { xs: "100%", sm: "auto" }, flexShrink: 0, minWidth: 88 }}
               >

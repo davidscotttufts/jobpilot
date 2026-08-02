@@ -1,22 +1,21 @@
 "use client";
 
 import { type ReactNode, useState } from "react";
-import { type ResumeData, SUGGESTED_REWRITE_LABEL } from "@jobpilot/contracts/resume";
+import { EMPTY_RESUME_DATA, SUGGESTED_REWRITE_LABEL } from "@jobpilot/contracts/resume";
 import { AutoFixHigh } from "@mui/icons-material";
 import { Alert, AlertTitle, Button, Skeleton, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
 import { invalidations, queryKeys } from "@/api/query-keys";
+import type { ResumeDto } from "@/api/types";
 import { useConfirm } from "@/providers/confirm-provider";
 import { plural } from "@/utils/format";
 import { diffRewrite } from "./rewrite-diff";
 import { RewriteReviewDialog } from "./rewrite-review-dialog";
 
 interface SuggestedRewriteCardProps {
-  resumeId: string;
-  base: ResumeData;
-  resumeUpdatedAt: string | Date;
+  resume: ResumeDto;
 }
 
 /**
@@ -24,7 +23,8 @@ interface SuggestedRewriteCardProps {
  * onto the base via the ordinary update route; the uploaded PDF stays the way back.
  */
 export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNode {
-  const { resumeId, base, resumeUpdatedAt } = props;
+  const { resume } = props;
+  const resumeId = resume.id;
   const confirm = useConfirm();
   const [reviewing, setReviewing] = useState(false);
 
@@ -61,8 +61,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     return <Skeleton variant="rounded" height={120} />;
   }
 
-  const notes = detail.data.diffNotes?.trim() ?? null;
-  const changeCount = diffRewrite(base, detail.data.content).length;
+  const changeCount = diffRewrite(resume.content ?? EMPTY_RESUME_DATA, detail.data.content).length;
 
   const handleDiscard = async (): Promise<void> => {
     const confirmed = await confirm({
@@ -76,7 +75,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     }
   };
 
-  const busy = accept.isPending || discard.isPending;
+  const isLoading = accept.isPending || discard.isPending;
 
   return (
     <>
@@ -91,7 +90,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
           <Button
             variant="contained"
             size="small"
-            disabled={busy}
+            disabled={isLoading}
             onClick={() => setReviewing(true)}
           >
             Review
@@ -100,7 +99,7 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
             variant="outlined"
             size="small"
             color="inherit"
-            disabled={busy}
+            disabled={isLoading}
             onClick={() => void handleDiscard()}
           >
             Discard
@@ -111,14 +110,9 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
       <RewriteReviewDialog
         open={reviewing}
         onClose={() => setReviewing(false)}
-        resumeId={resumeId}
-        resumeUpdatedAt={resumeUpdatedAt}
-        variantId={suggestion.id}
-        variantUpdatedAt={detail.data.updatedAt}
-        base={base}
-        suggested={detail.data.content}
-        notes={notes}
-        busy={busy}
+        resume={resume}
+        suggestion={detail.data}
+        isLoading={isLoading}
         onApply={() => accept.mutate(suggestion.id)}
       />
     </>

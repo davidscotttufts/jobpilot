@@ -1,43 +1,28 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { ResumeData } from "@jobpilot/contracts/resume";
+import { EMPTY_RESUME_DATA } from "@jobpilot/contracts/resume";
 import { OpenInNew } from "@mui/icons-material";
 import { Button, Divider, Paper, Stack, Typography } from "@mui/material";
 import { resumePdfUrl, variantPdfUrl } from "@/api/resume-urls";
+import type { ResumeDto, ResumeVariantDto } from "@/api/types";
 import { FormDialogShell } from "@/components/ui/form";
 import { diffRewrite } from "./rewrite-diff";
 
 interface RewriteReviewDialogProps {
   open: boolean;
   onClose: () => void;
-  resumeId: string;
-  resumeUpdatedAt: string | Date;
-  variantId: string;
-  variantUpdatedAt: string | Date;
-  base: ResumeData;
-  suggested: ResumeData;
-  notes: string | null;
-  busy: boolean;
+  resume: ResumeDto;
+  suggestion: ResumeVariantDto;
+  isLoading: boolean;
   onApply: () => void;
 }
 
 /** Before and after for every changed field, so applying a rewrite is not a leap of faith. */
 export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactElement {
-  const {
-    open,
-    onClose,
-    resumeId,
-    resumeUpdatedAt,
-    variantId,
-    variantUpdatedAt,
-    base,
-    suggested,
-    notes,
-    busy,
-    onApply,
-  } = props;
-  const changes = diffRewrite(base, suggested);
+  const { open, onClose, resume, suggestion, isLoading, onApply } = props;
+  const changes = diffRewrite(resume.content ?? EMPTY_RESUME_DATA, suggestion.content);
+  const notes = suggestion.diffNotes?.trim();
 
   return (
     <FormDialogShell
@@ -47,7 +32,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
       maxWidth="md"
       onSubmit={onApply}
       submit={
-        <Button type="submit" variant="contained" disabled={busy}>
+        <Button type="submit" variant="contained" disabled={isLoading}>
           Apply rewrite
         </Button>
       }
@@ -62,7 +47,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             variant="outlined"
             startIcon={<OpenInNew fontSize="sm" />}
             component="a"
-            href={resumePdfUrl(resumeId, resumeUpdatedAt)}
+            href={resumePdfUrl(resume.id, resume.updatedAt)}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -73,7 +58,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
             variant="outlined"
             startIcon={<OpenInNew fontSize="sm" />}
             component="a"
-            href={variantPdfUrl(variantId, variantUpdatedAt)}
+            href={variantPdfUrl(suggestion.id, suggestion.updatedAt)}
             target="_blank"
             rel="noopener noreferrer"
           >

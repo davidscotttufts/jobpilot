@@ -74,11 +74,7 @@ export function ResumeDetail(props: ResumeDetailProps): ReactElement {
       <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
         <ResumeHeaderBar resume={resume} />
         <ProfileMismatchCard mismatches={resume.profileMismatches} />
-        <SuggestedRewriteCard
-          resumeId={resumeId}
-          base={initialData}
-          resumeUpdatedAt={resume.updatedAt}
-        />
+        <SuggestedRewriteCard resume={resume} />
 
         {extracting ? (
           <ExtractionCard resumeId={resumeId} onSkip={() => setSkippedExtraction(true)} />
