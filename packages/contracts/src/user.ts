@@ -169,8 +169,6 @@ export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   },
 };
 
-// ── Public portfolio ("hire me" page) ────────────────────────────────────────
-
 /** The /u/[username] slug. Lowercased; letters, digits, and interior hyphens only. */
 export const usernameSchema = z
   .string()
@@ -192,8 +190,18 @@ export function parseAvailability(value: string | null): Availability | null {
   return value === null ? null : (availabilitySchema.safeParse(value).data ?? null);
 }
 
+/** What the owner has chosen to publish; every flag is opt-in. */
+export const portfolioVisibilitySchema = z.object({
+  showResume: z.boolean(),
+  showWebsite: z.boolean(),
+  showLinkedin: z.boolean(),
+  showGithub: z.boolean(),
+});
+
+export type PortfolioVisibility = z.infer<typeof portfolioVisibilitySchema>;
+
 /** Partial update of the user's portfolio settings; every field optional. */
-export const portfolioSettingsPatchSchema = z.object({
+export const portfolioSettingsPatchSchema = portfolioVisibilitySchema.partial().extend({
   username: usernameSchema.optional(),
   availability: availabilitySchema.nullable().optional(),
 });

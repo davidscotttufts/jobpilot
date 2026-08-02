@@ -47,11 +47,15 @@ export const leaderboardRowSchema = z.object({
   displayName: z.string(),
   headline: z.string().nullable(),
   availability: availabilitySchema.nullable(),
+  applications: z.number().int(),
+  messagesSent: z.number().int(),
   activityCount: z.number().int(),
 });
 
 export const leaderboardResponseSchema = z.object({
   window: leaderboardWindowSchema,
+  /** Active users in the window, counted before the row cap - not a registered-user count. */
+  totalActive: z.number().int(),
   rows: z.array(leaderboardRowSchema),
 });
 

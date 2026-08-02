@@ -13,6 +13,9 @@ const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
 
 const WINDOW_DAYS: Record<Exclude<LeaderboardWindow, "all">, number> = { week: 7, month: 30 };
 
+const activity = (r: { applications: number; messagesSent: number }) =>
+  r.applications + r.messagesSent;
+
 const LEADERBOARD_CAP = 50;
 const LEADERBOARD_TTL_MS = 5 * 60 * 1000;
 
@@ -54,6 +57,10 @@ export class PortfolioService {
         website: true,
         linkedin: true,
         github: true,
+        showResume: true,
+        showWebsite: true,
+        showLinkedin: true,
+        showGithub: true,
         city: true,
         state: true,
         primaryResumeId: true,
@@ -120,12 +127,13 @@ export class PortfolioService {
       availability: parseAvailability(user.availability),
       summary: content?.summary?.trim() || null,
       links: {
-        website: user.website || content?.basics.website || null,
-        linkedin: user.linkedin || content?.basics.linkedin || null,
-        github: user.github || content?.basics.github || null,
+        website: user.showWebsite ? user.website || content?.basics.website || null : null,
+        linkedin: user.showLinkedin ? user.linkedin || content?.basics.linkedin || null : null,
+        github: user.showGithub ? user.github || content?.basics.github || null : null,
       },
       skills: content ? content.skills.flatMap((g) => g.items) : [],
-      primaryResumeId: user.primaryResumeId ?? null,
+      // Withholding the id is the boundary - the PDF route stays open for already-sent email links.
+      primaryResumeId: user.showResume ? (user.primaryResumeId ?? null) : null,
       perDay,
       stats: {
         applications: applicationTotal,
@@ -144,7 +152,39 @@ export class PortfolioService {
       return cached.data;
     }
 
+    const gte =
+      window === "all"
+        ? undefined
+        : new Date(startOfDay(new Date()).getTime() - (WINDOW_DAYS[window] - 1) * DAY_MS);
+
+    // No `userId in (...)` list: rows carry their owner, so this is one row per *active* user.
+    const [appRows, msgRows] = await Promise.all([
+      this.prisma.application.groupBy({
+        by: ["userId"],
+        where: gte ? { appliedAt: { gte } } : {},
+        _count: { _all: true },
+      }),
+      this.prisma.networkingMessage.groupBy({
+        by: ["userId"],
+        where: gte ? { sentAt: { gte } } : { sentAt: { not: null } },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const apps = new Map(appRows.map((r) => [r.userId, r._count._all]));
+    const messages = new Map(msgRows.map((r) => [r.userId, r._count._all]));
+
+    const active = [...new Set([...apps.keys(), ...messages.keys()])].map((id) => ({
+      id,
+      applications: apps.get(id) ?? 0,
+      messagesSent: messages.get(id) ?? 0,
+    }));
+
+    // Cap before reading any user row, so only the survivors are fetched.
+    const ranked = active.sort((a, b) => activity(b) - activity(a)).slice(0, LEADERBOARD_CAP);
+
     const users = await this.prisma.user.findMany({
+      where: { id: { in: ranked.map((r) => r.id) } },
       select: {
         id: true,
         username: true,
@@ -154,38 +194,10 @@ export class PortfolioService {
         primaryResumeId: true,
       },
     });
-
-    const userIds = users.map((u) => u.id);
-
-    const gte =
-      window === "all"
-        ? undefined
-        : new Date(startOfDay(new Date()).getTime() - (WINDOW_DAYS[window] - 1) * DAY_MS);
-    const [appRows, msgRows] = await Promise.all([
-      this.prisma.application.groupBy({
-        by: ["userId"],
-        where: { userId: { in: userIds }, ...(gte ? { appliedAt: { gte } } : {}) },
-        _count: { _all: true },
-      }),
-      this.prisma.networkingMessage.groupBy({
-        by: ["userId"],
-        where: { userId: { in: userIds }, sentAt: gte ? { gte } : { not: null } },
-        _count: { _all: true },
-      }),
-    ]);
-
-    const counts = new Map<string, number>();
-    for (const r of appRows) counts.set(r.userId, (counts.get(r.userId) ?? 0) + r._count._all);
-    for (const r of msgRows) counts.set(r.userId, (counts.get(r.userId) ?? 0) + r._count._all);
-
-    const ranked = users
-      .map((u) => ({ u, activityCount: counts.get(u.id) ?? 0 }))
-      .filter((r) => r.activityCount > 0)
-      .sort((a, b) => b.activityCount - a.activityCount)
-      .slice(0, LEADERBOARD_CAP);
+    const userById = new Map(users.map((u) => [u.id, u]));
 
     // Headline only for the ranked subset - avoids parsing every user's resume JSON.
-    const resumeIds = ranked.map((r) => r.u.primaryResumeId).filter((id): id is string => !!id);
+    const resumeIds = users.map((u) => u.primaryResumeId).filter((id): id is string => !!id);
     const resumes = resumeIds.length
       ? await this.prisma.resume.findMany({
           where: { id: { in: resumeIds } },
@@ -196,16 +208,24 @@ export class PortfolioService {
       resumes.map((r) => [r.id, this.parseResume(r.content)?.basics.headline?.trim() || null]),
     );
 
-    const rows = ranked.map((r, i) => ({
-      rank: i + 1,
-      username: r.u.username ?? "",
-      displayName: `${r.u.firstName} ${r.u.lastName}`.trim() || (r.u.username ?? ""),
-      headline: r.u.primaryResumeId ? (headlineById.get(r.u.primaryResumeId) ?? null) : null,
-      availability: parseAvailability(r.u.availability),
-      activityCount: r.activityCount,
-    }));
+    // Rank after the join, so numbers stay contiguous if a user row has gone missing.
+    const rows = ranked
+      .flatMap((r) => {
+        const user = userById.get(r.id);
+        return user ? [{ ...r, user }] : [];
+      })
+      .map(({ user, ...r }, i) => ({
+        rank: i + 1,
+        username: user.username,
+        displayName: `${user.firstName} ${user.lastName}`.trim() || user.username,
+        headline: user.primaryResumeId ? (headlineById.get(user.primaryResumeId) ?? null) : null,
+        availability: parseAvailability(user.availability),
+        applications: r.applications,
+        messagesSent: r.messagesSent,
+        activityCount: activity(r),
+      }));
 
-    const data: LeaderboardResponse = { window, rows };
+    const data: LeaderboardResponse = { window, totalActive: active.length, rows };
     this.leaderboardCache.set(window, { expires: Date.now() + LEADERBOARD_TTL_MS, data });
     return data;
   }

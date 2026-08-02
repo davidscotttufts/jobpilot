@@ -26,7 +26,7 @@ export const publicPortfolioController = new Elysia({
     detail: {
       summary: "Trending users leaderboard",
       description:
-        "Returns published portfolios ranked by activity (applications + networking messages) over the requested window (week/month/all). Unauthenticated.",
+        "Ranks users by activity (applications + networking messages) over the requested window (week/month/all), capped at 50 rows. `totalActive` counts everyone active in the window, before the cap. Unauthenticated.",
     },
   })
   .get("/sitemap", () => svc.sitemap(), {
@@ -34,7 +34,7 @@ export const publicPortfolioController = new Elysia({
     detail: {
       summary: "Portfolio sitemap feed",
       description:
-        "Returns the username and last-updated date of every published portfolio, capped at 5000, for the web app's sitemap.xml.",
+        "Returns the username and last-updated date of every portfolio, capped at 5000, for the web app's sitemap.xml.",
     },
   })
   .get("/:username", ({ params }) => svc.byUsername(params.username), {
@@ -43,6 +43,6 @@ export const publicPortfolioController = new Elysia({
     detail: {
       summary: "Get a public portfolio",
       description:
-        "Returns one published portfolio by username, built from the active resume plus aggregated activity. 404 when the username is unknown or the portfolio is unpublished. Unauthenticated.",
+        "Returns one portfolio by username, built from the active resume plus aggregated activity. The resume id and each link appear only when the owner has turned them on. 404 when the username is unknown. Unauthenticated.",
     },
   });

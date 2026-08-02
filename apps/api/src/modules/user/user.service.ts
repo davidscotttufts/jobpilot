@@ -1,6 +1,5 @@
 import {
   type PortfolioSettingsPatch,
-  parseAvailability,
   type SalaryCurrency,
   type SalaryPeriod,
   type UserWithAutoApplyInput,
@@ -9,6 +8,7 @@ import { singleton } from "tsyringe";
 import { conflict, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage";
 import { PrismaClient } from "@/generated/prisma/client";
+import { PORTFOLIO_SETTINGS_SELECT, toPortfolioSettings } from "./user.mapper";
 
 const USER_SCALAR_SELECT = {
   id: true,
@@ -213,13 +213,10 @@ export class UserService {
   async getPortfolioSettings(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { username: true, availability: true },
+      select: PORTFOLIO_SETTINGS_SELECT,
     });
     if (!user) throw notFound("User not found");
-    return {
-      username: user.username,
-      availability: parseAvailability(user.availability),
-    };
+    return toPortfolioSettings(user);
   }
 
   /** Free when no other user holds it; the caller's own current username also reads as free.
@@ -248,13 +245,14 @@ export class UserService {
       data: {
         ...(body.username !== undefined && { username: body.username }),
         ...(body.availability !== undefined && { availability: body.availability }),
+        ...(body.showResume !== undefined && { showResume: body.showResume }),
+        ...(body.showWebsite !== undefined && { showWebsite: body.showWebsite }),
+        ...(body.showLinkedin !== undefined && { showLinkedin: body.showLinkedin }),
+        ...(body.showGithub !== undefined && { showGithub: body.showGithub }),
       },
-      select: { username: true, availability: true },
+      select: PORTFOLIO_SETTINGS_SELECT,
     });
 
-    return {
-      username: updated.username,
-      availability: parseAvailability(updated.availability),
-    };
+    return toPortfolioSettings(updated);
   }
 }

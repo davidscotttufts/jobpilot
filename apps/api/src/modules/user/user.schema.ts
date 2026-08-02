@@ -1,7 +1,10 @@
-import { availabilitySchema, SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/user";
+import {
+  availabilitySchema,
+  portfolioVisibilitySchema,
+  SALARY_CURRENCIES,
+  SALARY_PERIODS,
+} from "@jobpilot/contracts/user";
 import { z } from "zod/v4";
-
-// ── Response schemas ──────────────────────────────────────────────────────────
 
 /** A reference row attached to the user. */
 export const userReferenceSchema = z.object({
@@ -92,7 +95,7 @@ export const primaryResumeSetSchema = z.object({
 });
 
 /** Current public-portfolio settings (from the `users` row). Username is always assigned. */
-export const portfolioSettingsSchema = z.object({
+export const portfolioSettingsSchema = portfolioVisibilitySchema.extend({
   username: z.string(),
   availability: availabilitySchema.nullable(),
 });

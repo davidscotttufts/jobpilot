@@ -21,6 +21,11 @@ model User {
 
   username     String  @unique @map("username")
   availability String? @map("availability") // "open" | "not_looking"; null = unset
+  // Opt-in, not opt-out: each stays off the public portfolio until the owner turns it on.
+  showResume   Boolean @default(false) @map("show_resume")
+  showWebsite  Boolean @default(false) @map("show_website")
+  showLinkedin Boolean @default(false) @map("show_linkedin")
+  showGithub   Boolean @default(false) @map("show_github")
 
   // Applicant profile (merged from the former Profile model): populated at onboarding.
   firstName    String  @default("") @map("first_name")

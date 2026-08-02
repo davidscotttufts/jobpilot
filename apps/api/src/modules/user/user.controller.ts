@@ -57,7 +57,8 @@ export const userController = new Elysia({
     response: portfolioSettingsSchema,
     detail: {
       summary: "Get public-portfolio settings",
-      description: "Returns the user's portfolio username, publish flag, and availability status.",
+      description:
+        "Returns the user's portfolio username, availability status, and the four show/hide flags for the resume and links.",
     },
   })
   .get("/portfolio/preview", ({ user }) => portfolioSvc.previewByUserId(user.id), {
@@ -65,7 +66,7 @@ export const userController = new Elysia({
     detail: {
       summary: "Preview own portfolio",
       description:
-        "Renders the owner's portfolio card exactly as visitors would see it, regardless of publish state - backs the settings live preview.",
+        "Renders the owner's portfolio card exactly as visitors would see it, hidden links included - backs the settings live preview.",
     },
   })
   .get("/portfolio/available", ({ user, query }) => svc.checkUsername(user.id, query.username), {
@@ -83,6 +84,6 @@ export const userController = new Elysia({
     detail: {
       summary: "Update public-portfolio settings",
       description:
-        "Sets/changes the portfolio username (409 if taken), toggles publishing, and sets the availability status.",
+        "Sets/changes the portfolio username (409 if taken), the availability status, and which of the resume and links are shown publicly.",
     },
   });
