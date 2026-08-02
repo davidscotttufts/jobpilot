@@ -111,6 +111,11 @@ export const typographyOverrides: Components<Theme>["MuiTypography"] = {
       body2Strong: "p",
       displayLg: "h1",
       displayMd: "h2",
+      docsBody: "p",
+      docsH1: "h1",
+      docsH2: "h2",
+      docsH3: "h3",
+      docsH4: "h4",
     },
   },
 };

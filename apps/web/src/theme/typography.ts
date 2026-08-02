@@ -11,11 +11,18 @@ export const fontFamilies = {
 // The display role is Archivo widened to its expanded width axis (athletic headers).
 const displayStretch = "125%";
 
-/** /docs prose metrics; `docsBodyMuted` spreads this so the two cannot drift apart. */
+/** /docs prose metrics; `docsH4` reuses the size so an h4 sits flush with the prose around it. */
 const docsBody = {
   fontFamily: fontFamilies.body,
   fontSize: "0.9375rem",
   lineHeight: 1.7,
+  color: textColors.prose,
+} as const;
+
+/** Skips the expanded display width: that marketing voice at every /docs section break shouts. */
+const docsHeading = {
+  fontFamily: fontFamilies.body,
+  fontWeight: 600,
 } as const;
 
 export const typography: TypographyVariantsOptions = {
@@ -175,5 +182,14 @@ export const typography: TypographyVariantsOptions = {
   },
   // Prose for /docs
   docsBody,
-  docsBodyMuted: { ...docsBody, color: textColors.secondary },
+  docsH1: {
+    ...docsHeading,
+    fontWeight: 700,
+    fontSize: "1.625rem",
+    lineHeight: 1.25,
+    letterSpacing: "-0.015em",
+  },
+  docsH2: { ...docsHeading, fontSize: "1.1875rem", lineHeight: 1.35, letterSpacing: "-0.01em" },
+  docsH3: { ...docsHeading, fontSize: "1rem", lineHeight: 1.4 },
+  docsH4: { ...docsHeading, fontSize: docsBody.fontSize, lineHeight: 1.5 },
 };

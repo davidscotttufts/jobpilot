@@ -16,7 +16,14 @@ export function JobDetail(props: JobDetailProps): ReactElement {
 
   return (
     <Stack spacing={3}>
-      <LinkButton href="/jobs" variant="text" size="small" startIcon={<ArrowBack fontSize="sm" />}>
+      {/* alignSelf + the -1 inset match PageHeader's back link, keeping the hover target intact. */}
+      <LinkButton
+        href="/jobs"
+        variant="text"
+        size="small"
+        startIcon={<ArrowBack fontSize="sm" />}
+        sx={{ alignSelf: "flex-start", ml: -1 }}
+      >
         All jobs
       </LinkButton>
 

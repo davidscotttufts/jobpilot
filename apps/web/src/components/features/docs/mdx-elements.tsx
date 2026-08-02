@@ -7,29 +7,29 @@ import { fontFamilies } from "@/theme";
 
 const listSx = { mt: 0, mb: 2, pl: 3, "& > li + li": { mt: 0.75 } } as const;
 
-// Prose is muted, so bold at the same colour would stop reading as emphasis.
+// Prose reads in the softer `prose` tone, so bold also lifts to primary to stay distinct.
 const strongSx = { "& strong": { color: "text.primary" } } as const;
 
+const liSx = { "& > p": { mb: 1 }, ...strongSx } as const;
+
 export function DocsH1(props: ComponentProps<"h1">): ReactElement {
-  return <Typography variant="h1" component="h1" sx={{ mb: 2 }} {...props} />;
+  return <Typography variant="docsH1" sx={{ mb: 2 }} {...props} />;
 }
 
 export function DocsH2(props: ComponentProps<"h2">): ReactElement {
-  return <Typography variant="h2" component="h2" sx={{ mt: 6, mb: 1.5 }} {...props} />;
+  return <Typography variant="docsH2" sx={{ mt: 5, mb: 1.5 }} {...props} />;
 }
 
 export function DocsH3(props: ComponentProps<"h3">): ReactElement {
-  return <Typography variant="h3" component="h3" sx={{ mt: 4, mb: 1 }} {...props} />;
+  return <Typography variant="docsH3" sx={{ mt: 3.5, mb: 1 }} {...props} />;
 }
 
 export function DocsH4(props: ComponentProps<"h4">): ReactElement {
-  return <Typography variant="h4" component="h4" sx={{ mt: 3, mb: 1 }} {...props} />;
+  return <Typography variant="docsH4" sx={{ mt: 3, mb: 1 }} {...props} />;
 }
 
 export function DocsP(props: ComponentProps<"p">): ReactElement {
-  return (
-    <Typography variant="docsBodyMuted" component="p" sx={{ mb: 2, ...strongSx }} {...props} />
-  );
+  return <Typography variant="docsBody" sx={{ mb: 2, ...strongSx }} {...props} />;
 }
 
 export function DocsLink(props: ComponentProps<"a">): ReactElement {
@@ -59,13 +59,7 @@ export function DocsOl(props: ComponentProps<"ol">): ReactElement {
 }
 
 export function DocsLi(props: ComponentProps<"li">): ReactElement {
-  return (
-    <Box
-      component="li"
-      sx={(theme) => ({ ...theme.typography.docsBodyMuted, "& > p": { mb: 1 }, ...strongSx })}
-      {...props}
-    />
-  );
+  return <Typography variant="docsBody" component="li" sx={liSx} {...props} />;
 }
 
 export function DocsCode(props: ComponentProps<"code">): ReactElement {
@@ -138,7 +132,7 @@ export function DocsTable(props: ComponentProps<"table">): ReactElement {
         sx={(theme) => ({
           width: "100%",
           borderCollapse: "collapse",
-          ...theme.typography.docsBodyMuted,
+          ...theme.typography.docsBody,
           "& th": {
             color: theme.palette.text.primary,
             textAlign: "left",

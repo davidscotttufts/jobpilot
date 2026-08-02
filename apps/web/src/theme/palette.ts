@@ -19,6 +19,8 @@ export const textColors = {
   primary: "#F4F2EE",
   secondary: "#A7A49D",
   disabled: "#6C6860",
+  // Between primary and secondary, so bold-at-primary still reads as emphasis in /docs prose.
+  prose: "#D6D3CC",
 } as const;
 
 export const feedback = {

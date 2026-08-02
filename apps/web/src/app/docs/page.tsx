@@ -18,16 +18,14 @@ export default function DocsIndexPage(): ReactElement {
   return (
     <Stack spacing={3}>
       <Stack spacing={1.5}>
-        <Typography variant="h1" component="h1">
-          JobPilot docs
-        </Typography>
-        <Typography variant="docsBodyMuted" component="p">
+        <Typography variant="docsH1">JobPilot docs</Typography>
+        <Typography variant="docsBody">
           JobPilot is an AI agent that runs your job search. The dashboard lives on the web and
           holds your profile, resumes, campaigns, and pipeline. The agent runs on your own machine,
           on your Claude Code or Codex subscription, and drives a real browser. There is no API key,
           and JobPilot bills you for nothing.
         </Typography>
-        <Typography variant="docsBodyMuted" component="p">
+        <Typography variant="docsBody">
           The agent searches job boards, scores each posting against your resume, tailors a variant
           per job, fills out the application, and tracks the reply in your inbox. Drive it action by
           action from the dashboard, or hand the whole search to the Pilot and read the journal in
