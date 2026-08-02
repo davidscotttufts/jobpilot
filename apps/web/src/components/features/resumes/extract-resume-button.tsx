@@ -1,10 +1,10 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactElement } from "react";
 import { DocumentScanner } from "@mui/icons-material";
-import { Button } from "@mui/material";
 import type { ResumeDto } from "@/api/types";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
+import { AgentOnlyButton } from "@/components/ui/buttons";
+import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { buildCliArgs } from "@/utils/cli-args";
 
@@ -13,10 +13,9 @@ interface ExtractResumeButtonProps {
   size?: "small" | "medium";
 }
 
-export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactNode {
+export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactElement {
   const { resume, size = "small" } = props;
   const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
   const confirm = useConfirm();
 
   const hasData = resume.content !== null;
@@ -44,19 +43,14 @@ export function ExtractResumeButton(props: ExtractResumeButtonProps): ReactNode 
     }
   };
 
-  // Extraction runs the local agent, so this control is desktop-only.
-  if (!agentAvailable) {
-    return null;
-  }
-
   return (
-    <Button
+    <AgentOnlyButton
       size={size}
       variant="outlined"
       startIcon={<DocumentScanner />}
       onClick={() => void handleClick()}
     >
       {hasData ? "Re-extract from PDF" : "Extract from PDF"}
-    </Button>
+    </AgentOnlyButton>
   );
 }

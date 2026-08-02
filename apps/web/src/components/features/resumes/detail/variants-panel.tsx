@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import { isProtectedVariantLabel } from "@jobpilot/contracts/resume";
+import { isProtectedVariantLabel, UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { CleaningServices, Delete, OpenInNew, Search } from "@mui/icons-material";
 import {
   Box,
@@ -25,7 +25,9 @@ import type { ResumeVariantListItem } from "@/api/types";
 import { RelativeTime } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
+import { plural } from "@/utils/format";
 import { TailorForJobButton } from "../tailor/tailor-for-job-button";
+import { groupVariants } from "./group-variants";
 
 interface VariantsPanelProps {
   resumeId: string;
@@ -95,7 +97,7 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
   return (
     <SectionCard
       title="Tailored variants"
-      description={`AI-generated copies of "${resumeLabel}" tailored to specific jobs. Bases are not modified.`}
+      description={`AI-generated copies of "${resumeLabel}" tailored to specific jobs. Bases are not modified, and unused variants are removed automatically after ${UNUSED_VARIANT_DAYS} days.`}
       actions={
         <Stack direction="row" spacing={1}>
           {prunable.length > 0 && (
@@ -141,42 +143,52 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
           {filtered.length === 0 ? (
             <Typography variant="body2Muted">No variants match &ldquo;{search}&rdquo;.</Typography>
           ) : (
-            <Stack spacing={1} sx={{ maxHeight: 480, overflowY: "auto", pr: 0.5 }}>
-              {filtered.map((v) => (
-                <Card key={v.id} sx={{ flexShrink: 0 }}>
-                  <CardContent>
-                    <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                          <Typography variant="body2Strong">{v.label}</Typography>
-                          {v.applicationId && (
-                            <Chip
-                              label={`Application #${v.applicationId}`}
-                              size="small"
-                              variant="outlined"
-                            />
-                          )}
+            <Stack spacing={1.5} sx={{ maxHeight: 480, overflowY: "auto", pr: 0.5 }}>
+              {groupVariants(filtered).map((group) => (
+                <Stack key={group.company} spacing={1} sx={{ flexShrink: 0 }}>
+                  <Typography variant="overlineMuted">
+                    {group.company} · {plural(group.variants.length, "variant")}
+                    {group.attached > 0 && ` · ${group.attached} applied with`}
+                  </Typography>
+                  {group.variants.map((v) => (
+                    <Card key={v.id} sx={{ flexShrink: 0 }}>
+                      <CardContent>
+                        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                              <Typography variant="body2Strong">{v.label}</Typography>
+                              <Chip
+                                label={v.applicationId ? "Applied with this" : "Unused"}
+                                size="small"
+                                variant="outlined"
+                                color={v.applicationId ? "success" : "default"}
+                              />
+                            </Stack>
+                            <Typography variant="captionMuted">
+                              {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
+                              <RelativeTime value={v.createdAt} />
+                            </Typography>
+                          </Box>
+                          <IconButton
+                            component="a"
+                            href={variantPdfUrl(v.id, v.updatedAt)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Open variant PDF"
+                          >
+                            <OpenInNew fontSize="md" />
+                          </IconButton>
+                          <IconButton
+                            onClick={() => void handleDelete(v)}
+                            aria-label="Delete variant"
+                          >
+                            <Delete fontSize="md" />
+                          </IconButton>
                         </Stack>
-                        <Typography variant="captionMuted">
-                          {v.jobUrl ? `${v.jobUrl} · ` : ""}created{" "}
-                          <RelativeTime value={v.createdAt} />
-                        </Typography>
-                      </Box>
-                      <IconButton
-                        component="a"
-                        href={variantPdfUrl(v.id, v.updatedAt)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Open variant PDF"
-                      >
-                        <OpenInNew fontSize="md" />
-                      </IconButton>
-                      <IconButton onClick={() => void handleDelete(v)} aria-label="Delete variant">
-                        <Delete fontSize="md" />
-                      </IconButton>
-                    </Stack>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Stack>
               ))}
             </Stack>
           )}

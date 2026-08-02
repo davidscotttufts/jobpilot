@@ -1,11 +1,13 @@
 "use client";
 
 import { type ReactElement, useEffect, useState } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Paper, Stack, Typography } from "@mui/material";
 
 export interface SectionAnchor {
   id: string;
   label: string;
+  /** Shows a hollow marker, so a section with nothing in it is visible without opening it. */
+  empty?: boolean;
 }
 
 interface SectionAnchorNavProps {
@@ -110,12 +112,20 @@ export function SectionAnchorNav(props: SectionAnchorNavProps): ReactElement {
                 "&:focus-visible": { outline: theme.shadows_custom.focus, outlineOffset: 2 },
               })}
             >
-              <Typography
-                variant="body2"
-                sx={{ fontWeight: active ? 500 : 400, fontSize: "0.8125rem" }}
-              >
-                {anchor.label}
-              </Typography>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: active ? 500 : 400, fontSize: "0.8125rem" }}
+                >
+                  {anchor.label}
+                </Typography>
+                {anchor.empty && (
+                  <Paper
+                    variant="panel"
+                    sx={(theme) => ({ width: 6, height: 6, borderRadius: theme.radii.pill })}
+                  />
+                )}
+              </Stack>
             </Box>
           );
         })}

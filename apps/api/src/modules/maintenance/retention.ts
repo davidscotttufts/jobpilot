@@ -1,5 +1,6 @@
 // Retention windows + where-clause builders. No runtime env/db imports: CI runs `bun test` with neither.
 
+import { UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
 import { notProtectedVariant } from "@/modules/resume/variants/prunable";
@@ -19,8 +20,9 @@ export const RETENTION_DAYS = {
   emailBody: 60,
   applicationEvent: 90,
   // The reuse gate keeps the count down; this collects the tail. Under the scorer's 180d recency
-  // floor, so a swept variant is one it had already stopped preferring.
-  resumeVariant: 30,
+  // floor, so a swept variant is one it had already stopped preferring. The web states this rule in
+  // the variants panel, so the number is shared rather than repeated.
+  resumeVariant: UNUSED_VARIANT_DAYS,
 } as const;
 
 export type RetentionCutoffs = Record<keyof typeof RETENTION_DAYS, Date>;

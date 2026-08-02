@@ -11,12 +11,14 @@ import {
   Chip,
   IconButton,
   LinearProgress,
+  Paper,
   Stack,
   Typography,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type { Route } from "next";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { resumeQueries } from "@/api/queries";
@@ -51,6 +53,7 @@ export function ResumesList(): ReactElement {
   const toast = useToast();
   const agent = useAgent();
   const agentAvailable = useAgentAvailable();
+  const router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const list = useApiQuery(resumeQueries.list());
@@ -64,6 +67,9 @@ export function ResumesList(): ReactElement {
       if (agentAvailable) {
         void agent.injectSkill("extract-resume", id);
       }
+      // The resume page is where extraction progress and the result show up; a list row labelled
+      // "No structure" tells a first-time uploader nothing.
+      router.push(`/resumes/${id}` as Route);
     },
   });
 
@@ -83,14 +89,11 @@ export function ResumesList(): ReactElement {
   return (
     <Stack spacing={2}>
       <Stack
+        component={Paper}
+        variant="panel"
         direction="row"
         spacing={1.5}
-        sx={(t) => ({
-          alignItems: "center",
-          p: 2,
-          border: `1px dashed ${t.palette.line.border}`,
-          borderRadius: t.radii.md,
-        })}
+        sx={{ alignItems: "center", p: 2, borderStyle: "dashed" }}
       >
         <FileUpload
           accept="application/pdf"

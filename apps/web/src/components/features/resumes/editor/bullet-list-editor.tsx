@@ -1,10 +1,14 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { RESUME_BULLET_CHARS_PER_LINE } from "@jobpilot/contracts/resume";
 import { Add, ArrowDownward, ArrowUpward, Delete } from "@mui/icons-material";
 import { Button, IconButton, Stack, TextField } from "@mui/material";
 import { useKeyedList } from "@/hooks/use-keyed-list";
 import { moveAt, removeAt, replaceAt } from "@/utils/array";
+
+/** Past two rendered lines a bullet starts pushing the page layout around. */
+const LONG_BULLET = RESUME_BULLET_CHARS_PER_LINE * 2;
 
 interface BulletListEditorProps {
   label?: string;
@@ -44,6 +48,9 @@ export function BulletListEditor(props: BulletListEditorProps): ReactElement {
             placeholder={placeholder}
             value={b}
             onChange={(e) => update(i, e.target.value)}
+            helperText={
+              b.length > LONG_BULLET ? `${b.length} characters - runs past two lines` : undefined
+            }
           />
           <IconButton size="small" onClick={() => move(i, -1)} disabled={i === 0}>
             <ArrowUpward fontSize="sm" />
