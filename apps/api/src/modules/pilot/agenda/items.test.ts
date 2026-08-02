@@ -45,7 +45,7 @@ describe("buildAgenda M3 kinds", () => {
   it("caps networking.send at the sends left today and never emits linkedin drafts as sends", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyNetworkingCap: 2 }),
+        config: cfg({ networking: { dailyCap: 2 } }),
         networkingSentToday: 1,
         approvedNetworking: [send("m1"), send("m2"), send("m3")],
       }),
@@ -58,7 +58,7 @@ describe("buildAgenda M3 kinds", () => {
   it("suppresses networking.send entirely once the networking cap is spent", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyNetworkingCap: 2 }),
+        config: cfg({ networking: { dailyCap: 2 } }),
         networkingSentToday: 2,
         approvedNetworking: [send("m1")],
       }),
@@ -74,7 +74,7 @@ describe("buildAgenda M3 kinds", () => {
 
     const noSendsLeft = buildAgenda(
       base({
-        config: cfg({ dailyNetworkingCap: 1 }),
+        config: cfg({ networking: { dailyCap: 1 } }),
         networkingSentToday: 1,
         followups: [followup("m1")],
       }),
@@ -85,7 +85,7 @@ describe("buildAgenda M3 kinds", () => {
   it("gives followups only what the emitted sends left over", () => {
     const leftOne = buildAgenda(
       base({
-        config: cfg({ dailyNetworkingCap: 2 }),
+        config: cfg({ networking: { dailyCap: 2 } }),
         approvedNetworking: [send("m1")],
         followups: [followup("f1"), followup("f2")],
       }),
@@ -94,7 +94,7 @@ describe("buildAgenda M3 kinds", () => {
 
     const spent = buildAgenda(
       base({
-        config: cfg({ dailyNetworkingCap: 2 }),
+        config: cfg({ networking: { dailyCap: 2 } }),
         approvedNetworking: [send("m1"), send("m2")],
         followups: [followup("f1")],
       }),
@@ -131,11 +131,11 @@ describe("buildAgenda M3 kinds", () => {
     expect(agenda.items.filter((i) => i.kind === "networking.warmIntro")).toHaveLength(1);
   });
 
-  it("suppresses every networking kind when networkingEnabled is false", () => {
+  it("suppresses every networking kind when both channels are off", () => {
     const warm = [{ id: "w1", name: "Insider", title: null, email: "in@acme.test" }];
     const agenda = buildAgenda(
       base({
-        config: cfg({ networkingEnabled: false }),
+        config: cfg({ networking: { email: "off", linkedIn: "off" } }),
         approvedJobs: [{ ...job("j1", 90), company: "Acme", warmContacts: warm }],
         approvedNetworking: [send("m1")],
         followups: [followup("f1")],
@@ -159,7 +159,7 @@ describe("buildAgenda M3 kinds", () => {
   it("suppresses the warmIntro once the networking cap is spent", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyNetworkingCap: 1 }),
+        config: cfg({ networking: { dailyCap: 1 } }),
         networkingSentToday: 1,
         approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
       }),
@@ -170,7 +170,7 @@ describe("buildAgenda M3 kinds", () => {
   it("email off drops sends and followups but keeps the LinkedIn-capable warmIntro", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ autonomy: { networkingEmail: "off", networkingLinkedIn: "draft" } }),
+        config: cfg({ networking: { email: "off", linkedIn: "draft" } }),
         approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
         approvedNetworking: [send("m1")],
         followups: [followup("f1")],
@@ -182,30 +182,37 @@ describe("buildAgenda M3 kinds", () => {
     expect(kinds).toContain("networking.warmIntro");
   });
 
-  it("both channels off is the same as networking being off", () => {
+  it("resolves the warmIntro channel to email when both are on", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ autonomy: { networkingEmail: "off", networkingLinkedIn: "off" } }),
-        approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
-        approvedNetworking: [send("m1")],
-        followups: [followup("f1")],
-      }),
-    );
-    expect(agenda.items.some((i) => i.kind.startsWith("networking."))).toBe(false);
-  });
-
-  it("carries both channel autonomies into the warmIntro payload", () => {
-    const agenda = buildAgenda(
-      base({
-        config: cfg({ autonomy: { networkingEmail: "auto", networkingLinkedIn: "review" } }),
+        config: cfg({ networking: { email: "auto", linkedIn: "review" } }),
         approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
       }),
     );
     const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");
-    expect(warmIntro?.payload).toMatchObject({
-      emailAutonomy: "auto",
-      linkedInAutonomy: "review",
-    });
+    expect(warmIntro?.payload).toMatchObject({ channel: "email", autonomy: "auto" });
+  });
+
+  it("falls back to LinkedIn for the warmIntro when email is off", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ networking: { email: "off", linkedIn: "review" } }),
+        approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
+      }),
+    );
+    const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");
+    expect(warmIntro?.payload).toMatchObject({ channel: "linkedin", autonomy: "review" });
+  });
+
+  it("carries the email mode into every followup", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ networking: { email: "review" } }),
+        followups: [followup("f1")],
+      }),
+    );
+    const item = agenda.items.find((i) => i.kind === "networking.followup");
+    expect(item?.payload).toMatchObject({ channel: "email", autonomy: "review" });
   });
 
   it("emits promo.post per approved post and at most one promo.compose", () => {
@@ -290,7 +297,7 @@ describe("buildAgenda interview kinds", () => {
     // 950 beats jobBase + matchScore (800 + 95): a recruiter waiting always outranks another apply.
     const agenda = buildAgenda(
       base({
-        config: cfg({ networkingEnabled: false }),
+        config: cfg({ networking: { email: "off", linkedIn: "off" } }),
         interviewReplies: [reply("em1")],
         approvedJobs: [job("j1", 95)],
       }),

@@ -1,3 +1,4 @@
+import type { NetworkingMode } from "@jobpilot/contracts/networking";
 import type { AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import {
   MAX_PAUSED_REVIEWS,
@@ -66,7 +67,7 @@ export function buildJobApplyItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
  */
 export function buildWarmIntroItems(
   jobs: AgendaApprovedJob[],
-  config: PilotInstructionsConfig,
+  mode: NetworkingMode,
   sendsLeft: number,
 ): AgendaItem[] {
   if (sendsLeft <= 0) return [];
@@ -89,8 +90,7 @@ export function buildWarmIntroItems(
         jobTitle: job.title,
         jobUrl: job.url,
         contacts: job.warmContacts ?? [],
-        emailAutonomy: config.autonomy.networkingEmail,
-        linkedInAutonomy: config.autonomy.networkingLinkedIn,
+        ...mode,
       },
     });
   }

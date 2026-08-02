@@ -1,7 +1,8 @@
 import {
   type AgendaResponse,
   agendaResponseSchema,
-  emailNetworkingActive,
+  channelAutonomy,
+  networkingMode,
 } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
@@ -81,7 +82,8 @@ export class AgendaService {
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
     // Sends and followups only act on email drafts, so an off email channel makes gathering moot.
-    const emailNetworking = emailNetworkingActive(config);
+    const emailNetworking = channelAutonomy(config, "email") !== null;
+    const outreach = networkingMode(config) !== null;
 
     // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
@@ -119,7 +121,7 @@ export class AgendaService {
       gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),
       emailNetworking ? gatherApprovedNetworking(prisma, userId) : [],
-      config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
+      outreach ? countSentToday(prisma, userId, now) : 0,
       emailNetworking ? gatherFollowups(prisma, userId, config, now) : [],
       gatherApprovedPromotions(prisma, userId, now),
       duePlatforms(prisma, userId, config, now),
@@ -131,7 +133,8 @@ export class AgendaService {
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
 
-    if (config.networkingEnabled) {
+    // Warm intros spend the send budget, so a spent budget makes the contact lookup moot.
+    if (outreach && networkingSentToday < config.networking.dailyCap) {
       await attachWarmContacts(prisma, userId, approvedJobs);
     }
 

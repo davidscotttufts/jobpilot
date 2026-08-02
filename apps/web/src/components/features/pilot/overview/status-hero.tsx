@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { networkingMode } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Grid, Stack, Tooltip, Typography } from "@mui/material";
 import { ColorChip, RelativeTime, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
@@ -21,8 +22,8 @@ export function StatusHero(): ReactElement {
   const pilot = hostStatus?.pilot ?? null;
   const running = state.running;
   const goalsEmpty = state.instructionsGoals.trim() === "";
-  const { dailyApplyCap, dailyNetworkingCap, minScore, networkingEnabled } =
-    state.instructionsConfig;
+  const { dailyApplyCap, minScore, networking } = state.instructionsConfig;
+  const outreachOn = networkingMode(state.instructionsConfig) !== null;
   const { appliedToday, capReached, networkingSentToday } = state;
 
   const stopWithConfirm = async (): Promise<void> => {
@@ -166,12 +167,12 @@ export function StatusHero(): ReactElement {
                   Daily apply cap is 0 - the pilot won't apply until you raise it.
                 </Typography>
               )}
-              {networkingEnabled && dailyNetworkingCap > 0 && (
+              {outreachOn && networking.dailyCap > 0 && (
                 <Meter
                   label="Networked"
                   value={networkingSentToday}
-                  cap={dailyNetworkingCap}
-                  spent={networkingSentToday >= dailyNetworkingCap}
+                  cap={networking.dailyCap}
+                  spent={networkingSentToday >= networking.dailyCap}
                 />
               )}
               <TodayOutcomes appliedToday={appliedToday} />
@@ -186,8 +187,8 @@ export function StatusHero(): ReactElement {
               <Grid size={4}>
                 <StatCard
                   label="Networking"
-                  value={networkingEnabled ? dailyNetworkingCap : "Off"}
-                  hint={networkingEnabled ? "per day" : "disabled"}
+                  value={outreachOn ? networking.dailyCap : "Off"}
+                  hint={outreachOn ? "per day" : "disabled"}
                 />
               </Grid>
             </Grid>

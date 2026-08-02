@@ -31,7 +31,7 @@ describe("buildAgenda priority", () => {
   it("ranks job.apply items by matchScore descending", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ networkingEnabled: false }),
+        config: cfg({ networking: { email: "off", linkedIn: "off" } }),
         approvedJobs: [job("low", 60), job("high", 95)],
       }),
     );
@@ -120,7 +120,7 @@ describe("buildAgenda campaign.reviewPaused", () => {
   it("ranks above a perfect-score apply and queue.drain, below board health and answered questions", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ networkingEnabled: false }),
+        config: cfg({ networking: { email: "off", linkedIn: "off" } }),
         answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
         approvedJobs: [job("j1", 100)],
         pausedCampaigns: [pausedCampaign("c9")],
@@ -155,7 +155,7 @@ describe("buildAgenda campaign.reviewPaused", () => {
   it("still surfaces when the daily apply cap is reached", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyApplyCap: 3, networkingEnabled: false }),
+        config: cfg({ dailyApplyCap: 3, networking: { email: "off", linkedIn: "off" } }),
         appliedToday: 3,
         approvedJobs: [job("j1", 90)],
         pausedCampaigns: [pausedCampaign("c9")],

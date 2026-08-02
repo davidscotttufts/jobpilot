@@ -16,7 +16,7 @@ Follow `../_shared/setup.md` - health check `GET /api/health` first; abort with 
 CYCLE_ID=$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid 2>/dev/null || od -An -tx1 -N16 /dev/urandom | tr -d ' \n' | sed -E 's/^(.{8})(.{4})(.{4})(.{4})(.{12})$/\1-\2-\3-\4-\5/')
 ```
 
-Load the pilot state - later steps read its instructions (`autonomy`). No run-state check here: the host gates the loop.
+Load the pilot state - step 2 breaks priority ties with its goals text. No run-state check here: the host gates the loop.
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/pilot"
@@ -257,10 +257,11 @@ Send failure → `/result` `{outcome:"failed", failReason:"<why>"}`. Journal wit
 
 ### `networking.followup`
 
-Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince}`. Compose a 2-3 sentence follow-up (reference the original `subject`; `humanizer` in embedded mode for tone; plain ASCII), create it as a **new** draft via `POST /api/campaigns/$CID/networking` (the shape the `networking` skill saves a draft, channel `email`, reusing `contactId`); capture the returned draft's `id` as `DRAFT_MSGID`. Then gate on the pilot state's instructions `autonomy.networkingEmail` (from step 0's `GET /api/pilot`):
+Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, sentAt, daysSince, channel, autonomy}`. Compose a 2-3 sentence follow-up (reference the original `subject`; `humanizer` in embedded mode for tone; plain ASCII), create it as a **new** draft via `POST /api/campaigns/$CID/networking` (the shape the `networking` skill saves a draft, on the payload's `channel`, reusing `contactId`); capture the returned draft's `id` as `DRAFT_MSGID`. Then apply the **autonomy gate** on the payload's `autonomy`. It never says `"off"`: the server drops the item instead.
 
 - `"auto"` → send immediately and record sent, exactly as `networking.send` (messageId = `$DRAFT_MSGID`).
-- else → POST a question against the draft and stop - `subjectType:"networking"` + the draft's messageId is what lets a later cycle's `question.answered` route the answer:
+- `"draft"` → stop after saving; the user picks the draft up in the web.
+- `"review"` → POST a question against the draft and stop - `subjectType:"networking"` + the draft's messageId is what lets a later cycle's `question.answered` route the answer:
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/questions" \
@@ -272,12 +273,12 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 ### `networking.warmIntro`
 
-Payload `{campaignId, jobKey, company, jobTitle, jobUrl, contacts, emailAutonomy, linkedInAutonomy}`. Compose over email, or LinkedIn when `emailAutonomy` is `"off"` - the server never emits this item with both channels off. Delegate **one** `networking-worker` invocation:
+Payload `{campaignId, jobKey, company, jobTitle, jobUrl, contacts, channel, autonomy}`. The server already picked the `channel`, so compose on it rather than re-deciding. Delegate **one** `networking-worker` invocation:
 
 - `contacts` non-empty → compose only for the best contact (pass it as `target`, like the `networking` skill's rewrite mode, with the job for grounding); the worker composes, never sends.
 - `contacts` empty → discover **and** compose for the company/job (`target:{jobUrl, title:<jobTitle>, company}`). An empty list is the normal early case and the point of the item, not a reason to stop.
 
-Save the returned contact + draft via the campaign networking endpoints exactly as the `networking` skill's "Save the returned draft"; capture the saved draft's message `id`. Then apply the **same autonomy gate** as `networking.followup` on the chosen channel's payload value (`"auto"` → send + record; `"draft"` → stop after saving; `"review"` → POST the same `approval` question - `subjectType:"networking"`, `subjectId` = the saved draft's message id - then stop). Journal e.g. "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."
+Save the returned contact + draft via the campaign networking endpoints exactly as the `networking` skill's "Save the returned draft"; capture the saved draft's message `id`. Then apply the **same autonomy gate** as `networking.followup`, against this item's `autonomy`. Journal e.g. "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."
 
 ### `promo.compose`
 

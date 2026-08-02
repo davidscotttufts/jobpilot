@@ -1,8 +1,8 @@
 import {
   type AgendaContent,
   type AgendaItem,
-  anyNetworkingActive,
-  emailNetworkingActive,
+  channelAutonomy,
+  networkingMode,
 } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import {
@@ -61,7 +61,9 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   const { now, config } = input;
   const capReached = input.appliedToday >= config.dailyApplyCap;
   // The networking cap is independent of the apply cap; it gates sends and followups alike.
-  const sendsLeftToday = Math.max(0, config.dailyNetworkingCap - input.networkingSentToday);
+  const sendsLeftToday = Math.max(0, config.networking.dailyCap - input.networkingSentToday);
+  const outreach = networkingMode(config);
+  const emailAutonomy = channelAutonomy(config, "email");
 
   const items: AgendaItem[] = [...buildQuestionItems(input.answeredQuestions)];
   if (!capReached) items.push(...buildJobApplyItems(input.approvedJobs));
@@ -73,8 +75,11 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   items.push(...buildInterviewPrepItems(input.interviewPreps));
   // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
   items.push(...buildQueueDrainItem(input.queue));
-  items.push(...buildWarmIntroItems(input.approvedJobs, config, sendsLeftToday));
-  const sendItems = buildNetworkingSendItems(input.approvedNetworking, sendsLeftToday);
+  if (outreach) items.push(...buildWarmIntroItems(input.approvedJobs, outreach, sendsLeftToday));
+  // A send acts on an email draft, so the email channel gates it.
+  const sendItems = emailAutonomy
+    ? buildNetworkingSendItems(input.approvedNetworking, sendsLeftToday)
+    : [];
   items.push(...sendItems);
   items.push(...buildInboxItem(input.inbox));
   items.push(...buildPromoPostItems(input.approvedPromotions));
@@ -95,8 +100,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
 
   // Followups spend the same send budget, so they only get what the sends left over.
   const followupsLeftToday = sendsLeftToday - sendItems.length;
-  if (followupsLeftToday > 0)
-    items.push(...buildFollowupItems(input.followups.slice(0, followupsLeftToday)));
+  if (followupsLeftToday > 0 && emailAutonomy)
+    items.push(...buildFollowupItems(input.followups.slice(0, followupsLeftToday), emailAutonomy));
   items.push(...buildPromoComposeItems(input.duePlatforms));
 
   // Quiet-agenda maintenance surfaces only when no apply / discover / queue work is queued.
@@ -115,17 +120,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     items.push(...buildRetryFailedItems(input.retryFailed));
   }
 
-  // Sends and followups need an email draft; a warm intro picks its own channel. Mail triage is
-  // `inbox.review`, outside this namespace, so it survives networking being off.
-  const ranked = items.filter((item) => {
-    if (!item.kind.startsWith("networking.")) return true;
-    return item.kind === "networking.warmIntro"
-      ? anyNetworkingActive(config)
-      : emailNetworkingActive(config);
-  });
-
-  ranked.sort((a, b) => b.priority - a.priority);
-  const capped = ranked.slice(0, MAX_ITEMS);
+  items.sort((a, b) => b.priority - a.priority);
+  const capped = items.slice(0, MAX_ITEMS);
 
   const emptyReason = agendaEmptyReason(capped.length, capReached, input.awaitingSetup);
 
@@ -155,7 +151,7 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
       dailyApplyCap: config.dailyApplyCap,
       appliedToday: input.appliedToday,
       capReached,
-      dailyNetworkingCap: config.dailyNetworkingCap,
+      dailyNetworkingCap: config.networking.dailyCap,
       networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),
     },

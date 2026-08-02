@@ -1,4 +1,9 @@
 import { z } from "zod/v4";
+import { networkingModeSchema } from "../networking";
+
+// The server picks the channel and resolves the mode, so "off" never reaches a worker - an off
+// channel means the item is not emitted at all.
+const outgoingMode = networkingModeSchema.shape;
 
 const AGENDA_ITEM_KINDS = [
   "question.answered",
@@ -154,6 +159,7 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       subject: nullableString,
       sentAt: z.date(),
       daysSince: z.number().int(),
+      ...outgoingMode,
     }),
   ),
   agendaItem(
@@ -167,8 +173,7 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       jobUrl: z.string(),
       // Empty when nobody at the company is known yet; the worker discovers one.
       contacts: z.array(warmContactSchema).default([]),
-      emailAutonomy: z.enum(["off", "draft", "review", "auto"]),
-      linkedInAutonomy: z.enum(["off", "draft", "review"]),
+      ...outgoingMode,
     }),
   ),
   agendaItem(

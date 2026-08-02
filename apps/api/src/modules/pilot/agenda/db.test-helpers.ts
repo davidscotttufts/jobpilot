@@ -113,8 +113,8 @@ export interface Over {
 // (expiry, gather, claim, digest) issues against that model.
 
 function fakePilotState(over: Over) {
-  // Networking is opt-in in prod; these compile tests assert networking behavior, so default it on.
-  const defaultConfig = { networkingEnabled: true };
+  // Networking is off by default in prod; these compile tests assert networking behavior.
+  const defaultConfig = { networking: { email: "review", linkedIn: "draft" } };
   return {
     upsert: async () => ({ instructionsConfig: over.instructionsConfig ?? defaultConfig }),
     findUnique: async () => ({

@@ -1,3 +1,4 @@
+import { PILOT_EMAIL_AUTONOMY, PILOT_LINKEDIN_AUTONOMY } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
 export const instructionsFormSchema = z.object({
@@ -7,9 +8,8 @@ export const instructionsFormSchema = z.object({
   networkingFollowupDays: z.number().int().min(0),
   minScore: z.number().min(0).max(100),
   checkIntervalMinutes: z.number().int().min(5),
-  networkingEnabled: z.boolean(),
-  networkingEmail: z.enum(["off", "draft", "review", "auto"]),
-  networkingLinkedIn: z.enum(["off", "draft", "review"]),
+  networkingEmail: z.enum(PILOT_EMAIL_AUTONOMY),
+  networkingLinkedIn: z.enum(PILOT_LINKEDIN_AUTONOMY),
   boards: z.array(z.string()),
   promotionPlatforms: z.array(
     z.object({
@@ -30,9 +30,8 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   networkingFollowupDays: 5,
   minScore: 60,
   checkIntervalMinutes: 30,
-  networkingEnabled: false,
-  networkingEmail: "review",
-  networkingLinkedIn: "draft",
+  networkingEmail: "off",
+  networkingLinkedIn: "off",
   boards: [],
   promotionPlatforms: [],
 };
