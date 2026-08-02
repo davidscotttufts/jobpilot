@@ -4,19 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.25] - 2026-08-02
+
 ### Added
 
 - The pilot finds a contact instead of waiting for one: a high-scoring job with
   nobody known at the company now gets a warm intro. Networking that was switched
   on but never ran had been stuck on exactly this.
 - Email and LinkedIn networking can each be switched off on their own, and the
-  LinkedIn setting is finally read by something.
+  LinkedIn setting is finally read by something. Turning both off is how you
+  switch networking off - the separate master toggle is gone.
 - Discovery moves to the next configured board each cycle, so all your boards get
   worked instead of only the first.
 - "Reset pilot" on the Activity tab clears the journal and zeroes cycles run.
   Instructions, searches, and running state are untouched.
 - The Pilot card counts today's networking messages, plus jobs skipped and failed
   with the top reasons why.
+- The landing page opens with a short teaser video of a run, and the docs point at
+  it from the FAQ and getting-started pages.
 
 ### Changed
 
@@ -28,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - Skills edit as chips, over-long bullets say so, and variants group by company.
 - Desktop-agent controls are disabled with a reason instead of vanishing on mobile.
 - Relative timestamps age on their own; the live feed used to sit at "1s ago".
+- The README, docs, and marketing copy were reworded in plainer language.
 
 ### Fixed
 
@@ -35,6 +41,8 @@ All notable changes to this project will be documented in this file.
 - The Cycle filter chip no longer secretly turns off row collapsing - that has its
   own switch.
 - A cycle whose result was read from the server reads as routine, because it is.
+- The resume page stopped polling for extraction on machines with no agent running,
+  where the parse could never finish anyway.
 
 ## [2.1.24] - 2026-07-26
 

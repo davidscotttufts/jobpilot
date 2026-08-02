@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>JobPilot.Terminal</RootNamespace>
     <AssemblyName>jobpilot</AssemblyName>
-    <Version>2.1.24</Version>
+    <Version>2.1.25</Version>
     <ApplicationIcon>jobpilot.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
