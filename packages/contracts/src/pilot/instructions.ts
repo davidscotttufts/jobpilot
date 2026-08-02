@@ -1,8 +1,10 @@
 import { z } from "zod/v4";
 
+// "off" is per-channel: it silences one channel while the other keeps working. Silencing both is
+// the same as turning `networkingEnabled` off, and the agenda treats it that way.
 const pilotAutonomySchema = z.object({
-  networkingEmail: z.enum(["draft", "review", "auto"]).default("review"),
-  networkingLinkedIn: z.enum(["draft", "review"]).default("draft"),
+  networkingEmail: z.enum(["off", "draft", "review", "auto"]).default("review"),
+  networkingLinkedIn: z.enum(["off", "draft", "review"]).default("draft"),
 });
 
 const pilotPromotionPlatformSchema = z.object({
@@ -25,7 +27,7 @@ export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
-  checkIntervalMinutes: z.number().int().default(30),
+  checkIntervalMinutes: z.number().int().min(5).default(30),
   // Master switch: networking is opt-in. Off suppresses all networking work (compose, send, follow-up).
   networkingEnabled: z.boolean().default(false),
   // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
@@ -53,6 +55,7 @@ export const pilotStateSchema = z.object({
   // Today's applied count (tz-aware) and whether it has reached the instructions' daily cap.
   appliedToday: z.number().int(),
   capReached: z.boolean(),
+  networkingSentToday: z.number().int(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

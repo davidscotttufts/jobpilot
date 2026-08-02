@@ -163,10 +163,7 @@ describe("buildAgenda strategy.bootstrap", () => {
     expect(item?.subjectType).toBe("pilot");
     expect(item?.priority).toBe(520);
     expect(item?.title).toBe("Set up searches from your goals");
-    expect(item?.payload).toMatchObject({
-      goals: "Senior TypeScript roles, remote",
-      boards: ["linkedin"],
-    });
+    expect(item?.payload).toMatchObject({ goals: "Senior TypeScript roles, remote" });
     // No goals-empty variant: goals are mandatory, so the payload never carries a hasGoals flag.
     expect(item?.payload).not.toHaveProperty("hasGoals");
   });

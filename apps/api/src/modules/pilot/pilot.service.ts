@@ -14,7 +14,7 @@ import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/pr
 import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
 import { parseInstructionsConfig } from "./pilot.instructions";
 import { toPilotQuestion, toPilotState } from "./pilot.mapper";
-import { countAppliedToday } from "./pilot.stats";
+import { countAppliedToday, countSentToday, countTodayOutcomes } from "./pilot.stats";
 
 /** Expiring unanswered 2FA questions keeps their parked jobs from staying wedged. */
 const TWO_FA_TTL_MS = 5 * 60 * 1000;
@@ -35,8 +35,12 @@ export class PilotService {
 
   private async toStateDto(userId: string, row: PilotStateModel) {
     const config = parseInstructionsConfig(row.instructionsConfig);
-    const appliedToday = await countAppliedToday(this.prisma, userId, new Date());
-    return toPilotState(row, appliedToday, config);
+    const now = new Date();
+    const [appliedToday, networkingSentToday] = await Promise.all([
+      countAppliedToday(this.prisma, userId, now),
+      countSentToday(this.prisma, userId, now),
+    ]);
+    return toPilotState(row, { appliedToday, networkingSentToday }, config);
   }
 
   /** Create-on-first-read: every profile has exactly one PilotState, defaulted. */
@@ -96,6 +100,24 @@ export class PilotService {
     return this.setRunning(userId, false);
   }
 
+  /**
+   * Clears the run history: every journal entry, the cycle counter, and the cached agenda. Leaves
+   * the instructions, searches and running flag alone, so a running pilot just carries on from zero.
+   */
+  async reset(userId: string) {
+    const row = await this.prisma.$transaction(async (tx) => {
+      await tx.pilotJournalEntry.deleteMany({ where: { userId } });
+      return tx.pilotState.upsert({
+        where: { userId },
+        create: { userId },
+        update: { cycleCount: 0, lastCycleAt: null, ...AGENDA_SNAPSHOT_RESET },
+      });
+    });
+    const state = await this.toStateDto(userId, row);
+    publish(pilotChannel, { userId }, { type: "state.changed", state });
+    return state;
+  }
+
   private async setRunning(userId: string, running: boolean) {
     const row = await this.prisma.pilotState.upsert({
       where: { userId },
@@ -105,6 +127,11 @@ export class PilotService {
     const state = await this.toStateDto(userId, row);
     publish(pilotChannel, { userId }, { type: "state.changed", state });
     return state;
+  }
+
+  /** Today's skipped/failed counts and bucketed skip reasons - the "why so few applies?" answer. */
+  getTodayOutcomes(userId: string) {
+    return countTodayOutcomes(this.prisma, userId, new Date());
   }
 
   /** Newest persisted activity lets the terminal distinguish a slow live cycle from a stuck one. */

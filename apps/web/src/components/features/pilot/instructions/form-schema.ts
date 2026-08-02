@@ -6,10 +6,10 @@ export const instructionsFormSchema = z.object({
   dailyNetworkingCap: z.number().int().min(0),
   networkingFollowupDays: z.number().int().min(0),
   minScore: z.number().min(0).max(100),
-  checkIntervalMinutes: z.number().int().min(1),
+  checkIntervalMinutes: z.number().int().min(5),
   networkingEnabled: z.boolean(),
-  networkingEmail: z.enum(["draft", "review", "auto"]),
-  networkingLinkedIn: z.enum(["draft", "review"]),
+  networkingEmail: z.enum(["off", "draft", "review", "auto"]),
+  networkingLinkedIn: z.enum(["off", "draft", "review"]),
   boards: z.array(z.string()),
   promotionPlatforms: z.array(
     z.object({

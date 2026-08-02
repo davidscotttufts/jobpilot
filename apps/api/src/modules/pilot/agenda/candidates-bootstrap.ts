@@ -32,7 +32,6 @@ export async function gatherBootstrap(
 
   return {
     goals: trimmedGoals,
-    boards: config.boards,
     minScore: config.minScore,
   };
 }

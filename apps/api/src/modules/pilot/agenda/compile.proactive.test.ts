@@ -151,7 +151,6 @@ describe("AgendaService strategy.bootstrap", () => {
     expect(item?.subjectId).toBe("bootstrap");
     expect(item?.payload).toEqual({
       goals: "Senior TS roles, remote",
-      boards: ["linkedin"],
       minScore: 70,
     });
   });

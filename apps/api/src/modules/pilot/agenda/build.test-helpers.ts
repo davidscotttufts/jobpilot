@@ -16,6 +16,7 @@ export const NOW = new Date("2026-07-15T12:00:00.000Z");
 export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   now: NOW,
   config: cfg(),
+  cycleCount: 0,
   openQuestions: 0,
   answeredQuestions: [],
   activeClaims: 0,
@@ -107,7 +108,6 @@ export const boardHealth = (board: string, over: Record<string, unknown> = {}) =
 
 export const bootstrapCandidate = (over: Record<string, unknown> = {}) => ({
   goals: "Senior TypeScript roles, remote",
-  boards: ["linkedin"],
   minScore: 60,
   ...over,
 });

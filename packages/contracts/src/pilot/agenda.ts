@@ -165,7 +165,10 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       company: nullableString,
       jobTitle: z.string(),
       jobUrl: z.string(),
-      contacts: z.array(warmContactSchema),
+      // Empty when nobody at the company is known yet; the worker discovers one.
+      contacts: z.array(warmContactSchema).default([]),
+      emailAutonomy: z.enum(["off", "draft", "review", "auto"]),
+      linkedInAutonomy: z.enum(["off", "draft", "review"]),
     }),
   ),
   agendaItem(
@@ -260,7 +263,6 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     "pilot",
     z.object({
       goals: z.string(),
-      boards: z.array(z.string()),
       minScore: z.number(),
     }),
   ),
@@ -284,6 +286,8 @@ export const agendaContentSchema = z.object({
     dailyApplyCap: z.number().int(),
     appliedToday: z.number().int(),
     capReached: z.boolean(),
+    dailyNetworkingCap: z.number().int(),
+    networkingSentToday: z.number().int(),
     resetsAt: z.date(),
   }),
   emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),

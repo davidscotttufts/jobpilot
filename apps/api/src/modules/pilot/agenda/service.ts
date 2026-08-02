@@ -70,12 +70,15 @@ export class AgendaService {
   async refresh(userId: string): Promise<AgendaResponse> {
     const state = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { running: true },
+      select: { running: true, cycleCount: true },
     });
     if (!state?.running) throw conflict("Pilot is stopped.");
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
+    // Email drafts are the only thing sends and followups can act on, so an off email channel
+    // makes gathering them pointless work.
+    const emailNetworking = config.networkingEnabled && config.autonomy.networkingEmail !== "off";
 
     // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
@@ -112,9 +115,9 @@ export class AgendaService {
       countAppliedToday(prisma, userId, now),
       gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),
-      config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
+      emailNetworking ? gatherApprovedNetworking(prisma, userId) : [],
       config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
-      config.networkingEnabled ? gatherFollowups(prisma, userId, config, now) : [],
+      emailNetworking ? gatherFollowups(prisma, userId, config, now) : [],
       gatherApprovedPromotions(prisma, userId, now),
       duePlatforms(prisma, userId, config, now),
       gatherInterviewReplies(prisma, userId),
@@ -160,6 +163,7 @@ export class AgendaService {
     const content = buildAgenda({
       now,
       config,
+      cycleCount: state.cycleCount,
       openQuestions,
       answeredQuestions,
       activeClaims,

@@ -1,4 +1,4 @@
-import type { AgendaContent, AgendaItem } from "@jobpilot/contracts/pilot";
+import type { AgendaContent, AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import {
   ACTIVE_SLEEP_SECONDS,
@@ -47,6 +47,11 @@ function agendaEmptyReason(
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+const emailOn = (config: PilotInstructionsConfig) => config.autonomy.networkingEmail !== "off";
+
+const anyChannelOn = (config: PilotInstructionsConfig) =>
+  emailOn(config) || config.autonomy.networkingLinkedIn !== "off";
+
 /**
  * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the ordering,
  * cap-suppression, budget, and sleep rules are unit-testable. Ranking lives in PRIORITY
@@ -55,8 +60,8 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 export function buildAgenda(input: AgendaInput): AgendaContent {
   const { now, config } = input;
   const capReached = input.appliedToday >= config.dailyApplyCap;
-  // Networking headroom is independent of the apply cap; it gates sends and followups alike.
-  const sendHeadroom = Math.max(0, config.dailyNetworkingCap - input.networkingSentToday);
+  // The networking cap is independent of the apply cap; it gates sends and followups alike.
+  const sendsLeftToday = Math.max(0, config.dailyNetworkingCap - input.networkingSentToday);
 
   const items: AgendaItem[] = [...buildQuestionItems(input.answeredQuestions)];
   if (!capReached) items.push(...buildJobApplyItems(input.approvedJobs));
@@ -68,8 +73,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   items.push(...buildInterviewPrepItems(input.interviewPreps));
   // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
   items.push(...buildQueueDrainItem(input.queue));
-  items.push(...buildWarmIntroItems(input.approvedJobs));
-  const sendItems = buildNetworkingSendItems(input.approvedNetworking, sendHeadroom);
+  items.push(...buildWarmIntroItems(input.approvedJobs, config, sendsLeftToday));
+  const sendItems = buildNetworkingSendItems(input.approvedNetworking, sendsLeftToday);
   items.push(...sendItems);
   items.push(...buildInboxItem(input.inbox));
   items.push(...buildPromoPostItems(input.approvedPromotions));
@@ -79,19 +84,19 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   if (input.approvedJobs.length === 0) {
     items.push(...buildScorePendingItems(input.scorePending));
 
-    // Discovery targets the remaining daily headroom; the clamp keeps one scoring run bounded.
+    // Discovery targets the room left under the daily apply cap; the clamp keeps one run bounded.
     const newJobsTarget = clamp(
       config.dailyApplyCap - input.appliedToday,
       NEW_JOBS_TARGET_MIN,
       NEW_JOBS_TARGET_MAX,
     );
-    items.push(...buildDiscoverItems(input.dueQueries, config, newJobsTarget));
+    items.push(...buildDiscoverItems(input.dueQueries, config, newJobsTarget, input.cycleCount));
   }
 
-  // Followups spend the same send budget, so they only get the headroom the sends left over.
-  const followupHeadroom = sendHeadroom - sendItems.length;
-  if (followupHeadroom > 0)
-    items.push(...buildFollowupItems(input.followups.slice(0, followupHeadroom)));
+  // Followups spend the same send budget, so they only get what the sends left over.
+  const followupsLeftToday = sendsLeftToday - sendItems.length;
+  if (followupsLeftToday > 0)
+    items.push(...buildFollowupItems(input.followups.slice(0, followupsLeftToday)));
   items.push(...buildPromoComposeItems(input.duePlatforms));
 
   // Quiet-agenda maintenance surfaces only when no apply / discover / queue work is queued.
@@ -110,11 +115,13 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     items.push(...buildRetryFailedItems(input.retryFailed));
   }
 
-  // Opt-in networking: one category gate covers every `networking.*` kind by construction. `inbox.review`
-  // is deliberately outside the namespace so mail triage (interview replies) survives networking being off.
-  const ranked = config.networkingEnabled
-    ? items
-    : items.filter((i) => !i.kind.startsWith("networking."));
+  // Sends and followups act on existing email drafts; a warm intro picks its own channel. Mail
+  // triage is `inbox.review`, outside this namespace, so it survives networking being off.
+  const ranked = items.filter((item) => {
+    if (!item.kind.startsWith("networking.")) return true;
+    if (!config.networkingEnabled) return false;
+    return item.kind === "networking.warmIntro" ? anyChannelOn(config) : emailOn(config);
+  });
 
   ranked.sort((a, b) => b.priority - a.priority);
   const capped = ranked.slice(0, MAX_ITEMS);
@@ -147,6 +154,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
       dailyApplyCap: config.dailyApplyCap,
       appliedToday: input.appliedToday,
       capReached,
+      dailyNetworkingCap: config.dailyNetworkingCap,
+      networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),
     },
     emptyReason,

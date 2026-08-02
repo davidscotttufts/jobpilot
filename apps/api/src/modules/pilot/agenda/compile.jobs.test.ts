@@ -63,7 +63,7 @@ describe("AgendaService discover due selection", () => {
     expect(agenda.items.some((i) => i.kind === "search.discover")).toBe(false);
   });
 
-  it("hungry override re-runs the most-overdue idle search when apply headroom remains", async () => {
+  it("hungry override re-runs the most-overdue idle search when the apply cap has room", async () => {
     const agenda = await service({
       appliedToday: 0,
       // Not due, but never run - re-run it since the pipeline is empty and the cap is unspent.

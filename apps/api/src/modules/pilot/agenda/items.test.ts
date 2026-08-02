@@ -42,7 +42,7 @@ describe("buildAgenda M3 kinds", () => {
     expect(item?.subjectType).toBe("inbox");
   });
 
-  it("caps networking.send at the daily headroom and never emits linkedin drafts as sends", () => {
+  it("caps networking.send at the sends left today and never emits linkedin drafts as sends", () => {
     const agenda = buildAgenda(
       base({
         config: cfg({ dailyNetworkingCap: 2 }),
@@ -51,7 +51,7 @@ describe("buildAgenda M3 kinds", () => {
       }),
     );
     const sends = agenda.items.filter((i) => i.kind === "networking.send");
-    expect(sends).toHaveLength(1); // 2 cap - 1 sent = 1 headroom
+    expect(sends).toHaveLength(1); // 2 cap - 1 sent = 1 left
     expect(sends[0].payload.contactEmail).toBe("dana@acme.test");
   });
 
@@ -66,23 +66,23 @@ describe("buildAgenda M3 kinds", () => {
     expect(agenda.items.some((i) => i.kind === "networking.send")).toBe(false);
   });
 
-  it("emits at most 2 followups and only while send headroom exists", () => {
-    const withHeadroom = buildAgenda(
+  it("emits at most 2 followups and only while sends are left today", () => {
+    const withSendsLeft = buildAgenda(
       base({ followups: [followup("m1"), followup("m2"), followup("m3")] }),
     );
-    expect(withHeadroom.items.filter((i) => i.kind === "networking.followup")).toHaveLength(2);
+    expect(withSendsLeft.items.filter((i) => i.kind === "networking.followup")).toHaveLength(2);
 
-    const noHeadroom = buildAgenda(
+    const noSendsLeft = buildAgenda(
       base({
         config: cfg({ dailyNetworkingCap: 1 }),
         networkingSentToday: 1,
         followups: [followup("m1")],
       }),
     );
-    expect(noHeadroom.items.some((i) => i.kind === "networking.followup")).toBe(false);
+    expect(noSendsLeft.items.some((i) => i.kind === "networking.followup")).toBe(false);
   });
 
-  it("gives followups only the headroom the emitted sends left over", () => {
+  it("gives followups only what the emitted sends left over", () => {
     const leftOne = buildAgenda(
       base({
         config: cfg({ dailyNetworkingCap: 2 }),
@@ -148,6 +148,64 @@ describe("buildAgenda M3 kinds", () => {
     expect(kinds).not.toContain("networking.followup");
     // Inbox triage is not networking: it must still surface so interview mail is seen.
     expect(kinds).toContain("inbox.review");
+  });
+
+  it("emits a warmIntro for a high-score job with no known contacts", () => {
+    const agenda = buildAgenda(base({ approvedJobs: [{ ...job("j1", 90), company: "Acme" }] }));
+    const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");
+    expect(warmIntro?.payload.contacts).toEqual([]);
+  });
+
+  it("suppresses the warmIntro once the networking cap is spent", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ dailyNetworkingCap: 1 }),
+        networkingSentToday: 1,
+        approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
+      }),
+    );
+    expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
+  });
+
+  it("email off drops sends and followups but keeps the LinkedIn-capable warmIntro", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ autonomy: { networkingEmail: "off", networkingLinkedIn: "draft" } }),
+        approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
+        approvedNetworking: [send("m1")],
+        followups: [followup("f1")],
+      }),
+    );
+    const kinds = agenda.items.map((i) => i.kind);
+    expect(kinds).not.toContain("networking.send");
+    expect(kinds).not.toContain("networking.followup");
+    expect(kinds).toContain("networking.warmIntro");
+  });
+
+  it("both channels off is the same as networking being off", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ autonomy: { networkingEmail: "off", networkingLinkedIn: "off" } }),
+        approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
+        approvedNetworking: [send("m1")],
+        followups: [followup("f1")],
+      }),
+    );
+    expect(agenda.items.some((i) => i.kind.startsWith("networking."))).toBe(false);
+  });
+
+  it("carries both channel autonomies into the warmIntro payload", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ autonomy: { networkingEmail: "auto", networkingLinkedIn: "review" } }),
+        approvedJobs: [{ ...job("j1", 90), company: "Acme" }],
+      }),
+    );
+    const warmIntro = agenda.items.find((i) => i.kind === "networking.warmIntro");
+    expect(warmIntro?.payload).toMatchObject({
+      emailAutonomy: "auto",
+      linkedInAutonomy: "review",
+    });
   });
 
   it("emits promo.post per approved post and at most one promo.compose", () => {
@@ -231,7 +289,11 @@ describe("buildAgenda interview kinds", () => {
   it("ranks interview.reply above even a top-scored job.apply", () => {
     // 950 beats jobBase + matchScore (800 + 95): a recruiter waiting always outranks another apply.
     const agenda = buildAgenda(
-      base({ interviewReplies: [reply("em1")], approvedJobs: [job("j1", 95)] }),
+      base({
+        config: cfg({ networkingEnabled: false }),
+        interviewReplies: [reply("em1")],
+        approvedJobs: [job("j1", 95)],
+      }),
     );
     expect(agenda.items.map((i) => i.kind)).toEqual(["interview.reply", "job.apply"]);
   });

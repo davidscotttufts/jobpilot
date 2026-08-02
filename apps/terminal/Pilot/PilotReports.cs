@@ -14,6 +14,8 @@ internal static class PilotReports
         "Pilot orchestrator: the provider CLI keeps exiting right after startup - check its install and sign-in - taking a 30-minute break.";
     public const string Extend =
         "Pilot orchestrator: this run is taking longer than usual but is still making progress - giving it more time.";
+    // Routine recovery, not a fault: the server-recorded cycle carries the same status and sleep,
+    // so the wording must not read like the run failed.
     public const string Completion =
-        "Pilot orchestrator: run completion confirmed via the server - the terminal output was garbled.";
+        "Pilot orchestrator: read this run's result from the server because the terminal output was unreadable.";
 }

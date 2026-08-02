@@ -7,20 +7,32 @@ import type {
   PilotJournalKind,
   PilotJournalPage,
 } from "@jobpilot/contracts/pilot";
-import { Download } from "@mui/icons-material";
-import { Box, Button, Chip, Divider, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { DeleteSweep, Download } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Chip,
+  Divider,
+  FormControlLabel,
+  Stack,
+  Switch,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
-import { useApiQuery } from "@/api/hooks";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { queryKeys } from "@/api/query-keys";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
+import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
-import { useJournalLive } from "./use-journal-live";
+import { clearLiveJournal, useJournalLive } from "./use-journal-live";
 
 /** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
@@ -39,6 +51,7 @@ function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[
 /** Full journal feed. Kind filters run server-side, so paging under a filter stays on one stream. */
 export function JournalFeed(): ReactElement {
   const toast = useToast();
+  const confirm = useConfirm();
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
   const firstPage = useApiQuery(pilotQueries.journal(selectedKinds));
   const { entries: live, status } = useJournalLive();
@@ -46,6 +59,29 @@ export function JournalFeed(): ReactElement {
   const [pages, setPages] = useState<PilotJournalPage[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [view, setView] = useState<"flat" | "cycle">("flat");
+  const [collapseCycles, setCollapseCycles] = useState(true);
+
+  const reset = useApiMutation(() => api.pilot.reset.post(), {
+    successMessage: "Pilot reset",
+    invalidate: [queryKeys.pilot.all],
+    onSuccess: () => {
+      clearLiveJournal();
+      setPages([]);
+    },
+  });
+
+  const resetWithConfirm = async (): Promise<void> => {
+    const ok = await confirm({
+      title: "Reset the pilot?",
+      description:
+        "Deletes every journal entry and sets cycles run back to 0. Your instructions and searches stay, and a running pilot keeps running.",
+      confirmLabel: "Reset",
+      destructive: true,
+    });
+    if (ok) {
+      reset.mutate(undefined);
+    }
+  };
 
   const lastPage = pages.at(-1);
   const activeCursor = lastPage ? lastPage.nextCursor : (firstPage.data?.nextCursor ?? null);
@@ -88,9 +124,7 @@ export function JournalFeed(): ReactElement {
     selectedKinds.length === 0 ? live : live.filter((e) => selectedKinds.includes(e.kind));
   const older = pages.flatMap((page) => page.items);
   const entries = dedupeById([...streamed, ...(firstPage.data?.items ?? []), ...older]);
-  // Only the flat feed collapses; explicitly selecting the Cycle filter shows everything.
-  const visible =
-    view === "flat" && !selectedKinds.includes("cycle") ? collapseCoveredCycles(entries) : entries;
+  const visible = view === "flat" && collapseCycles ? collapseCoveredCycles(entries) : entries;
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -109,6 +143,15 @@ export function JournalFeed(): ReactElement {
             download="pilot-journal.ndjson"
           >
             Export
+          </Button>
+          <Button
+            size="small"
+            color="error"
+            startIcon={<DeleteSweep fontSize="sm" />}
+            disabled={reset.isPending}
+            onClick={() => void resetWithConfirm()}
+          >
+            Reset pilot
           </Button>
         </Stack>
       }
@@ -129,16 +172,31 @@ export function JournalFeed(): ReactElement {
             );
           })}
         </Stack>
-        <ToggleButtonGroup
-          exclusive
-          size="small"
-          value={view}
-          onChange={(_e, next) => next && setView(next)}
-          aria-label="Journal view"
-        >
-          <ToggleButton value="flat">Flat feed</ToggleButton>
-          <ToggleButton value="cycle">By cycle</ToggleButton>
-        </ToggleButtonGroup>
+        <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={view}
+            onChange={(_e, next) => next && setView(next)}
+            aria-label="Journal view"
+          >
+            <ToggleButton value="flat">Flat feed</ToggleButton>
+            <ToggleButton value="cycle">By cycle</ToggleButton>
+          </ToggleButtonGroup>
+          {view === "flat" && (
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={collapseCycles}
+                  onChange={(e) => setCollapseCycles(e.target.checked)}
+                />
+              }
+              label="Hide cycle rows their actions already cover"
+              slotProps={{ typography: { variant: "body2Muted" } }}
+            />
+          )}
+        </Stack>
         <QuerySection
           isLoading={firstPage.isLoading}
           isError={firstPage.isError}

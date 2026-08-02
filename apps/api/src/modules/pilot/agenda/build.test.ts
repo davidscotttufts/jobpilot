@@ -27,9 +27,44 @@ describe("buildAgenda priority", () => {
     expect(agenda.items.map((i) => i.kind)).toEqual(["question.answered", "search.discover"]);
   });
 
+  // Networking off throughout: a >=85 job also earns a warm intro, which says nothing about ranking.
   it("ranks job.apply items by matchScore descending", () => {
-    const agenda = buildAgenda(base({ approvedJobs: [job("low", 60), job("high", 95)] }));
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ networkingEnabled: false }),
+        approvedJobs: [job("low", 60), job("high", 95)],
+      }),
+    );
     expect(agenda.items.map((i) => i.subjectId)).toEqual(["high", "low"]);
+  });
+
+  it("moves discovery to the next configured board each cycle", () => {
+    const boardAt = (cycleCount: number) =>
+      buildAgenda(
+        base({
+          config: cfg({ boards: ["hiring.cafe", "linkedin.com", "indeed.com"] }),
+          cycleCount,
+          dueQueries: [dueQuery("golang")],
+        }),
+      ).items.find((i) => i.kind === "search.discover")?.payload.board;
+
+    expect([0, 1, 2, 3].map(boardAt)).toEqual([
+      "hiring.cafe",
+      "linkedin.com",
+      "indeed.com",
+      "hiring.cafe",
+    ]);
+  });
+
+  it("falls back to the search's own board when no boards are configured", () => {
+    const agenda = buildAgenda(
+      base({
+        config: cfg({ boards: [] }),
+        dueQueries: [dueQuery("golang", { board: "wellfound" })],
+      }),
+    );
+    const discover = agenda.items.find((i) => i.kind === "search.discover");
+    expect(discover?.payload.board).toBe("wellfound");
   });
 
   it("caps the agenda at 10 items", () => {
@@ -85,6 +120,7 @@ describe("buildAgenda campaign.reviewPaused", () => {
   it("ranks above a perfect-score apply and queue.drain, below board health and answered questions", () => {
     const agenda = buildAgenda(
       base({
+        config: cfg({ networkingEnabled: false }),
         answeredQuestions: [{ id: "e1", kind: "question", prompt: "q" }],
         approvedJobs: [job("j1", 100)],
         pausedCampaigns: [pausedCampaign("c9")],
@@ -119,7 +155,7 @@ describe("buildAgenda campaign.reviewPaused", () => {
   it("still surfaces when the daily apply cap is reached", () => {
     const agenda = buildAgenda(
       base({
-        config: cfg({ dailyApplyCap: 3 }),
+        config: cfg({ dailyApplyCap: 3, networkingEnabled: false }),
         appliedToday: 3,
         approvedJobs: [job("j1", 90)],
         pausedCampaigns: [pausedCampaign("c9")],

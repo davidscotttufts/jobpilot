@@ -1,6 +1,6 @@
 "use client";
 
-import { Grid, Stack, Typography } from "@mui/material";
+import { Alert, Grid, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { FormSection } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
@@ -10,6 +10,9 @@ export const NetworkingSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
   render: function NetworkingSection({ form }) {
     const networkingEnabled = useSelector(form.store, (s) => s.values.networkingEnabled);
+    const email = useSelector(form.store, (s) => s.values.networkingEmail);
+    const linkedIn = useSelector(form.store, (s) => s.values.networkingLinkedIn);
+    const bothOff = email === "off" && linkedIn === "off";
 
     return (
       <FormSection
@@ -52,8 +55,9 @@ export const NetworkingSection = withForm({
                   {(field) => (
                     <field.Select
                       label="Networking email"
-                      helperText="Draft only: never sends. Review each: asks you first. Auto-send: sends automatically."
+                      helperText="Off: never writes one. Draft only: writes it but never sends. Review each: asks you first. Auto-send: sends on its own."
                       items={[
+                        { value: "off", label: "Off" },
                         { value: "draft", label: "Draft only" },
                         { value: "review", label: "Review each" },
                         { value: "auto", label: "Auto-send" },
@@ -67,8 +71,9 @@ export const NetworkingSection = withForm({
                   {(field) => (
                     <field.Select
                       label="Networking LinkedIn"
-                      helperText="Draft only: never sends. Review each: asks you first."
+                      helperText="Off: never writes one. Draft only: writes it but never sends. Review each: asks you first."
                       items={[
+                        { value: "off", label: "Off" },
                         { value: "draft", label: "Draft only" },
                         { value: "review", label: "Review each" },
                       ]}
@@ -76,6 +81,14 @@ export const NetworkingSection = withForm({
                   )}
                 </form.AppField>
               </Grid>
+              {bothOff && (
+                <Grid size={12}>
+                  <Alert severity="warning">
+                    Both channels are off, so networking is switched on but has nothing it may do.
+                    Turn one back on, or switch networking off above.
+                  </Alert>
+                </Grid>
+              )}
             </Grid>
           ) : (
             <Typography variant="body2Muted">

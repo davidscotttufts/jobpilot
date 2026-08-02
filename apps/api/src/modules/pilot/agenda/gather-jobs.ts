@@ -233,8 +233,8 @@ export interface DuePilotSearches {
 
 /**
  * Searches whose `nextRunAt` has come due, plus a hungry-override fallback when nothing is due but
- * apply headroom remains. The claim damper is an in-flight/crash guard only; cadence lives in
- * `nextRunAt`, owned by scheduleNextRun.
+ * the daily apply cap has room left. The claim damper is an in-flight/crash guard only; cadence
+ * lives in `nextRunAt`, owned by scheduleNextRun.
  */
 export async function duePilotSearches(
   prisma: PrismaClient,

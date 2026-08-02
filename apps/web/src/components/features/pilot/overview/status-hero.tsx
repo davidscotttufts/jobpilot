@@ -1,17 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Grid,
-  LinearProgress,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, Button, Chip, Grid, Stack, Tooltip, Typography } from "@mui/material";
 import { ColorChip, RelativeTime, StatCard } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { CYCLE_STATUS_COLOR, providerDisplayName } from "@/lib/terminal";
@@ -19,6 +9,7 @@ import { useConfirm } from "@/providers/confirm-provider";
 import { formatTimeUntil } from "@/utils/format";
 import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../host-status";
 import { usePilotStatus } from "./pilot-status-context";
+import { Meter, TodayOutcomes } from "./today-panel";
 import { useNextWake } from "./use-next-wake";
 
 /** State + controls on the left, today's budget on the right; the one card that answers "is it working?". */
@@ -32,8 +23,7 @@ export function StatusHero(): ReactElement {
   const goalsEmpty = state.instructionsGoals.trim() === "";
   const { dailyApplyCap, dailyNetworkingCap, minScore, networkingEnabled } =
     state.instructionsConfig;
-  const { appliedToday, capReached } = state;
-  const progress = dailyApplyCap > 0 ? Math.min(100, (appliedToday / dailyApplyCap) * 100) : 0;
+  const { appliedToday, capReached, networkingSentToday } = state;
 
   const stopWithConfirm = async (): Promise<void> => {
     const ok = await confirm({
@@ -162,30 +152,29 @@ export function StatusHero(): ReactElement {
 
         <Grid size={{ xs: 12, md: 5 }}>
           <Stack spacing={2}>
-            <Stack spacing={0.5}>
+            <Stack spacing={1}>
               <Typography variant="overlineMuted">Today</Typography>
               {dailyApplyCap > 0 ? (
-                <>
-                  <Stack
-                    direction="row"
-                    sx={{ justifyContent: "space-between", alignItems: "baseline" }}
-                  >
-                    <Typography variant="body2Muted">Applied</Typography>
-                    <Typography variant="body2" color={capReached ? "error.main" : "text.primary"}>
-                      {appliedToday} / {dailyApplyCap}
-                    </Typography>
-                  </Stack>
-                  <LinearProgress
-                    variant="determinate"
-                    value={progress}
-                    color={capReached ? "error" : "primary"}
-                  />
-                </>
+                <Meter
+                  label="Applied"
+                  value={appliedToday}
+                  cap={dailyApplyCap}
+                  spent={capReached}
+                />
               ) : (
                 <Typography variant="body2Muted">
                   Daily apply cap is 0 - the pilot won't apply until you raise it.
                 </Typography>
               )}
+              {networkingEnabled && dailyNetworkingCap > 0 && (
+                <Meter
+                  label="Networked"
+                  value={networkingSentToday}
+                  cap={dailyNetworkingCap}
+                  spent={networkingSentToday >= dailyNetworkingCap}
+                />
+              )}
+              <TodayOutcomes appliedToday={appliedToday} />
             </Stack>
             <Grid container spacing={1.5}>
               <Grid size={4}>
@@ -195,9 +184,8 @@ export function StatusHero(): ReactElement {
                 <StatCard label="Daily cap" value={dailyApplyCap} />
               </Grid>
               <Grid size={4}>
-                {/* Cap only: no endpoint exposes networking-sent-today, so a meter would lie. */}
                 <StatCard
-                  label="Networking cap"
+                  label="Networking"
                   value={networkingEnabled ? dailyNetworkingCap : "Off"}
                   hint={networkingEnabled ? "per day" : "disabled"}
                 />

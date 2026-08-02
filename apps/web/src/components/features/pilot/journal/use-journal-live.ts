@@ -37,6 +37,14 @@ function appendEntry(entry: PilotJournalEntry): void {
   }
 }
 
+/** Empties the buffer after a pilot reset, so streamed entries don't outlive the rows they mirror. */
+export function clearLiveJournal(): void {
+  buffer = [];
+  for (const listener of listeners) {
+    listener();
+  }
+}
+
 /** Journal caches are keyed by their kind filter, and an unfiltered one takes every kind. */
 function takesKind(queryKey: readonly unknown[], kind: PilotJournalKind): boolean {
   const { kinds } = (queryKey.at(-1) ?? {}) as { kinds?: PilotJournalKind[] };
