@@ -1,13 +1,14 @@
+import type { NetworkingAutonomy } from "@jobpilot/contracts/networking";
 import type { AgendaItem } from "@jobpilot/contracts/pilot";
 import { MAX_FOLLOWUPS, PRIORITY } from "./constants";
 import type { AgendaFollowup, AgendaInbox, AgendaNetworkingSend } from "./types";
 
-/** Approved email sends, capped by the caller's remaining daily networking headroom. */
+/** Approved email sends, capped by how many the caller has left under today's networking cap. */
 export function buildNetworkingSendItems(
   sends: AgendaNetworkingSend[],
-  headroom: number,
+  sendsLeft: number,
 ): AgendaItem[] {
-  return sends.slice(0, headroom).map((m) => ({
+  return sends.slice(0, sendsLeft).map((m) => ({
     id: `networking.send:${m.messageId}`,
     kind: "networking.send",
     priority: PRIORITY.networkingSend,
@@ -42,8 +43,11 @@ export function buildInboxItem(inbox: AgendaInbox): AgendaItem[] {
   ];
 }
 
-/** Capped so one cycle can't drown in nudges; caller gates on remaining send headroom. */
-export function buildFollowupItems(followups: AgendaFollowup[]): AgendaItem[] {
+/** Capped so one cycle can't drown in nudges; caller gates on the sends left today. */
+export function buildFollowupItems(
+  followups: AgendaFollowup[],
+  autonomy: NetworkingAutonomy,
+): AgendaItem[] {
   return followups.slice(0, MAX_FOLLOWUPS).map((f) => ({
     id: `networking.followup:${f.messageId}`,
     kind: "networking.followup",
@@ -60,6 +64,9 @@ export function buildFollowupItems(followups: AgendaFollowup[]): AgendaItem[] {
       subject: f.subject,
       sentAt: f.sentAt,
       daysSince: f.daysSince,
+      // A followup nudges an existing email thread, so it never switches channel.
+      channel: "email",
+      autonomy,
     },
   }));
 }

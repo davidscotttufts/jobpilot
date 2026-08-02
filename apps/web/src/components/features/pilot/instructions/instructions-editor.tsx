@@ -59,13 +59,9 @@ function toFormValues(state: PilotState): InstructionsFormValues {
   return {
     goals: state.instructionsGoals,
     dailyApplyCap: c.dailyApplyCap,
-    dailyNetworkingCap: c.dailyNetworkingCap,
-    networkingFollowupDays: c.networkingFollowupDays,
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
-    networkingEnabled: c.networkingEnabled,
-    networkingEmail: c.autonomy.networkingEmail,
-    networkingLinkedIn: c.autonomy.networkingLinkedIn,
+    networking: { ...c.networking },
     boards: [...c.boards],
     promotionPlatforms: c.promotion.platforms.map((p) => ({
       platform: p.platform,
@@ -95,16 +91,10 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
     onSubmit: async ({ value }) => {
       const config: PilotInstructionsConfig = {
         dailyApplyCap: value.dailyApplyCap,
-        dailyNetworkingCap: value.dailyNetworkingCap,
-        networkingFollowupDays: value.networkingFollowupDays,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
-        networkingEnabled: value.networkingEnabled,
         boards: value.boards,
-        autonomy: {
-          networkingEmail: value.networkingEmail,
-          networkingLinkedIn: value.networkingLinkedIn,
-        },
+        networking: value.networking,
         promotion: {
           platforms: value.promotionPlatforms.map((p) => ({
             platform: p.platform.trim(),

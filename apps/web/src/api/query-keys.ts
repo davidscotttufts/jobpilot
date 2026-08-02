@@ -116,6 +116,7 @@ export const queryKeys = {
   pilot: {
     all: ["pilot"] as const,
     state: () => [...queryKeys.pilot.all, "state"] as const,
+    todayOutcomes: () => [...queryKeys.pilot.all, "today-outcomes"] as const,
     // Read-only view of the pilot's self-managed discovery searches.
     searches: () => [...queryKeys.pilot.all, "searches"] as const,
     // Mount-fetch + manual refresh only; PilotLive never invalidates this key (agenda compile is costly).

@@ -66,7 +66,7 @@ interface Bucket {
 
 /** An unbounded table keyed by client IP is itself a DoS. */
 const MAX_KEYS = 10_000;
-/** Headroom left after a sweep, so the O(n) scan runs once per this many new keys, not per request. */
+/** Spare capacity left after a sweep, so the O(n) scan runs once per this many new keys, not per request. */
 const EVICT_HEADROOM = 1_000;
 
 const DEFAULT_MESSAGE = "Too many requests. Slow down and try again shortly.";

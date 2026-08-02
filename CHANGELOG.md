@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- The pilot finds a contact instead of waiting for one: a high-scoring job with
+  nobody known at the company now gets a warm intro. Networking that was switched
+  on but never ran had been stuck on exactly this.
+- Email and LinkedIn networking can each be switched off on their own, and the
+  LinkedIn setting is finally read by something.
+- Discovery moves to the next configured board each cycle, so all your boards get
+  worked instead of only the first.
+- "Reset pilot" on the Activity tab clears the journal and zeroes cycles run.
+  Instructions, searches, and running state are untouched.
+- The Pilot card counts today's networking messages, plus jobs skipped and failed
+  with the top reasons why.
+
+### Changed
+
+- The resume editor collapses by section behind one sticky rail covering the
+  source PDF and variants too, and saves shortly after you stop typing.
+- Uploading a resume opens it and shows the PDF being read, instead of leaving a
+  row marked "No structure".
+- The suggested rewrite opens a before-and-after review per changed field.
+- Skills edit as chips, over-long bullets say so, and variants group by company.
+- Desktop-agent controls are disabled with a reason instead of vanishing on mobile.
+- Relative timestamps age on their own; the live feed used to sit at "1s ago".
+
+### Fixed
+
+- No more redundant "Cycle 1" chip on every card in the by-cycle journal.
+- The Cycle filter chip no longer secretly turns off row collapsing - that has its
+  own switch.
+- A cycle whose result was read from the server reads as routine, because it is.
+
 ## [2.1.24] - 2026-07-26
 
 ### Changed

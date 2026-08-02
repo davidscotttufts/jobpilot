@@ -1,35 +1,28 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type ReactElement, useState } from "react";
 import { AutoFixHigh } from "@mui/icons-material";
-import { Button } from "@mui/material";
-import { useAgentAvailable } from "@/providers/agent-provider";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { JobDescriptionDialog } from "./job-description-dialog";
 
 interface TailorForJobButtonProps {
   size?: "small" | "medium";
 }
 
-export function TailorForJobButton(props: TailorForJobButtonProps): ReactNode {
+export function TailorForJobButton(props: TailorForJobButtonProps): ReactElement {
   const { size = "small" } = props;
-  const agentAvailable = useAgentAvailable();
   const [open, setOpen] = useState(false);
-
-  // Tailoring runs the local agent, so this control is desktop-only.
-  if (!agentAvailable) {
-    return null;
-  }
 
   return (
     <>
-      <Button
+      <AgentOnlyButton
         size={size}
         variant="contained"
         startIcon={<AutoFixHigh />}
         onClick={() => setOpen(true)}
       >
         Tailor for job
-      </Button>
+      </AgentOnlyButton>
       <JobDescriptionDialog open={open} onClose={() => setOpen(false)} />
     </>
   );

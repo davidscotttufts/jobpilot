@@ -163,13 +163,14 @@ export interface AgendaRetryFailed {
 /** Empty pipeline + zero searches: the agent derives searches from goals, or asks when goals are blank. */
 export interface AgendaStrategyBootstrap {
   goals: string;
-  boards: string[];
   minScore: number;
 }
 
 export interface AgendaInput {
   now: Date;
   config: PilotInstructionsConfig;
+  // Cycles completed so far - the rotation offset that moves discovery across the configured boards.
+  cycleCount: number;
   openQuestions: number;
   answeredQuestions: AgendaQuestion[];
   activeClaims: number;

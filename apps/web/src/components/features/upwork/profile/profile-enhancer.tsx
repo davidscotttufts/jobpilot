@@ -4,11 +4,12 @@ import type { ReactElement } from "react";
 import { upworkChannel } from "@jobpilot/contracts/sse";
 import type { UpworkProfileStatus } from "@jobpilot/contracts/upwork";
 import { AutoFixHigh } from "@mui/icons-material";
-import { Box, Button, LinearProgress, Stack } from "@mui/material";
+import { Box, LinearProgress, Stack } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { upworkProfileQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { ColorChip } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
@@ -69,15 +70,13 @@ export function ProfileEnhancer(): ReactElement {
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <ColorChip value={status} colors={STATUS_COLOR} label={STATUS_LABEL[status]} />
           <Box sx={{ flex: 1 }} />
-          {agentAvailable && (
-            <Button
-              variant={hasSuggestion ? "text" : "contained"}
-              startIcon={<AutoFixHigh fontSize="sm" />}
-              onClick={() => void agent.injectSkill("upwork-profile")}
-            >
-              {hasSuggestion ? "Re-generate" : "Generate suggestions"}
-            </Button>
-          )}
+          <AgentOnlyButton
+            variant={hasSuggestion ? "text" : "contained"}
+            startIcon={<AutoFixHigh fontSize="sm" />}
+            onClick={() => void agent.injectSkill("upwork-profile")}
+          >
+            {hasSuggestion ? "Re-generate" : "Generate suggestions"}
+          </AgentOnlyButton>
         </Stack>
 
         {hasSuggestion && profile ? (

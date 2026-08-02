@@ -10,10 +10,11 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, emailQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { CampaignSummaryDto, NetworkingConfigDto, NetworkingMessageDto } from "@/api/types";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { DataTable } from "@/components/ui/data/data-table";
 import { ExternalLink, StatCard } from "@/components/ui/display";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
+import { useAgent } from "@/providers/agent-provider";
 import { EMPTY_SELECTION, resolveSelectedRows } from "@/utils/grid-selection";
 import { NetworkingMessageDialog } from "./networking-message-dialog";
 import { NetworkingStatusChip } from "./networking-status-chip";
@@ -38,7 +39,6 @@ interface NetworkingBoardProps {
 export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
   const { campaignId, status, summary, config } = props;
   const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
   const [openId, setOpenId] = useState<string | null>(null);
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
@@ -197,11 +197,9 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
       {selectedIds.length > 0 && (
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <Typography variant="body2Muted">{selectedIds.length} selected</Typography>
-          {agentAvailable && (
-            <Button size="small" variant="outlined" onClick={regenerateSelected}>
-              Regenerate selected
-            </Button>
-          )}
+          <AgentOnlyButton size="small" variant="outlined" onClick={regenerateSelected}>
+            Regenerate selected
+          </AgentOnlyButton>
           <Button
             size="small"
             variant="outlined"

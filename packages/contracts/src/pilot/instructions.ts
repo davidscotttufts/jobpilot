@@ -1,8 +1,21 @@
 import { z } from "zod/v4";
+import {
+  NETWORKING_AUTONOMY,
+  type NetworkingAutonomy,
+  type NetworkingChannel,
+  type NetworkingMode,
+} from "../networking";
 
-const pilotAutonomySchema = z.object({
-  networkingEmail: z.enum(["draft", "review", "auto"]).default("review"),
-  networkingLinkedIn: z.enum(["draft", "review"]).default("draft"),
+/** The campaign modes plus "off". LinkedIn drops "auto": nothing auto-sends there. */
+export const PILOT_EMAIL_AUTONOMY = ["off", ...NETWORKING_AUTONOMY] as const;
+export const PILOT_LINKEDIN_AUTONOMY = ["off", "draft", "review"] as const;
+
+// Every channel "off" is how networking is switched off; there is no separate master flag.
+export const pilotNetworkingSchema = z.object({
+  email: z.enum(PILOT_EMAIL_AUTONOMY).default("off"),
+  linkedIn: z.enum(PILOT_LINKEDIN_AUTONOMY).default("off"),
+  dailyCap: z.number().int().min(0).default(5),
+  followupDays: z.number().int().min(0).default(5),
 });
 
 const pilotPromotionPlatformSchema = z.object({
@@ -25,15 +38,10 @@ export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
-  checkIntervalMinutes: z.number().int().default(30),
-  // Master switch: networking is opt-in. Off suppresses all networking work (compose, send, follow-up).
-  networkingEnabled: z.boolean().default(false),
-  // Full default so a missing key still yields both autonomy fields (zod does not re-parse defaults).
-  autonomy: pilotAutonomySchema.default({ networkingEmail: "review", networkingLinkedIn: "draft" }),
-  dailyNetworkingCap: z.number().int().min(0).default(5),
-  networkingFollowupDays: z.number().int().default(5),
-  // Full default so a missing key still yields a usable promotion block (zod does not re-parse defaults).
-  promotion: pilotPromotionConfigSchema.default({ platforms: [], autonomy: "review" }),
+  checkIntervalMinutes: z.number().int().min(5).default(30),
+  // `prefault`, not `default`: a missing key is parsed as `{}` so every nested field defaults too.
+  networking: pilotNetworkingSchema.prefault({}),
+  promotion: pilotPromotionConfigSchema.prefault({}),
 });
 
 export const updatePilotInstructionsSchema = z.object({
@@ -53,6 +61,7 @@ export const pilotStateSchema = z.object({
   // Today's applied count (tz-aware) and whether it has reached the instructions' daily cap.
   appliedToday: z.number().int(),
   capReached: z.boolean(),
+  networkingSentToday: z.number().int(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -60,3 +69,24 @@ export const pilotStateSchema = z.object({
 export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
 export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;
+
+/** How one channel runs, or null when it is off. */
+export function channelAutonomy(
+  config: PilotInstructionsConfig,
+  channel: NetworkingChannel,
+): NetworkingAutonomy | null {
+  const mode = channel === "email" ? config.networking.email : config.networking.linkedIn;
+  return mode === "off" ? null : mode;
+}
+
+// Which channel a warm intro prefers when both are on
+const CHANNEL_PREFERENCE = ["email", "linkedin"] as const satisfies readonly NetworkingChannel[];
+
+/** How a new outreach message goes out, or null when every channel is off. */
+export function networkingMode(config: PilotInstructionsConfig): NetworkingMode | null {
+  for (const channel of CHANNEL_PREFERENCE) {
+    const autonomy = channelAutonomy(config, channel);
+    if (autonomy) return { channel, autonomy };
+  }
+  return null;
+}

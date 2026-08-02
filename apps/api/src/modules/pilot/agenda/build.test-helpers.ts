@@ -4,18 +4,25 @@ import {
   type PilotInstructionsConfig,
   pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
+import type { z } from "zod/v4";
 import type { AgendaInput } from "./types";
 
-// Networking is opt-in in prod, but these builder suites predate the flag and assert networking behavior,
-// so default it on here; a test that wants it off passes `networkingEnabled: false`.
-export const cfg = (over: Record<string, unknown> = {}): PilotInstructionsConfig =>
-  pilotInstructionsConfigSchema.parse({ networkingEnabled: true, ...over });
+type ConfigOverrides = z.input<typeof pilotInstructionsConfigSchema>;
+
+// Networking is off by default in prod, but these suites assert networking behavior, so both
+// channels default on here; a test that wants one off overrides just that key.
+export const cfg = (over: ConfigOverrides = {}): PilotInstructionsConfig =>
+  pilotInstructionsConfigSchema.parse({
+    ...over,
+    networking: { email: "review", linkedIn: "draft", ...over.networking },
+  });
 
 export const NOW = new Date("2026-07-15T12:00:00.000Z");
 
 export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   now: NOW,
   config: cfg(),
+  cycleCount: 0,
   openQuestions: 0,
   answeredQuestions: [],
   activeClaims: 0,
@@ -107,7 +114,6 @@ export const boardHealth = (board: string, over: Record<string, unknown> = {}) =
 
 export const bootstrapCandidate = (over: Record<string, unknown> = {}) => ({
   goals: "Senior TypeScript roles, remote",
-  boards: ["linkedin"],
   minScore: 60,
   ...over,
 });

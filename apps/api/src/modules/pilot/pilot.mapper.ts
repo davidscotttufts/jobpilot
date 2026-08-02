@@ -18,6 +18,7 @@ import type {
 export function toPilotState(
   row: PilotStateModel,
   appliedToday: number,
+  networkingSentToday: number,
   instructionsConfig: PilotInstructionsConfig,
 ): PilotState {
   return {
@@ -29,6 +30,7 @@ export function toPilotState(
     lastCycleAt: row.lastCycleAt,
     cycleCount: row.cycleCount,
     appliedToday,
+    networkingSentToday,
     // Cap 0 means "apply to nothing" - build.ts treats it as reached, so the mapper must too.
     capReached: appliedToday >= instructionsConfig.dailyApplyCap,
     createdAt: row.createdAt,

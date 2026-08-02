@@ -146,7 +146,7 @@ zero skill invocations by the user, ever.
   moved from instructions JSON to a pilot-owned `pilot_searches` table (CRUD + run-result
   routes; read-only list in the web with per-search `reason`); the fixed 24 h `checkEveryHours`
   damper replaced by `scheduleNextRun` (good run → 2 h, thin/harvested → 8 h, empty runs back
-  off 8/24/48 h) plus a hungry override when the apply cap has headroom; discovery paginates to
+  off 8/24/48 h) plus a hungry override when the apply cap has room left; discovery paginates to
   a demand-derived new-jobs target (cap−applied, clamped 5–20, ≤5 pages) instead of one ~10-row
   page; goals are mandatory (bootstrap always derives searches from goals; resume-derived goals
   and the bootstrap question deleted); enable/disable renamed start/stop end-to-end

@@ -13,6 +13,12 @@ export const linkedinTierSchema = z.enum(LINKEDIN_TIERS);
 export const NETWORKING_AUTONOMY = ["draft", "review", "auto"] as const;
 export const networkingAutonomySchema = z.enum(NETWORKING_AUTONOMY);
 
+/** A resolved outgoing message: the channel it goes out on and how much rein the sender has. */
+export const networkingModeSchema = z.object({
+  channel: networkingChannelSchema,
+  autonomy: networkingAutonomySchema,
+});
+
 /** Shape of `Campaign.config.networking` - the per-campaign mode selector. */
 export const networkingConfigSchema = z.object({
   channels: z.array(networkingChannelSchema).min(1),
@@ -151,6 +157,7 @@ export type NetworkingConfig = z.infer<typeof networkingConfigSchema>;
 export type NetworkingChannel = z.infer<typeof networkingChannelSchema>;
 export type LinkedinTier = z.infer<typeof linkedinTierSchema>;
 export type NetworkingAutonomy = z.infer<typeof networkingAutonomySchema>;
+export type NetworkingMode = z.infer<typeof networkingModeSchema>;
 export type NetworkingMessageStatus = z.infer<typeof networkingMessageStatusSchema>;
 export type ContactDiscoverySource = z.infer<typeof contactDiscoverySourceSchema>;
 export type CreateContactInput = z.infer<typeof createContactSchema>;

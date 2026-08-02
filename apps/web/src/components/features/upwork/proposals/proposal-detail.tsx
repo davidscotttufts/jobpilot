@@ -12,9 +12,10 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
+import { useAgent } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { ProposalNotes } from "./proposal-notes";
@@ -28,7 +29,6 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
   const { id } = props;
   const router = useRouter();
   const agent = useAgent();
-  const agentAvailable = useAgentAvailable();
   const toast = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
@@ -107,15 +107,13 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
                 Open posting
               </Button>
             )}
-            {agentAvailable && (
-              <Button
-                variant="contained"
-                startIcon={<AutoAwesome fontSize="md" />}
-                onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
-              >
-                {proposal.proposalText ? "Regenerate" : "Generate"}
-              </Button>
-            )}
+            <AgentOnlyButton
+              variant="contained"
+              startIcon={<AutoAwesome fontSize="md" />}
+              onClick={() => void agent.injectSkill("upwork-proposal", String(id))}
+            >
+              {proposal.proposalText ? "Regenerate" : "Generate"}
+            </AgentOnlyButton>
             <IconButton onClick={() => void handleDelete()} aria-label="Delete proposal">
               <Delete fontSize="md" />
             </IconButton>

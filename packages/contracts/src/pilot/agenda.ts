@@ -1,4 +1,9 @@
 import { z } from "zod/v4";
+import { networkingModeSchema } from "../networking";
+
+// The server picks the channel and resolves the mode, so "off" never reaches a worker - an off
+// channel means the item is not emitted at all.
+const outgoingMode = networkingModeSchema.shape;
 
 const AGENDA_ITEM_KINDS = [
   "question.answered",
@@ -154,6 +159,7 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       subject: nullableString,
       sentAt: z.date(),
       daysSince: z.number().int(),
+      ...outgoingMode,
     }),
   ),
   agendaItem(
@@ -165,7 +171,9 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       company: nullableString,
       jobTitle: z.string(),
       jobUrl: z.string(),
-      contacts: z.array(warmContactSchema),
+      // Empty when nobody at the company is known yet; the worker discovers one.
+      contacts: z.array(warmContactSchema).default([]),
+      ...outgoingMode,
     }),
   ),
   agendaItem(
@@ -260,7 +268,6 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     "pilot",
     z.object({
       goals: z.string(),
-      boards: z.array(z.string()),
       minScore: z.number(),
     }),
   ),
@@ -284,6 +291,8 @@ export const agendaContentSchema = z.object({
     dailyApplyCap: z.number().int(),
     appliedToday: z.number().int(),
     capReached: z.boolean(),
+    dailyNetworkingCap: z.number().int(),
+    networkingSentToday: z.number().int(),
     resetsAt: z.date(),
   }),
   emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),

@@ -1,4 +1,9 @@
-import { type AgendaResponse, agendaResponseSchema } from "@jobpilot/contracts/pilot";
+import {
+  type AgendaResponse,
+  agendaResponseSchema,
+  channelAutonomy,
+  networkingMode,
+} from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
@@ -70,12 +75,15 @@ export class AgendaService {
   async refresh(userId: string): Promise<AgendaResponse> {
     const state = await this.prisma.pilotState.findUnique({
       where: { userId },
-      select: { running: true },
+      select: { running: true, cycleCount: true },
     });
     if (!state?.running) throw conflict("Pilot is stopped.");
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
+    // Sends and followups only act on email drafts, so an off email channel makes gathering moot.
+    const emailNetworking = channelAutonomy(config, "email") !== null;
+    const outreach = networkingMode(config) !== null;
 
     // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
@@ -112,9 +120,9 @@ export class AgendaService {
       countAppliedToday(prisma, userId, now),
       gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),
-      config.networkingEnabled ? gatherApprovedNetworking(prisma, userId) : [],
-      config.networkingEnabled ? countSentToday(prisma, userId, now) : 0,
-      config.networkingEnabled ? gatherFollowups(prisma, userId, config, now) : [],
+      emailNetworking ? gatherApprovedNetworking(prisma, userId) : [],
+      outreach ? countSentToday(prisma, userId, now) : 0,
+      emailNetworking ? gatherFollowups(prisma, userId, config, now) : [],
       gatherApprovedPromotions(prisma, userId, now),
       duePlatforms(prisma, userId, config, now),
       gatherInterviewReplies(prisma, userId),
@@ -125,7 +133,8 @@ export class AgendaService {
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
 
-    if (config.networkingEnabled) {
+    // Warm intros spend the send budget, so a spent budget makes the contact lookup moot.
+    if (outreach && networkingSentToday < config.networking.dailyCap) {
       await attachWarmContacts(prisma, userId, approvedJobs);
     }
 
@@ -160,6 +169,7 @@ export class AgendaService {
     const content = buildAgenda({
       now,
       config,
+      cycleCount: state.cycleCount,
       openQuestions,
       answeredQuestions,
       activeClaims,

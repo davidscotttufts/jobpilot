@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { ResumeSkillGroup } from "@jobpilot/contracts/resume";
-import { Stack, TextField } from "@mui/material";
+import { Autocomplete, Stack, TextField } from "@mui/material";
 import { EntryList } from "./entry-list";
 
 interface SkillsSectionProps {
@@ -29,19 +29,18 @@ export function SkillsSection(props: SkillsSectionProps): ReactElement {
             value={entry.group}
             onChange={(e) => onUpdate({ ...entry, group: e.target.value })}
           />
-          <TextField
-            fullWidth
-            label="Items (comma-separated)"
-            value={entry.items.join(", ")}
-            onChange={(e) =>
-              onUpdate({
-                ...entry,
-                items: e.target.value
-                  .split(",")
-                  .map((k) => k.trim())
-                  .filter(Boolean),
-              })
+          {/* Chips, not one comma-joined string: fixing item 9 of 12 shouldn't mean cursor-hunting. */}
+          <Autocomplete
+            multiple
+            freeSolo
+            options={[]}
+            value={entry.items}
+            onChange={(_e, items) =>
+              onUpdate({ ...entry, items: items.map((k) => k.trim()).filter(Boolean) })
             }
+            renderInput={(params) => (
+              <TextField {...params} label="Items" placeholder="Type a skill, press Enter" />
+            )}
           />
         </Stack>
       )}

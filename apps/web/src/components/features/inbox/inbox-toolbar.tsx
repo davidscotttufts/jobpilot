@@ -8,7 +8,8 @@ import { useApiMutation } from "@/api/hooks";
 import type { InboxFilter } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { SyncResultDto } from "@/api/types";
-import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
+import { AgentOnlyButton } from "@/components/ui/buttons";
+import { useAgent } from "@/providers/agent-provider";
 
 interface InboxToolbarProps {
   filter: InboxFilter;
@@ -26,7 +27,6 @@ const FILTERS: ReadonlyArray<{ key: InboxFilter; label: string }> = [
 export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
   const { injectSkill } = useAgent();
-  const agentAvailable = useAgentAvailable();
 
   const sync = useApiMutation<SyncResultDto, void>(() => api.email.sync.post(), {
     successMessage: "Inbox synced",
@@ -50,18 +50,15 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
           {sync.isPending ? "Syncing" : "Sync"}
         </Button>
       </Tooltip>
-      {agentAvailable && (
-        <Tooltip title="Run the scan-inbox skill to classify pending messages">
-          <Button
-            size="small"
-            variant="contained"
-            startIcon={<FormatListBulleted />}
-            onClick={handleScan}
-          >
-            Scan pending
-          </Button>
-        </Tooltip>
-      )}
+      <AgentOnlyButton
+        size="small"
+        variant="contained"
+        startIcon={<FormatListBulleted />}
+        onClick={handleScan}
+        tooltip="Run the scan-inbox skill to classify pending messages"
+      >
+        Scan pending
+      </AgentOnlyButton>
       <ToggleButtonGroup
         size="small"
         exclusive

@@ -25,7 +25,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
     (input) => api.pilot.promotions({ id: promotion.id }).patch(input),
     { invalidate: [queryKeys.pilot.promotionsAll()] },
   );
-  const busy = patch.isPending;
+  const isLoading = patch.isPending;
 
   const edits: PatchPromotionInput = { body, ...(hasTitle ? { title } : {}) };
   const dirty = body !== promotion.body || (hasTitle && title !== (promotion.title ?? ""));
@@ -49,7 +49,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
               size="small"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              disabled={busy}
+              disabled={isLoading}
             />
           )}
           <TextField
@@ -59,7 +59,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
             size="small"
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            disabled={busy}
+            disabled={isLoading}
           />
 
           <Stack
@@ -70,7 +70,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
             <Button
               variant="text"
               size="small"
-              disabled={busy || !dirty || !canSave}
+              disabled={isLoading || !dirty || !canSave}
               // Resync both fields: a server-normalized title would otherwise keep
               // `dirty` true forever and never re-disable Save.
               onClick={() =>
@@ -88,7 +88,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
               variant="outlined"
               size="small"
               color="inherit"
-              disabled={busy}
+              disabled={isLoading}
               onClick={() => patch.mutate({ status: "declined" })}
             >
               Decline
@@ -96,7 +96,7 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
             <Button
               variant="contained"
               size="small"
-              disabled={busy || !canSave}
+              disabled={isLoading || !canSave}
               onClick={() => patch.mutate({ ...edits, status: "approved" })}
             >
               Approve

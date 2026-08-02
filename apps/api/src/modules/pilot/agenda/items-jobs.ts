@@ -1,3 +1,4 @@
+import type { NetworkingMode } from "@jobpilot/contracts/networking";
 import type { AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import {
   MAX_PAUSED_REVIEWS,
@@ -60,12 +61,20 @@ export function buildJobApplyItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
   });
 }
 
-/** One warm intro per agenda, ranked above discovery; gates on score, not the apply cap. */
-export function buildWarmIntroItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
+/**
+ * Gated on score and the networking cap, not the apply cap. An empty contact list is no reason to
+ * skip: the worker discovering one is how a first contact is created.
+ */
+export function buildWarmIntroItems(
+  jobs: AgendaApprovedJob[],
+  mode: NetworkingMode,
+  sendsLeft: number,
+): AgendaItem[] {
+  if (sendsLeft <= 0) return [];
+
   const items: AgendaItem[] = [];
   for (const job of jobs) {
-    const warm = job.warmContacts ?? [];
-    if (warm.length === 0 || (job.matchScore ?? 0) < WARM_INTRO_MIN_SCORE) continue;
+    if ((job.matchScore ?? 0) < WARM_INTRO_MIN_SCORE) continue;
     if (items.length >= MAX_WARM_INTROS) break;
     items.push({
       id: `networking.warmIntro:${job.campaignId}:${job.key}`,
@@ -80,7 +89,8 @@ export function buildWarmIntroItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
         company: job.company ?? null,
         jobTitle: job.title,
         jobUrl: job.url,
-        contacts: warm,
+        contacts: job.warmContacts ?? [],
+        ...mode,
       },
     });
   }
@@ -89,14 +99,19 @@ export function buildWarmIntroItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
 
 /**
  * Discovery fills the pipeline only when nothing approved is left to apply to (gated by the caller).
- * Item id / claim subject is the search id; `newJobsTarget` (demand-derived by the caller) and the
- * page cap steer the paginated crawl.
+ * Item id / claim subject is the search id; `newJobsTarget` and the page cap steer the crawl. The
+ * configured boards win over a search's own board, rotating one step per cycle so the pilot doesn't
+ * live on whichever board bootstrap picked.
  */
 export function buildDiscoverItems(
   queries: AgendaDueQuery[],
   config: PilotInstructionsConfig,
   newJobsTarget: number,
+  cycleCount: number,
 ): AgendaItem[] {
+  const { boards } = config;
+  const rotated = boards.length > 0 ? boards[cycleCount % boards.length] : undefined;
+
   return queries.map((q) => ({
     id: `search.discover:${q.searchId}`,
     kind: "search.discover",
@@ -107,7 +122,7 @@ export function buildDiscoverItems(
     payload: {
       searchId: q.searchId,
       query: q.query,
-      board: q.board,
+      board: rotated ?? q.board,
       resumeId: q.resumeId,
       minScore: config.minScore,
       campaignId: q.campaignId,

@@ -66,7 +66,7 @@ export async function gatherFollowups(
   config: PilotInstructionsConfig,
   now: Date,
 ): Promise<AgendaFollowup[]> {
-  const cutoff = new Date(now.getTime() - config.networkingFollowupDays * DAY_MS);
+  const cutoff = new Date(now.getTime() - config.networking.followupDays * DAY_MS);
   const candidates = await prisma.networkingMessage.findMany({
     where: {
       userId,

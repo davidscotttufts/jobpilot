@@ -5,7 +5,7 @@ import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
-import { pilotActivityResponseSchema } from "./pilot.schema";
+import { pilotActivityResponseSchema, pilotTodayOutcomesSchema } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 
 const pilot = container.resolve(PilotService);
@@ -51,6 +51,24 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Stop the pilot",
       description: "Stops the autonomous loop and returns the updated state.",
+    },
+  })
+  .post("/reset", ({ user }) => pilot.reset(user.id), {
+    beforeHandle: limitMutation,
+    response: pilotStateSchema,
+    detail: {
+      summary: "Reset the pilot's run history",
+      description:
+        "Deletes every journal entry, sets the cycle counter back to 0, and drops the cached agenda. Instructions, searches and the running flag are untouched.",
+    },
+  })
+  .get("/stats/today", ({ user }) => pilot.getTodayOutcomes(user.id), {
+    beforeHandle: limitAgenda,
+    response: pilotTodayOutcomesSchema,
+    detail: {
+      summary: "Today's non-applied outcomes",
+      description:
+        "How many of the profile's jobs were skipped or failed today, with the skip reasons bucketed by frequency. Applied counts come from the pilot state.",
     },
   })
   .get("/activity", ({ user }) => pilot.getActivity(user.id), {

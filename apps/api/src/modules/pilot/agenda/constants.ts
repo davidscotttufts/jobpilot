@@ -103,7 +103,7 @@ export const ACTIVE_SLEEP_SECONDS = 15;
 
 // Pilot-search discovery scheduling
 
-/** A discovery run's new-jobs target tracks remaining daily headroom, clamped to this band. */
+/** A discovery run's new-jobs target tracks the room left under the daily apply cap, clamped here. */
 export const NEW_JOBS_TARGET_MIN = 5;
 export const NEW_JOBS_TARGET_MAX = 20;
 /** Deepest page the crawl walks before stopping, even if the target isn't met. */
@@ -116,7 +116,7 @@ export const RERUN_GOOD_SEARCH_MS = 2 * HOUR_MS;
 export const RERUN_SLOW_SEARCH_MS = 8 * HOUR_MS;
 /** Backoff ladder for consecutive empty runs (0 new jobs): 8h, 24h, then 48h and holds. */
 export const EMPTY_RUN_BACKOFF_MS = [8 * HOUR_MS, 24 * HOUR_MS, 48 * HOUR_MS];
-/** Hungry override floor: with apply headroom left, re-run a search idle at least this long. */
+/** Hungry override floor: with room left under the apply cap, re-run a search idle this long. */
 export const HUNGRY_RERUN_MS = 6 * HOUR_MS;
 /** Claim damper for discovery: an in-flight/crashed run guard only, not a cadence knob. */
 export const SEARCH_CLAIM_COOLDOWN_MS = 2 * HOUR_MS;

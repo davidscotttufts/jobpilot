@@ -13,13 +13,16 @@ export const BoardsSection = withForm({
     const domains = boardsQuery.data?.map((board) => board.domain) ?? [];
 
     return (
-      <FormSection title="Boards" description="Which configured job boards the pilot works.">
+      <FormSection
+        title="Boards"
+        description="Which job boards the pilot searches, and in what order."
+      >
         <form.AppField name="boards">
           {(field) => (
             <field.Multiselect
               label="Boards"
               options={domains}
-              helperText="Boards the pilot may use. Empty = all configured boards."
+              helperText="The pilot moves to the next board each cycle, so all of them get worked. Empty = whichever board each saved search was created with."
             />
           )}
         </form.AppField>

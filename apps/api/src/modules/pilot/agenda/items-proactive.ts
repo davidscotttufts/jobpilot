@@ -94,7 +94,6 @@ export function buildBootstrapItem(bootstrap: AgendaStrategyBootstrap | null): A
       subjectId: "bootstrap",
       payload: {
         goals: bootstrap.goals,
-        boards: bootstrap.boards,
         minScore: bootstrap.minScore,
       },
     },

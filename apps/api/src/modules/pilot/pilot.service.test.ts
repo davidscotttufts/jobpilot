@@ -179,6 +179,7 @@ function instructionsService(prevGoals: string) {
       },
     },
     application: { count: async () => 0 },
+    networkingMessage: { count: async () => 0 },
   };
   return { svc: new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] })), rec };
 }
@@ -217,6 +218,7 @@ function runStateService(goals: string) {
       upsert: async (a: { update: { running: boolean } }) => stateRow(a.update.running),
     },
     application: { count: async () => 0 },
+    networkingMessage: { count: async () => 0 },
   };
   return new PilotService(db as unknown as PrismaClient, makePush({ pushes: [] }));
 }

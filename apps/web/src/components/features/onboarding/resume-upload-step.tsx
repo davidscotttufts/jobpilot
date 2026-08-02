@@ -1,18 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { resumeChannel } from "@jobpilot/contracts/sse";
 import { USER_DEFAULT_VALUES } from "@jobpilot/contracts/user";
 import { CheckCircle, ErrorOutlined, HourglassEmpty } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { resumeQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/hooks";
 import { invalidations } from "@/api/query-keys";
+import { useResumeExtraction } from "@/components/features/resumes/use-resume-extraction";
 import { FileUpload } from "@/components/ui/form";
 import { withForm } from "@/components/ui/form/tanstack";
 import { MAX_RESUME_BYTES } from "@/lib/constants";
-import { useSseChannel } from "@/lib/sse/client";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useToast } from "@/providers/notification-provider";
 import { applyBasicsToForm } from "./map-basics-to-profile";
@@ -55,32 +53,11 @@ export const ResumeUploadStep = withForm({
       },
     );
 
-    // Extraction target: initial fetch covers an already-parsed resume; SSE gives
-    // instant updates, and polling covers the race where the agent PUT finishes
-    // before the EventSource subscription is established.
-    const resume = useApiQuery(resumeQueries.detail(resumeId ?? ""), {
-      enabled: resumeId !== null && state === "extracting",
-      refetchInterval: 2_000,
-    });
-
-    useSseChannel(
-      resumeChannel,
-      { resumeId: resumeId ?? "" },
-      {
-        enabled: resumeId !== null && state === "extracting",
-        on: {
-          "content.updated": () => void resume.refetch(),
-        },
-      },
-    );
+    const { content } = useResumeExtraction(resumeId, state === "extracting");
 
     // Complete on content presence (not just a delivered event); the "done" state then blocks re-entry.
     useEffect(() => {
-      if (state !== "extracting") {
-        return;
-      }
-      const content = resume.data?.content;
-      if (!content) {
+      if (state !== "extracting" || !content) {
         return;
       }
       const basics = content.basics;
@@ -90,7 +67,7 @@ export const ResumeUploadStep = withForm({
       setState("done");
       // extract-resume chains review-resume itself, so onboarding never waits on the suggestion.
       onContinue();
-    }, [resume.data, state, form, onContinue]);
+    }, [content, state, form, onContinue]);
 
     const retryInject = async (): Promise<void> => {
       if (resumeId === null) {

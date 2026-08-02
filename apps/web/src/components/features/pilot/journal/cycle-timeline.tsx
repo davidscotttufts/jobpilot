@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import {
   type PilotJournalEntry,
   type PilotJournalKind,
@@ -50,16 +50,20 @@ function cycleDuration(entries: PilotJournalEntry[]): string {
   return formatSpanBetween(entries[entries.length - 1].createdAt, entries[0].createdAt);
 }
 
-/** One chip per kind present in the cycle, counting occurrences. */
-function KindSummary(props: { entries: PilotJournalEntry[] }): ReactElement {
+/** The `cycle` kind is skipped: the card header already says "Cycle" with its status. */
+function KindSummary(props: { entries: PilotJournalEntry[] }): ReactNode {
   const { entries } = props;
   const counts = new Map<PilotJournalKind, number>();
   for (const entry of entries) {
     counts.set(entry.kind, (counts.get(entry.kind) ?? 0) + 1);
   }
-  const kinds = KIND_ORDER.filter((kind) => counts.has(kind));
+  const kinds = KIND_ORDER.filter((kind) => kind !== "cycle" && counts.has(kind));
+  if (kinds.length === 0) {
+    return null;
+  }
+
   return (
-    <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75 }}>
+    <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75, mt: 1 }}>
       {kinds.map((kind) => (
         <Chip
           key={kind}
@@ -115,9 +119,7 @@ function CycleCard(props: { entries: PilotJournalEntry[]; defaultOpen: boolean }
               </Typography>
             )}
           </Stack>
-          <Box sx={{ mt: 1 }}>
-            <KindSummary entries={entries} />
-          </Box>
+          <KindSummary entries={entries} />
         </Box>
         {open ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
       </Stack>

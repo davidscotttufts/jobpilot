@@ -10,6 +10,7 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 import { queryKeys } from "@/api/query-keys";
+import { ExternalStore } from "@/lib/external-store";
 import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
 import { dedupeById } from "@/utils/array";
 
@@ -23,18 +24,18 @@ const CACHE_CAP = DEFAULT_CURSOR_PAGE_SIZE + LIVE_CAP;
  * One buffer for every caller: the overview strip, the stage hook, and the feed all
  * mount concurrently, so per-hook state would fan the same event into N copies.
  */
-let buffer: PilotJournalEntry[] = [];
-const listeners = new Set<() => void>();
+const journal = new ExternalStore<PilotJournalEntry[]>([]);
 
 /** Each subscriber's SSE handler fires for the same event, so appends must be idempotent. */
 function appendEntry(entry: PilotJournalEntry): void {
-  if (buffer.some((e) => e.id === entry.id)) {
-    return;
-  }
-  buffer = [entry, ...buffer].slice(0, LIVE_CAP);
-  for (const listener of listeners) {
-    listener();
-  }
+  journal.update((buffer) =>
+    buffer.some((e) => e.id === entry.id) ? buffer : [entry, ...buffer].slice(0, LIVE_CAP),
+  );
+}
+
+/** Empties the buffer after a pilot reset, so streamed entries don't outlive the rows they mirror. */
+export function clearLiveJournal(): void {
+  journal.set(EMPTY);
 }
 
 /** Journal caches are keyed by their kind filter, and an unfiltered one takes every kind. */
@@ -43,14 +44,9 @@ function takesKind(queryKey: readonly unknown[], kind: PilotJournalKind): boolea
   return !kinds?.length || kinds.includes(kind);
 }
 
-function subscribeToBuffer(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
 const EMPTY: PilotJournalEntry[] = [];
+const SERVER_EMPTY = () => EMPTY;
+const NO_CYCLE = () => null;
 
 /** SSE delivers raw JSON, so `createdAt` arrives as an ISO string, not a revived Date. */
 function fromEvent(entry: unknown): PilotJournalEntry {
@@ -91,11 +87,7 @@ interface JournalLive {
 /** Live journal buffer shared by the Overview strip and the Activity feed. */
 export function useJournalLive(): JournalLive {
   const status = useJournalStream();
-  const entries = useSyncExternalStore(
-    subscribeToBuffer,
-    () => buffer,
-    () => EMPTY,
-  );
+  const entries = useSyncExternalStore(journal.subscribe, journal.get, SERVER_EMPTY);
 
   return { entries, status };
 }
@@ -108,8 +100,8 @@ export function useJournalLive(): JournalLive {
 export function useLatestCycle(): PilotJournalEntry | null {
   useJournalStream();
   return useSyncExternalStore(
-    subscribeToBuffer,
-    () => buffer.find((entry) => entry.kind === "cycle") ?? null,
-    () => null,
+    journal.subscribe,
+    () => journal.get().find((entry) => entry.kind === "cycle") ?? null,
+    NO_CYCLE,
   );
 }
