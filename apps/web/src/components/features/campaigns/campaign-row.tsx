@@ -35,6 +35,14 @@ function summaryLine(campaign: CampaignDto): string {
   return `${s.applied} applied · ${s.failed} failed · ${s.skipped} skipped${tail}`;
 }
 
+// A high skip count is normal and reads like a fault without this.
+function summaryHint(campaign: CampaignDto): string {
+  if (campaign.summary.kind === "networking") {
+    return "Found: contacts discovered. Sent: messages sent. Replied: contacts who wrote back.";
+  }
+  return "Applied: submitted. Failed: the application errored. Skipped: below your match score, already applied, or the posting states a requirement you can't meet. Left: still waiting.";
+}
+
 export function CampaignRow(props: CampaignRowProps): ReactElement {
   const { campaign, onSelect, onOpenDetail } = props;
 
@@ -57,7 +65,11 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
           <Typography variant="body2Strong" noWrap>
             {campaign.query}
           </Typography>
-          <Typography variant="captionMuted">{summaryLine(campaign)}</Typography>
+          <Tooltip title={summaryHint(campaign)} enterDelay={400}>
+            <Typography variant="captionMuted" sx={{ alignSelf: "flex-start" }}>
+              {summaryLine(campaign)}
+            </Typography>
+          </Tooltip>
         </Stack>
       </CardActionArea>
       {onOpenDetail && (

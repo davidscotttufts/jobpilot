@@ -39,7 +39,7 @@ export function QueuePanel(): ReactElement {
   return (
     <SectionCard
       title={entries.length ? `Queue (${entries.length})` : "Queue"}
-      description="Single-apply URLs waiting for the agent"
+      description="Jobs you found yourself. Paste a link and the agent applies to that one job."
       actions={
         <Stack direction="row" spacing={1}>
           <Button
@@ -65,8 +65,8 @@ export function QueuePanel(): ReactElement {
       {entries.length === 0 ? (
         <EmptyState
           variant="inline"
-          title="No queued URLs"
-          description="Add job URLs to apply to them one at a time."
+          title="Nothing queued"
+          description="Press Add URLs and paste a link to a job posting. The agent reviews the fit, tailors your resume, and applies. To have it find the jobs instead, use a campaign below."
         />
       ) : (
         <Stack spacing={1}>

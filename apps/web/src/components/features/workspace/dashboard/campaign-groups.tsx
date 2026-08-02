@@ -38,6 +38,7 @@ export function CampaignGroups(): ReactElement {
   return (
     <SectionCard
       title="Campaigns"
+      description="One search the agent runs for you. It scores every result against your resume, and on auto-apply it applies to the ones that clear your score."
       actions={
         agentAvailable && (
           <Button
@@ -57,8 +58,8 @@ export function CampaignGroups(): ReactElement {
           title="No campaigns yet"
           description={
             agentAvailable
-              ? "Start the JobPilot agent in the dock and run a search - or create a campaign manually."
-              : "Open JobPilot on your desktop to start the agent and run a search."
+              ? "Press New campaign, say what you're looking for, and pick a board. Start with Search to review the matches yourself before anything is sent."
+              : "Open JobPilot on your desktop to start the agent and run your first search."
           }
           action={
             agentAvailable ? (

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { CampaignActor } from "@jobpilot/contracts/campaign";
-import { Chip } from "@mui/material";
+import { Chip, Tooltip } from "@mui/material";
 
 interface PilotBadgeProps {
   createdBy: CampaignActor;
@@ -9,5 +9,12 @@ interface PilotBadgeProps {
 /** Marks a campaign the pilot created; renders nothing for user- or agent-created ones. */
 export function PilotBadge(props: PilotBadgeProps): ReactNode {
   if (props.createdBy !== "pilot") return null;
-  return <Chip size="small" label="Pilot" color="info" variant="outlined" />;
+  return (
+    <Tooltip
+      title="The Pilot started this one on its own, from your instructions."
+      enterDelay={400}
+    >
+      <Chip size="small" label="Pilot" color="info" variant="outlined" />
+    </Tooltip>
+  );
 }
