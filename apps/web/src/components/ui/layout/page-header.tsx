@@ -1,8 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
-import { ArrowBack } from "@mui/icons-material";
 import { Box, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { LinkButton } from "@/components/ui/buttons";
+import { BackLink } from "@/components/ui/buttons";
 
 interface PageHeaderProps {
   eyebrow?: string;
@@ -19,15 +18,9 @@ export function PageHeader(props: PageHeaderProps): ReactElement {
   return (
     <Stack sx={{ mb: 3 }}>
       {backHref && (
-        <LinkButton
-          href={backHref}
-          size="small"
-          variant="text"
-          startIcon={<ArrowBack fontSize="sm" />}
-          sx={{ alignSelf: "flex-start", ml: -1, mb: 0.5 }}
-        >
-          {backLabel ?? "Back"}
-        </LinkButton>
+        <BackLink href={backHref} sx={{ mb: 0.5 }}>
+          {backLabel}
+        </BackLink>
       )}
       <Stack
         direction={{ xs: "column", sm: "row" }}

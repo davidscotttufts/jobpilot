@@ -1,8 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
-import { ArrowBack } from "@mui/icons-material";
 import { Box, Card, CardContent, Chip, Divider, Grid, Stack, Typography } from "@mui/material";
 import type { JobListingDto } from "@/api/types";
-import { LinkButton } from "@/components/ui/buttons";
+import { BackLink, LinkButton } from "@/components/ui/buttons";
 import { ExternalLink, LabelValue, RelativeTime } from "@/components/ui/display";
 import { formatDate, formatRelativeTime } from "@/utils/format";
 import { TechChips } from "./tech-chips";
@@ -16,16 +15,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
 
   return (
     <Stack spacing={3}>
-      {/* alignSelf + the -1 inset match PageHeader's back link, keeping the hover target intact. */}
-      <LinkButton
-        href="/jobs"
-        variant="text"
-        size="small"
-        startIcon={<ArrowBack fontSize="sm" />}
-        sx={{ alignSelf: "flex-start", ml: -1 }}
-      >
-        All jobs
-      </LinkButton>
+      <BackLink href="/jobs">All jobs</BackLink>
 
       <Stack spacing={1.5}>
         <Typography variant="displayMd" sx={{ overflowWrap: "anywhere" }}>
