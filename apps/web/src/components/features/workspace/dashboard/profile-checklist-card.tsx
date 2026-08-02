@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import type { ReactNode } from "react";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Stack, Typography } from "@mui/material";
 import type { Route } from "next";
@@ -22,7 +22,7 @@ interface ChecklistItem {
  * Post-onboarding nudges for everything the 3-step wizard skipped. Rendered on
  * the pipeline until every item is done, then disappears.
  */
-export function ProfileChecklistCard(): ReactElement | null {
+export function ProfileChecklistCard(): ReactNode {
   const { user } = useSession();
   const profileQuery = useApiQuery(userQueries.detail());
   const emailQuery = useApiQuery(emailQueries.account());
@@ -37,28 +37,28 @@ export function ProfileChecklistCard(): ReactElement | null {
   const items: ChecklistItem[] = [
     {
       key: "verify-email",
-      label: "Verify your email - unlocks applying and networking",
+      label: "Verify your email so you can apply and send messages.",
       done: user.emailVerified,
       href: "/verify-email" as Route,
       action: "Resend link",
     },
     {
       key: "address",
-      label: "Add your address and work authorization - application forms need them",
+      label: "Add your address and work authorization. Application forms ask for both.",
       done: Boolean(profile?.street && profile.city),
       href: "/settings/profile" as Route,
       action: "Fill in",
     },
     {
       key: "mailbox",
-      label: "Connect your mailbox - auto-fetch verification codes and recruiter replies",
+      label: "Connect your mailbox so the agent can read verification codes and recruiter replies.",
       done: emailQuery.data.connected,
       href: "/settings/email" as Route,
       action: "Connect",
     },
     {
       key: "credentials",
-      label: "Save job-board credentials - the agent logs in before applying",
+      label: "Save your job-board logins so the agent can sign in before it applies.",
       done: credentialsQuery.data.length > 0,
       href: "/settings/credentials" as Route,
       action: "Add",

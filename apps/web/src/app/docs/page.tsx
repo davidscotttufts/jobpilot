@@ -21,20 +21,18 @@ export default function DocsIndexPage(): ReactElement {
         <Typography variant="h1" component="h1">
           JobPilot docs
         </Typography>
-        <Stack spacing={1.5} sx={{ maxWidth: 620 }}>
-          <Typography variant="docsBodyMuted" component="p">
-            JobPilot is an AI agent that runs your job search. The dashboard lives on the web and
-            holds your profile, resumes, campaigns, and pipeline. The agent runs on your own
-            machine, on your Claude Code or Codex subscription, and drives a real browser. There is
-            no API key, and JobPilot bills you for nothing.
-          </Typography>
-          <Typography variant="docsBodyMuted" component="p">
-            The agent searches job boards, scores each posting against your resume, tailors a
-            variant per job, fills out the application, and tracks the reply in your inbox. Drive it
-            action by action from the dashboard, or hand the whole search to the Pilot and read the
-            journal in the morning. These guides cover setup and everyday use.
-          </Typography>
-        </Stack>
+        <Typography variant="docsBodyMuted" component="p">
+          JobPilot is an AI agent that runs your job search. The dashboard lives on the web and
+          holds your profile, resumes, campaigns, and pipeline. The agent runs on your own machine,
+          on your Claude Code or Codex subscription, and drives a real browser. There is no API key,
+          and JobPilot bills you for nothing.
+        </Typography>
+        <Typography variant="docsBodyMuted" component="p">
+          The agent searches job boards, scores each posting against your resume, tailors a variant
+          per job, fills out the application, and tracks the reply in your inbox. Drive it action by
+          action from the dashboard, or hand the whole search to the Pilot and read the journal in
+          the morning. These guides cover setup and everyday use.
+        </Typography>
       </Stack>
       <DocsIndexCards />
     </Stack>

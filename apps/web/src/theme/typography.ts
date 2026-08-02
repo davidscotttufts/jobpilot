@@ -11,6 +11,13 @@ export const fontFamilies = {
 // The display role is Archivo widened to its expanded width axis (athletic headers).
 const displayStretch = "125%";
 
+/** /docs prose metrics; `docsBodyMuted` spreads this so the two cannot drift apart. */
+const docsBody = {
+  fontFamily: fontFamilies.body,
+  fontSize: "0.9375rem",
+  lineHeight: 1.7,
+} as const;
+
 export const typography: TypographyVariantsOptions = {
   fontFamily: fontFamilies.body,
   h1: {
@@ -167,11 +174,6 @@ export const typography: TypographyVariantsOptions = {
     letterSpacing: "-0.02em",
   },
   // Prose for /docs
-  docsBody: { fontFamily: fontFamilies.body, fontSize: "0.9375rem", lineHeight: 1.7 },
-  docsBodyMuted: {
-    fontFamily: fontFamilies.body,
-    fontSize: "0.9375rem",
-    lineHeight: 1.7,
-    color: textColors.secondary,
-  },
+  docsBody,
+  docsBodyMuted: { ...docsBody, color: textColors.secondary },
 };

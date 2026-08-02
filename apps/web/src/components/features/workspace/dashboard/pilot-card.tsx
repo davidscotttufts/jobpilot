@@ -20,6 +20,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import type { PilotHealth, SessionStatus } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
+import { plural } from "@/utils/format";
 import { type TerminalHealth, useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
 
@@ -128,7 +129,7 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
               clickable
               color="warning"
               size="small"
-              label={`${openQuestions} need${openQuestions === 1 ? "s" : ""} your answer`}
+              label={`${plural(openQuestions, "question")} for you`}
             />
           )}
         </Stack>

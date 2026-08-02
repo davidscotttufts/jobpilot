@@ -7,6 +7,9 @@ import { fontFamilies } from "@/theme";
 
 const listSx = { mt: 0, mb: 2, pl: 3, "& > li + li": { mt: 0.75 } } as const;
 
+// Prose is muted, so bold at the same colour would stop reading as emphasis.
+const strongSx = { "& strong": { color: "text.primary" } } as const;
+
 export function DocsH1(props: ComponentProps<"h1">): ReactElement {
   return <Typography variant="h1" component="h1" sx={{ mb: 2 }} {...props} />;
 }
@@ -24,7 +27,9 @@ export function DocsH4(props: ComponentProps<"h4">): ReactElement {
 }
 
 export function DocsP(props: ComponentProps<"p">): ReactElement {
-  return <Typography variant="docsBody" component="p" sx={{ mb: 2 }} {...props} />;
+  return (
+    <Typography variant="docsBodyMuted" component="p" sx={{ mb: 2, ...strongSx }} {...props} />
+  );
 }
 
 export function DocsLink(props: ComponentProps<"a">): ReactElement {
@@ -57,7 +62,7 @@ export function DocsLi(props: ComponentProps<"li">): ReactElement {
   return (
     <Box
       component="li"
-      sx={(theme) => ({ ...theme.typography.docsBody, "& > p": { mb: 1 } })}
+      sx={(theme) => ({ ...theme.typography.docsBodyMuted, "& > p": { mb: 1 }, ...strongSx })}
       {...props}
     />
   );
@@ -92,7 +97,7 @@ export function DocsPre(props: ComponentProps<"pre">): ReactElement {
         marginBottom: 2,
         padding: 2,
         overflowX: "auto",
-        ...theme.typography.body1,
+        ...theme.typography.docsBody,
         fontFamily: fontFamilies.mono,
         // Undo the inline-code chrome inside fenced blocks.
         "& code": {
@@ -133,8 +138,9 @@ export function DocsTable(props: ComponentProps<"table">): ReactElement {
         sx={(theme) => ({
           width: "100%",
           borderCollapse: "collapse",
-          ...theme.typography.body1,
+          ...theme.typography.docsBodyMuted,
           "& th": {
+            color: theme.palette.text.primary,
             textAlign: "left",
             fontWeight: theme.typography.body1Strong.fontWeight,
             padding: theme.spacing(1, 1.5),

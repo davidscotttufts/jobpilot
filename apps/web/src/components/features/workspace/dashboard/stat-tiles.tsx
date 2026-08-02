@@ -25,16 +25,16 @@ export function StatTiles(): ReactElement {
   return (
     <Grid container spacing={1.5}>
       <Grid size={{ xs: 6, md: 3 }}>
-        <StatCard label="Active campaigns" value={active} />
+        <StatCard label="Active campaigns" value={active} hint="running or paused" />
       </Grid>
       <Grid size={{ xs: 6, md: 3 }}>
-        <StatCard label="Applied" value={applications.data?.total ?? 0} />
+        <StatCard label="Applied" value={applications.data?.total ?? 0} hint="all time" />
       </Grid>
       <Grid size={{ xs: 6, md: 3 }}>
-        <StatCard label="Interviewing" value={interviewing} />
+        <StatCard label="Interviewing" value={interviewing} hint="past the first reply" />
       </Grid>
       <Grid size={{ xs: 6, md: 3 }}>
-        <StatCard label="Replies" value={replies} />
+        <StatCard label="Replies" value={replies} hint="to your networking messages" />
       </Grid>
     </Grid>
   );

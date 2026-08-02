@@ -7,6 +7,7 @@ import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { networkingSummary } from "@/api/types";
 import { LinkButton } from "@/components/ui/buttons";
+import { plural } from "@/utils/format";
 
 /** Surfaces campaigns that need user action. Renders nothing when all clear. */
 export function AttentionStrip(): ReactNode {
@@ -35,8 +36,8 @@ export function AttentionStrip(): ReactNode {
         ) : null
       }
     >
-      {totalDrafts} networking draft{totalDrafts === 1 ? "" : "s"} awaiting send across{" "}
-      {draftCampaigns.length} campaign{draftCampaigns.length === 1 ? "" : "s"}.
+      {plural(totalDrafts, "networking message")} {totalDrafts === 1 ? "is" : "are"} drafted and
+      waiting for you to send, in {plural(draftCampaigns.length, "campaign")}.
     </Alert>
   );
 }

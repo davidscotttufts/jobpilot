@@ -43,7 +43,7 @@ const urlsTextSchema = z.string().refine(
     }
     return urls.every((u) => z.url().safeParse(u).success);
   },
-  { message: "Enter at least one valid URL, one per line" },
+  { message: "Add at least one job link." },
 );
 
 const formSchema = z.object({
@@ -79,7 +79,7 @@ export function AddUrlsDialog(props: AddUrlsDialogProps): ReactElement {
             multiline
             rows={6}
             placeholder={"https://www.linkedin.com/jobs/view/...\nhttps://boards.greenhouse.io/..."}
-            helperText="Paste one URL per line. Whitespace and commas are accepted."
+            helperText="One link per line. Extra spaces and commas are fine."
           />
         )}
       </form.AppField>
