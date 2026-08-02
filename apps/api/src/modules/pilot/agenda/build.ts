@@ -1,4 +1,9 @@
-import type { AgendaContent, AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
+import {
+  type AgendaContent,
+  type AgendaItem,
+  anyNetworkingActive,
+  emailNetworkingActive,
+} from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
 import {
   ACTIVE_SLEEP_SECONDS,
@@ -46,11 +51,6 @@ function agendaEmptyReason(
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-const emailOn = (config: PilotInstructionsConfig) => config.autonomy.networkingEmail !== "off";
-
-const anyChannelOn = (config: PilotInstructionsConfig) =>
-  emailOn(config) || config.autonomy.networkingLinkedIn !== "off";
 
 /**
  * Compile a prioritized agenda from already-fetched inputs. Pure: no I/O, so the ordering,
@@ -119,8 +119,9 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   // `inbox.review`, outside this namespace, so it survives networking being off.
   const ranked = items.filter((item) => {
     if (!item.kind.startsWith("networking.")) return true;
-    if (!config.networkingEnabled) return false;
-    return item.kind === "networking.warmIntro" ? anyChannelOn(config) : emailOn(config);
+    return item.kind === "networking.warmIntro"
+      ? anyNetworkingActive(config)
+      : emailNetworkingActive(config);
   });
 
   ranked.sort((a, b) => b.priority - a.priority);

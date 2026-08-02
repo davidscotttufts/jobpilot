@@ -60,5 +60,18 @@ export const pilotStateSchema = z.object({
 });
 
 export type PilotInstructionsConfig = z.infer<typeof pilotInstructionsConfigSchema>;
+
+/** Whether email networking can run at all - the gate for gathering drafts and for ranking sends. */
+export function emailNetworkingActive(config: PilotInstructionsConfig): boolean {
+  return config.networkingEnabled && config.autonomy.networkingEmail !== "off";
+}
+
+/** Whether any channel can run; a warm intro picks its own, so it only needs one of them on. */
+export function anyNetworkingActive(config: PilotInstructionsConfig): boolean {
+  return (
+    config.networkingEnabled &&
+    (config.autonomy.networkingEmail !== "off" || config.autonomy.networkingLinkedIn !== "off")
+  );
+}
 export type UpdatePilotInstructionsInput = z.infer<typeof updatePilotInstructionsSchema>;
 export type PilotState = z.infer<typeof pilotStateSchema>;

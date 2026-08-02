@@ -12,7 +12,6 @@ const POLL_MS = 2_000;
 interface ResumeExtraction {
   /** Non-null once the agent has written structured fields. */
   content: ResumeData | null;
-  refetch: () => void;
 }
 
 /** Watches a resume until `extract-resume` writes its fields. Shared with onboarding. */
@@ -30,5 +29,5 @@ export function useResumeExtraction(resumeId: string | null, enabled: boolean): 
     { enabled: active, on: { "content.updated": () => void resume.refetch() } },
   );
 
-  return { content: resume.data?.content ?? null, refetch: () => void resume.refetch() };
+  return { content: resume.data?.content ?? null };
 }

@@ -17,10 +17,10 @@ import type {
 
 export function toPilotState(
   row: PilotStateModel,
-  today: { appliedToday: number; networkingSentToday: number },
+  appliedToday: number,
+  networkingSentToday: number,
   instructionsConfig: PilotInstructionsConfig,
 ): PilotState {
-  const { appliedToday, networkingSentToday } = today;
   return {
     userId: row.userId,
     running: row.running,

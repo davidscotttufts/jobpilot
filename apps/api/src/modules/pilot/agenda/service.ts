@@ -1,4 +1,8 @@
-import { type AgendaResponse, agendaResponseSchema } from "@jobpilot/contracts/pilot";
+import {
+  type AgendaResponse,
+  agendaResponseSchema,
+  emailNetworkingActive,
+} from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
@@ -77,7 +81,7 @@ export class AgendaService {
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
     // Sends and followups only act on email drafts, so an off email channel makes gathering moot.
-    const emailNetworking = config.networkingEnabled && config.autonomy.networkingEmail !== "off";
+    const emailNetworking = emailNetworkingActive(config);
 
     // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);

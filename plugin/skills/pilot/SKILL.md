@@ -220,7 +220,7 @@ Journal with detail `{type:"strategyReview"}` (see step 5): "Campaign '<query>' 
 
 ### `strategy.bootstrap`
 
-Payload `{goals, minScore}` - goals are set (mandatory before start) but no searches exist yet. Config work, **no browser**, no worker. Load the profile and primary resume per `../_shared/setup.md`, then derive 1-3 searches and create each via `POST /api/pilot/searches`. Body `{query, resumeId, reason}`: `query` concrete enough to paste into a board search ("senior typescript remote", not "good jobs"); `reason` one user-facing sentence on why the pilot chose it. Never pin a `board` here - the user's configured board list decides that, rotating one board per cycle, and a pinned board would freeze the search on it. Journal: "Set up 2 searches from your goals: 'senior typescript remote', 'dotnet engineer remote'."
+Payload `{goals, minScore}` - goals are set (mandatory before start) but no searches exist yet. Config work, **no browser**, no worker. Load the profile and primary resume per `../_shared/setup.md`, then derive 1-3 searches and create each via `POST /api/pilot/searches`. Body `{query, resumeId, reason}`: `query` concrete enough to paste into a board search ("senior typescript remote", not "good jobs"); `reason` one user-facing sentence on why the pilot chose it. Never pin a `board`: the configured list rotates one board per cycle, and pinning freezes the search on one. Journal: "Set up 2 searches from your goals: 'senior typescript remote', 'dotnet engineer remote'."
 
 ```bash
 curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/searches" \
@@ -272,12 +272,12 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 
 ### `networking.warmIntro`
 
-Payload `{campaignId, jobKey, company, jobTitle, jobUrl, contacts, emailAutonomy, linkedInAutonomy}`. Compose over email unless `emailAutonomy` is `"off"`, in which case use LinkedIn; the server never emits this item with both channels off. Delegate **one** `networking-worker` invocation:
+Payload `{campaignId, jobKey, company, jobTitle, jobUrl, contacts, emailAutonomy, linkedInAutonomy}`. Compose over email, or LinkedIn when `emailAutonomy` is `"off"` - the server never emits this item with both channels off. Delegate **one** `networking-worker` invocation:
 
 - `contacts` non-empty → compose only for the best contact (pass it as `target`, like the `networking` skill's rewrite mode, with the job for grounding); the worker composes, never sends.
-- `contacts` empty → discover **and** compose for the company/job (`target:{jobUrl, title:<jobTitle>, company}`). Nobody at this company being known yet is the normal early case and is the whole point of the item, not a reason to stop.
+- `contacts` empty → discover **and** compose for the company/job (`target:{jobUrl, title:<jobTitle>, company}`). An empty list is the normal early case and the point of the item, not a reason to stop.
 
-Save the returned contact + draft via the campaign networking endpoints exactly as the `networking` skill's "Save the returned draft"; capture the saved draft's message `id`. Then apply the **same autonomy gate** as `networking.followup`, reading the chosen channel's value from the payload (`"auto"` → send + record; `"draft"` → stop after saving; `"review"` → POST the same `approval` question - `subjectType:"networking"`, `subjectId` = the saved draft's message id - and stop). Journal e.g. "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."
+Save the returned contact + draft via the campaign networking endpoints exactly as the `networking` skill's "Save the returned draft"; capture the saved draft's message `id`. Then apply the **same autonomy gate** as `networking.followup` on the chosen channel's payload value (`"auto"` → send + record; `"draft"` → stop after saving; `"review"` → POST the same `approval` question - `subjectType:"networking"`, `subjectId` = the saved draft's message id - then stop). Journal e.g. "Found warm path to Acme: Dana Lee (Eng Manager) - intro drafted."
 
 ### `promo.compose`
 

@@ -40,7 +40,7 @@ export class PilotService {
       countAppliedToday(this.prisma, userId, now),
       countSentToday(this.prisma, userId, now),
     ]);
-    return toPilotState(row, { appliedToday, networkingSentToday }, config);
+    return toPilotState(row, appliedToday, networkingSentToday, config);
   }
 
   /** Create-on-first-read: every profile has exactly one PilotState, defaulted. */

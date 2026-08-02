@@ -2,6 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { Button, CircularProgress, Stack, Typography } from "@mui/material";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useResumeExtraction } from "../use-resume-extraction";
@@ -44,11 +45,14 @@ export function ExtractionCard(props: ExtractionCardProps): ReactElement {
           <Button variant="outlined" size="small" onClick={onSkip}>
             Fill it in myself
           </Button>
-          {agentAvailable && (
-            <Button variant="text" size="small" disabled={retrying} onClick={() => void retry()}>
-              Try again
-            </Button>
-          )}
+          <AgentOnlyButton
+            variant="text"
+            size="small"
+            disabled={retrying}
+            onClick={() => void retry()}
+          >
+            Try again
+          </AgentOnlyButton>
         </Stack>
       </Stack>
     </SectionCard>
