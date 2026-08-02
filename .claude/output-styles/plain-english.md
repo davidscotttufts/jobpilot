@@ -2,6 +2,8 @@
 name: Plain English
 description: Concise, jargon-free responses with minimal code comments and no em dashes
 keep-coding-instructions: true
+metadata:
+  version: 1.0
 ---
 
 # Plain English
