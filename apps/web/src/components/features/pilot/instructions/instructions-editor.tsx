@@ -59,12 +59,9 @@ function toFormValues(state: PilotState): InstructionsFormValues {
   return {
     goals: state.instructionsGoals,
     dailyApplyCap: c.dailyApplyCap,
-    dailyNetworkingCap: c.networking.dailyCap,
-    networkingFollowupDays: c.networking.followupDays,
     minScore: c.minScore,
     checkIntervalMinutes: c.checkIntervalMinutes,
-    networkingEmail: c.networking.email,
-    networkingLinkedIn: c.networking.linkedIn,
+    networking: { ...c.networking },
     boards: [...c.boards],
     promotionPlatforms: c.promotion.platforms.map((p) => ({
       platform: p.platform,
@@ -97,12 +94,7 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
         boards: value.boards,
-        networking: {
-          email: value.networkingEmail,
-          linkedIn: value.networkingLinkedIn,
-          dailyCap: value.dailyNetworkingCap,
-          followupDays: value.networkingFollowupDays,
-        },
+        networking: value.networking,
         promotion: {
           platforms: value.promotionPlatforms.map((p) => ({
             platform: p.platform.trim(),

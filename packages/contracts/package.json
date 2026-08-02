@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
     "./pilot": "./src/pilot/index.ts",

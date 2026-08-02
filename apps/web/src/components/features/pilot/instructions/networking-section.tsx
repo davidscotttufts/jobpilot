@@ -20,8 +20,8 @@ const autonomyItems = (modes: readonly (keyof typeof AUTONOMY_LABELS)[]) =>
 export const NetworkingSection = withForm({
   defaultValues: INSTRUCTIONS_FORM_DEFAULTS,
   render: function NetworkingSection({ form }) {
-    const email = useSelector(form.store, (s) => s.values.networkingEmail);
-    const linkedIn = useSelector(form.store, (s) => s.values.networkingLinkedIn);
+    const email = useSelector(form.store, (s) => s.values.networking.email);
+    const linkedIn = useSelector(form.store, (s) => s.values.networking.linkedIn);
     const bothOff = email === "off" && linkedIn === "off";
 
     return (
@@ -31,7 +31,7 @@ export const NetworkingSection = withForm({
       >
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <form.AppField name="dailyNetworkingCap">
+            <form.AppField name="networking.dailyCap">
               {(field) => (
                 <field.TextField
                   label="Daily networking cap"
@@ -43,7 +43,7 @@ export const NetworkingSection = withForm({
             </form.AppField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <form.AppField name="networkingFollowupDays">
+            <form.AppField name="networking.followupDays">
               {(field) => (
                 <field.TextField
                   label="Networking follow-up (days)"
@@ -55,7 +55,7 @@ export const NetworkingSection = withForm({
             </form.AppField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <form.AppField name="networkingEmail">
+            <form.AppField name="networking.email">
               {(field) => (
                 <field.Select
                   label="Networking email"
@@ -66,7 +66,7 @@ export const NetworkingSection = withForm({
             </form.AppField>
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <form.AppField name="networkingLinkedIn">
+            <form.AppField name="networking.linkedIn">
               {(field) => (
                 <field.Select
                   label="Networking LinkedIn"

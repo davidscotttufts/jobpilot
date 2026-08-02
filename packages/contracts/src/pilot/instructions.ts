@@ -11,11 +11,11 @@ export const PILOT_EMAIL_AUTONOMY = ["off", ...NETWORKING_AUTONOMY] as const;
 export const PILOT_LINKEDIN_AUTONOMY = ["off", "draft", "review"] as const;
 
 // Every channel "off" is how networking is switched off; there is no separate master flag.
-const pilotNetworkingSchema = z.object({
+export const pilotNetworkingSchema = z.object({
   email: z.enum(PILOT_EMAIL_AUTONOMY).default("off"),
   linkedIn: z.enum(PILOT_LINKEDIN_AUTONOMY).default("off"),
   dailyCap: z.number().int().min(0).default(5),
-  followupDays: z.number().int().default(5),
+  followupDays: z.number().int().min(0).default(5),
 });
 
 const pilotPromotionPlatformSchema = z.object({
