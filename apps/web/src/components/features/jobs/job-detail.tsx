@@ -47,7 +47,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
         <Grid size={{ xs: 12, md: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
           <Stack spacing={3}>
             <ApplyCard />
-            <FactsCard job={job} />
+            <TechStackCard job={job} />
           </Stack>
         </Grid>
 
@@ -158,36 +158,22 @@ function ApplyCard(): ReactElement {
   );
 }
 
-function FactsCard(props: JobDetailProps): ReactNode {
+/** Location, salary, employment type and years already sit in the header, so only tech is here. */
+function TechStackCard(props: JobDetailProps): ReactNode {
   const { job } = props;
-  const facts = [
-    { label: "Employment", value: job.employmentType },
-    { label: "Location", value: job.remote ? "Remote" : job.location },
-    { label: "Salary", value: job.salary },
-    { label: "Experience", value: job.yearsExperience ? `${job.yearsExperience}+ years` : null },
-  ].flatMap((fact) => (fact.value ? [{ label: fact.label, value: fact.value }] : []));
 
-  if (facts.length === 0 && job.techStack.length === 0) {
+  if (job.techStack.length === 0) {
     return null;
   }
 
   return (
     <Card>
       <CardContent>
-        <Stack spacing={2}>
-          {facts.map((fact) => (
-            <LabelValue key={fact.label} label={fact.label}>
-              {fact.value}
-            </LabelValue>
-          ))}
-          {job.techStack.length > 0 && (
-            <LabelValue label="Tech stack">
-              <Box sx={{ mt: 0.75 }}>
-                <TechChips tech={job.techStack} linked />
-              </Box>
-            </LabelValue>
-          )}
-        </Stack>
+        <LabelValue label="Tech stack">
+          <Box sx={{ mt: 0.75 }}>
+            <TechChips tech={job.techStack} linked />
+          </Box>
+        </LabelValue>
       </CardContent>
     </Card>
   );
