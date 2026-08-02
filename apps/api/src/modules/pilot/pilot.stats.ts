@@ -54,7 +54,7 @@ export function classifySkipReason(reason: string): SkipBucket {
   if (text.includes("captcha")) return "captcha";
   if (text.includes("payment")) return "payment";
   if (text.includes("minimum match score") || text.includes("below min")) return "belowMinScore";
-  if (text.includes("cap reached") || text.includes("daily cap")) return "capReached";
+  if (text.includes("cap reached")) return "capReached";
   if (text.includes("expired") || text.includes("no longer") || text.includes("closed")) {
     return "postingClosed";
   }

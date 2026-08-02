@@ -19,7 +19,8 @@ export function ExtractionCard(props: ExtractionCardProps): ReactElement {
   const agentAvailable = useAgentAvailable();
   const [retrying, setRetrying] = useState(false);
 
-  useResumeExtraction(resumeId, true);
+  // Nothing to poll for when this device can't run the extraction; the detail SSE still catches it.
+  useResumeExtraction(resumeId, agentAvailable);
 
   const retry = async (): Promise<void> => {
     setRetrying(true);
