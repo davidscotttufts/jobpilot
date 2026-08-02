@@ -30,7 +30,8 @@ export default async function LeaderboardPage(): Promise<ReactElement> {
           The most active people on JobPilot, ranked by applications and networking outreach.
         </Typography>
       </Stack>
-      <LeaderboardView initialRows={board?.rows ?? []} initialWindow={board?.window ?? "month"} />
+      {/* A failed server fetch hands over nothing, so the client shows its error state, not "empty". */}
+      <LeaderboardView initial={board ?? undefined} />
     </Stack>
   );
 }

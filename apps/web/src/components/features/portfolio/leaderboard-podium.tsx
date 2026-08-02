@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
-import { Card, CardContent, Link as MuiLink, Stack, Typography } from "@mui/material";
+import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
+import type { Route } from "next";
 import type { LeaderboardRow } from "@/api/types";
 import { AvailabilityBadge } from "./availability-badge";
 import { PortfolioAvatar } from "./portfolio-avatar";
@@ -17,30 +18,46 @@ export function LeaderboardPodium(props: LeaderboardPodiumProps): ReactElement {
 
   return (
     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: "stretch" }}>
-      {top.map((row) => (
-        <Card key={row.username} variant="accent" sx={{ flex: 1 }}>
-          <CardContent>
-            <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
-              <Typography variant="statValue" sx={{ color: MEDAL[row.rank - 1] ?? "text.primary" }}>
-                #{row.rank}
-              </Typography>
-              <PortfolioAvatar name={row.displayName} size={56} availability={row.availability} />
-              <Stack spacing={0.25} sx={{ alignItems: "center" }}>
-                <MuiLink href={`/u/${row.username}`} sx={{ fontWeight: 600 }}>
-                  {row.displayName}
-                </MuiLink>
-                {row.headline && (
-                  <Typography variant="captionMuted" sx={{ overflowWrap: "anywhere" }}>
-                    {row.headline}
+      {top.map((row) => {
+        const medal = MEDAL[row.rank - 1] ?? "text.primary";
+        return (
+          <Card
+            key={row.username}
+            variant="accent"
+            sx={{ flex: 1, alignSelf: { sm: row.rank === 1 ? "stretch" : "flex-end" } }}
+          >
+            <CardActionArea href={`/u/${row.username}` as Route} sx={{ height: "100%" }}>
+              <CardContent>
+                <Stack spacing={1.5} sx={{ alignItems: "center", textAlign: "center" }}>
+                  <Typography variant="statValue" sx={{ color: medal }}>
+                    #{row.rank}
                   </Typography>
-                )}
-                <AvailabilityBadge availability={row.availability} />
-                <Typography variant="body2Muted">{row.activityCount} activities</Typography>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-      ))}
+                  <PortfolioAvatar
+                    name={row.displayName}
+                    size={56}
+                    availability={row.availability}
+                  />
+                  <Stack spacing={0.25} sx={{ alignItems: "center" }}>
+                    <Typography variant="body1Strong">{row.displayName}</Typography>
+                    {row.headline && (
+                      <Typography variant="captionMuted" sx={{ overflowWrap: "anywhere" }}>
+                        {row.headline}
+                      </Typography>
+                    )}
+                    <AvailabilityBadge availability={row.availability} />
+                  </Stack>
+                  <Stack spacing={0.25} sx={{ alignItems: "center" }}>
+                    <Typography variant="statValue">{row.activityCount}</Typography>
+                    <Typography variant="captionMuted">
+                      {row.applications} applied · {row.messagesSent} messaged
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        );
+      })}
     </Stack>
   );
 }
