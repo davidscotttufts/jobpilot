@@ -17,8 +17,6 @@ export default function PilotLayout(props: PilotLayoutProps): ReactElement {
         title="Pilot"
         description="Run JobPilot autonomously: set your instructions, watch its journal, and answer its questions."
         actions={
-          // The pilot asks its questions through push, so keep the setting reachable from every
-          // tab instead of at the bottom of the instructions form where nobody scrolls.
           <LinkButton
             href="/settings/notifications"
             size="small"

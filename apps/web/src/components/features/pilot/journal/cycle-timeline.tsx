@@ -50,10 +50,7 @@ function cycleDuration(entries: PilotJournalEntry[]): string {
   return formatSpanBetween(entries[entries.length - 1].createdAt, entries[0].createdAt);
 }
 
-/**
- * One chip per kind present in the cycle, counting occurrences. The `cycle` kind is skipped: the
- * card header already says "Cycle" with its status, so a "Cycle 1" chip only reads as an ordinal.
- */
+/** The `cycle` kind is skipped: the card header already says "Cycle" with its status. */
 function KindSummary(props: { entries: PilotJournalEntry[] }): ReactNode {
   const { entries } = props;
   const counts = new Map<PilotJournalKind, number>();

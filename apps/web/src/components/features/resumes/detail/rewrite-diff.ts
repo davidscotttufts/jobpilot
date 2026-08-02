@@ -23,11 +23,7 @@ function compareLists(where: string, before: string[], after: string[]): FieldCh
   return changes;
 }
 
-/**
- * Field-level before/after between the base resume and a suggested rewrite, so the review shows what
- * actually changed instead of asking the user to trust a list of notes. Positional: the rewrite
- * skill never reorders or drops entries, it only rewords them.
- */
+/** Matches entries positionally: the rewrite skill only rewords, it never reorders or drops. */
 export function diffRewrite(base: ResumeData, suggested: ResumeData): FieldChange[] {
   const changes: FieldChange[] = [];
 

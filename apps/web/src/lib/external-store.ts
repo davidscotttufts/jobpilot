@@ -1,9 +1,6 @@
 /**
- * One shared value behind `useSyncExternalStore`. Module-scoped stores exist because several
- * components mount against the same live data (the journal buffer, the clock tick) and per-hook
- * state would fan one update into N copies.
- *
- * `onActive` runs when the first subscriber arrives and its teardown when the last one leaves, so a
+ * One shared value behind `useSyncExternalStore`, so components watching the same live data don't
+ * each keep a copy. `onActive` runs on the first subscriber and its teardown on the last, so a
  * store backed by a timer or a socket costs nothing while nothing is watching.
  */
 export class ExternalStore<T> {
@@ -14,8 +11,7 @@ export class ExternalStore<T> {
     private value: T,
     private readonly onActive?: () => () => void,
   ) {
-    // `useSyncExternalStore` re-subscribes whenever it gets a new function identity, so the two
-    // members it receives must be stable and already bound.
+    // `useSyncExternalStore` re-subscribes on any new function identity, so these must stay stable.
     this.subscribe = this.subscribe.bind(this);
     this.get = this.get.bind(this);
   }
@@ -39,7 +35,7 @@ export class ExternalStore<T> {
     };
   }
 
-  /** Replaces the value and notifies. An `Object.is`-equal write is a no-op, so callers can be lazy. */
+  /** An `Object.is`-equal write is a no-op, so callers can be lazy. */
   set(next: T): void {
     if (Object.is(next, this.value)) {
       return;

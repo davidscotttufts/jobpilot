@@ -21,10 +21,7 @@ interface SectionBlockProps {
   children: ReactNode;
 }
 
-/**
- * One collapsible resume section. The `data-section-id` stays on the outer box so the sticky rail
- * still finds a collapsed section to scroll to.
- */
+/** `data-section-id` sits on the outer box so the rail can still scroll to a collapsed section. */
 export function SectionBlock(props: SectionBlockProps): ReactElement {
   const { section, summary, open, onToggle, children } = props;
   const Icon = section.icon;

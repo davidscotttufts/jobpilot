@@ -115,8 +115,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
     items.push(...buildRetryFailedItems(input.retryFailed));
   }
 
-  // Sends and followups act on existing email drafts; a warm intro picks its own channel. Mail
-  // triage is `inbox.review`, outside this namespace, so it survives networking being off.
+  // Sends and followups need an email draft; a warm intro picks its own channel. Mail triage is
+  // `inbox.review`, outside this namespace, so it survives networking being off.
   const ranked = items.filter((item) => {
     if (!item.kind.startsWith("networking.")) return true;
     if (!config.networkingEnabled) return false;

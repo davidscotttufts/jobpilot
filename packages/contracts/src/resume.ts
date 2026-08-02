@@ -96,24 +96,15 @@ export const EMPTY_RESUME_DATA: ResumeData = {
 };
 
 /**
- * Roughly how many characters fit on one bullet line once rendered. Letter width less the template's
- * margins and bullet indent leaves ~498pt, and Helvetica at 9.5pt averages ~4.75pt a character. The
- * editor warns past two lines; nothing enforces it, since a long bullet is legal, just ugly.
- * Keep in step with `bulletList`/`bulletText` in `apps/api/src/common/pdf/jake-template.tsx`.
+ * Characters per rendered bullet line: ~498pt of usable width, Helvetica 9.5pt at ~4.75pt a
+ * character. Keep in step with `bulletList`/`bulletText` in `common/pdf/jake-template.tsx`.
  */
 export const RESUME_BULLET_CHARS_PER_LINE = 104;
-
-// Variant labels that carry meaning beyond "a tailored copy", so sweeps must leave them alone and
-// the reuse scorer must skip them. Shared so the prune endpoint, the retention cron, and the web
-// panel agree - a prefix known to one and not the others deletes the thing it was meant to protect.
 
 /** An agent-authored rewrite awaiting the user's accept or discard. */
 export const SUGGESTED_REWRITE_LABEL = "Suggested rewrite";
 
-/**
- * How long a variant no application ever used survives the retention sweep. Shared so the panel can
- * state the rule and the cron can enforce it from one number.
- */
+/** How long an unused variant survives the sweep. Shared so the panel and the cron agree. */
 export const UNUSED_VARIANT_DAYS = 30;
 
 export const PROTECTED_VARIANT_LABELS = [SUGGESTED_REWRITE_LABEL] as const;

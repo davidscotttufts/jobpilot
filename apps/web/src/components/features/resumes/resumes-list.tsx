@@ -67,8 +67,7 @@ export function ResumesList(): ReactElement {
       if (agentAvailable) {
         void agent.injectSkill("extract-resume", id);
       }
-      // The resume page is where extraction progress and the result show up; a list row labelled
-      // "No structure" tells a first-time uploader nothing.
+      // Extraction progress only shows on the detail page, not on a row saying "No structure".
       router.push(`/resumes/${id}` as Route);
     },
   });

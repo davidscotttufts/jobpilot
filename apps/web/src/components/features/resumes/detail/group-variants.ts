@@ -8,10 +8,7 @@ export interface VariantGroup {
 
 const UNGROUPED = "Other";
 
-/**
- * The tailor skill labels variants `"<Company> - <Job title>"`, so the part before the first dash is
- * the company. Falls back to the job URL's host, then to one catch-all group.
- */
+/** The tailor skill labels variants `"<Company> - <Job title>"`; the URL host is the fallback. */
 function companyOf(variant: ResumeVariantListItem): string {
   const [head, ...rest] = variant.label.split(" - ");
   if (rest.length > 0 && head.trim()) {

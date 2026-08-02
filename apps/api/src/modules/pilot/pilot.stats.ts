@@ -27,11 +27,7 @@ export function countSentToday(
   });
 }
 
-/**
- * Countable buckets for a skip. The work-authorization ones are the scoring module's own kinds,
- * not a second list: the agent writes skip reasons from what `detectEligibilityRestrictions` found,
- * so a private copy here would drift the moment a pattern changes. The rest are operational.
- */
+/** Reuses the scoring module's eligibility kinds; a private copy would drift from its patterns. */
 export const SKIP_BUCKETS = [
   ...ELIGIBILITY_RESTRICTION_KINDS,
   "alreadyApplied",
@@ -45,10 +41,9 @@ export const SKIP_BUCKETS = [
 export type SkipBucket = (typeof SKIP_BUCKETS)[number];
 
 /**
- * Buckets a free-text `skipReason`. Reasons are agent-written prose, so grouping the raw column in
- * SQL yields one row per wording. Eligibility goes through the shared detector, which reads the
- * quoted JD sentence the reason carries; the remaining checks match the fixed phrasings
- * `plugin/skills/_shared/eligibility.md` tells the agent to write.
+ * Buckets a free-text `skipReason`; agent-written prose means grouping the raw column in SQL yields
+ * one row per wording. The literal checks match the phrasings `_shared/eligibility.md` tells the
+ * agent to write.
  */
 export function classifySkipReason(reason: string): SkipBucket {
   const blocked = detectEligibilityRestrictions(reason)[0];
@@ -73,11 +68,7 @@ export interface PilotTodayOutcomes {
   skipReasons: { reason: SkipBucket; count: number }[];
 }
 
-/**
- * Today's non-applied outcomes across the profile's campaigns. Deliberately excludes applied: the
- * pilot state already reports that from `Application`, and a second, slightly different number for
- * the same thing on the same card would just look wrong.
- */
+/** Excludes applied on purpose: pilot state already reports that from `Application`. */
 export async function countTodayOutcomes(
   prisma: Pick<PrismaClient, "job">,
   userId: string,

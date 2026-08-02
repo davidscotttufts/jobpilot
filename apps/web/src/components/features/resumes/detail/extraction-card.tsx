@@ -11,10 +11,7 @@ interface ExtractionCardProps {
   onSkip: () => void;
 }
 
-/**
- * What the resume page shows while `extract-resume` is reading a freshly uploaded PDF. Without it a
- * first-time upload lands on an empty form with nothing saying the agent is already working on it.
- */
+/** Without this, a first upload lands on an empty form with nothing saying the agent is working. */
 export function ExtractionCard(props: ExtractionCardProps): ReactElement {
   const { resumeId, onSkip } = props;
   const agent = useAgent();

@@ -61,8 +61,8 @@ export function buildJobApplyItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
 }
 
 /**
- * One warm intro per agenda, gated on score and the networking cap, not the apply cap. An empty
- * contact list is not a reason to skip: the worker discovering one is how a first contact is created.
+ * Gated on score and the networking cap, not the apply cap. An empty contact list is no reason to
+ * skip: the worker discovering one is how a first contact is created.
  */
 export function buildWarmIntroItems(
   jobs: AgendaApprovedJob[],
@@ -99,11 +99,9 @@ export function buildWarmIntroItems(
 
 /**
  * Discovery fills the pipeline only when nothing approved is left to apply to (gated by the caller).
- * Item id / claim subject is the search id; `newJobsTarget` (demand-derived by the caller) and the
- * page cap steer the paginated crawl.
- *
- * The configured board list wins over the board a search was created with, rotating one step per
- * cycle so every board gets worked instead of the pilot living on whichever one bootstrap picked.
+ * Item id / claim subject is the search id; `newJobsTarget` and the page cap steer the crawl. The
+ * configured boards win over a search's own board, rotating one step per cycle so the pilot doesn't
+ * live on whichever board bootstrap picked.
  */
 export function buildDiscoverItems(
   queries: AgendaDueQuery[],

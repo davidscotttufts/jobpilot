@@ -76,8 +76,7 @@ export class AgendaService {
 
     const now = new Date();
     const { config, goals } = await loadInstructions(this.prisma, userId);
-    // Email drafts are the only thing sends and followups can act on, so an off email channel
-    // makes gathering them pointless work.
+    // Sends and followups only act on email drafts, so an off email channel makes gathering moot.
     const emailNetworking = config.networkingEnabled && config.autonomy.networkingEmail !== "off";
 
     // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.

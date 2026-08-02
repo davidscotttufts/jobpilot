@@ -19,9 +19,7 @@ export const RETENTION_DAYS = {
   promotion: 30,
   emailBody: 60,
   applicationEvent: 90,
-  // The reuse gate keeps the count down; this collects the tail. Under the scorer's 180d recency
-  // floor, so a swept variant is one it had already stopped preferring. The web states this rule in
-  // the variants panel, so the number is shared rather than repeated.
+  // Under the scorer's 180d recency floor, so a swept variant is one it had stopped preferring.
   resumeVariant: UNUSED_VARIANT_DAYS,
 } as const;
 

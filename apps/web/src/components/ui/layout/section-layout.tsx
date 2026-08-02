@@ -7,10 +7,7 @@ interface SectionLayoutProps {
   children: ReactNode;
 }
 
-/**
- * Sticky section rail beside a column of `data-section-id` blocks. The rail hides below `lg`, where
- * the blocks just stack.
- */
+/** Sticky rail beside a column of `data-section-id` blocks; hidden below `lg`, where they stack. */
 export function SectionLayout(props: SectionLayoutProps): ReactElement {
   const { anchors, children } = props;
   return (

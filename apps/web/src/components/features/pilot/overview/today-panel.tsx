@@ -9,11 +9,10 @@ interface MeterProps {
   label: string;
   value: number;
   cap: number;
-  /** Turns the bar red once the cap is reached, so a stalled pilot reads as capped, not broken. */
+  /** Turns the bar red, so a capped pilot doesn't read as broken. */
   spent: boolean;
 }
 
-/** One "3 / 10" row with its progress bar. */
 export function Meter(props: MeterProps): ReactElement {
   const { label, value, cap, spent } = props;
   const percent = cap > 0 ? Math.min(100, (value / cap) * 100) : 0;
@@ -31,7 +30,7 @@ export function Meter(props: MeterProps): ReactElement {
   );
 }
 
-/** Wording for each bucket the API counts; the API sends slugs so this stays the only copy. */
+/** The API sends bucket slugs, so this stays the only copy of the wording. */
 const SKIP_LABELS: Record<string, string> = {
   sponsorship: "No visa sponsorship",
   citizenship: "Citizenship required",
@@ -45,7 +44,7 @@ const SKIP_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-/** Skips outnumbering applies by this much means the searches or the score bar are wrong, not the pilot. */
+/** Past this ratio of skips to applies, the searches or the score bar are wrong, not the pilot. */
 const SKIP_RATIO_WARNING = 2;
 
 const TOP_REASONS = 3;
@@ -54,10 +53,7 @@ interface TodayOutcomesProps {
   appliedToday: number;
 }
 
-/**
- * What today's cycles did other than apply. Without this the card shows "16 applied" while 52 jobs
- * were quietly skipped, which reads as a slow day rather than a mistargeted search.
- */
+/** Without this, "16 applied" beside 52 quiet skips reads as a slow day, not a bad search. */
 export function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
   const { appliedToday } = props;
   const query = useApiQuery(pilotQueries.todayOutcomes());

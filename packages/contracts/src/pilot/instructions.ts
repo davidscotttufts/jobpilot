@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 
-// "off" is per-channel: it silences one channel while the other keeps working. Silencing both is
-// the same as turning `networkingEnabled` off, and the agenda treats it that way.
+// "off" silences one channel only; both off is `networkingEnabled: false`, and the agenda agrees.
 const pilotAutonomySchema = z.object({
   networkingEmail: z.enum(["off", "draft", "review", "auto"]).default("review"),
   networkingLinkedIn: z.enum(["off", "draft", "review"]).default("draft"),

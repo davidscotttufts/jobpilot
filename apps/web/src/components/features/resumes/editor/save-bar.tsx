@@ -20,10 +20,7 @@ interface SaveBarProps {
   conflict?: ReactElement | null;
 }
 
-/**
- * Sticky footer for the editor. Lives outside any Card on purpose: MUI Card clips overflow, which
- * kills `position: sticky`.
- */
+/** Must stay outside any Card: MUI Card clips overflow, which kills `position: sticky`. */
 export function SaveBar(props: SaveBarProps): ReactElement {
   const { state, onSave, conflict } = props;
 

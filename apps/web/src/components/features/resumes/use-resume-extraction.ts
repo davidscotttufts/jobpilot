@@ -15,10 +15,7 @@ interface ResumeExtraction {
   refetch: () => void;
 }
 
-/**
- * Watches a resume until `extract-resume` writes its structured fields. Shared by onboarding and the
- * resume page so both learn the parse finished the same way.
- */
+/** Watches a resume until `extract-resume` writes its fields. Shared with onboarding. */
 export function useResumeExtraction(resumeId: string | null, enabled: boolean): ResumeExtraction {
   const active = enabled && resumeId !== null;
 

@@ -13,16 +13,11 @@ interface AutosaveOptions<T> {
 
 interface Autosave<T> {
   state: SaveState;
-  /** Records an edit and restarts the debounce. */
   change: (value: T) => void;
-  /** Writes immediately, for Ctrl+S and the explicit Save button. */
   flush: () => void;
 }
 
-/**
- * Debounced save with an explicit flush. Keeps the pending value in a ref rather than state so the
- * timer always writes the newest edit without re-arming on every keystroke render.
- */
+/** Pending value lives in a ref, so the timer writes the newest edit without re-arming. */
 export function useAutosave<T>(options: AutosaveOptions<T>): Autosave<T> {
   const { save } = options;
   const [state, setState] = useState<SaveState>("clean");

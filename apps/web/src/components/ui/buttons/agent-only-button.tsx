@@ -12,10 +12,7 @@ interface AgentOnlyButtonProps extends ButtonProps {
   tooltip?: string;
 }
 
-/**
- * A button for work that only the local agent can do. Disabled with a reason rather than hidden:
- * a control that silently vanishes on mobile reads as a missing feature.
- */
+/** Disabled with a reason, not hidden: a control that vanishes reads as a missing feature. */
 export function AgentOnlyButton(props: AgentOnlyButtonProps): ReactElement {
   const { children, disabled, tooltip = "", ...rest } = props;
   const available = useAgentAvailable();

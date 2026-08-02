@@ -100,10 +100,7 @@ export class PilotService {
     return this.setRunning(userId, false);
   }
 
-  /**
-   * Clears the run history: every journal entry, the cycle counter, and the cached agenda. Leaves
-   * the instructions, searches and running flag alone, so a running pilot just carries on from zero.
-   */
+  /** Clears run history only; instructions, searches and the running flag survive. */
   async reset(userId: string) {
     const row = await this.prisma.$transaction(async (tx) => {
       await tx.pilotJournalEntry.deleteMany({ where: { userId } });
