@@ -3,7 +3,8 @@ import { Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { DocsIndexCards } from "@/components/features/docs";
 
-const description = "How to set up and use JobPilot: the agent, campaigns, email, and credentials.";
+const description =
+  "How to set up and use JobPilot: the agent, the Pilot, campaigns, email, and credentials.";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -17,15 +18,23 @@ export default function DocsIndexPage(): ReactElement {
   return (
     <Stack spacing={3}>
       <Stack spacing={1.5}>
-        <Typography variant="h1" sx={{ fontSize: "2rem" }}>
+        <Typography variant="h1" component="h1">
           JobPilot docs
         </Typography>
-        <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 560 }}>
-          JobPilot is an AI agent for your job search. Your dashboard lives on the web; the agent
-          runs on your machine, on your own Claude Code or Codex subscription, and drives a real
-          browser to search boards, tailor your resume, apply, and follow up. These guides cover
-          setup and everyday use.
-        </Typography>
+        <Stack spacing={1.5} sx={{ maxWidth: 620 }}>
+          <Typography variant="docsBodyMuted" component="p">
+            JobPilot is an AI agent that runs your job search. The dashboard lives on the web and
+            holds your profile, resumes, campaigns, and pipeline. The agent runs on your own
+            machine, on your Claude Code or Codex subscription, and drives a real browser. There is
+            no API key, and JobPilot bills you for nothing.
+          </Typography>
+          <Typography variant="docsBodyMuted" component="p">
+            The agent searches job boards, scores each posting against your resume, tailors a
+            variant per job, fills out the application, and tracks the reply in your inbox. Drive it
+            action by action from the dashboard, or hand the whole search to the Pilot and read the
+            journal in the morning. These guides cover setup and everyday use.
+          </Typography>
+        </Stack>
       </Stack>
       <DocsIndexCards />
     </Stack>

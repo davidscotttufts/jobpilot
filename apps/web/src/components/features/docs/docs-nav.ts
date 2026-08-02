@@ -14,15 +14,16 @@ export const DOCS_NAV: DocsNavEntry[] = [
     description: "Install the plugin, run setup, and launch your first campaign.",
   },
   {
-    title: "Campaigns & skills",
-    href: "/docs/campaigns-and-skills",
-    description: "The four campaign modes, every skill, and how statuses work.",
-  },
-  {
     title: "The Pilot",
     href: "/docs/pilot",
     description:
       "Autonomous mode: write your instructions once and read the journal in the morning.",
+  },
+  {
+    title: "Campaigns & skills",
+    href: "/docs/campaigns-and-skills",
+    description:
+      "The three campaign modes, what each dashboard action runs, and how statuses work.",
   },
   {
     title: "Email setup",

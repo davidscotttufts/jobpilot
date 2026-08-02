@@ -32,18 +32,20 @@ user and takes about five minutes.
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
    It's your own project with you as the only user, so Google verification is
    never required. One catch: Testing-mode refresh tokens expire after about
-   7 days. If you'd rather not reconnect weekly, publish the app, which stays
-   verification-free under Google's 100-user test limit.
+   seven days, so expect to reconnect roughly once a week. Publishing the app
+   does not fix this. Gmail scopes are restricted, so a published app without
+   Google verification fails at sign-in.
 6. Back in **Settings → Email**, paste your **Client ID** and **Client
    secret**, save, then **Connect Gmail**.
 
 ## What JobPilot can and can't do
 
-JobPilot can read mail and send it, and nothing more. The two scopes above let
-it read your mail and send email on your behalf; deleting or modifying mail is
-outside what the token allows. Your client id and secret are stored encrypted
-per user (the secret never leaves the server) and the connected account is
-tied to your profile only.
+JobPilot can read mail and send it, and nothing more. The consent screen asks
+for four scopes: `gmail.readonly` and `gmail.send` do the work, while `openid`
+and `email` only tell JobPilot which address you connected. Deleting or
+modifying mail is outside what the token allows. Your client id and secret are
+stored encrypted per user (the secret never leaves the server) and the
+connected account is tied to your profile only.
 
 ## Troubleshooting
 
@@ -57,8 +59,10 @@ tied to your profile only.
 - **Mailbox connects read-only, or networking can't send.** The token was
   issued without `gmail.send`. Add the scope under **Data access**, then use
   **Reconnect to enable sending** in **Settings → Email**.
-- **Google 500 after publishing.** You published an app that uses a
-  sensitive scope. Go back to Testing mode under
+- **Google 500 after publishing.** A published app using restricted Gmail
+  scopes needs Google verification. Go back to Testing mode under
   **Audience → Publishing status → Back to testing**.
 
 Outlook and IMAP support are planned; Gmail is the only provider today.
+
+Next up: [Credentials](/docs/credentials), so the agent can sign in to boards.

@@ -79,9 +79,11 @@ see what each cycle did, its outcome, and how long it took.
 ## How long do I have to answer a question?
 
 Most questions wait indefinitely; the related job is parked until you answer.
-The exception is a 2FA/login code, which expires after about five minutes;
-missing one just skips that job cleanly. Enable notifications to get questions
-as a push on your phone.
+The exception is a login code, which expires after about five minutes; missing
+one just skips that job cleanly. You only see those for codes the agent can't
+read itself, meaning SMS and authenticator apps. Codes that arrive by email are
+pulled from your connected mailbox without asking you. Turn on notifications
+under **Settings → Notifications** to get questions as a push on your phone.
 
 ## Can JobPilot read and send email?
 
@@ -99,10 +101,11 @@ uses a 2Captcha or CapSolver key if you've added one under
 ## How do I update the agent?
 
 When a new version ships, the dashboard shows an update banner in the agent
-dock. Follow it: the flow updates the host and plugin, and on Claude Code
-reloads plugins without restarting your session. Re-running `setup` does the
-same thing: on an existing install it upgrades the terminal host to the
-latest release.
+dock. **Update now** swaps the terminal host for the new one and relaunches it,
+which stops any running session. Re-running `setup` does the same thing.
+
+The plugin is separate. Update it in your provider with the copy-paste commands
+behind **Prefer to update manually?** on the same banner.
 
 ## Can I switch between Claude Code and Codex?
 
@@ -112,16 +115,16 @@ the same plugin.
 ## Where are my resumes stored?
 
 Uploaded PDFs and generated variants are stored in your JobPilot account, not
-on your machine. The structured resume content is editable in the resume
-studio.
+on your machine. The structured content is editable under **Documents**.
 
 ## Does the agent change my resume?
 
 Not on its own. Two things touch resume content, both needing your click:
 
 - After an upload, `review-resume` proposes a rewrite and lists every change.
-  Nothing applies until you press **Apply**, and your PDF is never modified,
-  so re-extracting restores the original text.
+  Press **Review** to read it side by side, then **Apply rewrite** or
+  **Discard**. Your PDF is never modified, so **Re-extract from PDF** restores
+  the original text.
 - Per job, `tailor-resume` creates a **variant** and leaves your base alone. When
   the base doesn't fit the job it also reorders, merges, or drops entries and
   promotes projects onto the timeline, all still on the variant.

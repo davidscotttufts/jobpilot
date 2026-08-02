@@ -7,17 +7,17 @@ export const metadata = buildDocsMetadata("pilot", {
 
 # The Pilot
 
-The Pilot is JobPilot's autonomous mode. Write your **instructions** once
-(goals and limits) and the local agent runs your whole search on its own:
-it discovers and scores roles, applies, finds warm intros, networks and follows
-up, reviews recruiter replies, and drafts interview replies, prep sheets, and
-self-promotion posts. Everything it does lands in a live journal; the few
-decisions only you can make arrive as one-tap questions, on your phone if you
-enable notifications.
+The Pilot is JobPilot's autonomous mode. Write your **instructions** once, the
+goals and the limits, and the local agent runs your search on its own. It finds
+and scores roles, applies to them, reaches out to contacts and follows up, reads
+recruiter replies, and drafts interview replies, prep sheets, and posts.
 
-The Pilot supersedes the [campaign modes](/docs/campaigns-and-skills) and runs
-all of them for you, but every dashboard action stays available for hands-on
-work.
+Everything it does lands in a live journal. The few decisions only you can make
+arrive as one-tap questions, on your phone if you enable notifications.
+
+It runs the [campaign modes](/docs/campaigns-and-skills) for you: searching,
+applying, and networking all happen inside its cycles. Every dashboard action
+stays available whenever you want to do something by hand.
 
 ## How a cycle works
 
@@ -39,8 +39,9 @@ after a reboot, so no browser tab needs to stay open.
 
 ## Starting it
 
-1. Make sure your local agent terminal is running (the dock in the dashboard's
-   bottom corner). See [Getting started](/docs/getting-started) if it's offline.
+1. Make sure your local agent terminal is running (the dock down the right side
+   of the dashboard). See [Getting started](/docs/getting-started) if it's
+   offline.
 2. Open **Pilot** in the workspace, write your instructions, and save.
 3. Click **Start**.
 
@@ -49,34 +50,41 @@ cycles on boot, crash, or wake until you stop it.
 
 ## Your instructions
 
-One small document steers everything:
+**Goals** and **Searches** sit at the top of the Instructions tab. The rest is
+optional tuning, folded behind **Advanced settings**.
 
 - **Goals.** Plain-language direction: roles, priorities, constraints
-  ("senior TypeScript remote, at least $150k, by October").
-- **Operating limits.** Daily apply cap, minimum match score, check interval.
-- **Networking.** Off by default. When on, you set a daily cap, a follow-up
-  delay, and per-channel autonomy: email can be **draft**, **review**, or
-  **auto**, while LinkedIn is always review.
+  ("senior TypeScript remote, at least $150k, by October"). This is the only
+  part you have to write.
 - **Searches.** The Pilot creates these from your goals and re-runs them on
   demand, soon after a run that turns up new roles and less often once a
   search keeps coming up dry. The Instructions page shows them read-only, with
   each one's recent yield and next check.
+- **Operating limits.** Daily apply cap, minimum match score, check interval.
+- **Networking.** Off by default. You set a daily cap and a follow-up delay,
+  then an autonomy level per channel: email can be **draft only**, **review
+  each**, or **auto-send**; LinkedIn stops at **review each**, because nothing
+  is ever sent there without you.
+- **Boards.** Which job boards the Pilot searches, and in what order. It moves
+  to the next board each cycle, so all of them get worked. Leave it empty and
+  each saved search stays on the board it was created with.
 - **Platforms.** Where the Pilot drafts self-promotion posts. Posting is
   always review-only.
 
-Soft judgment lives in your goals text; the caps are enforced server-side, so
-the Pilot can never exceed them regardless of wording. Edit any time, and
-changes take effect on the next cycle.
+Your goals text handles the judgment calls. The caps are a different thing: the
+server enforces those, so the Pilot can't exceed one no matter how the goals are
+worded. Edit any of it any time, and changes take effect on the next cycle.
 
-## What runs on its own vs. what asks you
+## What runs on its own and what asks you
 
 | Runs on its own | Always asks you |
 | --- | --- |
-| Applies to matching roles within your daily cap | A 2FA / login code (a one-tap card, ~5-minute window) |
-| Sends networking emails you set to auto, within your cap | Salary and screening questions on an application |
-| Follows up on networking messages per your autonomy setting | Sending a LinkedIn InMail |
-| Reviews recruiter replies in your inbox (proposes moves) | Posting any self-promotion publicly |
-| Drafts emails, follow-ups, interview replies, prep sheets, and posts | Parking a board that keeps failing |
+| Applies to matching roles within your daily cap | A login code it can't read, from SMS or an authenticator app |
+| Reads emailed sign-in codes from your connected mailbox | Salary and screening questions on an application |
+| Sends networking emails you set to auto-send, within your cap | Sending a LinkedIn message |
+| Follows up on networking messages per your autonomy setting | Posting any self-promotion publicly |
+| Reviews recruiter replies in your inbox (proposes moves) | Sending a drafted interview reply |
+| Drafts emails, follow-ups, interview replies, prep sheets, and posts | Whether to resume a campaign you paused |
 
 Anything in the right column surfaces as a question. Nothing sends, posts, or
 changes an application's status without you.
@@ -85,18 +93,22 @@ changes an application's status without you.
 
 When the Pilot hits a decision only you can make, it posts a **question**, a
 one-decision card under **Needs attention** on the Overview tab, and parks the
-related work until you answer. Turn on **Notifications** (Instructions tab, per
-device) to get a web push when a question opens, even with the tab closed. A
-2FA request self-expires after about five minutes; if you miss it, the Pilot
-skips that job cleanly and moves on.
+related work until you answer. Turn on **Notifications** under
+**Settings → Notifications** (per device) to get a web push when a question
+opens, even with the tab closed.
 
-## The journal and morning digest
+Most questions wait as long as you need. Login codes are the exception: they
+expire after about five minutes, and if you miss one the Pilot skips that job
+cleanly and moves on. Codes that arrive by email never become a question at
+all, since the agent reads them out of your mailbox itself.
+
+## The journal and daily digest
 
 Every action lands in the **journal** on the Activity tab, a live feed you can
 filter by kind or group **by cycle** to see what each cycle did, its outcome,
 and how long it took. The Overview tab shows the latest activity plus when the
-next cycle will wake. Once a day the last 24 hours roll into a **morning
-digest**: applications, replies reviewed, messages sent, questions waiting.
+next cycle will wake. Once a day, after 07:00 UTC, the last 24 hours roll into
+a **digest**: applications, replies reviewed, messages sent, questions waiting.
 **Export** downloads the full history as a file.
 
 ## Interview autonomy
@@ -108,8 +120,8 @@ company notes) and attaches it to the application.
 
 ## Troubleshooting
 
-- **Host offline.** Start the agent from the dock. The Pilot resumes on its
-  own once the host is back.
+- **Host offline.** Start the agent from the dock on the right. The Pilot
+  resumes on its own once the host is back.
 - **Pilot paused after repeated stuck runs.** The host takes a break to
   protect your machine. Check the dock terminal for what got stuck, then
   start it again.
@@ -117,4 +129,5 @@ company notes) and attaches it to the application.
   found, usually an expired login it re-establishes on the spot. Everything
   else keeps running either way.
 
-Next up: [Email setup](/docs/email-setup) so the Pilot can review your replies.
+Next up: [Campaigns & skills](/docs/campaigns-and-skills), for the same work
+done by hand.

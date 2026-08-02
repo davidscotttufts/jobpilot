@@ -1,19 +1,22 @@
 import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("campaigns-and-skills", {
-  description: "The four campaign modes, every JobPilot skill, and how the pipeline works.",
+  description:
+    "The three campaign modes, what each dashboard action runs, and how the pipeline works.",
 });
 
 # Campaigns & skills
 
 A campaign is one run of the agent against a goal: find jobs, apply to them,
 or reach the people hiring. Skills are the units of work the agent performs.
+[The Pilot](/docs/pilot) runs all of this for you; everything below is the
+same work driven by hand.
 
 You don't type skill names. After `setup`, every skill is dispatched by an
 action in the dashboard (creating a campaign, applying to a job, scanning your
 inbox) and the agent carries it out in the dock while you watch.
 
-## The four campaign modes
+## The three campaign modes
 
 **Search.** The agent searches a board and scores every role against your
 resume, but doesn't apply. You review the ranked list on the campaign page
@@ -23,71 +26,75 @@ picky about targets.
 **Auto-apply.** The agent searches, scores, and applies on its own, one job
 at a time, skipping weak matches and jobs you already applied to. It stops
 when the board is exhausted, you pause it, or it hits your application cap.
-Best once you trust the scoring.
-
-**Apply.** One job at a time. Add a job URL to your workspace queue and press
-apply; the agent reviews fit, tailors your resume, and applies. **Apply all**
-drains the whole queue, one job at a time.
+This is what the composer opens on.
 
 **Networking.** The agent finds the hiring manager or recruiter behind a role
 and drafts a personalized email or LinkedIn message. Nothing is sent without
 your approval.
 
+Applying to one job needs no campaign at all. Paste a job URL into your
+workspace queue and press apply; the agent reviews fit, tailors your resume,
+and applies. **Apply all** drains the whole queue, one job at a time.
+
 ## What each dashboard action runs
 
-| In the dashboard                             | What the agent does                                                       |
-| -------------------------------------------- | ------------------------------------------------------------------------- |
-| New campaign → Search only (`search`)        | Searches a board and ranks every result against your resume.              |
-| New campaign → Auto-apply (`auto-apply`)     | Searches, then applies one job at a time until done, paused, or capped.   |
-| New campaign → Networking (`networking`)     | Finds the hiring contact for each role and drafts a personalized message. |
-| New campaign on Upwork (`upwork-search`)     | Searches Upwork, filters out low-quality clients, ranks the rest.         |
-| Apply all, or apply one URL (`apply`)        | Applies to a single job after a fit review.                               |
-| Campaign → Resume (`resume-campaign`)        | Picks a paused campaign back up on its remaining approved jobs.           |
-| Campaign → Rescan skipped (`rescan-skipped`) | Re-scores skipped jobs and promotes the wrongly dropped ones.             |
-| Campaign → Retry failed (`auto-apply`)       | Re-runs the applications that errored out.                                |
-| Inbox → Scan (`scan-inbox`)                  | Classifies new mail, matches it to applications, proposes status moves.   |
-| Networking → Regenerate (`networking`)       | Rewrites a drafted message.                                               |
-| Upload a resume (`extract-resume`)           | Parses the PDF into the structured editor.                                |
-| Resume → Tailor (`tailor-resume`)            | Rewrites a resume variant against one job description.                    |
-| Upwork → Proposal (`upwork-proposal`)        | Drafts a short, targeted proposal for one posting.                        |
-| Upwork → Profile (`upwork-profile`)          | Improves your Upwork overview; writes back only after you approve.        |
-| Pilot → Start (`pilot`)                      | Runs [Pilot](/docs/pilot) cycles on a loop until you stop it.             |
+| In the dashboard | What the agent does |
+| --- | --- |
+| **New campaign → Search** (`search`) | Searches a board and ranks every result against your resume. |
+| **New campaign → Auto-apply** (`auto-apply`) | Searches, then applies one job at a time until done, paused, or capped. |
+| **New campaign → Networking** (`networking`) | Finds the hiring contact for each role and drafts a personalized message. |
+| **New campaign** on Upwork (`upwork-search`) | Searches Upwork, filters out low-quality clients, ranks the rest. |
+| **Apply all**, or apply one URL (`apply`) | Applies to a single job after a fit review. |
+| **Campaign → Resume** (`resume-campaign`) | Picks a paused campaign back up on its remaining approved jobs. |
+| **Campaign → Rescan skipped** (`rescan-skipped`) | Re-scores skipped jobs and promotes the wrongly dropped ones. |
+| **Campaign → Retry failed** (`auto-apply`) | Re-runs the applications that errored out. |
+| **Inbox → Scan pending** (`scan-inbox`) | Classifies new mail, matches it to applications, proposes status moves. |
+| **Networking → Regenerate** (`networking`) | Rewrites a drafted message. |
+| Uploading a resume, or **Extract from PDF** (`extract-resume`) | Parses the PDF into the structured editor. |
+| **Resume → Tailor** (`tailor-resume`) | Rewrites a resume variant against one job description. |
+| **Upwork → Proposal** (`upwork-proposal`) | Drafts a short, targeted proposal for one posting. |
+| **Upwork → Profile** (`upwork-profile`) | Improves your Upwork overview; writes back only after you approve. |
+| **Pilot → Start** (`pilot`) | Runs [Pilot](/docs/pilot) cycles on a loop until you stop it. |
 
-The rest run on their own, mid-job: `tailor-resume` picks or creates the right
-resume variant per application, `review-resume` suggests a stronger rewrite
-after you upload a resume, `cover-letter` drafts a letter when a form asks for
-one, `get-code` pulls verification codes from your mailbox during logins,
-`solve-captcha` handles captchas, and `humanizer` keeps generated text reading
+Uploading a PDF during onboarding or from the resumes list starts extraction on
+its own. Uploading a new PDF onto an existing resume doesn't, so that page has
+an **Extract from PDF** button (**Re-extract from PDF** once there's content).
+
+The rest run on their own, mid-job. `tailor-resume` picks or creates the right
+resume variant per application, and `cover-letter` drafts a letter when a form
+asks for one. `get-code` pulls verification codes from your mailbox during
+logins, and `solve-captcha` handles captchas. `interview` drafts availability
+replies and builds prep sheets,
+`review-resume` leaves a [suggested rewrite](/docs/getting-started) on the
+resume page after an upload, and `humanizer` keeps generated text reading
 naturally.
 
 The one command you run yourself is `setup`: `/jobpilot:setup` in Claude
 Code, `$setup` in Codex. It installs and starts the local agent terminal, and
 upgrades it to the latest release when one is already installed.
 
-After an upload the agent parses your resume, then proposes an improved
-version with a rewritten summary, stronger bullets, and tidier skill groups.
-It appears on the resume page with a list of every change, and nothing applies
-until you press Apply. Your PDF is never modified, so you can always
-re-extract from it.
-
 ## Statuses
 
-Every application has one of six statuses: **applied → screening →
-interviewing → offer**, with **rejected** and **withdrawn** as exits. The
+Every application has one of six statuses:
+**applied → screening → interviewing → offer**,
+with **rejected** and **withdrawn** as exits. The
 workspace shows them as a funnel with every application listed beneath it,
 each application page keeps a full activity timeline, and analytics
 aggregates the funnel across campaigns.
 
 ## The inbox loop
 
-With [email connected](/docs/email-setup), the `scan-inbox` skill reads new
-mail, classifies each message (interview request, rejection, offer, ...), and
-matches it to an application. Proposed status moves appear in your inbox page;
-approve one and the application updates. Nothing changes status without you.
+With [email connected](/docs/email-setup), **Sync** on the inbox page pulls new
+mail from Gmail, and **Scan pending** runs the `scan-inbox` skill over it. The
+skill classifies each message (interview request, rejection, offer, and so on)
+and matches it to an application. Proposed status moves appear in your inbox
+page; approve one and the application updates. Nothing changes status without
+you.
 
 ## Recovering a campaign
 
-Both live on the campaign page:
+Two buttons on the campaign page, for a run that stopped and a run that skipped
+too much:
 
 - If a campaign is paused, press **Resume** (`resume-campaign`). It picks the
   apply loop back up on the remaining approved jobs without re-asking
@@ -99,7 +106,8 @@ Both live on the campaign page:
 
 ## Upwork
 
-Upwork gets its own toolkit because freelance marketplaces work differently:
+Upwork has its own three skills, because you're picking clients as much as
+jobs and nothing is submitted for you:
 
 - `upwork-search` filters out clients with poor hire rates, low spend, or bad
   ratings before ranking what's left against your profile. It saves
@@ -108,3 +116,5 @@ Upwork gets its own toolkit because freelance marketplaces work differently:
   your review before you send it.
 - `upwork-profile` reads your live profile, proposes an improved overview and
   portfolio, and writes it back only after you approve.
+
+Next up: [Email setup](/docs/email-setup), so replies land on your pipeline.

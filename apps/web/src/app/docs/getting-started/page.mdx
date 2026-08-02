@@ -45,10 +45,10 @@ already installed, `setup` upgrades it to the latest release instead.
 $setup
 ```
 
-From here the agent dock (the terminal panel in the dashboard's bottom corner)
-shows everything the agent does, and you can switch providers there any time.
-If the terminal host ever breaks, the [install page](/install) has a one-line
-installer to repair it.
+From here the agent dock (the terminal column down the right side of the
+dashboard) shows everything the agent does, and you can switch providers there
+any time. If the terminal host ever breaks, the [install page](/install) has a
+one-line installer to repair it.
 
 > Pick a mid-tier model: Claude Sonnet 5 or GPT 5.6 Terra (`/model` in Claude
 > Code). Top-tier models eat your weekly usage limits far faster without
@@ -56,17 +56,30 @@ installer to repair it.
 
 ## 3. Create your account
 
-1. Go to [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net) and sign up.
-2. Verify your email address.
-3. Complete onboarding: fill in your profile and upload a resume PDF. The
-   running agent parses the resume into the structured editor; the profile
-   powers form filling, the resume powers job scoring and tailoring.
-4. Check the suggested rewrite. The agent proposes an improved version (sharper
-   summary, outcome-first bullets, tidier skill groups) and lists every change.
-   Nothing applies until you press **Apply**, and your PDF is never modified, so
-   re-extracting always gets you back to the original.
+Go to [jobpilot.suxrobgm.net](https://jobpilot.suxrobgm.net), sign up, and
+verify your email address. Onboarding is three steps.
+
+1. **Resume.** Upload a PDF. The agent on your machine reads it and turns it
+   into structured content: contact details, work history, education, skills.
+   Watch it happen in the dock; it takes a minute or two. Without a running
+   agent (on a phone, say) the upload is kept and you fill the rest in by hand.
+2. **Personal.** Extraction copies your name, email, phone, links, and city
+   into any profile field that is still empty. It never overwrites something
+   you typed. Check what it filled in, add what it missed, then press
+   **Save & continue**. The profile powers form filling; the resume powers job
+   scoring and tailoring.
+3. **Connect agent.** This checks that the host you installed in step 2 is
+   running and shows the install commands again if it isn't. Press **Finish**
+   and you land on the workspace with the dock open.
 
 Everything can be changed later under **Settings**.
+
+While you finish onboarding, the agent also drafts an improved version of your
+resume: a sharper summary, outcome-first bullets, tidier skill groups. It waits
+for you on the resume page under **Documents**, as a card counting the suggested
+changes. Press **Review** to read the old and new text side by side, then
+**Apply rewrite** or **Discard**. Your uploaded PDF is never touched, so
+**Re-extract from PDF** always gets you back to the original.
 
 > Keep your profile address and resume header in agreement. Recruiters read the
 > resume, but application forms and cover-letter headers come from your profile,
@@ -78,14 +91,19 @@ Everything can be changed later under **Settings**.
 the dashboard, and it works in the dock while you watch.
 
 Start gentle: search first, apply after review. Press **New campaign**, enter
-what you're looking for, pick a board, and choose **Search only**. The agent
-searches, scores each role against your resume, and saves the matches to the
-campaign. Review the ranked list, then approve the ones worth applying to.
+what you're looking for, and pick a board. The composer opens on **Auto-apply**,
+so switch the mode to **Search** for this first run. The agent searches, scores
+each role against your resume, and saves the matches to the campaign. Review the
+ranked list, then approve the ones worth applying to.
 
-Once you trust the scoring, create a campaign with **Auto-apply** instead. It
-searches, scores, and applies one job at a time until the board is exhausted,
-you pause it, or it reaches your application cap (set under **Settings →
-Profile**).
+Once you trust the scoring, leave the mode on **Auto-apply**. It searches,
+scores, and applies one job at a time until the board is exhausted, you pause
+it, or it reaches the campaign's application cap (**Settings → Profile**).
 
 Every application lands in your workspace, where it moves from applied to
-offer. Next up: [Campaigns & skills](/docs/campaigns-and-skills).
+offer.
+
+You can also skip the campaign-by-campaign work. The Pilot writes its own
+searches from your goals, applies within a daily cap, handles replies, and only
+interrupts you for decisions it can't make, like a salary question on a form.
+Next up: [The Pilot](/docs/pilot).
