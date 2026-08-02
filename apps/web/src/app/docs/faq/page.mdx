@@ -30,18 +30,14 @@ On your machine. Your dashboard lives on the web, but the terminal companion,
 the AI session, and the browser doing the work all run locally, so you can
 watch every action in the agent dock.
 
-## The agent stopped. How do I start it again?
+## How do I start the agent again after it stops?
 
-On Windows, press **Start agent** in the dock. The agent registers a
-`jobpilot://` handler with Windows every time it runs, so the browser can
-launch it directly.
+On Windows, press **Start agent** in the dock. Everywhere else, use one of the
+two commands the dock offers: run `setup` again in Claude Code or Codex, or
+type `jobpilot` in any shell. Those work on Windows too.
 
-macOS and Linux have no equivalent, so the dock gives you two commands to copy
-instead: run `setup` again in Claude Code or Codex, or type `jobpilot` in any
-shell. Both work on Windows too.
-
-The very first start is always `setup`, on every operating system. The browser
-can only relaunch an agent that has already run once.
+The button exists only on Windows, and only after the agent has run at least
+once. [Getting started](/docs/getting-started) explains why.
 
 ## Which job boards are supported?
 

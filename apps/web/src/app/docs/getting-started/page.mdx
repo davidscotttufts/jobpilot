@@ -50,19 +50,18 @@ dashboard) shows everything the agent does, and you can switch providers there
 any time. If the terminal host ever breaks, the [install page](/install) has a
 one-line installer to repair it.
 
-Starting it again later depends on your operating system. The first start is
-always `setup`, but after the agent has run once:
+The first start is always `setup`. Once the agent has run, how you start it
+again depends on your operating system:
 
-- **Windows.** The dock shows a **Start agent** button when the agent is
-  stopped, and one click brings it back. This works because the agent
-  registers a `jobpilot://` handler with Windows each time it runs, which lets
-  the browser launch it.
-- **macOS and Linux.** There's no equivalent handler, so the dock shows two
-  commands instead. Run `setup` again in Claude Code or Codex, or type
+- **Windows.** The dock shows a **Start agent** button whenever the agent is
+  stopped. The agent registers a `jobpilot://` handler with Windows on every
+  run, and the button opens that link.
+- **macOS and Linux.** Nothing registers a handler there, so the dock offers
+  two commands instead: run `setup` again in Claude Code or Codex, or type
   `jobpilot` in any shell.
 
-Either route self-updates the agent on the way up, so a stopped agent comes
-back on the latest release.
+Whichever way you start it, the agent checks for a new release first, so it
+comes back on the latest version.
 
 > Pick a mid-tier model: Claude Sonnet 5 or GPT 5.6 Terra (`/model` in Claude
 > Code). Top-tier models eat your weekly usage limits far faster without
