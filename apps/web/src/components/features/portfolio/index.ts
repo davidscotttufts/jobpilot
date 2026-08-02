@@ -1,13 +1,3 @@
-export * from "./activity-heatmap";
-export * from "./availability-badge";
-export * from "./initials";
-export * from "./leaderboard-list";
-export * from "./leaderboard-podium";
-export * from "./leaderboard-view";
-export * from "./portfolio-avatar";
-export * from "./portfolio-card";
-export * from "./portfolio-form-values";
-export * from "./portfolio-settings";
-export * from "./portfolio-stats";
-export * from "./portfolio-view";
-export * from "./portfolio-visibility-fields";
+export { LeaderboardView } from "./leaderboard-view";
+export { PortfolioSettings } from "./portfolio-settings";
+export { PortfolioView } from "./portfolio-view";
