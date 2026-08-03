@@ -1,5 +1,6 @@
+import { DEFAULT_MIN_MATCH_SCORE } from "@jobpilot/contracts/user";
 import { detectEligibilityRestrictions, type EligibilityRestriction } from "./eligibility";
-import { expandSynonyms, normalizeKeyword, normalizePhrase } from "./keyword-normalize";
+import { expandSynonyms, normalizeMatchPhrase } from "./keyword-normalize";
 import type { FitProfile, JobDigest } from "./scoring.schema";
 
 export interface FitResult {
@@ -8,18 +9,26 @@ export interface FitResult {
   strongMatches: string[];
   partialMatches: string[];
   gaps: string[];
+  /** "trust": use the score as-is; "deliberate": reason from the match evidence instead. */
+  verdict: "trust" | "deliberate";
   /**
    * Set when the posting states a bar this candidate cannot clear. Kept out of `score` so a
-   * 90-point tech match still reads as 90 and the skip reason stays the real one.
+   * 90-point skills match still reads as 90 and the skip reason stays the real one.
    */
   eligibilityBlocked?: EligibilityRestriction;
 }
+
+/** Below this the inputs are too thin for the score to stand on its own. */
+const CONFIDENCE_TRUST_BAR = 0.7;
+
+/** How far the score must sit from the threshold before the call is not a coin flip. */
+const SCORE_THRESHOLD_MARGIN = 10;
 
 // Words that carry meaning on their own inside a multi-word term ("net", "sql" - not "ms").
 const WORD_MIN_LENGTH = 3;
 
 const termWords = (term: string): string[] => {
-  const words = normalizePhrase(term).split(" ");
+  const words = normalizeMatchPhrase(term).split(" ");
   return words.length > 1 ? words.filter((w) => w.length >= WORD_MIN_LENGTH) : [];
 };
 
@@ -34,35 +43,52 @@ const termVariants = (term: string): string[] => {
   return [...variants];
 };
 
-const normalizedHas = (set: Set<string>, term: string): boolean =>
-  termVariants(term).some((variant) => set.has(variant));
-
 /**
  * Heuristic keyword-overlap fit score. Server-side, deterministic, no LLM.
  * The model uses this to skip full deliberation on confident high/low scores
  * and only reason about borderline cases.
  *
  * Weights:
- *   50% tech overlap (weighted Jaccard with synonyms)
+ *   50% skills overlap (weighted Jaccard with synonyms)
  *   20% years-experience proximity
  *   30% keyword density in requirements
  */
-export function scoreFit(digest: JobDigest, profile: FitProfile): FitResult {
-  const digestTech = (digest.techStack || []).filter(Boolean);
-  const profileTechNormed = new Set<string>((profile.techStack || []).flatMap(termVariants));
+export function scoreFit(
+  digest: JobDigest,
+  profile: FitProfile,
+  minScore: number = DEFAULT_MIN_MATCH_SCORE,
+): FitResult {
+  const digestSkills = (digest.skills || []).filter(Boolean);
+  const profileSkillsNormed = new Set<string>((profile.skills || []).flatMap(termVariants));
+
+  const reqPhrase = normalizeMatchPhrase((digest.requirements || []).join(" "));
+  // Padded whole-token search, so "C#" does not hit every "c" and "SQL Server" does hit "sql server".
+  const paddedReq = ` ${reqPhrase} `;
 
   const strongMatches: string[] = [];
+  const partialMatches: string[] = [];
   const gaps: string[] = [];
+  let reqHits = 0;
 
-  for (const term of digestTech) {
-    if (normalizedHas(profileTechNormed, term)) {
+  for (const term of digestSkills) {
+    const variants = termVariants(term);
+    const strong = variants.some((variant) => profileSkillsNormed.has(variant));
+    if (strong) {
       strongMatches.push(term);
     } else {
       gaps.push(term);
     }
+
+    if (variants.some((variant) => paddedReq.includes(` ${variant} `))) {
+      reqHits++;
+      if (!strong && !partialMatches.includes(term)) {
+        partialMatches.push(term);
+      }
+    }
   }
 
-  const techOverlapScore = digestTech.length === 0 ? 0 : strongMatches.length / digestTech.length;
+  const skillsOverlapScore =
+    digestSkills.length === 0 ? 0 : strongMatches.length / digestSkills.length;
   let yearsScore = 0.5;
 
   if (
@@ -78,30 +104,17 @@ export function scoreFit(digest: JobDigest, profile: FitProfile): FitResult {
     }
   }
 
-  const reqText = (digest.requirements || []).join(" ").toLowerCase();
-  let reqHits = 0;
-  const partialMatches: string[] = [];
-
-  for (const term of digestTech) {
-    if (reqText.includes(normalizeKeyword(term))) {
-      reqHits++;
-      if (!strongMatches.includes(term) && !partialMatches.includes(term)) {
-        partialMatches.push(term);
-      }
-    }
-  }
-
-  // No requirements text leaves the density term neutral - a perfect tech match must not cap at 70.
+  // No requirements text leaves the density neutral - a perfect skills match must not cap at 70.
   const reqDensityScore =
-    digestTech.length === 0 || reqText.trim().length === 0
-      ? techOverlapScore
-      : reqHits / digestTech.length;
-  const raw = techOverlapScore * 0.5 + yearsScore * 0.2 + reqDensityScore * 0.3;
+    digestSkills.length === 0 || reqPhrase.length === 0
+      ? skillsOverlapScore
+      : reqHits / digestSkills.length;
+  const raw = skillsOverlapScore * 0.5 + yearsScore * 0.2 + reqDensityScore * 0.3;
   const score = Math.round(raw * 100);
 
-  // A no-requirements digest tops out at 0.6, under the skills' 0.7 trust-without-deliberation bar.
+  // A no-requirements digest tops out at 0.6, under CONFIDENCE_TRUST_BAR.
   let confidence = 0;
-  if (digestTech.length > 0) {
+  if (digestSkills.length > 0) {
     confidence += 0.4;
   }
   if ((digest.requirements || []).length > 0) {
@@ -122,12 +135,18 @@ export function scoreFit(digest: JobDigest, profile: FitProfile): FitResult {
     (restriction) => restriction.kind !== "sponsorship" || profile.requiresSponsorship,
   );
 
+  const roundedConfidence = Math.round(confidence * 100) / 100;
+  const trusted =
+    roundedConfidence >= CONFIDENCE_TRUST_BAR &&
+    Math.abs(score - minScore) >= SCORE_THRESHOLD_MARGIN;
+
   return {
     score,
-    confidence: Math.round(confidence * 100) / 100,
+    confidence: roundedConfidence,
     strongMatches,
-    partialMatches: partialMatches.filter((t) => !strongMatches.includes(t)),
+    partialMatches,
     gaps,
+    verdict: trusted ? "trust" : "deliberate",
     ...(blocked && { eligibilityBlocked: blocked }),
   };
 }

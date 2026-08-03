@@ -55,7 +55,7 @@ VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 
 ### 3.3 Fit
 
-Build the digest (`../_shared/digest-schema.md`); always populate `techStack`. The client signals belong in the saved digest - keep them as `EXTRA='{ "clientStats": <CLIENT>, "qualityScore": <quality score> }'`.
+Build the digest (`../_shared/digest-schema.md`); always populate `skills`. The client signals belong in the saved digest - keep them as `EXTRA='{ "clientStats": <CLIENT>, "qualityScore": <quality score> }'`.
 
 **Thin card** (you'd need the full posting): delegate to `job-worker mode:"score"` instead - it opens the posting, scores, and **saves the Job row itself** (full JD in `description`) in isolated context, so the posting body never enters this conversation. Pass `EXTRA` as `extraDigest`; use the returned `{matchScore, eligible}` for the table and **skip 3.4**:
 
@@ -69,11 +69,11 @@ One worker at a time. **Rich card** (the snippet is enough): score inline and sa
 
 ```bash
 FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
-  -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" '{digest:$d}')")
+  -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" --argjson min <minScore> '{digest:$d, minScore:$min}')")
 SCORE=$(echo "$FIT" | jq -r '.score')
 ```
 
-Use it directly when `confidence >= 0.7`; otherwise rescore from `strongMatches`/`partialMatches`/`gaps`. A thin or below-level posting is **not** a skip - judge on tech fit (`../_shared/eligibility.md`).
+Use it directly when the fit's `verdict` is `trust`; otherwise rescore from `strongMatches`/`partialMatches`/`gaps`. A thin or below-level posting is **not** a skip - judge on skills fit (`../_shared/eligibility.md`).
 
 ### 3.4 Save the recommendation (rich-card path only)
 

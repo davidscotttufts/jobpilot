@@ -2,7 +2,7 @@ import { buildListingDraft, type ListingSourceJob } from "./listing-draft";
 import { describe, expect, it } from "bun:test";
 
 const digest = JSON.stringify({
-  techStack: ["TypeScript", "React"],
+  skills: ["TypeScript", "React"],
   descriptionExcerpt: "Build things.",
 });
 
@@ -20,7 +20,7 @@ const job = (overrides: Partial<ListingSourceJob> = {}): ListingSourceJob => ({
 });
 
 describe("quality gate", () => {
-  it("publishes a job with title, company, url and a parsed techStack", () => {
+  it("publishes a job with title, company, url and parsed digest skills", () => {
     expect(buildListingDraft(job())).not.toBeNull();
   });
 
@@ -28,8 +28,8 @@ describe("quality gate", () => {
     expect(buildListingDraft(job({ digest: null }))).toBeNull();
   });
 
-  it("rejects a digest whose techStack is empty", () => {
-    expect(buildListingDraft(job({ digest: JSON.stringify({ techStack: [] }) }))).toBeNull();
+  it("rejects a digest whose skills list is empty", () => {
+    expect(buildListingDraft(job({ digest: JSON.stringify({ skills: [] }) }))).toBeNull();
   });
 
   it("rejects malformed digest JSON instead of throwing", () => {
@@ -57,17 +57,17 @@ describe("projection", () => {
   });
 
   it("honours an explicit remote flag in the digest", () => {
-    const raw = JSON.stringify({ techStack: ["Go"], remote: true });
+    const raw = JSON.stringify({ skills: ["Go"], remote: true });
     expect(buildListingDraft(job({ digest: raw, location: "New York, NY" }))?.remote).toBe(true);
   });
 
   it("falls back to the job description when the digest has no excerpt", () => {
-    const raw = JSON.stringify({ techStack: ["Go"] });
+    const raw = JSON.stringify({ skills: ["Go"] });
     expect(buildListingDraft(job({ digest: raw }))?.descriptionExcerpt).toBe("A long description.");
   });
 
   it("truncates a runaway excerpt", () => {
-    const raw = JSON.stringify({ techStack: ["Go"], descriptionExcerpt: "x".repeat(900) });
+    const raw = JSON.stringify({ skills: ["Go"], descriptionExcerpt: "x".repeat(900) });
     const excerpt = buildListingDraft(job({ digest: raw }))?.descriptionExcerpt ?? "";
     expect(excerpt.length).toBeLessThanOrEqual(601);
     expect(excerpt.endsWith("…")).toBe(true);
@@ -75,7 +75,7 @@ describe("projection", () => {
 
   it("carries the digest's requirements, responsibilities and years of experience", () => {
     const raw = JSON.stringify({
-      techStack: ["Go"],
+      skills: ["Go"],
       requirements: ["  5 years of Go  ", "", "Kubernetes"],
       responsibilities: ["Ship services"],
       yearsExperience: 5,
@@ -87,7 +87,7 @@ describe("projection", () => {
   });
 
   it("defaults the digest bullets to empty rather than undefined", () => {
-    const draft = buildListingDraft(job({ digest: JSON.stringify({ techStack: ["Go"] }) }));
+    const draft = buildListingDraft(job({ digest: JSON.stringify({ skills: ["Go"] }) }));
     expect(draft?.requirements).toEqual([]);
     expect(draft?.responsibilities).toEqual([]);
     expect(draft?.yearsExperience).toBeNull();
@@ -95,7 +95,7 @@ describe("projection", () => {
 
   it("caps how many bullets and how long each one can be", () => {
     const raw = JSON.stringify({
-      techStack: ["Go"],
+      skills: ["Go"],
       requirements: Array.from({ length: 30 }, (_, i) => `req ${i}`),
       responsibilities: ["y".repeat(500)],
     });
@@ -106,7 +106,7 @@ describe("projection", () => {
   });
 
   it.each([[0], [-3], [80]])("drops an out-of-range yearsExperience of %p", (years) => {
-    const raw = JSON.stringify({ techStack: ["Go"], yearsExperience: years });
+    const raw = JSON.stringify({ skills: ["Go"], yearsExperience: years });
     expect(buildListingDraft(job({ digest: raw }))?.yearsExperience).toBeNull();
   });
 

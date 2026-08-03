@@ -19,9 +19,9 @@ export function yearsSinceEarliestExperience(content: ResumeData): number | null
 
 /** Derives the fit inputs for a profile based on their resume content */
 export function deriveProfileFitInputs(content: ResumeData): {
-  techStack: string[];
+  skills: string[];
   yearsExperience: number | null;
 } {
-  const techStack = (content.skills ?? []).flatMap((group) => group.items ?? []).filter(Boolean);
-  return { techStack, yearsExperience: yearsSinceEarliestExperience(content) };
+  const skills = (content.skills ?? []).flatMap((group) => group.items ?? []).filter(Boolean);
+  return { skills, yearsExperience: yearsSinceEarliestExperience(content) };
 }

@@ -19,7 +19,7 @@ const MAX_BULLET_LENGTH = 300;
  * (location/salary/remote) this index wants. `Job.digest` is raw JSON, so they are usually present.
  */
 const digestSchema = z.object({
-  techStack: z.array(z.string()).optional(),
+  skills: z.array(z.string()).optional(),
   descriptionExcerpt: z.string().optional(),
   location: z.string().optional(),
   salary: z.string().optional(),
@@ -117,7 +117,8 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
   }
 
   const digest = parseDigest(job.digest);
-  const techStack = (digest.techStack ?? []).map((tech) => tech.trim()).filter(Boolean);
+  // The digest key is `skills`; the public listing field keeps the name `techStack`.
+  const techStack = (digest.skills ?? []).map((skill) => skill.trim()).filter(Boolean);
   if (techStack.length === 0) {
     return null;
   }

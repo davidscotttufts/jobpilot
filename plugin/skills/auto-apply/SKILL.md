@@ -94,16 +94,16 @@ If the listing row lacks enough detail, read it from the tab-1 snapshot (don't n
 ```bash
 FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' \
-  -d "$(jq -n --argjson digest "$DIGEST" --arg rid "$RESUME_ID" \
-    '{digest:$digest} + (if $rid=="" then {} else {resumeId:$rid} end)')")
+  -d "$(jq -n --argjson digest "$DIGEST" --arg rid "$RESUME_ID" --argjson minScore "$MIN_SCORE" \
+    '{digest:$digest, minScore:$minScore} + (if $rid=="" then {} else {resumeId:$rid} end)')")
 SCORE=$(echo "$FIT" | jq -r '.score')
-CONF=$(echo "$FIT" | jq -r '.confidence')
+FIT_VERDICT=$(echo "$FIT" | jq -r '.verdict')
 ```
 
 Branch on the result (eligibility per `../_shared/eligibility.md` - a thin/generic row is **not** a skip):
 
-- **Confident** - `CONF >= 0.7` and `SCORE` at least 10 points from `minMatchScore` on either side → use the score directly.
-- **Uncertain** → rescore yourself from `strongMatches`/`partialMatches`/`gaps`.
+- **Confident** - `FIT_VERDICT == "trust"` → use the score directly.
+- **Uncertain** - `FIT_VERDICT == "deliberate"` → rescore yourself from `strongMatches`/`partialMatches`/`gaps`.
 - **Needs the full posting** → delegate the row to `job-worker` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation. The worker creates every row non-terminal and sends ineligible outcomes to `/result`; eligible rows remain `pending`. PATCH an eligible row to `applying`, then go straight to apply (2.3):
 
 ```bash

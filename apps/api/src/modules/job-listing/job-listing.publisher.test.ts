@@ -8,7 +8,7 @@ const job = (url: string): ListingSourceJob => ({
   company: "Acme",
   url,
   location: "Austin, TX",
-  digest: JSON.stringify({ techStack: ["Go"] }),
+  digest: JSON.stringify({ skills: ["Go"] }),
 });
 
 interface FakeOptions {
@@ -130,7 +130,7 @@ describe("publish", () => {
 describe("enrich", () => {
   const withDigest = (extra: Record<string, unknown>): ListingSourceJob => ({
     ...job("https://x.com/1"),
-    digest: JSON.stringify({ techStack: ["Go"], ...extra }),
+    digest: JSON.stringify({ skills: ["Go"], ...extra }),
   });
 
   it("writes the digest fields when the scrape has them", async () => {

@@ -9,6 +9,7 @@ interface ScoreJobFitInput {
   digest: JobDigest;
   profile?: Partial<FitProfile>;
   resumeId?: string;
+  minScore?: number;
 }
 
 @singleton()
@@ -21,7 +22,7 @@ export class ScoringService {
    */
   async scoreJobFit(
     userId: string,
-    { digest, profile, resumeId }: ScoreJobFitInput,
+    { digest, profile, resumeId, minScore }: ScoreJobFitInput,
   ): Promise<FitResult> {
     // Prefer an explicit, owned resume override; otherwise the user's primary.
     const [content, user] = await Promise.all([
@@ -32,7 +33,7 @@ export class ScoringService {
       }),
     ]);
 
-    let derived = { techStack: [] as string[], yearsExperience: null as number | null };
+    let derived = { skills: [] as string[], yearsExperience: null as number | null };
 
     if (content) {
       try {
@@ -43,14 +44,14 @@ export class ScoringService {
     }
 
     const fitProfile = {
-      techStack: profile?.techStack ?? derived.techStack,
+      skills: profile?.skills ?? derived.skills,
       yearsExperience:
         profile?.yearsExperience !== undefined ? profile.yearsExperience : derived.yearsExperience,
       // From the profile, not the caller: omitting the flag must not skip the eligibility check.
       requiresSponsorship: user?.requiresSponsorship ?? false,
     };
 
-    return scoreFit(digest, fitProfile);
+    return scoreFit(digest, fitProfile, minScore);
   }
 
   /**

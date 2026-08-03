@@ -20,12 +20,12 @@ Detect the argument shape:
 - Starts with `http` → `browser_navigate`, then `browser_snapshot` the posting body (per `../_shared/browser-tips.md`) and build the digest (`../_shared/digest-schema.md`) from it.
 - Otherwise → pasted JD text; parse the same fields manually.
 
-From the digest (`title`, `requirements[]`, `responsibilities[]`, `techStack[]`, `yearsExperience`, `descriptionExcerpt`), assemble:
+From the digest (`title`, `requirements[]`, `responsibilities[]`, `skills[]`, `yearsExperience`, `descriptionExcerpt`), assemble:
 
 - `title`, `domain` (fintech/healthtech/devtools/…), `standouts` (clearance, on-call, on-site, …).
 - `roleFamily` ∈ `frontend | backend | fullstack | mobile | data | ml | devops | qa | other` - match `title` + `descriptionExcerpt` against: frontend (`frontend`, `ui`, `react`, `vue`, `angular`), backend (`backend`, `api`, `services`), fullstack (`full-stack`), mobile (`ios`, `android`, `react native`, `flutter`), data (`data engineer/scientist`, `analytics`, `etl`), ml (`ml`, `ai engineer`, `mlops`), devops (`devops`, `sre`, `platform`, `infrastructure`), qa (`qa`, `sdet`, `test engineer`).
 - `seniority` ∈ `junior | mid | senior | staff | lead` - from title (`junior`/`entry` → junior; `senior`/`sr.` → senior; `staff` → staff; `lead`/`principal` → lead; else mid). Cross-check `yearsExperience`: 0-2 junior, 3-5 mid, 6-9 senior, 10+ staff/lead.
-- `keywords` - top 10 required-tech terms from `techStack` ∪ extracted from `requirements`. Lowercase, deduped, must-have ranked above nice-to-have.
+- `keywords` - top 10 required skill terms from `skills` ∪ extracted from `requirements`. Lowercase, deduped, must-have ranked above nice-to-have.
 - `responsibilityTerms` - top 5 verbs/nouns from `responsibilities` (`design`, `mentor`, `migrate`, `on-call`, …).
 
 ## Step 2: Pick the Base

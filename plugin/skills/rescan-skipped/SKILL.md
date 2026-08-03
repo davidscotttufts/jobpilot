@@ -24,10 +24,10 @@ Count the full target list up front and process every one. **Below-threshold, ze
 
 ## Step 2: Per Job
 
-1. **Digest** - parse the cached `digest`. Rich = non-empty `techStack` **and** `requirements`/`responsibilities`.
+1. **Digest** - parse the cached `digest`. Rich = non-empty `skills` **and** `requirements`/`responsibilities`.
 2. **Re-read only when needed** - if the digest is thin/empty, or the original `skipReason` was invalid (location/onsite, sparse JD, 1099, seniority), open the posting (`browser_navigate` + narrowed `browser_snapshot`; log in via `../_shared/auth.md` if walled) and rebuild the digest. Send that digest and posting text with the rescan command below; terminal rows cannot be PATCHed.
 
-3. **Re-score** - every target gets a fresh `POST /api/score-fit` with `{digest}`; never reuse the stored `matchScore`. If `confidence >= 0.7` and `score` is ≥10 from the threshold, trust it; else deliberate from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier - only a JD-stated citizenship/clearance or no-sponsorship bar is (never infer from industry).
+3. **Re-score** - every target gets a fresh `POST /api/score-fit` with `{digest, minScore:<threshold>}`; never reuse the stored `matchScore`. Take the returned `score` as-is when `verdict` is `trust`; on `deliberate`, reason from `strongMatches`/`partialMatches`/`gaps`. A zero/low score with no `skipReason` (common at defense/federal employers) is not a disqualifier - only a JD-stated citizenship/clearance or no-sponsorship bar is (never infer from industry).
 4. **Decide:**
    - Eligible and `score >= threshold` → promote (no apply):
 

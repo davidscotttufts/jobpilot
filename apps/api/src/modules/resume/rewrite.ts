@@ -1,5 +1,5 @@
 import type { ResumeData } from "@jobpilot/contracts/resume";
-import { expandSynonyms, normalizePhrase } from "@/modules/scoring/keyword-normalize";
+import { expandSynonyms, normalizeMatchPhrase } from "@/modules/scoring/keyword-normalize";
 import type { StructureAudit } from "./structure";
 
 /**
@@ -94,7 +94,7 @@ export function buildCorpus(base: ResumeData): string {
   for (const g of base.skills ?? []) {
     parts.push(...(g.items ?? []));
   }
-  return normalizePhrase(parts.join(" "));
+  return normalizeMatchPhrase(parts.join(" "));
 }
 
 /** A token that looks like a technology/proper noun rather than ordinary prose. */
@@ -114,7 +114,7 @@ function isTechLike(token: string): boolean {
  */
 export function driftFlags(tailored: string, original: string, corpus: string): string[] {
   const flags: string[] = [];
-  const origNorm = normalizePhrase(original);
+  const origNorm = normalizeMatchPhrase(original);
   const seen = new Set<string>();
 
   for (const rawToken of tailored.split(/[\s,;:()/]+/)) {

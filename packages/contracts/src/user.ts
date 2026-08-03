@@ -113,6 +113,9 @@ export const userUpdateSchema = z.object({
   primaryResumeId: z.uuid().nullable().optional(),
 });
 
+/** Auto-apply threshold when the user has not set one; also the fit scorer's fallback. */
+export const DEFAULT_MIN_MATCH_SCORE = 60;
+
 export const autoApplySettingsSchema = z.object({
   minMatchScore: z.number().int().min(0).max(100),
   maxApplicationsPerCampaign: z.number().int().min(1).max(500).optional().nullable(),
@@ -163,7 +166,7 @@ export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   eeoDisabilityStatus: "Prefer not to disclose",
   primaryResumeId: null,
   autoApply: {
-    minMatchScore: 60,
+    minMatchScore: DEFAULT_MIN_MATCH_SCORE,
     maxApplicationsPerCampaign: null,
     defaultStartDate: "2 weeks notice",
   },

@@ -1,5 +1,5 @@
 import type { ResumeData, ResumeSkillGroup } from "@jobpilot/contracts/resume";
-import { expandSynonyms, normalizePhrase } from "@/modules/scoring/keyword-normalize";
+import { expandSynonyms, normalizeMatchPhrase } from "@/modules/scoring/keyword-normalize";
 
 export interface TailorOptions {
   summary?: string;
@@ -17,7 +17,7 @@ function matchesAny(text: string, terms: string[]): boolean {
     return false;
   }
 
-  const normedText = normalizePhrase(text);
+  const normedText = normalizeMatchPhrase(text);
   for (const term of terms) {
     for (const variant of expandSynonyms(term)) {
       if (variant && normedText.includes(variant)) return true;
@@ -31,7 +31,7 @@ function bulletScore(bullet: string, keywords: string[]): number {
     return 0;
   }
 
-  const normedBullet = normalizePhrase(bullet);
+  const normedBullet = normalizeMatchPhrase(bullet);
   let hits = 0;
 
   for (const kw of keywords) {

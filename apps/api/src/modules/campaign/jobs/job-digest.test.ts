@@ -11,7 +11,7 @@ const job = (digest?: string) => ({
   ...(digest !== undefined && { digest }),
 });
 
-const digest = JSON.stringify({ techStack: ["Go"] });
+const digest = JSON.stringify({ skills: ["Go"] });
 
 describe("job digest contract", () => {
   it("accepts a JSON object", () => {

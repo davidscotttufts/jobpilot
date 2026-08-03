@@ -1,6 +1,6 @@
-// Detects work-authorization restrictions stated in a posting. Pure - no db, no env.
-// Deterministic on purpose: a model asked to spot one sentence in a long JD misses it on the
-// eightieth application. Reads only what the posting says; infers nothing from silence.
+// Detects work-authorization restrictions a posting states; infers nothing from silence.
+// Deterministic on purpose: a model misses the one bar sentence on the eightieth JD.
+// US-market English only by design; other markets need their own pattern set, not more phrases here.
 
 /**
  * Which bar the posting states. Only `sponsorship` depends on the candidate - a stated citizenship
