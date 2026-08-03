@@ -34,6 +34,8 @@ export function ProfileChecklistCard(): ReactNode {
   }
 
   const profile = profileQuery.data.user;
+  const mailbox = emailQuery.data;
+  const needsReauth = mailbox.connected && mailbox.needsReauth;
   const items: ChecklistItem[] = [
     {
       key: "verify-email",
@@ -51,10 +53,12 @@ export function ProfileChecklistCard(): ReactNode {
     },
     {
       key: "mailbox",
-      label: "Connect your mailbox so the agent can read verification codes and recruiter replies.",
-      done: emailQuery.data.connected,
+      label: needsReauth
+        ? "Reconnect your mailbox - Google rejected its access grant, so mail sync has stopped."
+        : "Connect your mailbox so the agent can read verification codes and recruiter replies.",
+      done: mailbox.connected && !needsReauth,
       href: "/settings/email" as Route,
-      action: "Connect",
+      action: needsReauth ? "Reconnect" : "Connect",
     },
     {
       key: "credentials",
