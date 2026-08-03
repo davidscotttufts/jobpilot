@@ -16,3 +16,8 @@ const jobPayloadSchema = z.object({
 export function parseJobPayload(payload: unknown) {
   return jobPayloadSchema.parse(payload);
 }
+
+/** The claim subject id for a job. Producers and the claim-damping readers must agree byte for byte. */
+export function jobSubjectId(job: { campaignId: string; key: string }): string {
+  return `${job.campaignId}:${job.key}`;
+}

@@ -62,7 +62,9 @@ export const SCORE_PENDING_COOLDOWN_MS = 60 * 60 * 1000;
 
 export const MAX_ITEMS = 10;
 /** A job needs a strong match before its company is worth a warm-intro detour. */
-export const WARM_INTRO_MIN_SCORE = 85;
+export const WARM_INTRO_MIN_SCORE = 80;
+/** An applied job stays a warm-intro candidate this long - "I just applied" outreach still lands. */
+export const WARM_INTRO_APPLIED_WINDOW_MS = 48 * HOUR_MS;
 /** At most one warm intro and one followup burst per agenda so a single cycle stays focused. */
 export const MAX_WARM_INTROS = 1;
 export const MAX_FOLLOWUPS = 2;

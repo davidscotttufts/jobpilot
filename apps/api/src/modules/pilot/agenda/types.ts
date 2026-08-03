@@ -175,6 +175,8 @@ export interface AgendaInput {
   answeredQuestions: AgendaQuestion[];
   activeClaims: number;
   approvedJobs: AgendaApprovedJob[];
+  // Warm-intro pool: approved jobs at/above the floor plus recently-applied ones, claim-damped.
+  warmIntroCandidates: AgendaApprovedJob[];
   appliedToday: number;
   dueQueries: AgendaDueQuery[];
   // No searches yet, or no goals to derive them from: the pilot still needs setup.

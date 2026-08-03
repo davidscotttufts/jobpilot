@@ -75,7 +75,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
   items.push(...buildInterviewPrepItems(input.interviewPreps));
   // User-curated URLs are proactive apply work, ranked just under the scored apply queue.
   items.push(...buildQueueDrainItem(input.queue));
-  if (outreach) items.push(...buildWarmIntroItems(input.approvedJobs, outreach, sendsLeftToday));
+  if (outreach)
+    items.push(...buildWarmIntroItems(input.warmIntroCandidates, outreach, sendsLeftToday));
   // A send acts on an email draft, so the email channel gates it.
   const sendItems = emailAutonomy
     ? buildNetworkingSendItems(input.approvedNetworking, sendsLeftToday)

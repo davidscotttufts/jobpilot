@@ -1,12 +1,7 @@
 import type { NetworkingMode } from "@jobpilot/contracts/networking";
 import type { AgendaItem, PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
-import {
-  MAX_PAUSED_REVIEWS,
-  MAX_WARM_INTROS,
-  PRIORITY,
-  SEARCH_MAX_PAGES,
-  WARM_INTRO_MIN_SCORE,
-} from "./constants";
+import { MAX_PAUSED_REVIEWS, MAX_WARM_INTROS, PRIORITY, SEARCH_MAX_PAGES } from "./constants";
+import { jobSubjectId } from "./job-mutations";
 import type {
   AgendaApprovedJob,
   AgendaDueQuery,
@@ -62,8 +57,9 @@ export function buildJobApplyItems(jobs: AgendaApprovedJob[]): AgendaItem[] {
 }
 
 /**
- * Gated on score and the networking cap, not the apply cap. An empty contact list is no reason to
- * skip: the worker discovering one is how a first contact is created.
+ * Gated on the networking cap, not the apply cap. The pool arrives score-filtered and ranked from
+ * gatherWarmIntroCandidates. An empty contact list is no reason to skip: the worker discovering one
+ * is how a first contact is created.
  */
 export function buildWarmIntroItems(
   jobs: AgendaApprovedJob[],
@@ -72,29 +68,23 @@ export function buildWarmIntroItems(
 ): AgendaItem[] {
   if (sendsLeft <= 0) return [];
 
-  const items: AgendaItem[] = [];
-  for (const job of jobs) {
-    if ((job.matchScore ?? 0) < WARM_INTRO_MIN_SCORE) continue;
-    if (items.length >= MAX_WARM_INTROS) break;
-    items.push({
-      id: `networking.warmIntro:${job.campaignId}:${job.key}`,
-      kind: "networking.warmIntro",
-      priority: PRIORITY.warmIntro,
-      title: `Warm intro: ${job.title}`.slice(0, 200),
-      subjectType: "networking",
-      subjectId: `${job.campaignId}:${job.key}`,
-      payload: {
-        campaignId: job.campaignId,
-        jobKey: job.key,
-        company: job.company ?? null,
-        jobTitle: job.title,
-        jobUrl: job.url,
-        contacts: job.warmContacts ?? [],
-        ...mode,
-      },
-    });
-  }
-  return items;
+  return jobs.slice(0, MAX_WARM_INTROS).map((job) => ({
+    id: `networking.warmIntro:${jobSubjectId(job)}`,
+    kind: "networking.warmIntro",
+    priority: PRIORITY.warmIntro,
+    title: `Warm intro: ${job.title}`.slice(0, 200),
+    subjectType: "networking",
+    subjectId: jobSubjectId(job),
+    payload: {
+      campaignId: job.campaignId,
+      jobKey: job.key,
+      company: job.company ?? null,
+      jobTitle: job.title,
+      jobUrl: job.url,
+      contacts: job.warmContacts ?? [],
+      ...mode,
+    },
+  }));
 }
 
 /**

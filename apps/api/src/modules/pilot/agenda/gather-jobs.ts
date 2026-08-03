@@ -10,9 +10,49 @@ import {
   SCORE_PENDING_BATCH,
   SCORE_PENDING_COOLDOWN_MS,
   SEARCH_CLAIM_COOLDOWN_MS,
+  WARM_INTRO_APPLIED_WINDOW_MS,
   WARM_INTRO_MIN_SCORE,
 } from "./constants";
+import { jobSubjectId } from "./job-mutations";
 import type { AgendaApprovedJob, AgendaDueQuery, AgendaScorePending, WarmContact } from "./types";
+
+const AGENDA_JOB_SELECT = {
+  campaignId: true,
+  key: true,
+  title: true,
+  url: true,
+  board: true,
+  digest: true,
+  matchScore: true,
+  company: true,
+  campaign: { select: { config: true } },
+} satisfies Prisma.JobSelect;
+
+type AgendaJobRow = Prisma.JobGetPayload<{ select: typeof AGENDA_JOB_SELECT }>;
+
+/** Warm-intro candidates never reach an apply item, so they skip the digest blob and campaign join. */
+const WARM_INTRO_JOB_SELECT = {
+  campaignId: true,
+  key: true,
+  title: true,
+  url: true,
+  matchScore: true,
+  company: true,
+} satisfies Prisma.JobSelect;
+
+/** Rows → agenda jobs; jobs of one campaign share a config, parsed at most once. */
+function toAgendaJobs(rows: AgendaJobRow[]): AgendaApprovedJob[] {
+  const configByCampaign = new Map<string, CampaignConfig>();
+  return rows.map((row) => {
+    let cfg = configByCampaign.get(row.campaignId);
+    if (!cfg) {
+      cfg = parseCampaignConfig(row.campaign.config);
+      configByCampaign.set(row.campaignId, cfg);
+    }
+    const { campaign: _, ...fields } = row;
+    return { ...fields, resumeId: cfg.resumeId };
+  });
+}
 
 /** Approved jobs of in-progress campaigns, each carrying its campaign's resumeId. */
 export async function gatherApprovedJobs(
@@ -23,40 +63,9 @@ export async function gatherApprovedJobs(
     where: { status: "approved", campaign: { userId, status: "in_progress" } },
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
-    select: {
-      campaignId: true,
-      key: true,
-      title: true,
-      url: true,
-      board: true,
-      digest: true,
-      matchScore: true,
-      company: true,
-      campaign: { select: { config: true } },
-    },
+    select: AGENDA_JOB_SELECT,
   });
-
-  // Jobs of the same campaign share one config; parse each campaign's JSON at most once.
-  const configByCampaign = new Map<string, CampaignConfig>();
-
-  return rows.map((job) => {
-    let cfg = configByCampaign.get(job.campaignId);
-    if (!cfg) {
-      cfg = parseCampaignConfig(job.campaign.config);
-      configByCampaign.set(job.campaignId, cfg);
-    }
-    return {
-      campaignId: job.campaignId,
-      key: job.key,
-      title: job.title,
-      url: job.url,
-      board: job.board,
-      digest: job.digest,
-      matchScore: job.matchScore,
-      resumeId: cfg.resumeId,
-      company: job.company,
-    };
-  });
+  return toAgendaJobs(rows);
 }
 
 export interface LatestClaim {
@@ -79,17 +88,10 @@ export async function latestClaimBySubject(
     select: { subjectId: true, grantedAt: true, releasedAt: true, outcome: true },
   });
 
+  // Rows arrive newest-first, so the first row per subject wins.
   const latest = new Map<string, LatestClaim>();
-
-  for (const c of claims) {
-    const prev = latest.get(c.subjectId);
-    if (!prev || c.grantedAt > prev.grantedAt) {
-      latest.set(c.subjectId, {
-        grantedAt: c.grantedAt,
-        releasedAt: c.releasedAt,
-        outcome: c.outcome,
-      });
-    }
+  for (const { subjectId, ...claim } of claims) {
+    if (!latest.has(subjectId)) latest.set(subjectId, claim);
   }
   return latest;
 }
@@ -167,34 +169,71 @@ export async function gatherScorePendingCampaigns(
     campaigns.map((c) => c.campaignId),
   );
 
-  const out: AgendaScorePending[] = [];
-
-  for (const c of campaigns) {
-    const config = parseCampaignConfig(c.config);
-    const board = config.board ?? null;
-
-    if (claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS)) continue;
-
-    out.push({
-      campaignId: c.campaignId,
-      query: c.query,
-      board,
-      resumeId: config.resumeId,
-      minScore: config.minScore ?? fallbackMinScore,
-      pendingCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
-      entries: c.jobs,
+  return campaigns
+    .filter((c) => !claimDamped(latest.get(c.campaignId), now, SCORE_PENDING_COOLDOWN_MS))
+    .map((c) => {
+      const config = parseCampaignConfig(c.config);
+      return {
+        campaignId: c.campaignId,
+        query: c.query,
+        board: config.board ?? null,
+        resumeId: config.resumeId,
+        minScore: config.minScore ?? fallbackMinScore,
+        pendingCount: countByCampaign.get(c.campaignId) ?? c.jobs.length,
+        entries: c.jobs,
+      };
     });
-  }
-  return out;
 }
 
-/** Attach same-company contacts (with an email) to jobs scoring at/above the warm-intro threshold. */
+/**
+ * Warm-intro candidates: approved jobs at/above the floor plus recently-applied ones - applying
+ * (which outranks the intro) would otherwise drain the pool before an intro ever fires. Claim
+ * damping stops a done intro from re-firing inside the window.
+ */
+export async function gatherWarmIntroCandidates(
+  prisma: PrismaClient,
+  userId: string,
+  now: Date,
+  approvedJobs: AgendaApprovedJob[],
+): Promise<AgendaApprovedJob[]> {
+  const applied = await prisma.job.findMany({
+    where: {
+      status: "applied",
+      appliedAt: { gte: new Date(now.getTime() - WARM_INTRO_APPLIED_WINDOW_MS) },
+      matchScore: { gte: WARM_INTRO_MIN_SCORE },
+      campaign: { userId },
+    },
+    orderBy: { matchScore: "desc" },
+    take: GATHER_CAP,
+    select: WARM_INTRO_JOB_SELECT,
+  });
+
+  // A job holds one status, so the approved and applied halves can never overlap.
+  const candidates: AgendaApprovedJob[] = [
+    ...approvedJobs.filter((j) => (j.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE),
+    ...applied.map((row) => ({ ...row, board: null, digest: null })),
+  ];
+  if (candidates.length === 0) return [];
+
+  const latest = await latestClaimBySubject(
+    prisma,
+    userId,
+    "networking.warmIntro",
+    candidates.map(jobSubjectId),
+  );
+  return candidates
+    .filter((j) => !claimDamped(latest.get(jobSubjectId(j)), now, WARM_INTRO_APPLIED_WINDOW_MS))
+    .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+}
+
+/** Attach same-company contacts (with an email) to warm-intro candidates. The score floor is the
+ *  pool's, applied by {@link gatherWarmIntroCandidates}. */
 export async function attachWarmContacts(
   prisma: PrismaClient,
   userId: string,
-  approvedJobs: AgendaApprovedJob[],
+  candidates: AgendaApprovedJob[],
 ): Promise<void> {
-  const hot = approvedJobs.filter((j) => (j.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE && j.company);
+  const hot = candidates.filter((j) => j.company);
   if (hot.length === 0) {
     return;
   }
@@ -256,7 +295,9 @@ export async function duePilotSearches(
       lastRunAt: true,
     },
   });
-  if (rows.length === 0) return { due: [], nextSearchRunAt: null };
+  if (rows.length === 0) {
+    return { due: [], nextSearchRunAt: null };
+  }
 
   const ids = rows.map((r) => r.id);
   const [latest, existing] = await Promise.all([
@@ -287,7 +328,9 @@ export async function duePilotSearches(
   const nextSearchRunAt = rows[0].nextRunAt;
 
   const due = rows.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
-  if (due.length > 0) return { due, nextSearchRunAt };
+  if (due.length > 0) {
+    return { due, nextSearchRunAt };
+  }
 
   // Hungry override: cap unspent, so re-run the most-overdue search idle at least HUNGRY_RERUN_MS.
   if (appliedToday < config.dailyApplyCap) {
@@ -295,7 +338,9 @@ export async function duePilotSearches(
     const hungry = rows.find(
       (r) => claimable(r) && (r.lastRunAt == null || r.lastRunAt.getTime() < floor),
     );
-    if (hungry) return { due: [toEntry(hungry)], nextSearchRunAt };
+    if (hungry) {
+      return { due: [toEntry(hungry)], nextSearchRunAt };
+    }
   }
   return { due: [], nextSearchRunAt };
 }

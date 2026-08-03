@@ -20,7 +20,7 @@ describe("AgendaService warm-check join", () => {
     company: "Acme, Inc.",
   };
 
-  it("attaches same-company contacts and emits a warmIntro for a >=85 job", async () => {
+  it("attaches same-company contacts and emits a warmIntro for a >=80 job", async () => {
     const agenda = await service({
       approvedJobs: [approvedJob({ matchScore: 90, company: "Acme" })],
       contacts: [insider],
@@ -35,7 +35,35 @@ describe("AgendaService warm-check join", () => {
 
   it("does not emit a warmIntro below the score threshold", async () => {
     const agenda = await service({
-      approvedJobs: [approvedJob({ matchScore: 84, company: "Acme" })],
+      approvedJobs: [approvedJob({ matchScore: 79, company: "Acme" })],
+      contacts: [insider],
+    }).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
+  });
+
+  it("keeps a recently-applied high scorer in the warm-intro pool", async () => {
+    const agenda = await service({
+      approvedJobs: [],
+      recentAppliedJobs: [approvedJob({ matchScore: 90, company: "Acme", key: "done1" })],
+      contacts: [insider],
+    }).refresh("p1");
+    const warm = agenda.items.find((i) => i.kind === "networking.warmIntro");
+    expect(warm?.subjectId).toBe("c1:done1");
+    expect(agenda.items.some((i) => i.kind === "job.apply")).toBe(false);
+  });
+
+  it("damps a warm intro whose claim already ran", async () => {
+    const agenda = await service({
+      approvedJobs: [],
+      recentAppliedJobs: [approvedJob({ matchScore: 90, company: "Acme", key: "done1" })],
+      warmIntroClaims: [
+        {
+          subjectId: "c1:done1",
+          grantedAt: new Date(),
+          releasedAt: new Date(),
+          outcome: "done",
+        },
+      ],
       contacts: [insider],
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);

@@ -32,6 +32,7 @@ import {
   duePilotSearches,
   gatherApprovedJobs,
   gatherScorePendingCampaigns,
+  gatherWarmIntroCandidates,
 } from "./gather-jobs";
 import {
   duePlatforms,
@@ -133,10 +134,13 @@ export class AgendaService {
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
 
-    // Warm intros spend the send budget, so a spent budget makes the contact lookup moot.
-    if (outreach && networkingSentToday < config.networking.dailyCap) {
-      await attachWarmContacts(prisma, userId, approvedJobs);
-    }
+    // A spent send budget makes the pool moot. Hot approved jobs are shared references, so
+    // attaching contacts here also decorates their apply items.
+    const warmIntroCandidates =
+      outreach && networkingSentToday < config.networking.dailyCap
+        ? await gatherWarmIntroCandidates(prisma, userId, now, approvedJobs)
+        : [];
+    await attachWarmContacts(prisma, userId, warmIntroCandidates);
 
     const [{ due: dueQueries, nextSearchRunAt }, scorePending] =
       approvedJobs.length === 0
@@ -174,6 +178,7 @@ export class AgendaService {
       answeredQuestions,
       activeClaims,
       approvedJobs,
+      warmIntroCandidates,
       appliedToday,
       dueQueries,
       awaitingSetup,

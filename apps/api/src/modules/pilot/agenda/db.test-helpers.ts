@@ -40,6 +40,14 @@ export interface Over {
   expiredQuestions?: Record<string, unknown>[];
   answered?: Record<string, unknown>[];
   approvedJobs?: Record<string, unknown>[];
+  // Recently-applied high scorers for the warm-intro pool, plus that pool's claim dampers.
+  recentAppliedJobs?: Record<string, unknown>[];
+  warmIntroClaims?: {
+    subjectId: string;
+    grantedAt: Date;
+    releasedAt: Date | null;
+    outcome?: string | null;
+  }[];
   appliedToday?: number;
   activeClaims?: number;
   finalizeCampaigns?: Record<string, unknown>[];
@@ -131,6 +139,7 @@ function fakePilotClaim(over: Over, rec: Recorder) {
     // The cooldown gathers read their own claim history by kind; the rest split on subjectType.
     findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
       if (args.where.kind === "campaign.scorePending") return over.scorePendingClaims ?? [];
+      if (args.where.kind === "networking.warmIntro") return over.warmIntroClaims ?? [];
       if (args.where.kind === "campaign.reviewPaused") return over.pausedReviewClaims ?? [];
       if (args.where.kind === "search.discover") return over.searchClaims ?? [];
       if (args.where.kind === "job.apply") return over.openApplyClaims ?? [];
@@ -208,9 +217,10 @@ function fakePilotQuestion(over: Over, rec: Recorder) {
 
 function fakeJob(over: Over) {
   return {
-    // A matchScore filter is the promote sweep (scored-pending rows); a status `in` filter is the
+    // status "applied" = warm-intro pool; matchScore filter = promote sweep; status `in` =
     // board-health scan; everything else is the approved-job gather.
     findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) => {
+      if (a.where.status === "applied") return over.recentAppliedJobs ?? [];
       if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
       if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];
       return over.approvedJobs ?? [];
