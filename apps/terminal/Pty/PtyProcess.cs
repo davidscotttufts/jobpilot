@@ -248,6 +248,11 @@ public sealed class PtyProcess : IPty
             ["LC_ALL"] = utf8Locale,
             ["PYTHONUTF8"] = "1",
         };
+        // Pty.Net merges this dict over the host's own env, so a stripped host PATH needs repair here.
+        foreach (var kvp in PtyEnvironment.BuildOverrides())
+        {
+            env[kvp.Key] = kvp.Value;
+        }
         if (environment is not null)
         {
             foreach (var kvp in environment)
