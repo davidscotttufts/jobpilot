@@ -1,5 +1,5 @@
 import { detectEligibilityRestrictions, type EligibilityRestriction } from "./eligibility";
-import { expandSynonyms, normalizeKeyword } from "./keyword-normalize";
+import { expandSynonyms, normalizeKeyword, normalizePhrase } from "./keyword-normalize";
 import type { FitProfile, JobDigest } from "./scoring.schema";
 
 export interface FitResult {
@@ -15,8 +15,27 @@ export interface FitResult {
   eligibilityBlocked?: EligibilityRestriction;
 }
 
+// Words that carry meaning on their own inside a multi-word term ("net", "sql" - not "ms").
+const WORD_MIN_LENGTH = 3;
+
+const termWords = (term: string): string[] => {
+  const words = normalizePhrase(term).split(" ");
+  return words.length > 1 ? words.filter((w) => w.length >= WORD_MIN_LENGTH) : [];
+};
+
+/** Full-term variants plus word-level ones, so "ASP.NET Core" still matches a digest's ".NET". */
+const termVariants = (term: string): string[] => {
+  const variants = new Set(expandSynonyms(term));
+  for (const word of termWords(term)) {
+    for (const variant of expandSynonyms(word)) {
+      variants.add(variant);
+    }
+  }
+  return [...variants];
+};
+
 const normalizedHas = (set: Set<string>, term: string): boolean =>
-  expandSynonyms(term).some((variant) => set.has(variant));
+  termVariants(term).some((variant) => set.has(variant));
 
 /**
  * Heuristic keyword-overlap fit score. Server-side, deterministic, no LLM.
@@ -30,7 +49,7 @@ const normalizedHas = (set: Set<string>, term: string): boolean =>
  */
 export function scoreFit(digest: JobDigest, profile: FitProfile): FitResult {
   const digestTech = (digest.techStack || []).filter(Boolean);
-  const profileTechNormed = new Set<string>((profile.techStack || []).flatMap(expandSynonyms));
+  const profileTechNormed = new Set<string>((profile.techStack || []).flatMap(termVariants));
 
   const strongMatches: string[] = [];
   const gaps: string[] = [];
@@ -72,16 +91,21 @@ export function scoreFit(digest: JobDigest, profile: FitProfile): FitResult {
     }
   }
 
-  const reqDensityScore = digestTech.length === 0 ? techOverlapScore : reqHits / digestTech.length;
+  // No requirements text leaves the density term neutral - a perfect tech match must not cap at 70.
+  const reqDensityScore =
+    digestTech.length === 0 || reqText.trim().length === 0
+      ? techOverlapScore
+      : reqHits / digestTech.length;
   const raw = techOverlapScore * 0.5 + yearsScore * 0.2 + reqDensityScore * 0.3;
   const score = Math.round(raw * 100);
 
+  // A no-requirements digest tops out at 0.6, under the skills' 0.7 trust-without-deliberation bar.
   let confidence = 0;
   if (digestTech.length > 0) {
-    confidence += 0.5;
+    confidence += 0.4;
   }
   if ((digest.requirements || []).length > 0) {
-    confidence += 0.3;
+    confidence += 0.4;
   }
   if (digest.yearsExperience !== null && digest.yearsExperience !== undefined) {
     confidence += 0.2;

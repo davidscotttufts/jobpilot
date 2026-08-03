@@ -14,6 +14,9 @@ const SYNONYMS: Record<string, string[]> = {
   k8s: ["kubernetes"],
   dotnet: [".net", "aspnet"],
   golang: ["go"],
+  csharp: ["c#"],
+  react: ["reactjs", "react.js"],
+  sqlserver: ["sql server", "ms sql", "mssql", "microsoft sql server", "t-sql", "tsql"],
 };
 
 /** Lowercase + strip all non-alphanumerics (no spaces). Use for tight equality

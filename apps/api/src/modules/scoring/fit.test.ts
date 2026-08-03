@@ -68,6 +68,32 @@ describe("scoreFit", () => {
     expect(result.strongMatches).toEqual([]);
     expect(result.gaps).toEqual([]);
   });
+
+  it("matches multi-word profile terms at word level (.NET ↔ ASP.NET Core, SQL Server ↔ MS SQL)", () => {
+    const result = scoreFit(
+      digest({ techStack: [".NET", "SQL Server", "AWS"] }),
+      profile({ techStack: ["ASP.NET Core", "MS SQL", "AWS (Amplify, S3, Lambda, Cognito)"] }),
+    );
+    expect(result.strongMatches).toEqual([".NET", "SQL Server", "AWS"]);
+    expect(result.gaps).toEqual([]);
+  });
+
+  it("keeps the requirements-density term neutral when the digest has no requirements", () => {
+    const result = scoreFit(
+      digest({ techStack: ["react"], yearsExperience: 3 }),
+      profile({ techStack: ["react"], yearsExperience: 5 }),
+    );
+    // 0.5 tech + 0.2 years + 0.3 neutral density - a thin digest must not cap at 70.
+    expect(result.score).toBe(100);
+  });
+
+  it("caps confidence at 0.6 without requirements, under the 0.7 trust bar", () => {
+    const result = scoreFit(
+      digest({ techStack: ["react"], yearsExperience: 3 }),
+      profile({ techStack: ["react"], yearsExperience: 5 }),
+    );
+    expect(result.confidence).toBe(0.6);
+  });
 });
 
 describe("scoreFit - eligibility", () => {
