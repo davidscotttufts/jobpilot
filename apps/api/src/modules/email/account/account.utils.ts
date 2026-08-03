@@ -47,50 +47,63 @@ export async function loadFreshAccount(
     return null;
   }
 
-  const accessToken = await crypto.decryptField(
-    userId,
-    SECRET_CONTEXTS.gmailTokens,
-    account.accessToken,
-  );
-  const refreshToken = await crypto.decryptField(
-    userId,
-    SECRET_CONTEXTS.gmailTokens,
-    account.refreshToken,
-  );
-  const plain: EmailAccount = { ...account, accessToken, refreshToken };
+  const decrypt = (value: string | null) =>
+    crypto.decryptField(userId, SECRET_CONTEXTS.gmailTokens, value);
+
+  const plain: EmailAccount = {
+    ...account,
+    accessToken: await decrypt(account.accessToken),
+    refreshToken: await decrypt(account.refreshToken),
+  };
   const config = await resolveOAuthClient(prisma, crypto, userId);
 
-  const now = new Date();
-  if (refreshToken && account.tokenExpiresAt && account.tokenExpiresAt <= now) {
-    const provider = getProvider(account.provider);
-    const refreshed = await provider.refresh(config, refreshToken);
-    const newRefresh = refreshed.refreshToken ?? refreshToken;
+  const expired = account.tokenExpiresAt !== null && account.tokenExpiresAt <= new Date();
+  if (!plain.refreshToken || !expired) {
+    return { account: plain, config };
+  }
+  const fresh = await refreshTokens(prisma, crypto, userId, plain, plain.refreshToken, config);
+  return { account: fresh, config };
+}
 
+/**
+ * Refresh the expired access token and persist it re-encrypted. A rejected refresh (invalid_grant)
+ * stamps `refreshFailedAt` so status reports the mailbox needs reconnecting; success clears it.
+ */
+async function refreshTokens(
+  prisma: PrismaClient,
+  crypto: CryptoService,
+  userId: string,
+  account: EmailAccount,
+  refreshToken: string,
+  config: OAuthClientConfig,
+): Promise<EmailAccount> {
+  const provider = getProvider(account.provider);
+  let refreshed: Awaited<ReturnType<typeof provider.refresh>>;
+  try {
+    refreshed = await provider.refresh(config, refreshToken);
+  } catch (err) {
     await prisma.emailAccount.update({
       where: { id: account.id },
-      data: {
-        accessToken: await crypto.encryptFor(
-          userId,
-          SECRET_CONTEXTS.gmailTokens,
-          refreshed.accessToken,
-        ),
-        refreshToken: await crypto.encryptFor(userId, SECRET_CONTEXTS.gmailTokens, newRefresh),
-        tokenExpiresAt: refreshed.expiresAt ?? null,
-        scope: refreshed.scope ?? account.scope,
-      },
+      data: { refreshFailedAt: account.refreshFailedAt ?? new Date() },
     });
-
-    return {
-      account: {
-        ...plain,
-        accessToken: refreshed.accessToken,
-        refreshToken: newRefresh,
-        tokenExpiresAt: refreshed.expiresAt ?? null,
-        scope: refreshed.scope ?? account.scope,
-      },
-      config,
-    };
+    throw err;
   }
 
-  return { account: plain, config };
+  const fresh = {
+    accessToken: refreshed.accessToken,
+    refreshToken: refreshed.refreshToken ?? refreshToken,
+    tokenExpiresAt: refreshed.expiresAt ?? null,
+    scope: refreshed.scope ?? account.scope,
+    refreshFailedAt: null,
+  };
+  const encrypt = (value: string) => crypto.encryptFor(userId, SECRET_CONTEXTS.gmailTokens, value);
+  await prisma.emailAccount.update({
+    where: { id: account.id },
+    data: {
+      ...fresh,
+      accessToken: await encrypt(fresh.accessToken),
+      refreshToken: await encrypt(fresh.refreshToken),
+    },
+  });
+  return { ...account, ...fresh };
 }

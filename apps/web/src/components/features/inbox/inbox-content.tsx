@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useApiQuery } from "@/api/hooks";
 import { emailQueries, type InboxFilter } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
+import { MailboxReauthAlert } from "@/components/features/settings/sections/mailbox-reauth-alert";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data/empty-state";
 import { gridPagination, usePaginationParams } from "@/hooks/use-pagination";
@@ -25,7 +26,8 @@ export function InboxContent(): ReactElement {
 
   const account = useApiQuery(emailQueries.account());
 
-  const connected = account.data?.connected === true;
+  const status = account.data;
+  const connected = status?.connected === true;
 
   const pagination = usePaginationParams();
   const messages = useApiQuery(emailQueries.messages(filter, pagination.query), {
@@ -43,7 +45,7 @@ export function InboxContent(): ReactElement {
     return <LinearProgress />;
   }
 
-  if (!connected) {
+  if (!status?.connected) {
     return (
       <EmptyState
         title="No mailbox connected"
@@ -59,6 +61,15 @@ export function InboxContent(): ReactElement {
 
   return (
     <Stack spacing={2}>
+      {status.needsReauth && (
+        <MailboxReauthAlert
+          action={
+            <LinkButton href="/settings/email" color="inherit" size="small">
+              Reconnect
+            </LinkButton>
+          }
+        />
+      )}
       <InboxToolbar
         filter={filter}
         onFilterChange={(next) => {

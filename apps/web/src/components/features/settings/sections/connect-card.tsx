@@ -11,6 +11,7 @@ import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
+import { MailboxReauthAlert } from "./mailbox-reauth-alert";
 
 /**
  * Step 2 - connect / reconnect / disconnect the mailbox (gated on a saved
@@ -74,6 +75,7 @@ export function ConnectCard(): ReactElement {
               {status.provider} · last synced {last}
             </Typography>
           </Box>
+          {status.needsReauth && <MailboxReauthAlert />}
           {!configured && (
             <Alert severity="warning">
               Add your Google OAuth client above before reconnecting.

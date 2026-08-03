@@ -35,6 +35,7 @@ export class EmailAccountService {
       email: account.email,
       lastSyncAt: account.lastSyncAt,
       canSend: accountCanSend(account),
+      needsReauth: account.refreshFailedAt !== null,
     };
   }
 
@@ -136,6 +137,8 @@ export class EmailAccountService {
       refreshToken,
       tokenExpiresAt: tokens.expiresAt ?? null,
       scope: tokens.scope ?? null,
+      // A reconnect is exactly how a dead grant gets fixed.
+      refreshFailedAt: null,
     };
 
     await this.prisma.emailAccount.upsert({

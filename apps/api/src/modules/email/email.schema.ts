@@ -19,8 +19,6 @@ export const callbackQuery = z.object({
   error: z.string().optional(),
 });
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
 /** Connection status of the profile's linked mailbox (`account.accountStatus`). */
 export const accountStatusSchema = z.union([
   z.object({
@@ -33,6 +31,8 @@ export const accountStatusSchema = z.union([
     email: z.string(),
     lastSyncAt: z.date().nullable(),
     canSend: z.boolean(),
+    // True once a token refresh was rejected (invalid_grant): the mailbox must be reconnected.
+    needsReauth: z.boolean(),
   }),
 ]);
 

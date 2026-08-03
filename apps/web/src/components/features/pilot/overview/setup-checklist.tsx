@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
+import { useApiQuery } from "@/api/hooks";
+import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
@@ -22,12 +24,20 @@ export function PilotSetupChecklist(): ReactNode {
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
+  const mailbox = useApiQuery(emailQueries.account()).data;
+
   const hostReady = health === "reachable";
   const running = state.running;
   const goalsDone = state.instructionsGoals.trim() !== "";
+  const connected = mailbox?.connected === true;
+  const needsReauth = connected && mailbox.needsReauth;
+  const emailOk = connected && !needsReauth;
 
-  // "checking" counts as provisionally done so a set-up pilot doesn't flash the checklist on load.
-  if ((hostReady || health === "checking") && running) {
+  // Unanswered counts as done here so the checklist doesn't flash; the step rows below stay strict.
+  const hostSettled = hostReady || health === "checking";
+  const emailSettled = emailOk || mailbox == null;
+
+  if (hostSettled && running && emailSettled) {
     return null;
   }
 
@@ -55,6 +65,19 @@ export function PilotSetupChecklist(): ReactNode {
       action: (
         <LinkButton size="small" variant="outlined" href="/pilot/instructions">
           Write goals
+        </LinkButton>
+      ),
+    },
+    {
+      id: "email",
+      label: needsReauth ? "Reconnect your mailbox" : "Connect your mailbox",
+      description: needsReauth
+        ? "Google rejected the mailbox's access grant - mail sync, verification codes, and sending are paused."
+        : "The pilot reads replies, fetches verification codes, and sends networking email through it.",
+      done: emailOk,
+      action: (
+        <LinkButton size="small" variant="outlined" href="/settings/email">
+          {needsReauth ? "Reconnect" : "Connect Gmail"}
         </LinkButton>
       ),
     },
