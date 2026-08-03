@@ -134,13 +134,14 @@ export class AgendaService {
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
 
-    // A spent send budget makes the pool moot. Hot approved jobs are shared references, so
-    // attaching contacts here also decorates their apply items.
+    // A spent send budget makes the pool moot.
     const warmIntroCandidates =
       outreach && networkingSentToday < config.networking.dailyCap
         ? await gatherWarmIntroCandidates(prisma, userId, now, approvedJobs)
         : [];
-    await attachWarmContacts(prisma, userId, warmIntroCandidates);
+    // Both sets, because the pool drops claim-damped jobs whose apply items still want the contact.
+    // Approved jobs appear in both as shared references, so the second pass is a no-op for them.
+    await attachWarmContacts(prisma, userId, [...approvedJobs, ...warmIntroCandidates]);
 
     const [{ due: dueQueries, nextSearchRunAt }, scorePending] =
       approvedJobs.length === 0

@@ -68,6 +68,20 @@ describe("AgendaService warm-check join", () => {
     }).refresh("p1");
     expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
   });
+
+  it("keeps warmContacts on the apply item of a job damped out of the intro pool", async () => {
+    const agenda = await service({
+      approvedJobs: [approvedJob({ matchScore: 90, company: "Acme", key: "j1" })],
+      warmIntroClaims: [
+        { subjectId: "c1:j1", grantedAt: new Date(), releasedAt: new Date(), outcome: "done" },
+      ],
+      contacts: [insider],
+    }).refresh("p1");
+    expect(agenda.items.some((i) => i.kind === "networking.warmIntro")).toBe(false);
+    const apply = agenda.items.find((i) => i.kind === "job.apply");
+    const applyWarm = apply?.payload.warmContacts as { id: string }[] | undefined;
+    expect(applyWarm?.[0].id).toBe("ct1");
+  });
 });
 
 describe("AgendaService discover due selection", () => {

@@ -226,15 +226,15 @@ export async function gatherWarmIntroCandidates(
     .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
 }
 
-/** Attach same-company contacts (with an email) to warm-intro candidates. The score floor is the
- *  pool's, applied by {@link gatherWarmIntroCandidates}. */
+/** Attach same-company contacts (with an email) to every job that names a company. Ungated on score:
+ *  one contacts read covers the whole list, and a known insider is worth naming at any score. */
 export async function attachWarmContacts(
   prisma: PrismaClient,
   userId: string,
-  candidates: AgendaApprovedJob[],
+  jobs: AgendaApprovedJob[],
 ): Promise<void> {
-  const hot = candidates.filter((j) => j.company);
-  if (hot.length === 0) {
+  const withCompany = jobs.filter((j) => j.company);
+  if (withCompany.length === 0) {
     return;
   }
 
@@ -250,7 +250,7 @@ export async function attachWarmContacts(
   }
   const normalized = contacts.map((c) => ({ c, norm: normalizeCompanyName(c.company ?? "") }));
 
-  for (const job of hot) {
+  for (const job of withCompany) {
     const target = normalizeCompanyName(job.company ?? "");
     if (!target) {
       continue;
