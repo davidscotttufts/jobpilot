@@ -2,9 +2,12 @@
 
 import {
   expandSynonyms,
+  hasWholeToken,
+  matchesTerm,
   normalizeKeyword,
   normalizeMatchPhrase,
   normalizePhrase,
+  toSearchText,
 } from "./keyword-normalize";
 import { describe, expect, it } from "bun:test";
 
@@ -71,5 +74,44 @@ describe("expandSynonyms", () => {
 
   it("is memoized: repeated calls return the same array instance", () => {
     expect(expandSynonyms("k8s")).toBe(expandSynonyms("k8s"));
+  });
+});
+
+describe("hasWholeToken", () => {
+  const text = toSearchText("Wrote Go services and good docs");
+
+  it("matches a token on word boundaries, not inside a longer word", () => {
+    expect(hasWholeToken(text, "go")).toBe(true);
+    expect(hasWholeToken(text, "oo")).toBe(false);
+    expect(hasWholeToken(text, "doc")).toBe(false);
+  });
+
+  it("matches the first and last token", () => {
+    expect(hasWholeToken(text, "wrote")).toBe(true);
+    expect(hasWholeToken(text, "docs")).toBe(true);
+  });
+
+  it("matches a multi-word token", () => {
+    expect(hasWholeToken(toSearchText("SQL Server admin"), "sql server")).toBe(true);
+  });
+
+  it("never matches an empty token", () => {
+    expect(hasWholeToken(text, "")).toBe(false);
+  });
+});
+
+describe("matchesTerm", () => {
+  it("matches through synonyms", () => {
+    expect(matchesTerm(toSearchText("Ran Kubernetes clusters"), "k8s")).toBe(true);
+  });
+
+  it("keeps C# out of C++ text", () => {
+    const text = toSearchText("Wrote C++ tooling");
+    expect(matchesTerm(text, "c#")).toBe(false);
+    expect(matchesTerm(text, "c++")).toBe(true);
+  });
+
+  it("does not match a term inside a longer word", () => {
+    expect(matchesTerm(toSearchText("Built a JavaScript app"), "java")).toBe(false);
   });
 });

@@ -1,6 +1,11 @@
 import { DEFAULT_MIN_MATCH_SCORE } from "@jobpilot/contracts/user";
 import { detectEligibilityRestrictions, type EligibilityRestriction } from "./eligibility";
-import { expandSynonyms, normalizeMatchPhrase } from "./keyword-normalize";
+import {
+  expandSynonyms,
+  hasWholeToken,
+  normalizeMatchPhrase,
+  toSearchText,
+} from "./keyword-normalize";
 import type { FitProfile, JobDigest } from "./scoring.schema";
 
 export interface FitResult {
@@ -62,8 +67,7 @@ export function scoreFit(
   const profileSkillsNormed = new Set<string>((profile.skills || []).flatMap(termVariants));
 
   const reqPhrase = normalizeMatchPhrase((digest.requirements || []).join(" "));
-  // Padded whole-token search, so "C#" does not hit every "c" and "SQL Server" does hit "sql server".
-  const paddedReq = ` ${reqPhrase} `;
+  const reqSearchText = toSearchText(reqPhrase);
 
   const strongMatches: string[] = [];
   const partialMatches: string[] = [];
@@ -79,7 +83,7 @@ export function scoreFit(
       gaps.push(term);
     }
 
-    if (variants.some((variant) => paddedReq.includes(` ${variant} `))) {
+    if (variants.some((variant) => hasWholeToken(reqSearchText, variant))) {
       reqHits++;
       if (!strong && !partialMatches.includes(term)) {
         partialMatches.push(term);

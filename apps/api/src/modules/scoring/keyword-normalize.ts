@@ -1,8 +1,9 @@
 /**
  * Keyword normalization for skill matching (`scoring/fit.ts`, `resume/tailor.ts`); duplicate
- * detection lives in `scoring/applied-duplicates.ts` instead. Match with `normalizeMatchPhrase`
- * (keeps `+`/`#` so "c++"/"c#"/"c" stay distinct); `normalizePhrase` feeds the persisted dedupe
- * keys in `job-listing/dedupe.ts`, so its output must never change.
+ * detection lives in `scoring/applied-duplicates.ts` instead. Match with `toSearchText` +
+ * `matchesTerm` (keeps `+`/`#` so "c++"/"c#"/"c" stay distinct, and tests whole tokens);
+ * `normalizePhrase` feeds the persisted dedupe keys in `job-listing/dedupe.ts`, so its output
+ * must never change.
  */
 
 import { SYNONYM_GROUPS } from "./synonyms.data";
@@ -62,4 +63,19 @@ export function expandSynonyms(term: string): string[] {
   const result = [...variants];
   expandCache.set(term, result);
   return result;
+}
+
+/** Normalized text padded so `hasWholeToken` can test word boundaries. Build it once per text. */
+export function toSearchText(text: string): string {
+  return ` ${normalizeMatchPhrase(text)} `;
+}
+
+/** Whole-token containment in a `toSearchText` result, so "go" does not hit "good". */
+export function hasWholeToken(searchText: string, token: string): boolean {
+  return token.length > 0 && searchText.includes(` ${token} `);
+}
+
+/** True when any recognised spelling of `term` sits in the text as a whole token. */
+export function matchesTerm(searchText: string, term: string): boolean {
+  return expandSynonyms(term).some((variant) => hasWholeToken(searchText, variant));
 }

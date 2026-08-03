@@ -1,5 +1,5 @@
 import type { ResumeData } from "@jobpilot/contracts/resume";
-import { expandSynonyms, normalizeMatchPhrase } from "@/modules/scoring/keyword-normalize";
+import { matchesTerm, toSearchText } from "@/modules/scoring/keyword-normalize";
 import type { StructureAudit } from "./structure";
 
 /**
@@ -74,7 +74,7 @@ export function extractNumbers(text: string): Set<string> {
   return out;
 }
 
-/** All free-text from the resume, normalized - the haystack for drift checks. */
+/** All free-text from the resume, normalized for whole-token search - the drift check's corpus. */
 export function buildCorpus(base: ResumeData): string {
   const parts: string[] = [];
 
@@ -94,7 +94,7 @@ export function buildCorpus(base: ResumeData): string {
   for (const g of base.skills ?? []) {
     parts.push(...(g.items ?? []));
   }
-  return normalizeMatchPhrase(parts.join(" "));
+  return toSearchText(parts.join(" "));
 }
 
 /** A token that looks like a technology/proper noun rather than ordinary prose. */
@@ -114,7 +114,7 @@ function isTechLike(token: string): boolean {
  */
 export function driftFlags(tailored: string, original: string, corpus: string): string[] {
   const flags: string[] = [];
-  const origNorm = normalizeMatchPhrase(original);
+  const originalSearchText = toSearchText(original);
   const seen = new Set<string>();
 
   for (const rawToken of tailored.split(/[\s,;:()/]+/)) {
@@ -125,9 +125,8 @@ export function driftFlags(tailored: string, original: string, corpus: string): 
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const variants = expandSynonyms(token);
-    if (variants.some((v) => v && origNorm.includes(v))) continue; // already in the source bullet
-    if (variants.some((v) => v && corpus.includes(v))) continue; // attested elsewhere in the resume
+    if (matchesTerm(originalSearchText, token)) continue; // already in the source bullet
+    if (matchesTerm(corpus, token)) continue; // attested elsewhere in the resume
     flags.push(`unverified term: ${token}`);
   }
   return flags;
