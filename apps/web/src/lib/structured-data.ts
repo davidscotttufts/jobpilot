@@ -66,7 +66,7 @@ export interface JobPostingLdInput {
   salary: string | null;
   employmentType: string | null;
   descriptionExcerpt: string | null;
-  techStack: readonly string[];
+  skills: readonly string[];
   responsibilities: readonly string[];
   yearsExperience: number | null;
   /** Eden hands back a `Date`; a string is accepted so callers never have to re-wrap it. */
@@ -86,7 +86,7 @@ export function jobPostingLd(job: JobPostingLdInput): object {
     hiringOrganization: { "@type": "Organization", name: job.company },
     ...(job.employmentType && { employmentType: job.employmentType }),
     ...(job.salary && { baseSalary: job.salary }),
-    ...(job.techStack.length > 0 && { skills: job.techStack.join(", ") }),
+    ...(job.skills.length > 0 && { skills: job.skills.join(", ") }),
     ...(job.responsibilities.length > 0 && { responsibilities: job.responsibilities.join(" ") }),
     ...(job.yearsExperience && {
       experienceRequirements: {

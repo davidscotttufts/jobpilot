@@ -45,7 +45,7 @@ record `skipped` through `/jobs/<key>/result`; do not offer them for apply.
 
 ## Phase 4: Fit Review
 
-Score against the campaign's `config.resumeId` when set (`GET /api/resumes/<id>` for its content), else the primary (from setup). For each non-applied result, score 0-100 based on: tech stack overlap, years vs candidate, education match, domain/industry relevance, seniority alignment.
+Score against the campaign's `config.resumeId` when set (`GET /api/resumes/<id>` for its content), else the primary (from setup). For each non-applied result, score 0-100 based on: skills overlap, years vs candidate, education match, domain/industry relevance, seniority alignment.
 
 ## Phase 5: Save Results to the Campaign
 

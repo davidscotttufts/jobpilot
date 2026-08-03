@@ -26,7 +26,7 @@ export const publicJobListingController = new Elysia({
     detail: {
       summary: "List public job listings",
       description:
-        "Returns a page of deduped, published job listings filtered by free text, location, remote, board, and tech stack. Unauthenticated.",
+        "Returns a page of deduped, published job listings filtered by free text, location, remote, board, and skills. Unauthenticated.",
     },
   })
   // Declared before /:slug so the literal path wins the match.
@@ -35,7 +35,7 @@ export const publicJobListingController = new Elysia({
     detail: {
       summary: "Job listing filter facets",
       description:
-        "Returns the tech-stack values present in the published index with their listing counts, most common first. Backs the /jobs tech filter. Unauthenticated.",
+        "Returns the skills present in the published index with their listing counts, most common first. Backs the /jobs `?tech=` filter. Unauthenticated.",
     },
   })
   .get("/sitemap", () => svc.sitemap(), {

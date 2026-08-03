@@ -20,7 +20,7 @@ model JobListing {
   remote             Boolean  @default(false)
   salary             String?
   employmentType     String?  @map("employment_type")
-  techStack          String[] @map("tech_stack")
+  skills             String[] @map("skills")
   descriptionExcerpt String?  @map("description_excerpt")
   // From the agent's digest. Empty until a posting is re-scraped - there is no backfill.
   requirements       String[] @map("requirements")
@@ -38,8 +38,8 @@ model JobListing {
 
   // Serves the default list and the sitemap: `where status ORDER BY last_seen_at DESC`.
   @@index([status, lastSeenAt])
-  // `?tech=` is a `tech_stack @> ARRAY[..]` containment test - btree cannot serve it.
-  @@index([techStack], type: Gin)
+  // `?tech=` is a `skills @> ARRAY[..]` containment test - btree cannot serve it.
+  @@index([skills], type: Gin)
   // Trigram indexes serve the `?q=` ILIKE '%term%' search.
   @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_listings_title_trgm_idx")
   @@index([company(ops: raw("gin_trgm_ops"))], type: Gin, map: "job_listings_company_trgm_idx")

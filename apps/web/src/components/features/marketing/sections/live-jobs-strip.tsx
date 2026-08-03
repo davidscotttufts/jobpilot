@@ -45,7 +45,7 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
       <Grid container spacing={2}>
         {jobs.map((job) => (
           <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <JobCard job={job} maxTech={4} />
+            <JobCard job={job} maxSkills={4} />
           </Grid>
         ))}
       </Grid>

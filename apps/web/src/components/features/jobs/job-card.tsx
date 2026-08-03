@@ -4,17 +4,17 @@ import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
 import { fontFamilies } from "@/theme";
 import { formatRelativeTime } from "@/utils/format";
-import { TechChips } from "./tech-chips";
+import { SkillChips } from "./skill-chips";
 
 interface JobCardProps {
   job: JobListingSummaryDto;
-  /** Cap the chips on dense grids; the detail page shows the full stack. */
-  maxTech?: number;
+  /** Cap the chips on dense grids; the detail page shows them all. */
+  maxSkills?: number;
 }
 
 /** A listing in the public index; the whole card is one link. */
 export function JobCard(props: JobCardProps): ReactElement {
-  const { job, maxTech = 5 } = props;
+  const { job, maxSkills = 5 } = props;
 
   return (
     <Card variant="lift">
@@ -43,7 +43,7 @@ export function JobCard(props: JobCardProps): ReactElement {
             )}
           </Stack>
 
-          <TechChips tech={job.techStack} max={maxTech} />
+          <SkillChips skills={job.skills} max={maxSkills} />
 
           <Stack
             direction="row"

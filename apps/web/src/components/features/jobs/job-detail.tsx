@@ -4,7 +4,7 @@ import type { JobListingDto } from "@/api/types";
 import { BackLink, LinkButton } from "@/components/ui/buttons";
 import { ExternalLink, LabelValue, RelativeTime } from "@/components/ui/display";
 import { formatDate, formatRelativeTime } from "@/utils/format";
-import { TechChips } from "./tech-chips";
+import { SkillChips } from "./skill-chips";
 
 interface JobDetailProps {
   job: JobListingDto;
@@ -44,7 +44,7 @@ export function JobDetail(props: JobDetailProps): ReactElement {
         <Grid size={{ xs: 12, md: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
           <Stack spacing={3}>
             <ApplyCard />
-            <TechStackCard job={job} />
+            <SkillsCard job={job} />
           </Stack>
         </Grid>
 
@@ -155,20 +155,20 @@ function ApplyCard(): ReactElement {
   );
 }
 
-/** Location, salary, employment type and years already sit in the header, so only tech is here. */
-function TechStackCard(props: JobDetailProps): ReactNode {
+/** Location, salary, employment type and years already sit in the header, so only skills are here. */
+function SkillsCard(props: JobDetailProps): ReactNode {
   const { job } = props;
 
-  if (job.techStack.length === 0) {
+  if (job.skills.length === 0) {
     return null;
   }
 
   return (
     <Card>
       <CardContent>
-        <LabelValue label="Tech stack">
+        <LabelValue label="Skills">
           <Box sx={{ mt: 0.75 }}>
-            <TechChips tech={job.techStack} linked />
+            <SkillChips skills={job.skills} linked />
           </Box>
         </LabelValue>
       </CardContent>

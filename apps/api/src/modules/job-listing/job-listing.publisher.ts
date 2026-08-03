@@ -133,7 +133,7 @@ function enrich(draft: ListingDraft) {
     ...(draft.salary && { salary: draft.salary }),
     ...(draft.employmentType && { employmentType: draft.employmentType }),
     ...(draft.descriptionExcerpt && { descriptionExcerpt: draft.descriptionExcerpt }),
-    ...(draft.techStack.length > 0 && { techStack: draft.techStack }),
+    ...(draft.skills.length > 0 && { skills: draft.skills }),
     ...(draft.requirements.length > 0 && { requirements: draft.requirements }),
     ...(draft.responsibilities.length > 0 && { responsibilities: draft.responsibilities }),
     ...(draft.yearsExperience !== null && { yearsExperience: draft.yearsExperience }),

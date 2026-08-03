@@ -58,7 +58,7 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
 /** The tech vocabulary is server-cached, so seeding the filter costs a cheap API hop. */
 async function JobFiltersPanel(): Promise<ReactElement> {
   const { data } = await api.public.jobs.facets.get();
-  return <JobFilters techOptions={data?.tech.map((facet) => facet.value) ?? []} />;
+  return <JobFilters skillOptions={data?.skills.map((facet) => facet.value) ?? []} />;
 }
 
 async function JobsResults(props: JobsPageProps): Promise<ReactElement> {

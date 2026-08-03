@@ -45,7 +45,7 @@ describe("projection", () => {
   it("canonicalizes the url and carries only digest fields", () => {
     const draft = buildListingDraft(job());
     expect(draft?.url).toBe("https://example.com/jobs/1");
-    expect(draft?.techStack).toEqual(["TypeScript", "React"]);
+    expect(draft?.skills).toEqual(["TypeScript", "React"]);
     expect(draft?.salary).toBe("$180k");
     expect(draft?.employmentType).toBe("Full-time");
     expect(draft?.descriptionExcerpt).toBe("Build things.");

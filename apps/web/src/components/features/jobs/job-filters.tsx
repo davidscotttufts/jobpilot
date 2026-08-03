@@ -9,8 +9,8 @@ import { ActiveFilters } from "./active-filters";
 import { jobsHref } from "./jobs-href";
 
 interface JobFiltersProps {
-  /** The tech values the index actually contains, most common first. */
-  techOptions: string[];
+  /** The skills the index actually contains, most common first. */
+  skillOptions: string[];
 }
 
 /**
@@ -18,18 +18,19 @@ interface JobFiltersProps {
  * shareable and crawlable.
  */
 export function JobFilters(props: JobFiltersProps): ReactElement {
-  const { techOptions } = props;
+  const { skillOptions } = props;
   const router = useRouter();
   const params = useSearchParams();
   const form = useRef<HTMLFormElement>(null);
 
   const remote = params.get("remote") === "true";
-  const tech = parseTechParam(params.get("tech"));
+  // The public param stays `?tech=` so links shared before the skills rename keep working.
+  const skills = parseTechParam(params.get("tech"));
 
   /**
    * Seeds the query from the live form, then applies the patch (`null` drops a key). Reading the
    * form - not just `params` - is what keeps text the user typed but has not submitted when they
-   * toggle Remote or pick a tech.
+   * toggle Remote or pick a skill.
    */
   const apply = (patch: Record<string, string | null> = {}): void => {
     const next = new URLSearchParams(params);
@@ -75,13 +76,13 @@ export function JobFilters(props: JobFiltersProps): ReactElement {
               sx={{ flex: 1 }}
             />
             <MultiSelect
-              value={tech}
+              value={skills}
               onChange={(values) =>
                 apply({ tech: values.length > 0 ? serializeTechParam(values) : null })
               }
-              options={techOptions}
+              options={skillOptions}
               freeSolo={false}
-              placeholder={tech.length > 0 ? undefined : "Tech stack"}
+              placeholder={skills.length > 0 ? undefined : "Skills"}
               sx={{ flex: 1, minWidth: 180 }}
             />
             <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>

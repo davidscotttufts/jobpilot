@@ -19,7 +19,7 @@ export const jobListingSummarySchema = z.object({
   remote: z.boolean(),
   salary: z.string().nullable(),
   employmentType: z.string().nullable(),
-  techStack: z.array(z.string()),
+  skills: z.array(z.string()),
   descriptionExcerpt: z.string().nullable(),
   firstSeenAt: z.date(),
   lastSeenAt: z.date(),
@@ -39,7 +39,7 @@ export const jobListingPageSchema = paginatedSchema(jobListingSummarySchema);
 
 /** The `?tech=` option list: what the index actually contains, so the filter can't be guessed wrong. */
 export const jobListingFacetsSchema = z.object({
-  tech: z.array(z.object({ value: z.string(), count: z.number().int() })),
+  skills: z.array(z.object({ value: z.string(), count: z.number().int() })),
 });
 
 /** Slug + freshness only: the web's sitemap needs nothing else. */

@@ -1,14 +1,14 @@
-/** One `unnest(tech_stack)` row: a tech entry exactly as stored, and how many listings carry it. */
-export interface TechCountRow {
-  tech: string;
+/** One `unnest(skills)` row: a skill exactly as stored, and how many listings carry it. */
+export interface SkillCountRow {
+  skill: string;
   /** Published listings only - a hidden-only casing counts 0 and never reaches the option list. */
   count: number;
 }
 
-export interface TechVocabulary {
-  /** Display options, most common first. One entry per tech, in its most common casing. */
+export interface SkillVocabulary {
+  /** Display options, most common first. One entry per skill, in its most common casing. */
   facets: { value: string; count: number }[];
-  /** lowercased tech -> every casing of it present in the table. */
+  /** lowercased skill -> every casing of it present in the table. */
   variants: Map<string, string[]>;
 }
 
@@ -20,29 +20,29 @@ interface Group {
 }
 
 /**
- * The agent writes tech names in whatever casing the posting used ("React", "react", "REACT"), so
+ * The agent writes skills in whatever casing the posting used ("React", "react", "REACT"), so
  * the raw rows are grouped case-insensitively and the most common casing wins the label.
  */
-export function groupTechFacets(rows: TechCountRow[]): TechVocabulary {
+export function groupSkillFacets(rows: SkillCountRow[]): SkillVocabulary {
   const groups = new Map<string, Group>();
 
   for (const row of rows) {
-    const tech = row.tech.trim();
-    if (!tech) {
+    const skill = row.skill.trim();
+    if (!skill) {
       continue;
     }
 
-    const key = tech.toLowerCase();
+    const key = skill.toLowerCase();
     const group = groups.get(key);
     if (!group) {
-      groups.set(key, { total: row.count, label: tech, labelCount: row.count, casings: [tech] });
+      groups.set(key, { total: row.count, label: skill, labelCount: row.count, casings: [skill] });
       continue;
     }
 
     group.total += row.count;
-    group.casings.push(tech);
-    if (row.count > group.labelCount || (row.count === group.labelCount && tech < group.label)) {
-      group.label = tech;
+    group.casings.push(skill);
+    if (row.count > group.labelCount || (row.count === group.labelCount && skill < group.label)) {
+      group.label = skill;
       group.labelCount = row.count;
     }
   }
@@ -57,11 +57,11 @@ export function groupTechFacets(rows: TechCountRow[]): TechVocabulary {
 }
 
 /**
- * Expands the requested techs into every casing actually stored, so `?tech=react` still matches a
+ * Expands the requested skills into every casing actually stored, so `?tech=react` still matches a
  * listing saved as "React" - Prisma's array `hasSome` is exact, and this is what keeps the filter
  * case-insensitive without a normalized column.
  */
-export function resolveTechFilter(values: string[], variants: Map<string, string[]>): string[] {
+export function resolveSkillFilter(values: string[], variants: Map<string, string[]>): string[] {
   const resolved = new Set<string>();
 
   for (const value of values) {

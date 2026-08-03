@@ -52,7 +52,7 @@ export interface ListingDraft {
   remote: boolean;
   salary: string | null;
   employmentType: string | null;
-  techStack: string[];
+  skills: string[];
   descriptionExcerpt: string | null;
   requirements: string[];
   responsibilities: string[];
@@ -117,9 +117,9 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
   }
 
   const digest = parseDigest(job.digest);
-  // The digest key is `skills`; the public listing field keeps the name `techStack`.
-  const techStack = (digest.skills ?? []).map((skill) => skill.trim()).filter(Boolean);
-  if (techStack.length === 0) {
+  // A posting with no named skills has nothing to filter or match on, so it never gets published.
+  const skills = (digest.skills ?? []).map((skill) => skill.trim()).filter(Boolean);
+  if (skills.length === 0) {
     return null;
   }
 
@@ -135,7 +135,7 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     remote: digest.remote === true || normalizeListingLocation(location) === "remote",
     salary: clean(job.salary) ?? clean(digest.salary),
     employmentType: clean(job.type) ?? clean(digest.employmentType),
-    techStack,
+    skills,
     descriptionExcerpt: excerpt(clean(digest.descriptionExcerpt) ?? clean(job.description)),
     requirements: bullets(digest.requirements),
     responsibilities: bullets(digest.responsibilities),
