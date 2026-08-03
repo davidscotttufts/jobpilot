@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.26] - 2026-08-03
+
+### Added
+
+- Every account now has a public portfolio at `/u/<username>`. There is no
+  publish switch any more; instead you choose per item whether the resume
+  download and each link show up, and a hidden item never leaves the server.
+- The leaderboard splits activity into applications and messages, says how many
+  people were active in the window, and makes the whole row tappable.
+- Job pages show a requirements list, a what-you'll-do list, and an experience
+  chip, taken from what the agent already extracted.
+
+### Changed
+
+- Fit scoring works for any profession, not just tech jobs. The digest field is
+  now "skills" rather than "tech stack", the synonym table covers non-tech
+  vocabularies, and the score comes back with a verdict saying whether to trust
+  the number or read the evidence behind it.
+- A job is scored against your own auto-apply threshold instead of a fixed
+  constant.
+- The docs were rewritten and corrected: the real onboarding order, three
+  campaign modes, where Notifications live, and what the digest and update
+  banner actually do. Restarting the agent is now documented per OS, since the
+  one-click "Start agent" button only works on Windows.
+- The queue and campaigns panels say what they are for, and the campaign
+  summary explains what a skip means and who started the run.
+- Dashboard copy, stat tiles, and the docs type scale were reworked for
+  readability. The job sidebar no longer repeats facts already in the header.
+
+### Fixed
+
+- Tools the agent shells out to failed with exit 127 when the host was started
+  from a `jobpilot://` link on Windows. It now repairs the PATH it hands down.
+- Warm intros never fired for the strongest jobs: applying drained the intro
+  pool first. The pool is now gathered on its own over a 48-hour window.
+- An approved job lost its warm contacts right after the intro went out, which
+  is exactly when the application should name the insider.
+- A mailbox whose access was revoked now reports as needing reauth in the
+  inbox, settings, and both checklists, instead of showing a green check.
+- Resume keyword matching compares whole words, so "go" no longer matches
+  "delivered good results".
+- Tech terms match their synonyms, so "ASP.NET Core" in a listing matches a
+  profile that says ".NET".
+- Fixed the marketplace URL casing on the install page.
+
 ## [2.1.25] - 2026-08-02
 
 ### Added
