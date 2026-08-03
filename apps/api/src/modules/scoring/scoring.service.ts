@@ -29,7 +29,7 @@ export class ScoringService {
       this.resolveBaseResumeContent(userId, resumeId),
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { requiresSponsorship: true },
+        select: { requiresSponsorship: true, autoApply: { select: { minMatchScore: true } } },
       }),
     ]);
 
@@ -51,7 +51,8 @@ export class ScoringService {
       requiresSponsorship: user?.requiresSponsorship ?? false,
     };
 
-    return scoreFit(digest, fitProfile, minScore);
+    // A caller that omits the threshold gets the user's own auto-apply bar, not a global constant.
+    return scoreFit(digest, fitProfile, minScore ?? user?.autoApply?.minMatchScore);
   }
 
   /**

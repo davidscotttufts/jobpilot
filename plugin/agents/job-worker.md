@@ -42,7 +42,7 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 
 1. New tab, navigate to `url`, log in if needed (auth.md).
 2. Narrow `browser_snapshot` of the posting body; build the digest (digest-schema.md).
-3. `POST /api/score-fit {digest, minScore:<minMatchScore>}` (+ `resumeId`; omit `minScore` when `minMatchScore` is null - the server defaults to 60). `fit.verdict` `deliberate` → reason from strong/partial/gaps; `trust` → use the score as-is.
+3. `POST /api/score-fit {digest, minScore:<minMatchScore>}` (+ `resumeId`; omit `minScore` when `minMatchScore` is null - the server falls back to the user's auto-apply minimum). `fit.verdict` `deliberate` → reason from strong/partial/gaps; `trust` → use the score as-is.
 4. Flag JD-stated hard blockers (citizenship/clearance/no-sponsorship) in `blockers`, and JD silence on sponsorship (when the profile requires it) as `visaRisk`, per eligibility.md.
 5. Close tabs, return:
 
@@ -70,7 +70,7 @@ One tab for the whole batch - open it once, reuse per row, close it at the end. 
 1. Navigate to `url`, log in if needed (auth.md) - once per board, not per row.
 2. Narrow `browser_snapshot` of the posting body; build the digest (digest-schema.md).
 3. Dedupe: `GET /api/applied/check?url=&title=&company=` (url-encode each). If applied, skip to step 6 with `eligible:false`, `skipReason:"Already applied (<kind>)"`.
-4. `POST /api/score-fit {digest, minScore:<minMatchScore>}` (+ `resumeId`; omit `minScore` when `minMatchScore` is null - the server defaults to 60). `fit.verdict` `deliberate` → reason from strong/partial/gaps; `trust` → use the score as-is.
+4. `POST /api/score-fit {digest, minScore:<minMatchScore>}` (+ `resumeId`; omit `minScore` when `minMatchScore` is null - the server falls back to the user's auto-apply minimum). `fit.verdict` `deliberate` → reason from strong/partial/gaps; `trust` → use the score as-is.
 5. Eligibility (eligibility.md): below `minMatchScore`, a JD-stated citizenship/clearance bar, or JD-stated no-sponsorship language when `user.requiresSponsorship` is true, is `skipped` with the exact reason; else `pending`. Profile requires sponsorship but the JD is silent → not a skip; append the risk note to `matchReason`.
 6. Save (merge any `extraDigest` into `digest` first). `save:"create"` (default, keeps the digest/JD out of the orchestrator):
 
