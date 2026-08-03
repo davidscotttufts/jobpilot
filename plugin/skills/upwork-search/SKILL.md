@@ -48,10 +48,10 @@ CLIENT='{ "paymentVerified": true, "hireRate": 80, "totalSpent": 12000, "rating"
   "reviewsCount": 24, "proposalsBucket": "5-10", "postedHoursAgo": 6, "jobType": "hourly" }'
 QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
-VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
+CLIENT_VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
-`proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `VERDICT == "skip"`, create the Job as `pending`, record `.skipReason` through `/jobs/<key>/result`, and move on - don't score fit.
+`proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `CLIENT_VERDICT == "skip"`, create the Job as `pending`, record `.skipReason` through `/jobs/<key>/result`, and move on - don't score fit.
 
 ### 3.3 Fit
 
@@ -73,7 +73,7 @@ FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILO
 SCORE=$(echo "$FIT" | jq -r '.score')
 ```
 
-Use it directly when the fit's `verdict` is `trust`; otherwise rescore from `strongMatches`/`partialMatches`/`gaps`. A thin or below-level posting is **not** a skip - judge on skills fit (`../_shared/eligibility.md`).
+Use it directly when `FIT.verdict` is `trust`; otherwise rescore from `strongMatches`/`partialMatches`/`gaps`. A thin or below-level posting is **not** a skip - judge on skills fit (`../_shared/eligibility.md`).
 
 ### 3.4 Save the recommendation (rich-card path only)
 

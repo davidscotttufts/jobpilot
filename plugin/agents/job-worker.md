@@ -57,7 +57,7 @@ Read the posting and return fit data for a user-facing review. No save, no campa
   "gaps": [],
   "blockers": [],
   "visaRisk": "...",
-  "verdict": "1-2 lines"
+  "recommendation": "1-2 lines"
 }
 ```
 

@@ -42,7 +42,7 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 ### 1.1 Fit Review
 
-**URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`verdict` to fill the review below; keep its `digest` as `DIGEST` for 1.4.
+**URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`recommendation` to fill the review below; keep its `digest` as `DIGEST` for 1.4.
 
 **Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../_shared/digest-schema.md`), and `POST /api/score-fit {digest, minScore:<minMatchScore>}` for the score. Its `fit.verdict` drives the recommendation below: `trust` → report the score as-is; `deliberate` → reason from `strongMatches`/`partialMatches`/`gaps` first. Keep the digest in `DIGEST=...` for 1.4.
 
