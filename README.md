@@ -152,13 +152,13 @@ goes:
 | New campaign → Auto-apply (`auto-apply`)     | Searches, then applies to matches one at a time, up to the limits you set. |
 | New campaign → Networking (`networking`)     | Finds the recruiter or hiring manager and drafts a message to each.        |
 | New campaign on Upwork (`upwork-search`)     | Searches Upwork, filters out low-quality clients, ranks the rest.          |
-| Apply all, or apply one URL (`apply`)        | Applies to a single job after a fit review.                                |
+| New campaign → Apply to links (`apply`)      | Applies to each job link you paste, after a fit review.                    |
 | Campaign → Resume (`resume-campaign`)        | Picks a paused campaign back up and finishes its approved jobs.            |
 | Campaign → Rescan skipped (`rescan-skipped`) | Re-checks skipped jobs in case the reason no longer holds.                 |
 | Campaign → Retry failed (`auto-apply`)       | Re-runs the applications that errored out.                                 |
-| Inbox → Scan (`scan-inbox`)                  | Classifies new mail, matches it to applications, proposes stage moves.     |
+| Inbox → Scan pending (`scan-inbox`)          | Classifies new mail, matches it to applications, proposes stage moves.     |
 | Networking → Regenerate (`networking`)       | Rewrites a drafted message.                                                |
-| Upload a resume (`extract-resume`)           | Parses the PDF into your structured profile.                               |
+| Resume → Extract from PDF (`extract-resume`) | Parses an uploaded PDF into your structured profile.                       |
 | Resume → Tailor (`tailor-resume`)            | Rewrites a resume variant against one job description.                     |
 | Upwork → Proposal (`upwork-proposal`)        | Drafts a proposal for one posting.                                         |
 | Upwork → Profile (`upwork-profile`)          | Improves your Upwork overview; writes back only after you approve.         |

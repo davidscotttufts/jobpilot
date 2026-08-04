@@ -113,12 +113,13 @@ flowchart LR
   `JOBPILOT_SKILLS_ROOT` / `JOBPILOT_WORKSPACE_ROOT` for wrappers), so skills
   authenticate with zero manual setup.
 
-One Terminal instance owns one PTY. It survives tab close (reopening the
-panel reattaches a WebSocket to the live session); switching providers
-restarts the PTY; there is no replay buffer. The web injects commands as
-`/jobpilot:<skill>` for Claude and `$<skill>` for Codex. On a new release the
-agent dock shows an update banner; the guided flow updates host + plugin and
-finishes with `/reload-plugins` on Claude.
+One Terminal instance owns one PTY. It survives tab close: reopening the panel
+reattaches a WebSocket to the live session and replays the buffered tail
+(`TerminalHub`, 512 KB, cleared when a new session starts). Switching providers
+restarts the PTY. The web injects commands as `/jobpilot:<skill>` for Claude and
+`$<skill>` for Codex. On a new release the agent dock shows an update banner;
+the guided flow updates host + plugin and finishes with `/reload-plugins` on
+Claude.
 
 ### Plugin loading
 
@@ -173,8 +174,9 @@ sequenceDiagram
 
 Skills mutate through `/api/campaigns/*`; the web opens
 `EventSource /api/campaigns/[id]/events` and invalidates the TanStack Query
-cache on each event, refetching canonical state from PostgreSQL. Four more
-channels (`inbox`, `pipeline`, `resume`, `upwork`) follow the same pattern.
+cache on each event, refetching canonical state from PostgreSQL. Five more
+channels (`workspace`, `inbox`, `resume`, `upwork`, `pilot`) follow the same
+pattern; they are defined in `packages/contracts/src/sse/channels/`.
 
 ### Skills layer
 

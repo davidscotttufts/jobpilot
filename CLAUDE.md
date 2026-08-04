@@ -31,7 +31,8 @@ Root (`bun run …`):
 - `db:tunnel` - SSH tunnel to the remote PostgreSQL. No local DB container; `DATABASE_URL`
   points at the tunnel's local port (5433).
 - `db:setup` - Prisma generate + apply migrations + seed.
-- `test` - the API test suite (`bun test` in `apps/api`).
+- `test` - the API suite plus the contracts suite (`bun test` in `apps/api` and
+  `packages/contracts`).
 - `build:api` / `build:web` / `build:terminal` - production builds.
 - `check` / `format` / `lint` - Biome repo-wide (`check` = format + lint + import sort, writes).
   Biome skips Markdown; `.editorconfig` covers whitespace there.
