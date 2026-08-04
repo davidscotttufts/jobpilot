@@ -12,14 +12,15 @@ import type { CampaignDto, CreateCampaignRequest } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgent } from "@/providers/agent-provider";
-import { UPWORK_DOMAIN } from "../constants";
+import { ApplyFields } from "./apply-fields";
 import { AutoApplyFields } from "./auto-apply-fields";
 import { CampaignBasicsFields } from "./campaign-basics-fields";
 import {
-  buildCampaignConfig,
+  buildCreateCampaignRequest,
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
   composerFormSchema,
+  isUpworkSearch,
   SUBMIT_LABELS,
 } from "./form-config";
 import { NetworkingFields } from "./networking-fields";
@@ -63,17 +64,9 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     },
     validators: { onSubmit: composerFormSchema },
     onSubmit: async ({ value }) => {
-      // Upwork is recommend-only: it runs a search campaign driven by the
-      // dedicated upwork-search skill regardless of the toggle.
-      const upwork = value.board === UPWORK_DOMAIN;
+      const upwork = isUpworkSearch(value);
       const effective = upwork ? { ...value, mode: "search" as const } : value;
-      const campaign = await createCampaign.mutateAsync({
-        query: value.query.trim(),
-        source: effective.mode,
-        // resumeId is campaign-wide (mandatory for every mode), not mode-specific.
-        config: { resumeId: effective.resumeId, ...buildCampaignConfig(effective) },
-        createdBy: "user",
-      });
+      const campaign = await createCampaign.mutateAsync(buildCreateCampaignRequest(effective));
       const campaignId = campaign.campaignId;
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
       void agent.injectSkill(
@@ -85,7 +78,8 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
 
   const mode = useSelector(form.store, (s) => s.values.mode);
   const board = useSelector(form.store, (s) => s.values.board);
-  const isUpwork = board === UPWORK_DOMAIN;
+  const isApply = mode === "apply";
+  const isUpwork = isUpworkSearch({ mode, board });
   const isNetworking = mode === "networking";
 
   // Upwork has no auto-apply/networking path - pin the mode to search.
@@ -129,6 +123,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
           )}
           {mode === "auto-apply" && <AutoApplyFields form={form} />}
           {mode === "networking" && <NetworkingFields form={form} />}
+          {mode === "apply" && <ApplyFields form={form} />}
 
           <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
             <Button onClick={() => router.back()}>Cancel</Button>
@@ -138,7 +133,10 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
                   type="submit"
                   variant="contained"
                   disabled={
-                    !hasResumes || (!hasBoards && !isNetworking) || !canSubmit || isSubmitting
+                    !canSubmit ||
+                    isSubmitting ||
+                    // Apply needs neither prerequisite: it takes pasted links and tailors per job.
+                    (!isApply && (!hasResumes || (!hasBoards && !isNetworking)))
                   }
                 >
                   {isUpwork ? "Find Upwork jobs" : SUBMIT_LABELS[mode]}

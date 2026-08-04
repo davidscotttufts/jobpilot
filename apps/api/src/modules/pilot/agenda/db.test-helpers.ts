@@ -53,9 +53,8 @@ export interface Over {
   finalizeCampaigns?: Record<string, unknown>[];
   // Existing in-progress campaigns keyed by their pilot search, for the discover-reuse lookup.
   dueSearchCampaigns?: { campaignId: string; pilotSearchId: string }[];
-  // Score-pending gather (in_progress auto-apply campaigns with unscored pending rows) + its count groupBy.
+  // Score-pending gather: in_progress auto-apply campaigns with unscored pending rows.
   scorePendingCampaigns?: Record<string, unknown>[];
-  scorePendingCounts?: { campaignId: string; _count: { _all: number } }[];
   // Prior campaign.scorePending claims, gating the per-campaign cooldown. `outcome` drives the crash-retry cap.
   scorePendingClaims?: {
     subjectId: string;
@@ -105,8 +104,14 @@ export interface Over {
   networkingReplies?: number;
   promotionsPosted?: number;
   // Proactive wiring:
-  pendingQueue?: { id: string; url: string }[];
-  pendingQueueCount?: number;
+  // Queue-drain gather: in-progress apply campaigns holding `queued` rows.
+  queuedCampaigns?: Record<string, unknown>[];
+  queueDrainClaims?: {
+    subjectId: string;
+    grantedAt: Date;
+    releasedAt: Date | null;
+    outcome?: string | null;
+  }[];
   boardHealthJobs?: Record<string, unknown>[];
   quietCampaigns?: Record<string, unknown>[];
   quietJobCounts?: Record<string, unknown>[];
@@ -139,6 +144,7 @@ function fakePilotClaim(over: Over, rec: Recorder) {
     // The cooldown gathers read their own claim history by kind; the rest split on subjectType.
     findMany: async (args: { where: { subjectType?: string; kind?: string } }) => {
       if (args.where.kind === "campaign.scorePending") return over.scorePendingClaims ?? [];
+      if (args.where.kind === "queue.drain") return over.queueDrainClaims ?? [];
       if (args.where.kind === "networking.warmIntro") return over.warmIntroClaims ?? [];
       if (args.where.kind === "campaign.reviewPaused") return over.pausedReviewClaims ?? [];
       if (args.where.kind === "search.discover") return over.searchClaims ?? [];
@@ -229,9 +235,7 @@ function fakeJob(over: Over) {
     update: async () => ({}),
     updateMany: async () => ({ count: over.claimCount ?? 1 }),
     findUniqueOrThrow: async () => over.job ?? approvedJob(),
-    // groupBy by ["campaignId"] alone is the score-pending count; ["campaignId","skipReason"] is skip reasons.
     groupBy: async (a: { by: string[] }) => {
-      if (a.by.length === 1) return over.scorePendingCounts ?? [];
       if (a.by.includes("skipReason")) return over.skipReasonRows ?? [];
       if (over.quietJobCounts) return over.quietJobCounts;
       if (!over.quietCampaigns?.length) return [];
@@ -276,6 +280,8 @@ function fakeCampaign(over: Over, rec: Recorder) {
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
       if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
+      // Only the queue-drain gather pins a single source; score-pending is the other `jobs` filter.
+      if (a.where.source === "apply") return over.queuedCampaigns ?? [];
       if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];
     },
@@ -339,11 +345,6 @@ export function makeAgendaDb(over: Over = {}) {
     campaign: fakeCampaign(over, rec),
     networkingMessage: fakeNetworkingMessage(over),
     promotionPost: fakePromotionPost(over),
-    queueEntry: {
-      findMany: async () => over.pendingQueue ?? [],
-      count: async () => over.pendingQueueCount ?? 0,
-      updateMany: async () => ({ count: 1 }),
-    },
     emailMessage: {
       findMany: async () => over.inboxIds ?? [],
       count: async () => over.inboxCount ?? 0,

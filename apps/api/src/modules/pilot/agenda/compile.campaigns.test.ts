@@ -12,10 +12,10 @@ describe("AgendaService campaign.scorePending", () => {
           campaignId: "c1",
           query: "react",
           config: { board: "linkedin", minScore: 70 },
+          _count: { jobs: 9 },
           jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
         },
       ],
-      scorePendingCounts: [{ campaignId: "c1", _count: { _all: 9 } }],
     }).refresh("p1");
     const item = agenda.items.find((i) => i.kind === "campaign.scorePending");
     expect(item?.subjectType).toBe("campaign");
@@ -37,10 +37,10 @@ describe("AgendaService campaign.scorePending", () => {
         campaignId: "c1",
         query: "react",
         config: {},
+        _count: { jobs: 4 },
         jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
       },
     ],
-    scorePendingCounts: [{ campaignId: "c1", _count: { _all: 4 } }],
   };
 
   it("suppresses scorePending while its previous claim is still open", async () => {
@@ -84,10 +84,10 @@ describe("AgendaService campaign.scorePending", () => {
     const { svc, rec } = serviceWithRec(scorePendingOver);
     await svc.refresh("p1");
 
-    // The finalize sweep filters `jobs` too; only score-pending's clause carries no top-level OR.
-    const gather = rec.campaignQueries.find((w) => "jobs" in w && !("OR" in w)) as {
-      jobs: { some: Record<string, unknown> };
-    };
+    // Finalize and queue-drain filter `jobs` too; only score-pending pins source auto_apply.
+    const gather = rec.campaignQueries.find(
+      (w) => "jobs" in w && w.source === "auto_apply" && !("OR" in w),
+    ) as { jobs: { some: Record<string, unknown> } };
     expect(gather.jobs.some).toMatchObject({
       status: "pending",
       OR: [{ matchScore: null }, { digest: null }],
