@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.27] - 2026-08-04
+
+### Changed
+
+- The separate apply queue is gone. Pasting job links now starts an apply
+  campaign, so single jobs and bulk runs go through the same place and show the
+  same progress, and the dashboard has one panel instead of two.
+- The apply skill asks the API for the campaign that still has queued jobs
+  rather than paging through campaigns and filtering client-side, so a queued job
+  is no longer missed once you have more than fifty campaigns.
+- A queued job can no longer be published to the public job board by mistake.
+  Every path that publishes a listing now goes through the same check.
+
 ## [2.1.26] - 2026-08-03
 
 ### Added
