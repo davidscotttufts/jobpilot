@@ -7,6 +7,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 
 // No /api proxy: the browser calls the backend directly (see api/base-url.ts).
 const config: NextConfig = {
+  // Dev-only: StrictMode double-invokes effects, which races terminal-panel.tsx
+  // into calling startSession() twice against the fast local API (interleaved output).
+  reactStrictMode: false,
   output: "standalone",
   outputFileTracingRoot: path.resolve(here, "../.."),
   cacheComponents: true,

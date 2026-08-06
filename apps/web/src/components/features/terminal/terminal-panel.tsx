@@ -12,6 +12,13 @@ import { connectWebSocket, type WebSocketClient } from "@/lib/websocket";
 import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
+/**
+ * Serializes session starts across every mount of this panel. The `disposed`
+ * guard inside `start()` is only checked after the token fetch resolves, so
+ * against a local API that round-trip routinely beats effect cleanup and two
+ * mounts both reach `startSession()`.
+ */
+let sessionStartInFlight: Promise<unknown> | null = null;
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
 const CTRL_C_B64 = toBase64("\x03");
@@ -91,6 +98,14 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       return;
     }
 
+    // A previous instance can still be attached when this effect re-runs before its
+    // cleanup lands (StrictMode double-invoke, concurrent remount, fast-refresh).
+    // Two xterm layers in one container each paint their own glyphs into the same
+    // box, which renders as character-interleaved output. Tear down first.
+    terminalRef.current?.dispose();
+    terminalRef.current = null;
+    container.replaceChildren();
+
     const terminal = new Terminal({
       cursorBlink: true,
       fontFamily: TERMINAL_FONT_FAMILY,
@@ -145,14 +160,17 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
 
       try {
         fit.fit();
-        await startSession({
+        sessionStartInFlight ??= startSession({
           cols: terminal.cols,
           rows: terminal.rows,
           provider,
           apiToken: data.token,
           webUrl: window.location.origin,
           apiUrl: API_BASE_URL,
+        }).finally(() => {
+          sessionStartInFlight = null;
         });
+        await sessionStartInFlight;
       } catch (err) {
         if (disposed) {
           return;

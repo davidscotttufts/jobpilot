@@ -32,3 +32,6 @@ dist/
 .VSCodeCounter/
 
 .env
+
+# local-only credentials (never commit)
+.credentials.local
