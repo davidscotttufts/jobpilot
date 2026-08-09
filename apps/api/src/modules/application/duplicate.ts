@@ -5,6 +5,7 @@ import {
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/modules/scoring/applied-duplicates";
+import { canonicalizeJobUrl } from "./job-url";
 
 /** Enough candidates to cover a heavy month; the fuzzy scan is in-process, so it stays bounded. */
 const MAX_FUZZY_CANDIDATES = 1000;
@@ -51,7 +52,7 @@ export async function findAppliedDuplicate(
 ): Promise<AppliedDuplicate | null> {
   if (lookup.url) {
     const exact = await db.application.findUnique({
-      where: { userId_url: { userId, url: lookup.url } },
+      where: { userId_url: { userId, url: canonicalizeJobUrl(lookup.url) } },
       select: MATCH_SELECT,
     });
     if (exact) {
