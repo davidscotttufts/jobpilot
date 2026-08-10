@@ -9,15 +9,17 @@ interface PortfolioViewProps {
   portfolio: PortfolioDto;
   /** Public page shows the marketing footer CTA; the settings preview hides it. */
   showFooter?: boolean;
+  /** Demote the name when the view is embedded under a page that already owns the h1. */
+  nameAs?: "h1" | "h2";
 }
 
 /** The full portfolio, shared verbatim by the public /u/[username] page and the settings preview. */
 export function PortfolioView(props: PortfolioViewProps): ReactElement {
-  const { portfolio, showFooter = true } = props;
+  const { portfolio, showFooter = true, nameAs = "h1" } = props;
 
   return (
     <Stack spacing={4}>
-      <PortfolioCard portfolio={portfolio} />
+      <PortfolioCard portfolio={portfolio} nameAs={nameAs} />
 
       <Stack spacing={2}>
         <Typography variant="h4" component="h3">

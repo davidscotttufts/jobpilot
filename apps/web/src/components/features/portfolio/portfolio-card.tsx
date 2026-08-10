@@ -8,6 +8,8 @@ import { PortfolioAvatar } from "./portfolio-avatar";
 
 interface PortfolioCardProps {
   portfolio: PortfolioDto;
+  /** The name is the page heading on the public page, but a section heading inside the preview. */
+  nameAs?: "h1" | "h2";
 }
 
 /** A long resume lists more skills than a hero should carry; the rest collapse into a count. */
@@ -15,7 +17,7 @@ const MAX_SKILLS = 24;
 
 /** Presentational identity header - shared by the public page and the settings live preview. */
 export function PortfolioCard(props: PortfolioCardProps): ReactElement {
-  const { portfolio } = props;
+  const { portfolio, nameAs = "h1" } = props;
   const skills = portfolio.skills.slice(0, MAX_SKILLS);
   const overflow = portfolio.skills.length - skills.length;
 
@@ -29,7 +31,7 @@ export function PortfolioCard(props: PortfolioCardProps): ReactElement {
         <PortfolioAvatar name={portfolio.displayName} size={80} />
         <Stack spacing={0.75}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", flexWrap: "wrap" }}>
-            <Typography variant="displayMd" component="h1">
+            <Typography variant="displayMd" component={nameAs}>
               {portfolio.displayName}
             </Typography>
             <AvailabilityBadge availability={portfolio.availability} />

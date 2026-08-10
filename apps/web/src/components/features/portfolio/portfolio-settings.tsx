@@ -152,5 +152,5 @@ function PortfolioPreview(): ReactElement {
   if (!previewQuery.data) {
     return <Typography variant="body2Muted">Add a primary resume to see your preview.</Typography>;
   }
-  return <PortfolioView portfolio={previewQuery.data} showFooter={false} />;
+  return <PortfolioView portfolio={previewQuery.data} showFooter={false} nameAs="h2" />;
 }
