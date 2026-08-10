@@ -62,8 +62,8 @@ Start it yourself - don't ask the user to. Launch it detached so it outlives thi
   "$HOME/.jobpilot/jobpilot" --install-service
   ```
 
-  If that reports no supported service manager, fall back to a detached launch - it runs, but
-  nothing will restart it:
+  It exits 0 when supervised. On any non-zero exit - no service manager, or the supervisor refused
+  the unit - fall back to a detached launch, which runs but will not restart itself:
 
   ```bash
   (cd "$HOME/.jobpilot" && nohup ./jobpilot >"$HOME/.jobpilot/host.log" 2>&1 & disown)

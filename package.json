@@ -7,7 +7,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently --restart-tries -1 --restart-after 2000 -n terminal,api,web -c cyan,magenta,green \"dotnet run --project apps/terminal\" \"bun --cwd=apps/api run dev\" \"bun --cwd=apps/web run dev\"",
+    "dev": "concurrently --restart-tries 3 --restart-after 2000 -n terminal,api,web -c cyan,magenta,green \"dotnet run --project apps/terminal\" \"bun --cwd=apps/api run dev\" \"bun --cwd=apps/web run dev\"",
     "dev:api": "bun --cwd=apps/api run dev",
     "dev:web": "bun --cwd=apps/web run dev",
     "dev:terminal": "dotnet run --project apps/terminal",

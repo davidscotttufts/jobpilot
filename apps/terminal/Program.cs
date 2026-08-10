@@ -19,13 +19,15 @@ if (args.Any(a => a.Equals("--unregister", StringComparison.OrdinalIgnoreCase)))
 // Supervision, handled before the web host binds: installing is a one-shot command, not a mode.
 if (args.Any(a => a.Equals("--install-service", StringComparison.OrdinalIgnoreCase)))
 {
-    ServiceInstaller.Install(Environment.ProcessPath ?? AppContext.BaseDirectory, Console.Out);
+    // The exit code is the contract: setup falls back to a detached launch on anything non-zero,
+    // which matching stdout prose could not do reliably.
+    Environment.ExitCode = (int)ServiceInstaller.Install(Environment.ProcessPath ?? string.Empty, Console.Out);
     return;
 }
 
 if (args.Any(a => a.Equals("--uninstall-service", StringComparison.OrdinalIgnoreCase)))
 {
-    ServiceInstaller.Uninstall(Console.Out);
+    Environment.ExitCode = (int)ServiceInstaller.Uninstall(Console.Out);
     return;
 }
 
