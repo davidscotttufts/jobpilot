@@ -16,6 +16,19 @@ if (args.Any(a => a.Equals("--unregister", StringComparison.OrdinalIgnoreCase)))
     return;
 }
 
+// Supervision, handled before the web host binds: installing is a one-shot command, not a mode.
+if (args.Any(a => a.Equals("--install-service", StringComparison.OrdinalIgnoreCase)))
+{
+    ServiceInstaller.Install(Environment.ProcessPath ?? AppContext.BaseDirectory, Console.Out);
+    return;
+}
+
+if (args.Any(a => a.Equals("--uninstall-service", StringComparison.OrdinalIgnoreCase)))
+{
+    ServiceInstaller.Uninstall(Console.Out);
+    return;
+}
+
 var hostArgs = ProtocolRegistrar.ResolveHostArgs(args);
 
 // Load appsettings.json beside the executable, regardless of the launch directory.

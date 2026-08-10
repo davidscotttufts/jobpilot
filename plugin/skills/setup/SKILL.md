@@ -55,7 +55,15 @@ Start it yourself - don't ask the user to. Launch it detached so it outlives thi
   Start-Process "$env:USERPROFILE\.jobpilot\jobpilot.exe" -WorkingDirectory "$env:USERPROFILE\.jobpilot" -WindowStyle Hidden
   ```
 
-- **macOS / Linux:**
+- **macOS / Linux:** register it with the OS supervisor, which both starts it now and brings it
+  back after a crash or a reboot:
+
+  ```bash
+  "$HOME/.jobpilot/jobpilot" --install-service
+  ```
+
+  If that reports no supported service manager, fall back to a detached launch - it runs, but
+  nothing will restart it:
 
   ```bash
   (cd "$HOME/.jobpilot" && nohup ./jobpilot >"$HOME/.jobpilot/host.log" 2>&1 & disown)
@@ -68,6 +76,10 @@ Then poll until it answers (up to ~30s):
 
 - Healthy → continue to step 6 (a fresh start self-updates on launch).
 - Still refused after the timeout → check the log (`~/.jobpilot/host.log` on macOS/Linux, console output on Windows). If it says port 4102 is already in use, a stale `jobpilot` instance is running - stop it (`Get-Process jobpilot | Stop-Process -Force` / `pkill -x jobpilot`) and retry step 4. Otherwise report the failure and ask the user to start `jobpilot` manually.
+
+A supervised host restarts itself, so a crash no longer costs the user their agent. To stop that -
+before uninstalling, say - run `"$HOME/.jobpilot/jobpilot" --uninstall-service`, or the supervisor
+will keep starting it again.
 
 ## 5. Update to the latest release
 
