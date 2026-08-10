@@ -8,6 +8,7 @@
 |---|---|---|---|---|
 | Design System (cross-cutting) | A | A+ | 0 | 1 (reduced) |
 | **Accessibility Debt** | B+ | A+ | 0 | 2 |
+| **Designed states & resilience** | C | A+ | 0 | 2 |
 | Deferred Polish | A | A+ | 0 | 0 |
 | Per-experience areas (15) | not yet graded | A+ | — | — |
 
@@ -114,6 +115,35 @@ gap here where a user actually loses information. Then confirm `A11Y-3` live (`C
 
 ---
 
+## Designed states & resilience — Grade: C
+
+The one dimension gradable from source across every area, and the weakest thing found in this
+audit. Per-area coverage of empty/loading/error states is uneven — strong in Pilot (30 files,
+14 with loading, 10 with error) and Resumes; thin in Upwork, Applications, Boards, Cover letters,
+and Jobs, which are data-driven but had no error path at all.
+
+The root cause was not per-area sloppiness, it was the shared hook:
+
+- [x] `STATE-1` (**was Blocker**) **Closed 2026-08-10.** `useApiQuery` only toasted a failure when
+      the call site passed `errorMessage` — and **all 63 call sites omitted it**, so the toast was
+      dead code and a failed fetch rendered as a permanently empty surface saying nothing. The
+      route-level `(dashboard)/error.tsx` boundary does not catch it either, since query errors are
+      returned rather than thrown. The error's own (already normalized) message is now the default;
+      `errorMessage: null` opts out where a caller handles failure itself —
+      `apps/web/src/api/hooks/use-api-query.ts:48` — effort: S
+- [ ] `STATE-2` (Improvement) `useResumeExtraction` swallows failure entirely — it returns
+      `{ content }` and nothing else, so a failed extraction poll is invisible. It is opted out of
+      the default toast because it polls every 2s and would repeat, which means it now needs its
+      own inline error state — `apps/web/src/components/features/resumes/use-resume-extraction.ts:21`
+      — effort: S
+- [ ] `STATE-3` (Improvement) Areas with data fetching but no error path of their own: Upwork,
+      Applications, Boards, Cover letters, Jobs. `STATE-1` gives them all a toast; whether a toast
+      is the *right* treatment (vs an inline retry) is a per-surface call best made live — effort: M
+
+**Path to A+:** `STATE-2`, then decide `STATE-3` per surface during the `CT-*` pass.
+
+---
+
 ## Deferred Polish — Grade: A
 
 The UI-TODO and placeholder sweep came back clean: no `TODO(design)`, no lorem ipsum, no
@@ -136,6 +166,11 @@ this rubric forbids. They are listed so the coverage gap is explicit rather than
 ---
 
 ## Changelog
+- 2026-08-10: Graded **Designed states & resilience** (C) — the one dimension gradable statically
+  across all areas. Found and closed `STATE-1`: `useApiQuery`'s error toast was opt-in and all 63
+  call sites opted out, so every failed fetch was silent. Errors now surface by default. Opted the
+  2s resume-extraction poll out to avoid a repeating toast, recording `STATE-2` rather than hiding
+  it. Gate green: 542 API tests, web typecheck, Biome.
 - 2026-08-10: Added a `lead` typography variant and adopted it across 5 marketing sections;
   normalized 2 near-duplicate `h3` overrides. Reclassified most of `DS-3` as idiomatic MUI rather
   than scale violations, with the reasoning recorded. Upwork proposals count now announces

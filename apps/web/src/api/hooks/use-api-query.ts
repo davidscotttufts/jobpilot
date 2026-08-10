@@ -17,7 +17,13 @@ type UseApiQueryOptions<TData, TSelected = TData> = Omit<
   UseQueryOptions<TData, Error, TSelected, ApiQueryKey>,
   "queryKey" | "queryFn"
 > & {
-  errorMessage?: string | ((error: Error) => string);
+  /**
+   * Override the toast shown when the query fails. Omit it and the error's own message is used -
+   * every one of the 63 call sites omitted it, and the old opt-in meant a failed fetch rendered
+   * as a permanently empty surface with nothing said. Pass `null` where the caller genuinely
+   * handles the failure itself (an inline error state, or a probe whose failure is expected).
+   */
+  errorMessage?: string | ((error: Error) => string) | null;
 };
 
 export type ApiQueryResult<TData> = Omit<UseQueryResult<TData, Error>, "data" | "error"> & {
@@ -46,10 +52,15 @@ export function useApiQuery<TData, TSelected = TData>(
   });
 
   useEffect(() => {
-    if (result.error && errorMessage !== undefined) {
-      const msg = typeof errorMessage === "function" ? errorMessage(result.error) : errorMessage;
-      toast.error(msg);
+    if (!result.error || errorMessage === null) {
+      return;
     }
+    // queryFn already normalized the API error into a readable message, so it is a usable default.
+    const msg =
+      typeof errorMessage === "function"
+        ? errorMessage(result.error)
+        : (errorMessage ?? result.error.message);
+    toast.error(msg);
   }, [result.error, errorMessage, toast]);
 
   return result as ApiQueryResult<TSelected>;

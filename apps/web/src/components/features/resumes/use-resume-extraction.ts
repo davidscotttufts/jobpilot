@@ -21,6 +21,9 @@ export function useResumeExtraction(resumeId: string | null, enabled: boolean): 
   const resume = useApiQuery(resumeQueries.detail(resumeId ?? ""), {
     enabled: active,
     refetchInterval: POLL_MS,
+    // Polls every 2s, so the default error toast would repeat every 2s while extraction is down.
+    // This hook still swallows the failure (it returns content only) - see STATE-2.
+    errorMessage: null,
   });
 
   useSseChannel(
