@@ -47,7 +47,7 @@ jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 { "mode": "apply", "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "digest": <DIGEST>, "resumeId": "<RESUME_ID>",
   "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
-  "preSubmitReview": <bool> }
+  "preSubmitReview": <bool>, "browserServer": "<mcp server name, omit when running alone>" }
 ```
 
 Omit `digest` and the worker fetches it from the saved Job. The worker returns one of

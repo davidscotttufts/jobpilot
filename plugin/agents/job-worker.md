@@ -61,6 +61,13 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 }
 ```
 
+## Browser server
+
+`browserServer` in the input names the MCP server whose browser tools you use - `playwright`,
+`playwright-2`, and so on. Use only that one for every browser call. Absent, use `playwright`.
+Two workers sharing a server queue behind each other on one tab, which is the whole reason the
+caller assigns them.
+
 ## mode: score
 
 Read one or more postings, persist scored Job rows. No application. `jobs` absent → treat it as a one-row batch from the top-level `jobKey`/`url`.
