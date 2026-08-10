@@ -36,6 +36,15 @@ const pilotPromotionConfigSchema = z.object({
  */
 export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
+  /**
+   * How many applies may be in flight at once. Defaults to 1 - the serial loop the pilot has
+   * always run. Raising it is the only lever with a large throughput multiple in it, since one
+   * application is model- and page-bound at ~5 min and will not itself get much faster. Each
+   * concurrent worker needs its own browser profile, and parallel submissions from one identity
+   * are a stronger bot-detection signal than a serial trickle, so raise it a step at a time.
+   * Bounded by MAX_OPEN_APPLY_CLAIMS, past which the stale sweep stops protecting live jobs.
+   */
+  maxConcurrentApplies: z.number().int().min(1).max(20).default(1),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),

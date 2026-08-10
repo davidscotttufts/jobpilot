@@ -293,6 +293,9 @@ export const agendaContentSchema = z.object({
     dailyApplyCap: z.number().int(),
     appliedToday: z.number().int(),
     capReached: z.boolean(),
+    /** How many applies may run at once; 1 is the serial loop. */
+    maxConcurrentApplies: z.number().int(),
+    applyingNow: z.number().int(),
     dailyNetworkingCap: z.number().int(),
     networkingSentToday: z.number().int(),
     resetsAt: z.date(),

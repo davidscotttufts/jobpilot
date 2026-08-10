@@ -35,7 +35,9 @@ export async function assertApplyBudget(
     where: { userId },
     select: { instructionsConfig: true },
   });
-  const { dailyApplyCap } = parseInstructionsConfig(state?.instructionsConfig ?? {});
+  const { dailyApplyCap, maxConcurrentApplies } = parseInstructionsConfig(
+    state?.instructionsConfig ?? {},
+  );
 
   const [appliedToday, inFlight] = await Promise.all([
     db.application.count({ where: { userId, appliedAt: { gte: startOfDay(now) } } }),
@@ -44,6 +46,12 @@ export async function assertApplyBudget(
       take: MAX_IN_FLIGHT,
     } as Prisma.JobCountArgs),
   ]);
+
+  if (inFlight >= maxConcurrentApplies) {
+    throw conflict(
+      `Already applying to ${inFlight} job(s), the configured limit. Finish one before claiming another, or raise maxConcurrentApplies.`,
+    );
+  }
 
   const committed = appliedToday + inFlight;
   if (committed >= dailyApplyCap) {

@@ -6,9 +6,18 @@ import { describe, expect, it } from "bun:test";
 
 const NOW = new Date("2026-08-10T15:00:00Z");
 
-function reader(cap: number, appliedToday: number, inFlight: number): ApplyBudgetReader {
+function reader(
+  cap: number,
+  appliedToday: number,
+  inFlight: number,
+  maxConcurrentApplies = 20,
+): ApplyBudgetReader {
   return {
-    pilotState: { findUnique: async () => ({ instructionsConfig: { dailyApplyCap: cap } }) },
+    pilotState: {
+      findUnique: async () => ({
+        instructionsConfig: { dailyApplyCap: cap, maxConcurrentApplies },
+      }),
+    },
     application: { count: async () => appliedToday },
     job: { count: async () => inFlight },
   } as unknown as ApplyBudgetReader;
@@ -36,6 +45,27 @@ describe("assertApplyBudget", () => {
   it("blocks everything at a zero cap", async () => {
     await expect(assertApplyBudget(reader(0, 0, 0), "u1", NOW)).rejects.toThrow(
       /Daily apply cap reached/,
+    );
+  });
+
+  // Default is 1: the serial loop, unchanged for anyone who has not opted in.
+  it("allows only one apply in flight by default", async () => {
+    const db = {
+      pilotState: { findUnique: async () => ({ instructionsConfig: {} }) },
+      application: { count: async () => 0 },
+      job: { count: async () => 1 },
+    } as unknown as ApplyBudgetReader;
+
+    await expect(assertApplyBudget(db, "u1", NOW)).rejects.toThrow(/the configured limit/);
+  });
+
+  it("allows a second apply once concurrency is raised", async () => {
+    await expect(assertApplyBudget(reader(10, 0, 1, 3), "u1", NOW)).resolves.toBeUndefined();
+  });
+
+  it("stops at the configured concurrency even with daily room left", async () => {
+    await expect(assertApplyBudget(reader(50, 0, 3, 3), "u1", NOW)).rejects.toThrow(
+      /Already applying to 3/,
     );
   });
 

@@ -181,6 +181,8 @@ export interface AgendaInput {
   // Warm-intro pool: approved jobs at/above the floor plus recently-applied ones, claim-damped.
   warmIntroCandidates: AgendaApprovedJob[];
   appliedToday: number;
+  // Jobs already in `applying`. The concurrency limit is enforced against this at claim time.
+  applyingNow: number;
   dueQueries: AgendaDueQuery[];
   // No searches yet, or no goals to derive them from: the pilot still needs setup.
   awaitingSetup: boolean;

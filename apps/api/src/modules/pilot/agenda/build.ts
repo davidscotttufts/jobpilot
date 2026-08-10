@@ -152,6 +152,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
       dailyApplyCap: config.dailyApplyCap,
       appliedToday: input.appliedToday,
       capReached,
+      maxConcurrentApplies: config.maxConcurrentApplies,
+      applyingNow: input.applyingNow,
       dailyNetworkingCap: config.networking.dailyCap,
       networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),
