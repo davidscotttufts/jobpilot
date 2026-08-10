@@ -23,16 +23,16 @@ export async function recoverApplyingJobs(
   db: RecoveryWriter,
   where: Prisma.JobWhereInput,
 ): Promise<{ reapproved: number; parked: number }> {
-  const [reapproved, parked] = await Promise.all([
-    db.job.updateMany({
-      where: { ...where, submitAttemptedAt: null },
-      data: { status: "approved" },
-    }),
-    db.job.updateMany({
-      where: { ...where, submitAttemptedAt: { not: null } },
-      data: { status: "needs_user", skipReason: MAYBE_SUBMITTED_REASON },
-    }),
-  ]);
+  // Sequential, not Promise.all: every caller passes an interactive transaction client, and Prisma
+  // does not support concurrent queries on one.
+  const reapproved = await db.job.updateMany({
+    where: { ...where, submitAttemptedAt: null },
+    data: { status: "approved" },
+  });
+  const parked = await db.job.updateMany({
+    where: { ...where, submitAttemptedAt: { not: null } },
+    data: { status: "needs_user", skipReason: MAYBE_SUBMITTED_REASON },
+  });
 
   return { reapproved: reapproved.count, parked: parked.count };
 }

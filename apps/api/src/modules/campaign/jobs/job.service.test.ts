@@ -24,6 +24,7 @@ function setup() {
     failReason: null,
     retryNotes: null,
     skipReason: null,
+    submitAttemptedAt: null,
     description: null,
     digest: null,
     createdAt: new Date(),
@@ -97,6 +98,9 @@ function setup() {
     },
     setApplication(row: Record<string, unknown>) {
       application = row;
+    },
+    setSubmitAttempted(at: Date | null) {
+      job = { ...job, submitAttemptedAt: at } as typeof job;
     },
   };
 }
@@ -272,5 +276,28 @@ describe("CampaignJobService duplicate apply guard", () => {
     const patched = await state.service.patchJob("u1", "c1", "j1", { status: "applying" });
 
     expect(patched).toMatchObject({ status: "applying" });
+  });
+});
+
+// A stamped job may already be with the employer. Recovery parks it for a human; PATCH is the
+// other door into the apply queue and has to be locked too, or the guard is decorative.
+describe("CampaignJobService submit-attempt guard", () => {
+  it("refuses to re-approve a job that may already have been submitted", async () => {
+    const state = setup();
+    state.setStatus("applying");
+    state.setSubmitAttempted(new Date());
+
+    await expect(state.service.patchJob("u1", "c1", "j1", { status: "approved" })).rejects.toThrow(
+      /may already have been submitted/,
+    );
+  });
+
+  it("still re-approves an interrupted job that never reached the submit", async () => {
+    const state = setup();
+    state.setStatus("applying");
+
+    const patched = await state.service.patchJob("u1", "c1", "j1", { status: "approved" });
+
+    expect(patched).toMatchObject({ status: "approved" });
   });
 });

@@ -26,6 +26,7 @@ import { ensureCampaignOwned } from "../campaign.utils";
 import { assertNotAlreadyApplied } from "./applied-guard";
 import { writeJobRescan, writeJobRetry } from "./job-commands";
 import { isTerminalJob, writeJobResult } from "./job-result";
+import { MAYBE_SUBMITTED_REASON } from "./recover-applying";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
   // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
@@ -158,6 +159,17 @@ export class CampaignJobService {
       if (!ALLOWED_TRANSITIONS[existing.status].includes(patch.status)) {
         throw conflict(`Job cannot transition from ${existing.status} to ${patch.status}.`);
       }
+    }
+
+    // `applying → approved` is a legal transition, which makes PATCH a second way to put a job
+    // that may already have been submitted back in the apply queue - the same double-submit the
+    // crash-recovery guard exists to prevent. Recovery routes it to a human; so does this.
+    if (
+      existing.status === "applying" &&
+      patch.status === "approved" &&
+      existing.submitAttemptedAt !== null
+    ) {
+      throw conflict(MAYBE_SUBMITTED_REASON);
     }
 
     const job = await this.prisma.$transaction(async (tx) => {
