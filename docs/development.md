@@ -209,3 +209,42 @@ The guards in `apps/api/src/modules/resume/structure.ts` are the design: the
 model picks *which* entries combine, the server derives every date and
 whitelists umbrella employer names, so no request can add an employer or widen a
 range. The numbers guard in `rewrite.ts` covers every reworded bullet.
+
+## Tuning the apply loop
+
+One application is model- and page-bound at roughly five minutes and will not
+itself get much faster; throughput comes from doing more at once. Both knobs
+below are measured with the same instrument, so change one thing at a time.
+
+`--save-session` in [plugin/.mcp.json](../plugin/.mcp.json) records every tool
+call. Sessions land under the gitignored `.playwright-mcp/` and hold typed form
+values (address, phone, salary) - keep them there. Then:
+
+```bash
+bun apps/api/scripts/analyze-apply-session.ts
+```
+
+It reports tool calls per session and a per-tool breakdown, including
+per-field fill calls against batched ones - the number that should collapse now
+that a form page is filled with a single `browser_fill_form`.
+
+**Concurrency** is `maxConcurrentApplies` in the pilot's instructions config,
+default 1. The server enforces it at claim time along with the daily cap and an
+in-flight duplicate check, so raising it cannot overshoot either. The browser is
+the limit: one MCP server runs tool calls one at a time, so each worker needs
+its own server entry and profile (see `_shared/browser-tips.md`). Raise it a
+step at a time - parallel submissions from one identity look less human, and
+concurrency multiplies the cost of any bug.
+
+**Snapshot mode** is an open experiment. `--snapshot-mode none` keeps snapshots
+out of every action response, which is fewer tokens but means an explicit
+`browser_snapshot` to see what an action did. `full` returns the new state with
+each action - more tokens, fewer round trips. Which wins depends on how large
+your boards' pages are, and batching the fills changed the balance. Run a
+campaign each way and compare calls per application before settling.
+
+Not on the table: caching cover letters. `cover-letter`'s Step 2 reads the last
+five specifically so a new one does not resemble them; reuse would defeat the
+skill. Moving generation off the apply's critical path would need a separate
+preparation step, which is only worth building once a session capture shows how
+much of the five minutes it actually is.
