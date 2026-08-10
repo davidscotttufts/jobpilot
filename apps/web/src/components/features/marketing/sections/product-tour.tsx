@@ -62,7 +62,7 @@ export function ProductTour(): ReactElement {
               <Stack spacing={1.5}>
                 <SectionEyebrow color="accent.primary">{row.eyebrow}</SectionEyebrow>
                 <Typography variant="h2">{row.title}</Typography>
-                <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 440 }}>
+                <Typography variant="lead" sx={{ maxWidth: 440 }}>
                   {row.body}
                 </Typography>
               </Stack>

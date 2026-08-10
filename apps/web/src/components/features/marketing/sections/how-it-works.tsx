@@ -45,9 +45,7 @@ export function HowItWorks(): ReactElement {
                 >
                   {String(i + 1).padStart(2, "0")}
                 </Typography>
-                <Typography variant="h3" sx={{ fontSize: "1.2rem" }}>
-                  {step.title}
-                </Typography>
+                <Typography variant="h3">{step.title}</Typography>
                 <Typography variant="body2Muted">{step.body}</Typography>
                 <Box
                   component="code"

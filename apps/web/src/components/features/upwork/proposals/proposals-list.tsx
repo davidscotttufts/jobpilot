@@ -81,7 +81,10 @@ export function ProposalsList(): ReactElement {
           </Button>
         )}
         <Box sx={{ flex: 1 }} />
-        <Typography variant="captionMuted">{plural(total, "proposal")}</Typography>
+        {/* Live over SSE like the campaign job count - announce the total, not every row. */}
+        <Typography variant="captionMuted" role="status" aria-live="polite">
+          {plural(total, "proposal")}
+        </Typography>
       </Stack>
 
       {pageRows.length === 0 ? (

@@ -4,6 +4,7 @@ import type { controlHeights, gradients, iconSizes, motion, radii, shadows } fro
 
 /** Single list of custom variants; the three MUI interfaces below all derive from it. */
 interface CustomTypographyVariants {
+  lead: CSSProperties;
   body1Muted: CSSProperties;
   body2Muted: CSSProperties;
   captionMuted: CSSProperties;

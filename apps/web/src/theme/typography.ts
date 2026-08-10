@@ -102,6 +102,14 @@ export const typography: TypographyVariantsOptions = {
     fontWeight: 600,
     color: textColors.secondary,
   },
+  // Marketing intro copy: five sections had each hand-set this exact size over body1Muted,
+  // which is the scale telling you it was missing a step rather than five one-off decisions.
+  lead: {
+    fontFamily: fontFamilies.body,
+    fontSize: "0.9375rem",
+    lineHeight: 1.55,
+    color: textColors.secondary,
+  },
   body1Muted: {
     fontFamily: fontFamilies.body,
     fontSize: "0.8125rem",

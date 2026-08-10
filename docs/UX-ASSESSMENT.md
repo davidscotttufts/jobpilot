@@ -6,7 +6,7 @@
 
 | Collection | Grade | Target | Open blockers | Open gaps |
 |---|---|---|---|---|
-| Design System (cross-cutting) | A | A+ | 0 | 1 |
+| Design System (cross-cutting) | A | A+ | 0 | 1 (reduced) |
 | **Accessibility Debt** | B+ | A+ | 0 | 2 |
 | Deferred Polish | A | A+ | 0 | 0 |
 | Per-experience areas (15) | not yet graded | A+ | — | — |
@@ -69,7 +69,17 @@ A+.
 - [x] `DS-2` (Improvement) **Closed 2026-08-10.** Hardcoded px in `sx` where the theme or a numeric value belongs —
       `agent-dock/dock-panel.tsx:61` (`marginTop: "2px"`), `portfolio/activity-heatmap.tsx:121,139`
       (`borderRadius: "2px"`) — effort: S
-- [ ] `DS-3` (Improvement) ~70 hand-set `fontSize`/`fontWeight` outside `theme/`, concentrated in
+- [~] `DS-3` (Improvement) **Reduced 2026-08-10.** The raw count overstated it: of ~70 hits, most
+      are not type-scale decisions at all — MUI icon sizing (`<PlayArrow sx={{ fontSize: 32 }}`),
+      MUI X chart `tickLabelStyle`, xterm's own `fontSize: 13` config, `fontSize: "inherit"`,
+      reads *from* the theme (`theme.typography.body1Strong.fontWeight`), and `monoChip`, whose
+      definition explicitly says "Callers set `fontSize`". Closed the genuine ones: five marketing
+      sections each hand-set `0.9375rem` over `body1Muted`, which is a missing scale step, not five
+      decisions — added a `lead` variant and used it; two `h3` overrides within 0.05rem of `h3`
+      now use `h3`. Left deliberately: `brand-mark.tsx:35` (`1.1rem`) is a logo lockup where the
+      13% difference from `h3` is visible and intentional, and the remaining one-offs are single-use
+      sizes whose normalization changes pixels and wants a live look (`CT-5`). Originally: ~70
+      hand-set sizes concentrated in
       `features/marketing/sections/*` (pilot, how-it-works, campaign-types, teaser, pilot-cycle),
       `features/docs/mdx-elements.tsx`, `ui/navigation/tab-link.tsx`, `layout/mobile-nav.tsx`,
       `features/profile/account-menu.tsx`, `features/portfolio/activity-heatmap.tsx`. Each is a
@@ -126,6 +136,10 @@ this rubric forbids. They are listed so the coverage gap is explicit rather than
 ---
 
 ## Changelog
+- 2026-08-10: Added a `lead` typography variant and adopted it across 5 marketing sections;
+  normalized 2 near-duplicate `h3` overrides. Reclassified most of `DS-3` as idiomatic MUI rather
+  than scale violations, with the reasoning recorded. Upwork proposals count now announces
+  (`A11Y-1`). Gate green.
 - 2026-08-10: Closed `DS-1` (4 deep MUI `Grid` imports folded into the barrel), `DS-2` (3 px
   strings moved onto the theme's radius/spacing scale - `borderRadius: 2` renders identically
   given `shape.borderRadius: 1`), and `A11Y-2` (`prefers-reduced-motion` guard on `pulse-dot`).

@@ -53,7 +53,7 @@ export function CampaignTypes(): ReactElement {
       <Stack spacing={1.5} sx={{ mb: 4, maxWidth: 620 }}>
         <SectionEyebrow>HANDS-ON MODES</SectionEyebrow>
         <Typography variant="h2">Four modes for driving it yourself.</Typography>
-        <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
+        <Typography variant="lead">
           The Pilot runs all of these for you. Reach for them yourself when you want to steer a
           single search, application, or message.
         </Typography>
@@ -90,9 +90,7 @@ export function CampaignTypes(): ReactElement {
                   >
                     {mode.tag}
                   </Box>
-                  <Typography variant="h3" sx={{ fontSize: "1.15rem" }}>
-                    {mode.title}
-                  </Typography>
+                  <Typography variant="h3">{mode.title}</Typography>
                   <Typography variant="body2Muted">{mode.body}</Typography>
                   <Box
                     component="code"

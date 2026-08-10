@@ -26,7 +26,7 @@ export function Teaser(): ReactElement {
       <Stack spacing={1.5} sx={{ mb: 3, maxWidth: 620 }}>
         <SectionEyebrow color="accent.primary">SEE IT RUN</SectionEyebrow>
         <Typography variant="h2">Forty seconds of the agent working.</Typography>
-        <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
+        <Typography variant="lead">
           Nothing here is a mockup: it's one real cycle, a real application form, and the pipeline
           filling up.
         </Typography>

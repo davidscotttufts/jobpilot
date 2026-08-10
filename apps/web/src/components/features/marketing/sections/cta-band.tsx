@@ -46,7 +46,7 @@ export function CtaBand(): ReactElement {
           <Typography variant="displayMd" sx={{ maxWidth: 620 }}>
             Put your job search on autopilot.
           </Typography>
-          <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 520 }}>
+          <Typography variant="lead" sx={{ maxWidth: 520 }}>
             Free and open source. Install the agent, create your account, and run your first
             campaign tonight.
           </Typography>
