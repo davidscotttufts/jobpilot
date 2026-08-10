@@ -161,13 +161,14 @@ export class CampaignJobService {
       }
     }
 
-    // `applying → approved` is a legal transition, which makes PATCH a second way to put a job
-    // that may already have been submitted back in the apply queue - the same double-submit the
-    // crash-recovery guard exists to prevent. Recovery routes it to a human; so does this.
+    // Every route back into an apply, not just one. `needs_user → approved` is what the bulk
+    // re-apply button sends and it also clears skipReason, erasing the warning on the way; the
+    // resume flows re-send `applying → applying`, a no-op that skips the transition check entirely.
+    // Any of them would submit a second time, so a stamped job refuses all of them until the stamp
+    // is cleared by a terminal outcome.
     if (
-      existing.status === "applying" &&
-      patch.status === "approved" &&
-      existing.submitAttemptedAt !== null
+      existing.submitAttemptedAt !== null &&
+      (patch.status === "approved" || patch.status === "applying")
     ) {
       throw conflict(MAYBE_SUBMITTED_REASON);
     }
@@ -227,13 +228,23 @@ export class CampaignJobService {
    * rather than sending a second one - see `recover-applying.ts`.
    */
   async markSubmitAttempt(userId: string, campaignId: string, key: string) {
-    const marked = await this.prisma.job.updateMany({
-      where: { campaignId, key, status: "applying", campaign: { userId } },
+    // 404 vs 409 matters here: a typo'd key must not read as "claim it first".
+    const existing = await findOwned(
+      (where) => this.prisma.job.findFirst({ where, select: { status: true } }),
+      { campaignId, key, campaign: { userId } },
+      "Campaign job",
+    );
+    // `needs_user` counts: a 2FA or salary answer resumes the apply in place, without re-claiming,
+    // and that resumed attempt reaches the submit exactly like the first one.
+    if (existing.status !== "applying" && existing.status !== "needs_user") {
+      throw conflict(
+        `Job is ${existing.status}, not mid-apply; mark a submit attempt only while applying.`,
+      );
+    }
+    await this.prisma.job.updateMany({
+      where: { campaignId, key, campaign: { userId } },
       data: { submitAttemptedAt: new Date() },
     });
-    if (marked.count === 0) {
-      throw conflict("Job is not being applied to; claim it before recording a submit attempt.");
-    }
     return this.prisma.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });
   }
 

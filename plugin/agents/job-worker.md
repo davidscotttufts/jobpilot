@@ -65,8 +65,8 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 
 `browserServer` in the input names the MCP server whose browser tools you use - `playwright`,
 `playwright-2`, and so on. Use only that one for every browser call. Absent, use `playwright`.
-Two workers sharing a server queue behind each other on one tab, which is the whole reason the
-caller assigns them.
+The caller leases it to the claim, so it is yours for the run; two workers on one server do not
+merely queue, they hit a locked profile and both applies fail.
 
 ## mode: score
 
@@ -120,6 +120,10 @@ curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
 ```
 
    Then submit, `browser_wait_for`, narrow snapshot: success is `applied`; a populated error is `failed` with that message; a CAPTCHA at submit invokes `solve-captcha`, still unsolved is `skipped`.
+
+   `-fsS` exits non-zero on an HTTP error. A `409` here means the job is not mid-apply - stop and
+   return `failed` with that message rather than submitting, because an unmarked submit is exactly
+   the case recovery cannot protect. A `404` means the campaign/job key is wrong.
 
    This call is what stops a crash from mailing a second application. If you die between the click
    and the `/result` write, recovery has no other way to know the employer already has it - without

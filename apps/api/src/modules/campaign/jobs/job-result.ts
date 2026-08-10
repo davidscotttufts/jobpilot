@@ -62,6 +62,10 @@ export async function writeJobResult(
         skipReason: data.outcome === "skipped" ? data.skipReason : null,
         retryNotes: data.retryNotes,
         matchScore: data.matchScore,
+        // The agent lived to report an outcome, so this attempt is accounted for. Leaving the
+        // stamp would park a later, unrelated crash as "maybe submitted" and 409 the normal
+        // bail-out forever.
+        submitAttemptedAt: null,
       },
     });
     let raced = null;

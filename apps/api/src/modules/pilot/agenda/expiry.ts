@@ -34,7 +34,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         .map((claim) => parseJobPayload(claim.payload));
 
       if (jobRefs.length) {
-        await recoverApplyingJobs(tx, {
+        await recoverApplyingJobs(tx, userId, {
           status: "applying",
           campaign: { userId },
           OR: jobRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
@@ -52,7 +52,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
     });
     const openApplyRefs = openApplyClaims.map((claim) => parseJobPayload(claim.payload));
 
-    await recoverApplyingJobs(tx, {
+    await recoverApplyingJobs(tx, userId, {
       status: "applying",
       campaign: { userId },
       updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },

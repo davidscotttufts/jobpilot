@@ -8,6 +8,7 @@ import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { toPilotClaim } from "../pilot.mapper";
 import { assertApplyBudget } from "./apply-budget";
+import { acquireBrowser } from "./browser-lease";
 import { MAX_CLAIM_LIFETIME_MS } from "./constants";
 import { verifyGrant } from "./grant";
 import { parseJobPayload } from "./job-mutations";
@@ -110,6 +111,14 @@ export class ClaimService {
     return toPilotClaim(result.claim);
   }
 
+  /**
+   * Leases a browser to this claim for as long as it runs. See `browser-lease.ts` - a profile opens
+   * in one browser, and unarbitrated contention was the single largest cause of apply failures.
+   */
+  async acquireBrowser(userId: string, id: string, server: string) {
+    return this.prisma.$transaction((tx) => acquireBrowser(tx, userId, id, server, new Date()));
+  }
+
   async heartbeat(userId: string, id: string) {
     const open = await this.prisma.pilotClaim.findFirst({
       where: { id, userId, releasedAt: null },
@@ -146,7 +155,7 @@ export class ClaimService {
     const updated = await this.prisma.$transaction(async (tx) => {
       if (body.outcome === "abandoned" && existing.kind === "job.apply") {
         const jobRef = parseJobPayload(payload);
-        await recoverApplyingJobs(tx, {
+        await recoverApplyingJobs(tx, userId, {
           campaignId: jobRef.campaignId,
           key: jobRef.jobKey,
           status: "applying",

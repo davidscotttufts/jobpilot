@@ -296,6 +296,8 @@ export const agendaContentSchema = z.object({
     /** How many applies may run at once; 1 is the serial loop. */
     maxConcurrentApplies: z.number().int(),
     applyingNow: z.number().int(),
+    /** MCP browser servers already leased to a running item - pick one that is not here. */
+    browsersInUse: z.array(z.string()),
     dailyNetworkingCap: z.number().int(),
     networkingSentToday: z.number().int(),
     resetsAt: z.date(),

@@ -10,6 +10,15 @@ export const createPilotClaimSchema = z.object({
   itemId: z.string().min(1),
 });
 
+/** Names an MCP browser server from the agent's own .mcp.json - the API only arbitrates the name. */
+export const acquireBrowserSchema = z.object({
+  server: z.string().min(1).max(64),
+});
+
+export const acquiredBrowserSchema = z.object({
+  server: z.string(),
+});
+
 export const releasePilotClaimSchema = z.object({
   outcome: pilotClaimOutcomeSchema,
   note: z.string().optional(),

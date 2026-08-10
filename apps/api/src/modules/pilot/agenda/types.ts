@@ -183,6 +183,8 @@ export interface AgendaInput {
   appliedToday: number;
   // Jobs already in `applying`. The concurrency limit is enforced against this at claim time.
   applyingNow: number;
+  // Browser servers leased to open claims, so the agent can choose a free one up front.
+  browsersInUse: string[];
   dueQueries: AgendaDueQuery[];
   // No searches yet, or no goals to derive them from: the pilot still needs setup.
   awaitingSetup: boolean;

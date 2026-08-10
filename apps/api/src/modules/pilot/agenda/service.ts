@@ -14,6 +14,7 @@ import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { browsersInUse } from "./browser-lease";
 import { buildAgenda } from "./build";
 import { gatherBoardHealth } from "./candidates-board";
 import { gatherBootstrap } from "./candidates-bootstrap";
@@ -102,6 +103,7 @@ export class AgendaService {
       approvedJobs,
       appliedToday,
       applyingNow,
+      leasedBrowsers,
       pausedCampaigns,
       inbox,
       approvedNetworking,
@@ -121,6 +123,7 @@ export class AgendaService {
       gatherApprovedJobs(prisma, userId),
       countAppliedToday(prisma, userId, now),
       prisma.job.count({ where: { status: "applying", campaign: { userId } } }),
+      browsersInUse(prisma, userId, now),
       gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),
       emailNetworking ? gatherApprovedNetworking(prisma, userId) : [],
@@ -184,6 +187,7 @@ export class AgendaService {
       warmIntroCandidates,
       appliedToday,
       applyingNow,
+      browsersInUse: leasedBrowsers,
       dueQueries,
       awaitingSetup,
       nextSearchRunAt,

@@ -1,4 +1,6 @@
 import {
+  acquireBrowserSchema,
+  acquiredBrowserSchema,
   createPilotClaimSchema,
   pilotClaimSchema,
   releasePilotClaimSchema,
@@ -25,6 +27,21 @@ export const pilotClaimsController = new Elysia({ prefix: "/pilot", detail: { ta
         "Atomically claims an item from the supplied agenda version and creates its 15-minute claim; stale versions and races return 409.",
     },
   })
+  .post(
+    "/claims/:id/browser",
+    ({ user, params, body }) => claims.acquireBrowser(user.id, params.id, body.server),
+    {
+      params: idParam,
+      body: acquireBrowserSchema,
+      beforeHandle: limitClaim,
+      response: acquiredBrowserSchema,
+      detail: {
+        summary: "Lease a browser to this claim",
+        description:
+          "Reserves a named MCP browser server for the life of the claim. A Chrome profile opens in exactly one browser, so a second holder returns 409 - pick another server or wait. The lease is released when the claim is released or expires.",
+      },
+    },
+  )
   .post("/claims/:id/heartbeat", ({ user, params }) => claims.heartbeat(user.id, params.id), {
     params: idParam,
     beforeHandle: limitClaim,

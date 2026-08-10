@@ -12,6 +12,7 @@ export interface Recorder {
   recordResult: unknown[][];
   promoteScoredJobs: unknown[][];
   claimJobForApply: unknown[][];
+  questionsCreated: Record<string, unknown>[];
   claimCreates: Record<string, unknown>[];
   claimUpdates: { data: Record<string, unknown> }[];
   campaignUpdates: { where: Record<string, unknown>; data: Record<string, unknown> }[];
@@ -42,6 +43,8 @@ export interface Over {
   approvedJobs?: Record<string, unknown>[];
   // Recently-applied high scorers for the warm-intro pool, plus that pool's claim dampers.
   recentAppliedJobs?: Record<string, unknown>[];
+  /** Jobs stamped as maybe-submitted, read by crash recovery before parking them. */
+  stampedJobs?: Record<string, unknown>[];
   warmIntroClaims?: {
     subjectId: string;
     grantedAt: Date;
@@ -203,6 +206,10 @@ function fakePilotSearch(over: Over) {
 function fakePilotQuestion(over: Over, rec: Recorder) {
   return {
     count: async () => 0,
+    create: async (a: { data: Record<string, unknown> }) => {
+      rec.questionsCreated.push(a.data);
+      return a.data;
+    },
     findFirst: async () => over.pilotBootstrapQuestion ?? null,
     findMany: async (args: { where: { status?: unknown; subjectType?: string } }) => {
       if (args.where.subjectType === "campaign") return over.campaignQuestions ?? [];
@@ -225,7 +232,11 @@ function fakeJob(over: Over) {
   return {
     // status "applied" = warm-intro pool; matchScore filter = promote sweep; status `in` =
     // board-health scan; everything else is the approved-job gather.
-    findMany: async (a: { where: { status?: unknown; matchScore?: unknown } }) => {
+    findMany: async (a: {
+      where: { status?: unknown; matchScore?: unknown; submitAttemptedAt?: unknown };
+    }) => {
+      // Crash recovery's read of jobs stamped as maybe-submitted.
+      if ("submitAttemptedAt" in a.where) return over.stampedJobs ?? [];
       if (a.where.status === "applied") return over.recentAppliedJobs ?? [];
       if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
       if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];
@@ -324,6 +335,7 @@ export function makeAgendaDb(over: Over = {}) {
     recordResult: [],
     promoteScoredJobs: [],
     claimJobForApply: [],
+    questionsCreated: [],
     claimCreates: [],
     claimUpdates: [],
     campaignUpdates: [],

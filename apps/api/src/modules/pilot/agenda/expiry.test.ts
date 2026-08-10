@@ -6,6 +6,8 @@ function setup(options: {
   claims?: Record<string, unknown>[];
   questions?: Record<string, unknown>[];
   openApplyClaims?: Record<string, unknown>[];
+  /** Jobs stamped as maybe-submitted, which recovery parks instead of re-approving. */
+  stampedJobs?: Record<string, unknown>[];
 }) {
   const jobWrites: Record<string, unknown>[] = [];
   const claimWrites: Record<string, unknown>[] = [];
@@ -23,12 +25,19 @@ function setup(options: {
     },
     pilotQuestion: {
       findMany: async () => options.questions ?? [],
+      // Recovery raises one per parked job so the user hears about it.
+      create: async (args: { data: Record<string, unknown> }) => {
+        questionWrites.push(args.data);
+        return args.data;
+      },
       updateMany: async (args: Record<string, unknown>) => {
         questionWrites.push(args);
         return { count: options.questions?.length ?? 0 };
       },
     },
     job: {
+      // Crash recovery reads the maybe-submitted jobs before parking them; none by default.
+      findMany: async () => options.stampedJobs ?? [],
       updateMany: async (args: Record<string, unknown>) => {
         jobWrites.push(args);
         return { count: 1 };
@@ -99,5 +108,38 @@ describe("agenda expiry", () => {
       },
       data: { status: "approved" },
     });
+  });
+});
+
+describe("agenda expiry - maybe-submitted jobs", () => {
+  it("parks a stamped job and asks the user instead of re-approving it", async () => {
+    const state = setup({
+      claims: [
+        {
+          id: "cl1",
+          kind: "job.apply",
+          subjectId: "j1",
+          payload: { campaignId: "c1", jobKey: "j1" },
+        },
+      ],
+      stampedJobs: [
+        { campaignId: "c1", key: "j1", title: "Director of Engineering", company: "Acme" },
+      ],
+    });
+
+    await state.run();
+
+    // The re-approve write must never carry a stamped job.
+    const approved = state.jobWrites.filter(
+      (w) => (w.data as Record<string, unknown>)?.status === "approved",
+    );
+    for (const write of approved) {
+      expect((write.where as Record<string, unknown>).submitAttemptedAt).toBeNull();
+    }
+    const parked = state.jobWrites.find(
+      (w) => (w.data as Record<string, unknown>)?.status === "needs_user",
+    );
+    expect(parked).toBeDefined();
+    expect(state.questionWrites.some((q) => JSON.stringify(q).includes("Acme"))).toBe(true);
   });
 });
