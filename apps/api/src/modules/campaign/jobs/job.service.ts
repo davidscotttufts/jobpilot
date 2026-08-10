@@ -206,6 +206,25 @@ export class CampaignJobService {
     return job;
   }
 
+  /**
+   * Stamps the point of no return, just before the agent submits the form.
+   *
+   * Everything after this instant is unsafe to retry blindly: the application may already be with
+   * the employer, and the duplicate guard cannot see it, because an `Application` row only exists
+   * once the result is recorded. Crash recovery reads the stamp and parks the job for a human
+   * rather than sending a second one - see `recover-applying.ts`.
+   */
+  async markSubmitAttempt(userId: string, campaignId: string, key: string) {
+    const marked = await this.prisma.job.updateMany({
+      where: { campaignId, key, status: "applying", campaign: { userId } },
+      data: { submitAttemptedAt: new Date() },
+    });
+    if (marked.count === 0) {
+      throw conflict("Job is not being applied to; claim it before recording a submit attempt.");
+    }
+    return this.prisma.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });
+  }
+
   async retryJob(userId: string, campaignId: string, key: string, body: RetryCampaignJobInput) {
     const result = await writeJobRetry(this.prisma, userId, campaignId, key, body);
     this.publishStatusChange(userId, campaignId, result);

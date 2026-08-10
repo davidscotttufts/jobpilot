@@ -24,6 +24,18 @@ below or the pilot's claim - 409s when it duplicates an application, with a mess
 `Already applied (<kind>)`. That is the dedupe verdict, not a transient failure. Write the
 job's `skipped` result with that reason and move on; never retry the transition.
 
+## Before the submit click
+
+```bash
+curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
+  "$JOBPILOT_API/api/campaigns/$CID/jobs/<key>/submit-attempt"
+```
+
+Marks the point after which a retry would send a **second real application**. The dedupe guard
+cannot cover this window: an Application row is only written by the `/result` call, so a crash
+between submitting and recording leaves nothing for it to match on. With the mark, recovery parks
+the job for a human; without it, the job returns to `approved` and is applied to again.
+
 ## Terminal result writes
 
 Non-terminal transitions go through `PATCH /api/campaigns/$CID/jobs/<key>`

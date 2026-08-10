@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
+import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { GATHER_CAP, MAX_OPEN_APPLY_CLAIMS, STALE_APPLYING_MS } from "./constants";
 import { parseJobPayload } from "./job-mutations";
 
@@ -33,13 +34,10 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
         .map((claim) => parseJobPayload(claim.payload));
 
       if (jobRefs.length) {
-        await tx.job.updateMany({
-          where: {
-            status: "applying",
-            campaign: { userId },
-            OR: jobRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
-          },
-          data: { status: "approved" },
+        await recoverApplyingJobs(tx, {
+          status: "applying",
+          campaign: { userId },
+          OR: jobRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
         });
       }
     }
@@ -54,14 +52,11 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
     });
     const openApplyRefs = openApplyClaims.map((claim) => parseJobPayload(claim.payload));
 
-    await tx.job.updateMany({
-      where: {
-        status: "applying",
-        campaign: { userId },
-        updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
-        NOT: openApplyRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
-      },
-      data: { status: "approved" },
+    await recoverApplyingJobs(tx, {
+      status: "applying",
+      campaign: { userId },
+      updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
+      NOT: openApplyRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
     });
 
     const questions = await tx.pilotQuestion.findMany({

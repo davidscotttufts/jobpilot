@@ -112,7 +112,19 @@ Apply to one job. If `digest` is absent, fetch it from `GET /api/campaigns/$CAMP
 5. Tailor: invoke `tailor-resume` with the digest (fall back to `url`), `--base <resumeId>` when set. No usable base is `failed`, `failReason:"No tailorable resume base"`.
 6. Fill (form-filling.md): upload the variant; a cover-letter field invokes `cover-letter` (pass `source`). Use `defaultStartDate`. Salary fields: resolve per form-filling.md (`salaryExpectation` override → `user.salaryPreferences` match); unresolvable and required returns `needs_user`, `category:"salary"`.
 7. Pre-submit review (only if `preSubmitReview`): fill, leave the tab open, return `needs_user`, `category:"review"`, `context` = a one-line field summary. (Re-delegated with it false, the form is already filled: confirm and submit.)
-8. Submit, `browser_wait_for`, narrow snapshot: success is `applied`; a populated error is `failed` with that message; a CAPTCHA at submit invokes `solve-captcha`, still unsolved is `skipped`.
+8. **Mark the point of no return, then submit.** Immediately before the submit click:
+
+```bash
+curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
+  "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY/submit-attempt"
+```
+
+   Then submit, `browser_wait_for`, narrow snapshot: success is `applied`; a populated error is `failed` with that message; a CAPTCHA at submit invokes `solve-captcha`, still unsolved is `skipped`.
+
+   This call is what stops a crash from mailing a second application. If you die between the click
+   and the `/result` write, recovery has no other way to know the employer already has it - without
+   the mark it re-approves the job and applies again. Call it even if you expect the submit to
+   fail; a mark on an unsent form only costs a human glance, a missing mark costs a duplicate.
 9. Close tabs, select tab 0, return one of:
 
 ```json

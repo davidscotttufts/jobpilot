@@ -5,6 +5,7 @@ import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
+import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { toPilotClaim } from "../pilot.mapper";
 import { assertApplyBudget } from "./apply-budget";
 import { MAX_CLAIM_LIFETIME_MS } from "./constants";
@@ -145,14 +146,11 @@ export class ClaimService {
     const updated = await this.prisma.$transaction(async (tx) => {
       if (body.outcome === "abandoned" && existing.kind === "job.apply") {
         const jobRef = parseJobPayload(payload);
-        await tx.job.updateMany({
-          where: {
-            campaignId: jobRef.campaignId,
-            key: jobRef.jobKey,
-            status: "applying",
-            campaign: { userId },
-          },
-          data: { status: "approved" },
+        await recoverApplyingJobs(tx, {
+          campaignId: jobRef.campaignId,
+          key: jobRef.jobKey,
+          status: "applying",
+          campaign: { userId },
         });
       }
       const changed = await tx.pilotClaim.updateMany({
