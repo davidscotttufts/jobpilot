@@ -6,11 +6,27 @@ import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
+import { MAX_APPLY_CLAIM_LIFETIME_MS } from "./constants";
 import { verifyGrant } from "./grant";
 import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
+
+/**
+ * Holds an apply's heartbeat-extended expiry to a fixed ceiling from when it was granted, so a
+ * stuck-but-beating driver still expires. Other kinds keep the sliding window - a question waits
+ * on a human and legitimately runs for hours.
+ */
+function applyLifetimeCap(
+  claim: { kind: string; grantedAt: Date } | null,
+  proposedExpiry: number,
+): number {
+  if (claim?.kind !== "job.apply") {
+    return proposedExpiry;
+  }
+  return Math.min(proposedExpiry, claim.grantedAt.getTime() + MAX_APPLY_CLAIM_LIFETIME_MS);
+}
 
 /** Atomically claims versioned agenda items and manages claim heartbeats and release. */
 @singleton()
@@ -96,9 +112,18 @@ export class ClaimService {
   }
 
   async heartbeat(userId: string, id: string) {
+    const open = await this.prisma.pilotClaim.findFirst({
+      where: { id, userId, releasedAt: null },
+      select: { kind: true, grantedAt: true },
+    });
+
+    const now = Date.now();
     const updated = await this.prisma.pilotClaim.updateMany({
       where: { id, userId, releasedAt: null },
-      data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + CLAIM_TTL_MS) },
+      data: {
+        heartbeatAt: new Date(now),
+        expiresAt: new Date(applyLifetimeCap(open, now + CLAIM_TTL_MS)),
+      },
     });
     if (updated.count === 0) {
       const existing = await this.prisma.pilotClaim.findFirst({ where: { id, userId } });

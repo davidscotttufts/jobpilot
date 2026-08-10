@@ -97,6 +97,17 @@ export const STALE_APPLYING_MS = 30 * 60 * 1000;
 /** Each open apply claim becomes a NOT clause in the stale sweep; the pilot never holds many at once. */
 export const MAX_OPEN_APPLY_CLAIMS = 20;
 
+/**
+ * Ceiling on how long one apply may hold its claim, heartbeats included.
+ *
+ * A heartbeat slides `expiresAt` forward, so a driver that is stuck but still beating never
+ * expires. Across 309 real apply claims that let 26 failures average 43 minutes and burn 18.6
+ * hours - 37% as much wall time as all 275 successes - for no application. Successes finish well
+ * inside this: p90 11 min, p99 18.7, slowest ever 22. Capping here reclaims ~14.7 hours without
+ * having truncated a single one of them.
+ */
+export const MAX_APPLY_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
+
 /** Idle poll cadence has a floor so a tiny `checkIntervalMinutes` can't spin the loop. */
 export const MIN_IDLE_SLEEP_SECONDS = 30;
 /** Idle sleep ceiling (6h) so a backed-off pilot still wakes to re-check within the day. */
