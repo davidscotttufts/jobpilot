@@ -6,7 +6,7 @@ import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
-import { MAX_APPLY_CLAIM_LIFETIME_MS } from "./constants";
+import { MAX_CLAIM_LIFETIME_MS } from "./constants";
 import { verifyGrant } from "./grant";
 import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
@@ -14,18 +14,14 @@ import { parseAgendaSnapshot } from "./service";
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 
 /**
- * Holds an apply's heartbeat-extended expiry to a fixed ceiling from when it was granted, so a
- * stuck-but-beating driver still expires. Other kinds keep the sliding window - a question waits
- * on a human and legitimately runs for hours.
+ * Holds a heartbeat-extended expiry to a fixed ceiling from when the claim was granted, so a
+ * stuck-but-beating driver still expires no matter which kind of work it is running.
  */
-function applyLifetimeCap(
-  claim: { kind: string; grantedAt: Date } | null,
-  proposedExpiry: number,
-): number {
-  if (claim?.kind !== "job.apply") {
+function lifetimeCap(claim: { grantedAt: Date } | null, proposedExpiry: number): number {
+  if (!claim) {
     return proposedExpiry;
   }
-  return Math.min(proposedExpiry, claim.grantedAt.getTime() + MAX_APPLY_CLAIM_LIFETIME_MS);
+  return Math.min(proposedExpiry, claim.grantedAt.getTime() + MAX_CLAIM_LIFETIME_MS);
 }
 
 /** Atomically claims versioned agenda items and manages claim heartbeats and release. */
@@ -114,7 +110,7 @@ export class ClaimService {
   async heartbeat(userId: string, id: string) {
     const open = await this.prisma.pilotClaim.findFirst({
       where: { id, userId, releasedAt: null },
-      select: { kind: true, grantedAt: true },
+      select: { grantedAt: true },
     });
 
     const now = Date.now();
@@ -122,7 +118,7 @@ export class ClaimService {
       where: { id, userId, releasedAt: null },
       data: {
         heartbeatAt: new Date(now),
-        expiresAt: new Date(applyLifetimeCap(open, now + CLAIM_TTL_MS)),
+        expiresAt: new Date(lifetimeCap(open, now + CLAIM_TTL_MS)),
       },
     });
     if (updated.count === 0) {

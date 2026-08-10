@@ -1,9 +1,9 @@
-// A heartbeat slides `expiresAt` forward, so a stuck-but-beating apply used to run unbounded -
-// 26 real failures averaged 43 minutes against a 15-minute TTL. The cap is what ends them.
+// A heartbeat slides `expiresAt` forward, so stuck-but-beating work used to run unbounded - 26
+// apply failures averaged 43 min, and 4 question claims held 24.5 hours. The cap is what ends them.
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { ClaimService } from "./claim.service";
-import { MAX_APPLY_CLAIM_LIFETIME_MS } from "./constants";
+import { MAX_CLAIM_LIFETIME_MS } from "./constants";
 import { describe, expect, it } from "bun:test";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
@@ -84,7 +84,7 @@ describe("ClaimService heartbeat lifetime cap", () => {
     await state.service.heartbeat(USER_ID, CLAIM_ID);
 
     // Sliding alone would have given now + 15min, i.e. 35 minutes after the grant.
-    expect(state.expiry()).toBe(state.grantedAt.getTime() + MAX_APPLY_CLAIM_LIFETIME_MS);
+    expect(state.expiry()).toBe(state.grantedAt.getTime() + MAX_CLAIM_LIFETIME_MS);
   });
 
   it("leaves the normal sliding window alone while an apply is still well inside the cap", async () => {
@@ -105,12 +105,13 @@ describe("ClaimService heartbeat lifetime cap", () => {
     expect(state.expiry()).toBeLessThan(Date.now());
   });
 
-  // A question waits on a human and legitimately runs for hours - one real claim ran 6.
-  it("does not cap a kind that waits on the user", async () => {
+  // The kind means "apply the answer the user already gave", so it is not waiting on anyone.
+  // Four real claims held 24.5 hours between them; a completing one has never passed 12.6 min.
+  it("caps a stuck question claim too", async () => {
     const state = setup("question.answered", 180);
 
     await state.service.heartbeat(USER_ID, CLAIM_ID);
 
-    expect(state.expiry()).toBeGreaterThan(Date.now() + CLAIM_TTL_MS - MINUTE);
+    expect(state.expiry()).toBe(state.grantedAt.getTime() + MAX_CLAIM_LIFETIME_MS);
   });
 });

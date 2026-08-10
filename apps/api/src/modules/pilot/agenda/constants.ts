@@ -98,15 +98,19 @@ export const STALE_APPLYING_MS = 30 * 60 * 1000;
 export const MAX_OPEN_APPLY_CLAIMS = 20;
 
 /**
- * Ceiling on how long one apply may hold its claim, heartbeats included.
+ * Ceiling on how long any claim may be held, heartbeats included.
  *
  * A heartbeat slides `expiresAt` forward, so a driver that is stuck but still beating never
- * expires. Across 309 real apply claims that let 26 failures average 43 minutes and burn 18.6
- * hours - 37% as much wall time as all 275 successes - for no application. Successes finish well
- * inside this: p90 11 min, p99 18.7, slowest ever 22. Capping here reclaims ~14.7 hours without
- * having truncated a single one of them.
+ * expires. Two kinds showed it in real data: 26 apply claims averaged 43 minutes (18.6 hours, no
+ * application), and 4 `question.answered` claims held 24.5 hours - work that normally finishes in
+ * under 13 minutes, since the human has already answered by the time it is queued.
+ *
+ * No kind of work has ever legitimately run past this: the slowest success of any kind was an
+ * apply at 22.0 min (p99 18.7), then discovery at 15.9 and questions at 12.6. The cost is that a
+ * user who takes longer than this to answer a mid-apply 2FA prompt loses that attempt, which the
+ * job returning to `approved` then retries.
  */
-export const MAX_APPLY_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
+export const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
 
 /** Idle poll cadence has a floor so a tiny `checkIntervalMinutes` can't spin the loop. */
 export const MIN_IDLE_SLEEP_SECONDS = 30;
