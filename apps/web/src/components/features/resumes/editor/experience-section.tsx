@@ -2,8 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { ResumeExperience } from "@jobpilot/contracts/resume";
-import { Stack, TextField } from "@mui/material";
-import Grid from "@mui/material/Grid";
+import { Grid, Stack, TextField } from "@mui/material";
 import { BulletListEditor } from "./bullet-list-editor";
 import { EntryList } from "./entry-list";
 

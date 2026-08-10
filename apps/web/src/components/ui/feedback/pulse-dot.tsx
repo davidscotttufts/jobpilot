@@ -58,6 +58,9 @@ export function PulseDot(props: PulseDotProps): ReactElement {
             "0%, 100%": { opacity: 1 },
             "50%": { opacity: 0.45 },
           },
+          // The dot signals liveness by color alone once the pulse stops, which is the point:
+          // the state stays legible without motion for anyone who asked not to see it.
+          "@media (prefers-reduced-motion: reduce)": { animation: "none" },
         };
       }}
     />

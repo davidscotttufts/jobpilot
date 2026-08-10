@@ -213,7 +213,11 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
             Re-apply selected ({selectedForReapply.length})
           </Button>
         )}
-        <Typography variant="captionMuted">{plural(total, "job")}</Typography>
+        {/* SSE moves these counts while the run is live; without a status role a screen reader
+            is never told the campaign progressed. */}
+        <Typography variant="captionMuted" role="status" aria-live="polite">
+          {plural(total, "job")}
+        </Typography>
       </Stack>
       <CampaignJobsTable
         rows={visible}

@@ -58,7 +58,7 @@ export function DockPanel(): ReactElement {
           <AgentOrb size="xxl" />
           <Stack sx={{ minWidth: 0 }}>
             <Typography variant="h6">Agent</Typography>
-            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: "2px" }}>
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: "center", marginTop: 0.25 }}>
               <PulseDot
                 tone="muted"
                 pulsing={health === "checking" || (pending !== null && unreachable)}

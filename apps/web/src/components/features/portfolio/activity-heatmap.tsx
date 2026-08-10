@@ -118,7 +118,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
                     gridRow: i === 0 ? leadPad + 1 : undefined,
                     width: CELL,
                     height: CELL,
-                    borderRadius: "2px",
+                    borderRadius: 2,
                     backgroundColor: shade(level(day.count)),
                   }}
                 />
@@ -136,7 +136,7 @@ export function ActivityHeatmap(props: ActivityHeatmapProps): ReactElement {
         {LEGEND_LEVELS.map((lvl) => (
           <Box
             key={`legend-${lvl}`}
-            sx={{ width: CELL, height: CELL, borderRadius: "2px", backgroundColor: shade(lvl) }}
+            sx={{ width: CELL, height: CELL, borderRadius: 2, backgroundColor: shade(lvl) }}
           />
         ))}
         <Typography variant="captionMuted">More</Typography>
