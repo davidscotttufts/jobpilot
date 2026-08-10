@@ -94,8 +94,16 @@ export const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 /** An `applying` job with no open claim and no update for this long is stranded (crashed driver). */
 export const STALE_APPLYING_MS = 30 * 60 * 1000;
 
-/** Each open apply claim becomes a NOT clause in the stale sweep; the pilot never holds many at once. */
-export const MAX_OPEN_APPLY_CLAIMS = 20;
+/**
+ * Ceiling on concurrent applies, and the exclusion list the stale sweep builds from them.
+ *
+ * Every open apply claim becomes a NOT clause protecting its `applying` job from the sweep, so a
+ * claim beyond this cap is invisible to that exclusion and its live job can be reset mid-apply.
+ * That makes this the real limit on parallel workers - raise it before running more, not after.
+ * The 25-minute claim ceiling keeps it honest: a job is only exposed once STALE_APPLYING_MS
+ * (30 min) has passed, by which point a capped claim has already expired.
+ */
+export const MAX_OPEN_APPLY_CLAIMS = 100;
 
 /**
  * Ceiling on how long any claim may be held, heartbeats included.

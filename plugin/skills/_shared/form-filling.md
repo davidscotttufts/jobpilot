@@ -4,15 +4,16 @@ Job applications often span multiple pages. For each page:
 
 ## Identify and Fill
 
-1. **Enumerate fields** - take a `browser_snapshot` narrowed to the form container. Each input / textarea / select / checkbox / radio carries a `label` and a stable `ref` usable by `browser_click` / `browser_type` / `browser_select_option`.
-2. **Map fields** to profile/resume data using the label, placeholder, and name.
-3. **Fill** addressing each by `ref`:
-   - Text inputs → `browser_type` (or `browser_fill_form` for batch)
-   - Selects → `browser_select_option`
-   - Checkboxes / radios → `browser_click`
-   - File uploads (resume) → fetch the tailored variant from the caller's prior step into the scratch dir (see `./setup.md` "Scratch files"): `mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp" && curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume.pdf"`, then `browser_file_upload` that path.
+1. **Enumerate fields** - take a `browser_snapshot` narrowed to the form container. Each input / textarea / select / checkbox / radio carries a `label` and a stable `ref`.
+2. **Map fields** to profile/resume data using the label, placeholder, and name. Decide every value for the page *before* filling any of it.
+3. **Fill the whole page in one `browser_fill_form` call.** It takes all the fields at once and covers
+   textbox, checkbox, radio, combobox, and slider - every type on a normal application page. One
+   call per page, not one per field: each separate call is another round trip, and a 20-field form
+   filled one input at a time is 20 of them.
+   - Only these fall outside it: **file uploads** (resume) → fetch the tailored variant into the scratch dir (see `./setup.md` "Scratch files"): `mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp" && curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume.pdf"`, then `browser_file_upload` that path.
+   - Reach for single-field `browser_type` / `browser_select_option` / `browser_click` only for a field the batch call rejected, or a widget that needs a click to reveal its options.
    - Date fields → use the appropriate date format
-4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) the form snapshot couldn't enumerate cleanly: narrow the `browser_snapshot` to just that widget's container to obtain a ref.
+4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) the form snapshot couldn't enumerate cleanly: `browser_find` the widget's label or placeholder to get its ref. It returns matching nodes with a little context instead of the whole tree, so prefer it over a second `browser_snapshot` whenever you are locating something specific rather than reading a page.
 
 ## Special Fields
 
@@ -40,4 +41,7 @@ All paths refer to `GET /api/user` (already loaded by setup.md).
 
 1. After filling each page, find "Next" / "Continue" / "Save & Continue" and click.
 2. Repeat the fill process on each new page.
-3. **Re-snapshot the form** on each page to verify values landed before clicking Next.
+3. **Do not re-snapshot to confirm a clean fill.** `browser_fill_form` reports what it set, and a
+   form that rejected something says so - the next page fails to load, or validation text appears.
+   Snapshot again only when you have such a signal, or when a value had to go in field-by-field.
+   The page after Next is itself the confirmation that the last one was accepted.

@@ -56,4 +56,6 @@ generation step - edit here directly.
   (pending → approved → applying). On terminal outcome (applied / failed / skipped),
   `POST /api/campaigns/[id]/jobs/[jobKey]/result` - one call updates the Job and creates the
   Application + initial event. Summaries are derived from current rows, never persisted.
-- Browser automation: `browser_snapshot` (with `ref` for large pages), not screenshots.
+- Browser automation: `browser_snapshot` (with `ref` for large pages), not screenshots. Fill a form
+  page with one `browser_fill_form`, not a call per field; `browser_find` to locate a single
+  element rather than a second snapshot.

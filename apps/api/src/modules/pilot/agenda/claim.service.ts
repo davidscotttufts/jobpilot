@@ -6,6 +6,7 @@ import { toInputJson } from "@/common/json";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
+import { assertApplyBudget } from "./apply-budget";
 import { MAX_CLAIM_LIFETIME_MS } from "./constants";
 import { verifyGrant } from "./grant";
 import { parseJobPayload } from "./job-mutations";
@@ -78,6 +79,7 @@ export class ClaimService {
       await verifyGrant(tx, userId, item.kind, item.subjectId);
       let claimedJob = null;
       if (item.kind === "job.apply") {
+        await assertApplyBudget(tx, userId, now);
         claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
           tx,
           userId,

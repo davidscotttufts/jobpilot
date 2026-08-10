@@ -234,7 +234,7 @@ export class CampaignJobService {
       select: { url: true, title: true, company: true },
     });
     if (!target) throw conflict("Job is no longer approved.");
-    await assertNotAlreadyApplied(tx, userId, target);
+    await assertNotAlreadyApplied(tx, userId, { ...target, campaignId, key });
 
     const claim = await tx.job.updateMany({
       where: { campaignId, key, status: "approved", campaign: { userId } },

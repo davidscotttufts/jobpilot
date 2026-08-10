@@ -2,6 +2,7 @@
 // this is the gate a second application actually has to get past, so it is tested on its own.
 import type { DuplicateReader } from "@/modules/application/duplicate";
 import { assertNotAlreadyApplied } from "./applied-guard";
+import type { InFlightReader } from "./in-flight";
 import { describe, expect, it } from "bun:test";
 
 const APPLIED_AT = new Date("2026-07-20T12:00:00.000Z");
@@ -15,7 +16,10 @@ interface FakeApplication {
   status: string;
 }
 
-function reader(rows: FakeApplication[]): { db: DuplicateReader; queries: number } {
+function reader(
+  rows: FakeApplication[],
+  inFlight: Record<string, unknown>[] = [],
+): { db: DuplicateReader & InFlightReader; queries: number } {
   const state = { queries: 0 };
   const db = {
     application: {
@@ -28,9 +32,11 @@ function reader(rows: FakeApplication[]): { db: DuplicateReader; queries: number
         return rows;
       },
     },
+    // No other job is mid-apply unless a test says so.
+    job: { findMany: async () => inFlight },
   };
   return {
-    db: db as unknown as DuplicateReader,
+    db: db as unknown as DuplicateReader & InFlightReader,
     get queries() {
       return state.queries;
     },
@@ -52,6 +58,8 @@ describe("assertNotAlreadyApplied", () => {
 
     await expect(
       assertNotAlreadyApplied(db, "u1", {
+        campaignId: "c1",
+        key: "j1",
         url: EXISTING.url,
         title: "Frontend Engineer",
         company: "Acme",
@@ -65,6 +73,8 @@ describe("assertNotAlreadyApplied", () => {
 
     await expect(
       assertNotAlreadyApplied(db, "u1", {
+        campaignId: "c1",
+        key: "j1",
         url: "https://other-board.test/postings/999",
         title: "Senior Frontend Engineer",
         company: "Acme Inc",
@@ -76,7 +86,13 @@ describe("assertNotAlreadyApplied", () => {
     const { db } = reader([EXISTING]);
 
     await expect(
-      assertNotAlreadyApplied(db, "u1", { url: EXISTING.url, title: "x", company: "y" }),
+      assertNotAlreadyApplied(db, "u1", {
+        campaignId: "c1",
+        key: "j1",
+        url: EXISTING.url,
+        title: "x",
+        company: "y",
+      }),
     ).rejects.toThrow(/"Frontend Engineer" at Acme on 2026-07-20/);
   });
 
@@ -85,6 +101,8 @@ describe("assertNotAlreadyApplied", () => {
 
     await expect(
       assertNotAlreadyApplied(db, "u1", {
+        campaignId: "c1",
+        key: "j1",
         url: "https://example.test/jobs/2",
         title: "Data Scientist",
         company: "Globex",
@@ -97,6 +115,8 @@ describe("assertNotAlreadyApplied", () => {
 
     await expect(
       assertNotAlreadyApplied(db, "u1", {
+        campaignId: "c1",
+        key: "j1",
         url: "https://example.test/jobs/3",
         title: "Warehouse Associate",
         company: "Acme",

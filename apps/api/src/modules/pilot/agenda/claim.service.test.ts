@@ -64,6 +64,9 @@ function setup(version = VERSION, openClaim: { id: string } | null = null) {
         agendaExpiresAt: snapshot.expiresAt,
       }),
     },
+    // Read by the claim-time apply budget gate; these tests are always well under the cap.
+    application: { count: async () => 0 },
+    job: { count: async () => 0 },
     pilotClaim: {
       findFirst: async () => openClaim,
       create: async ({ data }: { data: Record<string, unknown> }) => {

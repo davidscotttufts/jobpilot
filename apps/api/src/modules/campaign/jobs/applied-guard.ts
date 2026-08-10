@@ -4,9 +4,12 @@ import {
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
+import { findInFlightDuplicate, type InFlightReader } from "./in-flight";
 
 /** The job fields the duplicate rule reads. */
 interface GuardedJob {
+  campaignId: string;
+  key: string;
   url: string;
   title: string;
   company: string;
@@ -19,13 +22,21 @@ interface GuardedJob {
  * and a duplicate reaching the browser means a second real application lands in an employer's
  * inbox - the `@@unique([userId, url])` row guard only dedupes the record, after the fact. Both
  * routes into `applying` (the pilot claim and the campaign PATCH) run this, so the block does not
- * depend on which flow is driving.
+ * depend on which flow is driving. It also refuses a posting another worker is mid-apply on, which
+ * `Application` rows cannot show until a result is written - see `./in-flight.ts`.
  */
 export async function assertNotAlreadyApplied(
-  db: DuplicateReader,
+  db: DuplicateReader & InFlightReader,
   userId: string,
   job: GuardedJob,
 ): Promise<void> {
+  const inFlight = await findInFlightDuplicate(db, userId, job);
+  if (inFlight) {
+    throw conflict(
+      `Already applying: another worker holds "${inFlight.title}" at ${inFlight.company} (${inFlight.campaignId}/${inFlight.key}). Record this job as skipped with reason "Already applied (in-flight)" instead of applying alongside it.`,
+    );
+  }
+
   const duplicate = await findAppliedDuplicate(db, userId, {
     url: job.url,
     title: job.title,
