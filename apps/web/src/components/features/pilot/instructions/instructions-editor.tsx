@@ -91,6 +91,8 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
     onSubmit: async ({ value }) => {
       const config: PilotInstructionsConfig = {
         dailyApplyCap: value.dailyApplyCap,
+        // No control for this yet; carry the saved value so a save can't reset it to serial.
+        maxConcurrentApplies: state.instructionsConfig.maxConcurrentApplies,
         minScore: value.minScore,
         checkIntervalMinutes: value.checkIntervalMinutes,
         boards: value.boards,
