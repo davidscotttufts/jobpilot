@@ -298,6 +298,8 @@ export const agendaContentSchema = z.object({
     applyingNow: z.number().int(),
     /** MCP browser servers already leased to a running item - pick one that is not here. */
     browsersInUse: z.array(z.string()),
+    /** True while the profile is still inside its review-first-N window. */
+    reviewNextApply: z.boolean(),
     dailyNetworkingCap: z.number().int(),
     networkingSentToday: z.number().int(),
     resetsAt: z.date(),

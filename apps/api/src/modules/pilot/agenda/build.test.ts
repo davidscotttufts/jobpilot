@@ -271,3 +271,23 @@ describe("buildAgenda sleep", () => {
     expect(agenda.sleepSeconds).toBe(30);
   });
 });
+
+describe("buildAgenda review-first-N", () => {
+  it("holds the first application for review when none has ever been sent", () => {
+    const agenda = buildAgenda(base({ appliedEver: 0, config: cfg({ reviewFirstApplies: 1 }) }));
+
+    expect(agenda.budget.reviewNextApply).toBe(true);
+  });
+
+  it("stops holding once the window is past", () => {
+    const agenda = buildAgenda(base({ appliedEver: 1, config: cfg({ reviewFirstApplies: 1 }) }));
+
+    expect(agenda.budget.reviewNextApply).toBe(false);
+  });
+
+  it("never holds when the user has turned review off", () => {
+    const agenda = buildAgenda(base({ appliedEver: 0, config: cfg({ reviewFirstApplies: 0 }) }));
+
+    expect(agenda.budget.reviewNextApply).toBe(false);
+  });
+});

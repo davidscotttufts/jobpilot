@@ -31,6 +31,7 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   appliedToday: 0,
   applyingNow: 0,
   browsersInUse: [],
+  appliedEver: 0,
   dueQueries: [],
   awaitingSetup: true,
   nextSearchRunAt: null,

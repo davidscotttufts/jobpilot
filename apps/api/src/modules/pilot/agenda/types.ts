@@ -185,6 +185,8 @@ export interface AgendaInput {
   applyingNow: number;
   // Browser servers leased to open claims, so the agent can choose a free one up front.
   browsersInUse: string[];
+  // Applications ever submitted, which decides whether the next one is held for review.
+  appliedEver: number;
   dueQueries: AgendaDueQuery[];
   // No searches yet, or no goals to derive them from: the pilot still needs setup.
   awaitingSetup: boolean;

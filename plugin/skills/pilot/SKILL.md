@@ -104,7 +104,7 @@ The `[interview-prep]` marker prefix is load-bearing - the server dedupes on it.
 
 ### `job.apply`
 
-Delegate ONE `job-worker` invocation in apply mode - the input JSON from `../_shared/campaign-flow.md` (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../_shared/setup.md`) plus `claimId:$CLAIM_ID` (lets the worker heartbeat through a long apply), all read from the claim payload. Heartbeat once more when it returns. Handle the four outcomes per `../_shared/campaign-flow.md` (Terminal result writes):
+Delegate ONE `job-worker` invocation in apply mode - the input JSON from `../_shared/campaign-flow.md` (campaignId, jobKey, url, board, digest, resumeId, plus profile fields per `../_shared/setup.md`) plus `claimId:$CLAIM_ID` (lets the worker heartbeat through a long apply), all read from the claim payload. **Pass `preSubmitReview: budget.reviewNextApply`** - true while the profile is inside its review-first-N window, which holds the application at the filled form and returns `needs_user` so a human sees one complete application before any go out unseen. Heartbeat once more when it returns. Handle the four outcomes per `../_shared/campaign-flow.md` (Terminal result writes):
 
 - `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` with the shared payload shapes.
 - `needs_user` → ask the user, then park the job:

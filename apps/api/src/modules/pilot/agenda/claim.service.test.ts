@@ -36,6 +36,7 @@ const snapshot: AgendaResponse = {
     maxConcurrentApplies: 1,
     applyingNow: 0,
     browsersInUse: [],
+    reviewNextApply: false,
     dailyNetworkingCap: 5,
     networkingSentToday: 0,
     resetsAt: now,

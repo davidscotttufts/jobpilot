@@ -155,6 +155,8 @@ export function buildAgenda(input: AgendaInput): AgendaContent {
       maxConcurrentApplies: config.maxConcurrentApplies,
       applyingNow: input.applyingNow,
       browsersInUse: input.browsersInUse,
+      // The first applications go out only after a human has seen one.
+      reviewNextApply: input.appliedEver < config.reviewFirstApplies,
       dailyNetworkingCap: config.networking.dailyCap,
       networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),

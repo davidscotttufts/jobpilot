@@ -45,6 +45,15 @@ export const pilotInstructionsConfigSchema = z.object({
    * Bounded by MAX_OPEN_APPLY_CLAIMS, past which the stale sweep stops protecting live jobs.
    */
   maxConcurrentApplies: z.number().int().min(1).max(20).default(1),
+  /**
+   * Hold the first N applications for approval before they are submitted.
+   *
+   * The scariest moment in an autonomous applier is the first one that goes out unseen, and the
+   * worker already supports `preSubmitReview` - nothing ever set it. Defaults to 1: see one
+   * complete application, with its tailored resume and cover letter, before trusting the rest.
+   * 0 turns it off.
+   */
+  reviewFirstApplies: z.number().int().min(0).max(50).default(1),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),
