@@ -9,7 +9,9 @@
  *   bun apps/api/scripts/apply-phase-report.ts [--since 7d]
  */
 // The shared client: it carries the adapter and connection settings this Prisma build requires.
+
 import { prisma } from "../src/common/database/prisma.client";
+import { Prisma } from "../src/generated/prisma/client";
 
 const PHASES = ["navigate", "read", "tailor", "coverLetter", "fill", "submit"] as const;
 
@@ -33,7 +35,8 @@ function percentile(sorted: number[], p: number): number {
 const since = parseSince(process.argv);
 
 const jobs = await prisma.job.findMany({
-  where: { phaseTimings: { not: null }, ...(since ? { updatedAt: { gte: since } } : {}) },
+  // DbNull, not null: a JSON column filters on the database NULL, and `null` is a type error.
+  where: { phaseTimings: { not: Prisma.DbNull }, ...(since ? { updatedAt: { gte: since } } : {}) },
   select: { phaseTimings: true, status: true },
 });
 

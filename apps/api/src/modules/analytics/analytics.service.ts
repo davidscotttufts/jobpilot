@@ -1,12 +1,28 @@
+import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
 import { PrismaClient } from "@/generated/prisma/client";
+import { buildOutcomeBreakdown } from "./outcomes";
 
 const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
 
 @singleton()
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaClient) {}
+
+  /**
+   * Conversion, not volume: which boards, score bands and title families actually go anywhere.
+   * `stats` already counts what was sent; nothing until now said what came back.
+   */
+  async outcomes(userId: string) {
+    const rows = await this.prisma.application.findMany({
+      where: { userId },
+      select: { status: true, board: true, matchScore: true, normalizedTitle: true },
+    });
+    return buildOutcomeBreakdown(
+      rows.map((r) => ({ ...r, status: r.status as ApplicationStatus })),
+    );
+  }
 
   async stats(userId: string) {
     const weekStart = startOfWeek();

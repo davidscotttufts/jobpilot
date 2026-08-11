@@ -64,3 +64,23 @@ export const analyticsStatsSchema = z.object({
     ),
   }),
 });
+
+/** One slice of the pipeline - a board, a score band, a title family - and how it fared. */
+const outcomeRowSchema = z.object({
+  key: z.string(),
+  applications: z.number().int(),
+  advanced: z.number().int(),
+  rejected: z.number().int(),
+  silent: z.number().int(),
+  // Null below the sample floor: a percentage over a handful of applications reads as signal.
+  advanceRate: z.number().nullable(),
+  replyRate: z.number().nullable(),
+});
+
+export const analyticsOutcomesSchema = z.object({
+  overall: outcomeRowSchema,
+  byBoard: z.array(outcomeRowSchema),
+  byScoreBand: z.array(outcomeRowSchema),
+  byTitle: z.array(outcomeRowSchema),
+  noPositiveOutcomesYet: z.boolean(),
+});
