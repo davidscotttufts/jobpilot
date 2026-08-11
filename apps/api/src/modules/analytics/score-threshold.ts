@@ -55,15 +55,21 @@ export function simulateThreshold(
     const threshold = currentThreshold - drop;
     // At or above the candidate threshold: these are the jobs the lower bar would have admitted.
     const qualifying = scored.filter((job) => job.matchScore >= threshold);
+    // Examples come from the band this step *newly* admits. Taking them from the cumulative set
+    // repeats the same top three under every heading, which is both useless and reads as a bug.
+    const previousThreshold = threshold + THRESHOLD_STEPS[0];
+    const newlyAdmitted = qualifying.filter((job) => job.matchScore < previousThreshold);
     return {
       threshold,
       additionalJobs: qualifying.length,
-      examples: qualifying.slice(0, EXAMPLES_PER_STEP).map((job) => ({
-        title: job.title,
-        company: job.company,
-        matchScore: job.matchScore,
-        matchReason: job.matchReason,
-      })),
+      examples: (newlyAdmitted.length > 0 ? newlyAdmitted : qualifying)
+        .slice(0, EXAMPLES_PER_STEP)
+        .map((job) => ({
+          title: job.title,
+          company: job.company,
+          matchScore: job.matchScore,
+          matchReason: job.matchReason,
+        })),
     };
   }).filter((step) => step.threshold > 0);
 

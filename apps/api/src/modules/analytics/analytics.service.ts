@@ -50,6 +50,9 @@ export class AnalyticsService {
           status: "skipped",
           skipReason: { startsWith: "Below minimum match score" },
         },
+        // Highest first: past the cap an unordered take drops an arbitrary subset, and the
+        // near-misses are the only rows that change any step's count.
+        orderBy: { matchScore: "desc" },
         select: { title: true, company: true, matchScore: true, matchReason: true },
         take: THRESHOLD_SCAN,
       }),
@@ -76,8 +79,8 @@ export class AnalyticsService {
         updatedAt: true,
       },
     });
-    const jobs = findActionableJobs(skipped, NEEDS_YOU_LIMIT);
-    return { total: findActionableJobs(skipped, Number.MAX_SAFE_INTEGER).length, jobs };
+    const actionable = findActionableJobs(skipped, Number.MAX_SAFE_INTEGER);
+    return { total: actionable.length, jobs: actionable.slice(0, NEEDS_YOU_LIMIT) };
   }
 
   async stats(userId: string) {

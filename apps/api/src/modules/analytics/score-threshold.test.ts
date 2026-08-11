@@ -28,16 +28,17 @@ describe("simulateThreshold", () => {
     expect(result.steps.find((s) => s.threshold === 50)?.additionalJobs).toBe(103);
   });
 
-  it("shows the highest-scoring examples first, so the judgment is on the best of them", () => {
+  it("orders examples by score within the band a step admits", () => {
     const skipped = [
-      job(41, { company: "Low" }),
-      job(58, { company: "Near" }),
-      job(50, { company: "Mid" }),
+      job(56, { company: "Lower" }),
+      job(59, { company: "Highest" }),
+      job(57, { company: "Middle" }),
     ];
 
-    const step = simulateThreshold(60, skipped).steps.find((s) => s.threshold === 40);
+    const step = simulateThreshold(60, skipped).steps.find((s) => s.threshold === 55);
 
-    expect(step?.examples.map((e) => e.company)).toEqual(["Near", "Mid", "Low"]);
+    // All three sit in the 55-59 band, so the judgment is made on the best of them first.
+    expect(step?.examples.map((e) => e.company)).toEqual(["Highest", "Middle", "Lower"]);
   });
 
   it("carries the reason, so a near-miss can be judged rather than guessed at", () => {
@@ -75,5 +76,33 @@ describe("simulateThreshold", () => {
     const result = simulateThreshold(90, [job(85)]);
 
     expect(result.steps.map((s) => s.threshold)).toEqual(THRESHOLD_STEPS.map((d) => 90 - d));
+  });
+});
+
+// Each step previously showed the same top three, under every heading.
+describe("simulateThreshold examples", () => {
+  it("draws examples from the band each step newly admits", () => {
+    const skipped = [
+      job(58, { company: "NearMiss" }),
+      job(57, { company: "AlsoNear" }),
+      job(52, { company: "Middling" }),
+      job(51, { company: "AlsoMiddling" }),
+    ];
+
+    const steps = simulateThreshold(60, skipped);
+    const at55 = steps.steps.find((s) => s.threshold === 55);
+    const at50 = steps.steps.find((s) => s.threshold === 50);
+
+    expect(at55?.examples.map((e) => e.company)).toEqual(["NearMiss", "AlsoNear"]);
+    // The 50 step is about what 50 adds over 55, not a repeat of the 55 list.
+    expect(at50?.examples.map((e) => e.company)).toEqual(["Middling", "AlsoMiddling"]);
+  });
+
+  it("still counts cumulatively even though examples do not", () => {
+    const skipped = [job(58), job(52)];
+
+    const at50 = simulateThreshold(60, skipped).steps.find((s) => s.threshold === 50);
+
+    expect(at50?.additionalJobs).toBe(2);
   });
 });

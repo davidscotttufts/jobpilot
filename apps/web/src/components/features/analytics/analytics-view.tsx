@@ -48,7 +48,7 @@ export function AnalyticsView(): ReactElement {
       {outcomes.data && (
         <Stack spacing={2}>
           <Typography variant="overlineMuted">What came back</Typography>
-          {outcomes.data.noPositiveOutcomesYet && (
+          {outcomes.data.noPositiveOutcomesYet && outcomes.data.overall.applications > 0 && (
             <OutcomeCaveat
               silent={outcomes.data.overall.silent}
               total={outcomes.data.overall.applications}
@@ -73,23 +73,27 @@ export function AnalyticsView(): ReactElement {
                 emptyMessage="No applications yet."
               />
             </Grid>
-            {needsYou.data && needsYou.data.total > 0 && (
-              <Grid size={{ xs: 12, md: 6 }}>
-                <NeedsYouList total={needsYou.data.total} jobs={needsYou.data.jobs} />
-              </Grid>
-            )}
-            {threshold.data && (
-              <Grid size={{ xs: 12, md: 6 }}>
-                <ThresholdSimulator
-                  currentThreshold={threshold.data.currentThreshold}
-                  skippedByThreshold={threshold.data.skippedByThreshold}
-                  steps={threshold.data.steps}
-                />
-              </Grid>
-            )}
           </Grid>
         </Stack>
       )}
+
+      {/* Independently fetched, so a slow or failed outcomes query does not hide them. */}
+      <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+        {needsYou.data && needsYou.data.total > 0 && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <NeedsYouList total={needsYou.data.total} jobs={needsYou.data.jobs} />
+          </Grid>
+        )}
+        {threshold.data && (
+          <Grid size={{ xs: 12, md: 6 }}>
+            <ThresholdSimulator
+              currentThreshold={threshold.data.currentThreshold}
+              skippedByThreshold={threshold.data.skippedByThreshold}
+              steps={threshold.data.steps}
+            />
+          </Grid>
+        )}
+      </Grid>
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>

@@ -33,9 +33,9 @@ export function NeedsYouList(props: NeedsYouListProps): ReactElement {
           Only you can finish these
         </Typography>
         <Typography variant="body2Muted" sx={{ mt: 1, mb: 2 }}>
-          {total === 0
-            ? "Nothing is waiting on you."
-            : `${total} postings were skipped for something the agent cannot do but you can - a CAPTCHA it must not hand-click, or a question that expired. Jobs no amount of attention changes, like a clearance requirement, are not listed.`}
+          {total} postings were skipped for something the agent cannot do but you can - a CAPTCHA it
+          must not hand-click, or a question that expired. Jobs no amount of attention changes, like
+          a clearance requirement, are not listed.
         </Typography>
 
         <Stack spacing={1.25}>

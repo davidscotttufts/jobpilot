@@ -81,6 +81,10 @@ form showed them. Include the judgment calls - salary, years of experience, work
 start date, and any custom question you answered from the resume. Skip the ones copied verbatim
 from the profile (name, email, address): they add noise and the user already knows them.
 
+**Never record EEO or voluntary self-identification answers** - race, ethnicity, gender, disability,
+veteran status. Sending one to an employer is not the same as keeping it indefinitely under the
+user's account, and nothing in this product needs it back. Skip those fields entirely.
+
 Nobody can see what you told an employer once the terminal scrolls, and a bad answer repeats across
 every application until someone notices. Never invent an entry for a field you did not fill.
 

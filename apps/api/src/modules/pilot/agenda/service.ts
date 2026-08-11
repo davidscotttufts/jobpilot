@@ -155,7 +155,9 @@ export class AgendaService {
       gatherApprovedJobs(prisma, userId),
       countAppliedToday(prisma, userId, now),
       prisma.job.count({ where: { status: "applying", campaign: { userId } } }),
-      prisma.application.count({ where: { userId } }),
+      // Campaign-linked only: this app is also a tracker, and counting manual or imported
+      // applications would close the review window for exactly the users who have history.
+      prisma.application.count({ where: { userId, campaignId: { not: null } } }),
       browsersInUse(prisma, userId, now),
       gatherPausedCampaigns(prisma, userId, now),
       gatherInbox(prisma, userId),

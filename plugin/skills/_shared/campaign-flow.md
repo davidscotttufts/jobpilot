@@ -71,7 +71,8 @@ nothing about which step spent them. Drop the key when the worker returned none;
 { "mode": "apply", "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "digest": <DIGEST>, "resumeId": "<RESUME_ID>",
   "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
-  "preSubmitReview": <bool>, "browserServer": "<mcp server name, omit when running alone>" }
+  "preSubmitReview": <bool>, "providedAnswers": <user answers, when resuming a question>,
+  "browserServer": "<mcp server name, omit when running alone>" }
 ```
 
 Omit `digest` and the worker fetches it from the saved Job. The worker returns one of

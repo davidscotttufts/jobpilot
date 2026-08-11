@@ -99,3 +99,16 @@ describe("scoreBand", () => {
     expect(scoreBand(null)).toBe("unscored");
   });
 });
+
+// `rows.every(...)` is vacuously true on an empty list, which showed a user with no applications
+// an alarming banner about "0 of 0".
+describe("buildOutcomeBreakdown with no applications", () => {
+  it("reports zero everywhere rather than inventing a story", () => {
+    const empty = buildOutcomeBreakdown([]);
+
+    expect(empty.overall).toMatchObject({ applications: 0, advanced: 0, rejected: 0, silent: 0 });
+    expect(empty.byBoard).toEqual([]);
+    // Still vacuously true - the UI gates the banner on having applications at all.
+    expect(empty.noPositiveOutcomesYet).toBe(true);
+  });
+});

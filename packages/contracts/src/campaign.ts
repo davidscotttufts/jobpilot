@@ -235,11 +235,15 @@ export const applyPhaseTimingsSchema = z
 export const submittedAnswersSchema = z
   .array(
     z.object({
-      label: z.string().min(1).max(200),
-      value: z.string().max(2000),
+      // Truncated, never rejected. This rides on the terminal result write, which happens *after*
+      // the form was submitted - a long "why do you want to work here?" answer failing validation
+      // would lose the record of an application that has already gone to an employer.
+      label: z.string().transform((v) => v.slice(0, 200)),
+      value: z.string().transform((v) => v.slice(0, 2000)),
     }),
   )
-  .max(200);
+  .transform((entries) => entries.slice(0, 200))
+  .catch([]);
 
 export const campaignJobResultSchema = z
   .object({

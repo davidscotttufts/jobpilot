@@ -93,8 +93,13 @@ export function OutcomeBreakdown(props: OutcomeBreakdownProps): ReactElement {
   );
 }
 
+interface OutcomeCaveatProps {
+  silent: number;
+  total: number;
+}
+
 /** The banner that keeps the tables above from being read backwards. */
-export function OutcomeCaveat(props: { silent: number; total: number }): ReactElement {
+export function OutcomeCaveat(props: OutcomeCaveatProps): ReactElement {
   const { silent, total } = props;
   return (
     <Alert severity="info" icon={false}>

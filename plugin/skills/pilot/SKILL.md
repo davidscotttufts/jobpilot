@@ -127,7 +127,7 @@ For `2fa`: the server auto-expires the question in ~5 minutes and the parked job
 
 The claim payload is enriched: `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Route by `subjectType`:
 
-- **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
+- **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `providedAnswers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`. **When the question was a pre-submit review (`kind:"approval"`) and the user approved, re-delegate with `preSubmitReview:false`** - the form is already filled, so the worker confirms and submits. Leaving it true refills and holds again, and because a held application creates no Application row, the review window never closes: the job would be held forever.
 - **`board`** → a board started serving a second host (`subjectId` is `<board>-><newHost>`). There is
   nothing to drive: journal the answer so it is on the record, and if the user said the hosts are the
   same site, say in the journal that `HOST_ALIASES` in `apps/api/src/modules/application/job-url.ts`
