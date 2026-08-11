@@ -12,6 +12,8 @@ const POLL_MS = 2_000;
 interface ResumeExtraction {
   /** Non-null once the agent has written structured fields. */
   content: ResumeData | null;
+  /** Set while the poll is failing, cleared by the next one that succeeds. */
+  error: Error | null;
 }
 
 /** Watches a resume until `extract-resume` writes its fields. Shared with onboarding. */
@@ -22,7 +24,7 @@ export function useResumeExtraction(resumeId: string | null, enabled: boolean): 
     enabled: active,
     refetchInterval: POLL_MS,
     // Polls every 2s, so the default error toast would repeat every 2s while extraction is down.
-    // This hook still swallows the failure (it returns content only) - see STATE-2.
+    // The failure is returned instead, for the caller to render once inline.
     errorMessage: null,
   });
 
@@ -32,5 +34,5 @@ export function useResumeExtraction(resumeId: string | null, enabled: boolean): 
     { enabled: active, on: { "content.updated": () => void resume.refetch() } },
   );
 
-  return { content: resume.data?.content ?? null };
+  return { content: resume.data?.content ?? null, error: resume.error };
 }

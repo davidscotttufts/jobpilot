@@ -53,7 +53,10 @@ export const ResumeUploadStep = withForm({
       },
     );
 
-    const { content } = useResumeExtraction(resumeId, state === "extracting");
+    const { content, error: extractionError } = useResumeExtraction(
+      resumeId,
+      state === "extracting",
+    );
 
     // Complete on content presence (not just a delivered event); the "done" state then blocks re-entry.
     useEffect(() => {
@@ -77,6 +80,7 @@ export const ResumeUploadStep = withForm({
     };
 
     const isExtracting = state === "extracting";
+    const extractionFailed = isExtracting && extractionError !== null;
 
     return (
       <Stack spacing={2}>
@@ -101,13 +105,13 @@ export const ResumeUploadStep = withForm({
           disabled={isExtracting}
         />
 
-        {isExtracting && (
+        {isExtracting && !extractionFailed && (
           <Alert icon={<CircularProgress size={18} />} severity="info" variant="outlined">
             Reading your resume in the terminal fields will autofill when it finishes.
           </Alert>
         )}
 
-        {isExtracting && (
+        {isExtracting && !extractionFailed && (
           <Alert
             severity="warning"
             icon={<HourglassEmpty fontSize="md" />}
@@ -118,6 +122,21 @@ export const ResumeUploadStep = withForm({
             }
           >
             Still extracting. Check the terminal in the dock for progress, then continue or skip.
+          </Alert>
+        )}
+
+        {extractionFailed && (
+          <Alert
+            severity="error"
+            icon={<ErrorOutlined fontSize="md" />}
+            action={
+              <Button color="inherit" size="small" onClick={() => retryInject()}>
+                Retry
+              </Button>
+            }
+          >
+            Couldn&rsquo;t check on the extraction: {extractionError.message}. Retry, or continue
+            and fill your profile in yourself &mdash; the upload itself is saved.
           </Alert>
         )}
 

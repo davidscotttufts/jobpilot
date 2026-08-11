@@ -1,6 +1,6 @@
 # UX Assessment — JobPilot web
 
-> Last updated: 2026-08-10 · Scope: `apps/web/src` (48 routes, 358 components) · Method: static source audit — rule-conformance sweep + accessibility signal scan across the whole app; per-area interaction grading partial (see coverage)
+> Last updated: 2026-08-11 · Scope: `apps/web/src` (48 routes, 358 components) · Method: static source audit — rule-conformance sweep + accessibility signal scan across the whole app; per-area interaction grading partial (see coverage)
 
 ## Grade summary
 
@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | Design System (cross-cutting) | A | A+ | 0 | 1 (reduced) |
 | **Accessibility Debt** | A- | A+ | 0 | 0 |
-| **Designed states & resilience** | C | A+ | 0 | 2 |
+| **Designed states & resilience** | B+ | A+ | 0 | 1 |
 | Deferred Polish | A | A+ | 0 | 0 |
 | Per-experience areas (13 measured live) | B+ | A+ | 0 | 1 |
 
@@ -126,12 +126,13 @@ It stays on the `CT-*` list.
 
 ---
 
-## Designed states & resilience — Grade: C
+## Designed states & resilience — Grade: B+
 
-The one dimension gradable from source across every area, and the weakest thing found in this
-audit. Per-area coverage of empty/loading/error states is uneven — strong in Pilot (30 files,
-14 with loading, 10 with error) and Resumes; thin in Upwork, Applications, Boards, Cover letters,
-and Jobs, which are data-driven but had no error path at all.
+The one dimension gradable from source across every area, and the weakest thing this audit found —
+though the two failures that made it a C are now closed. Per-area coverage of empty/loading/error
+states was uneven: strong in Pilot (30 files, 14 with loading, 10 with error) and Resumes; thin in
+Upwork, Applications, Boards, Cover letters, and Jobs, which are data-driven but had no error path
+at all.
 
 The root cause was not per-area sloppiness, it was the shared hook:
 
@@ -142,16 +143,22 @@ The root cause was not per-area sloppiness, it was the shared hook:
       returned rather than thrown. The error's own (already normalized) message is now the default;
       `errorMessage: null` opts out where a caller handles failure itself —
       `apps/web/src/api/hooks/use-api-query.ts:48` — effort: S
-- [ ] `STATE-2` (Improvement) `useResumeExtraction` swallows failure entirely — it returns
-      `{ content }` and nothing else, so a failed extraction poll is invisible. It is opted out of
-      the default toast because it polls every 2s and would repeat, which means it now needs its
-      own inline error state — `apps/web/src/components/features/resumes/use-resume-extraction.ts:21`
-      — effort: S
+- [x] `STATE-2` (Improvement) **Closed 2026-08-11.** The hook now returns `error` alongside
+      `content`, and both callers render it inline instead of spinning forever: the resume detail's
+      `ExtractionCard` swaps its progress row for the failure and keeps *Try again* / *Fill it in
+      myself*, and the onboarding step replaces its two extracting alerts with one error carrying
+      the same Retry. Wording points at *Continue* rather than *Skip* there — `Skip` is disabled
+      while extracting, so telling a stuck user to skip would have named a dead control. Originally:
+      it returned `{ content }` and nothing else, so a failed poll was invisible; the 2s interval
+      is why it opts out of the default toast, which is what left it with no error path at all —
+      `apps/web/src/components/features/resumes/use-resume-extraction.ts:21` — effort: S
 - [ ] `STATE-3` (Improvement) Areas with data fetching but no error path of their own: Upwork,
       Applications, Boards, Cover letters, Jobs. `STATE-1` gives them all a toast; whether a toast
       is the *right* treatment (vs an inline retry) is a per-surface call best made live — effort: M
 
-**Path to A+:** `STATE-2`, then decide `STATE-3` per surface during the `CT-*` pass.
+**Path to A+:** every surface now says something when a fetch fails, so what is left is `STATE-3`
+— whether a toast is the right treatment or an inline retry belongs there — decided per surface
+during the `CT-*` pass.
 
 ---
 
@@ -203,6 +210,14 @@ flow, and designed empty/error states per surface. Those remain the `CT-*` check
 ---
 
 ## Changelog
+- 2026-08-11: Closed `STATE-2` — `useResumeExtraction` returns its error and both callers render
+  it inline, so a failed poll no longer shows as an indefinite spinner. Designed states C to B+;
+  `STATE-3` is the remainder and is a per-surface judgment call, not missing coverage. Gate: web
+  typecheck + Biome green (web-only change).
+- 2026-08-11: Closed `CT-5`. Contrast measured across 6 routes / 579 text nodes with every
+  background layer composited from the root; the 13 failures found were all 12px white on the
+  error and info fills, fixed with explicit dark `contrastText` on both. Corrected two claims this
+  file made — the app is dark-only, so the earlier "two themes" pass measured one theme twice.
 - 2026-08-11: Closed `A11Y-1`. The inbox announces its message count from a visually-hidden polite
   region - it has no visible summary to attach a status role to, and announcing every SSE-changed
   row would be noise rather than information. Accessibility Debt B+ to A-; the rest of the way
