@@ -51,8 +51,19 @@ point of failure.
 > marked none. So "unmarked" meant "no information", not "nothing was sent", and retrying it risked
 > the very duplicate the mark existed to prevent. Recovery now hands *every* interrupted apply to a
 > human, and the mark only sharpens the wording. The asymmetry carries it: a duplicate reaches a
-> real employer and cannot be undone, a needless question costs one glance - and only 13 of 352
-> apply claims have ever reached this path.
+> real employer and cannot be undone, while a needless question costs one glance.
+>
+> Inverting the default meant the parked state had to become a real state rather than a dead end,
+> which is where the second half of the work went: the question carries an expiry (an ignored one
+> resolves to a skip instead of holding its campaign open forever), it is published over SSE and
+> push like any other, every route back into an apply refuses a held job — `markSubmitAttempt`
+> included, so a slow-but-healthy apply parked at the 25-minute claim cap cannot still submit — and
+> the agent routes the two answers to *record* or *retry* rather than re-applying on both. A
+> `confirmNotSubmitted` flag is the only thing that clears the hold, and only a human sends it.
+>
+> Volume was estimated at 13 of 352 apply claims, but that counts only claim-terminated recoveries;
+> the stale-`applying` sweep targets jobs with no claim at all, so manual apply and resume runs sit
+> outside the sample and are now parked too. The true rate is higher than 4%.
 
 The expiry sweep returns a stale `applying` job to `approved`, and the duplicate guard only sees
 `Application` rows, which are written *after* the browser submits. So a job whose form was

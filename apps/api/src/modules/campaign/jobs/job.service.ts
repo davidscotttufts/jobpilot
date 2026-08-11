@@ -8,6 +8,11 @@ import type {
   RescanCampaignJobInput,
   RetryCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
+import {
+  INTERRUPTED_REASON,
+  isAwaitingRecoveryAnswer,
+  MAYBE_SUBMITTED_REASON,
+} from "@jobpilot/contracts/campaign";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
@@ -26,7 +31,6 @@ import { ensureCampaignOwned } from "../campaign.utils";
 import { assertNotAlreadyApplied } from "./applied-guard";
 import { writeJobRescan, writeJobRetry } from "./job-commands";
 import { isTerminalJob, writeJobResult } from "./job-result";
-import { MAYBE_SUBMITTED_REASON } from "./recover-applying";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
   // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
@@ -164,13 +168,21 @@ export class CampaignJobService {
     // Every route back into an apply, not just one. `needs_user → approved` is what the bulk
     // re-apply button sends and it also clears skipReason, erasing the warning on the way; the
     // resume flows re-send `applying → applying`, a no-op that skips the transition check entirely.
-    // Any of them would submit a second time, so a stamped job refuses all of them until the stamp
-    // is cleared by a terminal outcome.
-    if (
-      existing.submitAttemptedAt !== null &&
-      (patch.status === "approved" || patch.status === "applying")
-    ) {
-      throw conflict(MAYBE_SUBMITTED_REASON);
+    // Any of them would submit a second time, so a held job refuses all of them.
+    //
+    // Two ways to be held, and the stamp is the rarer one: crash recovery parks *every* interrupted
+    // apply, stamped or not, because the agent marks the submit point almost never. Only a human
+    // answering "it was not submitted" clears the hold - hence `confirmNotSubmitted`, which is that
+    // answer and nothing else. It also drops the stamp, or the following apply would 409 here.
+    const reentering = patch.status === "approved" || patch.status === "applying";
+    const held = isAwaitingRecoveryAnswer(existing);
+    const confirmedSafe = patch.confirmNotSubmitted === true && patch.status === "approved";
+    if (reentering && !confirmedSafe) {
+      if (held) throw conflict(existing.skipReason ?? INTERRUPTED_REASON);
+      if (existing.submitAttemptedAt !== null) throw conflict(MAYBE_SUBMITTED_REASON);
+    }
+    if (patch.confirmNotSubmitted === true && !held) {
+      throw conflict("This job is not waiting on a submitted-or-not answer.");
     }
 
     const job = await this.prisma.$transaction(async (tx) => {
@@ -185,6 +197,7 @@ export class CampaignJobService {
             appliedAt: patch.status === "approved" ? null : undefined,
             failReason: patch.status === "approved" ? null : undefined,
             skipReason: patch.status === "approved" ? null : undefined,
+            submitAttemptedAt: confirmedSafe ? null : undefined,
           },
         });
         if (changed.count === 0) throw conflict("Job status changed concurrently.");
@@ -230,12 +243,19 @@ export class CampaignJobService {
   async markSubmitAttempt(userId: string, campaignId: string, key: string) {
     // 404 vs 409 matters here: a typo'd key must not read as "claim it first".
     const existing = await findOwned(
-      (where) => this.prisma.job.findFirst({ where, select: { status: true } }),
+      (where) => this.prisma.job.findFirst({ where, select: { status: true, skipReason: true } }),
       { campaignId, key, campaign: { userId } },
       "Campaign job",
     );
-    // `needs_user` counts: a 2FA or salary answer resumes the apply in place, without re-claiming,
-    // and that resumed attempt reaches the submit exactly like the first one.
+    // A job held pending "did it go through?" must not reach a submit. Recovery parks jobs that are
+    // sometimes still healthy - a slow apply outlives the 25-minute claim cap - and letting one of
+    // those submit is the duplicate this whole path exists to prevent, now with the user staring at
+    // a question about an application still in flight.
+    if (isAwaitingRecoveryAnswer(existing)) {
+      throw conflict(existing.skipReason ?? INTERRUPTED_REASON);
+    }
+    // `needs_user` otherwise counts: a 2FA or salary answer resumes the apply in place, without
+    // re-claiming, and that resumed attempt reaches the submit exactly like the first one.
     if (existing.status !== "applying" && existing.status !== "needs_user") {
       throw conflict(
         `Job is ${existing.status}, not mid-apply; mark a submit attempt only while applying.`,

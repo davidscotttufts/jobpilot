@@ -1,10 +1,14 @@
+import { MAYBE_SUBMITTED_REASON } from "@jobpilot/contracts/campaign";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { runExpiry } from "./expiry";
 import { describe, expect, it } from "bun:test";
 
 function setup(options: {
   claims?: Record<string, unknown>[];
+  /** Questions the expiry scan finds lapsed. */
   questions?: Record<string, unknown>[];
+  /** Questions already open against a parked job, which recovery must not duplicate. */
+  openQuestions?: Record<string, unknown>[];
   openApplyClaims?: Record<string, unknown>[];
   /** Rows recovery finds in `applying`; it parks all of them, stamped or not. */
   interruptedJobs?: Record<string, unknown>[];
@@ -24,7 +28,10 @@ function setup(options: {
       },
     },
     pilotQuestion: {
-      findMany: async () => options.questions ?? [],
+      // Two callers: recovery's dedupe lookup (by subjectId) and the expiry scan. Returning the
+      // expiring fixture to both would read as "already asked" and suppress every new question.
+      findMany: async (args: { where: Record<string, unknown> }) =>
+        args.where.subjectId ? (options.openQuestions ?? []) : (options.questions ?? []),
       // Recovery raises one per parked job so the user hears about it.
       create: async (args: { data: Record<string, unknown> }) => {
         questionWrites.push(args.data);
@@ -36,10 +43,10 @@ function setup(options: {
       },
     },
     job: {
-      // Crash recovery reads every interrupted job before parking it. One unstamped row by
-      // default: that is the ordinary case, an apply cut off with nothing recorded.
-      findMany: async () =>
-        options.interruptedJobs ?? [
+      // Crash recovery reads every interrupted job, then re-reads what it actually parked. One
+      // unstamped row by default: the ordinary case, an apply cut off with nothing recorded.
+      findMany: async (args: { where: Record<string, unknown> }) => {
+        const rows = options.interruptedJobs ?? [
           {
             campaignId: "c1",
             key: "j1",
@@ -47,7 +54,16 @@ function setup(options: {
             company: "Acme",
             submitAttemptedAt: null,
           },
-        ],
+        ];
+        // The re-read only sees rows a write moved to needs_user; without this the fake would
+        // report a question for every row regardless of whether parking succeeded.
+        if (args.where.status === "needs_user") {
+          return jobWrites.some((w) => (w.data as { status?: string }).status === "needs_user")
+            ? rows
+            : [];
+        }
+        return rows;
+      },
       updateMany: async (args: Record<string, unknown>) => {
         jobWrites.push(args);
         return { count: 1 };
@@ -86,9 +102,14 @@ describe("agenda expiry", () => {
     expect(state.transactions).toBe(1);
     expect(state.claimWrites[0]).toMatchObject({ data: { outcome: "expired" } });
     // Parked, not re-approved: an interrupted apply may already be with the employer, and nothing
-    // recorded how far it got.
+    // recorded how far it got. The write is scoped to the rows recovery actually read.
     expect(state.jobWrites[0]).toMatchObject({
-      where: { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
+      where: {
+        AND: [
+          { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
+          { OR: [{ campaignId: "c1", key: "j1" }] },
+        ],
+      },
       data: { status: "needs_user" },
     });
     expect(
@@ -116,14 +137,20 @@ describe("agenda expiry", () => {
       openApplyClaims: [{ payload: { campaignId: "c1", jobKey: "held" } }],
     });
     await state.run();
-    const sweep = state.jobWrites.find(
-      (w) => (w.where as { status?: string }).status === "applying",
+    const sweep = state.jobWrites.find((w) =>
+      JSON.stringify((w.where as Record<string, unknown>).AND).includes("held"),
     );
+    expect(sweep).toBeDefined();
     expect(sweep).toMatchObject({
       where: {
-        status: "applying",
-        NOT: [{ campaignId: "c1", key: "held" }],
-        updatedAt: { lt: expect.any(Date) },
+        AND: [
+          {
+            status: "applying",
+            NOT: [{ campaignId: "c1", key: "held" }],
+            updatedAt: { lt: expect.any(Date) },
+          },
+          { OR: expect.any(Array) },
+        ],
       },
       data: { status: "needs_user" },
     });
@@ -141,25 +168,65 @@ describe("agenda expiry - maybe-submitted jobs", () => {
           payload: { campaignId: "c1", jobKey: "j1" },
         },
       ],
-      stampedJobs: [
-        { campaignId: "c1", key: "j1", title: "Director of Engineering", company: "Acme" },
+      interruptedJobs: [
+        {
+          campaignId: "c1",
+          key: "j1",
+          title: "Director of Engineering",
+          company: "Initech",
+          submitAttemptedAt: new Date("2026-08-10T12:00:00Z"),
+        },
       ],
     });
 
     await state.run();
 
-    // The re-approve write must never carry a stamped job.
-    const approved = state.jobWrites.filter(
-      (w) => (w.data as Record<string, unknown>)?.status === "approved",
-    );
-    for (const write of approved) {
-      expect((write.where as Record<string, unknown>).submitAttemptedAt).toBeNull();
-    }
+    expect(
+      state.jobWrites.every((w) => (w.data as { status?: string }).status !== "approved"),
+    ).toBe(true);
     const parked = state.jobWrites.find(
-      (w) => (w.data as Record<string, unknown>)?.status === "needs_user",
+      (w) => (w.data as { status?: string }).status === "needs_user",
     );
-    expect(parked).toBeDefined();
-    expect(state.questionWrites.some((q) => JSON.stringify(q).includes("Acme"))).toBe(true);
+    expect(parked?.data).toMatchObject({ skipReason: MAYBE_SUBMITTED_REASON });
+    // Company comes from the fixture, not the default row, so the assertion tracks this job.
+    expect(state.questionWrites.some((q) => JSON.stringify(q).includes("Initech"))).toBe(true);
+  });
+
+  it("asks nothing when the job already has an open question against it", async () => {
+    const state = setup({
+      claims: [
+        {
+          id: "cl1",
+          kind: "job.apply",
+          subjectId: "j1",
+          payload: { campaignId: "c1", jobKey: "j1" },
+        },
+      ],
+      openQuestions: [{ subjectId: "c1:j1" }],
+    });
+
+    await state.run();
+
+    expect(state.questionWrites.some((q) => q.kind === "choice")).toBe(false);
+  });
+
+  // The caller publishes these; a question only in the database never reaches the user, and the
+  // parked job then keeps its campaign in progress with nothing to show for it.
+  it("returns the questions it raised so the caller can publish them", async () => {
+    const state = setup({
+      claims: [
+        {
+          id: "cl1",
+          kind: "job.apply",
+          subjectId: "j1",
+          payload: { campaignId: "c1", jobKey: "j1" },
+        },
+      ],
+    });
+
+    const result = await state.run();
+
+    expect(result.recoveryQuestions.length).toBeGreaterThan(0);
   });
 });
 

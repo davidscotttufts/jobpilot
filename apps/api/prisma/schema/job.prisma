@@ -26,8 +26,8 @@ model Job {
   status      CampaignJobStatus @default(pending)
   appliedAt   DateTime?         @map("applied_at")
   /// Stamped immediately before the agent submits the form - the point after which a retry may
-  /// send a second real application. Crash recovery reads it to tell "never submitted" (safe to
-  /// re-approve) from "may have submitted" (must go to a human), instead of retrying both.
+  /// send a second real application. Recovery hands every interrupted apply to a human regardless;
+  /// the stamp only sharpens the question from "we cannot tell" to "you were mid-submit".
   submitAttemptedAt DateTime?   @map("submit_attempted_at")
   failReason  String?           @map("fail_reason")
   retryNotes  String?           @map("retry_notes")

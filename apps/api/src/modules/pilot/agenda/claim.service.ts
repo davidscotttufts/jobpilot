@@ -1,12 +1,15 @@
 import { type ReleasePilotClaimInput } from "@jobpilot/contracts/pilot";
+import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { PrismaClient } from "@/generated/prisma/client";
+import { PushService } from "@/common/push";
+import { publish } from "@/common/sse";
+import { type PilotQuestion, PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
-import { toPilotClaim } from "../pilot.mapper";
+import { toPilotClaim, toPilotQuestion } from "../pilot.mapper";
 import { assertApplyBudget } from "./apply-budget";
 import { acquireBrowser } from "./browser-lease";
 import { MAX_CLAIM_LIFETIME_MS } from "./constants";
@@ -33,6 +36,7 @@ export class ClaimService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly campaignJobs: CampaignJobService,
+    private readonly push: PushService,
   ) {}
 
   async claim(userId: string, agendaVersion: string, itemId: string) {
@@ -152,15 +156,17 @@ export class ClaimService {
       throw conflict(`Claim already released with outcome ${existing.outcome}.`);
     }
     const payload = z.record(z.string(), z.json()).parse(existing.payload);
+    const parked: PilotQuestion[] = [];
     const updated = await this.prisma.$transaction(async (tx) => {
       if (body.outcome === "abandoned" && existing.kind === "job.apply") {
         const jobRef = parseJobPayload(payload);
-        await recoverApplyingJobs(tx, userId, {
+        const recovered = await recoverApplyingJobs(tx, userId, {
           campaignId: jobRef.campaignId,
           key: jobRef.jobKey,
           status: "applying",
           campaign: { userId },
         });
+        parked.push(...recovered.questions);
       }
       const changed = await tx.pilotClaim.updateMany({
         where: { id, userId, releasedAt: null },
@@ -173,6 +179,21 @@ export class ClaimService {
       if (changed.count === 0) throw conflict("Claim was released concurrently.");
       return tx.pilotClaim.findUniqueOrThrow({ where: { id } });
     });
+    // Published only after the commit: a question the user acts on before its job is parked would
+    // hit the very guard it is meant to release.
+    for (const question of parked) {
+      publish(
+        pilotChannel,
+        { userId },
+        { type: "question.created", question: toPilotQuestion(question) },
+      );
+      void this.push.sendToUser(userId, {
+        title: "JobPilot needs you",
+        body: question.prompt,
+        url: question.deepLink ?? "/pilot",
+        tag: `question-${question.id}`,
+      });
+    }
     return toPilotClaim(updated);
   }
 }

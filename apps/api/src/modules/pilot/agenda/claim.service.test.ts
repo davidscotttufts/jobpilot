@@ -1,8 +1,12 @@
 import type { AgendaResponse } from "@jobpilot/contracts/pilot";
+import type { PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { ClaimService } from "./claim.service";
 import { describe, expect, it } from "bun:test";
+
+/** Push is fire-and-forget notification; these tests assert on claim writes, not delivery. */
+const NO_PUSH = { sendToUser: async () => undefined } as unknown as PushService;
 
 const VERSION = "31b0c512-b767-4dd7-9ee8-913e46d544c6";
 const now = new Date();
@@ -92,7 +96,7 @@ function setup(version = VERSION, openClaim: { id: string } | null = null) {
     publishClaimedJob: () => undefined,
   } as unknown as CampaignJobService;
   return {
-    service: new ClaimService(db as unknown as PrismaClient, campaignJobs),
+    service: new ClaimService(db as unknown as PrismaClient, campaignJobs, NO_PUSH),
     creates,
     locks,
   };

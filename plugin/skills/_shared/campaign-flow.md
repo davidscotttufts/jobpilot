@@ -33,8 +33,9 @@ curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
 
 Marks the point after which a retry would send a **second real application**. The dedupe guard
 cannot cover this window: an Application row is only written by the `/result` call, so a crash
-between submitting and recording leaves nothing for it to match on. With the mark, recovery parks
-the job for a human; without it, the job returns to `approved` and is applied to again.
+between submitting and recording leaves nothing for it to match on. Recovery parks an interrupted
+apply for a human either way - the mark only lets the question say "you were mid-submit" instead of
+"we cannot tell".
 
 ## Terminal result writes
 

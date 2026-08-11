@@ -127,6 +127,42 @@ export const campaignStatusCommandSchema = z.object({
   reason: z.string().min(1).max(300).transform(cleanReplacementChars).optional(),
 });
 
+/**
+ * A crash between "form submitted" and "result recorded" leaves a job nothing can classify: the
+ * duplicate guard reads `Application` rows, and that row is written by the very call that never
+ * happened. Recovery parks such a job with one of these reasons and asks the user.
+ *
+ * They live here because three parties read them - the API writes and guards on them, the web must
+ * not offer a re-apply that the server will refuse, and the agent routes the answers.
+ */
+export const MAYBE_SUBMITTED_REASON =
+  "Recovered mid-apply after the form may already have been submitted. Check the employer's site or your email before retrying - re-applying would send a second application.";
+export const INTERRUPTED_REASON =
+  "The apply was interrupted and there is no record of how far it got, so it may or may not have been submitted. Check before retrying.";
+
+/** The two exits, which the agent routes on verbatim. */
+export const RECOVERY_ANSWERS = [
+  "It was submitted - mark applied",
+  "It was not submitted - try again",
+] as const;
+
+/**
+ * Whether a job is held waiting for the user to say if their application went through.
+ *
+ * Every route back into an apply has to refuse this, because the whole point of parking is that
+ * nothing can tell a sent application from an unsent one. Only an explicit `confirmNotSubmitted`
+ * from a human clears it.
+ */
+export function isAwaitingRecoveryAnswer(job: {
+  status: string;
+  skipReason: string | null;
+}): boolean {
+  return (
+    job.status === "needs_user" &&
+    (job.skipReason === MAYBE_SUBMITTED_REASON || job.skipReason === INTERRUPTED_REASON)
+  );
+}
+
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
 export const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
 
@@ -169,6 +205,12 @@ export const patchCampaignJobSchema = z.object({
   matchReason: reasonText.optional().nullable(),
   description: z.string().optional().nullable(),
   digest: jobDigest.optional().nullable(),
+  /**
+   * The user's answer that a crash-recovered apply never reached the employer, which is the only
+   * thing that releases the job back to `approved`. Deliberately not a general force flag: the
+   * server refuses it on any job that is not waiting on that question.
+   */
+  confirmNotSubmitted: z.boolean().optional(),
 });
 
 export const rescanCampaignJobSchema = z

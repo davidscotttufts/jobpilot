@@ -1,10 +1,15 @@
 // A heartbeat slides `expiresAt` forward, so stuck-but-beating work used to run unbounded - 26
 // apply failures averaged 43 min, and 4 question claims held 24.5 hours. The cap is what ends them.
+
+import type { PushService } from "@/common/push";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { ClaimService } from "./claim.service";
 import { MAX_CLAIM_LIFETIME_MS } from "./constants";
 import { describe, expect, it } from "bun:test";
+
+/** Push is fire-and-forget notification; these tests assert on claim writes, not delivery. */
+const NO_PUSH = { sendToUser: async () => undefined } as unknown as PushService;
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
 const MINUTE = 60 * 1000;
@@ -65,7 +70,7 @@ function setup(kind: string, grantedMinutesAgo: number) {
   };
   const campaignJobs = {} as unknown as CampaignJobService;
   return {
-    service: new ClaimService(db as unknown as PrismaClient, campaignJobs),
+    service: new ClaimService(db as unknown as PrismaClient, campaignJobs, NO_PUSH),
     grantedAt,
     expiry: () => {
       const written = updates[0];

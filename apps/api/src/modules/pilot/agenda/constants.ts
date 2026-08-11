@@ -114,9 +114,9 @@ export const MAX_OPEN_APPLY_CLAIMS = 100;
  * under 13 minutes, since the human has already answered by the time it is queued.
  *
  * No kind of work has ever legitimately run past this: the slowest success of any kind was an
- * apply at 22.0 min (p99 18.7), then discovery at 15.9 and questions at 12.6. The cost is that a
- * user who takes longer than this to answer a mid-apply 2FA prompt loses that attempt, which the
- * job returning to `approved` then retries.
+ * apply at 22.0 min (p99 18.7), then discovery at 15.9 and questions at 12.6. The margin is thin
+ * enough that a healthy apply can be cut off here, so the cost is real: that attempt is parked for
+ * the user to confirm rather than retried, and nothing lets it reach a submit in the meantime.
  */
 export const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
 

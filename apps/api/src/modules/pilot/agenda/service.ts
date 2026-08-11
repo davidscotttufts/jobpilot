@@ -4,11 +4,13 @@ import {
   channelAutonomy,
   networkingMode,
 } from "@jobpilot/contracts/pilot";
+import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { logger } from "@/common/logger";
 import { PushService } from "@/common/push";
+import { publish } from "@/common/sse";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
@@ -16,6 +18,7 @@ import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { DRIFT_SWEEP_CYCLES, sweepBoardDrift } from "@/modules/job-board/drift-sweep";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
+import { toPilotQuestion } from "../pilot.mapper";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { browsersInUse } from "./browser-lease";
 import { buildAgenda } from "./build";
@@ -94,6 +97,22 @@ export class AgendaService {
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
 
     const expiry = await runExpiry(this.prisma, userId, now);
+    // Crash recovery writes its questions inside that transaction, so they miss the publish that
+    // `createQuestion` does. Without this the parked job is invisible until a manual reload - and a
+    // parked job the user never sees is the campaign-wedging dead end parking exists to avoid.
+    for (const row of expiry.recoveryQuestions) {
+      publish(
+        pilotChannel,
+        { userId },
+        { type: "question.created", question: toPilotQuestion(row) },
+      );
+      void this.push.sendToUser(userId, {
+        title: "JobPilot needs you",
+        body: row.prompt,
+        url: row.deepLink ?? "/pilot",
+        tag: `question-${row.id}`,
+      });
+    }
     // A question that lapses silently costs a job outright - 52 of them on the live data, each one
     // a posting the user never heard about again. Telling them is the difference between a dead end
     // and a decision: these skips are re-scannable, but only if someone knows to look.

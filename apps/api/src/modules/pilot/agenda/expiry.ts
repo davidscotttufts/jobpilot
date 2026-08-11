@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { PilotQuestion, PrismaClient } from "@/generated/prisma/client";
 import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { GATHER_CAP, MAX_OPEN_APPLY_CLAIMS, STALE_APPLYING_MS } from "./constants";
 import { parseJobPayload } from "./job-mutations";
@@ -17,6 +17,8 @@ function splitJobSubject(subjectId: string) {
 export interface ExpiryOutcome {
   /** Jobs dropped because the question blocking them was never answered. */
   jobsDroppedByExpiredQuestion: number;
+  /** Questions crash recovery raised, for the caller to publish once this transaction commits. */
+  recoveryQuestions: PilotQuestion[];
 }
 
 /** Releases expired claims and questions, returning their subjects to a workable state. */
@@ -26,6 +28,7 @@ export async function runExpiry(
   now: Date,
 ): Promise<ExpiryOutcome> {
   return prisma.$transaction(async (tx) => {
+    const recoveryQuestions: PilotQuestion[] = [];
     const claims = await tx.pilotClaim.findMany({
       where: { userId, releasedAt: null, expiresAt: { lt: now } },
       take: GATHER_CAP,
@@ -43,11 +46,12 @@ export async function runExpiry(
         .map((claim) => parseJobPayload(claim.payload));
 
       if (jobRefs.length) {
-        await recoverApplyingJobs(tx, userId, {
+        const recovered = await recoverApplyingJobs(tx, userId, {
           status: "applying",
           campaign: { userId },
           OR: jobRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
         });
+        recoveryQuestions.push(...recovered.questions);
       }
     }
 
@@ -61,19 +65,20 @@ export async function runExpiry(
     });
     const openApplyRefs = openApplyClaims.map((claim) => parseJobPayload(claim.payload));
 
-    await recoverApplyingJobs(tx, userId, {
+    const stale = await recoverApplyingJobs(tx, userId, {
       status: "applying",
       campaign: { userId },
       updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
       NOT: openApplyRefs.map((ref) => ({ campaignId: ref.campaignId, key: ref.jobKey })),
     });
+    recoveryQuestions.push(...stale.questions);
 
     const questions = await tx.pilotQuestion.findMany({
       where: { userId, status: "open", expiresAt: { not: null, lt: now } },
       take: GATHER_CAP,
       select: { id: true, subjectType: true, subjectId: true },
     });
-    if (!questions.length) return { jobsDroppedByExpiredQuestion: 0 };
+    if (!questions.length) return { jobsDroppedByExpiredQuestion: 0, recoveryQuestions };
 
     await tx.pilotQuestion.updateMany({
       where: { id: { in: questions.map((question) => question.id) }, status: "open" },
@@ -84,7 +89,7 @@ export async function runExpiry(
       .filter((question) => question.subjectType === "job" && question.subjectId)
       .map((question) => splitJobSubject(question.subjectId as string));
 
-    if (!jobRefs.length) return { jobsDroppedByExpiredQuestion: 0 };
+    if (!jobRefs.length) return { jobsDroppedByExpiredQuestion: 0, recoveryQuestions };
 
     const dropped = await tx.job.updateMany({
       where: {
@@ -94,6 +99,6 @@ export async function runExpiry(
       },
       data: { status: "skipped", skipReason: "Question expired without an answer." },
     });
-    return { jobsDroppedByExpiredQuestion: dropped.count };
+    return { jobsDroppedByExpiredQuestion: dropped.count, recoveryQuestions };
   });
 }
