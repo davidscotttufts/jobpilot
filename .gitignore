@@ -36,3 +36,6 @@ dist/
 
 # local-only credentials (never commit)
 .credentials.local
+
+# Database dumps: real applications and profile data, never committed.
+backups/

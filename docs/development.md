@@ -13,10 +13,32 @@ bun run db:setup # generates the Prisma client, runs migrations, seeds default d
 bun run dev      # web :4100 + api :4101 + terminal :4102
 ```
 
-There is no local database container. Before running `db:setup`, point
-`DATABASE_URL` in [apps/api/.env](../apps/api/.env) at a PostgreSQL you can
-reach, either one you run yourself or the remote database through the SSH
-tunnel described below.
+For a local PostgreSQL, the repo now ships one:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d   # postgres:17 on :5433, named volume
+bun run db:setup
+```
+
+`DATABASE_URL` in [apps/api/.env](../apps/api/.env) already points at `:5433`. The alternative is
+any PostgreSQL you can reach, including the remote one through the SSH tunnel described below.
+
+**If you are already running an ad-hoc `jobpilot-db` container, check its volume first:**
+
+```bash
+docker inspect jobpilot-db --format '{{range .Mounts}}{{.Name}}{{end}}'
+```
+
+A long hex name means an *anonymous* volume - `docker volume prune` deletes those without naming
+what it removed, and everything the app owns (applications, resumes, pilot history) lives there
+with no upstream copy. Take a dump before touching it, then move to the compose stack:
+
+```bash
+bun run db:backup
+docker rm -f jobpilot-db
+docker compose -f docker-compose.dev.yml up -d
+bun run db:restore
+```
 
 Open `http://localhost:4100` and toggle the Terminal panel.
 
@@ -36,6 +58,21 @@ in [apps/api/.env](../apps/api/.env). `db:setup`, `db:studio`, and the API all
 then run against the remote DB. Set `REMOTE_DB_HOST` to `127.0.0.1` when the
 database runs on the SSH server itself, or to its private host when tunneling
 via a bastion.
+
+### Backups
+
+The database is the only copy of your applications, resumes and pilot history - nothing upstream
+can re-supply it.
+
+```bash
+bun run db:backup            # backups/jobpilot-<utc>.dump, keeps the newest 14
+bun run db:restore           # newest dump; refuses unless you type "restore"
+bun run db:restore path.dump
+```
+
+`db:backup` reads each dump back with `pg_restore --list` before reporting success, because a dump
+that cannot be read is not a backup. `db:restore` runs in a single transaction, so a failed restore
+leaves the database as it was. Dumps are gitignored - they contain real applications.
 
 ## Repository layout
 

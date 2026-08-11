@@ -1,0 +1,35 @@
+# Local development database.
+#
+# The repo previously shipped no way to create one, so instances ran an ad-hoc `docker run` whose
+# data landed on an *anonymous* volume - the kind `docker volume prune` deletes without naming what
+# it removed. A named volume is the whole point of this file: `prune` leaves it alone, and
+# `docker compose down` (without -v) does too.
+#
+#   docker compose -f docker-compose.dev.yml up -d
+#   bun run db:setup
+#
+# Port 5433, not 5432, so a PostgreSQL already installed on the host keeps its port. Credentials
+# match apps/api/.env.example; they are local-only and not secrets.
+services:
+  db:
+    image: postgres:17
+    container_name: jobpilot-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobpilot
+      POSTGRES_PASSWORD: jobpilot
+      POSTGRES_DB: jobpilot
+    ports:
+      - "5433:5432"
+    volumes:
+      - jobpilot-db-data:/var/lib/postgresql/data
+    healthcheck:
+      # `db:setup` immediately after `up` would otherwise race the first-boot initdb.
+      test: ["CMD-SHELL", "pg_isready -U jobpilot -d jobpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  jobpilot-db-data:
+    name: jobpilot-db-data

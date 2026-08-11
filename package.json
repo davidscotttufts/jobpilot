@@ -14,6 +14,8 @@
     "test": "bun --cwd=apps/api run test && bun --cwd=packages/contracts run test",
     "db:tunnel": "bash apps/api/scripts/db-tunnel.sh",
     "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
+    "db:backup": "bash apps/api/scripts/db-backup.sh",
+    "db:restore": "bash apps/api/scripts/db-restore.sh",
     "build:api": "bun --cwd=apps/api run build",
     "build:web": "bun --cwd=apps/web run build",
     "build:terminal": "dotnet publish apps/terminal -c Release -o dist/terminal",
