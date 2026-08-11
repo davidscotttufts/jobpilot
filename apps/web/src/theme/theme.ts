@@ -11,9 +11,12 @@ const baseTheme = createTheme({
     primary: { main: accent.primary, contrastText: "#1A0A05" },
     secondary: { main: accent.secondary, contrastText: "#0A1220" },
     warning: { main: feedback.warning },
-    error: { main: feedback.error },
+    // Measured: white on either of these is 3.9:1 and 3.7:1, and a filled chip's label is 12px, so
+    // AA wants 4.5. MUI's own pick is white because its contrast threshold is 3 - fine for the
+    // 18px+ text the default assumes, not for a status chip. Ink of the same hue clears it at ~5:1.
+    error: { main: feedback.error, contrastText: "#200607" },
     success: { main: feedback.success },
-    info: { main: feedback.info },
+    info: { main: feedback.info, contrastText: "#0A1220" },
     background: { default: surfaces.base, paper: surfaces.card },
     text: {
       primary: textColors.primary,

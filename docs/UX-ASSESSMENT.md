@@ -33,24 +33,31 @@ The remaining gaps are narrow and specific.
   (`web.md` rules), plus an accessibility signal scan (accessible names, semantics, live regions,
   motion, alt text) and a deferred-polish sweep.
 - **Not assessed:** per-route interaction grading for the 15 experience areas — layout at
-  breakpoints, focus order within flows, dark-mode parity per screen, and designed empty/error
-  states per surface. These need either a live pass or a dedicated per-area run
-  (`grade-ux <area>` in single-experience mode).
-- **Cannot be seen statically at all:** actual contrast ratios as rendered, focus-visible
-  behaviour, screen-reader output, and whether the terminal panel reflows on small screens.
+  breakpoints, focus order within flows, and designed empty/error states per surface. These need
+  either a live pass or a dedicated per-area run (`grade-ux <area>` in single-experience mode).
+- **Cannot be seen statically at all:** focus-visible behaviour, screen-reader output, and whether
+  the terminal panel reflows on small screens. Contrast has since been measured — see `CT-5`.
+- **One theme, not two.** `theme.ts` sets `palette.mode: "dark"` with no `colorSchemes`, so there
+  is no light mode to check parity against and `prefers-color-scheme` changes nothing. An earlier
+  pass here reported "52 page loads across two themes"; it measured one theme twice.
 - **Design language graded against:** `apps/web/src/theme/theme.ts` (+ `palette.ts`, `tokens.ts`,
   `typography.ts`, 14 component overrides) and `.claude/rules/web.md`.
 
 ## Click-through checklist (human, live app at :4100)
-Verify in **light + dark** and at mobile / tablet / desktop:
+Verify at mobile / tablet / desktop (the app is dark-only — see *Coverage*):
 - [x] `CT-1` Agent dock + terminal panel — reflow at mobile width; does the xterm viewport clip?
       (Overflow measured 0 app-wide at 390px, but the terminal's *internal* scroll still wants eyes.)
 - [ ] `CT-2` Campaign detail with a live run — do job rows update visibly *and* audibly (see `A11Y-1`)?
 - [ ] `CT-3` Inbox and Applications tables — horizontal overflow and touch-target size on mobile.
 - [x] `CT-4` (partial — 2 dialogs automated, see `A11Y-3`) Every dialog (credential form, campaign new, resume editor) — focus moves in on open,
       returns to the trigger on close, Escape works, focus never escapes behind the overlay.
-- [ ] `CT-5` Dark mode across `(dashboard)` — the marketing sections carry the most hand-set
-      typography (`DS-3`), so check those hardest.
+- [x] `CT-5` Contrast across `(dashboard)` — **measured, 579 text nodes over 6 routes, 0 below AA.**
+      Ratios are computed from rendered colour with every background layer composited from the root
+      and alpha honoured; taking the first non-transparent ancestor instead reads a 16%-opacity chip
+      as solid white and invents failures. The 13 real failures this found were all one shape:
+      12px white on the error and info fills, at 3.9:1 and 3.7:1. Fixed by giving those two palette
+      entries an explicit dark `contrastText` — MUI picks white on its own because its contrast
+      threshold is 3, which suits the 18px+ text the default assumes, not a chip label.
 - [ ] `CT-6` Onboarding and login/register — the only flows a brand-new user sees.
 
 ---
@@ -113,8 +120,9 @@ happens *after* first paint — updates and motion.
       The other two probes missed their trigger selector rather than failing, so coverage is 2
       dialogs, not all — effort: S
 
-**Path to A+:** the remaining gap is what static analysis and a headless pass cannot reach —
-measured contrast in both themes and real screen-reader output. Those stay on the `CT-*` list.
+**Path to A+:** contrast is now measured and clean (`CT-5`), so the remaining gap is real
+screen-reader output — the one thing neither static analysis nor a headless pass can stand in for.
+It stays on the `CT-*` list.
 
 ---
 
@@ -157,8 +165,8 @@ placeholder copy, no "temporary" styling markers under `apps/web/src`. Nothing t
 ## Per-experience areas — Grade: B+ (live pass, 13 areas)
 
 Driven against the running app with a headless Chromium: logged in, then each route loaded at
-**390px and 1440px** in **light and dark**, measuring horizontal overflow, console errors, heading
-structure, and target sizes — 52 measured page loads.
+**390px and 1440px**, measuring horizontal overflow, console errors, heading structure, and target
+sizes — 26 distinct measured page loads.
 
 **Areas measured:** Workspace · Inbox · Resumes · Pilot · Settings · Analytics · Boards · Upwork ·
 Portfolio · Cover letters · Networking · Onboarding · Documents.
@@ -167,7 +175,7 @@ Portfolio · Cover letters · Networking · Onboarding · Documents.
 
 | Check | Result |
 |---|---|
-| Horizontal overflow at 390px and 1440px | **0px on every area, both themes** |
+| Horizontal overflow at 390px and 1440px | **0px on every area** |
 | Console errors | **0 on every validly-measured area** |
 | Exactly one `h1` | 12/13 — Portfolio had two (now fixed) |
 | Dialog focus (Credentials, Boards) | opens into the dialog, Escape closes, focus returns |
@@ -181,15 +189,16 @@ Portfolio · Cover letters · Networking · Onboarding · Documents.
       have no index route** (only `[id]` and `new`), so both 404. Whether that is intended (they
       live under Workspace) or a missing landing page is a product call — `apps/web/src/app/(dashboard)/` — effort: S
 
-**Two corrections to earlier passes of this file**, both from checking rather than assuming:
+**Three corrections to earlier passes of this file**, all from checking rather than assuming:
 - The "console errors on Campaigns/Applications" finding was **invalid** — it was Next's 404 page
   for routes I had invented from directory names, not an app error.
 - The "small touch targets" on Pilot (7), Boards (4), and Portfolio (1) are **not violations**:
   every one is an inline text link (e.g. 1068×20), and WCAG 2.5.8 exempts inline links in text.
+- This pass originally claimed **52 page loads across two themes**. The app has no light theme, so
+  `emulateMedia` changed nothing and half those loads were duplicates of the other half.
 
-**Still not covered by any pass:** measured contrast ratios, actual screen-reader output, full
-keyboard traversal of each flow, and designed empty/error states per surface. Those remain the
-`CT-*` checklist's job.
+**Still not covered by any pass:** actual screen-reader output, full keyboard traversal of each
+flow, and designed empty/error states per surface. Those remain the `CT-*` checklist's job.
 
 ---
 
