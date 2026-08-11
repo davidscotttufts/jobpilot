@@ -25,6 +25,7 @@ function setup() {
     retryNotes: null,
     skipReason: null,
     submitAttemptedAt: null,
+    phaseTimings: undefined,
     description: null,
     digest: null,
     createdAt: new Date(),
@@ -299,5 +300,36 @@ describe("CampaignJobService submit-attempt guard", () => {
     const patched = await state.service.patchJob("u1", "c1", "j1", { status: "approved" });
 
     expect(patched).toMatchObject({ status: "approved" });
+  });
+});
+
+// Claim timings show that an apply took five minutes and nothing about where they went; the worker
+// is the only observer that can see inside one.
+describe("CampaignJobService phase timings", () => {
+  it("stores what the worker reported", async () => {
+    const state = setup();
+
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      phases: { navigate: 4200, fill: 48000, submit: 9100 },
+    });
+
+    expect(result.campaignJob).toMatchObject({
+      phaseTimings: { navigate: 4200, fill: 48000, submit: 9100 },
+    });
+  });
+
+  it("leaves earlier numbers alone when a worker did not time itself", async () => {
+    const state = setup();
+    state.setStatus("applying");
+
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "blocked",
+    });
+
+    // undefined, not null: a retry that skipped timing must not erase the attempt that measured.
+    expect(state.job.phaseTimings).toBeUndefined();
   });
 });

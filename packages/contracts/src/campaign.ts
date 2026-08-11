@@ -196,9 +196,29 @@ export const campaignJobReasonSchema = z.object({
   count: z.number().int().min(0),
 });
 
+/**
+ * Milliseconds spent in each phase of an apply, reported by the worker on the terminal write.
+ *
+ * The worker is the only observer that can see inside an apply - claim timings show 5 minutes and
+ * say nothing about where they went - and the terminal write is a call it already makes, so this
+ * costs no extra round trip. Optional throughout: a worker that did not time itself is not a
+ * failure, and a phase it skipped is simply absent.
+ */
+export const applyPhaseTimingsSchema = z
+  .object({
+    navigate: z.number().int().min(0).optional(),
+    read: z.number().int().min(0).optional(),
+    tailor: z.number().int().min(0).optional(),
+    coverLetter: z.number().int().min(0).optional(),
+    fill: z.number().int().min(0).optional(),
+    submit: z.number().int().min(0).optional(),
+  })
+  .partial();
+
 export const campaignJobResultSchema = z
   .object({
     outcome: campaignJobOutcomeSchema,
+    phases: applyPhaseTimingsSchema.optional(),
     appliedAt: z.iso.datetime().optional(),
     failReason: z.string().min(1).transform(cleanReplacementChars).optional(),
     skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
@@ -218,6 +238,7 @@ export const campaignJobResultSchema = z
 
 export type CampaignJobOutcome = z.infer<typeof campaignJobOutcomeSchema>;
 export type CampaignJobResultInput = z.infer<typeof campaignJobResultSchema>;
+export type ApplyPhaseTimings = z.infer<typeof applyPhaseTimingsSchema>;
 
 export type CampaignStatus = z.infer<typeof campaignStatusSchema>;
 export type CampaignJobStatus = z.infer<typeof campaignJobStatusSchema>;

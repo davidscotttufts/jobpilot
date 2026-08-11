@@ -16,6 +16,7 @@
     "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
     "db:backup": "bash apps/api/scripts/db-backup.sh",
     "db:restore": "bash apps/api/scripts/db-restore.sh",
+    "report:phases": "bun --cwd=apps/api run report:phases",
     "build:api": "bun --cwd=apps/api run build",
     "build:web": "bun --cwd=apps/web run build",
     "build:terminal": "dotnet publish apps/terminal -c Release -o dist/terminal",

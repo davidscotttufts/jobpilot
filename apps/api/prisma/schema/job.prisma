@@ -34,6 +34,9 @@ model Job {
   skipReason  String?           @map("skip_reason")
   description String?
   digest      String?
+  /// Per-phase apply durations in ms, as reported by the worker. Nothing else can see inside an
+  /// apply: the claim knows only that five minutes passed.
+  phaseTimings Json?    @map("phase_timings")
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @default(now()) @updatedAt @map("updated_at")
 

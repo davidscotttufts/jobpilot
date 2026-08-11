@@ -61,6 +61,13 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 }
 ```
 
+## Timing yourself
+
+Record elapsed milliseconds per phase and hand them to the caller as `phases` (see
+`../skills/_shared/campaign-flow.md`). `MS=$(date +%s%3N)` before a phase, subtract after; on macOS
+without GNU date, `python3 -c 'import time;print(int(time.time()*1000))'`. Skip it rather than guess
+- a fabricated number is worse than a missing one, because it will be believed.
+
 ## Browser server
 
 `browserServer` in the input names the MCP server whose browser tools you use - `playwright`,
