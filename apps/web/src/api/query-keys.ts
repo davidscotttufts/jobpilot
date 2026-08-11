@@ -86,6 +86,7 @@ export const queryKeys = {
   analytics: {
     all: ["analytics"] as const,
     stats: () => [...queryKeys.analytics.all, "stats"] as const,
+    outcomes: () => [...queryKeys.analytics.all, "outcomes"] as const,
   },
 
   upworkProposals: {

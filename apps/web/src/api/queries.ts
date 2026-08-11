@@ -184,6 +184,10 @@ export const coverLetterQueries = {
 
 export const analyticsQueries = {
   stats: () => ({ queryKey: queryKeys.analytics.stats(), queryFn: () => api.analytics.get() }),
+  outcomes: () => ({
+    queryKey: queryKeys.analytics.outcomes(),
+    queryFn: () => api.analytics.outcomes.get(),
+  }),
 };
 
 export const pilotQueries = {

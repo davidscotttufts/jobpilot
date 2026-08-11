@@ -7,6 +7,7 @@ import { analyticsQueries } from "@/api/queries";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
+import { OutcomeBreakdown, OutcomeCaveat } from "./outcome-breakdown";
 import { PortfolioRankChip } from "./portfolio-rank-chip";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
 import { TopBoardsList } from "./top-boards-list";
@@ -22,6 +23,7 @@ export function AnalyticsView(): ReactElement {
   const query = useApiQuery(analyticsQueries.stats(), {
     errorMessage: "Failed to load analytics stats",
   });
+  const outcomes = useApiQuery(analyticsQueries.outcomes());
 
   if (query.isPending) {
     return <Typography variant="body2Muted">Loading analytics</Typography>;
@@ -38,6 +40,38 @@ export function AnalyticsView(): ReactElement {
       <PortfolioRankChip />
       <Typography variant="overlineMuted">Applications</Typography>
       <AnalyticsStatTiles stats={stats} />
+
+      {outcomes.data && (
+        <Stack spacing={2}>
+          <Typography variant="overlineMuted">What came back</Typography>
+          {outcomes.data.noPositiveOutcomesYet && (
+            <OutcomeCaveat
+              silent={outcomes.data.overall.silent}
+              total={outcomes.data.overall.applications}
+            />
+          )}
+          <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <OutcomeBreakdown
+                eyebrow="Conversion"
+                title="By match score"
+                rows={outcomes.data.byScoreBand}
+                rejectionsOnly={outcomes.data.noPositiveOutcomesYet}
+                emptyMessage="No applications yet."
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <OutcomeBreakdown
+                eyebrow="Conversion"
+                title="By board"
+                rows={outcomes.data.byBoard}
+                rejectionsOnly={outcomes.data.noPositiveOutcomesYet}
+                emptyMessage="No applications yet."
+              />
+            </Grid>
+          </Grid>
+        </Stack>
+      )}
 
       <Grid container spacing={2} sx={{ alignItems: "stretch" }}>
         <Grid size={{ xs: 12, md: 6 }}>
