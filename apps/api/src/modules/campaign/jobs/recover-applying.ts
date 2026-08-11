@@ -2,22 +2,31 @@ import type { Prisma } from "@/generated/prisma/client";
 
 export type RecoveryWriter = Pick<Prisma.TransactionClient, "job" | "pilotQuestion">;
 
-/** Shown on a job parked for review; the agent must not re-apply on its own. */
+/** The agent reached the submit and we know it. */
 export const MAYBE_SUBMITTED_REASON =
   "Recovered mid-apply after the form may already have been submitted. Check the employer's site or your email before retrying - re-applying would send a second application.";
+
+/** The apply was interrupted and nothing recorded how far it got. */
+export const INTERRUPTED_REASON =
+  "The apply was interrupted and there is no record of how far it got, so it may or may not have been submitted. Check before retrying.";
 
 /** Answering either way resolves the job; leaving it unanswered lets the sweep skip it, which is safe. */
 const ANSWERS = ["It was submitted - mark applied", "It was not submitted - try again"] as const;
 
 /**
- * Returns interrupted `applying` jobs to a workable state without risking a second submission.
+ * Hands every interrupted `applying` job to a human rather than retrying it.
  *
- * `submitAttemptedAt` is stamped just before the agent clicks submit, so it splits an interrupted
- * apply into two very different cases. Nothing was sent yet - safe to re-approve and retry, which
- * is what recovery has always done. Something may have been sent - and the duplicate guard cannot
- * see it, because an `Application` row is only written once the *result* is recorded, which is
- * exactly the write that never happened. Auto-retrying that case mails a second application to a
- * real employer and cannot be undone, so it goes to a human instead.
+ * The original design leaned on `submitAttemptedAt`: stamped meant "may have been sent, ask a
+ * human", unstamped meant "safe to retry". In practice the agent does not reliably make that call -
+ * across four real applications after the instruction shipped, it marked none - so "unstamped"
+ * silently came to mean "no information" rather than "nothing was sent", and auto-retrying it
+ * risked exactly the duplicate the stamp existed to prevent.
+ *
+ * So the default is inverted: interrupted means ask, and the stamp now only sharpens the wording.
+ * The asymmetry justifies it - a duplicate application reaches a real employer and cannot be
+ * undone, while a needless question costs one glance - and the volume is small: 13 of 352 apply
+ * claims have ever reached this path, because only an expired or abandoned claim does. `done` and
+ * `failed` are agent-reported and never come through here.
  *
  * Parking also raises a question. `needs_user` is an active status, so a parked job keeps its
  * campaign from finalizing, and nothing else in the agenda surfaces one - without the question the
@@ -30,30 +39,35 @@ export async function recoverApplyingJobs(
   db: RecoveryWriter,
   userId: string,
   where: Prisma.JobWhereInput,
-): Promise<{ reapproved: number; parked: number }> {
-  // Read before write: updateMany cannot tell us which rows it touched, and each parked job needs
-  // its own question. Sequential throughout - callers pass an interactive transaction client, and
+): Promise<{ parkedKnownSubmit: number; parkedUnknown: number }> {
+  // Read before write: updateMany cannot say which rows it touched, and each parked job needs its
+  // own question. Sequential throughout - callers pass an interactive transaction client, and
   // Prisma does not support concurrent queries on one.
-  const stamped = await db.job.findMany({
-    where: { ...where, submitAttemptedAt: { not: null } },
-    select: { campaignId: true, key: true, title: true, company: true },
+  const interrupted = await db.job.findMany({
+    where,
+    select: {
+      campaignId: true,
+      key: true,
+      title: true,
+      company: true,
+      submitAttemptedAt: true,
+    },
   });
-
-  const reapproved = await db.job.updateMany({
-    where: { ...where, submitAttemptedAt: null },
-    data: { status: "approved" },
-  });
-
-  if (stamped.length === 0) {
-    return { reapproved: reapproved.count, parked: 0 };
+  if (interrupted.length === 0) {
+    return { parkedKnownSubmit: 0, parkedUnknown: 0 };
   }
 
-  const parked = await db.job.updateMany({
+  const known = await db.job.updateMany({
     where: { ...where, submitAttemptedAt: { not: null } },
     data: { status: "needs_user", skipReason: MAYBE_SUBMITTED_REASON },
   });
+  const unknown = await db.job.updateMany({
+    where: { ...where, submitAttemptedAt: null },
+    data: { status: "needs_user", skipReason: INTERRUPTED_REASON },
+  });
 
-  for (const job of stamped) {
+  for (const job of interrupted) {
+    const certain = job.submitAttemptedAt !== null;
     await db.pilotQuestion.create({
       data: {
         userId,
@@ -61,11 +75,13 @@ export async function recoverApplyingJobs(
         subjectType: "job",
         // The `campaignId:jobKey` form the agenda's job questions already use.
         subjectId: `${job.campaignId}:${job.key}`,
-        prompt: `Did your application to ${job.company} for "${job.title}" go through? It was interrupted mid-submit, so re-applying might send a second one.`,
+        prompt: certain
+          ? `Did your application to ${job.company} for "${job.title}" go through? It was interrupted mid-submit, so re-applying might send a second one.`
+          : `The application to ${job.company} for "${job.title}" was interrupted and never finished recording. Did it go through? Re-applying blind might send a second one.`,
         options: [...ANSWERS],
       },
     });
   }
 
-  return { reapproved: reapproved.count, parked: parked.count };
+  return { parkedKnownSubmit: known.count, parkedUnknown: unknown.count };
 }

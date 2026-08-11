@@ -152,7 +152,9 @@ curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
    return `failed` with that message rather than submitting, because an unmarked submit is exactly
    the case recovery cannot protect. A `404` means the campaign/job key is wrong.
 
-   This call is what stops a crash from mailing a second application. If you die between the click
+   Recovery no longer depends on this call - an interrupted apply is handed to a human either way -
+   but making it is what lets the question say "you were mid-submit" instead of "we cannot tell",
+   which is the difference between a quick confirmation and a hunt through your email. If you die between the click
    and the `/result` write, recovery has no other way to know the employer already has it - without
    the mark it re-approves the job and applies again. Call it even if you expect the submit to
    fail; a mark on an unsent form only costs a human glance, a missing mark costs a duplicate.

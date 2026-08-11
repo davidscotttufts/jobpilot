@@ -2,6 +2,7 @@
 // used to re-approve the job, and the duplicate guard could not catch it because the Application
 // row is written by the very call that never happened.
 import {
+  INTERRUPTED_REASON,
   MAYBE_SUBMITTED_REASON,
   type RecoveryWriter,
   recoverApplyingJobs,
@@ -9,7 +10,23 @@ import {
 import { describe, expect, it } from "bun:test";
 
 const STAMPED = [
-  { campaignId: "c1", key: "j1", title: "Director of Engineering", company: "Acme" },
+  {
+    campaignId: "c1",
+    key: "j1",
+    title: "Director of Engineering",
+    company: "Acme",
+    submitAttemptedAt: new Date("2026-08-10T12:00:00Z"),
+  },
+];
+
+const UNSTAMPED = [
+  {
+    campaignId: "c1",
+    key: "j2",
+    title: "Director of Engineering",
+    company: "Acme",
+    submitAttemptedAt: null,
+  },
 ];
 
 interface Harness {
@@ -18,12 +35,12 @@ interface Harness {
   questions: Array<Record<string, unknown>>;
 }
 
-function harness(stamped: typeof STAMPED): Harness {
+function harness(rows: Array<Record<string, unknown>>): Harness {
   const updates: Harness["updates"] = [];
   const questions: Harness["questions"] = [];
   const db = {
     job: {
-      findMany: async () => stamped,
+      findMany: async () => rows,
       updateMany: async ({
         where,
         data,
@@ -31,9 +48,11 @@ function harness(stamped: typeof STAMPED): Harness {
         where: Record<string, unknown>;
         data: Record<string, unknown>;
       }) => {
-        const isStamped = where.submitAttemptedAt !== null;
-        updates.push({ stamped: isStamped, status: data.status, skipReason: data.skipReason });
-        return { count: isStamped ? stamped.length : 1 };
+        const wantsStamped = where.submitAttemptedAt !== null;
+        updates.push({ stamped: wantsStamped, status: data.status, skipReason: data.skipReason });
+        return {
+          count: rows.filter((r) => (r.submitAttemptedAt !== null) === wantsStamped).length,
+        };
       },
     },
     pilotQuestion: {
@@ -47,14 +66,34 @@ function harness(stamped: typeof STAMPED): Harness {
 }
 
 describe("recoverApplyingJobs", () => {
-  it("re-approves a job that never reached the submit", async () => {
+  it("does nothing when nothing was interrupted", async () => {
     const h = harness([]);
 
     const result = await recoverApplyingJobs(h.db, "u1", { status: "applying" });
 
-    expect(result).toEqual({ reapproved: 1, parked: 0 });
-    expect(h.updates.find((u) => !u.stamped)?.status).toBe("approved");
+    expect(result).toEqual({ parkedKnownSubmit: 0, parkedUnknown: 0 });
     expect(h.questions).toHaveLength(0);
+  });
+
+  // The agent marked none of four real applications, so "unstamped" means "no information", not
+  // "nothing was sent" - retrying it risks the duplicate the stamp was meant to prevent.
+  it("parks an interrupted job even when the submit was never marked", async () => {
+    const h = harness(UNSTAMPED);
+
+    const result = await recoverApplyingJobs(h.db, "u1", { status: "applying" });
+
+    expect(result).toEqual({ parkedKnownSubmit: 0, parkedUnknown: 1 });
+    const parked = h.updates.find((u) => !u.stamped);
+    expect(parked?.status).toBe("needs_user");
+    expect(parked?.skipReason).toBe(INTERRUPTED_REASON);
+  });
+
+  it("never re-approves an interrupted job", async () => {
+    const h = harness([...STAMPED, ...UNSTAMPED]);
+
+    await recoverApplyingJobs(h.db, "u1", { status: "applying" });
+
+    expect(h.updates.every((u) => u.status !== "approved")).toBe(true);
   });
 
   it("parks a job that may already have been submitted, instead of retrying it", async () => {
@@ -62,7 +101,7 @@ describe("recoverApplyingJobs", () => {
 
     const result = await recoverApplyingJobs(h.db, "u1", { status: "applying" });
 
-    expect(result.parked).toBe(1);
+    expect(result.parkedKnownSubmit).toBe(1);
     const parked = h.updates.find((u) => u.stamped);
     expect(parked?.status).toBe("needs_user");
     expect(parked?.skipReason).toBe(MAYBE_SUBMITTED_REASON);

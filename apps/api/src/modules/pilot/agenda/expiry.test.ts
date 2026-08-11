@@ -6,8 +6,8 @@ function setup(options: {
   claims?: Record<string, unknown>[];
   questions?: Record<string, unknown>[];
   openApplyClaims?: Record<string, unknown>[];
-  /** Jobs stamped as maybe-submitted, which recovery parks instead of re-approving. */
-  stampedJobs?: Record<string, unknown>[];
+  /** Rows recovery finds in `applying`; it parks all of them, stamped or not. */
+  interruptedJobs?: Record<string, unknown>[];
 }) {
   const jobWrites: Record<string, unknown>[] = [];
   const claimWrites: Record<string, unknown>[] = [];
@@ -36,8 +36,18 @@ function setup(options: {
       },
     },
     job: {
-      // Crash recovery reads the maybe-submitted jobs before parking them; none by default.
-      findMany: async () => options.stampedJobs ?? [],
+      // Crash recovery reads every interrupted job before parking it. One unstamped row by
+      // default: that is the ordinary case, an apply cut off with nothing recorded.
+      findMany: async () =>
+        options.interruptedJobs ?? [
+          {
+            campaignId: "c1",
+            key: "j1",
+            title: "Engineer",
+            company: "Acme",
+            submitAttemptedAt: null,
+          },
+        ],
       updateMany: async (args: Record<string, unknown>) => {
         jobWrites.push(args);
         return { count: 1 };
@@ -61,7 +71,7 @@ function setup(options: {
 }
 
 describe("agenda expiry", () => {
-  it("releases an expired claim and reverts its applying job in one transaction", async () => {
+  it("releases an expired claim and parks its applying job in one transaction", async () => {
     const state = setup({
       claims: [
         {
@@ -75,10 +85,15 @@ describe("agenda expiry", () => {
     await state.run();
     expect(state.transactions).toBe(1);
     expect(state.claimWrites[0]).toMatchObject({ data: { outcome: "expired" } });
+    // Parked, not re-approved: an interrupted apply may already be with the employer, and nothing
+    // recorded how far it got.
     expect(state.jobWrites[0]).toMatchObject({
       where: { status: "applying", OR: [{ campaignId: "c1", key: "j1" }] },
-      data: { status: "approved" },
+      data: { status: "needs_user" },
     });
+    expect(
+      state.jobWrites.every((w) => (w.data as { status?: string }).status !== "approved"),
+    ).toBe(true);
   });
 
   it("expires a question and skips its parked job atomically", async () => {
@@ -87,12 +102,16 @@ describe("agenda expiry", () => {
     });
     await state.run();
     expect(state.transactions).toBe(1);
-    expect(state.questionWrites[0]).toMatchObject({ data: { status: "expired" } });
+    // The array also holds questions recovery *creates*, so match the expiry update itself.
+    const expired = state.questionWrites.find(
+      (w) => (w as { data?: { status?: string } }).data?.status === "expired",
+    );
+    expect(expired).toBeDefined();
     const skip = state.jobWrites.find((w) => (w.data as { status?: string }).status === "skipped");
     expect(skip).toMatchObject({ data: { status: "skipped" } });
   });
 
-  it("reverts stale applying jobs while sparing ones under an open apply claim", async () => {
+  it("parks stale applying jobs while sparing ones under an open apply claim", async () => {
     const state = setup({
       openApplyClaims: [{ payload: { campaignId: "c1", jobKey: "held" } }],
     });
@@ -106,7 +125,7 @@ describe("agenda expiry", () => {
         NOT: [{ campaignId: "c1", key: "held" }],
         updatedAt: { lt: expect.any(Date) },
       },
-      data: { status: "approved" },
+      data: { status: "needs_user" },
     });
   });
 });

@@ -44,7 +44,15 @@ point of failure.
 
 ## 3. Robustness — ranked by expected harm
 
-### R1. An application can be submitted twice after a crash (**highest severity**)
+### R1. An application can be submitted twice after a crash (**highest severity**) — closed
+
+> **Resolved 2026-08-11**, and not as first designed. The fix relied on the agent marking the point
+> of no return before submitting; across four real applications after that instruction shipped, it
+> marked none. So "unmarked" meant "no information", not "nothing was sent", and retrying it risked
+> the very duplicate the mark existed to prevent. Recovery now hands *every* interrupted apply to a
+> human, and the mark only sharpens the wording. The asymmetry carries it: a duplicate reaches a
+> real employer and cannot be undone, a needless question costs one glance - and only 13 of 352
+> apply claims have ever reached this path.
 
 The expiry sweep returns a stale `applying` job to `approved`, and the duplicate guard only sees
 `Application` rows, which are written *after* the browser submits. So a job whose form was
