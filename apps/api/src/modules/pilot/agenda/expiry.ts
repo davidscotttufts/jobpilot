@@ -14,9 +14,18 @@ function splitJobSubject(subjectId: string) {
   };
 }
 
+export interface ExpiryOutcome {
+  /** Jobs dropped because the question blocking them was never answered. */
+  jobsDroppedByExpiredQuestion: number;
+}
+
 /** Releases expired claims and questions, returning their subjects to a workable state. */
-export async function runExpiry(prisma: PrismaClient, userId: string, now: Date): Promise<void> {
-  await prisma.$transaction(async (tx) => {
+export async function runExpiry(
+  prisma: PrismaClient,
+  userId: string,
+  now: Date,
+): Promise<ExpiryOutcome> {
+  return prisma.$transaction(async (tx) => {
     const claims = await tx.pilotClaim.findMany({
       where: { userId, releasedAt: null, expiresAt: { lt: now } },
       take: GATHER_CAP,
@@ -64,7 +73,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       take: GATHER_CAP,
       select: { id: true, subjectType: true, subjectId: true },
     });
-    if (!questions.length) return;
+    if (!questions.length) return { jobsDroppedByExpiredQuestion: 0 };
 
     await tx.pilotQuestion.updateMany({
       where: { id: { in: questions.map((question) => question.id) }, status: "open" },
@@ -75,9 +84,9 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       .filter((question) => question.subjectType === "job" && question.subjectId)
       .map((question) => splitJobSubject(question.subjectId as string));
 
-    if (!jobRefs.length) return;
+    if (!jobRefs.length) return { jobsDroppedByExpiredQuestion: 0 };
 
-    await tx.job.updateMany({
+    const dropped = await tx.job.updateMany({
       where: {
         status: "needs_user",
         campaign: { userId },
@@ -85,5 +94,6 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
       },
       data: { status: "skipped", skipReason: "Question expired without an answer." },
     });
+    return { jobsDroppedByExpiredQuestion: dropped.count };
   });
 }

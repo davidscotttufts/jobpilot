@@ -143,3 +143,22 @@ describe("agenda expiry - maybe-submitted jobs", () => {
     expect(state.questionWrites.some((q) => JSON.stringify(q).includes("Acme"))).toBe(true);
   });
 });
+
+describe("agenda expiry - jobs lost to an unanswered question", () => {
+  it("reports how many jobs a lapsed question dropped, so the user can be told", async () => {
+    const state = setup({
+      questions: [{ id: "q1", subjectType: "job", subjectId: "c1:j1" }],
+    });
+
+    const result = await state.run();
+
+    // 52 jobs were dropped this way on the live data, every one of them silently.
+    expect(result.jobsDroppedByExpiredQuestion).toBe(1);
+  });
+
+  it("reports zero when nothing expired, so no notification fires", async () => {
+    const state = setup({});
+
+    expect((await state.run()).jobsDroppedByExpiredQuestion).toBe(0);
+  });
+});

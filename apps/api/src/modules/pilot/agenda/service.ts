@@ -93,7 +93,22 @@ export class AgendaService {
     // Before the inbox gather, so `inbox.review` sees mail that arrived since the last cycle.
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
 
-    await runExpiry(this.prisma, userId, now);
+    const expiry = await runExpiry(this.prisma, userId, now);
+    // A question that lapses silently costs a job outright - 52 of them on the live data, each one
+    // a posting the user never heard about again. Telling them is the difference between a dead end
+    // and a decision: these skips are re-scannable, but only if someone knows to look.
+    if (expiry.jobsDroppedByExpiredQuestion > 0) {
+      const count = expiry.jobsDroppedByExpiredQuestion;
+      void this.push.sendToUser(userId, {
+        title: "JobPilot dropped a job waiting on you",
+        body:
+          count === 1
+            ? "A question went unanswered, so that application was skipped. It can be picked back up."
+            : `${count} questions went unanswered, so those applications were skipped. They can be picked back up.`,
+        url: "/pilot",
+        tag: "questions-expired",
+      });
+    }
     // Advisory, so it must never take the cycle down with it: runExpiry above is load-bearing
     // (a stranded applying job has to be recovered before the agenda is built), but nothing
     // downstream reads drift. A transient failure here would otherwise 500 the refresh the pilot
