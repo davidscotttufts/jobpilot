@@ -1,6 +1,6 @@
 import type { RescanCampaignJobInput, RetryCampaignJobInput } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
-import type { CampaignJobStatus, Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type CampaignJobStatus, Prisma, type PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "../campaign.summary";
 
 async function findJob(prisma: PrismaClient, userId: string, campaignId: string, key: string) {
@@ -74,6 +74,9 @@ export async function writeJobRetry(
       failReason: null,
       skipReason: null,
       retryNotes: body.retryNotes,
+      // Timings belong to the attempt that produced them. Leaving them makes a retried job report
+      // the failed run's numbers under an `applied` row. DbNull, not null, for a JSON column.
+      phaseTimings: Prisma.DbNull,
     },
     rejection: (status) => `Only failed jobs can be retried; job is ${status}.`,
   });

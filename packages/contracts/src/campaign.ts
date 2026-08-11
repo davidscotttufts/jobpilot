@@ -196,6 +196,9 @@ export const campaignJobReasonSchema = z.object({
   count: z.number().int().min(0),
 });
 
+/** No apply phase runs for four hours; one absurd value would poison max and p90 forever. */
+export const APPLY_PHASE_MAX_MS = 4 * 60 * 60 * 1000;
+
 /**
  * Milliseconds spent in each phase of an apply, reported by the worker on the terminal write.
  *
@@ -204,16 +207,21 @@ export const campaignJobReasonSchema = z.object({
  * costs no extra round trip. Optional throughout: a worker that did not time itself is not a
  * failure, and a phase it skipped is simply absent.
  */
+const phaseMs = z.number().int().min(0).max(APPLY_PHASE_MAX_MS).optional();
+
 export const applyPhaseTimingsSchema = z
   .object({
-    navigate: z.number().int().min(0).optional(),
-    read: z.number().int().min(0).optional(),
-    tailor: z.number().int().min(0).optional(),
-    coverLetter: z.number().int().min(0).optional(),
-    fill: z.number().int().min(0).optional(),
-    submit: z.number().int().min(0).optional(),
+    navigate: phaseMs,
+    read: phaseMs,
+    tailor: phaseMs,
+    coverLetter: phaseMs,
+    fill: phaseMs,
+    submit: phaseMs,
   })
-  .partial();
+  // Strict on purpose: Zod strips unknown keys by default, so a worker using the wrong names would
+  // send `{}` - truthy, and stored over real timings from a previous attempt. A typo should be a
+  // 422 the worker can see, not silent data loss.
+  .strict();
 
 export const campaignJobResultSchema = z
   .object({

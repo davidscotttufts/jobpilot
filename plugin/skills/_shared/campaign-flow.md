@@ -53,6 +53,17 @@ jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", fail
 jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 ```
 
+**Forward the worker's `phases` when it returned one**, on any outcome - add it to the payload
+above rather than making a second call:
+
+```bash
+jq -n --arg t "$NOW" --argjson score <0-100> --argjson phases "<worker's phases object>" \
+  '{outcome:"applied", appliedAt:$t, matchScore:$score, phases:$phases}'
+```
+
+It is the only measurement of where an apply's minutes went - claim timings show five minutes and
+nothing about which step spent them. Drop the key when the worker returned none; never invent one.
+
 ## job-worker apply-mode input
 
 ```json

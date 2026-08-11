@@ -63,10 +63,16 @@ Read the posting and return fit data for a user-facing review. No save, no campa
 
 ## Timing yourself
 
-Record elapsed milliseconds per phase and hand them to the caller as `phases` (see
-`../skills/_shared/campaign-flow.md`). `MS=$(date +%s%3N)` before a phase, subtract after; on macOS
-without GNU date, `python3 -c 'import time;print(int(time.time()*1000))'`. Skip it rather than guess
-- a fabricated number is worse than a missing one, because it will be believed.
+Include `phases` in your return: elapsed **milliseconds** per phase, any subset. You do not post it
+anywhere - the orchestrator forwards it on the `/result` write it already makes.
+
+Exactly these keys, or the value is dropped and the row records nothing:
+`navigate`, `read`, `tailor`, `coverLetter`, `fill`, `submit`.
+
+`MS=$(date +%s%3N)` before a phase and subtract after; on macOS without GNU date,
+`python3 -c 'import time;print(int(time.time()*1000))'`. Omit `phases` entirely rather than guess -
+a fabricated number is worse than a missing one, because it will be believed. Report what you have
+even on `failed` or `skipped`: knowing a CAPTCHA skip cost 40s of navigation is the point.
 
 ## Browser server
 
@@ -139,8 +145,8 @@ curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
 9. Close tabs, select tab 0, return one of:
 
 ```json
-{ "outcome": "applied", "appliedAt": "...", "matchScore": 0 }
-{ "outcome": "failed",  "failReason": "...", "retryNotes": "..." }
+{ "outcome": "applied", "appliedAt": "...", "matchScore": 0, "phases": { "navigate": 4200, "read": 15300, "fill": 48000, "submit": 9100 } }
+{ "outcome": "failed",  "failReason": "...", "retryNotes": "...", "phases": { "navigate": 4200 } }
 { "outcome": "skipped", "skipReason": "..." }
 { "outcome": "needs_user", "category": "verification|payment|salary|review", "context": "...", "kind": "question|choice|2fa|approval", "question": "...", "options": ["..."] }
 ```

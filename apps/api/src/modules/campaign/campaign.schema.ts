@@ -42,6 +42,8 @@ export const campaignJobSchema = z.object({
   matchReason: z.string().nullable(),
   status: campaignJobStatusSchema,
   appliedAt: z.date().nullable(),
+  // phaseTimings is deliberately absent: it is operator telemetry read from the database by
+  // `report:phases`, not something any client renders, and Elysia strips what is not declared.
   submitAttemptedAt: z.date().nullable(),
   failReason: z.string().nullable(),
   retryNotes: z.string().nullable(),

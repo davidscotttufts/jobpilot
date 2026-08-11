@@ -32,6 +32,9 @@ function setup() {
     updatedAt: new Date(),
   };
   let application: Record<string, unknown> | null = null;
+  // What the terminal write actually sent, so a test can assert on the write rather than on a
+  // fixture default the fake never touched.
+  const resultWrites: Record<string, unknown>[] = [];
   let applicationUpserts = 0;
   const variantLinks: { where: Record<string, unknown>; data: Record<string, unknown> }[] = [];
   const campaign = { source: "auto_apply" as const };
@@ -51,6 +54,9 @@ function setup() {
           if (["applied", "failed", "skipped"].includes(job.status)) return { count: 0 };
         } else if (typeof where.status === "string" && job.status !== where.status) {
           return { count: 0 };
+        }
+        if ("status" in data && ["applied", "failed", "skipped"].includes(String(data.status))) {
+          resultWrites.push(data);
         }
         job = { ...job, ...data } as typeof job;
         return { count: 1 };
@@ -99,6 +105,9 @@ function setup() {
     },
     setApplication(row: Record<string, unknown>) {
       application = row;
+    },
+    lastResultWrite() {
+      return resultWrites.at(-1) ?? null;
     },
     setSubmitAttempted(at: Date | null) {
       job = { ...job, submitAttemptedAt: at } as typeof job;
@@ -320,16 +329,30 @@ describe("CampaignJobService phase timings", () => {
     });
   });
 
-  it("leaves earlier numbers alone when a worker did not time itself", async () => {
+  it("does not send an empty object, which would erase a previous attempt's numbers", async () => {
     const state = setup();
-    state.setStatus("applying");
+
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "blocked",
+      // What a worker using the wrong key names produces: Zod strips them, leaving {} - truthy,
+      // and previously written straight over real timings.
+      phases: {},
+    });
+
+    expect(state.lastResultWrite()?.phaseTimings).toBeUndefined();
+  });
+
+  it("omits the column entirely when the worker reported nothing", async () => {
+    const state = setup();
 
     await state.service.recordJobResult("u1", "c1", "j1", {
       outcome: "failed",
       failReason: "blocked",
     });
 
-    // undefined, not null: a retry that skipped timing must not erase the attempt that measured.
-    expect(state.job.phaseTimings).toBeUndefined();
+    // `undefined` is what makes Prisma skip the field rather than null it.
+    expect(state.lastResultWrite()).not.toBeNull();
+    expect(state.lastResultWrite()?.phaseTimings).toBeUndefined();
   });
 });

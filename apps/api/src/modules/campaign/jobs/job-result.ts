@@ -62,9 +62,9 @@ export async function writeJobResult(
         skipReason: data.outcome === "skipped" ? data.skipReason : null,
         retryNotes: data.retryNotes,
         matchScore: data.matchScore,
-        // Absent when the worker did not time itself; never overwrite a previous run's numbers
-        // with nothing, or a retry erases the only measurement of the attempt that worked.
-        phaseTimings: data.phases ? data.phases : undefined,
+        // `undefined` skips the column. An *empty* object must skip it too: it means the worker
+        // reported nothing usable, and writing it would erase a previous attempt's real numbers.
+        phaseTimings: data.phases && Object.keys(data.phases).length > 0 ? data.phases : undefined,
         // The agent lived to report an outcome, so this attempt is accounted for. Leaving the
         // stamp would park a later, unrelated crash as "maybe submitted" and 409 the normal
         // bail-out forever.
