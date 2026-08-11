@@ -8,9 +8,11 @@ import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { PushService } from "@/common/push";
+import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { sweepBoardDrift } from "@/modules/job-board/drift-sweep";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
@@ -91,6 +93,8 @@ export class AgendaService {
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
 
     await runExpiry(this.prisma, userId, now);
+    // A board that quietly changes host defeats exact-URL dedupe; ask once when it happens.
+    await sweepBoardDrift(this.prisma, userId, env.APP_URL);
     await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);
     // After promotion, so freshly-approved rows keep their campaign out of the idle sweep.
     await finalizeIdleCampaigns({ prisma: this.prisma, pilot: this.pilot }, userId, now);
