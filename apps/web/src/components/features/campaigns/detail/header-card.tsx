@@ -40,15 +40,13 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
           sx={{ alignItems: { xs: "stretch", sm: "flex-start" }, justifyContent: "space-between" }}
         >
           <Stack spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+            {/* The query is the page's h1 now, so repeating it here would say it twice. */}
             <Stack
               direction="row"
               spacing={1}
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
               <CampaignStatusChip status={campaign.status} />
-              <Typography variant="body1Strong" sx={{ minWidth: 0, wordBreak: "break-word" }}>
-                {campaign.query}
-              </Typography>
             </Stack>
 
             <Stack

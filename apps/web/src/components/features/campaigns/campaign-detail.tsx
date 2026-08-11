@@ -8,6 +8,7 @@ import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { NetworkingBoard } from "@/components/features/networking";
+import { PageHeader, PageShell } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import { CampaignHeaderCard } from "./detail/header-card";
 import { CampaignJobsPanel } from "./detail/jobs-panel";
@@ -55,26 +56,41 @@ export function CampaignDetail(props: CampaignDetailProps): ReactElement {
 
   const campaign = detail.data;
 
+  const header = (
+    <PageHeader
+      eyebrow="Campaign"
+      title={campaign.query}
+      backHref="/workspace"
+      backLabel="Workspace"
+    />
+  );
+
   if (campaign.summary.kind === "networking") {
     return (
-      <Stack spacing={3}>
-        <CampaignHeaderCard campaign={campaign} />
-        <NetworkingBoard
-          campaignId={campaignId}
-          status={campaign.status}
-          summary={campaign.summary}
-          config={campaign.config.networking}
-        />
-      </Stack>
+      <PageShell maxWidth="lg">
+        {header}
+        <Stack spacing={3}>
+          <CampaignHeaderCard campaign={campaign} />
+          <NetworkingBoard
+            campaignId={campaignId}
+            status={campaign.status}
+            summary={campaign.summary}
+            config={campaign.config.networking}
+          />
+        </Stack>
+      </PageShell>
     );
   }
 
   return (
-    <Stack spacing={3}>
-      <CampaignHeaderCard campaign={campaign} />
-      <CampaignSummaryTiles campaign={campaign} />
-      <CampaignReasonBreakdown campaign={campaign} />
-      <CampaignJobsPanel campaign={campaign} />
-    </Stack>
+    <PageShell maxWidth="lg">
+      {header}
+      <Stack spacing={3}>
+        <CampaignHeaderCard campaign={campaign} />
+        <CampaignSummaryTiles campaign={campaign} />
+        <CampaignReasonBreakdown campaign={campaign} />
+        <CampaignJobsPanel campaign={campaign} />
+      </Stack>
+    </PageShell>
   );
 }

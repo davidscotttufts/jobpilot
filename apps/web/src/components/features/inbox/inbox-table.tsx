@@ -159,8 +159,10 @@ export function InboxTable(props: InboxTableProps): ReactElement {
         aria-live="polite"
         sx={{
           position: "absolute",
-          width: 1,
-          height: 1,
+          // "1px", not 1: MUI reads a bare number <= 1 as a *percentage*, so `width: 1` resolved
+          // to 100% of the viewport (no positioned ancestor) and scrolled the page 144px sideways.
+          width: "1px",
+          height: "1px",
           overflow: "hidden",
           clip: "rect(0 0 0 0)",
           whiteSpace: "nowrap",

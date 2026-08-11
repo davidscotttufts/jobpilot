@@ -1,6 +1,6 @@
 # UX Assessment — JobPilot web
 
-> Last updated: 2026-08-11 · Scope: `apps/web/src` (48 routes, 358 components) · Method: static source audit — rule-conformance sweep + accessibility signal scan across the whole app; per-area interaction grading partial (see coverage)
+> Last updated: 2026-08-11 · Scope: `apps/web/src` (48 routes, 358 components) · Method: static source audit — rule-conformance sweep + accessibility signal scan across the whole app — plus two headless live passes measuring rendered geometry, contrast, and headings (see coverage)
 
 ## Grade summary
 
@@ -10,7 +10,7 @@
 | **Accessibility Debt** | A- | A+ | 0 | 0 |
 | **Designed states & resilience** | B+ | A+ | 0 | 1 |
 | Deferred Polish | A | A+ | 0 | 0 |
-| Per-experience areas (13 measured live) | B+ | A+ | 0 | 1 |
+| Per-experience areas (13 measured live) | A- | A+ | 0 | 1 |
 
 The app is markedly more disciplined than a typical MUI codebase. The rules in
 `.claude/rules/web.md` are not aspirational here — most are actually held:
@@ -47,8 +47,16 @@ The remaining gaps are narrow and specific.
 Verify at mobile / tablet / desktop (the app is dark-only — see *Coverage*):
 - [x] `CT-1` Agent dock + terminal panel — reflow at mobile width; does the xterm viewport clip?
       (Overflow measured 0 app-wide at 390px, but the terminal's *internal* scroll still wants eyes.)
-- [ ] `CT-2` Campaign detail with a live run — do job rows update visibly *and* audibly (see `A11Y-1`)?
-- [ ] `CT-3` Inbox and Applications tables — horizontal overflow and touch-target size on mobile.
+- [~] `CT-2` (partial) Campaign detail — **audible half verified**: the job count carries
+      `role="status"` and reads "116 jobs" against real data, and the page holds its SSE stream open
+      (that is why `networkidle` never fires on authed routes). Found and fixed a separate defect
+      while here: the `h1` was the raw campaign UUID (`AREA-3`). **Not verified:** rows actually
+      moving under a live run — that needs a real campaign, and a real campaign sends real
+      applications to real employers, so it is a human's call to start, not an audit's.
+- [x] `CT-3` Inbox and Applications tables — **measured at 390px and 1440px.** Found and fixed a
+      144px horizontal page scroll on `/inbox` (`AREA-4`). The DataGrid itself is correct: at 390px
+      it puts 1030px of columns inside its own `overflow-x: scroll` viewport rather than widening
+      the page. Touch targets: 0 real violations — see `AREA-5` for why the 26 flagged are not.
 - [x] `CT-4` (partial — 2 dialogs automated, see `A11Y-3`) Every dialog (credential form, campaign new, resume editor) — focus moves in on open,
       returns to the trigger on close, Escape works, focus never escapes behind the overlay.
 - [x] `CT-5` Contrast across `(dashboard)` — **measured, 579 text nodes over 6 routes, 0 below AA.**
@@ -58,7 +66,11 @@ Verify at mobile / tablet / desktop (the app is dark-only — see *Coverage*):
       12px white on the error and info fills, at 3.9:1 and 3.7:1. Fixed by giving those two palette
       entries an explicit dark `contrastText` — MUI picks white on its own because its contrast
       threshold is 3, which suits the 18px+ text the default assumes, not a chip label.
-- [ ] `CT-6` Onboarding and login/register — the only flows a brand-new user sees.
+- [x] `CT-6` Onboarding and login/register — **measured at 390px and 1440px:** 0 horizontal
+      overflow, 0 console errors, exactly one sensible `h1` on each ("Welcome to JobPilot",
+      "JobPilot"). The "Forgot password?" link is 98×14, under the 24px minimum, but its nearest
+      neighbour sits 22px from its centre against a 12px circle radius, so WCAG 2.5.8's spacing
+      exception carries it. Keyboard traversal and screen-reader output still want a human.
 
 ---
 
@@ -120,6 +132,12 @@ happens *after* first paint — updates and motion.
       The other two probes missed their trigger selector rather than failing, so coverage is 2
       dialogs, not all — effort: S
 
+> The inbox half of `A11Y-1` shipped a layout regression with it — the visually-hidden region was
+> sized `width: 1`, which MUI reads as 100%, and it scrolled `/inbox` sideways by 144px for three
+> weeks without being visible. Closed as `AREA-4`. Worth stating here rather than only in the areas
+> section: an accessibility fix is still a layout change, and this one was invisible by
+> construction, so only a geometry measurement was ever going to catch it.
+
 **Path to A+:** contrast is now measured and clean (`CT-5`), so the remaining gap is real
 screen-reader output — the one thing neither static analysis nor a headless pass can stand in for.
 It stays on the `CT-*` list.
@@ -169,23 +187,30 @@ placeholder copy, no "temporary" styling markers under `apps/web/src`. Nothing t
 
 ---
 
-## Per-experience areas — Grade: B+ (live pass, 13 areas)
+## Per-experience areas — Grade: A- (live pass, 13 areas + a second pass on 4 flows)
 
 Driven against the running app with a headless Chromium: logged in, then each route loaded at
 **390px and 1440px**, measuring horizontal overflow, console errors, heading structure, and target
-sizes — 26 distinct measured page loads.
+sizes — 26 distinct measured page loads on 2026-08-10, plus a second 14-load pass on 2026-08-11
+covering the `CT-2`/`CT-3`/`CT-6` flows (Inbox, Workspace, campaign detail, application detail,
+onboarding, login, register) with a real 157-application, 539-message dataset.
 
 **Areas measured:** Workspace · Inbox · Resumes · Pilot · Settings · Analytics · Boards · Upwork ·
 Portfolio · Cover letters · Networking · Onboarding · Documents.
 
 **Results:**
 
-| Check | Result |
-|---|---|
-| Horizontal overflow at 390px and 1440px | **0px on every area** |
-| Console errors | **0 on every validly-measured area** |
-| Exactly one `h1` | 12/13 — Portfolio had two (now fixed) |
-| Dialog focus (Credentials, Boards) | opens into the dialog, Escape closes, focus returns |
+| Check | 2026-08-10 | 2026-08-11 re-measure |
+|---|---|---|
+| Horizontal overflow at 390px and 1440px | 0px on every area | **`/inbox` 144px @1440, 12px @390** → fixed (`AREA-4`) |
+| Console errors | 0 on every validly-measured area | 0 on all 7 routes, both widths |
+| Exactly one `h1` | 12/13 — Portfolio had two (now fixed) | 7/7 — but campaign detail's was a UUID (`AREA-3`) |
+| Touch targets under 24px | 12 flagged, all retracted | 28 flagged, **all 28 not violations** (`AREA-5`) |
+| Dialog focus (Credentials, Boards) | opens into the dialog, Escape closes, focus returns | not re-run |
+
+The inbox overflow is a **regression, not a miss**: the 08-10 pass measured that route at 0, and the
+live region that caused it landed on 08-11. That is the argument for re-measuring geometry after
+any change, including — especially — an accessibility one.
 
 - [x] `AREA-1` **Closed 2026-08-10.** Portfolio rendered two `h1`s — `PageHeader`'s "Portfolio" plus
       the identity card's name, because the card is shared verbatim with the public
@@ -195,6 +220,28 @@ Portfolio · Cover letters · Networking · Onboarding · Documents.
 - [ ] `AREA-2` (Improvement) Two areas could not be measured: **`/campaigns` and `/applications`
       have no index route** (only `[id]` and `new`), so both 404. Whether that is intended (they
       live under Workspace) or a missing landing page is a product call — `apps/web/src/app/(dashboard)/` — effort: S
+- [x] `AREA-3` **Closed 2026-08-11.** (was **Blocker** for `CT-2`) Campaign detail's `h1` was the
+      raw UUID — `PageHeader title={id}` in the RSC page, because the campaign's only human-readable
+      name (`query`) is loaded client-side. The page now follows the application-detail split: the
+      RSC page is a thin wrapper and `CampaignDetail` owns `PageShell` + `PageHeader`, titled with
+      the query. The header card's duplicate copy of the query came out with it, since it would
+      otherwise be said twice on one screen. Verified live: `h1: ["director of engineering
+      Michigan"]` — `campaigns/[id]/page.tsx:16`, `campaign-detail.tsx`, `detail/header-card.tsx` —
+      effort: S
+- [x] `AREA-4` **Closed 2026-08-11.** (was **Blocker**) `/inbox` scrolled sideways — 144px at
+      1440px, 12px at 390px — and the culprit was the live region added to close `A11Y-1`. In MUI's
+      `sx`, a bare number ≤ 1 on `width`/`height` is a **percentage**, so the intended 1×1px
+      screen-reader box was `100% × 100%`; with `position: absolute` and no positioned ancestor it
+      resolved against the viewport and pushed the document 144px wide. `clip: rect(0 0 0 0)` kept
+      it invisible, which is exactly why it shipped unnoticed. Now `"1px"`. Re-measured: 0 overflow
+      at both widths, region still `role="status"`, still announcing, still visually hidden —
+      `inbox-table.tsx:162` — effort: S
+- [x] `AREA-5` **Not a violation — checked 2026-08-11.** 26 targets on campaign detail and 1 each on
+      Workspace and Login measure under 24px, and none are real. The bare `<input>` is 336×21 inside
+      a `MuiInputBase-root` that is 336×**38** — the hit area is the wrapper. The 8 job-title links
+      are 15px tall but each sits alone in a 52px row, so no 24px circle centred on one reaches
+      another target. This is the same conclusion the 2026-08-10 pass reached, but for the correct
+      reason: it is the **spacing** exception in WCAG 2.5.8, not the inline-in-text one.
 
 **Three corrections to earlier passes of this file**, all from checking rather than assuming:
 - The "console errors on Campaigns/Applications" finding was **invalid** — it was Next's 404 page
@@ -205,11 +252,19 @@ Portfolio · Cover letters · Networking · Onboarding · Documents.
   `emulateMedia` changed nothing and half those loads were duplicates of the other half.
 
 **Still not covered by any pass:** actual screen-reader output, full keyboard traversal of each
-flow, and designed empty/error states per surface. Those remain the `CT-*` checklist's job.
+flow, designed empty/error states per surface, and job rows moving under a live campaign run —
+the last one deliberately, since starting a campaign sends real applications (`CT-2`).
 
 ---
 
 ## Changelog
+- 2026-08-11: **Second live pass** (`CT-2` partial, `CT-3`, `CT-6`) — 14 page loads over 7 routes at
+  two widths against real data. Two blockers found and closed: `/inbox` scrolled the page sideways
+  144px because the `A11Y-1` live region used MUI's `width: 1`, which is 100%, not 1px (`AREA-4`);
+  and campaign detail's `h1` was the raw UUID rather than the campaign query (`AREA-3`). All 28
+  under-24px targets checked and none are real violations (`AREA-5`). Per-experience areas B+ to A-.
+  `CT-2`'s live-run half is deliberately left open — verifying it means sending real applications.
+  Gate: web typecheck + Biome green.
 - 2026-08-11: Closed `STATE-2` — `useResumeExtraction` returns its error and both callers render
   it inline, so a failed poll no longer shows as an indefinite spinner. Designed states C to B+;
   `STATE-3` is the remainder and is a per-surface judgment call, not missing coverage. Gate: web
