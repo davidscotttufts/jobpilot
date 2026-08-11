@@ -188,6 +188,10 @@ export const analyticsQueries = {
     queryKey: queryKeys.analytics.outcomes(),
     queryFn: () => api.analytics.outcomes.get(),
   }),
+  scoreThreshold: () => ({
+    queryKey: queryKeys.analytics.scoreThreshold(),
+    queryFn: () => api.analytics["score-threshold"].get(),
+  }),
 };
 
 export const pilotQueries = {

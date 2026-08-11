@@ -2,7 +2,12 @@ import type { ApplicationStatus } from "@jobpilot/contracts/application";
 import { singleton } from "tsyringe";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
 import { PrismaClient } from "@/generated/prisma/client";
+import { loadInstructions } from "../pilot/pilot.instructions";
 import { buildOutcomeBreakdown } from "./outcomes";
+import { simulateThreshold } from "./score-threshold";
+
+/** Bounds the scan; the counts stay representative well before this. */
+const THRESHOLD_SCAN = 2000;
 
 const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
 
@@ -22,6 +27,29 @@ export class AnalyticsService {
     return buildOutcomeBreakdown(
       rows.map((r) => ({ ...r, status: r.status as ApplicationStatus })),
     );
+  }
+
+  /**
+   * The threshold is the most consequential number in the pilot's config and is chosen blind.
+   * This says what a lower one would have admitted - without recommending it, because whether
+   * those jobs are worth applying to is not a judgment the data can make.
+   */
+  async scoreThreshold(userId: string) {
+    const [{ config }, skipped] = await Promise.all([
+      loadInstructions(this.prisma, userId),
+      this.prisma.job.findMany({
+        // The reason string is what the agent writes when the score alone caused the skip; other
+        // skips (clearance, CAPTCHA, dedupe) would not be admitted by a lower bar.
+        where: {
+          campaign: { userId },
+          status: "skipped",
+          skipReason: { startsWith: "Below minimum match score" },
+        },
+        select: { title: true, company: true, matchScore: true, matchReason: true },
+        take: THRESHOLD_SCAN,
+      }),
+    ]);
+    return simulateThreshold(config.minScore, skipped);
   }
 
   async stats(userId: string) {

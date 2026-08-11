@@ -84,3 +84,23 @@ export const analyticsOutcomesSchema = z.object({
   byTitle: z.array(outcomeRowSchema),
   noPositiveOutcomesYet: z.boolean(),
 });
+
+/** What a lower match-score bar would have admitted, with examples to judge it by. */
+export const analyticsThresholdSchema = z.object({
+  currentThreshold: z.number().int(),
+  skippedByThreshold: z.number().int(),
+  steps: z.array(
+    z.object({
+      threshold: z.number().int(),
+      additionalJobs: z.number().int(),
+      examples: z.array(
+        z.object({
+          title: z.string(),
+          company: z.string(),
+          matchScore: z.number().int(),
+          matchReason: z.string().nullable(),
+        }),
+      ),
+    }),
+  ),
+});

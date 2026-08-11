@@ -10,6 +10,7 @@ import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { OutcomeBreakdown, OutcomeCaveat } from "./outcome-breakdown";
 import { PortfolioRankChip } from "./portfolio-rank-chip";
 import { StatusBreakdownChart } from "./status-breakdown-chart";
+import { ThresholdSimulator } from "./threshold-simulator";
 import { TopBoardsList } from "./top-boards-list";
 
 function toEntries<T extends { count: number }>(
@@ -24,6 +25,7 @@ export function AnalyticsView(): ReactElement {
     errorMessage: "Failed to load analytics stats",
   });
   const outcomes = useApiQuery(analyticsQueries.outcomes());
+  const threshold = useApiQuery(analyticsQueries.scoreThreshold());
 
   if (query.isPending) {
     return <Typography variant="body2Muted">Loading analytics</Typography>;
@@ -69,6 +71,15 @@ export function AnalyticsView(): ReactElement {
                 emptyMessage="No applications yet."
               />
             </Grid>
+            {threshold.data && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <ThresholdSimulator
+                  currentThreshold={threshold.data.currentThreshold}
+                  skippedByThreshold={threshold.data.skippedByThreshold}
+                  steps={threshold.data.steps}
+                />
+              </Grid>
+            )}
           </Grid>
         </Stack>
       )}

@@ -87,6 +87,7 @@ export const queryKeys = {
     all: ["analytics"] as const,
     stats: () => [...queryKeys.analytics.all, "stats"] as const,
     outcomes: () => [...queryKeys.analytics.all, "outcomes"] as const,
+    scoreThreshold: () => [...queryKeys.analytics.all, "score-threshold"] as const,
   },
 
   upworkProposals: {
