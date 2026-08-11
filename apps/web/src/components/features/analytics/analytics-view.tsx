@@ -6,6 +6,7 @@ import { useApiQuery } from "@/api/hooks";
 import { analyticsQueries } from "@/api/queries";
 import { AnalyticsStatTiles } from "./analytics-stat-tiles";
 import { ApplicationsTimelineChart } from "./applications-timeline-chart";
+import { NeedsYouList } from "./needs-you-list";
 import { NetworkingStatTiles } from "./networking-stat-tiles";
 import { OutcomeBreakdown, OutcomeCaveat } from "./outcome-breakdown";
 import { PortfolioRankChip } from "./portfolio-rank-chip";
@@ -26,6 +27,7 @@ export function AnalyticsView(): ReactElement {
   });
   const outcomes = useApiQuery(analyticsQueries.outcomes());
   const threshold = useApiQuery(analyticsQueries.scoreThreshold());
+  const needsYou = useApiQuery(analyticsQueries.needsYou());
 
   if (query.isPending) {
     return <Typography variant="body2Muted">Loading analytics</Typography>;
@@ -71,6 +73,11 @@ export function AnalyticsView(): ReactElement {
                 emptyMessage="No applications yet."
               />
             </Grid>
+            {needsYou.data && needsYou.data.total > 0 && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <NeedsYouList total={needsYou.data.total} jobs={needsYou.data.jobs} />
+              </Grid>
+            )}
             {threshold.data && (
               <Grid size={{ xs: 12, md: 6 }}>
                 <ThresholdSimulator

@@ -104,3 +104,20 @@ export const analyticsThresholdSchema = z.object({
     }),
   ),
 });
+
+/** Jobs a person can finish in a couple of minutes, which the agent structurally cannot. */
+export const analyticsNeedsYouSchema = z.object({
+  total: z.number().int(),
+  jobs: z.array(
+    z.object({
+      campaignId: z.string(),
+      key: z.string(),
+      title: z.string(),
+      company: z.string(),
+      url: z.string(),
+      skipReason: z.string().nullable(),
+      blockedBy: z.enum(["captcha", "unanswered-question"]),
+      updatedAt: z.date(),
+    }),
+  ),
+});

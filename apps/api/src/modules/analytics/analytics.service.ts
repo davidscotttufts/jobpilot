@@ -3,11 +3,16 @@ import { singleton } from "tsyringe";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
 import { PrismaClient } from "@/generated/prisma/client";
 import { loadInstructions } from "../pilot/pilot.instructions";
+import { findActionableJobs } from "./needs-you";
 import { buildOutcomeBreakdown } from "./outcomes";
 import { simulateThreshold } from "./score-threshold";
 
 /** Bounds the scan; the counts stay representative well before this. */
 const THRESHOLD_SCAN = 2000;
+
+/** Scan depth and how many to hand back: a list past this is a backlog, not a to-do. */
+const NEEDS_YOU_SCAN = 1000;
+const NEEDS_YOU_LIMIT = 10;
 
 const NON_INTERVIEWING_STATUSES = ["applied", "rejected", "withdrawn"] as const;
 
@@ -50,6 +55,29 @@ export class AnalyticsService {
       }),
     ]);
     return simulateThreshold(config.minScore, skipped);
+  }
+
+  /**
+   * The short list of postings worth a person's five minutes. Capped: a queue nobody can finish
+   * gets ignored, and the newest are the ones still likely to be open.
+   */
+  async needsYou(userId: string) {
+    const skipped = await this.prisma.job.findMany({
+      where: { campaign: { userId }, status: "skipped", skipReason: { not: null } },
+      orderBy: { updatedAt: "desc" },
+      take: NEEDS_YOU_SCAN,
+      select: {
+        campaignId: true,
+        key: true,
+        title: true,
+        company: true,
+        url: true,
+        skipReason: true,
+        updatedAt: true,
+      },
+    });
+    const jobs = findActionableJobs(skipped, NEEDS_YOU_LIMIT);
+    return { total: findActionableJobs(skipped, Number.MAX_SAFE_INTEGER).length, jobs };
   }
 
   async stats(userId: string) {

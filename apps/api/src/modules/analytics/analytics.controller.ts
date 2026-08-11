@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di";
 import { authGuard } from "@/common/middleware";
 import {
+  analyticsNeedsYouSchema,
   analyticsOutcomesSchema,
   analyticsStatsSchema,
   analyticsThresholdSchema,
@@ -37,5 +38,13 @@ export const analyticsController = new Elysia({
       summary: "Simulate a lower match-score threshold",
       description:
         "Reports how many jobs each lower threshold would have admitted, with the highest-scoring examples and their match reasons. Counts only jobs skipped for scoring too low - a lower bar would not admit a clearance or CAPTCHA skip.",
+    },
+  })
+  .get("/needs-you", ({ user }) => analyticsService.needsYou(user.id), {
+    response: analyticsNeedsYouSchema,
+    detail: {
+      summary: "Jobs only a human can finish",
+      description:
+        "Lists postings the agent skipped for an obstacle a person can clear - a CAPTCHA it must not hand-click, or a verification question that expired. Excludes skips no amount of attention changes, such as a clearance requirement, so the list stays worth opening.",
     },
   });
