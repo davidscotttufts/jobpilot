@@ -45,6 +45,8 @@ export interface Over {
   recentAppliedJobs?: Record<string, unknown>[];
   /** Jobs stamped as maybe-submitted, read by crash recovery before parking them. */
   stampedJobs?: Record<string, unknown>[];
+  /** Rows the board-drift scan reads; unset means a board that has never changed host. */
+  boardDriftJobs?: Record<string, unknown>[];
   warmIntroClaims?: {
     subjectId: string;
     grantedAt: Date;
@@ -237,6 +239,10 @@ function fakeJob(over: Over) {
     }) => {
       // Crash recovery's read of jobs stamped as maybe-submitted.
       if ("submitAttemptedAt" in a.where) return over.stampedJobs ?? [];
+      // The board-drift scan: filters on board with no status. Board health also filters on board
+      // but pins status, so the absence of status is the discriminator. Without its own branch the
+      // drift query falls through to approvedJobs, whose fixtures have no createdAt.
+      if ("board" in a.where && !("status" in a.where)) return over.boardDriftJobs ?? [];
       if (a.where.status === "applied") return over.recentAppliedJobs ?? [];
       if ("matchScore" in a.where) return over.scoredPendingJobs ?? [];
       if (a.where.status && typeof a.where.status === "object") return over.boardHealthJobs ?? [];

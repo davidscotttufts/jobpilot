@@ -128,6 +128,12 @@ For `2fa`: the server auto-expires the question in ~5 minutes and the parked job
 The claim payload is enriched: `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Route by `subjectType`:
 
 - **`job`** → delegate `job-worker` apply mode as `job.apply` above with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as `job.apply`.
+- **`board`** → a board started serving a second host (`subjectId` is `<board>-><newHost>`). There is
+  nothing to drive: journal the answer so it is on the record, and if the user said the hosts are the
+  same site, say in the journal that `HOST_ALIASES` in `apps/api/src/modules/application/job-url.ts`
+  needs the entry - until it has one, the same posting under both hosts still applies twice. Release
+  the claim `done`. **Do not skip this route**: an answered question with no route is re-emitted as
+  a top-priority item every cycle, forever.
 - **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
 - **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign from paginated campaign `.items` and `GET /api/campaigns/<id>/networking?page=1&limit=100` `.items`. `"Send"` → send and record exactly as `networking.send`; `"Skip"` → record result `skipped`.
 - **`campaign`** → a `campaign.reviewPaused` answer; `subjectId` = the campaignId. `"Resume"` → `POST /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`; `"Complete campaign"` → same route with `completed`; `"Keep paused"` → journal only; free text → interpret as one of the three. Journal the outcome.

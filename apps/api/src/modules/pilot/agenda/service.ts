@@ -7,12 +7,13 @@ import {
 import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
+import { logger } from "@/common/logger";
 import { PushService } from "@/common/push";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
-import { sweepBoardDrift } from "@/modules/job-board/drift-sweep";
+import { DRIFT_SWEEP_CYCLES, sweepBoardDrift } from "@/modules/job-board/drift-sweep";
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
@@ -93,8 +94,19 @@ export class AgendaService {
     await this.emailSync.syncIfStale(userId, INBOX_SYNC_STALE_MS, now);
 
     await runExpiry(this.prisma, userId, now);
-    // A board that quietly changes host defeats exact-URL dedupe; ask once when it happens.
-    await sweepBoardDrift(this.prisma, userId, env.APP_URL);
+    // Advisory, so it must never take the cycle down with it: runExpiry above is load-bearing
+    // (a stranded applying job has to be recovered before the agenda is built), but nothing
+    // downstream reads drift. A transient failure here would otherwise 500 the refresh the pilot
+    // polls, ending the cycle.
+    try {
+      // Every DRIFT_SWEEP_CYCLES-th cycle: the 400-row scan has no index that serves it, and a
+      // board's host mix changes over days, not minutes.
+      if (state.cycleCount % DRIFT_SWEEP_CYCLES === 0) {
+        await sweepBoardDrift(this.prisma, userId, env.APP_URL, now);
+      }
+    } catch (error) {
+      logger.warn({ err: error, userId }, "Board-drift sweep failed; continuing the cycle.");
+    }
     await promoteScoredPendingJobs(this.jobDeps, userId, config.minScore);
     // After promotion, so freshly-approved rows keep their campaign out of the idle sweep.
     await finalizeIdleCampaigns({ prisma: this.prisma, pilot: this.pilot }, userId, now);
