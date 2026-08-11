@@ -7,7 +7,7 @@
 | Collection | Grade | Target | Open blockers | Open gaps |
 |---|---|---|---|---|
 | Design System (cross-cutting) | A | A+ | 0 | 1 (reduced) |
-| **Accessibility Debt** | B+ | A+ | 0 | 2 |
+| **Accessibility Debt** | A- | A+ | 0 | 0 |
 | **Designed states & resilience** | C | A+ | 0 | 2 |
 | Deferred Polish | A | A+ | 0 | 0 |
 | Per-experience areas (13 measured live) | B+ | A+ | 0 | 1 |
@@ -93,12 +93,12 @@ scale genuinely lacks one.
 
 ---
 
-## Accessibility Debt — Grade: B+
+## Accessibility Debt — Grade: A-
 
 Better than typical: names, semantics, and alt text are handled. The debt is concentrated in what
 happens *after* first paint — updates and motion.
 
-- [~] `A11Y-1` (Improvement, was **Blocker**) **Partly closed 2026-08-10** - the campaign job count now carries `role="status"`, and the update banner already announces via MUI `Alert`'s default `role="alert"`. Remaining: Inbox and Upwork lists, where announcing every changed row would be noisy and the right granularity needs a live pass (`CT-2`, `CT-3`). Originally: no live regions anywhere. Zero `aria-live`, `role="status"`, or
+- [x] `A11Y-1` **Closed 2026-08-11.** (was **Blocker**) **Partly closed 2026-08-10** - the campaign job count now carries `role="status"`, and the update banner already announces via MUI `Alert`'s default `role="alert"`. Remaining: Inbox and Upwork lists, where announcing every changed row would be noisy and the right granularity needs a live pass (`CT-2`, `CT-3`). Originally: no live regions anywhere. Zero `aria-live`, `role="status"`, or
       `role="alert"` in the entire app, yet at least 8 surfaces update themselves from SSE —
       `campaigns/detail/jobs-panel.tsx`, `campaigns/campaign-detail.tsx`, `inbox/inbox-content.tsx`,
       `inbox/inbox-table.tsx`, `upwork/proposals/proposals-list.tsx`, `proposal-detail.tsx`,
@@ -113,8 +113,8 @@ happens *after* first paint — updates and motion.
       The other two probes missed their trigger selector rather than failing, so coverage is 2
       dialogs, not all — effort: S
 
-**Path to A+:** finish `A11Y-1` — Inbox and Upwork still announce nothing, and it is the only
-gap here where a user actually loses information. Then confirm `A11Y-3` live (`CT-4`).
+**Path to A+:** the remaining gap is what static analysis and a headless pass cannot reach —
+measured contrast in both themes and real screen-reader output. Those stay on the `CT-*` list.
 
 ---
 
@@ -194,6 +194,10 @@ keyboard traversal of each flow, and designed empty/error states per surface. Th
 ---
 
 ## Changelog
+- 2026-08-11: Closed `A11Y-1`. The inbox announces its message count from a visually-hidden polite
+  region - it has no visible summary to attach a status role to, and announcing every SSE-changed
+  row would be noise rather than information. Accessibility Debt B+ to A-; the rest of the way
+  needs measured contrast and a real screen reader.
 - 2026-08-10: **Live pass.** Drove the running app headless — 52 page loads across 13 areas at two
   breakpoints in both themes. Zero horizontal overflow and zero console errors everywhere; found
   and fixed Portfolio's duplicate `h1` (`AREA-1`), and verified dialog focus behaviour (`A11Y-3`).

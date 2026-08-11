@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import type { Classification } from "@jobpilot/contracts/email";
-import { Button, Chip, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, Stack, Typography } from "@mui/material";
 import type { GridColDef } from "@mui/x-data-grid";
 import type { EmailMessageDto } from "@/api/types";
 import { DataTable } from "@/components/ui/data/data-table";
@@ -150,13 +150,32 @@ export function InboxTable(props: InboxTableProps): ReactElement {
   ];
 
   return (
-    <DataTable
-      rows={rows}
-      columns={columns}
-      loading={loading}
-      rowHeight={60}
-      onRowClick={onRowClick}
-      {...pagination}
-    />
+    <>
+      {/* SSE moves this table while the user reads it. There is no visible summary to carry a
+          status role, and announcing each changed row would be noise, so the count is announced
+          from a region that is available to a screen reader and invisible to everyone else. */}
+      <Box
+        role="status"
+        aria-live="polite"
+        sx={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          overflow: "hidden",
+          clip: "rect(0 0 0 0)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {loading ? "Loading messages" : `${rows.length} messages shown`}
+      </Box>
+      <DataTable
+        rows={rows}
+        columns={columns}
+        loading={loading}
+        rowHeight={60}
+        onRowClick={onRowClick}
+        {...pagination}
+      />
+    </>
   );
 }
