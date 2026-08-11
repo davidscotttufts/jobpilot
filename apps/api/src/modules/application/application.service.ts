@@ -6,6 +6,7 @@ import type {
   StatusTransitionInput,
 } from "@jobpilot/contracts/application";
 import { SINGLE_APPLY_CAMPAIGN, STATUSES } from "@jobpilot/contracts/application";
+import { submittedAnswersSchema } from "@jobpilot/contracts/campaign";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
@@ -111,6 +112,9 @@ export class ApplicationService {
 
     return {
       ...row,
+      // A JSON column comes back as JsonValue; parse it rather than casting, so a row written by
+      // an older shape degrades to "not recorded" instead of throwing at the response schema.
+      submittedAnswers: submittedAnswersSchema.safeParse(row.submittedAnswers).data ?? null,
       source: row.source as ApplicationSource,
       appliedAt: row.appliedAt,
       rejectedAt: row.rejectedAt,

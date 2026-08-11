@@ -61,7 +61,8 @@ jq -n --arg t "$NOW" --argjson score <0-100> --argjson phases "<worker's phases 
   '{outcome:"applied", appliedAt:$t, matchScore:$score, phases:$phases}'
 ```
 
-It is the only measurement of where an apply's minutes went - claim timings show five minutes and
+Forward the worker's `answers` the same way (`answers:$answers`) - it is the only record of what
+was actually told to an employer. It is the only measurement of where an apply's minutes went - claim timings show five minutes and
 nothing about which step spent them. Drop the key when the worker returned none; never invent one.
 
 ## job-worker apply-mode input

@@ -223,10 +223,29 @@ export const applyPhaseTimingsSchema = z
   // 422 the worker can see, not silent data loss.
   .strict();
 
+/**
+ * The answers the agent actually put in the form.
+ *
+ * The agent fills applications on the user's behalf and the only window into what it said was a
+ * raw terminal that scrolls away. Without a record, a bad answer repeated across fifty
+ * applications is invisible - and "what did it tell them about my salary?" is unanswerable.
+ * Values are the user's own data going to an employer either way; storing them adds no exposure
+ * the application itself did not already have.
+ */
+export const submittedAnswersSchema = z
+  .array(
+    z.object({
+      label: z.string().min(1).max(200),
+      value: z.string().max(2000),
+    }),
+  )
+  .max(200);
+
 export const campaignJobResultSchema = z
   .object({
     outcome: campaignJobOutcomeSchema,
     phases: applyPhaseTimingsSchema.optional(),
+    answers: submittedAnswersSchema.optional(),
     appliedAt: z.iso.datetime().optional(),
     failReason: z.string().min(1).transform(cleanReplacementChars).optional(),
     skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
@@ -247,6 +266,7 @@ export const campaignJobResultSchema = z
 export type CampaignJobOutcome = z.infer<typeof campaignJobOutcomeSchema>;
 export type CampaignJobResultInput = z.infer<typeof campaignJobResultSchema>;
 export type ApplyPhaseTimings = z.infer<typeof applyPhaseTimingsSchema>;
+export type SubmittedAnswers = z.infer<typeof submittedAnswersSchema>;
 
 export type CampaignStatus = z.infer<typeof campaignStatusSchema>;
 export type CampaignJobStatus = z.infer<typeof campaignJobStatusSchema>;

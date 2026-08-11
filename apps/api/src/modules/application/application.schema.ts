@@ -4,6 +4,7 @@ import {
   applicationFilterSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
+import { submittedAnswersSchema } from "@jobpilot/contracts/campaign";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -74,6 +75,8 @@ export const applicationEventSchema = z.object({
 /** A single application with its chronological activity history. */
 export const applicationDetailSchema = applicationSchema.extend({
   events: z.array(applicationEventSchema),
+  // Detail only: the list would carry every answer of every application for no one to read.
+  submittedAnswers: submittedAnswersSchema.nullable(),
 });
 
 /** The application summary embedded in a duplicate-check match. */

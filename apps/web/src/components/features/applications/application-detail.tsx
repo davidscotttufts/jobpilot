@@ -3,7 +3,7 @@
 import { type ReactElement, useState } from "react";
 import type { ApplicationStatus, StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
-import { Button, IconButton, LinearProgress, Stack } from "@mui/material";
+import { Button, IconButton, LinearProgress, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -122,6 +122,24 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
             {app.failReason && <LabelValue label="Fail reason">{app.failReason}</LabelValue>}
           </Stack>
         </SectionCard>
+
+        {app.submittedAnswers && app.submittedAnswers.length > 0 && (
+          <SectionCard title="What was submitted">
+            <Stack spacing={1.5}>
+              <Typography variant="body2Muted">
+                The answers the agent entered on this application. Worth a glance when a pattern
+                looks wrong - a bad answer repeats across every application until it is noticed.
+              </Typography>
+              <Stack spacing={1}>
+                {app.submittedAnswers.map((answer) => (
+                  <LabelValue key={`${answer.label}-${answer.value}`} label={answer.label}>
+                    {answer.value}
+                  </LabelValue>
+                ))}
+              </Stack>
+            </Stack>
+          </SectionCard>
+        )}
 
         <SectionCard title="Activity">
           <ActivityTimeline events={app.events} />

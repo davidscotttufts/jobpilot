@@ -24,6 +24,8 @@ model Application {
   status     ApplicationStatus @default(applied)
   rejectedAt DateTime?         @map("rejected_at")
 
+  /// What the agent actually entered in the form, so a submission can be audited after the fact.
+  submittedAnswers Json? @map("submitted_answers")
   matchScore  Int?    @map("match_score")
   matchReason String? @map("match_reason")
   failReason  String? @map("fail_reason")

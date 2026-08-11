@@ -96,6 +96,9 @@ export async function writeJobResult(
               campaignId,
               matchScore: job.matchScore,
               matchReason: job.matchReason,
+              // Empty means the worker reported nothing usable; storing [] would read as "asked
+              // nothing" rather than "not recorded".
+              submittedAnswers: data.answers?.length ? data.answers : undefined,
               normalizedTitle: normalizeJobTitle(job.title),
               normalizedCompany: normalizeCompanyName(job.company),
               appliedAt: requireAppliedAt(data),

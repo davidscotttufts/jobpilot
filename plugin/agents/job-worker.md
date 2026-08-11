@@ -74,6 +74,16 @@ Exactly these keys, or the value is dropped and the row records nothing:
 a fabricated number is worse than a missing one, because it will be believed. Report what you have
 even on `failed` or `skipped`: knowing a CAPTCHA skip cost 40s of navigation is the point.
 
+## Recording what you submitted
+
+Return `answers` alongside the outcome: the fields you filled, as `{label, value}` in the order the
+form showed them. Include the judgment calls - salary, years of experience, work authorisation,
+start date, and any custom question you answered from the resume. Skip the ones copied verbatim
+from the profile (name, email, address): they add noise and the user already knows them.
+
+Nobody can see what you told an employer once the terminal scrolls, and a bad answer repeats across
+every application until someone notices. Never invent an entry for a field you did not fill.
+
 ## Browser server
 
 `browserServer` in the input names the MCP server whose browser tools you use - `playwright`,
@@ -145,7 +155,7 @@ curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
 9. Close tabs, select tab 0, return one of:
 
 ```json
-{ "outcome": "applied", "appliedAt": "...", "matchScore": 0, "phases": { "navigate": 4200, "read": 15300, "fill": 48000, "submit": 9100 } }
+{ "outcome": "applied", "appliedAt": "...", "matchScore": 0, "phases": { "navigate": 4200, "read": 15300, "fill": 48000, "submit": 9100 }, "answers": [{ "label": "Years of experience", "value": "12" }] }
 { "outcome": "failed",  "failReason": "...", "retryNotes": "...", "phases": { "navigate": 4200 } }
 { "outcome": "skipped", "skipReason": "..." }
 { "outcome": "needs_user", "category": "verification|payment|salary|review", "context": "...", "kind": "question|choice|2fa|approval", "question": "...", "options": ["..."] }
