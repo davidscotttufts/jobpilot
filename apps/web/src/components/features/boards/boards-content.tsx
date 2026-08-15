@@ -20,7 +20,7 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { jobBoardQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import type { JobBoardDto } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, QuerySection } from "@/components/ui/data";
 import { ExternalLink } from "@/components/ui/display";
 import { DropdownMenu } from "@/components/ui/feedback";
 import { SearchField } from "@/components/ui/form";
@@ -38,7 +38,8 @@ export function BoardsContent(): ReactElement {
   const search = useDebouncedValue(searchDraft, SEARCH_DEBOUNCE_MS);
   const confirm = useConfirm();
 
-  const boards = useApiQuery(jobBoardQueries.list());
+  // The section says so itself now, so the toast would be the same news twice.
+  const boards = useApiQuery(jobBoardQueries.list(), { errorMessage: null });
   // Filtered here, not server-side: a profile's board list is bounded by the catalog.
   const needle = search.trim().toLowerCase();
   const rows = (boards.data ?? []).filter(
@@ -104,16 +105,23 @@ export function BoardsContent(): ReactElement {
           )}
         </Stack>
 
-        {rows.length === 0 ? (
-          <EmptyState
-            variant="inline"
-            title={
-              isAnyFilterActive
-                ? "No boards match the current filters."
-                : "No boards yet. Add one to let campaigns search it."
-            }
-          />
-        ) : (
+        <QuerySection
+          isLoading={boards.isLoading}
+          isError={boards.isError}
+          onRetry={() => void boards.refetch()}
+          errorTitle="Couldn't load your boards."
+          isEmpty={rows.length === 0}
+          empty={
+            <EmptyState
+              variant="inline"
+              title={
+                isAnyFilterActive
+                  ? "No boards match the current filters."
+                  : "No boards yet. Add one to let campaigns search it."
+              }
+            />
+          }
+        >
           <TableContainer>
             <Table size="small">
               <TableHead>
@@ -173,7 +181,7 @@ export function BoardsContent(): ReactElement {
               </TableBody>
             </Table>
           </TableContainer>
-        )}
+        </QuerySection>
       </SectionCard>
 
       <BoardFormDialog

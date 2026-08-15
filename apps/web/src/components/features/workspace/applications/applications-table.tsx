@@ -5,7 +5,6 @@ import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } fro
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import type { ApplicationDto } from "@/api/types";
-import { EmptyState } from "@/components/ui/data";
 import { type ApplicationStatus, StatusChip } from "@/components/ui/display";
 import { formatRelativeTime } from "@/utils/format";
 
@@ -18,10 +17,6 @@ interface ApplicationsTableProps {
 export function ApplicationsTable(props: ApplicationsTableProps): ReactElement {
   const { rows, campaignLabel } = props;
   const router = useRouter();
-
-  if (rows.length === 0) {
-    return <EmptyState variant="inline" title="No applications match the filters." />;
-  }
 
   return (
     <Box sx={{ overflowX: "auto" }}>

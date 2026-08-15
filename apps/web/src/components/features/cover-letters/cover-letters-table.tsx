@@ -22,7 +22,10 @@ const SOURCE_COLOR: Record<CoverLetterListItem["source"], "default" | "info" | "
 export function CoverLettersTable(): ReactElement {
   const router = useRouter();
   const pagination = usePaginationParams();
-  const lettersQuery = useApiQuery(coverLetterQueries.list(pagination.query));
+  // The grid's own overlay reports the failure now, so a toast would repeat it.
+  const lettersQuery = useApiQuery(coverLetterQueries.list(pagination.query), {
+    errorMessage: null,
+  });
 
   const rows = lettersQuery.data?.items ?? [];
 
@@ -82,6 +85,8 @@ export function CoverLettersTable(): ReactElement {
       rows={rows}
       columns={columns}
       loading={lettersQuery.isLoading}
+      errorTitle={lettersQuery.isError ? "Couldn't load your cover letters." : undefined}
+      onRetry={() => void lettersQuery.refetch()}
       getRowId={(row) => row.id}
       onRowClick={(row) => router.push(`/cover-letters/${row.id}` as Route)}
       {...gridPagination(pagination, lettersQuery.data?.pagination)}

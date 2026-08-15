@@ -6,7 +6,7 @@ import { Button, Stack, TextField } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { applicationQueries, campaignQueries, jobBoardQueries } from "@/api/queries";
-import { PaginationFooter } from "@/components/ui/data";
+import { EmptyState, PaginationFooter, QuerySection } from "@/components/ui/data";
 import { SelectField, type SelectFieldOption } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -37,8 +37,10 @@ export function ApplicationsPanel(): ReactElement {
     ...(term && { search: term }),
   };
 
+  // The panel states the failure itself, so the toast would be the same news twice.
   const apps = useApiQuery(
     applicationQueries.list({ ...query, ...filters, ...(group && { status: group }) }),
+    { errorMessage: null },
   );
 
   // Status is deliberately excluded: the tiles keep showing every bucket's size while one is picked.
@@ -117,7 +119,16 @@ export function ApplicationsPanel(): ReactElement {
               </Button>
             )}
           </Stack>
-          <ApplicationsTable rows={rows} campaignLabel={campaignLabel} />
+          <QuerySection
+            isLoading={apps.isLoading}
+            isError={apps.isError}
+            onRetry={() => void apps.refetch()}
+            errorTitle="Couldn't load your applications."
+            isEmpty={rows.length === 0}
+            empty={<EmptyState variant="inline" title="No applications match the filters." />}
+          >
+            <ApplicationsTable rows={rows} campaignLabel={campaignLabel} />
+          </QuerySection>
           {apps.data && (
             <PaginationFooter
               pagination={apps.data.pagination}

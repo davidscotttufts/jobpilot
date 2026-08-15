@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { EmptyState, PaginationFooter, QuerySection } from "@/components/ui/data";
 import { SelectField } from "@/components/ui/form";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
@@ -39,8 +39,10 @@ export function ProposalsList(): ReactElement {
     },
   });
 
+  // The section states the failure itself, so the toast would be the same news twice.
   const proposals = useApiQuery(
     upworkProposalQueries.list({ ...query, ...(statusFilter && { status: statusFilter }) }),
+    { errorMessage: null },
   );
 
   const pageRows = proposals.data?.items ?? [];
@@ -87,16 +89,23 @@ export function ProposalsList(): ReactElement {
         </Typography>
       </Stack>
 
-      {pageRows.length === 0 ? (
-        <EmptyState
-          variant="inline"
-          title={
-            hasFilters
-              ? "No proposals match the current filter."
-              : "No proposals yet. Start one from “New proposal”."
-          }
-        />
-      ) : (
+      <QuerySection
+        isLoading={proposals.isLoading}
+        isError={proposals.isError}
+        onRetry={() => void proposals.refetch()}
+        errorTitle="Couldn't load your proposals."
+        isEmpty={pageRows.length === 0}
+        empty={
+          <EmptyState
+            variant="inline"
+            title={
+              hasFilters
+                ? "No proposals match the current filter."
+                : "No proposals yet. Start one from “New proposal”."
+            }
+          />
+        }
+      >
         <Stack spacing={1}>
           {pageRows.map((p) => (
             <Card key={p.id} variant="interactive">
@@ -127,7 +136,7 @@ export function ProposalsList(): ReactElement {
             </Card>
           ))}
         </Stack>
-      )}
+      </QuerySection>
 
       {proposals.data && (
         <PaginationFooter

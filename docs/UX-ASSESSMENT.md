@@ -1,6 +1,6 @@
 # UX Assessment — JobPilot web
 
-> Last updated: 2026-08-11 · Scope: `apps/web/src` (48 routes, 358 components) · Method: static source audit — rule-conformance sweep + accessibility signal scan across the whole app — plus two headless live passes measuring rendered geometry, contrast, and headings (see coverage)
+> Last updated: 2026-08-14 · Scope: `apps/web/src` (48 routes, 358 components) · Method: static source audit — rule-conformance sweep + accessibility signal scan across the whole app — plus two headless live passes measuring rendered geometry, contrast, and headings (see coverage)
 
 ## Grade summary
 
@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | Design System (cross-cutting) | A | A+ | 0 | 1 (reduced) |
 | **Accessibility Debt** | A- | A+ | 0 | 0 |
-| **Designed states & resilience** | B+ | A+ | 0 | 1 |
+| **Designed states & resilience** | A | A+ | 0 | 0 |
 | Deferred Polish | A | A+ | 0 | 0 |
 | Per-experience areas (13 measured live) | A- | A+ | 0 | 1 |
 
@@ -144,7 +144,7 @@ It stays on the `CT-*` list.
 
 ---
 
-## Designed states & resilience — Grade: B+
+## Designed states & resilience — Grade: A
 
 The one dimension gradable from source across every area, and the weakest thing this audit found —
 though the two failures that made it a C are now closed. Per-area coverage of empty/loading/error
@@ -170,13 +170,29 @@ The root cause was not per-area sloppiness, it was the shared hook:
       it returned `{ content }` and nothing else, so a failed poll was invisible; the 2s interval
       is why it opts out of the default toast, which is what left it with no error path at all —
       `apps/web/src/components/features/resumes/use-resume-extraction.ts:21` — effort: S
-- [ ] `STATE-3` (Improvement) Areas with data fetching but no error path of their own: Upwork,
-      Applications, Boards, Cover letters, Jobs. `STATE-1` gives them all a toast; whether a toast
-      is the *right* treatment (vs an inline retry) is a per-surface call best made live — effort: M
+- [x] `STATE-3` **Closed 2026-08-14.** The per-surface call came out the same way on every one, so
+      it is really one rule: **a list emptied by a failed fetch must not claim to be empty.** A
+      toast is the wrong primary treatment here because it is transient and the false "No boards
+      yet" persists after it fades. Each surface now reports the failure in place with a Retry, and
+      opts out of the toast (`errorMessage: null`) so the news is not delivered twice.
+      Nothing new was invented: `QuerySection` already existed for exactly this and its doc comment
+      already said why ("a failed query rendering as 'empty' is the bug this prevents") — it was
+      simply confined to Pilot, which is why Pilot graded strongest. Adopted in Boards, Upwork
+      proposals and the Applications panel; for the DataGrid surfaces `DataTable` gained
+      `errorTitle`/`onRetry`, which swap the grid's own "No rows" overlay for the failure.
+      **Jobs needed no change** — `/jobs` is an RSC that already separates "Jobs are unavailable
+      right now" from a genuinely empty result, so this file's claim that it had "no error path at
+      all" was wrong; it is the pattern the others now match.
+      Verified by failing each list request at the network layer: all four show the error and a
+      Retry, none still shows a false empty state, and all four still render rows and 0 console
+      errors when healthy — `boards-content.tsx`, `proposals-list.tsx`, `applications-panel.tsx`,
+      `cover-letters-table.tsx`, `ui/data/data-table.tsx` — effort: M
 
-**Path to A+:** every surface now says something when a fetch fails, so what is left is `STATE-3`
-— whether a toast is the right treatment or an inline retry belongs there — decided per surface
-during the `CT-*` pass.
+**Path to A+:** the collection's own gaps are closed — every data surface distinguishes "this
+failed" from "there is nothing here", and that is now verified by failing the requests rather than
+argued from source. What keeps it off A+ is coverage, not a known defect: the four surfaces were
+checked by fault injection, the rest by reading. A general pass that fails *every* list request and
+asserts no surface claims emptiness would settle it.
 
 ---
 
@@ -258,6 +274,14 @@ the last one deliberately, since starting a campaign sends real applications (`C
 ---
 
 ## Changelog
+- 2026-08-14: Closed `STATE-3` by fault injection rather than inspection — failed each list request
+  at the network layer and read what the UI then said. The per-surface call came out identically
+  four times, so it is one rule: a list emptied by a failed fetch must not claim to be empty, and a
+  transient toast cannot carry that because the false "No boards yet" outlives it. `QuerySection`
+  already encoded this and was confined to Pilot; adopting it (plus `errorTitle`/`onRetry` on
+  `DataTable` for the grid surfaces) is what closed the gap. Corrected this file's claim that Jobs
+  had no error path — `/jobs` already had the right one. Designed states B+ to A, 0 open gaps.
+  Gate: web typecheck + Biome green.
 - 2026-08-11: **Second live pass** (`CT-2` partial, `CT-3`, `CT-6`) — 14 page loads over 7 routes at
   two widths against real data. Two blockers found and closed: `/inbox` scrolled the page sideways
   144px because the `A11Y-1` live region used MUI's `width: 1`, which is 100%, not 1px (`AREA-4`);
