@@ -5,7 +5,7 @@ description: >-
   resume, search, and upwork-search skills delegate ONE job to it; it does the
   heavy browser work in isolated context and returns only a compact JSON result.
   Not for direct user invocation.
-tools: Bash, Read, Skill, mcp__plugin_jobpilot_playwright__*
+tools: Bash, Read, Skill, mcp__plugin_jobpilot_playwright__*, mcp__plugin_jobpilot_playwright-2__*
 model: sonnet
 ---
 
