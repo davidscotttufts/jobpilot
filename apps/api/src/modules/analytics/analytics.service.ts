@@ -3,6 +3,7 @@ import { singleton } from "tsyringe";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
 import { PrismaClient } from "@/generated/prisma/client";
 import { toWireDiscoverySource } from "@/modules/contact";
+import { normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { loadInstructions } from "../pilot/pilot.instructions";
 import { findActionableJobs } from "./needs-you";
 import { buildOutcomeBreakdown } from "./outcomes";
@@ -32,10 +33,17 @@ export class AnalyticsService {
   async outcomes(userId: string) {
     const rows = await this.prisma.application.findMany({
       where: { userId },
-      select: { status: true, board: true, matchScore: true, normalizedTitle: true },
+      select: { status: true, board: true, matchScore: true, title: true },
     });
+    // Normalized in-process rather than read from a stored copy: the columns that held it were
+    // dropped precisely because they only ever drifted from whatever the normalizer does today.
     return buildOutcomeBreakdown(
-      rows.map((r) => ({ ...r, status: r.status as ApplicationStatus })),
+      rows.map((r) => ({
+        status: r.status as ApplicationStatus,
+        board: r.board,
+        matchScore: r.matchScore,
+        normalizedTitle: normalizeJobTitle(r.title),
+      })),
     );
   }
 
