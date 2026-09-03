@@ -4,4 +4,5 @@ export * from "./instructions";
 export * from "./journal";
 export * from "./promotion";
 export * from "./question";
+export * from "./schedule";
 export * from "./search";

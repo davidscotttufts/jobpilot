@@ -1,5 +1,5 @@
 import { type CampaignConfig } from "@jobpilot/contracts/campaign";
-import type { PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
+import { isPinnedWeekly, type PilotInstructionsConfig } from "@jobpilot/contracts/pilot";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { parseCampaignConfig } from "@/modules/campaign/campaign.config";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
@@ -304,6 +304,10 @@ export async function duePilotSearches(
       resumeId: true,
       nextRunAt: true,
       lastRunAt: true,
+      minScore: true,
+      maxApplications: true,
+      cadence: true,
+      cadenceDays: true,
     },
   });
   if (rows.length === 0) {
@@ -333,6 +337,8 @@ export async function duePilotSearches(
     board: r.board ?? undefined,
     resumeId: r.resumeId ?? undefined,
     campaignId: campaignBySearch.get(r.id),
+    minScore: r.minScore ?? undefined,
+    maxApplications: r.maxApplications ?? undefined,
   });
 
   // Rows arrive ordered by nextRunAt, so the head is the earliest.
@@ -344,10 +350,15 @@ export async function duePilotSearches(
   }
 
   // Hungry override: cap unspent, so re-run the most-overdue search idle at least HUNGRY_RERUN_MS.
+  // Pinned searches are exempt - running one early because the day was quiet is exactly what a
+  // user who asked for Mondays does not want, and it would leave the next Monday looking stale.
   if (appliedToday < config.dailyApplyCap) {
     const floor = now.getTime() - HUNGRY_RERUN_MS;
     const hungry = rows.find(
-      (r) => claimable(r) && (r.lastRunAt == null || r.lastRunAt.getTime() < floor),
+      (r) =>
+        !isPinnedWeekly(r) &&
+        claimable(r) &&
+        (r.lastRunAt == null || r.lastRunAt.getTime() < floor),
     );
     if (hungry) {
       return { due: [toEntry(hungry)], nextSearchRunAt };

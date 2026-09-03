@@ -68,6 +68,8 @@ export const campaignSchema = z.object({
   completedAt: z.date().nullable(),
   config: campaignConfigSchema,
   summary: campaignSummarySchema,
+  // The pilot search repeating this campaign, when one is; the web reads it to show the schedule.
+  pilotSearchId: z.uuid().nullable(),
 });
 
 export const campaignListSchema = paginatedSchema(campaignSchema);

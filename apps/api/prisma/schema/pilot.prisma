@@ -1,3 +1,8 @@
+enum PilotSearchCadence {
+  adaptive
+  weekly
+}
+
 enum PilotClaimOutcome {
   done
   failed
@@ -59,22 +64,34 @@ model PilotState {
 }
 
 model PilotSearch {
-  id           String    @id @default(uuid())
-  userId       String    @map("user_id")
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  query        String
-  board        String?
-  resumeId     String?   @map("resume_id")
+  id              String             @id @default(uuid())
+  userId          String             @map("user_id")
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query           String
+  board           String?
+  resumeId        String?            @map("resume_id")
   // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
-  reason       String    @default("")
-  lastRunAt    DateTime? @map("last_run_at")
-  lastJobsSeen Int?      @map("last_jobs_seen")
-  lastNewJobs  Int?      @map("last_new_jobs")
+  reason          String             @default("")
+  lastRunAt       DateTime?          @map("last_run_at")
+  lastJobsSeen    Int?               @map("last_jobs_seen")
+  lastNewJobs     Int?               @map("last_new_jobs")
   // Consecutive runs with zero new jobs; drives the dry-search backoff, "backing off" >= 3.
-  emptyRuns    Int       @default(0) @map("empty_runs")
-  nextRunAt    DateTime  @default(now()) @map("next_run_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  emptyRuns       Int                @default(0) @map("empty_runs")
+  nextRunAt       DateTime           @default(now()) @map("next_run_at")
+  // Overrides the pilot's instructions-wide defaults on the campaigns this search opens; null
+  // keeps the old behaviour of taking both from the pilot config.
+  minScore        Int?               @map("min_score")
+  maxApplications Int?               @map("max_applications")
+  // `adaptive` leaves cadence to the yield ladder in scheduleNextRun; `weekly` pins the search to
+  // the user's chosen weekdays and takes the ladder out of the decision.
+  cadence         PilotSearchCadence @default(adaptive)
+  // Weekdays as Date#getDay() numbers them: 0 = Sunday. Empty unless the cadence is weekly.
+  cadenceDays     Int[]              @default([]) @map("cadence_days")
+  cadenceHour     Int                @default(8) @map("cadence_hour")
+  // IANA zone the hour is read in, so a pinned time survives DST instead of drifting.
+  cadenceTimeZone String             @default("UTC") @map("cadence_time_zone")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
 
   // Campaigns this search spawned; a completed one is left behind when the next run opens a new campaign.
   campaigns Campaign[]

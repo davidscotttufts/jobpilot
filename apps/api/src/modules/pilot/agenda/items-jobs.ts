@@ -114,7 +114,10 @@ export function buildDiscoverItems(
       query: q.query,
       board: rotated ?? q.board,
       resumeId: q.resumeId,
-      minScore: config.minScore,
+      // A search that carries its own threshold or cap outranks the instructions-wide default;
+      // that is what makes a repeated campaign keep the settings it was repeated from.
+      minScore: q.minScore ?? config.minScore,
+      maxApplications: q.maxApplications,
       campaignId: q.campaignId,
       newJobsTarget,
       maxPages: SEARCH_MAX_PAGES,

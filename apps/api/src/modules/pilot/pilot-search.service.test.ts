@@ -1,14 +1,23 @@
 // Fake-Prisma unit test for PilotSearchService and its pure scheduleNextRun policy (no database).
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { PilotSearchService, scheduleNextRun } from "./pilot-search.service";
+import { PilotSearchService, type SearchCadence, scheduleNextRun } from "./pilot-search.service";
 import { describe, expect, it } from "bun:test";
 
 const NOW = new Date("2026-07-15T12:00:00.000Z");
 
+/** The cadence half of a row, as every parsed input carries it once the schema has applied defaults. */
+const ADAPTIVE: SearchCadence = {
+  cadence: "adaptive",
+  cadenceDays: [],
+  cadenceHour: 8,
+  cadenceTimeZone: "UTC",
+};
+
 describe("scheduleNextRun", () => {
   const run = (over: Partial<Parameters<typeof scheduleNextRun>[0]> = {}) =>
     scheduleNextRun({
+      ...ADAPTIVE,
       emptyRuns: 0,
       jobsSeen: 20,
       newJobs: 0,
@@ -98,6 +107,7 @@ function makeDb(over: DbOver = {}) {
     updates: [] as { where: Record<string, unknown>; data: Record<string, unknown> }[],
     deletes: [] as Record<string, unknown>[],
     stateUpdates: [] as { data: Record<string, unknown> }[],
+    adoptions: [] as { where: Record<string, unknown>; data: Record<string, unknown> }[],
   };
   const db = {
     pilotSearch: {
@@ -117,6 +127,12 @@ function makeDb(over: DbOver = {}) {
         return {};
       },
     },
+    campaign: {
+      updateMany: async (a: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+        rec.adoptions.push(a);
+        return { count: 1 };
+      },
+    },
     pilotState: {
       updateMany: async (a: { data: Record<string, unknown> }) => {
         rec.stateUpdates.push(a);
@@ -130,7 +146,7 @@ function makeDb(over: DbOver = {}) {
 describe("PilotSearchService.create", () => {
   it("creates a search and nulls the agenda snapshot", async () => {
     const { svc, rec } = makeDb();
-    await svc.create("p1", { query: "react", reason: "core stack" });
+    await svc.create("p1", { ...ADAPTIVE, query: "react", reason: "core stack" });
     expect(rec.creates[0]).toMatchObject({
       userId: "p1",
       query: "react",
@@ -142,7 +158,9 @@ describe("PilotSearchService.create", () => {
 
   it("rejects a duplicate query+board with 409", async () => {
     const { svc } = makeDb({ clash: { id: "dupe" } });
-    await expect(svc.create("p1", { query: "react", reason: "" })).rejects.toMatchObject({
+    await expect(
+      svc.create("p1", { ...ADAPTIVE, query: "react", reason: "" }),
+    ).rejects.toMatchObject({
       status: 409,
     });
   });
@@ -192,5 +210,106 @@ describe("PilotSearchService.reportRun", () => {
     // 5 new jobs, board still yielding ⇒ good-run 2h re-run, backoff cleared.
     expect(rec.updates[0].data).toMatchObject({ emptyRuns: 0, lastJobsSeen: 30, lastNewJobs: 5 });
     expect(rec.stateUpdates[0].data.agendaSnapshot).toBeDefined();
+  });
+});
+
+const MONDAYS: SearchCadence = {
+  cadence: "weekly",
+  cadenceDays: [1],
+  cadenceHour: 8,
+  cadenceTimeZone: "America/New_York",
+};
+
+describe("scheduleNextRun under a weekly pin", () => {
+  const weekly = (over: Partial<Parameters<typeof scheduleNextRun>[0]> = {}) =>
+    scheduleNextRun({
+      ...MONDAYS,
+      emptyRuns: 0,
+      jobsSeen: 20,
+      newJobs: 0,
+      reachedEnd: false,
+      // Wednesday 2026-07-15, 08:00 in New York.
+      now: NOW,
+      ...over,
+    });
+
+  it("goes to the next pinned day after a dry run instead of up the backoff ladder", () => {
+    expect(weekly({ newJobs: 0 }).nextRunAt.toISOString()).toBe("2026-07-20T12:00:00.000Z");
+  });
+
+  it("goes to the same pinned day after a good run instead of re-running in 2h", () => {
+    expect(weekly({ newJobs: 9, reachedEnd: false }).nextRunAt.toISOString()).toBe(
+      "2026-07-20T12:00:00.000Z",
+    );
+  });
+
+  it("still counts empty runs, so the UI can show a pinned search coming up dry", () => {
+    expect(weekly({ newJobs: 0, emptyRuns: 2 }).emptyRuns).toBe(3);
+  });
+
+  it("falls back to the ladder when the cadence is weekly but every day was removed", () => {
+    const result = weekly({ cadenceDays: [], newJobs: 9 });
+    expect(result.nextRunAt.getTime()).toBeLessThan(new Date("2026-07-16T00:00:00Z").getTime());
+  });
+});
+
+describe("PilotSearchService weekly scheduling", () => {
+  const pin = { ...MONDAYS, query: "cto", reason: "" };
+
+  it("waits for the first pinned day rather than firing the moment it is saved", async () => {
+    const { svc, rec } = makeDb();
+    await svc.create("p1", pin);
+    const nextRunAt = rec.creates[0].nextRunAt as Date;
+    // Saved on a Wednesday; the next Monday is the first run, not "now".
+    expect(nextRunAt.getUTCDay()).toBe(1);
+    expect(nextRunAt.getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it("leaves nextRunAt alone for an adaptive search", async () => {
+    const { svc, rec } = makeDb();
+    await svc.create("p1", { ...ADAPTIVE, query: "cto", reason: "" });
+    expect(rec.creates[0].nextRunAt).toBeUndefined();
+  });
+
+  it("links the campaign it was spun out of", async () => {
+    const { svc, rec } = makeDb();
+    await svc.create("p1", { ...pin, campaignId: "c1" });
+    expect(rec.adoptions[0].where).toMatchObject({
+      campaignId: "c1",
+      userId: "p1",
+      pilotSearchId: null,
+    });
+  });
+
+  it("re-aims the next run when the schedule is edited", async () => {
+    const { svc, rec } = makeDb({ existing: { id: "s1", query: "cto", board: null, ...ADAPTIVE } });
+    await svc.update("p1", "s1", { cadence: "weekly", cadenceDays: [4] });
+    expect((rec.updates[0].data.nextRunAt as Date).getUTCDay()).toBe(4);
+  });
+
+  it("does not move the date when an edit leaves the schedule untouched", async () => {
+    const { svc, rec } = makeDb({ existing: { id: "s1", query: "cto", board: null, ...MONDAYS } });
+    await svc.update("p1", "s1", { reason: "clearer why" });
+    expect(rec.updates[0].data.nextRunAt).toBeUndefined();
+  });
+
+  it("keeps a pinned search on its day when the query changes", async () => {
+    const { svc, rec } = makeDb({ existing: { id: "s1", query: "cto", board: null, ...MONDAYS } });
+    await svc.update("p1", "s1", { query: "cio" });
+    // The reset still clears the yield history, but must not drag the run onto today.
+    expect(rec.updates[0].data.emptyRuns).toBe(0);
+    expect(rec.updates[0].data.nextRunAt).toBeUndefined();
+  });
+
+  it("restarts an adaptive search from now when the query changes", async () => {
+    const { svc, rec } = makeDb({ existing: { id: "s1", query: "cto", board: null, ...ADAPTIVE } });
+    await svc.update("p1", "s1", { query: "cio" });
+    expect(rec.updates[0].data.nextRunAt).toBeInstanceOf(Date);
+  });
+
+  it("schedules a reported run against the row's own cadence", async () => {
+    const { svc, rec } = makeDb({ existing: { emptyRuns: 0, ...MONDAYS } });
+    await svc.reportRun("p1", "s1", { jobsSeen: 40, newJobs: 9, reachedEnd: false });
+    expect((rec.updates[0].data.nextRunAt as Date).getUTCDay()).toBe(1);
   });
 });

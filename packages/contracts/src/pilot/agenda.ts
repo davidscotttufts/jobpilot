@@ -97,6 +97,8 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
       board: optionalString,
       resumeId: optionalString,
       minScore: z.number(),
+      // The repeated campaign's application cap, when its search carries one.
+      maxApplications: z.number().int().optional(),
       // Existing in-progress campaign for this query; the agent reuses it instead of creating one.
       campaignId: optionalString,
       // Fresh non-duplicate rows this run aims for, and the page cap for the paginated crawl.

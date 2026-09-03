@@ -60,6 +60,9 @@ export interface AgendaDueQuery {
   resumeId?: string;
   /** Existing in-progress campaign for this query - discovery reuses it instead of creating one. */
   campaignId?: string;
+  /** The search's own thresholds, when it overrides the instructions-wide ones. */
+  minScore?: number;
+  maxApplications?: number;
 }
 
 /** A paused auto-apply campaign with no open/undecided review question - the review candidate. */
