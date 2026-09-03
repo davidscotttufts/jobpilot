@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactElement, useEffect } from "react";
+import { MAX_APPLY_URLS } from "@jobpilot/contracts/campaign";
 import { Button, LinearProgress, Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
@@ -19,25 +20,39 @@ import {
   buildCreateCampaignRequest,
   buildSkillArg,
   COMPOSER_DEFAULT_VALUES,
+  type ComposerFormValues,
   composerFormSchema,
   isUpworkSearch,
   SUBMIT_LABELS,
 } from "./form-config";
 import { NetworkingFields } from "./networking-fields";
+import { composerValuesFromCampaign } from "./prefill";
 
 interface CampaignComposerProps {
   /** Preselect a board (e.g. from /campaigns/new?board=upwork.com). */
   defaultBoard?: string;
+  /** Run an earlier campaign again: seed every field from it (/campaigns/new?from=<id>). */
+  fromCampaignId?: string;
 }
 
 export function CampaignComposer(props: CampaignComposerProps): ReactElement {
-  const { defaultBoard } = props;
+  const { defaultBoard, fromCampaignId } = props;
   const router = useRouter();
   const agent = useAgent();
 
   const boardsQuery = useApiQuery(jobBoardQueries.list());
   const profileQuery = useApiQuery(userQueries.detail());
   const recentCampaignsQuery = useApiQuery(campaignQueries.list());
+
+  const sourceQuery = useApiQuery(campaignQueries.detail(fromCampaignId ?? ""), {
+    enabled: !!fromCampaignId,
+  });
+  const sourceCampaign = sourceQuery.data;
+  // An apply campaign stores its pasted links as jobs, so replaying one has to read them back.
+  const sourceJobsQuery = useApiQuery(
+    campaignQueries.jobs(fromCampaignId ?? "", { page: 1, limit: MAX_APPLY_URLS }),
+    { enabled: sourceCampaign?.source === "apply" },
+  );
 
   const createCampaign = useApiMutation<CampaignDto, CreateCampaignRequest>(
     (body) => api.campaigns.post(body),
@@ -55,13 +70,25 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
   const presetBoard =
     defaultBoard && boards.some((b) => b.domain === defaultBoard) ? defaultBoard : undefined;
 
+  const baseValues: ComposerFormValues = {
+    ...COMPOSER_DEFAULT_VALUES,
+    board: presetBoard ?? boards[0]?.domain ?? "",
+    resumeId: resumes.find((r) => r.isPrimary)?.id ?? resumes[0]?.id ?? "",
+    minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
+    // Networking reuses this field as its sourcing cap, so switching modes carries the number
+    // over - visible and clearable, rather than the blank that ignored the setting entirely.
+    maxApps:
+      profileQuery.data?.autoApply?.maxApplicationsPerCampaign ?? COMPOSER_DEFAULT_VALUES.maxApps,
+  };
+
   const form = useAppForm({
-    defaultValues: {
-      ...COMPOSER_DEFAULT_VALUES,
-      board: presetBoard ?? boards[0]?.domain ?? "",
-      resumeId: resumes.find((r) => r.isPrimary)?.id ?? resumes[0]?.id ?? "",
-      minScore: profileQuery.data?.autoApply?.minMatchScore ?? COMPOSER_DEFAULT_VALUES.minScore,
-    },
+    defaultValues: sourceCampaign
+      ? composerValuesFromCampaign(sourceCampaign, baseValues, {
+          boards,
+          resumes,
+          urls: (sourceJobsQuery.data?.items ?? []).map((job) => job.url),
+        })
+      : baseValues,
     validators: { onSubmit: composerFormSchema },
     onSubmit: async ({ value }) => {
       const upwork = isUpworkSearch(value);
@@ -89,7 +116,13 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     }
   }, [isUpwork, mode, form]);
 
-  if (boardsQuery.isLoading || profileQuery.isLoading) {
+  // The form captures its defaults on mount, so nothing may render before the prefill has landed.
+  if (
+    boardsQuery.isLoading ||
+    profileQuery.isLoading ||
+    sourceQuery.isLoading ||
+    sourceJobsQuery.isLoading
+  ) {
     return <LinearProgress />;
   }
 

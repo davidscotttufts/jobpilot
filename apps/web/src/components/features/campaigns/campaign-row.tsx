@@ -1,17 +1,7 @@
 "use client";
 
-import type { ReactElement } from "react";
-import { OpenInNew } from "@mui/icons-material";
-import {
-  Box,
-  Card,
-  CardActionArea,
-  Chip,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import type { ReactElement, ReactNode } from "react";
+import { Box, Card, CardActionArea, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import type { CampaignDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
 import { CampaignStatusChip } from "./campaign-status-chip";
@@ -21,8 +11,10 @@ interface CampaignRowProps {
   campaign: CampaignDto;
   /** Primary click - e.g. open the campaign. */
   onSelect?: (campaign: CampaignDto) => void;
-  /** Secondary affordance - open the full campaign detail. */
-  onOpenDetail?: (campaign: CampaignDto) => void;
+  /** Corner slot, outside the card's own click target - e.g. an actions menu. */
+  actions?: ReactNode;
+  /** Extra chip rendered beside the status chips - e.g. a repeat schedule. */
+  badge?: ReactNode;
 }
 
 /** Networking campaigns track contacts/messages; job campaigns track applications. */
@@ -44,19 +36,20 @@ function summaryHint(campaign: CampaignDto): string {
 }
 
 export function CampaignRow(props: CampaignRowProps): ReactElement {
-  const { campaign, onSelect, onOpenDetail } = props;
+  const { campaign, onSelect, actions, badge } = props;
 
   return (
     <Card variant="interactive" sx={{ position: "relative" }}>
       <CardActionArea
         onClick={() => onSelect?.(campaign)}
-        sx={{ padding: 1.25, paddingRight: onOpenDetail ? 4.5 : 1.25 }}
+        sx={{ padding: 1.25, paddingRight: actions ? 4.5 : 1.25 }}
       >
         <Stack spacing={0.5} sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
             <CampaignStatusChip status={campaign.status} />
             <Chip size="small" label={campaign.source} variant="outlined" />
             <PilotBadge createdBy={campaign.createdBy} />
+            {badge}
             <Box sx={{ flex: 1 }} />
             <Typography variant="captionMuted" noWrap>
               {formatRelativeTime(campaign.startedAt)}
@@ -72,20 +65,12 @@ export function CampaignRow(props: CampaignRowProps): ReactElement {
           </Tooltip>
         </Stack>
       </CardActionArea>
-      {onOpenDetail && (
+      {actions && (
         <Box
           sx={{ position: "absolute", top: 4, right: 4, zIndex: 1 }}
           onClick={(e) => e.stopPropagation()}
         >
-          <Tooltip title="Open campaign details" enterDelay={400}>
-            <IconButton
-              size="small"
-              aria-label="Open campaign details"
-              onClick={() => onOpenDetail(campaign)}
-            >
-              <OpenInNew fontSize="sm" />
-            </IconButton>
-          </Tooltip>
+          {actions}
         </Box>
       )}
     </Card>

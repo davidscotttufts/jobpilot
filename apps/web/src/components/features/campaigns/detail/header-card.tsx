@@ -5,6 +5,7 @@ import type { CampaignActor } from "@jobpilot/contracts/campaign";
 import { Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { CampaignDetailDto } from "@/api/types";
 import { formatRelativeTime } from "@/utils/format";
+import { CampaignRepeatChip } from "../campaign-repeat-chip";
 import { CampaignStatusChip } from "../campaign-status-chip";
 import { PilotBadge } from "../pilot-badge";
 import { CampaignActionsBar } from "./actions-bar";
@@ -58,6 +59,7 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
                 {campaign.source} · Started {formatRelativeTime(campaign.startedAt)} ago
               </Typography>
               <PilotBadge createdBy={campaign.createdBy} />
+              <CampaignRepeatChip campaign={campaign} />
               {cfg.board && <Chip size="small" label={`Board: ${cfg.board}`} variant="outlined" />}
               {!isAutoApply && typeof cfg.maxJobs === "number" && (
                 <Chip size="small" label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />

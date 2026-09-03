@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PilotSearch } from "@jobpilot/contracts/pilot";
+import {
+  describeWeeklySchedule,
+  isPinnedWeekly,
+  type PilotSearch,
+} from "@jobpilot/contracts/pilot";
 import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
@@ -18,6 +22,13 @@ interface SearchStatus {
 
 /** The one status worth flagging on a row, or null when the search is on its normal cadence. */
 function searchStatus(search: PilotSearch): SearchStatus | null {
+  // A pinned search reports its schedule instead: "backing off" describes the ladder it is not on.
+  if (isPinnedWeekly(search)) {
+    return {
+      label: describeWeeklySchedule(search.cadenceDays, search.cadenceHour, search.cadenceTimeZone),
+      color: "info",
+    };
+  }
   if (search.emptyRuns >= BACKOFF_THRESHOLD) {
     return { label: "coming up dry — backing off", color: "warning" };
   }
@@ -40,7 +51,8 @@ function yieldStats(search: PilotSearch): string {
   }
   // Skip the countdown once due/overdue - the "due now" chip already carries that.
   if (new Date(search.nextRunAt).getTime() > Date.now()) {
-    parts.push(`next check ~${formatTimeUntil(search.nextRunAt)}`);
+    const label = isPinnedWeekly(search) ? "next run" : "next check";
+    parts.push(`${label} ~${formatTimeUntil(search.nextRunAt)}`);
   }
   return parts.join(" · ");
 }

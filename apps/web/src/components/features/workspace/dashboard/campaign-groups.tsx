@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
-import { CampaignRow } from "@/components/features/campaigns";
+import { CampaignRepeatChip, CampaignRow, CampaignRowMenu } from "@/components/features/campaigns";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
@@ -99,7 +99,13 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
         {group.label} · {pagination.total}
       </Typography>
       {group.items.map((c) => (
-        <CampaignRow key={c.campaignId} campaign={c} onSelect={onOpen} onOpenDetail={onOpen} />
+        <CampaignRow
+          key={c.campaignId}
+          campaign={c}
+          onSelect={onOpen}
+          actions={<CampaignRowMenu campaign={c} />}
+          badge={<CampaignRepeatChip campaign={c} />}
+        />
       ))}
       {/* The group heading already carries the total, so a one-page footer is noise. */}
       {pagination.totalPages > 1 && (
