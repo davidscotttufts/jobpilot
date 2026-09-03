@@ -63,12 +63,6 @@ export const queryKeys = {
       [...queryKeys.campaigns.all, "networking", campaignId, filters] as const,
   },
 
-  contacts: {
-    all: ["contacts"] as const,
-    list: (filters: Record<string, unknown> = {}) =>
-      [...queryKeys.contacts.all, "list", filters] as const,
-  },
-
   email: {
     all: ["email"] as const,
     account: () => [...queryKeys.email.all, "account"] as const,
@@ -114,8 +108,11 @@ export const queryKeys = {
     all: ["pilot"] as const,
     state: () => [...queryKeys.pilot.all, "state"] as const,
     todayOutcomes: () => [...queryKeys.pilot.all, "today-outcomes"] as const,
+    cost: () => [...queryKeys.pilot.all, "cost"] as const,
     // Read-only view of the pilot's self-managed discovery searches.
     searches: () => [...queryKeys.pilot.all, "searches"] as const,
+    // What an instructions edit would leave running; read on demand, never prefetched.
+    instructionsImpact: () => [...queryKeys.pilot.all, "instructions-impact"] as const,
     // Mount-fetch + manual refresh only; PilotLive never invalidates this key (agenda compile is costly).
     agenda: () => [...queryKeys.pilot.all, "agenda"] as const,
     journalAll: () => [...queryKeys.pilot.all, "journal"] as const,

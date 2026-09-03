@@ -1,6 +1,6 @@
 using System.Text;
-using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Contracts;
+using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Pty;
 
 namespace JobPilot.Terminal.Sessions;
@@ -66,6 +66,9 @@ public sealed class SessionManager : IDisposable
                 return;
             }
 
+            // Runs before the outgoing PTY stops so a failed preparation leaves that session alive.
+            TerminalProviders.PrepareWorkspace(normalizedProvider, sessionPaths);
+
             if (state == SessionState.Running)
             {
                 logger.LogInformation(
@@ -79,7 +82,7 @@ public sealed class SessionManager : IDisposable
 
             var workingDir = sessionPaths.WorkingDir;
             scratch.CleanSessionStart(workingDir);
-            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.PluginDir, workingDir);
+            var spec = TerminalProviders.GetLaunchSpec(normalizedProvider, sessionPaths.PluginDir, logger);
 
             logger.LogInformation(
                 "Starting {Provider}: cwd={Cwd} command={Command} args={Args} skillsDir={SkillsDir} cols={Cols} rows={Rows}",
@@ -132,6 +135,7 @@ public sealed class SessionManager : IDisposable
         ArgumentException.ThrowIfNullOrEmpty(command);
 
         int generation;
+        int submitKeyPresses;
         lock (stateLock)
         {
             if (state != SessionState.Running) return InjectResult.NotRunning;
@@ -149,10 +153,24 @@ public sealed class SessionManager : IDisposable
             }
 
             generation = liveGeneration;
+            submitKeyPresses = TerminalProviders.SubmitKeyPresses(activeProvider, command);
 
             pty.Write(Encoding.UTF8.GetBytes(command));
         }
 
+        for (var press = 0; press < submitKeyPresses; press++)
+        {
+            if (!await WriteSubmitKey(generation, ct))
+            {
+                return InjectResult.NotRunning;
+            }
+        }
+
+        return InjectResult.Injected;
+    }
+
+    private async Task<bool> WriteSubmitKey(int generation, CancellationToken ct)
+    {
         await Task.Delay(SubmitKeyDelay, ct);
 
         lock (stateLock)
@@ -161,13 +179,12 @@ public sealed class SessionManager : IDisposable
             if (state != SessionState.Running || liveGeneration != generation)
             {
                 logger.LogWarning("Dropped the submit key: the session ended or was replaced mid-inject.");
-                return InjectResult.NotRunning;
+                return false;
             }
 
             pty.Write(EnterKey);
+            return true;
         }
-
-        return InjectResult.Injected;
     }
 
     public void Resize(int cols, int rows)

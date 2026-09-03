@@ -155,6 +155,22 @@ describe("agenda expiry", () => {
       data: { status: "needs_user" },
     });
   });
+
+  it("skips approved jobs the pilot left to go stale, sparing the user's own campaigns", async () => {
+    const state = setup({});
+    await state.run();
+    const sweep = state.jobWrites.find(
+      (w) => (w.where as { status?: string }).status === "approved",
+    );
+    expect(sweep).toMatchObject({
+      where: {
+        status: "approved",
+        campaign: { userId: "u1", createdBy: "pilot" },
+        createdAt: { lt: expect.any(Date) },
+      },
+      data: { status: "skipped", skipReason: "Posting went stale before the pilot applied." },
+    });
+  });
 });
 
 describe("agenda expiry - maybe-submitted jobs", () => {

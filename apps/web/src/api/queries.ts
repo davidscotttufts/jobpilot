@@ -128,13 +128,6 @@ export const campaignQueries = {
   }),
 };
 
-export const contactQueries = {
-  list: (query: PaginationQuery) => ({
-    queryKey: queryKeys.contacts.list(query),
-    queryFn: () => api.contacts.get({ query }),
-  }),
-};
-
 /** The inbox list filter: a review status, or "all" for no filter. */
 export type InboxFilter = ReviewStatus | "all";
 
@@ -204,9 +197,17 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.todayOutcomes(),
     queryFn: () => api.pilot.stats.today.get(),
   }),
+  cost: () => ({
+    queryKey: queryKeys.pilot.cost(),
+    queryFn: () => api.pilot.stats.cost.get(),
+  }),
   searches: () => ({
     queryKey: queryKeys.pilot.searches(),
     queryFn: () => api.pilot.searches.get(),
+  }),
+  instructionsImpact: () => ({
+    queryKey: queryKeys.pilot.instructionsImpact(),
+    queryFn: () => api.pilot.instructions.impact.get(),
   }),
   agenda: () => ({
     queryKey: queryKeys.pilot.agenda(),

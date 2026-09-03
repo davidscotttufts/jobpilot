@@ -106,6 +106,13 @@ export const STALE_APPLYING_MS = 30 * 60 * 1000;
 export const MAX_OPEN_APPLY_CLAIMS = 100;
 
 /**
+ * How long an approved job stays worth applying to. Approved rows have no other age bound, so a
+ * pilot paused for a week wakes to a backlog of dead postings ranked above everything else
+ * (jobBase + matchScore). Pilot campaigns only - a user's own queue is theirs to clear.
+ */
+export const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
+
+/**
  * Ceiling on how long any claim may be held, heartbeats included.
  *
  * A heartbeat slides `expiresAt` forward, so a driver that is stuck but still beating never

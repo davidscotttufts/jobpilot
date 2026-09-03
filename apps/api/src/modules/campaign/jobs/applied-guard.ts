@@ -1,12 +1,18 @@
-import { conflict } from "@/common/errors";
+import { conflict, ErrorCodes, HttpError } from "@/common/errors";
+import type { Job, Prisma } from "@/generated/prisma/client";
 import {
+  type AppliedDuplicate,
   type DuplicateReader,
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
 import { findInFlightDuplicate, type InFlightReader } from "./in-flight";
 
-/** The job fields the duplicate rule reads. */
+/** Wider than a read: the guard writes the skip alongside the duplicate scan. */
+export type GuardTransaction = DuplicateReader &
+  InFlightReader &
+  Pick<Prisma.TransactionClient, "job">;
+
 interface GuardedJob {
   campaignId: string;
   key: string;
@@ -15,39 +21,56 @@ interface GuardedJob {
   company: string;
 }
 
+function refusalMessage(duplicate: AppliedDuplicate, recorded: boolean): string {
+  const { title, company, appliedAt } = duplicate.application;
+  const day = appliedAt.toISOString().slice(0, 10);
+  const tail = recorded ? " The job has been recorded as skipped with this reason;" : "";
+  return `${duplicateSkipReason(duplicate)}: this profile applied to "${title}" at ${company} on ${day}.${tail} do not apply again.`;
+}
+
+export class AlreadyAppliedError extends HttpError {
+  constructor(
+    readonly duplicate: AppliedDuplicate,
+    /** Null only when a concurrent writer moved the job before the guard could skip it. */
+    readonly skipped: Job | null,
+  ) {
+    super(ErrorCodes.CONFLICT, refusalMessage(duplicate, skipped !== null), 409);
+    this.name = "AlreadyAppliedError";
+  }
+}
+
 /**
- * Refuses to move a job into `applying` when this profile already applied to it.
+ * Refuses a move into `applying` when this profile already applied, recording the job `skipped` in
+ * the caller's transaction - left `approved` it is offered again by every following agenda.
  *
- * The apply skills are told to call `/applied/check` first, but that is advice a model can skip,
- * and a duplicate reaching the browser means a second real application lands in an employer's
- * inbox - the `@@unique([userId, url])` row guard only dedupes the record, after the fact. Both
- * routes into `applying` (the pilot claim and the campaign PATCH) run this, so the block does not
- * depend on which flow is driving. It also refuses a posting another worker is mid-apply on, which
- * `Application` rows cannot show until a result is written - see `./in-flight.ts`.
+ * The skills' own `/applied/check` is advice a model can skip, and `@@unique([userId, url])` only
+ * dedupes the record once the second application has already landed with the employer.
+ *
+ * The in-flight pass runs first and is deliberately *not* recorded as a skip: the other worker may
+ * still fail, and a posting nobody applied to must stay approved. `Application` rows cannot show a
+ * concurrent apply until its result is written minutes later, so with `maxConcurrentApplies` above
+ * one this is the only thing standing between two workers and two real applications.
  */
-export async function assertNotAlreadyApplied(
-  db: DuplicateReader & InFlightReader,
+export async function skipIfAlreadyApplied(
+  tx: GuardTransaction,
   userId: string,
   job: GuardedJob,
-): Promise<void> {
-  const inFlight = await findInFlightDuplicate(db, userId, job);
+): Promise<AlreadyAppliedError | null> {
+  const inFlight = await findInFlightDuplicate(tx, userId, job);
   if (inFlight) {
     throw conflict(
       `Already applying: another worker holds "${inFlight.title}" at ${inFlight.company} (${inFlight.campaignId}/${inFlight.key}). Record this job as skipped with reason "Already applied (in-flight)" instead of applying alongside it.`,
     );
   }
 
-  const duplicate = await findAppliedDuplicate(db, userId, {
-    url: job.url,
-    title: job.title,
-    company: job.company,
-  });
+  const duplicate = await findAppliedDuplicate(tx, userId, job);
   if (!duplicate) {
-    return;
+    return null;
   }
 
-  // Carries the reason verbatim so the caller can write the skip without restating the rule.
-  throw conflict(
-    `${duplicateSkipReason(duplicate)}: this profile applied to "${duplicate.application.title}" at ${duplicate.application.company} on ${duplicate.application.appliedAt.toISOString().slice(0, 10)}. Record the job as skipped with this reason instead of applying again.`,
-  );
+  const [skipped] = await tx.job.updateManyAndReturn({
+    where: { campaignId: job.campaignId, key: job.key },
+    data: { status: "skipped", skipReason: duplicateSkipReason(duplicate) },
+  });
+  return new AlreadyAppliedError(duplicate, skipped ?? null);
 }

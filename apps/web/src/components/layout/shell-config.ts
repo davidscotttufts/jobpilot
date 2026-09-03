@@ -23,7 +23,7 @@ export interface NavItem {
   icon: SvgIconComponent;
   /** Shown only to ADMIN/SUPER_ADMIN. Cosmetic - the API's requireRole is the real gate. */
   adminOnly?: boolean;
-  /** Live attention badge on the icon; "questions" shows the open-question count. */
+  /** Live attention badge on the icon: open pilot questions. */
   badge?: "questions";
   /** Gets its own tab on the mobile bottom nav; the rest fall into its "More" sheet. */
   primary?: boolean;

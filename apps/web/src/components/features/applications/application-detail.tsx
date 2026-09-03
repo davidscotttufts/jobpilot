@@ -16,6 +16,7 @@ import { useConfirm } from "@/providers/confirm-provider";
 import { formatAbsoluteTime } from "@/utils/format";
 import { ActivityTimeline } from "./activity-timeline";
 import { StatusTransitionDialog } from "./status-transition-dialog";
+import { SubmissionDetails } from "./submission-details";
 
 interface ApplicationDetailProps {
   applicationId: string;
@@ -123,6 +124,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
           </Stack>
         </SectionCard>
 
+        <SubmissionDetails application={app} />
         {app.submittedAnswers && app.submittedAnswers.length > 0 && (
           <SectionCard title="What was submitted">
             <Stack spacing={1.5}>

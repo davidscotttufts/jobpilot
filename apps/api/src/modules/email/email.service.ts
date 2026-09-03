@@ -12,7 +12,7 @@ import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
-import { AUTO_REJECTION_FROM_STATUSES, isAutoRejection } from "./auto-rejection";
+import { AUTO_REJECTION_FROM_STATUSES, isAutoRejection, needsHumanReview } from "./auto-rejection";
 import { serializeMessage } from "./email.mapper";
 import { emailStatusNote, verdictOps } from "./verdict";
 
@@ -28,7 +28,7 @@ interface MessageQuery {
 export class EmailService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  async listMessages(userId: string, query: PaginationQuery & MessageQuery) {
+  private messageWhere(userId: string, query: MessageQuery): Prisma.EmailMessageWhereInput {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
 
     const where: Prisma.EmailMessageWhereInput = { account: { userId } };
@@ -55,6 +55,19 @@ export class EmailService {
         { rawBody: { contains: domainHint } },
       ];
     }
+
+    return where;
+  }
+
+  /** Just the total, for callers that render a number and would otherwise page a row to get it. */
+  async countMessages(userId: string, query: MessageQuery) {
+    return {
+      count: await this.prisma.emailMessage.count({ where: this.messageWhere(userId, query) }),
+    };
+  }
+
+  async listMessages(userId: string, query: PaginationQuery & MessageQuery) {
+    const where = this.messageWhere(userId, query);
 
     const [rows, total] = await Promise.all([
       this.prisma.emailMessage.findMany({
@@ -124,6 +137,9 @@ export class EmailService {
       this.resolveAutoRejection(userId, body),
     ]);
 
+    // `auto` means "the server applied it", so an interview or offer left there hides from the queue.
+    const reviewStatus = needsHumanReview(body) ? "pending" : body.reviewStatus;
+
     const update = this.prisma.emailMessage.update({
       where: { id },
       data: {
@@ -135,7 +151,7 @@ export class EmailService {
         // Applied below, so the row is already reviewed and carries the status it applied -
         // leaving it "auto" would re-offer it.
         appliedStatus: autoRejection ? "rejected" : body.appliedStatus,
-        reviewStatus: autoRejection ? "approved" : body.reviewStatus,
+        reviewStatus: autoRejection ? "approved" : reviewStatus,
         verificationCode: body.verificationCode,
         verificationLink: body.verificationLink,
         verificationDomain: body.verificationDomain,

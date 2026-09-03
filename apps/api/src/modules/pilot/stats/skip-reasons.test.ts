@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { classifySkipReason, type SkipBucket } from "./pilot.stats";
+import { classifySkipReason, SERVER_SKIP_REASONS, type SkipBucket } from "./skip-reasons";
 import { describe, expect, it } from "bun:test";
 
 describe("classifySkipReason", () => {
@@ -36,12 +36,31 @@ describe("classifySkipReason", () => {
 });
 
 /**
+ * The server writes these itself, so a reworded literal at the call site must fail here rather than
+ * silently demote that skip to `other`.
+ */
+describe("the skips the server writes", () => {
+  const serverCases = Object.entries(SERVER_SKIP_REASONS) as [SkipBucket, string][];
+
+  for (const [bucket, reason] of serverCases) {
+    it(`buckets "${reason}" as ${bucket}`, () => {
+      expect(classifySkipReason(reason)).toBe(bucket);
+    });
+  }
+
+  // The prose heuristics read "expired" as a closed posting, which this reason is not.
+  it("does not read an expired question as a closed posting", () => {
+    expect(classifySkipReason(SERVER_SKIP_REASONS.unanswered)).not.toBe("postingClosed");
+  });
+});
+
+/**
  * The classifier matches prose the agent is told to write, so a reworded doc must fail here rather
  * than quietly bucket every skip as `other`.
  */
 describe("the phrasings eligibility.md prescribes", () => {
   const doc = readFileSync(
-    join(import.meta.dir, "../../../../../plugin/skills/_shared/eligibility.md"),
+    join(import.meta.dir, "../../../../../../plugin/skills/_shared/eligibility.md"),
     "utf8",
   ).toLowerCase();
 

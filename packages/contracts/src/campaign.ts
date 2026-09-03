@@ -61,6 +61,8 @@ export const campaignJobSummarySchema = z.object({
   byStatus: z.record(campaignJobStatusSchema, z.number().int().min(0)),
   /** Jobs carrying a match score, however they were later resolved. */
   scored: z.number().int().min(0).default(0),
+  /** Warm-intro drafts the pilot saved against this job campaign. */
+  networkingCount: z.number().int().min(0).default(0),
 });
 
 export const campaignNetworkingSummarySchema = z.object({
@@ -297,6 +299,10 @@ export const campaignJobResultSchema = z
     skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
     retryNotes: reasonText.optional().nullable(),
     matchScore: z.number().int().min(0).max(100).optional(),
+    // The resume actually submitted. `resumeVariantId` is absent when the base went out untailored;
+    // both are absent on an outcome that never reached a form.
+    resumeId: z.uuid().optional(),
+    resumeVariantId: z.uuid().optional(),
   })
   .refine(
     (v) =>

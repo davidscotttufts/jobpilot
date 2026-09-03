@@ -1,4 +1,4 @@
-import { type ReleasePilotClaimInput } from "@jobpilot/contracts/pilot";
+import { type AgendaItem, type ReleasePilotClaimInput } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
@@ -6,7 +6,14 @@ import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { PushService } from "@/common/push";
 import { publish } from "@/common/sse";
-import { type PilotQuestion, PrismaClient } from "@/generated/prisma/client";
+import {
+  type Job,
+  type PilotClaim,
+  type PilotQuestion,
+  type Prisma,
+  PrismaClient,
+} from "@/generated/prisma/client";
+import { AlreadyAppliedError } from "@/modules/campaign/jobs/applied-guard";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { toPilotClaim, toPilotQuestion } from "../pilot.mapper";
@@ -18,6 +25,11 @@ import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
+
+/** Either the claim, or the duplicate refusal the guard recorded a skip for. */
+type ClaimResult =
+  | { claim: PilotClaim; item: AgendaItem; claimedJob: Job | null }
+  | AlreadyAppliedError;
 
 /**
  * Holds a heartbeat-extended expiry to a fixed ceiling from when the claim was granted, so a
@@ -40,71 +52,14 @@ export class ClaimService {
   ) {}
 
   async claim(userId: string, agendaVersion: string, itemId: string) {
-    const result = await this.prisma.$transaction(async (tx) => {
-      const now = new Date();
-      const locked = await tx.pilotState.updateMany({
-        where: {
-          userId,
-          running: true,
-          agendaVersion,
-          agendaExpiresAt: { gt: now },
-        },
-        data: { agendaVersion },
-      });
-      if (locked.count === 0) {
-        const current = await tx.pilotState.findUnique({
-          where: { userId },
-          select: { running: true },
-        });
-        if (!current?.running) throw conflict("Pilot is stopped.");
-        throw conflict("Agenda snapshot is stale; refresh it before claiming.");
-      }
-      const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
-      if (!state.agendaSnapshot) {
-        throw conflict("Agenda snapshot is stale; refresh it before claiming.");
-      }
-      const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
-        (candidate) => candidate.id === itemId,
-      );
-      if (!item) throw conflict("Agenda item is no longer available.");
+    const result = await this.prisma.$transaction((tx) =>
+      this.claimInTransaction(tx, userId, agendaVersion, itemId),
+    );
 
-      // Safe as a read-then-write: the pilotState update above locks this user's row for the
-      // rest of the transaction, so concurrent claim() calls for one user serialize here.
-      const open = await tx.pilotClaim.findFirst({
-        where: {
-          userId,
-          kind: item.kind,
-          subjectType: item.subjectType,
-          subjectId: item.subjectId,
-          releasedAt: null,
-        },
-        select: { id: true },
-      });
-      if (open) throw conflict("This item is already claimed.");
+    // Committing is the point: the guard recorded the skip inside that same transaction.
+    if (result instanceof AlreadyAppliedError)
+      return this.campaignJobs.rejectDuplicate(userId, result);
 
-      await verifyGrant(tx, userId, item.kind, item.subjectId);
-      let claimedJob = null;
-      if (item.kind === "job.apply") {
-        await assertApplyBudget(tx, userId, now);
-        claimedJob = await this.campaignJobs.claimJobForApplyInTransaction(
-          tx,
-          userId,
-          item.payload.campaignId,
-          item.payload.jobKey,
-        );
-      }
-      const claim = await tx.pilotClaim.create({
-        data: {
-          userId,
-          kind: item.kind,
-          subjectType: item.subjectType,
-          subjectId: item.subjectId,
-          payload: toInputJson(item.payload),
-          expiresAt: new Date(now.getTime() + CLAIM_TTL_MS),
-        },
-      });
-      return { claim, item, claimedJob };
-    });
     if (result.claimedJob && result.item.kind === "job.apply") {
       this.campaignJobs.publishClaimedJob(
         userId,
@@ -113,6 +68,84 @@ export class ClaimService {
       );
     }
     return toPilotClaim(result.claim);
+  }
+
+  private async claimInTransaction(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    agendaVersion: string,
+    itemId: string,
+  ): Promise<ClaimResult> {
+    const now = new Date();
+    const locked = await tx.pilotState.updateMany({
+      where: {
+        userId,
+        running: true,
+        agendaVersion,
+        agendaExpiresAt: { gt: now },
+      },
+      data: { agendaVersion },
+    });
+
+    if (locked.count === 0) {
+      const current = await tx.pilotState.findUnique({
+        where: { userId },
+        select: { running: true },
+      });
+      if (!current?.running) throw conflict("Pilot is stopped.");
+      throw conflict("Agenda snapshot is stale; refresh it before claiming.");
+    }
+
+    const state = await tx.pilotState.findUniqueOrThrow({ where: { userId } });
+    if (!state.agendaSnapshot) {
+      throw conflict("Agenda snapshot is stale; refresh it before claiming.");
+    }
+    const item = parseAgendaSnapshot(state.agendaSnapshot).items.find(
+      (candidate) => candidate.id === itemId,
+    );
+    if (!item) throw conflict("Agenda item is no longer available.");
+
+    // Safe as a read-then-write: the pilotState update above locks this user's row for the
+    // rest of the transaction, so concurrent claim() calls for one user serialize here.
+    const open = await tx.pilotClaim.findFirst({
+      where: {
+        userId,
+        kind: item.kind,
+        subjectType: item.subjectType,
+        subjectId: item.subjectId,
+        releasedAt: null,
+      },
+      select: { id: true },
+    });
+    if (open) throw conflict("This item is already claimed.");
+
+    await verifyGrant(tx, userId, item.kind, item.subjectId);
+    let claimedJob = null;
+    if (item.kind === "job.apply") {
+      // Before the job is reserved: the cap counts `applying` rows, so claiming first would let
+      // the claim itself push the account over its own daily limit.
+      await assertApplyBudget(tx, userId, now);
+      const attempt = await this.campaignJobs.claimJobForApplyInTransaction(
+        tx,
+        userId,
+        item.payload.campaignId,
+        item.payload.jobKey,
+      );
+      if (attempt instanceof AlreadyAppliedError) return attempt;
+      claimedJob = attempt;
+    }
+
+    const claim = await tx.pilotClaim.create({
+      data: {
+        userId,
+        kind: item.kind,
+        subjectType: item.subjectType,
+        subjectId: item.subjectId,
+        payload: toInputJson(item.payload),
+        expiresAt: new Date(now.getTime() + CLAIM_TTL_MS),
+      },
+    });
+    return { claim, item, claimedJob };
   }
 
   /**
@@ -158,6 +191,8 @@ export class ClaimService {
     const payload = z.record(z.string(), z.json()).parse(existing.payload);
     const parked: PilotQuestion[] = [];
     const updated = await this.prisma.$transaction(async (tx) => {
+      // Not a blunt reset to `approved`: an abandoned apply may already have reached the employer,
+      // so recovery parks what it cannot classify and asks rather than silently retrying it.
       if (body.outcome === "abandoned" && existing.kind === "job.apply") {
         const jobRef = parseJobPayload(payload);
         const recovered = await recoverApplyingJobs(tx, userId, {

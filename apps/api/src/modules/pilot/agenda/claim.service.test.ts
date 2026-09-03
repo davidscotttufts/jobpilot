@@ -94,6 +94,7 @@ function setup(version = VERSION, openClaim: { id: string } | null = null) {
   const campaignJobs = {
     claimJobForApplyInTransaction: async () => ({ key: "j1" }),
     publishClaimedJob: () => undefined,
+    rejectDuplicate: async () => undefined,
   } as unknown as CampaignJobService;
   return {
     service: new ClaimService(db as unknown as PrismaClient, campaignJobs, NO_PUSH),

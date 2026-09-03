@@ -1,19 +1,13 @@
-import type {
-  AddCampaignJobInput,
-  CampaignJobReason,
-  CampaignJobResultInput,
-  CampaignJobStatus,
-  CampaignSummary,
-  PatchCampaignJobInput,
-  RescanCampaignJobInput,
-  RetryCampaignJobInput,
-} from "@jobpilot/contracts/campaign";
 import {
+  type AddCampaignJobInput,
+  type CampaignJobResultInput,
+  type CampaignSummary,
   INTERRUPTED_REASON,
   isAwaitingRecoveryAnswer,
-  MAYBE_SUBMITTED_REASON,
+  type PatchCampaignJobInput,
+  type RescanCampaignJobInput,
+  type RetryCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
-import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { conflict, findOwned } from "@/common/errors";
@@ -25,34 +19,18 @@ import {
   PrismaClient,
 } from "@/generated/prisma/client";
 import { JobListingPublisher } from "@/modules/job-listing";
-import { PROMOTABLE_SOURCES } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned } from "../campaign.utils";
-import { assertNotAlreadyApplied } from "./applied-guard";
-import { writeJobRescan, writeJobRetry } from "./job-commands";
-import { isTerminalJob, writeJobResult } from "./job-result";
+import { AlreadyAppliedError, type GuardTransaction, skipIfAlreadyApplied } from "./applied-guard";
+import { writeJobPatch, writeJobRescan, writeJobRetry } from "./job-commands";
+import { type ScoredJobPromotion, writeScoredPromotions } from "./job-promotion";
+import { type JobListQuery, listCampaignJobReasons, listCampaignJobs } from "./job-queries";
+import { writeJobResult } from "./job-result";
 
-const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
-  // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
-  queued: ["pending"],
-  pending: ["approved"],
-  approved: ["pending", "applying"],
-  applying: ["approved", "needs_user"],
-  needs_user: ["approved", "applying"],
-  applied: [],
-  failed: [],
-  skipped: [],
-};
-
-type JobTransaction = Pick<Prisma.TransactionClient, "job" | "application">;
-
-interface ScoredJobPromotion {
-  key: string;
-  matchScore: number;
-  threshold: number;
-}
-
-/** Coordinates campaign job discovery, non-terminal edits, claims, and terminal results. */
+/**
+ * Coordinates campaign job reads, writes, claims and results. Every write algorithm lives in a
+ * sibling `job-*` module; what stays here is the DI wiring and the SSE publishing that follows.
+ */
 @singleton()
 export class CampaignJobService {
   constructor(
@@ -60,65 +38,12 @@ export class CampaignJobService {
     private readonly listings: JobListingPublisher,
   ) {}
 
-  async listJobs(
-    userId: string,
-    campaignId: string,
-    query: PaginationQuery & { status?: CampaignJobStatus; search?: string },
-  ) {
-    const where: Prisma.JobWhereInput = {
-      campaignId,
-      campaign: { userId },
-      status: query.status,
-      ...(query.search
-        ? {
-            OR: [
-              { title: { contains: query.search, mode: "insensitive" } },
-              { company: { contains: query.search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    };
-    // The page is already ownership-scoped; the probe only separates 404 from an empty page, so
-    // it rides along rather than costing a round trip of its own.
-    const [, jobs, total] = await Promise.all([
-      ensureCampaignOwned(this.prisma, userId, campaignId),
-      this.prisma.job.findMany({ where, orderBy: { createdAt: "asc" }, ...pageSlice(query) }),
-      this.prisma.job.count({ where }),
-    ]);
-    return paginate(jobs, query, total);
+  listJobs(userId: string, campaignId: string, query: JobListQuery) {
+    return listCampaignJobs(this.prisma, userId, campaignId, query);
   }
 
-  /** Skip/fail reasons grouped by frequency across every job, so the breakdown is not page-scoped. */
-  async listJobReasons(userId: string, campaignId: string): Promise<CampaignJobReason[]> {
-    await ensureCampaignOwned(this.prisma, userId, campaignId);
-
-    const [skipped, failed] = await Promise.all([
-      this.prisma.job.groupBy({
-        by: ["skipReason"],
-        where: { campaignId, status: "skipped", skipReason: { not: null } },
-        _count: { _all: true },
-      }),
-      this.prisma.job.groupBy({
-        by: ["failReason"],
-        where: { campaignId, status: "failed", failReason: { not: null } },
-        _count: { _all: true },
-      }),
-    ]);
-
-    // The `{ not: null }` guards above make the reason non-null on every row.
-    const reasons: CampaignJobReason[] = [
-      ...skipped.map((row) => ({
-        kind: "skipped" as const,
-        reason: row.skipReason as string,
-        count: row._count._all,
-      })),
-      ...failed.map((row) => ({
-        kind: "failed" as const,
-        reason: row.failReason as string,
-        count: row._count._all,
-      })),
-    ];
-    return reasons.sort((a, b) => b.count - a.count);
+  listJobReasons(userId: string, campaignId: string) {
+    return listCampaignJobReasons(this.prisma, userId, campaignId);
   }
 
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
@@ -149,87 +74,12 @@ export class CampaignJobService {
   }
 
   async patchJob(userId: string, campaignId: string, key: string, patch: PatchCampaignJobInput) {
-    const existing = await findOwned(
-      (where) =>
-        this.prisma.job.findFirst({ where, include: { campaign: { select: { source: true } } } }),
-      { campaignId, key, campaign: { userId } },
-      "Campaign job",
-    );
+    const result = await writeJobPatch(this.prisma, userId, campaignId, key, patch);
+    if (result instanceof AlreadyAppliedError) return this.rejectDuplicate(userId, result);
 
-    if (isTerminalJob(existing.status)) {
-      throw conflict("Terminal jobs cannot be edited; use the retry or rescan command.");
-    }
-    if (patch.status && patch.status !== existing.status) {
-      if (!ALLOWED_TRANSITIONS[existing.status].includes(patch.status)) {
-        throw conflict(`Job cannot transition from ${existing.status} to ${patch.status}.`);
-      }
-    }
-
-    // Every route back into an apply, not just one. `needs_user → approved` is what the bulk
-    // re-apply button sends and it also clears skipReason, erasing the warning on the way; the
-    // resume flows re-send `applying → applying`, a no-op that skips the transition check entirely.
-    // Any of them would submit a second time, so a held job refuses all of them.
-    //
-    // Two ways to be held, and the stamp is the rarer one: crash recovery parks *every* interrupted
-    // apply, stamped or not, because the agent marks the submit point almost never. Only a human
-    // answering "it was not submitted" clears the hold - hence `confirmNotSubmitted`, which is that
-    // answer and nothing else. It also drops the stamp, or the following apply would 409 here.
-    const reentering = patch.status === "approved" || patch.status === "applying";
-    const held = isAwaitingRecoveryAnswer(existing);
-    const confirmedSafe = patch.confirmNotSubmitted === true && patch.status === "approved";
-    if (reentering && !confirmedSafe) {
-      if (held) throw conflict(existing.skipReason ?? INTERRUPTED_REASON);
-      if (existing.submitAttemptedAt !== null) throw conflict(MAYBE_SUBMITTED_REASON);
-    }
-    if (patch.confirmNotSubmitted === true && !held) {
-      throw conflict("This job is not waiting on a submitted-or-not answer.");
-    }
-
-    const job = await this.prisma.$transaction(async (tx) => {
-      if (patch.status && patch.status !== existing.status) {
-        if (patch.status === "applying") {
-          await assertNotAlreadyApplied(tx, userId, existing);
-        }
-        const changed = await tx.job.updateMany({
-          where: { campaignId, key, status: existing.status },
-          data: {
-            status: patch.status,
-            appliedAt: patch.status === "approved" ? null : undefined,
-            failReason: patch.status === "approved" ? null : undefined,
-            skipReason: patch.status === "approved" ? null : undefined,
-            submitAttemptedAt: confirmedSafe ? null : undefined,
-          },
-        });
-        if (changed.count === 0) throw conflict("Job status changed concurrently.");
-      }
-      return tx.job.update({
-        where: { campaignId_key: { campaignId, key } },
-        data: {
-          title: patch.title,
-          company: patch.company,
-          location: patch.location,
-          salary: patch.salary,
-          type: patch.type,
-          board: patch.board,
-          retryNotes: patch.retryNotes,
-          matchScore: patch.matchScore,
-          matchReason: patch.matchReason,
-          description: patch.description,
-          digest: patch.digest,
-        },
-      });
-    });
-
-    this.listings.publishInBackground(job);
-    const statusChanged = !!patch.status && patch.status !== existing.status;
-    this.publishStatusChange(userId, campaignId, {
-      job,
-      changed: true,
-      summary: statusChanged
-        ? await deriveCampaignSummary(this.prisma, campaignId, existing.campaign.source)
-        : null,
-    });
-    return job;
+    this.listings.publishInBackground(result.job);
+    this.publishStatusChange(userId, campaignId, result);
+    return result.job;
   }
 
   /**
@@ -285,33 +135,68 @@ export class CampaignJobService {
     return result.job;
   }
 
+  /**
+   * Moves an approved job into `applying`. The pilot claims inside its own transaction, so this
+   * takes a client rather than opening one, and a duplicate comes back as a refusal rather than a
+   * throw - the guard's skip has to commit with that transaction, not roll back with it.
+   */
   async claimJobForApplyInTransaction(
-    tx: JobTransaction,
+    tx: GuardTransaction,
     userId: string,
     campaignId: string,
     key: string,
-  ): Promise<Job> {
+  ): Promise<Job | AlreadyAppliedError> {
+    const where = {
+      campaignId,
+      key,
+      status: "approved",
+      campaign: { userId },
+    } satisfies Prisma.JobWhereInput;
+
     const target = await tx.job.findFirst({
-      where: { campaignId, key, status: "approved", campaign: { userId } },
+      where,
       select: { url: true, title: true, company: true },
     });
     if (!target) throw conflict("Job is no longer approved.");
-    await assertNotAlreadyApplied(tx, userId, { ...target, campaignId, key });
 
-    const claim = await tx.job.updateMany({
-      where: { campaignId, key, status: "approved", campaign: { userId } },
-      data: { status: "applying" },
-    });
-    if (claim.count === 0) throw conflict("Job is no longer approved.");
-    return tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });
+    const refusal = await skipIfAlreadyApplied(tx, userId, { ...target, campaignId, key });
+    if (refusal) return refusal;
+
+    // Returning the row from the write keeps the claim at two round trips; an empty result is the
+    // lost race.
+    const [claimed] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
+    if (!claimed) throw conflict("Job is no longer approved.");
+    return claimed;
   }
 
   async claimJobForApply(userId: string, campaignId: string, key: string) {
-    const job = await this.prisma.$transaction((tx) =>
+    const attempt = await this.prisma.$transaction((tx) =>
       this.claimJobForApplyInTransaction(tx, userId, campaignId, key),
     );
-    this.publishJob(userId, campaignId, job, "updated");
-    return job;
+    if (attempt instanceof AlreadyAppliedError) return this.rejectDuplicate(userId, attempt);
+
+    this.publishJob(userId, campaignId, attempt, "updated");
+    return attempt;
+  }
+
+  /**
+   * Publishes the skip the guard already committed inside the caller's transaction, then raises the
+   * refusal. The summary is derived here rather than in the guard so the campaign-wide aggregate
+   * stays out of that transaction's lock window.
+   */
+  async rejectDuplicate(userId: string, refusal: AlreadyAppliedError): Promise<never> {
+    const job = refusal.skipped;
+    if (!job) throw refusal;
+
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { campaignId: job.campaignId },
+      select: { source: true },
+    });
+    const summary = campaign
+      ? await deriveCampaignSummary(this.prisma, job.campaignId, campaign.source)
+      : null;
+    this.publishStatusChange(userId, job.campaignId, { job, changed: true, summary });
+    throw refusal;
   }
 
   publishClaimedJob(userId: string, campaignId: string, job: Job): void {
@@ -325,57 +210,20 @@ export class CampaignJobService {
     candidates: ScoredJobPromotion[],
   ): Promise<void> {
     if (candidates.length === 0) return;
-    // One write per (outcome, score) group rather than three per row. Grouping by score keeps the
-    // `matchScore` guard - which detects a concurrent rescore - exact under an `in` on keys, and
-    // lets skipped rows sharing a score share their score-bearing reason prose.
-    const groups = new Map<
-      string,
-      { approved: boolean; score: number; threshold: number; keys: string[] }
-    >();
 
-    for (const candidate of candidates) {
-      const approved = candidate.matchScore >= candidate.threshold;
-      const groupKey = `${approved}:${candidate.matchScore}`;
-      const group = groups.get(groupKey) ?? {
-        approved,
-        score: candidate.matchScore,
-        threshold: candidate.threshold,
-        keys: [],
-      };
-      group.keys.push(candidate.key);
-      groups.set(groupKey, group);
-    }
+    const { jobs, summary } = await writeScoredPromotions(
+      this.prisma,
+      userId,
+      campaignId,
+      source,
+      candidates,
+    );
+    if (jobs.length === 0) return;
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const jobs: Job[] = [];
-
-      for (const group of groups.values()) {
-        const updated = await tx.job.updateManyAndReturn({
-          where: {
-            campaignId,
-            status: "pending",
-            matchScore: group.score,
-            key: { in: group.keys },
-            campaign: { userId, status: "in_progress", source: { in: PROMOTABLE_SOURCES } },
-          },
-          data: group.approved
-            ? { status: "approved" }
-            : {
-                status: "skipped",
-                skipReason: `Below minimum match score (${group.score} < ${group.threshold})`,
-              },
-        });
-        jobs.push(...updated);
-      }
-
-      return { jobs, summary: await deriveCampaignSummary(tx, campaignId, source) };
-    });
-
-    if (result.jobs.length === 0) return;
-    for (const job of result.jobs) {
+    for (const job of jobs) {
       this.publishJob(userId, campaignId, job, "updated");
     }
-    publish(campaignChannel, { campaignId }, { type: "progress", payload: result.summary });
+    publish(campaignChannel, { campaignId }, { type: "progress", payload: summary });
   }
 
   async recordJobResult(

@@ -1,7 +1,34 @@
-import type { RescanCampaignJobInput, RetryCampaignJobInput } from "@jobpilot/contracts/campaign";
+import {
+  type CampaignSummary,
+  INTERRUPTED_REASON,
+  isAwaitingRecoveryAnswer,
+  MAYBE_SUBMITTED_REASON,
+  type PatchCampaignJobInput,
+  type RescanCampaignJobInput,
+  type RetryCampaignJobInput,
+} from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
-import { type CampaignJobStatus, Prisma, type PrismaClient } from "@/generated/prisma/client";
+import {
+  type CampaignJobStatus,
+  type Job,
+  Prisma,
+  type PrismaClient,
+} from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "../campaign.summary";
+import { AlreadyAppliedError, skipIfAlreadyApplied } from "./applied-guard";
+import { isTerminalJob } from "./job-result";
+
+const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
+  // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
+  queued: ["pending"],
+  pending: ["approved"],
+  approved: ["pending", "applying"],
+  applying: ["approved", "needs_user"],
+  needs_user: ["approved", "applying"],
+  applied: [],
+  failed: [],
+  skipped: [],
+};
 
 async function findJob(prisma: PrismaClient, userId: string, campaignId: string, key: string) {
   return findOwned(
@@ -80,6 +107,100 @@ export async function writeJobRetry(
     },
     rejection: (status) => `Only failed jobs can be retried; job is ${status}.`,
   });
+}
+
+export type JobPatchResult =
+  | { job: Job; changed: boolean; summary: CampaignSummary | null }
+  | AlreadyAppliedError;
+
+/**
+ * Applies a field edit, moving the job's status too when the patch names a new one. Unlike the
+ * retry/rescan commands this is never idempotent: the caller asked for these exact field values.
+ */
+export async function writeJobPatch(
+  prisma: PrismaClient,
+  userId: string,
+  campaignId: string,
+  key: string,
+  patch: PatchCampaignJobInput,
+): Promise<JobPatchResult> {
+  const existing = await findJob(prisma, userId, campaignId, key);
+  if (isTerminalJob(existing.status)) {
+    throw conflict("Terminal jobs cannot be edited; use the retry or rescan command.");
+  }
+
+  const moveTo = patch.status && patch.status !== existing.status ? patch.status : null;
+  if (moveTo && !ALLOWED_TRANSITIONS[existing.status].includes(moveTo)) {
+    throw conflict(`Job cannot transition from ${existing.status} to ${moveTo}.`);
+  }
+
+  // Every route back into an apply, not just one. `needs_user → approved` is what the bulk
+  // re-apply button sends and it also clears skipReason, erasing the warning on the way; the
+  // resume flows re-send `applying → applying`, a no-op that leaves `moveTo` null and skips the
+  // transition check entirely. Any of them would submit a second time, so a held job refuses all
+  // of them - which is why this reads `patch.status` rather than `moveTo`.
+  //
+  // Two ways to be held, and the stamp is the rarer one: crash recovery parks *every* interrupted
+  // apply, stamped or not, because the agent marks the submit point almost never. Only a human
+  // answering "it was not submitted" clears the hold - hence `confirmNotSubmitted`, which is that
+  // answer and nothing else. It also drops the stamp, or the following apply would 409 here.
+  const reentering = patch.status === "approved" || patch.status === "applying";
+  const held = isAwaitingRecoveryAnswer(existing);
+  const confirmedSafe = patch.confirmNotSubmitted === true && patch.status === "approved";
+  if (reentering && !confirmedSafe) {
+    if (held) throw conflict(existing.skipReason ?? INTERRUPTED_REASON);
+    if (existing.submitAttemptedAt !== null) throw conflict(MAYBE_SUBMITTED_REASON);
+  }
+  if (patch.confirmNotSubmitted === true && !held) {
+    throw conflict("This job is not waiting on a submitted-or-not answer.");
+  }
+
+  const outcome = await prisma.$transaction(async (tx): Promise<Job | AlreadyAppliedError> => {
+    if (moveTo) {
+      if (moveTo === "applying") {
+        const refusal = await skipIfAlreadyApplied(tx, userId, existing);
+        // Returned rather than thrown so the guard's skip commits with this transaction.
+        if (refusal) return refusal;
+      }
+      const changed = await tx.job.updateMany({
+        where: { campaignId, key, status: existing.status },
+        data: {
+          status: moveTo,
+          appliedAt: moveTo === "approved" ? null : undefined,
+          failReason: moveTo === "approved" ? null : undefined,
+          skipReason: moveTo === "approved" ? null : undefined,
+          submitAttemptedAt: confirmedSafe ? null : undefined,
+        },
+      });
+      if (changed.count === 0) throw conflict("Job status changed concurrently.");
+    }
+    return tx.job.update({
+      where: { campaignId_key: { campaignId, key } },
+      data: {
+        title: patch.title,
+        company: patch.company,
+        location: patch.location,
+        salary: patch.salary,
+        type: patch.type,
+        board: patch.board,
+        retryNotes: patch.retryNotes,
+        matchScore: patch.matchScore,
+        matchReason: patch.matchReason,
+        description: patch.description,
+        digest: patch.digest,
+      },
+    });
+  });
+
+  if (outcome instanceof AlreadyAppliedError) return outcome;
+
+  return {
+    job: outcome,
+    changed: true,
+    summary: moveTo
+      ? await deriveCampaignSummary(prisma, campaignId, existing.campaign.source)
+      : null,
+  };
 }
 
 /** Records a fresh skipped-job rescan and its explicit decision. */

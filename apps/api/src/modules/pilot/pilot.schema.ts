@@ -1,6 +1,6 @@
 import { pilotCycleStatusSchema, pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
-import { SKIP_BUCKETS } from "./pilot.stats";
+import { SKIP_BUCKETS } from "./stats";
 
 /** Rows created by a batch journal append. */
 export const createPilotJournalResponseSchema = z.object({
@@ -12,6 +12,20 @@ export const pilotTodayOutcomesSchema = z.object({
   skipped: z.number().int(),
   failed: z.number().int(),
   skipReasons: z.array(z.object({ reason: z.enum(SKIP_BUCKETS), count: z.number().int() })),
+});
+
+/** Where the last week of cycles went, by agenda kind, heaviest first. */
+export const pilotCostSchema = z.object({
+  items: z.array(
+    z.object({
+      kind: z.string(),
+      runs: z.number().int(),
+      medianMs: z.number().int(),
+      totalMs: z.number().int(),
+      failed: z.number().int(),
+      abandoned: z.number().int(),
+    }),
+  ),
 });
 
 /** Orchestrator liveness probe: newest server-side agent activity + the active-claim count. */

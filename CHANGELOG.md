@@ -2,7 +2,155 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## v2.1.35 - 2026-08-30
+
+### Added
+
+- Resumes now carry publications, awards and certifications, plus custom titled sections for
+  anything else. Resume import files what it finds there instead of dropping it, so an academic
+  CV keeps its publications, grants, talks and patents. Publication titles and certification
+  names also feed the keyword-drift check.
+- Applications record the resume and variant they were submitted with, so the Documents card
+  shows what actually went out. A migration recovers what the old link covered.
+- A cost panel on /pilot/activity shows where the week went: runs per agenda kind, median
+  duration, failures and abandoned claims.
+
+### Changed
+
+- Saving changed pilot goals now asks what to retire. You can re-derive the searches, complete
+  the campaigns started under the old goals, and drop the approved backlog. Nothing happens
+  unless you pick it.
+- Approved jobs in pilot campaigns expire after 7 days, so a paused pilot does not wake to a
+  queue of dead postings ranked above everything else.
+- A pilot cycle re-reads far less. The pilot skill is a short loop plus one file per agenda
+  kind, read only for the kind being run, and the cover letter step no longer re-reads the
+  source resume PDF or five prior letters in full.
+- The vendored humanizer moved from 2.9.1 to 2.11.2, with the JobPilot additions re-applied.
+
+### Fixed
+
+- Public pages behind the server renderer no longer share one rate-limit bucket. Every visitor
+  looked like the docker gateway, so one visitor's traffic throttled everyone.
+- A rate-limited public detail page renders as an error instead of "not found", which used to
+  invite search engines to deindex a live page.
+- The inbox nav badge is gone. It stuck at 99+ and opening the inbox never cleared it.
+- The terminal host resolves Windows executable extensions correctly when locating the agent.
+- The cycle-cost query dropped a 2000-row cap that silently shortened the week it reports, and
+  server-written skip reasons are bucketed directly instead of guessed from their wording.
+
+## v2.1.34 - 2026-08-18
+
+### Added
+
+- A cross-campaign Networking page with Contacts and Messages tabs, so warm intros drafted
+  against job campaigns can be read and approved. Job campaign details list their own drafts,
+  and the pilot's approval question links straight to one.
+- The application detail page shows the cover letter and resume that went out, the job posting
+  text, and the mail and contacts matched to that application.
+- The Inbox nav item carries a badge for mail awaiting a decision, visible from any page.
+
+### Changed
+
+- Interview invites and offers found by the mail scanner now wait in the review queue instead of
+  sitting in the Auto tab, where they left the application unmoved and the funnel reporting zero
+  interviews. Existing parked mail moves into the queue.
+- Accordion and badge styling moved into the theme, and the web and API now share one list of
+  actively-interviewing statuses.
+
+### Fixed
+
+- Codex sessions start with browser tools again. The MCP server command resolves to a real
+  executable path, including when the host is launched through the `jobpilot://` link and gets a
+  rebuilt PATH. The Playwright MCP server is pinned instead of tracking `@latest`.
+- Dashboard page loads no longer fetch a full email to render the Inbox badge count.
+- The application detail page finds its job posting through an index instead of scanning the
+  campaign's whole job set.
+
+## v2.1.33 - 2026-08-17
+
+### Fixed
+
+- Codex Pilot uses the Windows fallback sandbox for JobPilot sessions and identifies the
+  host-injected API origin as the intended audience for its bearer token, preventing automatic
+  approval from blocking authenticated retries after a Schannel TLS failure.
+
+## [2.1.32] - 2026-08-17
+
+### Changed
+
+- The terminal panel streams provider output immediately again instead of holding chunks briefly.
+
+### Fixed
+
+- Codex Pilot retries JobPilot API requests outside the native Windows sandbox when Schannel
+  returns `SEC_E_NO_CREDENTIALS`, instead of incorrectly reporting that the backend is unavailable.
+
+## [2.1.31] - 2026-08-15
+
+### Fixed
+
+- Codex sessions now load the bundled Playwright MCP server. The host passed
+  the server name in quotes, which Codex rejected at startup with an "Invalid
+  MCP server name" warning.
+
+## [2.1.30] - 2026-08-15
+
+### Changed
+
+- Codex sessions no longer depend on the user-installed public plugin. The
+  terminal host now writes the bundled JobPilot skills into `.agents/skills`
+  before each Codex launch and passes the bundled Playwright MCP server as
+  Codex config overrides, so dashboard sessions always run the shipped skill
+  set.
+- The Codex marketplace plugin is now bootstrap-only (the `setup` skill),
+  matching the Claude marketplace.
+
+### Fixed
+
+- Injected Codex `$skill` commands now submit reliably. The host presses Enter
+  twice so the first press accepts the skill autocomplete item and the second
+  sends the prompt.
+
+## [2.1.29] - 2026-08-15
+
+### Added
+
+- The terminal host now supports `jobpilot --version` for checking the installed
+  version without starting the local server.
+
+### Fixed
+
+- Codex sessions now start correctly on Windows. The terminal host no longer
+  passes the working directory through both the PTY and Codex command line,
+  which caused Codex to exit with OS error 123 on startup.
+
+## [2.1.28] - 2026-08-15
+
+### Changed
+
+- The agent no longer runs with every permission check switched off. Claude Code
+  sessions start in auto mode and Codex sessions use its automatic approval
+  review, so a second model checks each action instead of nothing checking it.
+  Routine work is unaffected, but an action it judges risky now waits for you in
+  the dashboard terminal.
+- Claude Code sessions start on Sonnet. You no longer have to set the model
+  yourself, and `/model` still changes it for a running session.
+
+### Fixed
+
+- The API now refuses a second application to a job you already applied to,
+  even when the posting reappears under a different URL. Before, the duplicate
+  check was advisory and a skipped check could submit the same application
+  twice. The agent records the refusal as a skip instead of failing the job.
+- The agent panel no longer renders garbled on Apple silicon Macs. The terminal
+  host set the wrong pty window size there, so every repaint wrapped and
+  overprinted.
+- The campaign summary is computed outside the claim's lock window, and a
+  duplicate skip is committed in the same transaction that decided it.
+- Corrected stale claims in the READMEs and dev guide, including the note about
+  what runs on `localhost:5433`.
+- Internal cleanup: shared URL canonicalization between the job tables, one
+  applied-duplicate row shape, and an index for the duplicate scan.
 
 ## [2.1.27] - 2026-08-04
 

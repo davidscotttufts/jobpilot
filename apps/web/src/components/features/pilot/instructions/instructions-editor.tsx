@@ -2,11 +2,11 @@
 
 import { type ReactElement, useState } from "react";
 import {
-  type PilotInstructionsConfig,
+  NO_INSTRUCTIONS_CHANGE,
+  type PilotInstructionsChange,
   type PilotState,
-  pilotInstructionsConfigSchema,
+  type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
-import { ExpandMore } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -17,7 +17,8 @@ import {
 } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
-import { useApiMutation } from "@/api/hooks";
+import { useApiMutation, useApiQuery } from "@/api/hooks";
+import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
@@ -26,11 +27,19 @@ import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/sec
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
 import { BoardsSection } from "./boards-section";
-import { type InstructionsFormValues, instructionsFormSchema } from "./form-schema";
+import {
+  hasTunedConfig,
+  type InstructionsFormValues,
+  instructionsFormSchema,
+  toConfig,
+  toFormValues,
+} from "./form-schema";
+import { GoalsChangeDialog } from "./goals-change-dialog";
 import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
+import { SaveBar } from "./save-bar";
 import { SearchesList } from "./searches-list";
 
 interface InstructionsEditorProps {
@@ -51,65 +60,57 @@ const NAV_ANCHORS: SectionAnchor[] = [
   { id: "advanced", label: "Advanced settings" },
 ];
 
-/** A config indistinguishable from `{}` means the user never tuned anything - keep Advanced folded. */
-const DEFAULT_CONFIG_JSON = JSON.stringify(pilotInstructionsConfigSchema.parse({}));
-
-function toFormValues(state: PilotState): InstructionsFormValues {
-  const c = state.instructionsConfig;
-  return {
-    goals: state.instructionsGoals,
-    dailyApplyCap: c.dailyApplyCap,
-    minScore: c.minScore,
-    checkIntervalMinutes: c.checkIntervalMinutes,
-    networking: { ...c.networking },
-    boards: [...c.boards],
-    promotionPlatforms: c.promotion.platforms.map((p) => ({
-      platform: p.platform,
-      target: p.target ?? "",
-      postEveryDays: p.postEveryDays,
-    })),
-  };
-}
-
 export function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
   const toast = useToast();
   // Expanded when any advanced value was ever customized, so tuning stays visible to its owner.
-  const [advancedOpen, setAdvancedOpen] = useState(
-    () => JSON.stringify(state.instructionsConfig) !== DEFAULT_CONFIG_JSON,
+  const [advancedOpen, setAdvancedOpen] = useState(() => hasTunedConfig(state));
+
+  const save = useApiMutation<unknown, UpdatePilotInstructionsInput>(
+    (body) => api.pilot.instructions.put(body),
+    {
+      invalidate: [queryKeys.pilot.state(), queryKeys.pilot.searches()],
+      successMessage: "Instructions saved.",
+    },
   );
 
-  const save = useApiMutation<unknown, { goals: string; config: PilotInstructionsConfig }>(
-    (body) => api.pilot.instructions.put(body),
-    { invalidate: [queryKeys.pilot.state()], successMessage: "Instructions saved." },
-  );
+  // Fetched on submit, not on mount: a mount fetch still in flight reads as "nothing in flight"
+  // and saves changed goals without ever asking, which is the case the dialog exists for.
+  const impact = useApiQuery(pilotQueries.instructionsImpact(), {
+    enabled: false,
+    errorMessage: "Failed to check what the pilot has in flight",
+  });
+
+  // Held between "the goals changed" and the user answering what to retire. Its presence opens the
+  // dialog, and it carries the values the save finishes with.
+  const [pending, setPending] = useState<InstructionsFormValues | null>(null);
+
+  const commit = async (value: InstructionsFormValues, onChange: PilotInstructionsChange) => {
+    await save.mutateAsync({ goals: value.goals, config: toConfig(value), onChange });
+    setPending(null);
+    // Re-baseline the defaults so the dirty save bar hides after a successful save.
+    form.reset(value);
+  };
 
   const form = useAppForm({
     defaultValues: toFormValues(state),
     validators: { onSubmit: instructionsFormSchema },
     onSubmitInvalid: () => toast.error("Fix the highlighted fields"),
     onSubmit: async ({ value }) => {
-      const config: PilotInstructionsConfig = {
-        dailyApplyCap: value.dailyApplyCap,
-        // No controls for these yet; carry the saved values so a save cannot silently reset them.
-        maxConcurrentApplies: state.instructionsConfig.maxConcurrentApplies,
-        reviewFirstApplies: state.instructionsConfig.reviewFirstApplies,
-        minScore: value.minScore,
-        checkIntervalMinutes: value.checkIntervalMinutes,
-        boards: value.boards,
-        networking: value.networking,
-        promotion: {
-          platforms: value.promotionPlatforms.map((p) => ({
-            platform: p.platform.trim(),
-            target: p.target.trim() || undefined,
-            postEveryDays: p.postEveryDays,
-          })),
-          autonomy: "review",
-        },
-      };
-      await save.mutateAsync({ goals: value.goals, config });
-      // Re-baseline the defaults so the dirty save bar hides after a successful save.
-      form.reset(value);
+      // Only rewritten goals strand work - every config field is read live off the instructions.
+      if (value.goals === state.instructionsGoals) {
+        await commit(value, NO_INSTRUCTIONS_CHANGE);
+        return;
+      }
+
+      // A failed check must not silently keep the old plan, so only a confirmed empty one skips.
+      const { data, isError } = await impact.refetch();
+      const inFlight = data ? data.searches.length + data.campaigns.length + data.approvedJobs : 0;
+      if (!isError && inFlight === 0) {
+        await commit(value, NO_INSTRUCTIONS_CHANGE);
+        return;
+      }
+      setPending(value);
     },
   });
 
@@ -158,17 +159,11 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
 
               <Box data-section-id="advanced">
                 <Accordion
-                  disableGutters
-                  elevation={0}
                   expanded={advancedOpen}
                   onChange={(_, open) => setAdvancedOpen(open)}
-                  sx={(theme) => ({
-                    border: `1px solid ${theme.palette.line.divider}`,
-                    borderRadius: theme.radii.md,
-                    "&::before": { display: "none" },
-                  })}
+                  sx={(theme) => ({ borderColor: theme.palette.line.divider })}
                 >
-                  <AccordionSummary expandIcon={<ExpandMore />}>
+                  <AccordionSummary>
                     <Stack spacing={0.25}>
                       <Typography variant="body1Strong">Advanced settings</Typography>
                       <Typography variant="captionMuted">
@@ -192,30 +187,26 @@ export function InstructionsEditor(props: InstructionsEditorProps): ReactElement
         </Box>
       </SectionCard>
 
-      {/* Outside the SectionCard: MUI Card clips overflow, which would break position: sticky. */}
       {showSaveBar && (
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={(theme) => ({
-            position: "sticky",
-            bottom: 0,
-            justifyContent: "flex-end",
-            alignItems: "center",
-            paddingBlock: theme.spacing(1.5),
-            backgroundColor: theme.palette.surfaces.base,
-            borderTop: `1px solid ${theme.palette.line.divider}`,
-            zIndex: 1,
-          })}
-        >
-          <Typography variant="captionMuted">Unsaved changes</Typography>
+        <SaveBar>
           <form.AppForm>
             <form.SubmitButton disabled={save.isPending}>
               {save.isPending ? "Saving" : "Save instructions"}
             </form.SubmitButton>
           </form.AppForm>
-        </Stack>
+        </SaveBar>
       )}
+
+      <GoalsChangeDialog
+        open={pending !== null}
+        impact={impact.data}
+        isLoading={impact.isLoading}
+        saving={save.isPending}
+        onConfirm={(change) => {
+          if (pending) void commit(pending, change);
+        }}
+        onCancel={() => setPending(null)}
+      />
     </Box>
   );
 }

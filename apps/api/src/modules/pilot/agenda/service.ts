@@ -19,7 +19,7 @@ import { DRIFT_SWEEP_CYCLES, sweepBoardDrift } from "@/modules/job-board/drift-s
 import { PilotJournalService } from "../journal.service";
 import { loadInstructions } from "../pilot.instructions";
 import { toPilotQuestion } from "../pilot.mapper";
-import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { countAppliedToday, countSentToday } from "../stats";
 import { browsersInUse } from "./browser-lease";
 import { buildAgenda } from "./build";
 import { gatherBoardHealth } from "./candidates-board";

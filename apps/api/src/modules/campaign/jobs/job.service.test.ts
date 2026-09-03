@@ -44,6 +44,11 @@ function setup() {
       findFirst: async () => ({ ...job, campaign }),
       // The in-flight reservation scan; no sibling job is mid-apply in these tests.
       findMany: async () => [],
+      // The duplicate guard records its own skip, and reads the row back to report it.
+      updateManyAndReturn: async ({ data }: { data: Record<string, unknown> }) => {
+        job = { ...job, ...data } as typeof job;
+        return [job];
+      },
       updateMany: async ({
         where,
         data,
@@ -81,6 +86,7 @@ function setup() {
       },
     },
     resumeVariant: {
+      findFirst: async () => null,
       updateMany: async (args: {
         where: Record<string, unknown>;
         data: Record<string, unknown>;
@@ -88,6 +94,20 @@ function setup() {
         variantLinks.push(args);
         return { count: 1 };
       },
+    },
+    // Tables the result path touches only to link records this suite does not assert on. Stubbed
+    // rather than modelled: the behaviours here are the guards and the application row.
+    campaign: {
+      findUnique: async () => campaign,
+    },
+    resume: {
+      findFirst: async () => null,
+    },
+    coverLetter: {
+      updateMany: async () => ({ count: 0 }),
+    },
+    networkingMessage: {
+      groupBy: async () => [],
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
@@ -133,22 +153,15 @@ describe("CampaignJobService terminal results", () => {
     expect(result.summary).toMatchObject({ kind: "jobs", applied: 1 });
   });
 
-  it("links the job's tailored resume variants to the new application", async () => {
+  it("does not guess which resume variant was used", async () => {
     const state = setup();
     await state.service.recordJobResult("u1", "c1", "j1", {
       outcome: "applied",
       appliedAt: APPLIED_AT,
     });
-    // The only thing tying a variant to an outcome. Scoped by owner+url, fills an unset link only.
-    expect(state.variantLinks).toHaveLength(1);
-    expect(state.variantLinks[0]).toMatchObject({
-      where: {
-        jobUrl: "https://example.test/jobs/1",
-        applicationId: null,
-        resume: { userId: "u1" },
-      },
-      data: { applicationId: "app1" },
-    });
+    // A variant is linked only when the worker names one; matching on url alone claimed variants
+    // that were tailored for the job but never actually submitted.
+    expect(state.variantLinks).toHaveLength(0);
   });
 
   it("does not link variants when the job was not applied to", async () => {
@@ -269,7 +282,8 @@ describe("CampaignJobService duplicate apply guard", () => {
     await expect(state.service.patchJob("u1", "c1", "j1", { status: "applying" })).rejects.toThrow(
       /Already applied/,
     );
-    expect(state.job.status).toBe("approved");
+    // Skipped rather than left approved: an approved duplicate is re-offered by every next agenda.
+    expect(state.job.status).toBe("skipped");
   });
 
   it("blocks the pilot claim", async () => {
@@ -280,7 +294,7 @@ describe("CampaignJobService duplicate apply guard", () => {
     await expect(state.service.claimJobForApply("u1", "c1", "j1")).rejects.toThrow(
       /Already applied/,
     );
-    expect(state.job.status).toBe("approved");
+    expect(state.job.status).toBe("skipped");
   });
 
   it("still lets a job through when nothing matches", async () => {

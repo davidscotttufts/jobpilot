@@ -19,10 +19,10 @@ Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is 
 and move on without opening a tab. Skills that deviate (e.g. `networking` keeps applied jobs and
 records `.match.application.id` as `relatedAppId`) say so inline.
 
-The server enforces the same rule independently: moving a job into `applying` - the `PATCH`
-below or the pilot's claim - 409s when it duplicates an application, with a message opening
-`Already applied (<kind>)`. That is the dedupe verdict, not a transient failure. Write the
-job's `skipped` result with that reason and move on; never retry the transition.
+The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the
+pilot's claim - 409s on a duplicate with a message opening `Already applied (<kind>)`. That is the
+verdict, not a transient failure, and the server has already written the job's `skipped` result.
+Move to the next item; never retry the transition or re-write the result.
 
 ## Before the submit click
 
@@ -46,13 +46,20 @@ Application + initial event on `applied`. Payload shapes:
 
 ```bash
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-# applied
-jq -n --arg t "$NOW" --argjson score <0-100> '{outcome:"applied", appliedAt:$t, matchScore:$score}'
+# applied - resumeId/resumeVariantId name the resume that was uploaded (see below)
+jq -n --arg t "$NOW" --argjson score <0-100> --arg rid "<resumeId>" --arg vid "<resumeVariantId>" \
+  '{outcome:"applied", appliedAt:$t, matchScore:$score}
+   + (if $rid == "" then {} else {resumeId:$rid} end)
+   + (if $vid == "" then {} else {resumeVariantId:$vid} end)'
 # failed (login failure, unexpected page, validation, crash)
 jq -n --arg r "<failReason>" --arg notes "<retryNotes>" '{outcome:"failed", failReason:$r, retryNotes:$notes}'
 # skipped (CAPTCHA, user cancelled, cap reached, ...)
 jq -n --arg r "<skipReason>" '{outcome:"skipped", skipReason:$r}'
 ```
+
+**Always send `resumeId` on `applied`**, and `resumeVariantId` too whenever a tailored variant was
+uploaded - including when `tailor-resume` reused an existing one. This is the only record of what the
+candidate actually submitted; without it the application's Documents card has nothing to show.
 
 **Forward the worker's `phases` when it returned one**, on any outcome - add it to the payload
 above rather than making a second call:

@@ -1,6 +1,6 @@
 "use client";
 
-import type { HTMLAttributes, ReactElement } from "react";
+import { type HTMLAttributes, type ReactElement, useMemo } from "react";
 import { Button, Stack, Typography } from "@mui/material";
 import {
   DataGrid,
@@ -9,6 +9,7 @@ import {
   type GridValidRowModel,
   type NoRowsOverlayPropsOverrides,
 } from "@mui/x-data-grid";
+import { EmptyState } from "./empty-state";
 
 interface DataTableProps<TRow extends GridValidRowModel>
   extends Omit<
@@ -26,6 +27,8 @@ interface DataTableProps<TRow extends GridValidRowModel>
    */
   errorTitle?: string;
   onRetry?: () => void;
+  /** Replaces the grid's "No rows" overlay, so every empty table reads like the rest of the app. */
+  emptyMessage?: string;
 }
 
 // The grid passes slot props through this interface; without the augmentation our two extra
@@ -64,10 +67,30 @@ function LoadErrorOverlay(props: LoadErrorOverlayProps): ReactElement {
 export function DataTable<TRow extends GridValidRowModel>(
   props: DataTableProps<TRow>,
 ): ReactElement {
-  const { rows, columns, getRowId, onRowClick, isRowSelectable, errorTitle, onRetry, ...rest } =
-    props;
+  const {
+    rows,
+    columns,
+    getRowId,
+    onRowClick,
+    isRowSelectable,
+    errorTitle,
+    onRetry,
+    emptyMessage,
+    slots,
+    ...rest
+  } = props;
 
-  const slots = errorTitle ? { ...rest.slots, noRowsOverlay: LoadErrorOverlay } : rest.slots;
+  // An error outranks an empty message: a failed fetch also leaves `rows` empty, and the emptiness
+  // copy would then be a claim about the data rather than about the fetch.
+  // A fresh slot component each render would remount the overlay instead of updating it.
+  const mergedSlots = useMemo(() => {
+    if (errorTitle) {
+      return { ...slots, noRowsOverlay: LoadErrorOverlay };
+    }
+    return emptyMessage
+      ? { noRowsOverlay: () => <EmptyState variant="inline" title={emptyMessage} />, ...slots }
+      : slots;
+  }, [errorTitle, emptyMessage, slots]);
   const slotProps = errorTitle
     ? { ...rest.slotProps, noRowsOverlay: { errorTitle, onRetry } }
     : rest.slotProps;
@@ -75,7 +98,7 @@ export function DataTable<TRow extends GridValidRowModel>(
   return (
     <DataGrid<TRow>
       {...rest}
-      slots={slots}
+      slots={mergedSlots}
       slotProps={slotProps}
       rows={rows}
       columns={columns}

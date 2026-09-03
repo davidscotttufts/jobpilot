@@ -11,7 +11,7 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { singleton } from "tsyringe";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { findAppliedDuplicate } from "./duplicate";
+import { type DuplicateLookup, findAppliedDuplicate } from "./duplicate";
 import { statusChangeOps } from "./status-change";
 
 export interface AppliedListFilters {
@@ -20,12 +20,6 @@ export interface AppliedListFilters {
   source?: string;
   search?: string;
   campaignId?: string;
-}
-
-export interface AppliedCheckQuery {
-  url?: string;
-  title?: string;
-  company?: string;
 }
 
 @singleton()
@@ -104,6 +98,45 @@ export class ApplicationService {
           where,
           include: {
             events: { orderBy: { createdAt: "asc" } },
+            resume: { select: { id: true, label: true, updatedAt: true } },
+            resumeVariantUsed: {
+              select: { id: true, resumeId: true, label: true, diffNotes: true, updatedAt: true },
+            },
+            resumeVariants: {
+              select: {
+                id: true,
+                resumeId: true,
+                label: true,
+                diffNotes: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+              orderBy: { createdAt: "desc" },
+            },
+            coverLetters: {
+              select: { id: true, createdAt: true },
+              orderBy: { createdAt: "desc" },
+            },
+            emailMessages: {
+              select: {
+                id: true,
+                subject: true,
+                fromName: true,
+                receivedAt: true,
+                classification: true,
+              },
+              orderBy: { receivedAt: "desc" },
+            },
+            contacts: {
+              select: {
+                id: true,
+                name: true,
+                title: true,
+                company: true,
+                email: true,
+                linkedinUrl: true,
+              },
+            },
           },
         }),
       { id, userId },
@@ -123,7 +156,17 @@ export class ApplicationService {
         kind: e.kind as ApplicationEventKind,
         source: e.source as ApplicationEventSource | null,
       })),
+      job: await this.findCampaignJob(row.campaignId, row.url),
     };
+  }
+
+  /** No FK exists: the job is matched by url within the campaign, so a single-apply row has none. */
+  private async findCampaignJob(campaignId: string | null, url: string) {
+    if (!campaignId) return null;
+    return this.prisma.job.findFirst({
+      where: { campaignId, url },
+      select: { description: true, salary: true, type: true },
+    });
   }
 
   async addEvent(userId: string, id: string, input: { kind: "note"; notes: string }) {
@@ -179,7 +222,7 @@ export class ApplicationService {
     return { id, status: toStatus };
   }
 
-  async check(userId: string, query: AppliedCheckQuery) {
+  async check(userId: string, query: DuplicateLookup) {
     const duplicate = await findAppliedDuplicate(this.prisma, userId, query);
     if (!duplicate) {
       return { applied: false as const, match: null };

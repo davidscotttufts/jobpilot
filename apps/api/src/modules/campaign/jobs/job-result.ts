@@ -1,9 +1,8 @@
 import type { CampaignJobResultInput, CampaignJobStatus } from "@jobpilot/contracts/campaign";
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Application, PrismaClient } from "@/generated/prisma/client";
 import { canonicalizeJobUrl } from "@/modules/application/job-url";
-import { normalizeCompanyName, normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
 import { toWireCampaignSource } from "../campaign.mapper";
 import { deriveCampaignSummary } from "../campaign.summary";
 
@@ -19,6 +18,38 @@ function requireAppliedAt(data: CampaignJobResultInput): Date {
     throw new Error("Applied job result has no applied timestamp.");
   }
   return new Date(data.appliedAt);
+}
+
+interface SubmittedResume {
+  resumeId: string | null;
+  resumeVariantId: string | null;
+}
+
+/**
+ * Resolves the resume the agent says it submitted, dropping anything the user doesn't own - the ids
+ * arrive from the agent, not from a route the auth guard has already scoped. A variant's own
+ * `resumeId` wins over a reported one so the two can never disagree.
+ */
+async function resolveSubmittedResume(
+  tx: Pick<PrismaClient, "resume" | "resumeVariant">,
+  userId: string,
+  data: CampaignJobResultInput,
+): Promise<SubmittedResume> {
+  if (data.resumeVariantId) {
+    const variant = await tx.resumeVariant.findFirst({
+      where: { id: data.resumeVariantId, resume: { userId } },
+      select: { id: true, resumeId: true },
+    });
+    if (variant) return { resumeId: variant.resumeId, resumeVariantId: variant.id };
+  }
+  if (data.resumeId) {
+    const resume = await tx.resume.findFirst({
+      where: { id: data.resumeId, userId },
+      select: { id: true },
+    });
+    if (resume) return { resumeId: resume.id, resumeVariantId: null };
+  }
+  return { resumeId: null, resumeVariantId: null };
 }
 
 /** Atomically records an idempotent terminal job result and its dependent writes. */
@@ -52,6 +83,12 @@ export async function writeJobResult(
     };
   }
 
+  // Read-only ownership checks on rows the transaction never writes, so they stay out of its lock window.
+  const submitted: SubmittedResume =
+    data.outcome === "applied"
+      ? await resolveSubmittedResume(prisma, userId, data)
+      : { resumeId: null, resumeVariantId: null };
+
   return prisma.$transaction(async (tx) => {
     const changed = await tx.job.updateMany({
       where: { campaignId, key, status: { notIn: [...CAMPAIGN_JOB_TERMINAL_OUTCOMES] } },
@@ -71,7 +108,9 @@ export async function writeJobResult(
         submitAttemptedAt: null,
       },
     });
+
     let raced = null;
+
     if (changed.count === 0) {
       raced = await tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });
       if (raced.status !== data.outcome) {
@@ -80,42 +119,59 @@ export async function writeJobResult(
     }
     const job =
       raced ?? (await tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } }));
-    const application =
-      data.outcome === "applied"
-        ? await tx.application.upsert({
-            where: { userId_url: { userId, url: canonicalizeJobUrl(job.url) } },
-            update: {},
-            create: {
-              userId,
-              url: canonicalizeJobUrl(job.url),
-              title: job.title,
-              company: job.company,
-              location: job.location,
-              board: job.board,
-              source: toWireCampaignSource(existing.campaign.source),
-              campaignId,
-              matchScore: job.matchScore,
-              matchReason: job.matchReason,
-              // Empty means the worker reported nothing usable; storing [] would read as "asked
-              // nothing" rather than "not recorded".
-              submittedAnswers: data.answers?.length ? data.answers : undefined,
-              normalizedTitle: normalizeJobTitle(job.title),
-              normalizedCompany: normalizeCompanyName(job.company),
-              appliedAt: requireAppliedAt(data),
-              events: {
-                create: { kind: "status_change", toStatus: "applied", source: "campaign" },
-              },
-            },
-          })
-        : null;
-    // tailor-resume runs before this row exists, so the variant cannot carry an applicationId at
-    // creation - link it here by the url it recorded.
-    if (application) {
-      await tx.resumeVariant.updateMany({
-        where: { jobUrl: job.url, applicationId: null, resume: { userId } },
+
+    const canonicalUrl = canonicalizeJobUrl(job.url);
+
+    let application: Application | null = null;
+    if (data.outcome === "applied") {
+      const appliedAt = requireAppliedAt(data);
+      const logApplied = {
+        create: { kind: "status_change", toStatus: "applied", source: "campaign" },
+      } as const;
+      // Empty means the worker reported nothing usable; storing [] would read as "asked nothing"
+      // rather than "not recorded", and a repost must not blank what the first attempt captured.
+      const answers = data.answers?.length ? { submittedAnswers: data.answers } : {};
+      application = await tx.application.upsert({
+        where: { userId_url: { userId, url: canonicalUrl } },
+        // A repost reuses this row, so the date has to move: the duplicate window measures from
+        // it, and a frozen date retires the guard for that url. A result already recorded
+        // (`count === 0`) must not, or the retry logs a second event.
+        update:
+          changed.count === 0 ? {} : { appliedAt, events: logApplied, ...submitted, ...answers },
+        create: {
+          userId,
+          url: canonicalUrl,
+          title: job.title,
+          company: job.company,
+          location: job.location,
+          board: job.board,
+          source: toWireCampaignSource(existing.campaign.source),
+          campaignId,
+          matchScore: job.matchScore,
+          matchReason: job.matchReason,
+          appliedAt,
+          events: logApplied,
+          ...submitted,
+          ...answers,
+        },
+      });
+
+      // Marks the variant used, which is what the resume page's prune filter reads. A reused variant
+      // already points at the application it was created for; that first link is the one to keep.
+      if (submitted.resumeVariantId) {
+        await tx.resumeVariant.updateMany({
+          where: { id: submitted.resumeVariantId, applicationId: null },
+          data: { applicationId: application.id },
+        });
+      }
+
+      // The letter is written before this row exists, so link it by the url it recorded.
+      await tx.coverLetter.updateMany({
+        where: { jobUrl: job.url, applicationId: null, userId },
         data: { applicationId: application.id },
       });
     }
+
     return {
       campaignJob: job,
       application,

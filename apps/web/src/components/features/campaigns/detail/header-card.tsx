@@ -48,13 +48,6 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
               sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
             >
               <CampaignStatusChip status={campaign.status} />
-            </Stack>
-
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
-            >
               <Typography variant="body2Muted">
                 {campaign.source} · Started {formatRelativeTime(campaign.startedAt)} ago
               </Typography>
