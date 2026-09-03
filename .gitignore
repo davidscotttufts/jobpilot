@@ -5,6 +5,8 @@ node_modules/
 
 # Skill scratch output. The rule lives in plugin/skills/_shared/setup.md "Scratch files".
 .temp/
+# A pilot cycle exports its CYCLE_ID here for the shell it drives; one file, rewritten per cycle.
+.temp_cycle_env
 *.pdf
 *.csv
 *.tsv
@@ -12,6 +14,9 @@ node_modules/
 # Repo root is source only. Ignore strays by location - `snapshot-*.md` guessed at
 # filenames and missed job-header.md / results-p2.md.
 /*.md
+# Screenshots dropped at the root while driving the app. Every real image lives under
+# apps/web/public/ or docs/images/, so nothing tracked is caught by this.
+/*.png
 !/README.md
 !/CLAUDE.md
 !/AGENTS.md
