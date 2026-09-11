@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev -p 4100",
+    "dev": "NODE_OPTIONS=--max-old-space-size=2048 next dev -p 4100",
     "build": "next build",
     "start": "next start -p 4100",
     "typegen": "next typegen",

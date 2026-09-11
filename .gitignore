@@ -5,8 +5,9 @@ node_modules/
 
 # Skill scratch output. The rule lives in plugin/skills/_shared/setup.md "Scratch files".
 .temp/
-# A pilot cycle exports its CYCLE_ID here for the shell it drives; one file, rewritten per cycle.
-.temp_cycle_env
+# A pilot cycle drops its id here for the shell it drives; rewritten every cycle, and the suffix
+# has already changed once (_env, then _id), so match the family rather than the filename.
+.temp_cycle_*
 *.pdf
 *.csv
 *.tsv
