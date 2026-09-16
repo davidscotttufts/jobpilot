@@ -92,6 +92,8 @@ export const emailMessageSchema = z.object({
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
+  links: z.array(z.object({ url: z.string(), text: z.string() })),
+  harvestedAt: z.date().nullable(),
   matchedApp: matchedAppSchema,
 });
 
@@ -122,3 +124,6 @@ export const syncResultSchema = z.object({
   fetched: z.number().int(),
   new: z.number().int(),
 });
+
+/** How many alert emails a harvest mark actually changed (`svc.markJobAlertsHarvested`). */
+export const jobAlertsHarvestedSchema = z.object({ harvested: z.number().int().min(0) });

@@ -32,6 +32,7 @@ import {
   pilotAgendaController,
   pilotClaimsController,
   pilotController,
+  pilotJobAlertsController,
   pilotJournalController,
   pilotQuestionsController,
   pilotSearchController,
@@ -94,6 +95,7 @@ const app = new Elysia()
       .use(pilotSearchController)
       .use(pilotAgendaController)
       .use(pilotClaimsController)
+      .use(pilotJobAlertsController)
       .use(pilotJournalController)
       .use(pilotQuestionsController)
       .use(promotionController)

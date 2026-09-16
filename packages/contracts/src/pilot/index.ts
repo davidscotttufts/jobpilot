@@ -1,6 +1,7 @@
 export * from "./agenda";
 export * from "./claim";
 export * from "./instructions";
+export * from "./job-alerts";
 export * from "./journal";
 export * from "./promotion";
 export * from "./question";

@@ -14,6 +14,7 @@ import {
   domainOf,
   type EmailHeader,
   encodeBase64Url,
+  extractLinks,
   extractPlainText,
   headerValue,
   parseAddress,
@@ -217,6 +218,7 @@ export class GmailProvider implements EmailProvider {
           fromDomain: domainOf(email),
           snippet: msg.data.snippet ?? "",
           rawBody: plain,
+          links: extractLinks(msg.data.payload),
           receivedAt: internal,
         });
       } catch {

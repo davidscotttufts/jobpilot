@@ -187,6 +187,15 @@ export class EmailService {
     return message;
   }
 
+  /** Only unharvested rows count, so a retried mark reports 0 instead of re-stamping. */
+  async markJobAlertsHarvested(userId: string, messageIds: string[]) {
+    const { count } = await this.prisma.emailMessage.updateMany({
+      where: { id: { in: messageIds }, account: { userId }, harvestedAt: null },
+      data: { harvestedAt: new Date() },
+    });
+    return { harvested: count };
+  }
+
   async denyMessage(userId: string, id: string) {
     await findOwned(
       (where) => this.prisma.emailMessage.findFirst({ where, select: { id: true } }),

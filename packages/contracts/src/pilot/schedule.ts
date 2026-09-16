@@ -150,6 +150,38 @@ export function nextWeeklyRun(
   return null;
 }
 
+/** The next instant any of `hours` strikes in `timeZone`, strictly after `now`; null with no hours. */
+export function nextDailyRun(hours: readonly number[], timeZone: string, now: Date): Date | null {
+  let soonest: Date | null = null;
+  for (const hour of hours) {
+    const at = nextWeeklyRun(WEEKDAYS, hour, timeZone, now);
+    if (at && (!soonest || at < soonest)) {
+      soonest = at;
+    }
+  }
+  return soonest;
+}
+
+/**
+ * The most recent instant any of `hours` struck in `timeZone`, at or before `now`.
+ *
+ * Checks today and yesterday in the zone: with at least one hour picked, one of those two days
+ * always holds a slot that has already passed.
+ */
+export function latestDailyRun(hours: readonly number[], timeZone: string, now: Date): Date | null {
+  let latest: Date | null = null;
+  for (const back of [0, 1]) {
+    const day = zonedDate(new Date(now.getTime() - back * DAY_MS), timeZone);
+    for (const hour of hours) {
+      const at = zonedWallClockToUtc(day, hour, timeZone);
+      if (at.getTime() <= now.getTime() && (!latest || at > latest)) {
+        latest = at;
+      }
+    }
+  }
+  return latest;
+}
+
 /** "Mon, Thu at 08:00" - the one-line schedule summary every surface shows. */
 export function describeWeeklySchedule(
   days: readonly number[],

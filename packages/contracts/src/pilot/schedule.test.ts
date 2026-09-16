@@ -3,6 +3,8 @@ import {
   describeWeeklySchedule,
   isPinnedWeekly,
   isTimeZone,
+  latestDailyRun,
+  nextDailyRun,
   nextWeeklyRun,
   pilotSearchScheduleFields,
 } from "./schedule";
@@ -142,5 +144,37 @@ describe("describeWeeklySchedule", () => {
 
   it("says so when nothing is selected", () => {
     expect(describeWeeklySchedule([], 8)).toBe("No days selected");
+  });
+});
+
+describe("daily runs", () => {
+  // Wednesday 2026-09-02, 12:30 in New York (16:30Z).
+  const now = new Date("2026-09-02T16:30:00Z");
+
+  it("finds the next slot later today", () => {
+    expect(wallClock(nextDailyRun([8, 17], NY, now)!, NY)).toBe("Wed, 09/02/2026, 17:00");
+  });
+
+  it("rolls the next slot to tomorrow once today's have passed", () => {
+    expect(wallClock(nextDailyRun([8, 11], NY, now)!, NY)).toBe("Thu, 09/03/2026, 08:00");
+  });
+
+  it("finds the latest slot earlier today", () => {
+    expect(wallClock(latestDailyRun([8, 17], NY, now)!, NY)).toBe("Wed, 09/02/2026, 08:00");
+  });
+
+  it("reaches back to yesterday before today's first slot", () => {
+    const early = new Date("2026-09-02T10:00:00Z"); // 06:00 in New York
+    expect(wallClock(latestDailyRun([8, 17], NY, early)!, NY)).toBe("Tue, 09/01/2026, 17:00");
+  });
+
+  it("counts a slot striking exactly now as passed", () => {
+    const onTheHour = new Date("2026-09-02T12:00:00Z"); // 08:00 in New York
+    expect(latestDailyRun([8], NY, onTheHour)!.getTime()).toBe(onTheHour.getTime());
+  });
+
+  it("returns null with no hours", () => {
+    expect(nextDailyRun([], NY, now)).toBeNull();
+    expect(latestDailyRun([], NY, now)).toBeNull();
   });
 });

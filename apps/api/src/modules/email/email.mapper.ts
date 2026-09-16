@@ -1,5 +1,6 @@
 import type { Classification, ReviewStatus } from "@jobpilot/contracts/email";
 import type { Prisma } from "@/generated/prisma/client";
+import type { EmailLink } from "./email.utils";
 
 /** An inbox message row with its union fields narrowed off plain `string`. */
 export type EmailMessageRow = Omit<
@@ -8,13 +9,15 @@ export type EmailMessageRow = Omit<
       matchedApp: { select: { id: true; title: true; company: true; status: true } };
     };
   }>,
-  "receivedAt" | "fetchedAt" | "scannedAt"
+  "receivedAt" | "fetchedAt" | "scannedAt" | "harvestedAt" | "links"
 > & {
+  links: EmailLink[];
   reviewStatus: ReviewStatus;
   classification: Classification | null;
   receivedAt: Date;
   fetchedAt: Date;
   scannedAt: Date | null;
+  harvestedAt: Date | null;
 };
 
 /** Serialize a raw message row: enums narrowed; Date fields kept as Date objects. */

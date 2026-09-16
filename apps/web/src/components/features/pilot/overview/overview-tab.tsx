@@ -6,6 +6,7 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
+import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";
 import { usePilotControls } from "../use-pilot-controls";
 import { AgendaPreview } from "./agenda-preview";
 import { OrchestrationPanel } from "./orchestration-panel";
@@ -48,6 +49,9 @@ export function OverviewTab(): ReactElement {
           <AgendaPreview />
         </Box>
         <Box sx={{ order: { xs: 5, md: 0 } }}>
+          <JobAlertsPanel />
+        </Box>
+        <Box sx={{ order: { xs: 6, md: 0 } }}>
           <RecentActivity />
         </Box>
       </Stack>

@@ -38,6 +38,8 @@ export const base = (over: Partial<AgendaInput> = {}): AgendaInput => ({
   scorePending: [],
   pausedCampaigns: [],
   inbox: { messageIds: [], count: 0 },
+  jobAlerts: null,
+  nextJobAlertsAt: null,
   approvedNetworking: [],
   networkingSentToday: 0,
   followups: [],

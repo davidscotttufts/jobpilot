@@ -157,4 +157,4 @@ curl -fsS -X POST -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
 4. Anything stuck - including an orchestrator check-in - exits through step 7's error batch. A `cycle` entry without `detail` is not a completion signal.
 5. Eligibility for `job.apply`/`question.answered` follows `../_shared/eligibility.md`; never skip silently.
 6. Draft promotions only for the instructions' platforms. Drafting never posts; `promo.post` publishes only a user-approved draft, verbatim - the server refuses the claim otherwise.
-7. Heartbeat `$CLAIM_ID` during long branches (`search.discover`, `campaign.scorePending`, `queue.drain`, `job.apply`) - after each worker return/row and at least every ~10 minutes - or the orchestrator reads legitimate long work as stuck and sends a check-in.
+7. Heartbeat `$CLAIM_ID` during long branches (`search.discover`, `inbox.jobAlerts`, `campaign.scorePending`, `queue.drain`, `job.apply`) - after each worker return/row and at least every ~10 minutes - or the orchestrator reads legitimate long work as stuck and sends a check-in.
