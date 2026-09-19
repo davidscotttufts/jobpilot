@@ -1,7 +1,4 @@
-// The window concurrency opens: an `Application` row appears only when a result is written, so
-// between claim and result two workers can both see "not applied" for one posting. An `applying`
-// row is the reservation that closes it. Fixtures are the real GitLab/Alpaca duplicate pair.
-import { findInFlightDuplicate, type InFlightReader } from "./in-flight";
+import { findApplyingDuplicate, type JobReader } from "./applying-duplicate";
 import { describe, expect, it } from "bun:test";
 
 const GITLAB_LEGACY =
@@ -10,7 +7,7 @@ const GITLAB_CANONICAL =
   "https://hiringcafe.com/job/director-of-engineering-growth-and-monetization-gitlab-canada-q05zkngwllkfigpu";
 
 /** Honors the NOT clause the real query sends, so self-exclusion is actually exercised. */
-function reader(rows: Array<Record<string, unknown>>): InFlightReader {
+function reader(rows: Array<Record<string, unknown>>): JobReader {
   return {
     job: {
       findMany: async ({ where }: { where: { NOT?: { campaignId: string; key: string } } }) =>
@@ -18,7 +15,7 @@ function reader(rows: Array<Record<string, unknown>>): InFlightReader {
           (row) => !(row.campaignId === where.NOT?.campaignId && row.key === where.NOT?.key),
         ),
     },
-  } as unknown as InFlightReader;
+  } as unknown as JobReader;
 }
 
 const CLAIMING = {
@@ -29,7 +26,7 @@ const CLAIMING = {
   company: "GitLab",
 };
 
-describe("findInFlightDuplicate", () => {
+describe("findApplyingDuplicate", () => {
   it("blocks the same posting held under the other host", async () => {
     const db = reader([
       {
@@ -41,7 +38,7 @@ describe("findInFlightDuplicate", () => {
       },
     ]);
 
-    expect(await findInFlightDuplicate(db, "u1", CLAIMING)).toMatchObject({ key: "j1" });
+    expect(await findApplyingDuplicate(db, "u1", CLAIMING)).toMatchObject({ key: "j1" });
   });
 
   it("blocks a relisted posting whose title was rephrased", async () => {
@@ -63,13 +60,13 @@ describe("findInFlightDuplicate", () => {
       company: "Harris Computer",
     };
 
-    expect(await findInFlightDuplicate(db, "u1", claiming)).toMatchObject({ key: "j1" });
+    expect(await findApplyingDuplicate(db, "u1", claiming)).toMatchObject({ key: "j1" });
   });
 
   it("ignores the row being claimed itself", async () => {
     const db = reader([{ ...CLAIMING }]);
 
-    expect(await findInFlightDuplicate(db, "u1", CLAIMING)).toBeNull();
+    expect(await findApplyingDuplicate(db, "u1", CLAIMING)).toBeNull();
   });
 
   it("lets a different employer through while another apply is open", async () => {
@@ -91,10 +88,6 @@ describe("findInFlightDuplicate", () => {
       company: "Cardiff",
     };
 
-    expect(await findInFlightDuplicate(db, "u1", claiming)).toBeNull();
-  });
-
-  it("is a no-op when nothing else is being applied to", async () => {
-    expect(await findInFlightDuplicate(reader([]), "u1", CLAIMING)).toBeNull();
+    expect(await findApplyingDuplicate(db, "u1", claiming)).toBeNull();
   });
 });

@@ -31,7 +31,7 @@ function transaction(rows: FakeApplication[]): { tx: GuardTransaction; writes: W
         rows.filter((r) => r.appliedAt >= where.appliedAt.gte),
     },
     job: {
-      // The in-flight reservation scan; nothing else is mid-apply in these cases.
+      // The applying-duplicate scan; nothing else is mid-apply in these cases.
       findMany: async () => [],
       updateManyAndReturn: async (args: Written) => {
         writes.push(args);

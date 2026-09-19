@@ -5,10 +5,9 @@ import {
   findFuzzyDuplicate,
 } from "@/modules/scoring/applied-duplicates";
 
-/** Rows already being applied to are the reservation; no separate table is needed. */
-export type InFlightReader = Pick<Prisma.TransactionClient, "job">;
+export type JobReader = Pick<Prisma.TransactionClient, "job">;
 
-export interface InFlightJob {
+export interface JobPosting {
   campaignId: string;
   key: string;
   url: string;
@@ -16,35 +15,27 @@ export interface InFlightJob {
   company: string;
 }
 
-/** Bounds the scan; a profile never has more than a handful of applies open at once. */
-const MAX_IN_FLIGHT = 100;
+/** A profile never has more than a handful of applies open at once. */
+const MAX_APPLYING = 100;
 
 /**
- * A duplicate of this job that another worker is applying to *right now*.
- *
- * The applied-duplicate rule only sees `Application` rows, which are written when a result is
- * recorded - minutes after the claim was granted. Serially that gap is invisible. Run two workers
- * and it is the whole apply: both claim the same posting under two URLs, both see no application,
- * and both submit. That is exactly how GitLab and Alpaca were applied to twice. Treating an
- * `applying` row as a reservation closes the window without a new table.
+ * An `applying` sibling of the same posting. `Application` rows land only when the result is
+ * recorded, so until then the applied-duplicate rule cannot see an apply in progress.
  */
-export async function findInFlightDuplicate(
-  db: InFlightReader,
+export async function findApplyingDuplicate(
+  db: JobReader,
   userId: string,
-  job: InFlightJob,
-): Promise<InFlightJob | null> {
+  job: JobPosting,
+): Promise<JobPosting | null> {
   const others = await db.job.findMany({
     where: {
       status: "applying",
       campaign: { userId },
       NOT: { campaignId: job.campaignId, key: job.key },
     },
-    take: MAX_IN_FLIGHT,
+    take: MAX_APPLYING,
     select: { campaignId: true, key: true, url: true, title: true, company: true },
   });
-  if (others.length === 0) {
-    return null;
-  }
 
   const canonical = canonicalizeJobUrl(job.url);
   const sameUrl = others.find((other) => canonicalizeJobUrl(other.url) === canonical);
