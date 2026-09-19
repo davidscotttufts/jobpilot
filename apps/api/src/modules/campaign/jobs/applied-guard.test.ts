@@ -1,5 +1,3 @@
-// `/applied/check` is advice the agent can skip; this is the gate a second application has to get
-// past, so it is tested on its own.
 import { DAY_MS } from "@/common/date/buckets";
 import { AlreadyAppliedError, type GuardTransaction, skipIfAlreadyApplied } from "./applied-guard";
 import { describe, expect, it } from "bun:test";
