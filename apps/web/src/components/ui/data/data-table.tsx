@@ -21,18 +21,14 @@ interface DataTableProps<TRow extends GridValidRowModel>
   getRowId?: (row: TRow) => string | number;
   onRowClick?: (row: TRow) => void;
   isRowSelectable?: (row: TRow) => boolean;
-  /**
-   * Set it when the feeding query failed. A failed fetch leaves `rows` empty, and the grid's
-   * own overlay would then say "No rows" - which is a claim about the data, not about the fetch.
-   */
+  /** Set when the query failed, so its empty `rows` do not read as "no data". */
   errorTitle?: string;
   onRetry?: () => void;
   /** Replaces the grid's "No rows" overlay, so every empty table reads like the rest of the app. */
   emptyMessage?: string;
 }
 
-// The grid passes slot props through this interface; without the augmentation our two extra
-// props are not assignable to `noRowsOverlay`.
+// Without this, `slotProps.noRowsOverlay` rejects the two extra props.
 declare module "@mui/x-data-grid" {
   interface NoRowsOverlayPropsOverrides {
     errorTitle?: string;
@@ -40,9 +36,9 @@ declare module "@mui/x-data-grid" {
   }
 }
 
-type LoadErrorOverlayProps = HTMLAttributes<HTMLDivElement> & NoRowsOverlayPropsOverrides;
-
-function LoadErrorOverlay(props: LoadErrorOverlayProps): ReactElement {
+function LoadErrorOverlay(
+  props: HTMLAttributes<HTMLDivElement> & NoRowsOverlayPropsOverrides,
+): ReactElement {
   const { errorTitle, onRetry } = props;
   return (
     <Stack
@@ -80,8 +76,6 @@ export function DataTable<TRow extends GridValidRowModel>(
     ...rest
   } = props;
 
-  // An error outranks an empty message: a failed fetch also leaves `rows` empty, and the emptiness
-  // copy would then be a claim about the data rather than about the fetch.
   // A fresh slot component each render would remount the overlay instead of updating it.
   const mergedSlots = useMemo(() => {
     if (errorTitle) {
