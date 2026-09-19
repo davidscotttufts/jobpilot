@@ -14,7 +14,7 @@ import { toBase64 } from "@/utils/base64";
 const RESIZE_DEBOUNCE_MS = 220;
 
 /** Module scope because the race is between mounts: a remount can pass the abort check before cleanup runs. */
-let sessionStartInFlight: Promise<unknown> | null = null;
+let pendingStart: Promise<unknown> | null = null;
 
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
 const SHIFT_ENTER_B64 = toBase64("\x1b[13;2u");
@@ -101,7 +101,7 @@ async function openSession(
 
   try {
     fit.fit();
-    sessionStartInFlight ??= startSession({
+    pendingStart ??= startSession({
       cols: terminal.cols,
       rows: terminal.rows,
       provider,
@@ -109,9 +109,9 @@ async function openSession(
       webUrl: window.location.origin,
       apiUrl: API_BASE_URL,
     }).finally(() => {
-      sessionStartInFlight = null;
+      pendingStart = null;
     });
-    await sessionStartInFlight;
+    await pendingStart;
     return !signal.aborted;
   } catch (err) {
     if (signal.aborted) {
