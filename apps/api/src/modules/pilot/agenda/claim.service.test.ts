@@ -123,7 +123,6 @@ describe("ClaimService snapshots", () => {
 const USER_ID = "5f0d4d0e-4f27-4a0a-9f4e-2b1c6f1f7f01";
 const CLAIM_ID = "4c965efd-b586-49ea-825b-1af715760116";
 
-/** Minimal harness for the heartbeat path, which the snapshot fake above does not reach. */
 function heartbeatDb(grantedAt: Date) {
   const writes: Record<string, unknown>[] = [];
   const db = {
@@ -167,7 +166,6 @@ describe("ClaimService heartbeat lifetime ceiling", () => {
   });
 
   it("holds a long-running claim to the ceiling instead of sliding it forward again", async () => {
-    // Granted 20 minutes ago: the ceiling leaves 5, where the TTL alone would hand back 15.
     const state = heartbeatDb(new Date(Date.now() - 20 * 60_000));
     await state.service.heartbeat(USER_ID, CLAIM_ID);
     const minutesOut = (state.expiry.getTime() - Date.now()) / 60_000;

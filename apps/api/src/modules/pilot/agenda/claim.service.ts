@@ -7,23 +7,13 @@ import { type Job, type PilotClaim, type Prisma, PrismaClient } from "@/generate
 import { AlreadyAppliedError } from "@/modules/campaign/jobs/applied-guard";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { toPilotClaim } from "../pilot.mapper";
-import { MAX_CLAIM_LIFETIME_MS } from "./constants";
 import { verifyGrant } from "./grant";
 import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
-
-/**
- * Holds a heartbeat-extended expiry to a fixed ceiling from when the claim was granted, so a
- * stuck-but-beating driver still expires no matter which kind of work it is running.
- */
-function lifetimeCap(claim: { grantedAt: Date } | null, proposedExpiry: number): number {
-  if (!claim) {
-    return proposedExpiry;
-  }
-  return Math.min(proposedExpiry, claim.grantedAt.getTime() + MAX_CLAIM_LIFETIME_MS);
-}
+/** Hard limit from `grantedAt`. A stuck driver that still heartbeats would never expire. */
+const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
 
 /** Either the claim, or the duplicate refusal the guard recorded a skip for. */
 type ClaimResult =
@@ -139,11 +129,12 @@ export class ClaimService {
     });
 
     const now = Date.now();
+    const ceiling = (open?.grantedAt.getTime() ?? Number.POSITIVE_INFINITY) + MAX_CLAIM_LIFETIME_MS;
     const updated = await this.prisma.pilotClaim.updateMany({
       where: { id, userId, releasedAt: null },
       data: {
         heartbeatAt: new Date(now),
-        expiresAt: new Date(lifetimeCap(open, now + CLAIM_TTL_MS)),
+        expiresAt: new Date(Math.min(now + CLAIM_TTL_MS, ceiling)),
       },
     });
     if (updated.count === 0) {
