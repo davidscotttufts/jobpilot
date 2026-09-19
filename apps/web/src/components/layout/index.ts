@@ -1,3 +1,1 @@
-export * from "./app-shell";
-export * from "./rail";
-export * from "./shell-config";
+export { AppShell } from "./app-shell";

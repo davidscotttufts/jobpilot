@@ -89,6 +89,40 @@ public class AgentSettingsTests
     }
 
     [Fact]
+    public void CodexConfigOverrides_TranslatesARemoteHttpMcpServer()
+    {
+        using var temp = new TempDir();
+        temp.File(
+            ".mcp.json",
+            """{"mcpServers":{"upwork":{"type":"http","url":"https://mcp.upwork.com/mcp"}}}""");
+
+        Assert.Equal(
+            ["mcp_servers.upwork.url=\"https://mcp.upwork.com/mcp\""],
+            AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance, _ => null));
+    }
+
+    [Fact]
+    public void CodexConfigOverrides_TranslatesStdioAndRemoteServersFromOneFile()
+    {
+        using var temp = new TempDir();
+        temp.File(
+            ".mcp.json",
+            """
+            {"mcpServers":{
+              "playwright":{"command":"npx","args":["@playwright/mcp@latest"]},
+              "upwork":{"type":"http","url":"https://mcp.upwork.com/mcp"},
+              "other":{"type":"http","url":"https://example.com/mcp"}
+            }}
+            """);
+
+        var overrides = AgentSettings.CodexConfigOverrides(temp.Root, NullLogger.Instance, _ => "/usr/bin/npx");
+
+        Assert.Contains("mcp_servers.upwork.url=\"https://mcp.upwork.com/mcp\"", overrides);
+        Assert.Contains("mcp_servers.other.url=\"https://example.com/mcp\"", overrides);
+        Assert.Contains("mcp_servers.playwright.command=\"/usr/bin/npx\"", overrides);
+    }
+
+    [Fact]
     public void CodexConfigOverrides_SkipsAnMcpServerWhoseCommandIsNotOnPath()
     {
         using var temp = new TempDir();
@@ -107,7 +141,7 @@ public class AgentSettingsTests
     }
 
     [Fact]
-    public void CodexConfigOverrides_SkipsAnMcpServerWithoutACommand()
+    public void CodexConfigOverrides_SkipsAnMcpServerWithNeitherACommandNorAUrl()
     {
         using var temp = new TempDir();
         temp.File(".mcp.json", """{"mcpServers":{"playwright":{"args":["pkg"]}}}""");

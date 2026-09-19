@@ -1,10 +1,9 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
+import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
-import {
-  ChangeEmailCard,
-  ChangePasswordCard,
-  ConnectedAccountsCard,
-} from "@/components/features/security";
+import { ChangeEmailCard } from "@/components/features/security/change-email-card";
+import { ChangePasswordCard } from "@/components/features/security/change-password-card";
+import { ConnectedAccountsCard } from "@/components/features/security/connected-accounts-card";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 export const metadata: Metadata = {
@@ -16,9 +15,7 @@ interface SecurityPageProps {
   searchParams: Promise<{ oauth?: string; provider?: string; reason?: string }>;
 }
 
-export default async function SecurityPage(props: SecurityPageProps): Promise<ReactElement> {
-  // OAuth callback result flags; read server-side to skip a Suspense dance.
-  const { oauth, provider, reason } = await props.searchParams;
+export default function SecurityPage(props: SecurityPageProps): ReactElement {
   return (
     <PageShell maxWidth="md">
       <PageHeader
@@ -28,7 +25,15 @@ export default async function SecurityPage(props: SecurityPageProps): Promise<Re
       />
       <ChangeEmailCard />
       <ChangePasswordCard />
-      <ConnectedAccountsCard oauthResult={oauth} provider={provider} reason={reason} />
+      {/* Only this card reads the OAuth callback flags off the URL. */}
+      <Suspense fallback={<Skeleton variant="rounded" height={220} />}>
+        <ConnectedAccounts searchParams={props.searchParams} />
+      </Suspense>
     </PageShell>
   );
+}
+
+async function ConnectedAccounts(props: SecurityPageProps): Promise<ReactElement> {
+  const { oauth, provider, reason } = await props.searchParams;
+  return <ConnectedAccountsCard oauthResult={oauth} provider={provider} reason={reason} />;
 }

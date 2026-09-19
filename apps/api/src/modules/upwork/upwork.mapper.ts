@@ -1,17 +1,10 @@
-import type {
-  PortfolioProject,
-  ScreeningAnswer,
-  UpworkProfileStatus,
-  UpworkProposalOutcome,
-  UpworkProposalSource,
-  UpworkProposalStatus,
-} from "@jobpilot/contracts/upwork";
-import type { UpworkProfile } from "@/generated/prisma/client";
+import type { PortfolioProject, ScreeningAnswer } from "@jobpilot/contracts/upwork";
+import type { UpworkInboxItem, UpworkProfile, UpworkProposal } from "@/generated/prisma/client";
 
-function parsePortfolio(json: string): PortfolioProject[] {
+function parseArray<T>(json: string): T[] {
   try {
     const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? (parsed as PortfolioProject[]) : [];
+    return Array.isArray(parsed) ? (parsed as T[]) : [];
   } catch {
     return [];
   }
@@ -23,37 +16,39 @@ export function toUpworkProfileDto(row: UpworkProfile) {
     currentTitle: row.currentTitle,
     currentOverview: row.currentOverview,
     currentHourlyRate: row.currentHourlyRate,
-    currentPortfolio: parsePortfolio(row.currentPortfolio),
+    currentPortfolio: parseArray<PortfolioProject>(row.currentPortfolio),
+    currentSkills: parseArray<string>(row.currentSkills),
     suggestedTitle: row.suggestedTitle,
     suggestedOverview: row.suggestedOverview,
     suggestedHourlyRate: row.suggestedHourlyRate,
-    suggestedPortfolio: parsePortfolio(row.suggestedPortfolio),
-    status: row.status as UpworkProfileStatus,
+    suggestedPortfolio: parseArray<PortfolioProject>(row.suggestedPortfolio),
+    suggestedSkills: parseArray<string>(row.suggestedSkills),
+    status: row.status,
     updatedAt: row.updatedAt,
     appliedAt: row.appliedAt,
   };
 }
 
 /** Decode a proposal row's JSON-encoded screening answers for the API shape. */
-export function decodeUpworkProposal<
-  T extends {
-    screeningAnswers: string;
-    status: string;
-    outcome: string | null;
-    source: string;
-    createdAt: Date;
-    updatedAt: Date;
-    submittedAt: Date | null;
-  },
->(proposal: T) {
+export function decodeUpworkProposal(proposal: UpworkProposal) {
   return {
     ...proposal,
     screeningAnswers: JSON.parse(proposal.screeningAnswers) as ScreeningAnswer[],
-    status: proposal.status as UpworkProposalStatus,
-    outcome: proposal.outcome as UpworkProposalOutcome | null,
-    source: proposal.source as UpworkProposalSource,
-    createdAt: proposal.createdAt,
-    updatedAt: proposal.updatedAt,
-    submittedAt: proposal.submittedAt,
+  };
+}
+
+export function toUpworkInboxItemDto(row: Omit<UpworkInboxItem, "raw">) {
+  return {
+    id: row.id,
+    upworkId: row.upworkId,
+    kind: row.kind,
+    title: row.title,
+    clientName: row.clientName,
+    jobUrl: row.jobUrl,
+    body: row.body,
+    status: row.status,
+    receivedAt: row.receivedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }

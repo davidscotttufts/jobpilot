@@ -1,7 +1,7 @@
 import { credentialPatchSchema, credentialSchema } from "@jobpilot/contracts/credential";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { deletedResponseSchema } from "@/types/response";
 import {
@@ -42,7 +42,7 @@ export const credentialController = new Elysia({
     detail: {
       summary: "Resolve login for domain",
       description:
-        "Resolves the effective login for a board domain by precedence (per-board override, then domain-scoped credential, then default-scoped credential) and returns the matching email/password with its source and scope, or null when no complete pair is found.",
+        "Resolves the effective login for a board domain: the credential scoped to the domain, else the one scoped to `default`. Returns the email/password with the credential id (the target for a password update) and matched scope, or null when no complete pair is found.",
     },
   })
   .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {

@@ -25,6 +25,7 @@ const AGENDA_ITEM_KINDS = [
   "job.rescanSkipped",
   "job.retryFailed",
   "strategy.bootstrap",
+  "upwork.syncInbox",
 ] as const;
 
 const AGENDA_SUBJECT_TYPES = [
@@ -38,6 +39,7 @@ const AGENDA_SUBJECT_TYPES = [
   "email",
   "board",
   "pilot",
+  "upwork",
 ] as const;
 
 const nullableString = z.string().nullable();
@@ -228,6 +230,14 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
     }),
   ),
   agendaItem(
+    "upwork.syncInbox",
+    "upwork",
+    z.object({
+      lastSyncedAt: z.date().nullable(),
+      unreadCount: z.number().int(),
+    }),
+  ),
+  agendaItem(
     "board.health",
     "board",
     z.object({
@@ -275,12 +285,12 @@ export const agendaClaimFieldsSchema = z.discriminatedUnion("kind", [
   ),
 ]);
 
-export const agendaItemSchema = z.intersection(
+const agendaItemSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),
   agendaClaimFieldsSchema,
 );
 
-export const agendaContentSchema = z.object({
+const agendaContentSchema = z.object({
   generatedAt: z.date(),
   items: z.array(agendaItemSchema),
   counts: z.object({

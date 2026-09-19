@@ -34,7 +34,7 @@ export const csvArray = <T extends z.ZodType>(item: T) =>
   z.preprocess((value) => (typeof value === "string" ? value.split(",") : value), z.array(item));
 
 /** Page metadata returned alongside a paginated collection. */
-export const paginationSchema = z.object({
+const paginationSchema = z.object({
   /** Current page number, starting from 1. */
   page: z.number().int(),
   /** Number of items per page. */
@@ -79,8 +79,6 @@ export const cursorQuerySchema = z.object({
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_CURSOR_PAGE_SIZE),
 });
-
-export type CursorQuery = z.infer<typeof cursorQuerySchema>;
 
 /** Build an `{ items, nextCursor }` response schema for a given item schema. */
 export const cursorPageSchema = <T extends z.ZodType>(item: T) =>

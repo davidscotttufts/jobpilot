@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
 import type { Metadata } from "next";
 import { AuthCard, LoginForm } from "@/components/features/auth";
-import { resolveOauthReason } from "@/components/features/auth/oauth";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -9,17 +8,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/login" },
 };
 
-interface LoginPageProps {
-  searchParams: Promise<{ oauth?: string; reason?: string }>;
-}
-
-export default async function LoginPage(props: LoginPageProps): Promise<ReactElement> {
-  const { oauth, reason } = await props.searchParams;
-  const oauthError =
-    oauth === "error" ? (resolveOauthReason(reason) ?? "Sign-in failed.") : undefined;
+export default function LoginPage(): ReactElement {
+  // The form reads its own OAuth error off the URL, so the whole page prerenders.
   return (
     <AuthCard title="Sign in" subtitle="Welcome back. Sign in to continue.">
-      <LoginForm oauthError={oauthError} />
+      <LoginForm />
     </AuthCard>
   );
 }

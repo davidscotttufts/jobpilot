@@ -17,18 +17,11 @@ model JobBoard {
   @@map("job_boards")
 }
 
-// A user's adoption of a global board: its credentials, ordering, and optional overrides.
+// A user's adoption of a global board. Logins live in Credential, keyed by the board's domain.
 model UserJobBoard {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
   jobBoardId String   @map("job_board_id")
-  email      String?
-  // Encrypted under the user's DEK, like every other stored secret.
-  password   String?
-  // Null = inherit the global board's value.
-  name       String?
-  searchUrl  String?  @map("search_url")
-  sortOrder  Int?     @map("sort_order")
   createdAt  DateTime @default(now()) @map("created_at")
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)

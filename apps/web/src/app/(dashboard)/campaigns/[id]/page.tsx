@@ -1,10 +1,11 @@
-import { cache, type ReactElement } from "react";
+import { cache, type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
 import { dataOrThrow } from "@/api/error";
 import { getFetchOptions } from "@/api/server";
 import { CampaignDetail } from "@/components/features/campaigns";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell } from "@/components/ui/layout";
 
 interface PageProps {
@@ -25,7 +26,18 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   return { title: campaign?.query ?? "Campaign" };
 }
 
-export default async function CampaignDetailPage(props: PageProps): Promise<ReactElement> {
+export default function CampaignDetailPage(props: PageProps): ReactElement {
+  // The header title is the campaign's own query, so it streams with the detail.
+  return (
+    <PageShell maxWidth="lg">
+      <Suspense fallback={<DetailSkeleton />}>
+        <Campaign params={props.params} />
+      </Suspense>
+    </PageShell>
+  );
+}
+
+async function Campaign(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
   const campaign = await getCampaign(id);
 
@@ -34,7 +46,7 @@ export default async function CampaignDetailPage(props: PageProps): Promise<Reac
   }
 
   return (
-    <PageShell maxWidth="lg">
+    <>
       <PageHeader
         eyebrow="Campaign"
         title={campaign.query}
@@ -42,6 +54,6 @@ export default async function CampaignDetailPage(props: PageProps): Promise<Reac
         backLabel="Workspace"
       />
       <CampaignDetail campaignId={id} />
-    </PageShell>
+    </>
   );
 }

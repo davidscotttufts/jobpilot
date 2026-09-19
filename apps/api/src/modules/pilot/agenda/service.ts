@@ -7,7 +7,7 @@ import {
 import { singleton } from "tsyringe";
 import { conflict } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
-import { PushService } from "@/common/push";
+import { PushService } from "@/common/push/push.service";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
@@ -22,6 +22,7 @@ import { gatherQuietCandidates } from "./candidates-maintenance";
 import { gatherPausedCampaigns } from "./candidates-paused";
 import { gatherAnsweredQuestions } from "./candidates-questions";
 import { gatherQueueDrain } from "./candidates-queue";
+import { gatherUpworkSync } from "./candidates-upwork";
 import { INBOX_SYNC_STALE_MS } from "./constants";
 import { writeDigestIfDue } from "./digest";
 import { runExpiry } from "./expiry";
@@ -42,7 +43,7 @@ import {
 } from "./gather-networking";
 import { promoteScoredPendingJobs } from "./promote";
 
-export const AGENDA_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
+const AGENDA_SNAPSHOT_TTL_MS = 5 * 60 * 1000;
 
 /** Validates a stored agenda snapshot and restores its date fields. */
 export function parseAgendaSnapshot(value: unknown): AgendaResponse {
@@ -112,6 +113,7 @@ export class AgendaService {
       interviewPreps,
       queueDrains,
       boardHealth,
+      upworkSync,
       searchCount,
     ] = await Promise.all([
       prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
@@ -130,6 +132,7 @@ export class AgendaService {
       gatherInterviewPreps(prisma, userId),
       gatherQueueDrain(prisma, userId, config.minScore, now),
       gatherBoardHealth(prisma, userId),
+      gatherUpworkSync(prisma, userId, now),
       prisma.pilotSearch.count({ where: { userId } }),
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";
@@ -196,6 +199,7 @@ export class AgendaService {
       interviewPreps,
       queueDrains,
       boardHealth,
+      upworkSync,
       strategyReviews: quiet.strategyReviews,
       rescanSkipped: quiet.rescanSkipped,
       retryFailed: quiet.retryFailed,

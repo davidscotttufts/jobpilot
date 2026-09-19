@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.1.38 - 2026-09-09
+
+### Changed
+
+- A rejected resume tailor now reports every rule violation at once, so you fix them in one pass
+  instead of one retry per problem.
+
+### Fixed
+
+- Pilot claims no longer return a 500 when a board has never been synced.
+
+## v2.1.37 - 2026-09-08
+
+### Changed
+
+- Board logins now live only under Settings, Credentials, scoped to the board's domain. Adding a
+  board no longer asks for an email and password, and the per-board edit dialog is gone. Existing
+  board logins move into credentials automatically.
+- A job board is linked by its domain, so the Add board dialog offers the catalog first and only
+  asks for a domain, name, and search URL when you pick "Another site".
+- Starting a campaign with a preset board that you have not linked (such as Upwork from "Find
+  jobs") now offers that board from the catalog and links it on submit, instead of falling back to
+  the first board on your list.
+
+## v2.1.36 - 2026-09-07
+
+### Added
+
+- Upwork now runs on the official Upwork MCP server in both runtimes, and the module has its own
+  inbox for incoming contract work.
+- The pilot refreshes the Upwork inbox as part of a normal cycle, so new Upwork work shows up
+  without a manual sync.
+- Admin and dashboard routes render inside a real App Shell, so the nav and layout stay put while
+  a page loads.
+
+### Changed
+
+- The web app moved to Next.js 16.3.4 and TypeScript 7, with Partial Prefetching enabled and the
+  public routes unblocked.
+- `/login` and `/inbox` are prerendered, so both open faster on a cold visit.
+- Campaign cards show the campaign name instead of its GUID.
+- Closed value sets moved onto Prisma enums, so invalid values are rejected by the database.
+
+### Fixed
+
+- The Upwork sync agenda item is now tied to the sync itself, so a finished sync closes its own
+  agenda item instead of leaving it open.
+
 ## v2.1.35 - 2026-08-30
 
 ### Added

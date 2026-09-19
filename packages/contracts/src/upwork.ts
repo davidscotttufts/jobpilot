@@ -10,7 +10,6 @@ export type UpworkProposalOutcome = z.infer<typeof upworkProposalOutcomeSchema>;
 
 export const UPWORK_PROPOSAL_SOURCES = ["manual", "search"] as const;
 const upworkProposalSourceSchema = z.enum(UPWORK_PROPOSAL_SOURCES);
-export type UpworkProposalSource = z.infer<typeof upworkProposalSourceSchema>;
 
 export const screeningAnswerSchema = z.object({
   question: z.string(),
@@ -49,21 +48,17 @@ export type ScreeningAnswer = z.infer<typeof screeningAnswerSchema>;
 export type UpworkProposalInput = z.infer<typeof createUpworkProposalSchema>;
 export type UpworkProposalPatch = z.infer<typeof patchUpworkProposalSchema>;
 
-// ── Client-quality scoring (smart filter) ───────────────────────────────────
-// Scraped from an Upwork posting + client panel. Every signal is nullable so a
-// partially-readable card degrades to a neutral score rather than crashing.
-export const PROPOSAL_BUCKETS = ["<5", "5-10", "10-15", "15-20", "20-50", "50+"] as const;
-const proposalsBucketSchema = z.enum(PROPOSAL_BUCKETS);
-export type ProposalsBucket = z.infer<typeof proposalsBucketSchema>;
-
-export const upworkClientSchema = z.object({
+// Read off the Upwork MCP: the search row carries every field except clientHires,
+// which needs the per-job get. Nullable throughout so a partial read degrades to a
+// neutral score rather than crashing.
+const upworkClientSchema = z.object({
   paymentVerified: z.boolean().nullish(),
-  hireRate: z.number().min(0).max(100).nullish(), // %
+  clientHires: z.number().int().min(0).nullish(), // lifetime hires, not a rate
   totalSpent: z.number().min(0).nullish(), // USD
   avgHourlyPaid: z.number().min(0).nullish(), // USD/hr
-  rating: z.number().min(0).max(5).nullish(),
+  rating: z.number().min(0).max(5).nullish(), // what freelancers scored this client
   reviewsCount: z.number().int().min(0).nullish(),
-  proposalsBucket: proposalsBucketSchema.nullish(),
+  proposalsCount: z.number().int().min(0).nullish(),
   postedHoursAgo: z.number().min(0).nullish(),
   country: z.string().nullish(),
   budget: z.number().min(0).nullish(), // fixed-price budget, USD
@@ -81,7 +76,6 @@ export interface UpworkQualityResult {
   skipReason: string | null; // set when verdict === "skip"
 }
 
-// ── Profile enhancement ──────────────────────────────────────────────────────
 export const portfolioProjectSchema = z.object({
   title: z.string().min(1),
   description: z.string().default(""),
@@ -99,10 +93,48 @@ export const updateUpworkProfileSchema = z.object({
   currentOverview: z.string().optional().nullable(),
   currentHourlyRate: z.string().optional().nullable(),
   currentPortfolio: z.array(portfolioProjectSchema).optional(),
+  currentSkills: z.array(z.string()).optional(),
   suggestedTitle: z.string().optional().nullable(),
   suggestedOverview: z.string().optional().nullable(),
   suggestedHourlyRate: z.string().optional().nullable(),
   suggestedPortfolio: z.array(portfolioProjectSchema).optional(),
+  suggestedSkills: z.array(z.string()).optional(),
   status: upworkProfileStatusSchema.optional(),
 });
 export type UpdateUpworkProfileInput = z.infer<typeof updateUpworkProfileSchema>;
+
+// What the sync skill mirrors out of the MCP, because the web cannot reach it.
+
+export const updateUpworkAccountSchema = z.object({
+  connectsBalance: z.number().int().min(0).optional().nullable(),
+});
+export type UpdateUpworkAccountInput = z.infer<typeof updateUpworkAccountSchema>;
+
+export const UPWORK_INBOX_KINDS = ["invitation", "offer", "message"] as const;
+const upworkInboxKindSchema = z.enum(UPWORK_INBOX_KINDS);
+export type UpworkInboxKind = z.infer<typeof upworkInboxKindSchema>;
+
+export const UPWORK_INBOX_STATUSES = ["unread", "archived"] as const;
+const upworkInboxStatusSchema = z.enum(UPWORK_INBOX_STATUSES);
+export type UpworkInboxStatus = z.infer<typeof upworkInboxStatusSchema>;
+
+const upworkInboxItemInputSchema = z.object({
+  upworkId: z.string().min(1),
+  kind: upworkInboxKindSchema,
+  title: z.string().min(1),
+  clientName: z.string().optional().nullable(),
+  jobUrl: z.string().optional().nullable(),
+  body: z.string().optional().nullable(),
+  receivedAt: z.iso.datetime(),
+  raw: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const syncUpworkInboxSchema = z.object({
+  items: z.array(upworkInboxItemInputSchema).max(200),
+});
+export type SyncUpworkInboxInput = z.infer<typeof syncUpworkInboxSchema>;
+
+export const patchUpworkInboxItemSchema = z.object({
+  status: upworkInboxStatusSchema,
+});
+export type PatchUpworkInboxItemInput = z.infer<typeof patchUpworkInboxItemSchema>;

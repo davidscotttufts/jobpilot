@@ -1,3 +1,50 @@
+enum UpworkProposalStatus {
+  draft
+  submitted
+  closed
+
+  @@map("upwork_proposal_status")
+}
+
+enum UpworkProposalOutcome {
+  hired
+  declined
+  no_response
+
+  @@map("upwork_proposal_outcome")
+}
+
+enum UpworkProposalSource {
+  manual
+  search
+
+  @@map("upwork_proposal_source")
+}
+
+enum UpworkProfileStatus {
+  empty
+  draft
+  approved
+  applied
+
+  @@map("upwork_profile_status")
+}
+
+enum UpworkInboxKind {
+  invitation
+  offer
+  message
+
+  @@map("upwork_inbox_kind")
+}
+
+enum UpworkInboxStatus {
+  unread
+  archived
+
+  @@map("upwork_inbox_status")
+}
+
 model UpworkProposal {
   id        String  @id @default(uuid())
   userId    String  @map("user_id")
@@ -11,14 +58,13 @@ model UpworkProposal {
   proposalText     String @default("") @map("proposal_text")
   screeningAnswers String @default("[]") @map("screening_answers") // JSON: { question: string, answer: string }[]
 
-  status  String  @default("draft") // draft | submitted | closed
-  outcome String? // when closed: hired | declined | no_response
+  status  UpworkProposalStatus  @default(draft)
+  outcome UpworkProposalOutcome?
   notes   String?
 
-  // Link back to the campaign Job this proposal was drafted from (set when
-  // launched from an Upwork search recommendation). `source` distinguishes a
-  // manually-pasted JD from a search-originated draft.
-  source     String  @default("manual") // manual | search
+  // Set when the draft came from an Upwork search recommendation rather than a
+  // pasted JD, which is what `source` records. Loose columns, not foreign keys.
+  source     UpworkProposalSource @default(manual)
   campaignId String? @map("campaign_id")
   jobKey     String? @map("job_key")
 
@@ -32,10 +78,9 @@ model UpworkProposal {
   @@map("upwork_proposals")
 }
 
-// One Upwork profile-enhancement record per user. Holds the scraped current
-// state and the agent-generated suggestions; `status` gates the live write
-// (only `approved` may be applied to Upwork). Portfolio columns are JSON arrays
-// of { title, description, url?, skills?: string[] }.
+// Only an `approved` row may be written back to Upwork. Portfolio columns hold JSON
+// { title, description, url?, skills?: string[] }[]; the MCP cannot write portfolio or
+// hourly rate, so those two stay advisory.
 model UpworkProfile {
   id        String  @id @default(uuid())
   userId    String  @unique @map("user_id")
@@ -45,15 +90,59 @@ model UpworkProfile {
   currentOverview   String? @map("current_overview")
   currentHourlyRate String? @map("current_hourly_rate")
   currentPortfolio  String  @default("[]") @map("current_portfolio")
+  currentSkills     String  @default("[]") @map("current_skills")
 
   suggestedTitle      String? @map("suggested_title")
   suggestedOverview   String? @map("suggested_overview")
   suggestedHourlyRate String? @map("suggested_hourly_rate")
   suggestedPortfolio  String  @default("[]") @map("suggested_portfolio")
+  suggestedSkills     String  @default("[]") @map("suggested_skills")
 
-  status    String    @default("empty") // empty | draft | approved | applied
+  status    UpworkProfileStatus @default(empty)
   updatedAt DateTime  @updatedAt @map("updated_at")
   appliedAt DateTime? @map("applied_at")
 
   @@map("upwork_profiles")
+}
+
+// The MCP runs in the user's local agent, so the browser cannot reach it. The
+// sync skill mirrors the account here and the web reads it like any other row.
+model UpworkAccount {
+  id        String  @id @default(uuid())
+  userId    String  @unique @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  connectsBalance Int? @map("connects_balance")
+
+  lastSyncedAt DateTime? @map("last_synced_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("upwork_accounts")
+}
+
+// `upworkId` is Upwork's own id and makes the sync idempotent; `raw` keeps the
+// payload so a later feature can read a field this model does not name yet.
+model UpworkInboxItem {
+  id        String  @id @default(uuid())
+  userId    String  @map("user_id")
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  upworkId String  @map("upwork_id")
+  kind     UpworkInboxKind
+  title    String
+  clientName String? @map("client_name")
+  jobUrl     String? @map("job_url")
+  body       String?
+
+  status     UpworkInboxStatus @default(unread)
+  receivedAt DateTime @map("received_at")
+  raw        String   @default("{}")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, upworkId])
+  @@index([userId, kind, receivedAt])
+  @@index([userId, status])
+  @@map("upwork_inbox_items")
 }

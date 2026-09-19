@@ -3,6 +3,7 @@ import { type ApplicationStatus, statusSchema } from "./application";
 
 export const EMAIL_PROVIDERS = ["gmail", "outlook", "imap"] as const;
 export const emailProviderSchema = z.enum(EMAIL_PROVIDERS);
+export type EmailProvider = z.infer<typeof emailProviderSchema>;
 
 export const CLASSIFICATIONS = [
   "interviewing",
@@ -52,7 +53,6 @@ export const oauthClientUpsertSchema = z.object({
   clientSecret: z.string().optional(),
 });
 
-export type EmailProviderName = z.infer<typeof emailProviderSchema>;
 export type Classification = z.infer<typeof classificationSchema>;
 export type ReviewStatus = z.infer<typeof reviewStatusSchema>;
 export type ScanMessageInput = z.infer<typeof scanMessageSchema>;

@@ -1,4 +1,4 @@
-export * from "./palette";
-export * from "./theme";
-export * from "./tokens";
+export { accent, editorial, feedback, line, surfaces } from "./palette";
+export { theme } from "./theme";
+export { gradients, motion, radii } from "./tokens";
 export { fontFamilies } from "./typography";

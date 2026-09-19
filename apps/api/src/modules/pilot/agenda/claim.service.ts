@@ -12,6 +12,8 @@ import { parseJobPayload } from "./job-mutations";
 import { parseAgendaSnapshot } from "./service";
 
 const CLAIM_TTL_MS = 15 * 60 * 1000;
+/** Hard limit from `grantedAt`. A stuck driver that still heartbeats would never expire. */
+const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
 
 /** Either the claim, or the duplicate refusal the guard recorded a skip for. */
 type ClaimResult =
@@ -121,9 +123,19 @@ export class ClaimService {
   }
 
   async heartbeat(userId: string, id: string) {
+    const open = await this.prisma.pilotClaim.findFirst({
+      where: { id, userId, releasedAt: null },
+      select: { grantedAt: true },
+    });
+
+    const now = Date.now();
+    const ceiling = (open?.grantedAt.getTime() ?? Number.POSITIVE_INFINITY) + MAX_CLAIM_LIFETIME_MS;
     const updated = await this.prisma.pilotClaim.updateMany({
       where: { id, userId, releasedAt: null },
-      data: { heartbeatAt: new Date(), expiresAt: new Date(Date.now() + CLAIM_TTL_MS) },
+      data: {
+        heartbeatAt: new Date(now),
+        expiresAt: new Date(Math.min(now + CLAIM_TTL_MS, ceiling)),
+      },
     });
     if (updated.count === 0) {
       const existing = await this.prisma.pilotClaim.findFirst({ where: { id, userId } });

@@ -10,17 +10,13 @@ const config: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.resolve(here, "../.."),
   cacheComponents: true,
+  partialPrefetching: true,
   reactCompiler: true,
   typedRoutes: true,
   allowedDevOrigins: ["127.0.0.1"],
   pageExtensions: ["ts", "tsx", "md", "mdx"],
   // Compile the workspace TS packages consumed by the app.
   transpilePackages: ["@jobpilot/contracts", "@jobpilot/api-client"],
-  // Next can only type-check via the TS6 JS API shim; `bun run typecheck` (TS7 native) is the gate.
-  typescript: { ignoreBuildErrors: true },
-  experimental: {
-    optimizePackageImports: ["@mui/material", "@mui/icons-material"],
-  },
 };
 
 // Plugins must be string references under Turbopack (loader options are serialized).

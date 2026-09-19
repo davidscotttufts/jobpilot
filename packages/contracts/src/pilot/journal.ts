@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
 
-const PILOT_JOURNAL_KINDS = [
+export const PILOT_JOURNAL_KINDS = [
   "cycle",
   "action",
   "observation",
@@ -51,7 +51,7 @@ export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
 export type PilotJournalPage = z.infer<typeof pilotJournalPageSchema>;
 
 /** Terminal outcome of one orchestrator cycle - the vocabulary shared by the journal detail and the host's sentinel. */
-export const PILOT_CYCLE_STATUSES = ["ok", "empty", "error"] as const;
+const PILOT_CYCLE_STATUSES = ["ok", "empty", "error"] as const;
 export const pilotCycleStatusSchema = z.enum(PILOT_CYCLE_STATUSES);
 export type PilotCycleStatus = z.infer<typeof pilotCycleStatusSchema>;
 
@@ -65,5 +65,3 @@ export const pilotCycleDetailSchema = z
     sleepSeconds: z.number().int().optional(),
   })
   .loose();
-
-export type PilotCycleDetail = z.infer<typeof pilotCycleDetailSchema>;

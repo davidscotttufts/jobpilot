@@ -2,18 +2,27 @@ import type { ResumeData } from "@jobpilot/contracts/resume";
 import type { z } from "zod/v4";
 import { unprocessable } from "@/common/errors";
 import type { tailorResumeSchema } from "../resume.schema";
-import { type VariantRewriteAudit, validateRewrites } from "../rewrite";
-import { applyStructure } from "../structure";
+import { buildCorpus } from "../rewrite/facts";
+import { validateHeadline, validateSummary } from "../rewrite/prose";
+import { type EntryRewriteAudit, validateRewrites } from "../rewrite/rewrite";
+import { applyStructure, type StructureAudit } from "../structure";
 import { tailorBase } from "../tailor";
 
 export type TailorVariantBody = z.infer<typeof tailorResumeSchema>;
+
+/** Persisted shape for `ResumeVariant.rewrites` (stringified JSON). */
+export interface VariantRewriteAudit {
+  experience: EntryRewriteAudit[];
+  /** Present only for variants that restructured sections. */
+  structure?: StructureAudit;
+}
 
 export interface TailoredVariant {
   content: ResumeData;
   /** Null when nothing was reworded or restructured. */
   audit: VariantRewriteAudit | null;
   rewordedBullets: number;
-  /** Soft review notes from both stages. */
+  /** Soft review notes from the restructure stage. */
   flags: string[];
 }
 
@@ -29,9 +38,18 @@ export function buildTailoredVariant(base: ResumeData, body: TailorVariantBody):
   }
 
   const restructured = structure?.content ?? base;
-  const rewrites = validateRewrites(restructured, body.bulletRewrites ?? []);
-  if (!rewrites.ok) {
-    throw unprocessable("Rewrite validation failed", rewrites.violations);
+  const corpus = buildCorpus(restructured);
+  const summary = body.summary?.trim();
+  const headline = body.headline?.trim();
+  const rewrites = validateRewrites(restructured, body.bulletRewrites ?? [], corpus);
+  // One throw for every field, so a request with a bad summary and a bad bullet takes one round trip.
+  const violations = [
+    ...(summary ? validateSummary(restructured.summary ?? "", summary, corpus) : []),
+    ...(headline ? validateHeadline(headline, corpus) : []),
+    ...rewrites.violations,
+  ];
+  if (violations.length > 0) {
+    throw unprocessable("Tailor validation failed", violations);
   }
 
   const content = tailorBase(restructured, {
@@ -53,9 +71,6 @@ export function buildTailoredVariant(base: ResumeData, body: TailorVariantBody):
         ? { experience: rewrites.audit, ...(structureAudit && { structure: structureAudit }) }
         : null,
     rewordedBullets,
-    flags: [
-      ...rewrites.audit.flatMap((entry) => entry.bullets.flatMap((bullet) => bullet.flags)),
-      ...(structureAudit?.flags ?? []),
-    ],
+    flags: structureAudit?.flags ?? [],
   };
 }

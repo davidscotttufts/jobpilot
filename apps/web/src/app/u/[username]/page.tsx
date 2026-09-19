@@ -1,4 +1,4 @@
-import { cache, type ReactElement } from "react";
+import { cache, type ReactElement, Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
@@ -6,6 +6,7 @@ import { dataOrThrow } from "@/api/error";
 import { getPublicFetchOptions } from "@/api/server";
 import { PortfolioView } from "@/components/features/portfolio";
 import { JsonLd } from "@/components/seo/json-ld";
+import { DetailSkeleton } from "@/components/ui/data";
 import { breadcrumbLd, personLd } from "@/lib/structured-data";
 
 interface PortfolioPageProps {
@@ -43,7 +44,16 @@ export async function generateMetadata(props: PortfolioPageProps): Promise<Metad
   };
 }
 
-export default async function PortfolioPage(props: PortfolioPageProps): Promise<ReactElement> {
+export default function PortfolioPage(props: PortfolioPageProps): ReactElement {
+  // Everything on the page is the profile, so the marketing shell is the shared App Shell.
+  return (
+    <Suspense fallback={<DetailSkeleton heights={[180, 120, 320]} />}>
+      <Portfolio params={props.params} />
+    </Suspense>
+  );
+}
+
+async function Portfolio(props: PortfolioPageProps): Promise<ReactElement> {
   const { username } = await props.params;
   const portfolio = await getPortfolio(username);
   if (!portfolio) {

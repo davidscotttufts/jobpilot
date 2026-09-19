@@ -33,7 +33,7 @@ export const queryKeys = {
   jobBoards: {
     all: ["job-boards"] as const,
     list: () => [...queryKeys.jobBoards.all, "list"] as const,
-    detail: (id: string) => [...queryKeys.jobBoards.all, "detail", id] as const,
+    catalog: () => [...queryKeys.jobBoards.all, "catalog"] as const,
   },
 
   applications: {
@@ -92,6 +92,17 @@ export const queryKeys = {
   upworkProfile: {
     all: ["upwork-profile"] as const,
     detail: () => [...queryKeys.upworkProfile.all, "detail"] as const,
+  },
+
+  upworkAccount: {
+    all: ["upwork-account"] as const,
+    detail: () => [...queryKeys.upworkAccount.all, "detail"] as const,
+  },
+
+  upworkInbox: {
+    all: ["upwork-inbox"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.upworkInbox.all, "list", filters] as const,
   },
 
   coverLetters: {
