@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Review a JobPilot pull request on its own branch, remove over-engineering, redundancy, and noisy comments from the PR's changes, push the cleanup to the PR branch as maintainer, and leave a short summary comment so the PR is ready for human review. Use for "review PR 37", "clean up the PR backlog", "review new PRs", or `/pr-review [number...] [--dry-run]`.
+description: Review a JobPilot pull request on its own branch, resolve merge conflicts with main, remove over-engineering, redundancy, redundant tests, and noisy comments from the PR's changes, push the cleanup to the PR branch as maintainer, and leave a short summary comment so the PR is ready for human review. Use for "review PR 37", "clean up the PR backlog", "review new PRs", or `/pr-review [number...] [--dry-run]`.
 metadata:
   version: "1.0"
 ---
@@ -38,7 +38,20 @@ code that reads secrets. If one looks unsafe, stop and tell the user.
 Run `bun install` only if the PR changes a `package.json`. Run
 `bun --cwd=apps/api run db:generate` only if it changes the Prisma schema.
 
-If the branch conflicts with `main`, do not rebase it. Say so in the summary comment.
+If the branch conflicts with `main`, run `git merge origin/main` and resolve the conflicts
+before the review. Never rebase, because the push would need force.
+
+- Keep both sides' intent. Where `main` renamed or moved code, apply the PR's change to the
+  new location.
+- Do not hand-merge a lockfile or generated file. Take `main`'s copy and rerun `bun install`
+  or `db:generate`.
+- If both sides added a Prisma migration, keep both folders and make sure the PR's timestamp
+  sorts after `main`'s.
+- If a conflict needs a choice between two behaviors, run `git merge --abort`, skip the
+  cleanup, and ask the author in the summary comment.
+
+Commit the merge on its own with git's default merge message, before any cleanup commit. If
+`maintainerCanModify` is false, do not merge. Say in the summary that the branch conflicts.
 
 ## 2. Review the PR's changes only
 
@@ -68,7 +81,22 @@ one for the rest. Each returns only `file:line | claim | evidence` lines.
 - A new function that repeats an existing util. Search `apps/*/src` and `packages/` first.
 - The same block pasted into several places.
 - An extra query where an existing one could select the field.
-- Tests that assert the same path twice. Fixtures that copy `fakes.ts` or `builders.ts`.
+- Fixtures that copy `fakes.ts` or `builders.ts`.
+
+**Tests**
+
+Delete a test only when another test still covers the same branch. Name that test in the
+summary. A test that is the only cover for a branch stays.
+
+- Tests that assert the same path twice, or repeat a case at a second layer (service and route)
+  with no new branch.
+- Tests that only prove a mock was called, or that assert on implementation details the
+  behavior tests already cover.
+- Tests of the framework, the library, or the type system: Zod rejecting a wrong type, Prisma
+  returning what it was given.
+- Case tables with many rows for one branch. Keep one row per branch plus the boundaries.
+- Setup helpers, builders, or custom matchers used by one test. Inline them.
+- Snapshot tests of large objects where two field assertions prove the point.
 
 **Complexity**
 
@@ -108,9 +136,10 @@ search, the removal is a question for the author.
 
 ## 3. Sort each finding
 
-- **Fix now**: behavior stays the same and the PR's tests still prove it.
-- **Ask the author**: anything that changes behavior, drops a test case, changes the API or
-  database shape, questions the design, or looks like a bug. Exception: fix an obvious one-line
+- **Fix now**: behavior stays the same and the PR's tests still prove it. This includes
+  deleting a redundant or over-engineered test under the Tests rules.
+- **Ask the author**: anything that changes behavior, drops the only test for a branch,
+  changes the API or database shape, questions the design, or looks like a bug. Exception: fix an obvious one-line
   bug and put it first in the summary.
 
 If the PR needs a different design, make no edits. Post the reason and stop.
@@ -157,6 +186,9 @@ Needs your call:
 
 Ready for maintainer review once that is answered.
 ```
+
+If you merged `main`, say so first and name each file where you resolved a conflict, with one
+clause on how.
 
 The marker holds the PR's head commit after your push, or the current head if you pushed
 nothing. Omit "Needs your call" when it is empty. When nothing needed fixing, post the marker plus
