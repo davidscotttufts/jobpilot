@@ -34,10 +34,9 @@ export type AppliedDuplicate =
   | { kind: "fuzzy"; score: number; application: DuplicateApplication };
 
 /**
- * Exact URL, else fuzzy title+company. Only the fuzzy arm is windowed - it is a similarity score
- * and would otherwise accumulate false positives forever, while an exact url is the same posting
- * however long ago it was. Shared by `/applied/check` and
- * the apply guard so advice and enforcement cannot drift apart.
+ * Exact URL at any age, else fuzzy title+company inside the window, where old near-matches would
+ * be false positives. Shared by `/applied/check` and the apply guard so advice and enforcement
+ * cannot drift apart.
  */
 export async function findAppliedDuplicate(
   db: DuplicateReader,
@@ -52,10 +51,6 @@ export async function findAppliedDuplicate(
       where: { userId_url: { userId, url } },
       select: MATCH_SELECT,
     });
-    // Deliberately unwindowed, unlike the fuzzy arm below. An exact canonical url is the same
-    // posting however long ago it was, and the costs are not symmetric: skipping a genuine repost
-    // costs one missed application, while re-applying puts a second one in an employer's inbox and
-    // cannot be taken back.
     if (exact) {
       return { kind: "url", application: exact };
     }
