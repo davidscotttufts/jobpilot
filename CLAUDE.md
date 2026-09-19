@@ -38,7 +38,7 @@ before assuming which one `DATABASE_URL` hits.
 Never run `biome check --write --unsafe`. It rewrites `cookie[KEY]!.set(…)` to `?.set(…)` and
 drops auth cookie writes.
 
-Invoke the `verify` skill before committing.
+Invoke the `verify` skill before committing. Commit with the `commit` skill.
 
 ## Code style
 
@@ -50,14 +50,3 @@ Invoke the `verify` skill before committing.
   named re-exports. `export *` only for a `package.json` `exports` target.
 - Split a test file past a few hundred lines by domain. Shared fixtures go in `fakes.ts` or
   `builders.ts`.
-
-## Commits
-
-A commit message is one short sentence and nothing else.
-
-- Imperative, under 70 characters, `type(scope):` prefix.
-- No body, no bullets, no trailers (`Co-Authored-By` included).
-
-```text
-fix(pilot): revive lastSyncedAt so claims stop returning 500
-```
