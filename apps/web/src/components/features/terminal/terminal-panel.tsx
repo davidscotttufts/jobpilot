@@ -13,11 +13,7 @@ import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 
-/**
- * Serializes session starts across every mount of this panel. `signal.aborted` is only consulted
- * after the token fetch resolves, and against a local API that round trip routinely beats effect
- * cleanup - so under StrictMode, or a quick remount, both mounts reach `startSession()`.
- */
+/** Module scope because the race is between mounts: a remount can pass the abort check before cleanup runs. */
 let sessionStartInFlight: Promise<unknown> | null = null;
 
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
@@ -105,8 +101,6 @@ async function openSession(
 
   try {
     fit.fit();
-    // `??=` so a second mount joins the first start rather than racing it; the winner clears the
-    // slot so a later, genuine restart is not blocked by a settled promise.
     sessionStartInFlight ??= startSession({
       cols: terminal.cols,
       rows: terminal.rows,
