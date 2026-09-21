@@ -80,12 +80,10 @@ export const markJobAlertsHarvestedSchema = z.object({
   messageIds: z.array(z.uuid()).min(1).max(200),
 });
 
-export type MarkJobAlertsHarvestedInput = z.infer<typeof markJobAlertsHarvestedSchema>;
-
-export const JOB_ALERT_RUN_OUTCOMES = ["done", "failed", "abandoned", "expired"] as const;
+const JOB_ALERT_RUN_OUTCOMES = ["done", "failed", "abandoned", "expired"] as const;
 
 /** The most recent harvest claim, and the campaign it opened when it opened one. */
-export const jobAlertsLastRunSchema = z.object({
+const jobAlertsLastRunSchema = z.object({
   startedAt: z.date(),
   finishedAt: z.date().nullable(),
   // Null while the run is still in flight.

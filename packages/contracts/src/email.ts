@@ -22,7 +22,7 @@ export const CLASSIFICATION_TO_STATUS: Partial<Record<Classification, Applicatio
 };
 
 /** A link captured at sync with the text a reader sees for it (`EmailMessage.links`). */
-export const emailLinkSchema = z.object({ url: z.string(), text: z.string() });
+const emailLinkSchema = z.object({ url: z.string(), text: z.string() });
 export const emailLinksSchema = z.array(emailLinkSchema);
 
 export type EmailLink = z.infer<typeof emailLinkSchema>;

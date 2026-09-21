@@ -14,7 +14,7 @@ import {
 } from "./constants";
 import type { AgendaJobAlerts } from "./types";
 
-export const JOB_ALERTS_KIND = "inbox.jobAlerts";
+const JOB_ALERTS_KIND = "inbox.jobAlerts";
 
 type JobAlertsSettings = PilotInstructionsConfig["jobAlerts"];
 
@@ -53,7 +53,7 @@ export function jobAlertsDue(
 }
 
 /** Sender-domain match that also takes subdomains (`e.theladders.com`). */
-export function senderDomainFilter(domains: string[]) {
+function senderDomainFilter(domains: string[]) {
   return domains.flatMap((domain) => [
     { fromDomain: domain },
     { fromDomain: { endsWith: `.${domain}` } },
