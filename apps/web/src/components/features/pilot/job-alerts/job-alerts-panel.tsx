@@ -1,28 +1,20 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type {
-  JobAlertsStatus,
-  PilotJobAlerts,
-  RunJobAlertsResult,
-} from "@jobpilot/contracts/pilot";
-import { PlayArrow, Schedule } from "@mui/icons-material";
+import type { JobAlertsStatus, PilotJobAlerts } from "@jobpilot/contracts/pilot";
+import { Schedule } from "@mui/icons-material";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { api } from "@/api/client";
-import { useApiMutation, useApiQuery } from "@/api/hooks";
-import { pilotQueries } from "@/api/queries";
+import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
 import { LinkButton } from "@/components/ui/buttons";
 import { QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { useToast } from "@/providers/notification-provider";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
+import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
-
-/** Poll fast only while a run is queued or in flight; otherwise the schedule barely moves. */
-const ACTIVE_POLL_MS = 15_000;
-const IDLE_POLL_MS = 120_000;
+import { runBlocker, useJobAlerts } from "./use-job-alerts";
 
 const OUTCOME_LABELS: Record<string, string> = {
   done: "finished",
@@ -30,13 +22,6 @@ const OUTCOME_LABELS: Record<string, string> = {
   abandoned: "was abandoned",
   expired: "timed out",
 };
-
-function isActive(status: JobAlertsStatus | undefined): boolean {
-  if (!status) return false;
-  return (
-    status.requestedAt !== null || (status.lastRun !== null && status.lastRun.outcome === null)
-  );
-}
 
 function scheduleSummary(status: JobAlertsStatus): string {
   const { settings } = status;
@@ -76,12 +61,8 @@ function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
  * does the harvesting, so every action here only queues work for its next cycle.
  */
 export function JobAlertsPanel(): ReactElement {
-  const toast = useToast();
   const [editing, setEditing] = useState(false);
-  const query = useApiQuery(pilotQueries.jobAlerts(), {
-    refetchInterval: (current) => (isActive(current.state.data) ? ACTIVE_POLL_MS : IDLE_POLL_MS),
-  });
-  const status = query.data;
+  const { query, status } = useJobAlerts();
 
   const save = useApiMutation<JobAlertsStatus, PilotJobAlerts>(
     (body) => api.pilot["job-alerts"].put(body),
@@ -90,18 +71,6 @@ export function JobAlertsPanel(): ReactElement {
       successMessage: "Job alert schedule saved.",
     },
   );
-  const run = useApiMutation<RunJobAlertsResult, void>(() => api.pilot["job-alerts"].run.post(), {
-    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.agenda()],
-    onSuccess: (result) => {
-      if (!result.queued) {
-        toast.info("No new job alert emails to harvest.");
-        return;
-      }
-      toast.success(
-        `Queued ${plural(result.pendingEmails, "alert email")} - the pilot picks it up on its next cycle.`,
-      );
-    },
-  });
 
   const blocker = status ? runBlocker(status) : null;
 
@@ -154,16 +123,7 @@ export function JobAlertsPanel(): ReactElement {
               <Button size="small" startIcon={<Schedule />} onClick={() => setEditing(true)}>
                 Schedule
               </Button>
-              <Button
-                size="small"
-                variant="contained"
-                startIcon={<PlayArrow />}
-                // A queued or running harvest already covers the mail a second click would queue.
-                disabled={blocker !== null || isActive(status) || run.isPending}
-                onClick={() => run.mutate()}
-              >
-                Run now
-              </Button>
+              <RunJobAlertsButton label="Run now" />
             </Stack>
           </Stack>
         )}
@@ -182,12 +142,4 @@ export function JobAlertsPanel(): ReactElement {
       )}
     </SectionCard>
   );
-}
-
-/** Why Run now is disabled, or null when it can run. */
-function runBlocker(status: JobAlertsStatus): string | null {
-  if (!status.mailboxConnected)
-    return "Connect Gmail in Settings → Email so there is mail to read.";
-  if (!status.pilotRunning) return "Start the pilot - it is what does the harvesting.";
-  return null;
 }
