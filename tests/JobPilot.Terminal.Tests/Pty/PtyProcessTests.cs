@@ -10,10 +10,55 @@ namespace JobPilot.Terminal.Tests;
 /// </summary>
 public sealed class PtyProcessTests
 {
-    private static PtyProcess CreatePty(params IPtyConnection[] connections)
+    private static PtyProcess CreatePty(params IPtyConnection[] connections) =>
+        CreatePty(_ => { }, connections);
+
+    private static PtyProcess CreatePty(Action<int> killTree, params IPtyConnection[] connections)
     {
         var remaining = new Queue<IPtyConnection>(connections);
-        return new PtyProcess(_ => remaining.Dequeue());
+        return new PtyProcess(_ => remaining.Dequeue(), killTree: killTree);
+    }
+
+    [Fact]
+    public void Stop_KillsTheTree_OfAChildThatIgnoresTheHangup()
+    {
+        var killed = new List<int>();
+        var stubborn = new FakePtyConnection { ExitsOnKill = false };
+        using var pty = CreatePty(killed.Add, stubborn);
+        pty.Start("claude", [], ".", 80, 24);
+
+        pty.Stop();
+
+        Assert.Equal([stubborn.Pid], killed);
+        Assert.Equal(1, stubborn.DisposeCalls);
+    }
+
+    [Fact]
+    public void Stop_LeavesTheTree_OfAChildThatExits()
+    {
+        var killed = new List<int>();
+        var connection = new FakePtyConnection();
+        using var pty = CreatePty(killed.Add, connection);
+        pty.Start("claude", [], ".", 80, 24);
+
+        pty.Stop();
+
+        Assert.Empty(killed);
+    }
+
+    [Fact]
+    public void Stop_ToleratesAnAlreadyReapedChild_AndAFailedTreeKill()
+    {
+        var reaped = new FakePtyConnection { WaitForExitThrows = true };
+        var stubborn = new FakePtyConnection { ExitsOnKill = false };
+        using var pty = CreatePty(_ => throw new InvalidOperationException("gone"), reaped, stubborn);
+
+        pty.Start("claude", [], ".", 80, 24);
+        pty.Start("claude", [], ".", 80, 24);
+        pty.Stop();
+
+        Assert.Equal(1, reaped.DisposeCalls);
+        Assert.Equal(1, stubborn.DisposeCalls);
     }
 
     [Fact]

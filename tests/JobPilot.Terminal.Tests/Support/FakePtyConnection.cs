@@ -36,7 +36,13 @@ internal sealed class FakePtyConnection : IPtyConnection
 
     public int ExitCode { get; set; }
 
-    public bool WaitForExit(int milliseconds) => true;
+    /// <summary>False models a child that ignores Kill's SIGHUP, as Claude Code does.</summary>
+    public bool ExitsOnKill { get; set; } = true;
+
+    public bool WaitForExitThrows { get; set; }
+
+    public bool WaitForExit(int milliseconds) =>
+        WaitForExitThrows ? throw new InvalidOperationException("No child process") : ExitsOnKill;
 
     public void Kill()
     {

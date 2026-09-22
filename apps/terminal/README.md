@@ -45,6 +45,9 @@ root may be user state and must not be pruned.
 
 - Explicit session stops still raise a requested exit for Pilot waiters, but never produce a crash banner.
 - Provider replacement disowns the outgoing PTY generation before stopping it.
+- A stopped PTY child is gone before `Stop()` returns: Pty.Net's Unix kill is a SIGHUP, which Claude Code
+  ignores, so a child still alive after a short grace has its whole process tree killed (its Playwright MCP
+  servers included).
 - A caller cancellation must propagate through Pilot probes, reports, and command submission; transport failures
   alone fail open to the orchestrator ladder.
 - SSE re-pairing is heartbeat-bounded: the next frame detects changed credentials and reconnects without backoff.

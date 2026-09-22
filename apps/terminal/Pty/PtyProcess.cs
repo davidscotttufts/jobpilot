@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -30,8 +31,12 @@ public sealed class PtyProcess : IPty
     // Give Pty.Net's exit event a chance to deliver the real code before the EOF fallback reports one.
     private static readonly TimeSpan EofExitGrace = TimeSpan.FromMilliseconds(500);
 
+    // How long a SIGHUP'd provider gets to exit on its own before its whole tree is killed.
+    private static readonly TimeSpan StopGrace = TimeSpan.FromSeconds(3);
+
     private readonly Lock connectionLock = new();
     private readonly Func<PtyOptions, IPtyConnection> spawner;
+    private readonly Action<int> killTree;
     private readonly ILogger<PtyProcess> logger;
 
     private IPtyConnection? connection;
@@ -39,15 +44,19 @@ public sealed class PtyProcess : IPty
     private int exitRaisedGeneration;
 
     public PtyProcess(ILogger<PtyProcess> logger)
-        : this(SpawnWithPtyNet, logger)
+        : this(SpawnWithPtyNet, logger, KillProcessTree)
     {
     }
 
     // Test seam: production spawning goes through Pty.Net's static provider.
-    internal PtyProcess(Func<PtyOptions, IPtyConnection> spawner, ILogger<PtyProcess>? logger = null)
+    internal PtyProcess(
+        Func<PtyOptions, IPtyConnection> spawner,
+        ILogger<PtyProcess>? logger = null,
+        Action<int>? killTree = null)
     {
         this.spawner = spawner;
         this.logger = logger ?? NullLogger<PtyProcess>.Instance;
+        this.killTree = killTree ?? KillProcessTree;
     }
 
     /// <inheritdoc />
@@ -160,7 +169,41 @@ public sealed class PtyProcess : IPty
         // On Unix, Kill and Dispose throw ESRCH for a child that already exited. That is still a
         // successful stop, so both run regardless. Kill raises ProcessExited with its own generation.
         BestEffort(oldConnection.Kill);
+        EnsureExited(oldConnection);
         BestEffort(oldConnection.Dispose);
+    }
+
+    /// <summary>
+    /// Pty.Net's Unix Kill is a SIGHUP, which Claude Code ignores: a restart used to leave the old
+    /// session running with its Playwright servers holding the browser profiles the new one needs.
+    /// The tree is killed while the provider is still alive - afterwards its children are orphans
+    /// nothing can find.
+    /// </summary>
+    private void EnsureExited(IPtyConnection stopped)
+    {
+        bool exited;
+        try
+        {
+            exited = stopped.WaitForExit((int)StopGrace.TotalMilliseconds);
+        }
+        catch
+        {
+            // Pty.Net throws for a child it already reaped.
+            return;
+        }
+        if (exited)
+        {
+            return;
+        }
+
+        logger.LogWarning("PTY child {Pid} ignored the hangup; killing its process tree.", stopped.Pid);
+        BestEffort(() => killTree(stopped.Pid));
+    }
+
+    private static void KillProcessTree(int pid)
+    {
+        using var process = Process.GetProcessById(pid);
+        process.Kill(entireProcessTree: true);
     }
 
     public void Dispose() => Stop();
