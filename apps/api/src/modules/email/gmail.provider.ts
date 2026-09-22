@@ -51,6 +51,33 @@ export function scopeCanRead(scope: string | null | undefined): boolean {
   return grants(scope, GMAIL_READ_SCOPE);
 }
 
+/** One page of `users.history.list`, reduced to what the sync reads. */
+export interface HistoryPage {
+  messageIds: string[];
+  historyId: string | null;
+  nextPageToken: string | null;
+}
+
+/**
+ * Every message added since the cursor, across all pages. Each page reports the mailbox's *current*
+ * `historyId`, so saving it after reading only the first page (100 records) skips the rest for good -
+ * which is what a sync after a few days offline used to do.
+ */
+export async function readAddedMessageIds(
+  fetchPage: (pageToken?: string) => Promise<HistoryPage>,
+): Promise<{ messageIds: string[]; historyId: string | null }> {
+  const messageIds = new Set<string>();
+  let historyId: string | null = null;
+  let pageToken: string | undefined;
+  do {
+    const page = await fetchPage(pageToken);
+    for (const id of page.messageIds) messageIds.add(id);
+    historyId = page.historyId ?? historyId;
+    pageToken = page.nextPageToken ?? undefined;
+  } while (pageToken);
+  return { messageIds: [...messageIds], historyId };
+}
+
 export class GmailProvider implements EmailProvider {
   private makeOAuthClient(config: OAuthClientConfig): OAuth2Client {
     return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
@@ -161,19 +188,25 @@ export class GmailProvider implements EmailProvider {
 
     if (account.historyId) {
       try {
-        const res = await gmail.users.history.list({
-          userId: "me",
-          startHistoryId: account.historyId,
-          historyTypes: ["messageAdded"],
+        const startHistoryId = account.historyId;
+        const added = await readAddedMessageIds(async (pageToken) => {
+          const res = await gmail.users.history.list({
+            userId: "me",
+            startHistoryId,
+            historyTypes: ["messageAdded"],
+            pageToken,
+          });
+          return {
+            messageIds: (res.data.history ?? []).flatMap((h) =>
+              (h.messagesAdded ?? []).flatMap((ma) => (ma.message?.id ? [ma.message.id] : [])),
+            ),
+            historyId: res.data.historyId ?? null,
+            nextPageToken: res.data.nextPageToken ?? null,
+          };
         });
 
-        newHistoryId = res.data.historyId ?? account.historyId;
-
-        for (const h of res.data.history ?? []) {
-          for (const ma of h.messagesAdded ?? []) {
-            if (ma.message?.id) messageIds.push(ma.message.id);
-          }
-        }
+        newHistoryId = added.historyId ?? account.historyId;
+        messageIds.push(...added.messageIds);
       } catch {
         // history cursor too old - fall back to list
       }
