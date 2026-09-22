@@ -1,14 +1,16 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import { BOARD_HEALTH_MIN_FAILURES, REASON_CAP } from "./constants";
+import { BOARD_HEALTH_COOLDOWN_MS, BOARD_HEALTH_MIN_FAILURES, REASON_CAP } from "./constants";
+import { claimDamped, latestClaimBySubject } from "./gather-jobs";
 import type { AgendaBoardHealth } from "./types";
 
 const BOARD_HEALTH_SCAN = 500;
 const BOARD_HEALTH_WINDOW = 50;
 
-/** Finds boards with a recent consecutive apply-failure streak. */
+/** Finds boards with a recent consecutive apply-failure streak, excluding ones probed within the cooldown. */
 export async function gatherBoardHealth(
   prisma: PrismaClient,
   userId: string,
+  now: Date,
 ): Promise<AgendaBoardHealth[]> {
   const rows = await prisma.job.findMany({
     where: {
@@ -69,5 +71,15 @@ export async function gatherBoardHealth(
       },
     });
   }
-  return candidates.sort((left, right) => right.consecutiveFailures - left.consecutiveFailures);
+
+  const latest = await latestClaimBySubject(
+    prisma,
+    userId,
+    "board.health",
+    candidates.map((c) => c.board),
+  );
+  const due = candidates.filter(
+    (c) => !claimDamped(latest.get(c.board), now, BOARD_HEALTH_COOLDOWN_MS),
+  );
+  return due.sort((left, right) => right.consecutiveFailures - left.consecutiveFailures);
 }

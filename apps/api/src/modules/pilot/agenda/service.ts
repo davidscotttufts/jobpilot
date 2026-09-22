@@ -191,7 +191,7 @@ export class AgendaService {
       gatherInterviewReplies(prisma, userId),
       gatherInterviewPreps(prisma, userId),
       gatherQueueDrain(prisma, userId, config.minScore, now),
-      gatherBoardHealth(prisma, userId),
+      gatherBoardHealth(prisma, userId, now),
       prisma.pilotSearch.count({ where: { userId } }),
     ]);
     const awaitingSetup = searchCount === 0 || goals.trim() === "";

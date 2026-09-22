@@ -58,6 +58,13 @@ export const QUEUE_BATCH = 5;
 export const REASON_CAP = 3;
 /** A board is unhealthy once its most recent apply outcomes are this many failures deep. */
 export const BOARD_HEALTH_MIN_FAILURES = 3;
+/**
+ * Minimum gap between board-health probes of the same board. A hard-blocked board (paywall, bot
+ * wall) never produces a fresh success to clear its streak, so without this the item re-pins every
+ * cycle forever - confirmed livelocking on theladders.com at ~1 probe/3min. The failing rows stay in
+ * the scan window regardless; only the probe cadence is throttled.
+ */
+export const BOARD_HEALTH_COOLDOWN_MS = 6 * HOUR_MS;
 
 /** Row cap for unbounded gather/expiry scans, matching the module's take: 200 list precedent. */
 export const GATHER_CAP = 200;

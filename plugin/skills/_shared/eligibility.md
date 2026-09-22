@@ -11,6 +11,11 @@
     - `clearance` → `Active security clearance required` - raised for everyone.
   - Quote the JD's words verbatim in a sponsorship reason. It reads the digest you sent, so populate `descriptionExcerpt` and `requirements` or it finds nothing. Absent means the posting is **silent**, not that sponsorship is offered - see the never-skip list.
 - `CAPTCHA - apply manually via the apply skill` / `Payment required` - surface during apply, not scoring.
+- `Payment required (<board> Premium paywall)` for a board confirmed hard-paywalled with no free apply
+  path at all - skip at ingestion, before scoring, rather than rediscovering it per job. Currently:
+  `theladders.com` (every posting 302s to an Apply4Me/Premium checkout; confirmed repeatedly, see
+  `../pilot/kinds/inbox.jobAlerts.md` step 4). Add a board here only after the same confirmation -
+  a slow login or an occasional CAPTCHA is not this.
 
 **Never skip for:** onsite/hybrid/other city when `willingToRelocate` is true or `preferredLocations` is empty/`"Anywhere"` (score on fit, not geography); a sparse JD (read and rescore first); 1099/contractor work; defense/federal industry absent a JD-stated citizenship/clearance requirement; **a role below your level** (Junior/Mid when your résumé is Senior) or one asking fewer years than you have - over-qualification is full marks on experience; judge on skills fit; a JD that is **silent** on sponsorship when the profile requires it - proceed, and append a short risk note to `matchReason` (e.g. `sponsorship unstated in JD`) - the question usually surfaces on the application form, not the posting.
 

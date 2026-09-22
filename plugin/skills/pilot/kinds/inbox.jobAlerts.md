@@ -115,7 +115,10 @@ required; when the alert does not name one, send `Unknown (<board domain>)` - th
 the posting replaces it. Key rows `alert-<board-slug>-<posting-id-or-slug>`
 - shell-safe, and brace every `${CID}` in strings. Already-applied rows are created `pending` and then
 immediately given `{outcome:"skipped", skipReason:"Already applied (<kind>)"}` via `/jobs/<key>/result`;
-ineligible rows likewise with their reason (`../../_shared/eligibility.md`). Rows below
+ineligible rows likewise with their reason (`../../_shared/eligibility.md`). A posting whose board is
+on `../../_shared/eligibility.md`'s hard-paywall list (`theladders.com`) skips the same way, immediately,
+with `skipReason:"Payment required (<board> Premium paywall)"` - never score or hand it to a worker;
+scoring it wastes a call and applying wastes a browser cycle on a checkout page. Rows below
 `minScore` stay `pending` with their score: the server records their skip, so the campaign keeps the
 full ranked list.
 
