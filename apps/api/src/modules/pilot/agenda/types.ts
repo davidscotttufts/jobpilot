@@ -200,7 +200,7 @@ export interface AgendaInput {
   dueQueries: AgendaDueQuery[];
   // No searches yet, or no goals to derive them from: the pilot still needs setup.
   awaitingSetup: boolean;
-  // Earliest nextRunAt across live searches; the idle sleep clamps to it so a backed-off pilot wakes on time.
+  // Earliest time a search can run (damper included); the idle sleep clamps to it so a backed-off pilot wakes on time.
   nextSearchRunAt: Date | null;
   // Existing campaigns with pending rows lacking a score or digest; emitted only when the apply
   // pipeline is empty.

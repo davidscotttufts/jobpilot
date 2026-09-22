@@ -104,9 +104,37 @@ export async function latestClaimBySubject(
 export function claimDamped(last: LatestClaim | undefined, now: Date, cooldownMs: number): boolean {
   if (!last) return false;
   if (last.releasedAt == null) return true;
-  const crashRecovered = last.outcome === "expired" || last.outcome === "abandoned";
+  return now < dampedUntil(last.releasedAt, last.outcome, cooldownMs);
+}
+
+function dampedUntil(releasedAt: Date, outcome: string | null, cooldownMs: number): Date {
+  const crashRecovered = outcome === "expired" || outcome === "abandoned";
   const cap = crashRecovered ? Math.min(cooldownMs, CRASH_RETRY_MS) : cooldownMs;
-  return now.getTime() - last.releasedAt.getTime() < cap;
+  return new Date(releasedAt.getTime() + cap);
+}
+
+/**
+ * When the earliest search can actually run. A damped search reports when its damper lifts, not its
+ * overdue `nextRunAt` - that reads as "due now" and pins the idle sleep at its floor, so a crash-
+ * recovered search had the pilot cycling on an empty agenda every 30s for two hours. An in-flight
+ * one is skipped: whoever holds the claim is already awake.
+ */
+export function earliestSearchWake(
+  searches: { id: string; nextRunAt: Date }[],
+  latest: Map<string, LatestClaim>,
+  cooldownMs: number,
+): Date | null {
+  let earliest: Date | null = null;
+  for (const search of searches) {
+    const last = latest.get(search.id);
+    if (last && last.releasedAt == null) continue;
+    const liftsAt = last?.releasedAt
+      ? dampedUntil(last.releasedAt, last.outcome, cooldownMs)
+      : null;
+    const wake = liftsAt && liftsAt > search.nextRunAt ? liftsAt : search.nextRunAt;
+    if (!earliest || wake < earliest) earliest = wake;
+  }
+  return earliest;
 }
 
 /** Campaigns whose newest claim of `kind` no longer damps them - see {@link claimDamped}. */
@@ -277,7 +305,7 @@ export async function attachWarmContacts(
 
 export interface DuePilotSearches {
   due: AgendaDueQuery[];
-  /** Earliest nextRunAt across all searches - the idle sleep clamps to it. */
+  /** Earliest time a search can run, damper included - the idle sleep clamps to it. */
   nextSearchRunAt: Date | null;
 }
 
@@ -341,8 +369,7 @@ export async function duePilotSearches(
     maxApplications: r.maxApplications ?? undefined,
   });
 
-  // Rows arrive ordered by nextRunAt, so the head is the earliest.
-  const nextSearchRunAt = rows[0].nextRunAt;
+  const nextSearchRunAt = earliestSearchWake(rows, latest, SEARCH_CLAIM_COOLDOWN_MS);
 
   const due = rows.filter((r) => r.nextRunAt <= now && claimable(r)).map(toEntry);
   if (due.length > 0) {
