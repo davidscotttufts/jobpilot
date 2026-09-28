@@ -54,7 +54,7 @@ Let `BASE_ID` be the chosen id.
 ## Step 3: Extract Structure if Missing
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID"
 ```
 
 If `content` is `null`, delegate to extract-resume so the logic stays in one place:
@@ -72,7 +72,7 @@ Skip this step when `hasData: true`.
 ## Step 4: Decide Reuse vs Create
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$BASE_ID/variants"
 ```
 
 **Shortlist first.** Rank the list response by title similarity and fetch `GET /api/resumes/variants/<id>` for the **top 5** only - a base with 60 variants would otherwise cost 60 fetches per job.
@@ -152,7 +152,7 @@ Tailoring changes presentation, not facts:
 On 422, read `details`, fix, resend - never drop the guardrail. Non-blocking **`flags`** name tech absent from the resume and a `title` sharing no word with the original (`retitled: "X" -> "Y"`). Echo them - they're what you'll be asked about in an interview.
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg summary "<2-3 sentence tailored summary>" \
                 --arg label "<Company> - <Title>" \
@@ -165,7 +165,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 With a restructure, add `headline` and `structure`:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$BASE_ID/tailor" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg label "<Company> - <Title>" \
                 --arg summary "<retargeted summary>" \

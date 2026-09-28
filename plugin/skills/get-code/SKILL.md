@@ -19,7 +19,7 @@ Set `BOARD_DOMAIN` to the skill argument (e.g. `linkedin.com`).
 ## Phase 1: Confirm Mailbox Connected
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
 ```
 
 If `.connected === false`, print exactly `{}` and exit. Caller falls back to asking the user.
@@ -27,7 +27,7 @@ If `.connected === false`, print exactly `{}` and exit. Caller falls back to ask
 ## Phase 2: Trigger Sync
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync"
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync"
 ```
 
 ## Phase 3: Poll for the Code
@@ -36,7 +36,7 @@ Up to 6 attempts (~30s) looking for a verification message in the last 5 minutes
 
 ```bash
 for i in 1 2 3 4 5 6; do
-  RESULT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -G "$JOBPILOT_API/api/email/messages" \
+  RESULT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -G "$JOBPILOT_API/api/email/messages" \
     --data-urlencode "classification=verification" \
     --data-urlencode "domainHint=$BOARD_DOMAIN" \
     --data-urlencode "since=$(date -u -d '5 minutes ago' +%FT%TZ 2>/dev/null || date -u -v-5M +%FT%TZ)")
@@ -57,7 +57,7 @@ If still nothing, also look for unclassified messages whose body matches the boa
 5. PATCH the message:
 
    ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
+   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
      -H 'content-type: application/json' \
      -d "$(jq -n --arg code "<code>" --arg link "<link>" --arg domain "$BOARD_DOMAIN" \
        '{classification:"verification",
