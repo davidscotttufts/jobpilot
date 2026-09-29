@@ -45,8 +45,9 @@ export const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;
 
 /** Alert emails one harvest reads; twice a day this covers any realistic alert volume. */
 export const JOB_ALERTS_BATCH = 40;
-/** Older alerts point at postings that have mostly filled; a first enable should not dig up a month. */
-export const JOB_ALERTS_LOOKBACK_MS = 3 * DAY_MS;
+/** Older alerts point at postings that have mostly filled, so a first enable should not dig up a
+ * month - but a week, because three days lost every alert that landed while the app was down. */
+export const JOB_ALERTS_LOOKBACK_MS = 7 * DAY_MS;
 /** A harvest that failed or crashed retries this soon instead of waiting for the next slot. */
 export const JOB_ALERTS_RETRY_MS = HOUR_MS;
 /** A "Run now" the pilot never got to (stopped, or busy for an hour) lapses rather than firing later. */
