@@ -5,6 +5,8 @@ import {
   GMAIL_SCOPES,
   GMAIL_SEND_SCOPE,
   type HistoryPage,
+  isQuotaError,
+  nextHistoryCursor,
   readAddedMessageIds,
   scopeCanRead,
   scopeCanSend,
@@ -88,5 +90,32 @@ describe("readAddedMessageIds", () => {
   it("reports no cursor when Gmail returns none", async () => {
     const { fetchPage } = pager([{ messageIds: [], historyId: null, nextPageToken: null }]);
     expect(await readAddedMessageIds(fetchPage)).toEqual({ messageIds: [], historyId: null });
+  });
+});
+
+describe("nextHistoryCursor", () => {
+  it("advances to the fetched cursor when every message was read", () => {
+    expect(nextHistoryCursor("100", "250", 0)).toBe("250");
+  });
+
+  it("holds the previous cursor when a fetch failed, so the next sync retries it", () => {
+    expect(nextHistoryCursor("100", "250", 1)).toBe("100");
+  });
+});
+
+describe("isQuotaError", () => {
+  it("recognises a 429", () => {
+    expect(isQuotaError({ status: 429, message: "Too Many Requests" })).toBe(true);
+  });
+
+  it("recognises Gmail's per-user quota refusal, which arrives as a 403", () => {
+    const message =
+      "Quota exceeded for quota metric 'Total Query Cost' and limit 'Units per minute per user'";
+    expect(isQuotaError({ status: 403, message })).toBe(true);
+  });
+
+  it("leaves other failures alone", () => {
+    expect(isQuotaError({ status: 500, message: "Backend Error" })).toBe(false);
+    expect(isQuotaError(undefined)).toBe(false);
   });
 });

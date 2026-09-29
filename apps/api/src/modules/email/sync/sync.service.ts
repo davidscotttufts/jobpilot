@@ -72,7 +72,13 @@ export class EmailSyncService {
 
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
-    const result = await provider.syncMessages(config, active);
+    const result = await provider.syncMessages(config, active, async (ids) => {
+      const stored = await this.prisma.emailMessage.findMany({
+        where: { accountId: active.id, providerId: { in: ids } },
+        select: { providerId: true },
+      });
+      return new Set(stored.map((row) => row.providerId));
+    });
 
     let inserted = 0;
     const insertedForLinking: InboundForLinking[] = [];
