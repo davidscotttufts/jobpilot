@@ -10,7 +10,7 @@ Job applications often span multiple pages. For each page:
    textbox, checkbox, radio, combobox, and slider - every type on a normal application page. One
    call per page, not one per field: each separate call is another round trip, and a 20-field form
    filled one input at a time is 20 of them.
-   - Only these fall outside it: **file uploads** (resume) → fetch the tailored variant into the scratch dir (see `./setup.md` "Scratch files"): `mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp" && curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume.pdf"`, then `browser_file_upload` that path.
+   - Only these fall outside it: **file uploads** (resume) → fetch the tailored variant into the scratch dir (see `./setup.md` "Scratch files"): `mkdir -p "$JOBPILOT_WORKSPACE_ROOT/.temp" && curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/variants/<id>/pdf" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/resume.pdf"`, then `browser_file_upload` that path.
    - Reach for single-field `browser_type` / `browser_select_option` / `browser_click` only for a field the batch call rejected, or a widget that needs a click to reveal its options.
    - Date fields → use the appropriate date format
 4. **Custom widgets** (date pickers, autocomplete combos, rich-text editors) the form snapshot couldn't enumerate cleanly: `browser_find` the widget's label or placeholder to get its ref. It returns matching nodes with a little context instead of the whole tree, so prefer it over a second `browser_snapshot` whenever you are locating something specific rather than reading a page.
@@ -28,7 +28,7 @@ All paths refer to `GET /api/user` (already loaded by setup.md).
 - **Start date** → "Immediately" or "2 weeks notice" unless `autoApply.defaultStartDate` overrides.
 - **Cover letter** (a textarea or a file-upload field labelled "cover letter") → generate via the `cover-letter` skill (already humanized; it also saves the letter to history - pass `source` = the invoking skill, `apply` or `auto-apply`). Then:
   - Text area → paste the text directly.
-  - File upload → render the text to PDF and upload it: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/cover-letters/pdf" -H 'content-type: application/json' -d "$(jq -n --arg t "<letter text>" '{text:$t}')" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/cover-letter.pdf"`, then `browser_file_upload` that path (overwritten each time).
+  - File upload → render the text to PDF and upload it: `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/cover-letters/pdf" -H 'content-type: application/json' -d "$(jq -n --arg t "<letter text>" '{text:$t}')" -o "$JOBPILOT_WORKSPACE_ROOT/.temp/cover-letter.pdf"`, then `browser_file_upload` that path (overwritten each time).
 - **"How did you hear about us?"** → "Job board" or "Company website".
 - **Years of experience** → calculate from earliest work experience date.
 - **Custom questions** → best judgment from the resume. Genuinely uncertain → ask (loop skills: make a reasonable attempt and log in notes).

@@ -101,7 +101,7 @@ journal "Harvested N alert emails - no new postings."
 ```bash
 LABEL="Job alerts · $(date +'%b %-d %H:00')"
 MIN_SCORE=<payload.minScore>
-CAMPAIGN=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
+CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "$LABEL" --arg rid "$RESUME_ID" --argjson minScore "$MIN_SCORE" \
     '{query:$q, source:"auto-apply", createdBy:"pilot", config:{resumeId:$rid, minScore:$minScore}}')")
@@ -128,7 +128,7 @@ Once every row is written - and also when nothing survived - stamp the messages 
 skips them. Send **all** payload `messageIds`, not only the ones that yielded postings:
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/job-alerts/harvested" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/job-alerts/harvested" \
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson ids '<messageIds JSON array>' '{messageIds:$ids}')"
 ```

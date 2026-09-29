@@ -23,7 +23,7 @@ Follow `../_shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `Rea
 3. **Save the draft** for review:
 
    ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
+   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
      -d "$(jq -n --arg ct "<current title>" --arg co "<current overview>" --arg st "<suggested title>" \
        --arg so "<suggested overview>" --argjson cp '<current portfolio json>' --argjson sp '<suggested portfolio json>' \
        '{currentTitle:$ct, currentOverview:$co, currentPortfolio:$cp, suggestedTitle:$st, suggestedOverview:$so, suggestedPortfolio:$sp, status:"draft"}')"
@@ -33,13 +33,13 @@ Follow `../_shared/setup.md` (`$JOBPILOT_API` is injected by the terminal). `Rea
 
 ## Mode: apply
 
-1. `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` → require `.status == "approved"`. If not, tell the user to review and approve on `/upwork/profile` first, then stop.
+1. `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/upwork/profile"` → require `.status == "approved"`. If not, tell the user to review and approve on `/upwork/profile` first, then stop.
 2. Use the `suggested*` fields as the source of truth (the user may have edited them in the UI).
 3. `browser_navigate` to the Upwork profile editor and write each section via `../_shared/form-filling.md`: title, overview, hourly rate (if suggested), and portfolio projects (add/update). `browser_wait_for` and re-snapshot after each save. Pause and ask the user on 2FA; attempt the `solve-captcha` skill on a CAPTCHA.
 4. On success, mark it applied:
 
    ```bash
-   curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
+   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PUT "$JOBPILOT_API/api/upwork/profile" -H 'content-type: application/json' \
      -d '{"status":"applied"}'
    ```
 

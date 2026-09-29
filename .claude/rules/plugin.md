@@ -47,7 +47,7 @@ through `JOBPILOT_SKILLS_ROOT`. No generation step - edit here directly.
   Claude-only frontmatter (`allowed-tools`) is fine - Codex ignores unknown keys.
 - Imperative voice, addressed to the provider. Keep prose terse.
 - Start by checking `GET /api/health`; abort with a clear message if the API is down.
-- API access: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."`.
+- API access: `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."`.
   The terminal host injects `JOBPILOT_API` (backend base URL), `JOBPILOT_API_TOKEN` (per-user
   PAT), and `JOBPILOT_WEB` (web origin, for user-facing links). Never hard-code `localhost`.
   No direct DB access.

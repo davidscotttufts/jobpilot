@@ -15,7 +15,7 @@ Find Upwork jobs the user can win - qualify on fit **and** client quality, drop 
    - `--board upwork.com` - required.
    - `--max-jobs <N>` - cap on results to evaluate. Absent = unlimited (evaluate until results run dry).
    - `--campaign <id>` - campaign to save to. The UI passes it; if absent, match the latest `source:"search"`, `status:"in_progress"` campaign on the query, else create one (a `source:"search"` create requires `config.resumeId` - default to the profile's `primaryResumeId`).
-3. Resolve the board: `curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, first command it to `failed` with `POST /api/campaigns/<id>/status {"status":"failed"}`.
+3. Resolve the board: `curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/job-boards" | jq '.[] | select(.domain=="upwork.com")'`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given, first command it to `failed` with `POST /api/campaigns/<id>/status {"status":"failed"}`.
 
 ## Phase 1: Parse Query
 
@@ -46,7 +46,7 @@ Read the card + client panel for the signals below (omit any you can't see - eve
 ```bash
 CLIENT='{ "paymentVerified": true, "hireRate": 80, "totalSpent": 12000, "rating": 4.9,
   "reviewsCount": 24, "proposalsBucket": "5-10", "postedHoursAgo": 6, "jobType": "hourly" }'
-QUALITY=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
+QUALITY=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
 CLIENT_VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
@@ -68,7 +68,7 @@ Build the digest (`../_shared/digest-schema.md`); always populate `skills`. The 
 One worker at a time. **Rich card** (the snippet is enough): score inline and save in 3.4:
 
 ```bash
-FIT=$(curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
+FIT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" --argjson min <minScore> '{digest:$d, minScore:$min}')")
 SCORE=$(echo "$FIT" | jq -r '.score')
 ```
@@ -82,7 +82,7 @@ The thin-card path already saved via the worker - skip to the next result. For a
 ```bash
 DIGEST_FULL=$(jq -n --argjson fit "$DIGEST" --argjson client "$CLIENT" --argjson q "$QUALITY" \
   '$fit + {clientStats:$client, qualityScore:($q.qualityScore)}')
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<company-title-rank slug>" --arg title "<title>" --arg company "<clientName>" \
     --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(echo "$QUALITY" | jq -r '.flags|join(", ")')" \
@@ -93,7 +93,7 @@ curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/
 ## Phase 4: Close & Hand Off
 
 ```bash
-curl -fsS -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
+curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/status" \
   -H 'content-type: application/json' -d '{"status":"completed"}'
 ```
 
