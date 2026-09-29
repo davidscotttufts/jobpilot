@@ -48,7 +48,7 @@ CLIENT='{ "paymentVerified": true, "hireRate": 80, "totalSpent": 12000, "rating"
   "reviewsCount": 24, "proposalsBucket": "5-10", "postedHoursAgo": 6, "jobType": "hourly" }'
 QUALITY=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
-CLIENT_VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
+CLIENT_VERDICT=$(printf '%s\n' "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
 `proposalsBucket` is one of `<5 | 5-10 | 10-15 | 15-20 | 20-50 | 50+`. The scorer hard-skips unverified payment, 50+ proposals (saturated), low hire-rate-but-many-jobs (unresponsive), and unproven+unverified clients. If `CLIENT_VERDICT == "skip"`, create the Job as `pending`, record `.skipReason` through `/jobs/<key>/result`, and move on - don't score fit.
@@ -70,7 +70,7 @@ One worker at a time. **Rich card** (the snippet is enough): score inline and sa
 ```bash
 FIT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" --argjson min <minScore> '{digest:$d, minScore:$min}')")
-SCORE=$(echo "$FIT" | jq -r '.score')
+SCORE=$(printf '%s\n' "$FIT" | jq -r '.score')
 ```
 
 Use it directly when `FIT.verdict` is `trust`; otherwise rescore from `strongMatches`/`partialMatches`/`gaps`. A thin or below-level posting is **not** a skip - judge on skills fit (`../_shared/eligibility.md`).
@@ -85,8 +85,8 @@ DIGEST_FULL=$(jq -n --argjson fit "$DIGEST" --argjson client "$CLIENT" --argjson
 curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<company-title-rank slug>" --arg title "<title>" --arg company "<clientName>" \
-    --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(echo "$QUALITY" | jq -r '.flags|join(", ")')" \
-    --argjson score "$SCORE" --arg digest "$(echo "$DIGEST_FULL" | jq -c .)" --arg desc "<full JD>" \
+    --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(printf '%s\n' "$QUALITY" | jq -r '.flags|join(", ")')" \
+    --argjson score "$SCORE" --arg digest "$(printf '%s\n' "$DIGEST_FULL" | jq -c .)" --arg desc "<full JD>" \
     '{key:$key, title:$title, company:$company, url:$url, board:"upwork.com", matchScore:$score, matchReason:$matchReason, status:"pending", digest:$digest, description:$desc}')"
 ```
 

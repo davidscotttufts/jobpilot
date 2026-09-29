@@ -76,7 +76,7 @@ CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOK
   -H 'content-type: application/json' \
   -d "$(jq -n --arg query "<title> at <company>" \
     '{query:$query, source:"apply", config:{maxApplications:1}}')")
-CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
+CAMPAIGN_ID=$(printf '%s\n' "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 ### 1.4 Add the Job

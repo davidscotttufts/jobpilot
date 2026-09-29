@@ -105,7 +105,7 @@ CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOK
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "$LABEL" --arg rid "$RESUME_ID" --argjson minScore "$MIN_SCORE" \
     '{query:$q, source:"auto-apply", createdBy:"pilot", config:{resumeId:$rid, minScore:$minScore}}')")
-CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
+CID=$(printf '%s\n' "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 Create one Job per posting in ranked order, with the row shape from the `search` skill: `status:"pending"`,

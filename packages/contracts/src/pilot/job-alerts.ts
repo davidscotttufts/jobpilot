@@ -29,6 +29,8 @@ export const JOB_ALERT_SENDER_DOMAINS = [
   "careerbuilder.com",
   "flexjobs.com",
   "jobright.ai",
+  // SAP SuccessFactors "Talent Community" alerts, sent for each employer on its career site.
+  "jobs2web.com",
 ] as const;
 
 /**

@@ -51,6 +51,8 @@ through `JOBPILOT_SKILLS_ROOT`. No generation step - edit here directly.
   The terminal host injects `JOBPILOT_API` (backend base URL), `JOBPILOT_API_TOKEN` (per-user
   PAT), and `JOBPILOT_WEB` (web origin, for user-facing links). Never hard-code `localhost`.
   No direct DB access.
+- Pipe captured JSON as `printf '%s\n' "$VAR" | jq`, never `echo "$VAR" | jq` - zsh's `echo`
+  expands the `\n` escapes inside JSON strings, so any multi-line field breaks jq.
 - Load profile/resume/credentials via `skills/_shared/setup.md`. Credential lookup: board override →
   `Credential.scope === <domain>` → `scope === "default"`. Log in proactively before
   searching/applying.

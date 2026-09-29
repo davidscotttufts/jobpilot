@@ -30,7 +30,7 @@ CONFIG=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN
 
 `config.networking` = `{ channels:["email"|"linkedin"], linkedinTier:"free"|"premium",
 autonomy:"draft"|"review"|"auto", dailyCap? }`. `config` also carries the campaign's selected
-`resumeId` - build its public link `RESUME_URL="$JOBPILOT_API/api/public/resumes/$(echo "$CONFIG" | jq -r '.resumeId')/pdf"` and append it to the email body (skip when it is a `localhost` URL - dev only). `config` may also carry `board`
+`resumeId` - build its public link `RESUME_URL="$JOBPILOT_API/api/public/resumes/$(printf '%s\n' "$CONFIG" | jq -r '.resumeId')/pdf"` and append it to the email body (skip when it is a `localhost` URL - dev only). `config` may also carry `board`
 (domain to search) and optional `maxJobs` (cap; absent = run until stopped).
 
 Target criteria = the positional arg, else `.query`. The optional `board` is the control:
@@ -140,7 +140,7 @@ For each message to send:
     -H 'content-type: application/json' \
     -d "$(jq -n --arg to "<email>" --arg s "<subject>" --arg b "<body>" \
       '{to:$to,subject:$s,body:$b}')")
-  PID=$(echo "$SENT" | jq -r '.providerId'); TID=$(echo "$SENT" | jq -r '.threadId')
+  PID=$(printf '%s\n' "$SENT" | jq -r '.providerId'); TID=$(printf '%s\n' "$SENT" | jq -r '.threadId')
   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/networking/<messageId>/result" \
     -H 'content-type: application/json' \
     -d "$(jq -n --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg p "$PID" --arg th "$TID" \

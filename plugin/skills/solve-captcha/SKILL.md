@@ -50,7 +50,7 @@ Solve it server-side (the endpoint resolves the configured key + polls the provi
 ```bash
 RESP=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/captcha/solve" -H 'content-type: application/json' \
   -d "$(jq -n --arg s "$SITEKEY" --arg u "$PAGEURL" '{type:"recaptcha", sitekey:$s, pageurl:$u}')") || true
-TOKEN=$(echo "$RESP" | jq -r '.token // empty')
+TOKEN=$(printf '%s\n' "$RESP" | jq -r '.token // empty')
 ```
 
 Empty `TOKEN` (no key configured, or solver failure) → **unsolved**.

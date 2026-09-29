@@ -7,7 +7,7 @@ CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOK
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" --arg sid "$SEARCH_ID" \
     '{query:$q, source:"auto-apply", createdBy:"pilot", pilotSearchId:$sid, config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
-CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
+CID=$(printf '%s\n' "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 When the payload carries `maxApplications`, add it to that `config` (`--argjson maxApps <n>`,
