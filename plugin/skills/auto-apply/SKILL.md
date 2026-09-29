@@ -51,7 +51,7 @@ CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOK
   -d "$(jq -n --arg q "<query>" --arg board "<domain>" --arg rid "$RESUME_ID" \
     --argjson minScore <n> \
     '{query:$q, source:"auto-apply", config:{board:$board, resumeId:$rid, minScore:$minScore}}')")
-CAMPAIGN_ID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
+CAMPAIGN_ID=$(printf '%s\n' "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 Surface live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
@@ -96,8 +96,8 @@ FIT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -
   -H 'content-type: application/json' \
   -d "$(jq -n --argjson digest "$DIGEST" --arg rid "$RESUME_ID" --argjson minScore "$MIN_SCORE" \
     '{digest:$digest, minScore:$minScore} + (if $rid=="" then {} else {resumeId:$rid} end)')")
-SCORE=$(echo "$FIT" | jq -r '.score')
-FIT_VERDICT=$(echo "$FIT" | jq -r '.verdict')
+SCORE=$(printf '%s\n' "$FIT" | jq -r '.score')
+FIT_VERDICT=$(printf '%s\n' "$FIT" | jq -r '.verdict')
 ```
 
 Branch on the result (eligibility per `../_shared/eligibility.md` - a thin/generic row is **not** a skip):

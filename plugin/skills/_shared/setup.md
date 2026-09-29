@@ -48,6 +48,7 @@ curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPI
 
 Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at the top level. Errors are `{ code, message, details? }` with an HTTP status.
 `--fail-with-body` (never `-f`, which discards it) exits non-zero on an error status but still prints that body, so read `message` - and `details` for a `422`'s field problems - before deciding how to recover.
+Pipe a captured response into `jq` with `printf '%s\n' "$VAR" | jq`, never `echo`: zsh's `echo` turns the `\n` escapes inside JSON strings into raw newlines, and jq rejects the result as invalid JSON.
 
 ## Profile
 
