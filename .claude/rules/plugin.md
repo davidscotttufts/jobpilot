@@ -29,6 +29,8 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/structure.ts`.
 - Imperative voice, terse.
 - Start with `GET /api/health`. Stop with a clear message if the API is down.
 - Call the API with curl. Never hard-code `localhost`. No direct DB access.
+- Pipe captured JSON as `printf '%s\n' "$VAR" | jq`, never `echo "$VAR" | jq` - zsh's `echo`
+  expands the `\n` escapes inside JSON strings, so any multi-line field breaks jq.
 
   ```sh
   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/..."

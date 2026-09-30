@@ -56,10 +56,10 @@ for i in $(seq 1 24); do
   for d in $(printf '%s\n' "$DOMAINS" | tr ' ' '\n'); do
     RESULT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -G "$JOBPILOT_API/api/email/messages" \
       --data-urlencode "domainHint=$d" --data-urlencode "since=$SINCE")
-    FOUND=$(echo "$RESULT" | jq -c '[.items[] | select((.subject + " " + (.snippet // "")) | test("code|verif|password|reset|confirm|sign.?in|log.?in|one.?time"; "i"))]')
-    [ "$(echo "$FOUND" | jq 'length')" -gt 0 ] && break
+    FOUND=$(printf '%s\n' "$RESULT" | jq -c '[.items[] | select((.subject + " " + (.snippet // "")) | test("code|verif|password|reset|confirm|sign.?in|log.?in|one.?time"; "i"))]')
+    [ "$(printf '%s\n' "$FOUND" | jq 'length')" -gt 0 ] && break
   done
-  [ -n "$FOUND" ] && [ "$(echo "$FOUND" | jq 'length')" -gt 0 ] && break
+  [ -n "$FOUND" ] && [ "$(printf '%s\n' "$FOUND" | jq 'length')" -gt 0 ] && break
   sleep 5
 done
 ```

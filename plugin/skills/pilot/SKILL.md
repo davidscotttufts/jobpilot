@@ -26,7 +26,7 @@ curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPI
 
 ```bash
 AGENDA=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/agenda/refresh")
-AGENDA_VERSION=$(echo "$AGENDA" | jq -r '.version')
+AGENDA_VERSION=$(printf '%s\n' "$AGENDA" | jq -r '.version')
 ```
 
 A `409` means the pilot was stopped mid-cycle - a rare race the host normally gates. Journal and exit empty.
@@ -46,7 +46,7 @@ If `.items` is empty:
 curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg cid "$CYCLE_ID" --arg s "All caught up - nothing needs doing; checking back at <nextWakeAt>." \
-    --argjson detail "$(echo "$AGENDA" | jq '{status:"empty", sleepSeconds:.sleepSeconds}')" \
+    --argjson detail "$(printf '%s\n' "$AGENDA" | jq '{status:"empty", sleepSeconds:.sleepSeconds}')" \
     '{cycleId:$cid, entries:[{kind:"cycle", summary:$s, detail:$detail}]}')"
 ```
 
@@ -62,7 +62,7 @@ Take the top item - the server already ranked the agenda. If several share prior
 CLAIM=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/claims" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg id "<itemId>" --arg version "$AGENDA_VERSION" '{itemId:$id,agendaVersion:$version}')")
-CLAIM_ID=$(echo "$CLAIM" | jq -r '.id')
+CLAIM_ID=$(printf '%s\n' "$CLAIM" | jq -r '.id')
 ```
 
 On `409`, re-fetch the agenda once; if still nothing claimable, treat this as an empty cycle (step 1's journal + sentinel). A `409` opening `Already applied` is the duplicate guard - the job is already recorded `skipped`, so claim the next item instead of writing a result yourself. `CLAIM_ID` feeds step 6's release and the **heartbeat** that long branches send to keep the claim alive:
@@ -83,7 +83,7 @@ at; the rest are not your cycle's work.
 curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/pilot/journal" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg cid "$CYCLE_ID" --arg st "<subjectType>" --arg sid "<subjectId>" --arg a "<narrative>" --arg c "<cycle summary>" \
-    --argjson cdetail "$(echo "$AGENDA" | jq '{status:"ok", sleepSeconds:.sleepSeconds}')" \
+    --argjson cdetail "$(printf '%s\n' "$AGENDA" | jq '{status:"ok", sleepSeconds:.sleepSeconds}')" \
     '{cycleId:$cid, entries:[{kind:"action", subjectType:$st, subjectId:$sid, summary:$a}, {kind:"cycle", summary:$c, detail:$cdetail}]}')"
 ```
 
@@ -93,7 +93,7 @@ An action entry may also carry a `detail` object - required for the load-bearing
 
 ```bash
 jq -n --arg cid "$CYCLE_ID" --arg sid "$CID" --arg a "$NARRATIVE" --arg c "<cycle summary>" \
-  --argjson detail '{"type":"strategyReview"}' --argjson cdetail "$(echo "$AGENDA" | jq '{status:"ok", sleepSeconds:.sleepSeconds}')" \
+  --argjson detail '{"type":"strategyReview"}' --argjson cdetail "$(printf '%s\n' "$AGENDA" | jq '{status:"ok", sleepSeconds:.sleepSeconds}')" \
   '{cycleId:$cid, entries:[{kind:"action", subjectType:"campaign", subjectId:$sid, summary:$a, detail:$detail}, {kind:"cycle", summary:$c, detail:$cdetail}]}'
 ```
 

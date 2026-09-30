@@ -7,7 +7,7 @@ CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOK
   -H 'content-type: application/json' \
   -d "$(jq -n --arg q "<query>" --arg rid "<resumeId>" --argjson minScore <n> --arg board "<board>" --arg sid "$SEARCH_ID" \
     '{query:$q, source:"auto_apply", createdBy:"pilot", pilotSearchId:$sid, config:{resumeId:$rid, minScore:$minScore, board:$board}}')")
-CID=$(echo "$CAMPAIGN" | jq -r '.campaignId')
+CID=$(printf '%s\n' "$CAMPAIGN" | jq -r '.campaignId')
 ```
 
 Paginate per `../../_shared/browser-tips.md` (**Pagination & infinite scroll**) up to `maxPages` pages. Score every row **in-context** - no per-job navigation, no worker delegation, since the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check`, then create every Job as a non-terminal `pending` row carrying the `digest` you scored it from (`../../_shared/digest-schema.md`; row shape per the `search` skill) - a row with no `skills` simply has none. Already-applied or ineligible → immediately POST its `skipped` outcome and reason to `/jobs/<key>/result`. Eligible rows keep their score and stay `pending`; one too thin to score confidently stays `pending` without `matchScore` for `campaign.scorePending` later. The server auto-promotes rows scoring ≥ threshold on the next agenda refresh, so **do not apply** in this cycle.

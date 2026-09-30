@@ -42,7 +42,7 @@ Verify status is `paused`. If `completed` or `failed`, stop:
 Refuse to resume if there are no resumable jobs (`approved`, `pending`, or `applying`):
 
 ```bash
-RESUMABLE=$(echo "$JOBS" | jq '[.items[] | select(.status=="approved" or .status=="pending" or .status=="applying")] | length')
+RESUMABLE=$(printf '%s\n' "$JOBS" | jq '[.items[] | select(.status=="approved" or .status=="pending" or .status=="applying")] | length')
 [ "$RESUMABLE" = "0" ] && { echo "No resumable jobs (approved/pending/applying). If none were ever added, start fresh with the auto-apply skill."; exit 0; }
 ```
 
@@ -59,7 +59,7 @@ curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST
 Read `config.maxApplications` from the campaign for the stop condition below:
 
 ```bash
-MAX_APPS=$(echo "$CAMPAIGN" | jq -r '.config.maxApplications // empty')
+MAX_APPS=$(printf '%s\n' "$CAMPAIGN" | jq -r '.config.maxApplications // empty')
 ```
 
 ## Phase 2: Replay Apply Loop

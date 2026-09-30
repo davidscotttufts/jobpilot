@@ -78,7 +78,7 @@ CLIENT='{ "paymentVerified": true, "totalSpent": 12000, "rating": 4.9,
   "reviewsCount": 24, "proposalsCount": 7, "postedHoursAgo": 6, "jobType": "hourly" }'
 QUALITY=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/upwork/client-quality" \
   -H 'content-type: application/json' -d "$(jq -n --argjson c "$CLIENT" '{client:$c}')")
-CLIENT_VERDICT=$(echo "$QUALITY" | jq -r '.verdict')   # good | caution | skip
+CLIENT_VERDICT=$(printf '%s\n' "$QUALITY" | jq -r '.verdict')   # good | caution | skip
 ```
 
 Field sources: `paymentVerified` from `verification_status`, `totalSpent` from `total_spent`,
@@ -111,7 +111,7 @@ card here and no need to delegate to `job-worker`:
 ```bash
 FIT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/score-fit" \
   -H 'content-type: application/json' -d "$(jq -n --argjson d "$DIGEST" --argjson min <minScore> '{digest:$d, minScore:$min}')")
-SCORE=$(echo "$FIT" | jq -r '.score')
+SCORE=$(printf '%s\n' "$FIT" | jq -r '.score')
 ```
 
 Use it directly when `FIT.verdict` is `trust`; otherwise rescore from `strongMatches`,
@@ -131,8 +131,8 @@ DIGEST_FULL=$(jq -n --argjson fit "$DIGEST" --argjson client "$CLIENT" --argjson
 curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/<campaign-id>/jobs" \
   -H 'content-type: application/json' \
   -d "$(jq -n --arg key "<company-title-rank slug>" --arg title "<title>" --arg company "<clientName>" \
-    --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(echo "$QUALITY" | jq -r '.flags|join(", ")')" \
-    --argjson score "$SCORE" --arg digest "$(echo "$DIGEST_FULL" | jq -c .)" --arg desc "<description>" \
+    --arg url "<job-url>" --arg matchReason "Fit $SCORE · $(printf '%s\n' "$QUALITY" | jq -r '.flags|join(", ")')" \
+    --argjson score "$SCORE" --arg digest "$(printf '%s\n' "$DIGEST_FULL" | jq -c .)" --arg desc "<description>" \
     '{key:$key, title:$title, company:$company, url:$url, board:"upwork.com", matchScore:$score, matchReason:$matchReason, status:"pending", digest:$digest, description:$desc}')"
 ```
 
