@@ -7,11 +7,11 @@ import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
 import { usePilotControls } from "../use-pilot-controls";
-import { AgendaPreview } from "./agenda-preview";
 import { OrchestrationPanel } from "./orchestration-panel";
 import { RecentActivity } from "./recent-activity";
 import { PilotSetupChecklist } from "./setup-checklist";
 import { StatusHero } from "./status-hero";
+import { TaskListPreview } from "./task-list-preview";
 
 export function OverviewTab(): ReactElement {
   // Owned here so the hero, checklist and diagram share one host poll.
@@ -51,7 +51,7 @@ export function OverviewTab(): ReactElement {
         <NeedsAttention />
       </Box>
       <Box sx={{ order: { xs: 4, md: 0 } }}>
-        <AgendaPreview />
+        <TaskListPreview />
       </Box>
       <Box sx={{ order: { xs: 5, md: 0 } }}>
         <RecentActivity />

@@ -19,8 +19,8 @@ public sealed class PilotSession : IPilotSession, IDisposable
         "journal the error batch (system + cycle with detail:{\"status\":\"error\",\"sleepSeconds\":300}), "
         + "and print the error sentinel.";
 
-    private const string CheckInText = "Checking in: you appear stuck. Release your claim, " + ErrorExit;
-    private const string SkipText = "Stop the current action. Fail the claimed task, " + ErrorExit;
+    private const string CheckInText = "Checking in: you appear stuck. Finish your run, " + ErrorExit;
+    private const string SkipText = "Stop the current action. Fail the started task, " + ErrorExit;
 
     private readonly TerminalSession terminal;
     private readonly PilotStore store;

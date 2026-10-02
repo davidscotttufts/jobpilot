@@ -119,7 +119,7 @@ Project rule: one line, four at most, only for a non-obvious why.
 
 ```ts
 // Before: 12 lines on how heartbeats slide expiry, with claim counts and p99 timings.
-/** Hard limit from `grantedAt`. A stuck driver that still heartbeats would never expire. */
+/** Hard limit from `startedAt`. A stuck driver that still heartbeats would never expire. */
 export const MAX_CLAIM_LIFETIME_MS = 25 * 60 * 1000;
 ```
 

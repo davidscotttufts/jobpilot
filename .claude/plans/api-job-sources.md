@@ -51,7 +51,7 @@ User decisions:
 - Server-found applied-duplicates are counted in the run summary, not persisted as skipped rows.
 - `auto_apply` campaigns promote inline via `CampaignJobService.promoteScoredJobs`; `search`
   campaigns stay `pending` for the normal review flow.
-- Pilot API runs are fire-and-forget with a `nextRunAt` lease (now + 10 min, written before
+- Pilot API runs are fire-and-forget with a `nextRunAt` hold (now + 10 min, written before
   launch, overwritten by `reportRun`). Crash-safe, no new claim kind, survives the 5-min agenda
   snapshot TTL.
 - Provider errors set `nextRunAt = now + 30min` directly and journal a warning. They never step
@@ -107,7 +107,7 @@ User decisions:
   - `run-plan.ts` (pure, + test): `deriveRunLimit` (default 50, cap 100),
     `derivePostedWithinDays(lastRunAt, now)` (min 1, cap 30, undefined on first run),
     `splitNewPostings` (key + canonical-URL dedupe against existing campaign rows),
-    `apiSearchLease` / `providerRetryAt` helpers, `summarizeFit`.
+    `apiSearchHoldUntil` / `providerRetryAt` helpers, `summarizeFit`.
   - `job-source-run.service.ts` (@singleton; value imports for tsyringe):
     `runForCampaign(userId, campaignId, opts? {pilotSearchId?, postedWithinDays?})`:
     ensure owned campaign, resolve adapter or 409, per-campaign and per-domain (4) concurrency
@@ -150,8 +150,8 @@ User decisions:
   to `buildAgenda`. For API ones call `this.jobSourceRuns.launchPilotRuns(userId, apiDue,
   config)` (inject `JobSourceRunService`; no DI cycle, it never imports `AgendaService`).
 - `launchPilotRuns`: awaited part is DB-only and fast. For up to 2 due searches not in the
-  module-level in-flight set, write the lease with a direct
-  `prisma.pilotSearch.update({nextRunAt: apiSearchLease(now)})` (not via `PilotSearchService`,
+  module-level in-flight set, write the hold with a direct
+  `prisma.pilotSearch.update({nextRunAt: apiSearchHoldUntil(now)})` (not via `PilotSearchService`,
   whose `nullAgenda` would invalidate the snapshot being built). Then fire-and-forget:
   reuse `q.campaignId` or create the pilot campaign row (`source: "auto_apply"`,
   `createdBy: "pilot"`, `pilotSearchId`), then `runForCampaign(..., {pilotSearchId,
@@ -160,7 +160,7 @@ User decisions:
   `job.apply` items. On `SourceUnavailableError`: `nextRunAt = providerRetryAt(now)` without
   touching `emptyRuns`, plus a pilot journal warning.
 - No `PilotSearch` schema change. `scheduleNextRun` untouched.
-- Pure test asserts the lease (10 min) outlives the snapshot TTL (5 min).
+- Pure test asserts the hold (10 min) outlives the snapshot TTL (5 min).
 
 ## Milestone 5: web boards + pilot UI
 
@@ -231,6 +231,6 @@ User decisions:
    pending then approved/skipped with scores; confirm freehire listings appear in the public
    /jobs index.
 5. Pilot: a PilotSearch on freehire.me produces no `search.discover` item; jobs land
-   server-side; ladder fields update; kill the API mid-run and confirm the 10-min lease retry.
+   server-side; ladder fields update; kill the API mid-run and confirm the 10-min hold retry.
 6. Plugin smoke: `/api-search "typescript backend" --board freehire.me --max-jobs 20` with the
    web agent closed.

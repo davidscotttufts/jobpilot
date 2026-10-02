@@ -23,15 +23,15 @@ stays available whenever you want to do something by hand.
 
 The Pilot works in short, self-contained **cycles**:
 
-1. **Sense.** The server compiles a ranked agenda of everything worth doing
+1. **Sense.** The server builds a ranked task list of everything worth doing
    right now: your answers to act on, approved jobs, replies to review,
    searches that are due.
-2. **Act.** The agent takes the top item and does exactly that one thing:
+2. **Act.** The agent takes the top task and does exactly that one thing:
    one application, one inbox review, one search.
 3. **Record.** The outcome is journaled and the agent sleeps, for seconds when
    work is queued or up to your check interval when idle.
 
-One item per cycle is deliberate. Every result is saved to the server before
+One task per cycle is deliberate. Every result is saved to the server before
 the next thing starts, so a crash, reboot, or closed lid never loses work; the
 next cycle picks up exactly where the last one stopped. A small orchestrator on
 your machine drives the loop, restarts stuck runs, and starts cycles on its own

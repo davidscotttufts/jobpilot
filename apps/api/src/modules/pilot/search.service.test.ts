@@ -42,7 +42,7 @@ function makeService(over: SearchRows = {}) {
   const rec = {
     creates: [] as Record<string, unknown>[],
     updates: [] as Record<string, unknown>[],
-    agendaResets: 0,
+    taskListResets: 0,
   };
   const db = {
     pilotSearch: {
@@ -60,7 +60,7 @@ function makeService(over: SearchRows = {}) {
     },
     pilotState: {
       updateMany: async () => {
-        rec.agendaResets++;
+        rec.taskListResets++;
         return { count: 1 };
       },
     },
@@ -71,11 +71,11 @@ function makeService(over: SearchRows = {}) {
 describe("PilotSearchService", () => {
   const existing = { id: "s1", query: "react", board: null, emptyRuns: 0 };
 
-  it("creates a search and clears the cached agenda", async () => {
+  it("creates a search and clears the cached task list", async () => {
     const { svc, rec } = makeService();
     await svc.create("p1", { query: "react", reason: "core stack" });
     expect(rec.creates[0]).toMatchObject({ userId: "p1", query: "react", board: null });
-    expect(rec.agendaResets).toBe(1);
+    expect(rec.taskListResets).toBe(1);
   });
 
   it("rejects a duplicate query and board, on create and on edit", async () => {
@@ -112,10 +112,10 @@ describe("PilotSearchService", () => {
     });
   });
 
-  it("applies a run report to the schedule and clears the cached agenda", async () => {
+  it("applies a run report to the schedule and clears the cached task list", async () => {
     const { svc, rec } = makeService({ existing });
     await svc.reportRun("p1", "s1", { jobsSeen: 30, newJobs: 5, reachedEnd: false });
     expect(rec.updates[0]).toMatchObject({ emptyRuns: 0, lastJobsSeen: 30, lastNewJobs: 5 });
-    expect(rec.agendaResets).toBe(1);
+    expect(rec.taskListResets).toBe(1);
   });
 });

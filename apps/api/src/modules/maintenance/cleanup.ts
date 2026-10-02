@@ -1,8 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import {
   applicationEventWhere,
-  claimDiscoverWhere,
-  claimReleasedWhere,
   cutoffs,
   emailBodyWhere,
   journalDigestOldWhere,
@@ -12,6 +10,8 @@ import {
   type RetentionCutoffs,
   refreshTokenWhere,
   resumeVariantWhere,
+  runDiscoverWhere,
+  runFinishedWhere,
   verificationTokenWhere,
 } from "./retention";
 
@@ -30,10 +30,10 @@ const RULES = [
     key: "journalDigests",
     run: (db, c) => db.pilotJournalEntry.deleteMany({ where: journalDigestOldWhere(c) }),
   },
-  { key: "claims", run: (db, c) => db.pilotClaim.deleteMany({ where: claimReleasedWhere(c) }) },
+  { key: "runs", run: (db, c) => db.pilotRun.deleteMany({ where: runFinishedWhere(c) }) },
   {
-    key: "claimsDiscover",
-    run: (db, c) => db.pilotClaim.deleteMany({ where: claimDiscoverWhere(c) }),
+    key: "runsDiscover",
+    run: (db, c) => db.pilotRun.deleteMany({ where: runDiscoverWhere(c) }),
   },
   {
     key: "questions",

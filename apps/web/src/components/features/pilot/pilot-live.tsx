@@ -31,7 +31,7 @@ export function PilotLive(): ReactNode {
     },
   });
 
-  // Catch up on events missed while reconnecting. Never `pilot.all`: that would recompile the agenda.
+  // Catch up on events missed while reconnecting. Never `pilot.all`: that would rebuild the task list.
   const previousStatus = useRef(status);
   useEffect(() => {
     if (previousStatus.current === "reconnecting" && status === "open") {

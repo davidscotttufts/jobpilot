@@ -220,11 +220,11 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.instructionsImpact(),
     queryFn: () => api.pilot.instructions.impact.get(),
   }),
-  agenda: () => ({
-    queryKey: queryKeys.pilot.agenda(),
+  taskList: () => ({
+    queryKey: queryKeys.pilot.taskList(),
     queryFn: async () => {
-      const result = await api.pilot.agenda.get();
-      return { ...result, data: result.data?.agenda ?? null };
+      const result = await api.pilot.tasks.get();
+      return { ...result, data: result.data?.taskList ?? null };
     },
   }),
   // Sorted so the same filter set toggled in a different order shares one cache entry.

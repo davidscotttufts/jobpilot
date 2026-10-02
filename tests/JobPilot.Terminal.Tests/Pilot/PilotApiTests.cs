@@ -9,7 +9,7 @@ namespace JobPilot.Terminal.Tests;
 public sealed class PilotApiTests
 {
     private const string ActivityJson =
-        """{"running":true,"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"cycleId":"1f2e3d4c-5b6a-7089-90ab-cdef01234567","completedAt":"2026-07-19T18:30:00Z","status":"ok","sleepSeconds":300},"activeClaims":2}""";
+        """{"running":true,"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"cycleId":"1f2e3d4c-5b6a-7089-90ab-cdef01234567","completedAt":"2026-07-19T18:30:00Z","status":"ok","sleepSeconds":300},"activeRuns":2}""";
 
     private static PilotApi Api(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) =>
         new(new HttpClient(new StubHandler(respond)), NullLogger<PilotApi>.Instance);

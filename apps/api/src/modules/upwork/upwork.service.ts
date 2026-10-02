@@ -164,7 +164,7 @@ export class UpworkService {
       }),
     );
 
-    // The only writer of lastSyncedAt: it is how the pilot agenda knows the mirror is current.
+    // The only writer of lastSyncedAt: it is how the pilot task list knows the mirror is current.
     const syncedAt = new Date();
     await this.prisma.upworkAccount.upsert({
       where: { userId },

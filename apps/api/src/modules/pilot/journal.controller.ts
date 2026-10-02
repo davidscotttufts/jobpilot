@@ -11,7 +11,7 @@ import { PilotJournalService } from "./journal.service";
 import { createPilotJournalResponseSchema } from "./pilot.schema";
 
 const journal = container.resolve(PilotJournalService);
-const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
+const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
 const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);
 
@@ -32,7 +32,7 @@ export const pilotJournalController = new Elysia({ prefix: "/pilot", detail: { t
     ({ user, query }) => journal.listJournal(user.id, query.cursor, query.limit, query.kinds),
     {
       query: pilotJournalQuerySchema,
-      beforeHandle: limitAgenda,
+      beforeHandle: limitTaskList,
       response: pilotJournalPageSchema,
       detail: {
         summary: "List journal entries",

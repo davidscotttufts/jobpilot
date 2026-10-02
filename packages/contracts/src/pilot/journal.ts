@@ -4,7 +4,7 @@ import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
 export const PILOT_JOURNAL_KINDS = [
   "cycle",
   "action",
-  "observation",
+  "hint",
   "question",
   "system",
   "digest",

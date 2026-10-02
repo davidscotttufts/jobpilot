@@ -95,7 +95,7 @@ model User {
   coverLetters       CoverLetter[]
   pilotState         PilotState?
   pilotSearches      PilotSearch[]
-  pilotClaims        PilotClaim[]
+  pilotRuns          PilotRun[]
   pilotQuestions     PilotQuestion[]
   pilotJournal       PilotJournalEntry[]
   pushSubscriptions  PushSubscription[]

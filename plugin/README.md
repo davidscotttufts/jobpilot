@@ -30,7 +30,7 @@ The main ones are `search`, `auto-apply`, `apply`, `networking`, and
 | --- | --- |
 | `skills/<name>/SKILL.md` | One skill per directory. The same file serves Claude and Codex. |
 | `skills/_shared/` | Docs several skills read: setup, login, form filling, browser tips, eligibility. No `SKILL.md`, so it isn't listed as a skill. |
-| `skills/pilot/kinds/` | One file per task type the autonomous Pilot can pick up. |
+| `skills/pilot/tasks/` | One file per task type the autonomous Pilot can pick up. |
 | `skills/humanizer/` | Rewrites letters, proposals, and messages so they read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
 | `agents/` | `job-worker` and `networking-worker`, the subagents that handle one job or one contact at a time so browser output stays out of the main session. |
 | `bin/` | `jobpilot-api`, the helper every skill uses to call the API. |

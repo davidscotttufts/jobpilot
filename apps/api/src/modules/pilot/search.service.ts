@@ -7,7 +7,7 @@ import { singleton } from "tsyringe";
 import { HOUR_MS } from "@/common/date/buckets";
 import { conflict, findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
-import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
+import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 /** A run with this many new jobs is "good": re-run it soon while the board is yielding. */
 const GOOD_RUN_NEW_JOBS = 3;
@@ -39,8 +39,8 @@ export function scheduleNextRun(emptyRuns: number, run: ReportPilotSearchRunInpu
 export class PilotSearchService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  private clearAgenda(userId: string) {
-    return this.prisma.pilotState.updateMany({ where: { userId }, data: AGENDA_SNAPSHOT_RESET });
+  private clearTaskList(userId: string) {
+    return this.prisma.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
   }
 
   /**
@@ -88,7 +88,7 @@ export class PilotSearchService {
         reason: input.reason,
       },
     });
-    await this.clearAgenda(userId);
+    await this.clearTaskList(userId);
     return row;
   }
 
@@ -112,14 +112,14 @@ export class PilotSearchService {
           : {}),
       },
     });
-    await this.clearAgenda(userId);
+    await this.clearTaskList(userId);
     return row;
   }
 
   async remove(userId: string, id: string) {
     await this.findOwnedSearch(userId, id);
     await this.prisma.pilotSearch.delete({ where: { id } });
-    await this.clearAgenda(userId);
+    await this.clearTaskList(userId);
     return { deleted: id };
   }
 
@@ -129,7 +129,7 @@ export class PilotSearchService {
       where: { id },
       data: scheduleNextRun(existing.emptyRuns, input, new Date()),
     });
-    await this.clearAgenda(userId);
+    await this.clearTaskList(userId);
     return row;
   }
 }

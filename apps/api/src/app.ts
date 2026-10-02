@@ -28,12 +28,12 @@ import { adminJobListingController, publicJobListingController } from "@/modules
 import { cleanupJob } from "@/modules/maintenance/cleanup.job";
 import { pdfCacheJob } from "@/modules/maintenance/pdf-cache.job";
 import { networkingController } from "@/modules/networking/networking.controller";
-import { pilotAgendaController } from "@/modules/pilot/agenda/agenda.controller";
 import { pilotJournalController } from "@/modules/pilot/journal.controller";
 import { pilotController } from "@/modules/pilot/pilot.controller";
 import { promotionController } from "@/modules/pilot/promotion.controller";
 import { pilotQuestionsController } from "@/modules/pilot/question.controller";
 import { pilotSearchController } from "@/modules/pilot/search.controller";
+import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
 import { pushController } from "@/modules/push/push.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
@@ -82,7 +82,7 @@ const app = new Elysia()
       .use(networkingController)
       .use(pilotController)
       .use(pilotSearchController)
-      .use(pilotAgendaController)
+      .use(pilotTasksController)
       .use(pilotJournalController)
       .use(pilotQuestionsController)
       .use(promotionController)

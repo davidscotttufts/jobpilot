@@ -1,10 +1,10 @@
-enum PilotClaimOutcome {
+enum PilotRunOutcome {
   done
   failed
   abandoned
   expired
 
-  @@map("pilot_claim_outcome")
+  @@map("pilot_run_outcome")
 }
 
 enum PilotQuestionKind {
@@ -28,7 +28,7 @@ enum PilotQuestionStatus {
 enum PilotJournalKind {
   cycle
   action
-  observation
+  hint
   question
   system
   digest
@@ -56,10 +56,10 @@ model PilotState {
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at")
-  agendaVersion         String?   @map("agenda_version")
-  agendaGeneratedAt     DateTime? @map("agenda_generated_at")
-  agendaExpiresAt       DateTime? @map("agenda_expires_at")
-  agendaSnapshot        Json?     @map("agenda_snapshot")
+  taskListVersion       String?   @map("task_list_version")
+  taskListBuiltAt       DateTime? @map("task_list_built_at")
+  taskListExpiresAt     DateTime? @map("task_list_expires_at")
+  taskListSnapshot      Json?     @map("task_list_snapshot")
   lastCycleAt           DateTime? @map("last_cycle_at")
   cycleCount            Int       @default(0) @map("cycle_count")
   createdAt             DateTime  @default(now()) @map("created_at")
@@ -93,26 +93,26 @@ model PilotSearch {
   @@map("pilot_searches")
 }
 
-model PilotClaim {
-  id          String             @id @default(uuid())
-  userId      String             @map("user_id")
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind        String
-  subjectType String             @map("subject_type")
-  subjectId   String             @map("subject_id")
-  payload     Json               @default("{}")
-  grantedAt   DateTime           @default(now()) @map("granted_at")
-  heartbeatAt DateTime?          @map("heartbeat_at")
-  expiresAt   DateTime           @map("expires_at")
-  releasedAt  DateTime?          @map("released_at")
-  outcome     PilotClaimOutcome?
+model PilotRun {
+  id          String           @id @default(uuid())
+  userId      String           @map("user_id")
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType    String           @map("task_type")
+  subjectType String           @map("subject_type")
+  subjectId   String           @map("subject_id")
+  payload     Json             @default("{}")
+  startedAt   DateTime         @default(now()) @map("started_at")
+  heartbeatAt DateTime?        @map("heartbeat_at")
+  expiresAt   DateTime         @map("expires_at")
+  finishedAt  DateTime?        @map("finished_at")
+  outcome     PilotRunOutcome?
 
   @@index([userId, expiresAt])
   @@index([userId, subjectType, subjectId])
-  @@index([releasedAt])
-  // No @@unique on (userId, kind, subject): one open claim per subject is an *open*-claim rule, and
-  // released rows are kept as history for the retry damper. ClaimService enforces it in-transaction.
-  @@map("pilot_claims")
+  @@index([finishedAt])
+  // No @@unique on (userId, taskType, subject): one open run per subject is an *open*-run rule, and
+  // finished rows are kept as history for the retry damper. RunService enforces it in-transaction.
+  @@map("pilot_runs")
 }
 
 model PilotQuestion {

@@ -1,4 +1,4 @@
-import { agendaClaimFieldsSchema, agendaResponseSchema } from "@jobpilot/contracts/pilot";
+import { taskFieldsSchema, taskListSchema } from "@jobpilot/contracts/pilot";
 import { DATE_KEYS, reviveJsonDates, toInputJson } from "./json";
 import { describe, expect, it } from "bun:test";
 
@@ -54,9 +54,9 @@ function dateKeysOf(schema: ZodNode, found = new Set<string>(), seen = new Set<Z
 }
 
 describe("reviveJsonDates", () => {
-  it("covers every date key the agenda and claim schemas declare", () => {
-    const declared = dateKeysOf(agendaResponseSchema as unknown as ZodNode);
-    dateKeysOf(agendaClaimFieldsSchema as unknown as ZodNode, declared);
+  it("covers every date key the task list and run schemas declare", () => {
+    const declared = dateKeysOf(taskListSchema as unknown as ZodNode);
+    dateKeysOf(taskFieldsSchema as unknown as ZodNode, declared);
 
     expect([...declared].filter((key) => !DATE_KEYS.has(key))).toEqual([]);
   });

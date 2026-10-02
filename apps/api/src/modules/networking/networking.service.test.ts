@@ -118,7 +118,7 @@ describe("networking send gate: LinkedIn InMail", () => {
 
 describe("networking result: sent email", () => {
   // The email already left the outbox by the time the result lands, so recording must never be
-  // rejected (a cap 422 here would leave sentAt null and let the agenda re-emit → duplicate email).
+  // rejected (a cap 422 here would leave sentAt null and let the task list re-emit → duplicate email).
   it("records a sent email result unconditionally, stamping sentAt", async () => {
     const { svc } = service({
       message: { channel: "email", status: "approved" },

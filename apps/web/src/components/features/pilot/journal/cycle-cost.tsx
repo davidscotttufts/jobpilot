@@ -7,9 +7,9 @@ import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatDuration, plural } from "@/utils/format";
-import { agendaKindLabel } from "../agenda-kinds";
+import { taskTypeLabel } from "../task-types";
 
-/** Wall clock stands in for token spend: nothing measures tokens per cycle, and both rank kinds alike. */
+/** Wall clock stands in for token spend: nothing measures tokens per cycle, and both rank task types alike. */
 export function CycleCost(): ReactElement {
   const query = useApiQuery(pilotQueries.cost(), { errorMessage: "Failed to load cycle costs" });
   const items = query.data?.items ?? [];
@@ -18,7 +18,7 @@ export function CycleCost(): ReactElement {
   return (
     <SectionCard
       title="Where the time goes"
-      description="The last 7 days of cycles by agenda kind, heaviest first."
+      description="The last 7 days of cycles by task type, heaviest first."
     >
       <QuerySection
         isLoading={query.isLoading}
@@ -30,13 +30,13 @@ export function CycleCost(): ReactElement {
       >
         <Stack spacing={1.5}>
           {items.map((item) => (
-            <Box key={item.kind}>
+            <Box key={item.taskType}>
               <Stack
                 direction="row"
                 spacing={1}
                 sx={{ alignItems: "baseline", justifyContent: "space-between" }}
               >
-                <Typography variant="body2">{agendaKindLabel(item.kind)}</Typography>
+                <Typography variant="body2">{taskTypeLabel(item.taskType)}</Typography>
                 <Typography variant="captionMuted">
                   {formatDuration(Math.round(item.totalMs / 1000))} total
                 </Typography>

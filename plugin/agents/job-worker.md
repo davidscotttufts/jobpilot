@@ -15,7 +15,7 @@ Process one job, return one compact JSON object. Snapshots, API payloads, and ta
 
 ## Input
 
-One JSON blob: `{ mode, campaignId, jobKey, jobs, url, board, digest, resumeId, defaultStartDate, salaryExpectation, answers, minMatchScore, preSubmitReview, save, claimId }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
+One JSON blob: `{ mode, campaignId, jobKey, jobs, url, board, digest, resumeId, defaultStartDate, salaryExpectation, answers, minMatchScore, preSubmitReview, save, runId }`. `mode` is `review`, `score`, or `apply`; absent fields are null.
 
 - `jobs` (score mode only, ≤5): `[{jobKey,url,title?,company?}]` for batch scoring - when set, ignore the top-level `jobKey`/`url`.
 - `save` (score mode, default `"create"`): `"create"` or `"patch"`.
@@ -31,13 +31,13 @@ The browser is shared: the orchestrator owns tab 0. Open your own tab, and befor
 
 ## Heartbeats
 
-When `claimId` is set, extend the pilot claim at major phase boundaries so a long run doesn't look stuck: login done, tailoring done, form filled (apply mode); each row scored (score mode). One call each, no body:
+When `runId` is set, extend the pilot run at major phase boundaries so a long run doesn't look stuck: login done, tailoring done, form filled (apply mode); each row scored (score mode). One call each, no body:
 
 ```bash
-jobpilot-api POST /api/pilot/claims/$CLAIM_ID/heartbeat
+jobpilot-api POST /api/pilot/runs/$RUN_ID/heartbeat
 ```
 
-Skip entirely when `claimId` is absent.
+Skip entirely when `runId` is absent.
 
 ## Scoring (review and score modes)
 
@@ -82,7 +82,7 @@ One tab for the whole batch: open it once, reuse it per row, close it at the end
 6. Save (merge any `extraDigest` into `digest` first):
    - `save:"create"` (default; keeps the JD out of the orchestrator): write `{key, title, company, location, url, board, matchScore, matchReason, status:"pending", digest, description}` (`digest` as a JSON string, `description` = the posting text) to `$JOBPILOT_TEMP/job-$JOB_KEY.json`, then `POST /api/campaigns/$CAMPAIGN_ID/jobs --data @"$JOBPILOT_TEMP/job-$JOB_KEY.json"`. An ineligible row then gets `POST /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY/result` `{outcome:"skipped",skipReason}`; creation never writes a terminal status.
    - `save:"patch"` (the row already exists, e.g. from `search.discover`): eligible → `PATCH /api/campaigns/$CAMPAIGN_ID/jobs/$JOB_KEY` `{matchScore,matchReason,digest,description}`; ineligible → the `/result` skip instead. A `queued` row (pasted link, hostname placeholder title, no company) also needs the real `title`, `company`, `location`, `board` and `status:"pending"` in that PATCH.
-7. Heartbeat if `claimId` is set.
+7. Heartbeat if `runId` is set.
 
 Close the tab and return a single object for a one-row input, else an array, each `{ "outcome":"scored", "jobKey", "title", "company", "location", "matchScore", "confidence", "eligible", "skipReason", "matchReason" }`.
 
@@ -119,4 +119,4 @@ Apply to one job. The job is already `applying`. If `digest` is absent, read it 
 4. Never skip silently (eligibility.md).
 5. One job per invocation, except a score-mode batch (`jobs`, ≤5). No looping or pagination beyond it.
 6. Every file you write goes under `$JOBPILOT_TEMP`, prefixed with the job key (setup.md "Scratch files").
-7. Optionally add `observations` to your return: 0-3 short strings, **durable board/site facts only** (e.g. "greenhouse.io added a demographics page after submit"), never per-job trivia.
+7. Optionally add `hints` to your return: 0-3 short strings, **durable board/site facts only** (e.g. "greenhouse.io added a demographics page after submit"), never per-job trivia.

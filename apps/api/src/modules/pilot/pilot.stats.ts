@@ -1,9 +1,9 @@
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { isCrash } from "./agenda/claims";
 import { classifySkipReason, type SkipBucket } from "./skip-reasons";
+import { isCrash } from "./tasks/runs";
 
-/** Claims older than a week describe a version of the agent you are no longer running. */
+/** Runs older than a week describe a version of the agent you are no longer running. */
 const COST_WINDOW_MS = 7 * DAY_MS;
 
 export function countAppliedToday(
@@ -66,32 +66,32 @@ function median(sorted: number[]): number {
 }
 
 /**
- * Where the week's cycles went, by agenda kind, heaviest first. A released claim already brackets
- * one run of one kind, so its wall clock stands in for token spend without a telemetry write.
+ * Where the week's cycles went, by task type, heaviest first. A finished run already brackets
+ * one run of one task type, so its wall clock stands in for token spend without a telemetry write.
  */
-export async function costByKind(
-  prisma: Pick<PrismaClient, "pilotClaim">,
+export async function costByTaskType(
+  prisma: Pick<PrismaClient, "pilotRun">,
   userId: string,
   now: Date,
 ) {
-  const claims = await prisma.pilotClaim.findMany({
+  const rows = await prisma.pilotRun.findMany({
     where: {
       userId,
-      releasedAt: { not: null },
-      grantedAt: { gte: new Date(now.getTime() - COST_WINDOW_MS) },
+      finishedAt: { not: null },
+      startedAt: { gte: new Date(now.getTime() - COST_WINDOW_MS) },
     },
     // Uncapped: any cap short enough to matter would quietly shorten the week being reported.
-    select: { kind: true, grantedAt: true, releasedAt: true, outcome: true },
+    select: { taskType: true, startedAt: true, finishedAt: true, outcome: true },
   });
 
-  const released = claims.flatMap(({ releasedAt, ...claim }) =>
-    releasedAt ? [{ ...claim, ms: releasedAt.getTime() - claim.grantedAt.getTime() }] : [],
+  const finished = rows.flatMap(({ finishedAt, ...run }) =>
+    finishedAt ? [{ ...run, ms: finishedAt.getTime() - run.startedAt.getTime() }] : [],
   );
-  return [...Map.groupBy(released, (run) => run.kind)]
-    .map(([kind, runs]) => {
+  return [...Map.groupBy(finished, (run) => run.taskType)]
+    .map(([taskType, runs]) => {
       const durations = runs.map((run) => run.ms).sort((a, b) => a - b);
       return {
-        kind,
+        taskType,
         runs: runs.length,
         medianMs: median(durations),
         totalMs: durations.reduce((sum, ms) => sum + ms, 0),

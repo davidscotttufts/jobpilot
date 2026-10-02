@@ -21,10 +21,10 @@ import {
   NETWORKING_CHANNELS,
   NETWORKING_MESSAGE_STATUSES,
 } from "@jobpilot/contracts/networking";
-import { PILOT_CLAIM_OUTCOMES } from "@jobpilot/contracts/pilot/claim";
 import { PILOT_JOURNAL_KINDS } from "@jobpilot/contracts/pilot/journal";
 import { PROMOTION_STATUSES } from "@jobpilot/contracts/pilot/promotion";
 import { PILOT_QUESTION_KINDS, PILOT_QUESTION_STATUSES } from "@jobpilot/contracts/pilot/question";
+import { PILOT_RUN_OUTCOMES } from "@jobpilot/contracts/pilot/run";
 import { ROLES } from "@jobpilot/contracts/role";
 import {
   UPWORK_INBOX_KINDS,
@@ -65,7 +65,7 @@ const PAIRS: [string, readonly string[], Record<string, string>][] = [
   ["LinkedinMessageKind", LINKEDIN_KINDS, prismaEnums.LinkedinMessageKind],
   ["NetworkingChannel", NETWORKING_CHANNELS, prismaEnums.NetworkingChannel],
   ["NetworkingMessageStatus", NETWORKING_MESSAGE_STATUSES, prismaEnums.NetworkingMessageStatus],
-  ["PilotClaimOutcome", PILOT_CLAIM_OUTCOMES, prismaEnums.PilotClaimOutcome],
+  ["PilotRunOutcome", PILOT_RUN_OUTCOMES, prismaEnums.PilotRunOutcome],
   ["PilotJournalKind", PILOT_JOURNAL_KINDS, prismaEnums.PilotJournalKind],
   ["PilotQuestionKind", PILOT_QUESTION_KINDS, prismaEnums.PilotQuestionKind],
   ["PilotQuestionStatus", PILOT_QUESTION_STATUSES, prismaEnums.PilotQuestionStatus],

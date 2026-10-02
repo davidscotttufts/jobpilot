@@ -23,9 +23,9 @@ export class EmailSyncService {
   ) {}
 
   /**
-   * Best-effort pull for the pilot's agenda compile: skips when no account is connected or the
+   * Best-effort pull for the pilot's task list refresh: skips when no account is connected or the
    * last sync is fresher than `staleMs`, and swallows failures - a broken mailbox must never
-   * block the agenda.
+   * block the task list.
    */
   async syncIfStale(userId: string, staleMs: number, now: Date): Promise<void> {
     const account = await this.prisma.emailAccount.findUnique({

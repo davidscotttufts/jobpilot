@@ -1,0 +1,85 @@
+import { approvedJob, hasTaskType, service } from "./fakes";
+import { describe, expect, it } from "bun:test";
+
+describe("TaskListService warm intros", () => {
+  const insider = {
+    id: "ct1",
+    name: "Insider",
+    title: "Staff Eng",
+    email: "in@acme.test",
+    company: "Acme, Inc.",
+  };
+
+  it("matches contacts by normalized company onto both the apply and the intro", async () => {
+    const taskList = await service({
+      approvedJobs: [approvedJob({ matchScore: 90, company: "Acme" })],
+      contacts: [insider],
+    }).refresh("p1");
+    const apply = taskList.tasks.find((i) => i.taskType === "job.apply");
+    const intro = taskList.tasks.find((i) => i.taskType === "networking.warmIntro");
+    expect(apply?.payload).toMatchObject({ warmContacts: [{ id: "ct1" }] });
+    expect(intro?.payload).toMatchObject({ contacts: [{ id: "ct1" }] });
+  });
+
+  it("leaves a job below the score floor out of the pool", async () => {
+    const taskList = await service({
+      approvedJobs: [approvedJob({ matchScore: 79 })],
+      contacts: [insider],
+    }).refresh("p1");
+    expect(hasTaskType(taskList, "networking.warmIntro")).toBe(false);
+  });
+
+  it("keeps a recent strong apply in the pool", async () => {
+    const taskList = await service({
+      recentAppliedJobs: [approvedJob({ matchScore: 90, key: "done1" })],
+    }).refresh("p1");
+    const intro = taskList.tasks.find((i) => i.taskType === "networking.warmIntro");
+    expect(intro?.subjectId).toBe("c1:done1");
+  });
+
+  it("drops an introduced job from the pool but keeps its contacts on the apply", async () => {
+    const taskList = await service({
+      approvedJobs: [approvedJob({ matchScore: 90, key: "j1" })],
+      warmIntroRuns: [
+        { subjectId: "c1:j1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+      ],
+      contacts: [insider],
+    }).refresh("p1");
+    expect(hasTaskType(taskList, "networking.warmIntro")).toBe(false);
+    const apply = taskList.tasks.find((i) => i.taskType === "job.apply");
+    expect(apply?.payload).toMatchObject({ warmContacts: [{ id: "ct1" }] });
+  });
+});
+
+describe("TaskListService board.diagnose", () => {
+  // Newest-first apply outcomes for one board.
+  const failed = (key: string) => ({
+    campaignId: "c1",
+    key,
+    url: `https://x/${key}`,
+    board: "linkedin",
+    status: "failed",
+    failReason: "captcha wall",
+  });
+  const applied = (key: string) => ({ ...failed(key), status: "applied", failReason: null });
+
+  it("flags a board whose latest three applies failed, probing the newest failure", async () => {
+    const taskList = await service({
+      boardDiagnoseJobs: [failed("a"), failed("b"), failed("c"), applied("d")],
+    }).refresh("p1");
+    const task = taskList.tasks.find((i) => i.taskType === "board.diagnose");
+    expect(task?.payload).toEqual({
+      board: "linkedin",
+      consecutiveFailures: 3,
+      recentFailReasons: ["captcha wall", "captcha wall", "captcha wall"],
+      testJob: { campaignId: "c1", jobKey: "a", url: "https://x/a" },
+    });
+  });
+
+  it("does not flag a board whose streak a recent success broke", async () => {
+    const taskList = await service({
+      boardDiagnoseJobs: [failed("a"), failed("b"), applied("c"), failed("d")],
+    }).refresh("p1");
+    expect(hasTaskType(taskList, "board.diagnose")).toBe(false);
+  });
+});

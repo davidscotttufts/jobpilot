@@ -111,21 +111,21 @@ cycle for as long as it's enabled:
     └──── the orchestrator re-injects ◄───────┘
 ```
 
-- **Sense.** The agent fetches its agenda, a prioritized list the server
+- **Sense.** The agent fetches its task list, a prioritized list the server
   compiles fresh from your data on every request (jobs to apply to, replies to
   review, follow-ups due). There is no separate task queue or background cron.
-- **Decide.** It takes the single top item.
-- **Act.** It claims the item, with a short-lived claim that has a built-in
+- **Decide.** It takes the single top task.
+- **Act.** It starts a run on the task, a short-lived lock that has a built-in
   timeout, and does that one thing: apply to a job, send a follow-up, draft an
   interview reply. The result is saved to the server before anything else
-  happens, so a crash mid-cycle loses nothing. The claim expires and the work
-  returns to the agenda.
+  happens, so a crash mid-cycle loses nothing. The run expires and the work
+  returns to the task list.
 - **Record.** The action lands in the live journal.
 - **Exit.** The cycle prints a sentinel line (`[[JOBPILOT_CYCLE ...]]`) and
   stops. The orchestrator on your machine reads it, confirms completion with
   the server (garbled terminal output can't fake a finish), and schedules the
   next run. A quiet or stuck run gets a check-in reminder, then a session
-  restart; the claim timeout returns its work to the agenda either way.
+  restart; the run timeout returns its work to the task list either way.
 
 Two things let this run without a browser tab open: **one-time pairing**
 stores your login token securely with the host when you first enable the

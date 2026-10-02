@@ -23,7 +23,7 @@ function stateService(savedGoals: string) {
   const rec = {
     searchResets: 0,
     searchDeletes: 0,
-    bootstrapClaimDeletes: 0,
+    setupRunDeletes: 0,
     campaignsCompleted: 0,
     jobsDropped: 0,
   };
@@ -38,7 +38,7 @@ function stateService(savedGoals: string) {
         stateRow({ instructionsGoals: savedGoals, ...a.update }),
     },
     pilotSearch: { updateMany: count("searchResets"), deleteMany: count("searchDeletes") },
-    pilotClaim: { deleteMany: count("bootstrapClaimDeletes") },
+    pilotRun: { deleteMany: count("setupRunDeletes") },
     campaign: {
       findMany: async () => [{ campaignId: "c1", source: "auto_apply" }],
       updateMany: count("campaignsCompleted"),
@@ -64,7 +64,7 @@ describe("PilotService.updateInstructions", () => {
     expect(rec).toEqual({
       searchResets: 1,
       searchDeletes: 0,
-      bootstrapClaimDeletes: 0,
+      setupRunDeletes: 0,
       campaignsCompleted: 0,
       jobsDropped: 0,
     });
@@ -76,10 +76,10 @@ describe("PilotService.updateInstructions", () => {
     expect(rec.searchResets).toBe(0);
   });
 
-  it("clears the bootstrap damper with the searches, or the re-derive waits a day", async () => {
+  it("clears the setup damper with the searches, or the re-derive waits a day", async () => {
     const { svc, rec } = stateService("old goals");
     await svc.updateInstructions("p1", body("new goals", { rederiveSearches: true }));
-    expect(rec).toMatchObject({ searchResets: 0, searchDeletes: 1, bootstrapClaimDeletes: 1 });
+    expect(rec).toMatchObject({ searchResets: 0, searchDeletes: 1, setupRunDeletes: 1 });
   });
 
   it("completes campaigns and drops the approved backlog when asked", async () => {
@@ -113,7 +113,7 @@ describe("PilotService.getActivity", () => {
   ) {
     const noMax = { _max: { createdAt: null, updatedAt: null } };
     const db = {
-      pilotClaim: { findMany: async () => [] },
+      pilotRun: { findMany: async () => [] },
       pilotJournalEntry: { aggregate: async () => noMax, findFirst: async () => cycleEntry },
       campaign: { aggregate: async () => noMax },
       job: { aggregate: async () => noMax },

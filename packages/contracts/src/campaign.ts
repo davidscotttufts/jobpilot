@@ -102,7 +102,7 @@ export const createCampaignSchema = z
     source: campaignSourceSchema,
     config: campaignConfigSchema.optional(),
     createdBy: campaignActorSchema.default("user"),
-    /** Set by the pilot's discovery cycle so the search can find this campaign again by id. */
+    /** Set by the pilot's discovery run so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
     /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
     urls: applyUrlsSchema.optional(),

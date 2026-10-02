@@ -100,7 +100,7 @@ export async function assertNotDuplicateApply(
 
 /**
  * Runs a move into `applying`. On a duplicate the move has rolled back, so the job is skipped
- * here - otherwise it stays `approved` and the next agenda offers the same duplicate again.
+ * here - otherwise it stays `approved` and the next task list offers the same duplicate again.
  */
 export async function guardApply<T>(
   prisma: PrismaClient,
@@ -129,7 +129,7 @@ export async function guardApply<T>(
 }
 
 /** Moves an approved job into `applying` inside the caller's transaction; wrap it in `guardApply`. */
-export async function claimJobForApply(
+export async function startApplying(
   tx: Prisma.TransactionClient,
   userId: string,
   campaignId: string,
@@ -150,7 +150,7 @@ export async function claimJobForApply(
   await assertNotDuplicateApply(tx, userId, { ...target, campaignId, key });
 
   // An empty result is the lost race.
-  const [claimed] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
-  if (!claimed) throw conflict("Job is no longer approved.");
-  return claimed;
+  const [started] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
+  if (!started) throw conflict("Job is no longer approved.");
+  return started;
 }

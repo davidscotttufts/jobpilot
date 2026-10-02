@@ -18,7 +18,7 @@ function selectWakeMs(page: PilotJournalPage): number | null {
 }
 
 /**
- * The newest cycle's completion plus the sleep it announced. The agenda carries the same figure,
+ * The newest cycle's completion plus the sleep it announced. The task list carries the same figure,
  * but its query is pinned and goes stale; the journal cache is streamed into and stays live.
  */
 export function useNextWake(): Date | null {

@@ -17,7 +17,7 @@ and move on without opening a tab. Skills that deviate (e.g. `networking` keeps 
 records `.match.application.id` as `relatedAppId`) say so inline.
 
 The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the
-pilot's claim - 409s on a duplicate with a message opening `Already applied (<kind>)`. That is the
+pilot's run start - 409s on a duplicate with a message opening `Already applied (<kind>)`. That is the
 verdict, not a transient failure, and the server has already written the job's `skipped` result.
 Move to the next item; never retry the transition or re-write the result.
 

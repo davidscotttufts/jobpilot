@@ -12,8 +12,8 @@ import type { PilotHealth } from "@/lib/terminal";
 import { formatTimeUntil, humanizeIsoInText } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline } from "../host-status";
-import { useAgenda } from "./agenda-preview";
 import { type StageFlowNode, stageNodeTypes } from "./flow-nodes";
+import { useTaskList } from "./task-list-preview";
 import { useNextWake } from "./use-next-wake";
 
 type StageId = "orchestrator" | "agent" | "worker" | "results";
@@ -40,7 +40,7 @@ const STAGE_SPACING = 220;
 const STAGE_BY_KIND: Record<PilotJournalKind, StageId> = {
   cycle: "agent",
   action: "worker",
-  observation: "worker",
+  hint: "worker",
   digest: "results",
   question: "results",
   correction: "results",
@@ -85,7 +85,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const theme = useTheme();
   const journal = useApiQuery(pilotQueries.journal());
   const nextWakeAt = useNextWake();
-  const agenda = useAgenda();
+  const taskList = useTaskList();
 
   // ReactFlow measures the DOM, so the canvas must never render during SSR.
   const [mounted, setMounted] = useState(false);
@@ -96,12 +96,12 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const newest = journal.data?.items[0] ?? null;
   const activeStage = mode === "working" && newest ? STAGE_BY_KIND[newest.kind] : "orchestrator";
   const activeIndex = STAGES.findIndex((stage) => stage.id === activeStage);
-  const topAgendaItem = agenda.data?.items[0]?.title;
+  const topTask = taskList.data?.tasks[0]?.title;
   const latestAction = newest ? humanizeIsoInText(newest.summary) : "";
 
   const captions: Record<StageId, string> = {
     orchestrator: orchestratorCaption(mode, nextWakeAt),
-    agent: topAgendaItem ? `Next: ${truncate(topAgendaItem, 60)}` : "Senses the agenda",
+    agent: topTask ? `Next: ${truncate(topTask, 60)}` : "Reads the task list",
     worker: latestAction ? truncate(latestAction) : "Scores & applies jobs",
     results: `${state.appliedToday} / ${state.instructionsConfig.dailyApplyCap} applied today`,
   };
@@ -187,7 +187,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
           <Typography variant="body2Muted">{hint}</Typography>
         ) : (
           <Typography variant="captionMuted">
-            Each cycle the orchestrator wakes the agent, which senses the agenda and delegates a
+            Each cycle the orchestrator wakes the agent, which reads the task list and delegates a
             worker to act on the job board.
           </Typography>
         )}

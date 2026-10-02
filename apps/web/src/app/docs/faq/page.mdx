@@ -57,7 +57,7 @@ goes off-script. The same is true of the networking cap.
 
 ## How does the Pilot decide what to do first?
 
-The server ranks the agenda every cycle: your answered questions come first,
+The server ranks the task list every cycle: your answered questions come first,
 then interview replies, then applications ordered by match score, then
 networking, then discovery of new postings. You steer it with your goals text
 and limits. See [the Pilot](/docs/pilot).
@@ -72,8 +72,8 @@ replies are always drafted for review. Those rules are enforced server-side.
 ## What happens if my computer sleeps or crashes mid-cycle?
 
 Nothing is lost. Each cycle does one unit of work and saves the result before
-moving on; work claimed by a crashed cycle times out and returns to the
-agenda. The host restarts cycles on its own after a reboot or wake.
+moving on; work started by a crashed cycle times out and returns to the
+task list. The host restarts cycles on its own after a reboot or wake.
 
 ## Can I use JobPilot manually while the Pilot is running?
 

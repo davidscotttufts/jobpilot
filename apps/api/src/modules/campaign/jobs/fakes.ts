@@ -3,7 +3,7 @@
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { JobListingPublisher } from "@/modules/job-listing";
-import { claimJobForApply, guardApply } from "./apply-guard";
+import { guardApply, startApplying } from "./apply-guard";
 import { CampaignJobService } from "./job.service";
 
 /** Relative to now, so the duplicate fixtures stay inside the window as the calendar moves. */
@@ -136,10 +136,10 @@ export function setup() {
   const service = new CampaignJobService(db as unknown as PrismaClient, listings);
   return {
     service,
-    /** The pilot's claim: the move runs inside a transaction wrapped in the duplicate guard. */
-    claim: () =>
+    /** Starting a job.apply run: the move happens in a transaction wrapped in the duplicate guard. */
+    startApplying: () =>
       guardApply(db as unknown as PrismaClient, "u1", () =>
-        claimJobForApply(db as unknown as Prisma.TransactionClient, "u1", "c1", "j1"),
+        startApplying(db as unknown as Prisma.TransactionClient, "u1", "c1", "j1"),
       ),
     get job() {
       return job;

@@ -15,7 +15,7 @@ export const pilotTodayOutcomesSchema = z.object({
 export const pilotCostSchema = z.object({
   items: z.array(
     z.object({
-      kind: z.string(),
+      taskType: z.string(),
       runs: z.number().int(),
       medianMs: z.number().int(),
       totalMs: z.number().int(),
@@ -27,7 +27,7 @@ export const pilotCostSchema = z.object({
 
 export const pilotActivityResponseSchema = z.object({
   lastActivityAt: z.date().nullable(),
-  activeClaims: z.number().int(),
+  activeRuns: z.number().int(),
   // The host's pre-inject gate reads this, so a probe costs no PilotState write.
   running: z.boolean(),
   // The durable completion signal the host falls back on when the sentinel is mangled.

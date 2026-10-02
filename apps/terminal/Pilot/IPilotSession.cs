@@ -19,7 +19,7 @@ public readonly record struct WaitResult(WaitOutcome Outcome, CycleResult Cycle 
     public static WaitResult Sentinel(CycleResult cycle) => new(WaitOutcome.Sentinel, cycle);
 }
 
-/// <summary>CheckIn asks the agent to release its claim; Skip makes it fail the claimed task. Both end the cycle.</summary>
+/// <summary>CheckIn asks the agent to finish its run; Skip makes it fail the started task. Both end the cycle.</summary>
 public enum Directive
 {
     CheckIn,

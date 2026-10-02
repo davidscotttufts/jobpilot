@@ -18,7 +18,7 @@ import { PilotService } from "./pilot.service";
 
 const pilot = container.resolve(PilotService);
 
-const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
+const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotController = new Elysia({
@@ -73,11 +73,11 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Reset the pilot's run history",
       description:
-        "Deletes every journal entry, sets the cycle counter back to 0, and drops the cached agenda. Instructions, searches and the running flag are untouched.",
+        "Deletes every journal entry, sets the cycle counter back to 0, and drops the cached task list. Instructions, searches and the running flag are untouched.",
     },
   })
   .get("/stats/today", ({ user }) => pilot.getTodayOutcomes(user.id), {
-    beforeHandle: limitAgenda,
+    beforeHandle: limitTaskList,
     response: pilotTodayOutcomesSchema,
     detail: {
       summary: "Today's non-applied outcomes",
@@ -86,21 +86,21 @@ export const pilotController = new Elysia({
     },
   })
   .get("/stats/cost", ({ user }) => pilot.getCost(user.id), {
-    beforeHandle: limitAgenda,
+    beforeHandle: limitTaskList,
     response: pilotCostSchema,
     detail: {
       summary: "Where the last week of cycles went",
       description:
-        "Per agenda kind: runs, median and total wall clock, failures, and abandoned claims over the last 7 days, heaviest first. Derived from claim timings - no separate telemetry write.",
+        "Per task type: runs, median and total wall clock, failures, and abandoned runs over the last 7 days, heaviest first. Derived from run timings - no separate telemetry write.",
     },
   })
   .get("/activity", ({ user }) => pilot.getActivity(user.id), {
-    beforeHandle: limitAgenda,
+    beforeHandle: limitTaskList,
     response: pilotActivityResponseSchema,
     detail: {
       summary: "Pilot liveness activity",
       description:
-        "Newest server-side agent activity (claims, journal, campaign/job writes) plus the active-claim count, so the terminal orchestrator can tell a live long run from a genuinely stuck one.",
+        "Newest server-side agent activity (runs, journal, campaign/job writes) plus the active-run count, so the terminal orchestrator can tell a live long run from a genuinely stuck one.",
     },
   })
   .get("/events", ({ user, headers }) => sseStream(pilotChannel, { userId: user.id }, headers), {

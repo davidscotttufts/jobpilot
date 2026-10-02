@@ -22,7 +22,7 @@ export const KIND_META: Record<
 > = {
   cycle: { icon: Autorenew, color: "primary", label: "Cycle" },
   action: { icon: Bolt, color: "info", label: "Action" },
-  observation: { icon: Visibility, color: "default", label: "Note" },
+  hint: { icon: Visibility, color: "default", label: "Hint" },
   question: { icon: NotificationImportant, color: "warning", label: "Question" },
   system: { icon: Terminal, color: "default", label: "System" },
   digest: { icon: Summarize, color: "success", label: "Summary" },

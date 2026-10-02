@@ -96,7 +96,7 @@ const GITLAB_LEGACY =
 const GITLAB_CANONICAL =
   "https://hiringcafe.com/job/director-of-engineering-growth-and-monetization-gitlab-canada-q05zkngwllkfigpu";
 
-const CLAIMING = job({
+const STARTING = job({
   campaignId: "c2",
   key: "j2",
   url: GITLAB_CANONICAL,
@@ -106,9 +106,9 @@ const CLAIMING = job({
 
 describe("assertNotDuplicateApply - applying sibling", () => {
   it("blocks the same posting held under the other host", async () => {
-    const sibling = { ...CLAIMING, campaignId: "c1", key: "j1", url: GITLAB_LEGACY };
+    const sibling = { ...STARTING, campaignId: "c1", key: "j1", url: GITLAB_LEGACY };
 
-    expect((await refusal(db([], [sibling]), CLAIMING))?.message).toMatch(/c1\/j1/);
+    expect((await refusal(db([], [sibling]), STARTING))?.message).toMatch(/c1\/j1/);
   });
 
   it("blocks a relisted posting whose title was rephrased", async () => {
@@ -117,7 +117,7 @@ describe("assertNotDuplicateApply - applying sibling", () => {
       title: "(Remote) VP of R&D",
       company: "Harris Computer",
     });
-    const claiming = job({
+    const starting = job({
       campaignId: "c2",
       key: "j2",
       url: "https://hiringcafe.com/job/remote-vice-president-of-research-and-development-harris-computer-y2bgwhpg4bo",
@@ -125,11 +125,11 @@ describe("assertNotDuplicateApply - applying sibling", () => {
       company: "Harris Computer",
     });
 
-    expect((await refusal(db([], [sibling]), claiming))?.message).toMatch(/Already applying/);
+    expect((await refusal(db([], [sibling]), starting))?.message).toMatch(/Already applying/);
   });
 
-  it("ignores the row being claimed itself", async () => {
-    expect(await refusal(db([], [CLAIMING]), CLAIMING)).toBeNull();
+  it("ignores the row being started itself", async () => {
+    expect(await refusal(db([], [STARTING]), STARTING)).toBeNull();
   });
 
   it("lets a different employer through while another apply is open", async () => {
@@ -138,7 +138,7 @@ describe("assertNotDuplicateApply - applying sibling", () => {
       title: "Director of Engineering",
       company: "Clarity",
     });
-    const claiming = job({
+    const starting = job({
       campaignId: "c2",
       key: "j2",
       url: "https://hiringcafe.com/job/director-of-engineering-cardiff",
@@ -146,6 +146,6 @@ describe("assertNotDuplicateApply - applying sibling", () => {
       company: "Cardiff",
     });
 
-    expect(await refusal(db([], [sibling]), claiming)).toBeNull();
+    expect(await refusal(db([], [sibling]), starting)).toBeNull();
   });
 });
