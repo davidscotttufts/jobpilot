@@ -1,8 +1,20 @@
 # Plan: Pilot v2, fewer tokens per application
 
+## Status
+
+| Milestone | State |
+| --- | --- |
+| 1. Rename | Done on `feat/pilot-v2` (commit "refactor(pilot)!: rename agenda to task list and claim to run"). Migration not applied; live run not done. |
+| 0. Spike | Next. |
+| 2-8 | Not started. |
+
+The rename ran before the spike so the spike and every later milestone use the final names.
+
 ## Context
 
-The pilot works: the server ranks the agenda, claims gate the work, the journal records it, and
+Names below are the post-rename ones (milestone 1).
+
+The pilot works: the server ranks the task list, runs gate the work, the journal records it, and
 cycles keep no state. Its cost is the problem. A user who leaves it running can spend a large
 share of a weekly Claude or Codex limit, and most of that spend does not move an application
 forward.
@@ -11,19 +23,20 @@ Where the tokens go today (reviewed 2026-10-01):
 
 1. **The model does the bookkeeping.** Each cycle runs `/clear`, loads
    `plugin/skills/pilot/SKILL.md` and `_shared/setup.md`, then spends model turns on fixed steps:
-   health check, cycle id, `GET /api/pilot`, agenda refresh, claim, journal, release, sentinel.
+   health check, cycle id, `GET /api/pilot`, task list refresh, start run, journal, finish run,
+   sentinel.
    Every turn resends the context.
-2. **Idle wakes find nothing.** `PilotLoop.RunOnceAsync` checks only the run state, not the
-   agenda. An idle pilot wakes the model every `checkIntervalMinutes` (default 30). That is longer
+2. **Idle wakes find nothing.** `PilotLoop.RunOnceAsync` checks only whether the pilot is
+   running, not the task list. An idle pilot wakes the model every `checkIntervalMinutes` (default 30). That is longer
    than the default 5-minute prompt cache, so each wake probably rewrites the prompt into the
-   cache, then spends about five turns learning the agenda is empty. That is up to 48 wakes a day.
+   cache, then spends about five turns learning the task list is empty. That is up to 48 wakes a day.
 3. **Worker docs miss the cache.** A `job-worker` gets its varying input JSON first, then reads
    about 20 KB of shared docs. Content placed after a varying prefix is not reused across workers.
 4. **The worker writes before it checks.** Apply mode tailors the resume and writes the letter
    before it looks at the form, where sponsorship and clearance blockers often show up.
 5. **One model for everything.** The session model (`sonnet`, `plugin/settings/claude.json`) runs
    discovery, bookkeeping and form filling alike.
-6. **No token numbers.** `costByKind` (`apps/api/src/modules/pilot/pilot.stats.ts`) uses run time
+6. **No token numbers.** `costByTaskType` (`apps/api/src/modules/pilot/pilot.stats.ts`) uses run time
    in place of tokens. Nothing can enforce a budget.
 
 `/clear` itself is not a cost problem and stays. The prompt cache matches the prompt's opening
@@ -59,7 +72,7 @@ Clearing also stops untrusted page content from carrying into the next cycle.
 - **Scripted browser automation** (replay scripts, form inspection scripts): fragile; the user
   rejected it.
 - **A new `WorkItem` queue table:** job, message and question statuses already form the queue,
-  and `PilotClaim` already has versions, heartbeats and a lifetime cap. A second copy drifts.
+  and `PilotRun` already has versions, heartbeats and a lifetime cap. A second copy drifts.
 - **Several LLM agents in parallel, each with a browser:** multiplies spend, invites bot
   detection, and the Playwright profile allows one browser per folder anyway.
 - **Per-user experiments and learning:** one user produces too few replies to separate signal
@@ -70,12 +83,12 @@ Clearing also stops untrusted page content from carrying into the next cycle.
 ## Execution process
 
 - Branch `feat/pilot-v2` from `main` before any change.
-- One milestone at a time, in order. After each: run /verify, then commit (subject only, no
-  co-author trailers).
+- One milestone at a time, in the order of the Status table. After each: run /verify, then
+  commit (subject only, no co-author trailers).
 - Migrations: hand-author the SQL folder and apply with `migrate deploy` (see the migration-drift
   memory). Hold `db:migrate:apply` until the user confirms, since the database is shared.
 - C# changes: rebuild and restart the host (`restart-terminal` skill) before any live check.
-- Milestone 0 is a spike. Its findings go into this file before milestone 1 starts.
+- Milestone 0 is a spike. Its findings go into this file before milestone 2 starts.
 
 ## Milestone 0: spike TUI telemetry and control (no merge)
 
@@ -96,69 +109,59 @@ Prove that the host can measure and steer a TUI pilot session without headless m
   measure what a switch does to the prompt cache.
 - **Cache after `/clear`.** Read cache read versus cache write for a few back-to-back cycles.
   A one-off script in the scratchpad, not committed.
-- **Baseline.** Tokens per cycle by kind, for idle, apply and discover cycles.
+- **Baseline.** Tokens per cycle by task type, for idle, apply and discover cycles.
 
 Exit: a short "Spike findings" section added to this file, with the telemetry route per CLI, the
 TUI commands that work, and the baseline numbers.
 
-## Milestone 1: rename jargon and ambiguous names
+## Milestone 1: rename jargon and ambiguous names (done)
 
-Done first so every later milestone writes new code with the final names. One commit covers the
-API, contracts, api-client, web, host, plugin skills and a data migration. No aliases or old
-routes kept; CHANGELOG history and dated logs keep the old words.
+One commit on `feat/pilot-v2` covers the API, contracts, web, host, plugin skills, docs and a data
+migration. No aliases or old routes kept; CHANGELOG, applied migrations and `.claude/ideas.md`
+keep the old words.
 
 ### The core words
 
-Today the pilot uses agenda, agenda item, claim, cycle, and (before 2026-07-21) lease. After this
-pass:
-
-- **task**: one piece of work the server ranked (was agenda item). The ranked list is the **task list**
-  (was agenda). "Task" is already the word users see.
-- **run**: one attempt at one task by the agent (was claim). A claim already has a start, a
-  heartbeat, an expiry, a finish and an outcome, which is what a run is; milestone 2 adds its
-  token usage to the same row instead of a second `pilot_runs` table keyed by `claimId`.
-  Starting a run reserves the task, as claiming does today.
+- **task**: one piece of work the server ranked (was agenda item). The ranked list is the
+  **task list** (was agenda). "Task" is already the word users see.
+- **run**: one attempt at one task by the agent (was claim). A claim already had a start, a
+  heartbeat, an expiry, a finish and an outcome, which is what a run is; milestone 2 adds token
+  usage to the same `pilot_runs` row. Starting a run reserves the task, as claiming did.
 - **cycle** stays: one pass of the host loop that asks the server for tasks. A cycle starts at
   most one run; after milestone 3 most cycles start none. ("Check" was tried and rejected: it
   collides with check-in, `checkIntervalMinutes` and health checks, and sounds read-only.)
+- `lease` was already gone from code; the last mention, in `api-job-sources.md`, became "hold".
 
-`lease` is already gone from code. It survives only in applied migrations, which stay as they
-are, and in `.claude/plans/api-job-sources.md`, which gets fixed in this pass.
+### What changed
 
-### Table
-
-| Now | New | Where |
+| Old | New | Where |
 | --- | --- | --- |
-| agenda | task list | `/api/pilot/agenda*` → `/api/pilot/tasks*` (response `{taskList}`, its `items` → `tasks`), `modules/pilot/agenda/` → `tasks/`, `AgendaService` → `TaskListService`, `agendaResponseSchema` → `taskListSchema` |
-| agenda item | task | `agendaItem` → `task`, `AgendaItem` → `PilotTask`, `agendaItemSchema` → `taskSchema`, claim body `itemId` → `taskId` |
-| `agendaVersion`, `agendaSnapshot`, `agendaGeneratedAt`, `agendaExpiresAt` | `taskListVersion`, `taskListSnapshot`, `taskListBuiltAt`, `taskListExpiresAt` | `PilotState` columns, start-run body |
-| kind (of a task or claim) | `taskType` | `PilotClaim.kind`, task items, `costByKind` → `costByTaskType`, `skills/pilot/kinds/` → `skills/pilot/tasks/`. The journal and question enums keep `kind`. |
-| claim | run | `PilotClaim` / `pilot_claims` → `PilotRun` / `pilot_runs`, `ClaimService` → `RunService`, `/api/pilot/claims*` → `/api/pilot/runs*`, `claimId` → `runId`, `activeClaims` → `activeRuns`, `agendaClaimFieldsSchema` → `taskFieldsSchema`, release route → `/runs/:id/finish` |
-| claim / release (verbs) | start / finish | `claims.claim()` → `runs.start()`, `grantedAt` → `startedAt`, `releasedAt` → `finishedAt`, "claimable" → "startable" |
-| `PilotClaimOutcome` | `PilotRunOutcome` | Values unchanged: `done`, `failed`, `abandoned`, `expired`. |
-| `claimDamped` | `ranRecently` | "Damped" is jargon for "run recently, so ranked lower". |
-| `claimJobForApply` | `startApplying` | `campaign/jobs/apply-guard.ts`. It moves a job to `applying` and was never a pilot claim. |
-| journal kind `observation` | `hint` | `PilotJournalKind`. Milestone 6 turns these into `site_hints`. |
-| `queue.drain` | `queue.score` | It scores pasted links; "drain" says nothing about what happens to them. |
-| `strategy.bootstrap` | `strategy.setup` | It creates the first searches. |
-| `promo.compose`, `promo.post` | `promotion.draft`, `promotion.post` | Match the `Promotion` model and its `draft` status. |
-| `board.health` | `board.diagnose` | It diagnoses a failing board; "health" reads like a status. Payload `probeJob` → `testJob`. |
+| agenda | task list | `/api/pilot/agenda*` → `/api/pilot/tasks*` (response `{taskList}`, `items` → `tasks`, `generatedAt` → `builtAt`), `modules/pilot/agenda/` → `tasks/`, `AgendaService` → `TaskListService`, `agendaResponseSchema` → `taskListSchema` |
+| agenda item | task | `AgendaItem` → `PilotTask`, `agendaItemSchema` → `taskSchema`, start body `itemId` → `taskId` |
+| `agendaVersion`, `agendaSnapshot`, `agendaGeneratedAt`, `agendaExpiresAt` | `taskListVersion`, `taskListSnapshot`, `taskListBuiltAt`, `taskListExpiresAt` | `PilotState` columns, start body |
+| kind (of a task or run) | `taskType` | `PilotRun.taskType`, tasks, `/stats/cost` items, `costByTaskType`, `skills/pilot/kinds/` → `skills/pilot/tasks/`. Journal and question enums keep `kind`. |
+| claim | run | `PilotRun` / `pilot_runs`, `RunService`, `/api/pilot/runs`, `/runs/:id/heartbeat`, `/runs/:id/finish`, `activeRuns`, `taskFieldsSchema`, `RUN_ID`, worker input `runId` |
+| claim / release (verbs) | start / finish | `runs.start()` / `runs.finish()`, `startedAt` / `finishedAt`, "startable", payload `releaseNote` → `finishNote` |
+| `PilotClaimOutcome` | `PilotRunOutcome` | values unchanged |
+| `claimDamped`, `claimJobForApply` | `ranRecently`, `startApplying` | |
+| journal kind `observation` | `hint` | worker return field `observations` → `hints` |
+| `queue.drain`, `strategy.bootstrap`, `promo.compose`, `promo.post`, `board.health` | `queue.score`, `strategy.setup`, `promotion.draft`, `promotion.post`, `board.diagnose` | task types and skill files; `strategy.setup` subject id `bootstrap` → `setup`; payload `probeJob` → `testJob` |
 | "marker", "stand-down" (prose) | "detail type", "stop" | `SKILL.md`, host comments, docs |
 
-Kept on purpose: `heartbeat`, `journal`, `digest`, `check-in`, `stuck`, `orchestrator`,
-`networking.warmIntro` (a standard recruiting term), `job.rescanSkipped` (matches the
-`rescan-skipped` skill).
+Kept on purpose: `cycle`, `heartbeat`, `journal`, `digest`, `check-in`, `stuck`,
+`orchestrator`, `networking.warmIntro`, `job.rescanSkipped`. New names this plan introduces
+follow the same rule: "task input" (not "packet") and "tier".
 
-New names this plan introduces follow the same rule: the data the host hands the agent is the
-"task input" (not "packet"), and the model level is a "tier".
+Migration `20261002000000_rename_pilot_task_list_and_runs`: renames the table, constraints,
+indexes, columns and enums, rewrites stored task types, subject ids and payload keys, and nulls
+the `task_list_*` columns so the server rebuilds the snapshot.
 
-- Migration: rename the table, columns and enum values (`ALTER TYPE ... RENAME VALUE`), rewrite
-  stored task-type strings in `pilot_runs`, and null the `task_list_*` columns so the server rebuilds it.
-- Confirm the table with the user before starting; drop any row they reject.
-- Afterwards, update the pilot-vocabulary memory.
+Remaining before merge:
 
-Exit: `rg` finds none of the old names outside CHANGELOG, applied migrations and dated logs;
-/verify passes; one live run completes with the new routes.
+- Apply the migration (`migrate deploy`) once the user confirms; the database is shared.
+- One live cycle end to end with the new routes. API, web, host and plugin ship together.
+- Possible follow-up: the host's `/healthz` field `Conducting` still carries the old
+  "conductor" word.
 
 ## Milestone 2: token telemetry
 
@@ -316,8 +319,8 @@ Each needs this plan's telemetry first:
   `PilotLoop` does today.
 - **The agent may skip posting its result.** The stuck ladder covers it, but a high rate means
   the skill's last step needs work. Track runs that end without a result in `pilot_runs`.
-- **The rename touches everything at once.** A missed reference breaks the pilot. Keep it in one
-  commit, grep for every old name, and run one live run before merging.
+- **The rename shipped without aliases.** The API, web, host and plugin must deploy together with
+  the migration; an old host or plugin against the new API fails on every route.
 - **The browser profile is one folder.** The pilot and a user's interactive session cannot both
   drive the browser. Keep `PilotLoop`'s rule: when the user runs a session, the pilot waits.
 - **Cheaper models may fail more** in ways that cost more than they save. Milestone 7 is judged
