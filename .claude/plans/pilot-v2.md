@@ -4,9 +4,9 @@
 
 | Milestone | State |
 | --- | --- |
-| 1. Rename | Done on `feat/pilot-v2` (commit "refactor(pilot)!: rename agenda to task list and claim to run"). Migration not applied; live run not done. |
+| 1. Rename | Done on `feat/pilot-v2` (commits "refactor(pilot)!: rename agenda to task list and claim to run" and "refactor(pilot)!: rename strategy tasks and the job digest to brief"). Migrations not applied; live run not done. |
 | 0. Spike | Next. |
-| 2-7 | Not started. |
+| 2-8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 
@@ -97,6 +97,8 @@ Clearing also stops untrusted page content from carrying into the next cycle.
 - Migrations: hand-author the SQL folder and apply with `migrate deploy` (see the migration-drift
   memory). Hold `db:migrate:apply` until the user confirms, since the database is shared.
 - C# changes: rebuild and restart the host (`restart-terminal` skill) before any live check.
+- Web changes: check them in the running app (`run` skill) in light and dark themes and at phone
+  width before committing.
 - Milestone 0 is a spike. Its findings go into this file before milestone 2 starts.
 
 ## Milestone 0: spike TUI telemetry and control (no merge)
@@ -157,21 +159,29 @@ keep the old words.
 | `PilotClaimOutcome` | `PilotRunOutcome` | values unchanged |
 | `claimDamped`, `claimJobForApply` | `ranRecently`, `startApplying` | |
 | journal kind `observation` | `hint` | worker return field `observations` → `hints` |
-| `queue.drain`, `strategy.bootstrap`, `promo.compose`, `promo.post`, `board.health` | `queue.score`, `strategy.setup`, `promotion.draft`, `promotion.post`, `board.diagnose` | task types and skill files; `strategy.setup` subject id `bootstrap` → `setup`; payload `probeJob` → `testJob` |
+| `queue.drain`, `strategy.bootstrap`, `promo.compose`, `promo.post`, `board.health` | `queue.score`, `search.setup`, `promotion.draft`, `promotion.post`, `board.diagnose` | task types and skill files; `search.setup` subject id `bootstrap` → `setup`; payload `probeJob` → `testJob` |
 | "marker", "stand-down" (prose) | "detail type", "stop" | `SKILL.md`, host comments, docs |
+| `campaign.strategyReview`, detail type `strategyReview` | `campaign.tune`, `tune` | task type, skill file, `campaignTunes`, `tuneTask`. "Strategy" named two unrelated tasks and no model; "review" already meant four other things. |
+| job digest (`Job.digest`, `digest-schema.md`, `score-fit {digest}`, worker input `digest`) | job brief (`Job.brief`, `job-brief.md`, `score-fit {brief}`, `brief`) | column `jobs.digest` → `jobs.brief`, contracts, scoring, job listings, every plugin skill. "Facts" was rejected: it collides with the resume facts in `tailoring/facts.ts`. |
 
-Kept on purpose: `cycle`, `heartbeat`, `journal`, `digest`, `check-in`, `stuck`,
+Kept on purpose: `cycle`, `heartbeat`, `journal`, `digest` (now only the morning journal
+summary), `check-in`, `stuck`,
 `orchestrator`, `networking.warmIntro`, `job.rescanSkipped`. New names this plan introduces
 follow the same rule: "task input" (not "packet"), and agent names that say what the agent does
 (`job-scorer`, `job-applier`, `job-searcher`).
 
 Migration `20261002000000_rename_pilot_task_list_and_runs`: renames the table, constraints,
 indexes, columns and enums, rewrites stored task types, subject ids and payload keys, and nulls
-the `task_list_*` columns so the server rebuilds the snapshot.
+the `task_list_*` columns so the server rebuilds the snapshot. It also rewrites the `strategy`
+task types and the `strategyReview` detail type in journal entries; it was edited in place since
+it has never been applied.
+
+Migration `20261002120000_rename_job_digest_to_brief`: renames `jobs.digest` to `jobs.brief`
+and the `digest` key in stored run payloads.
 
 Remaining before merge:
 
-- Apply the migration (`migrate deploy`) once the user confirms; the database is shared.
+- Apply both migrations (`migrate deploy`) once the user confirms; the database is shared.
 - One live cycle end to end with the new routes. API, web, host and plugin ship together.
 - Possible follow-up: the host's `/healthz` field `Conducting` still carries the old
   "conductor" word.
@@ -215,7 +225,7 @@ The session stays in the TUI the whole time.
   for the same data.
 - Typed result in `@jobpilot/contracts`: `pilotRunResultSchema` with `outcome`
   (`done | failed | needs_user`), `summary` (the journal action line), `subjectType`,
-  `subjectId`, optional `detail` (the strategyReview, rescanSkipped and retryFailed detail
+  `subjectId`, optional `detail` (the tune, rescanSkipped and retryFailed detail
   types), and `hints` (0-3). The agent posts it as its last step:
   `jobpilot-api POST /api/pilot/runs/:id/result`. The API validates it with the Zod schema
   (a `400` names the bad field, and the agent fixes it and posts again), writes the journal
@@ -243,12 +253,12 @@ agent; the main session reads the task input, starts one agent, and posts the re
 
 | Agent | Work | Task types |
 | --- | --- | --- |
-| `job-scorer` | read a posting, build the digest, score, save the row (today's review and score modes) | `queue.score`, `campaign.scorePending`; review for the `apply` skill |
+| `job-scorer` | read a posting, build the brief, score, save the row (today's review and score modes) | `queue.score`, `campaign.scorePending`; review for the `apply` skill |
 | `job-applier` | one application, blockers first (today's apply mode) | `job.apply`, `question.answered` (job), `board.diagnose` |
 | `job-searcher` | one board search: paginate, dedupe, score rows in place, create `pending` rows | `search.discover` |
 | `networking-worker` | unchanged, except `model: inherit` | `networking.*` |
 
-Text-only task types (`interview.*`, `promotion.*`, `campaign.strategyReview`,
+Text-only task types (`interview.*`, `promotion.*`, `campaign.tune`, `search.setup`,
 `inbox.review`) stay in the main session: short, and no browser.
 
 - Replace `plugin/agents/job-worker.md` with `job-scorer.md` and `job-applier.md`, and add
@@ -261,7 +271,7 @@ Text-only task types (`interview.*`, `promotion.*`, `campaign.strategyReview`,
   rules. A blocker returns `skipped` with the reason before any tailoring or letter. Then tailor,
   fill and submit as today. Multi-page forms check each page before moving on.
 - **Docs in the body.** Copy into each agent the parts of `setup.md`, `untrusted-content.md`,
-  `browser-tips.md`, `eligibility.md` and `digest-schema.md` that agent uses on every run.
+  `browser-tips.md`, `eligibility.md` and `job-brief.md` that agent uses on every run.
   `form-filling.md` goes only into `job-applier`. Leave rarely needed docs (`solve-captcha`,
   `upwork-mcp.md`, the `auth.md` registration flow) as reads.
 - **Codex.** `.codex/agents/*.toml` today tell Codex to read the `.md` at runtime, so nothing is
@@ -301,7 +311,7 @@ asked again.
   stop being startable:
   - under 50%: everything;
   - 50-80%: no `job.rescanSkipped`, `job.retryFailed`, `promotion.draft`,
-    `campaign.strategyReview`;
+    `campaign.tune`;
   - 80-100%: only `question.answered`, `interview.*`, and `job.apply` above the campaign's
     minimum score plus 10;
   - 100%: nothing until the weekly reset. The tasks response's `sleepSeconds` runs until then,
@@ -311,6 +321,78 @@ asked again.
 - The web pilot page shows spend this week against the budget, by task type.
 
 Exit: a deliberately low budget stops the pilot cleanly at its limit, and the journal explains it.
+
+## Milestone 8: pilot pages, agent graph and public page
+
+Milestones 2, 6 and 7 each ship their own small UI (token cost panel, saved answers page,
+budget setting). This milestone brings the rest of the web in line with the new shape (the host
+checks first, the server picks one task, one specialized agent does it) and redesigns the
+agent graph. It starts after milestone 5, when the shape is settled; budget UI from milestone 7
+fits into it if that lands first.
+
+**Data the graph needs.** Today the overview guesses the active stage from the newest journal
+entry's kind (`STAGE_BY_KIND` in `orchestration-panel.tsx`), and the state carries only an
+`activeRuns` count.
+
+- Add `currentRun` to `PilotState` in `@jobpilot/contracts`: `{id, taskType, startedAt}` or
+  null. The run start/finish events already published by the API refresh it.
+- Map task types to agents in one place, next to the labels in
+  `components/features/pilot/task-types.ts`: `job-searcher`, `job-scorer`, `job-applier`,
+  `networking-worker`, or `session` for text-only task types.
+- Token figures (this run, this week per agent) come from milestone 2's stats grouped by agent,
+  not a new endpoint.
+
+**Agent graph on the pilot overview** (`overview/orchestration-panel.tsx`, `flow-nodes.tsx`).
+Replace the four fixed stages (Orchestrator, Agent, Worker, Results) with the real path:
+
+```text
+Host ──► Server ──► Session ─┬─► Searcher ──┐
+                             ├─► Scorer ────┤
+                             ├─► Applier ───┼─► Journal
+                             ├─► Networker ─┤
+                             └─ text tasks ─┘
+```
+
+- **Host:** "checked 4 min ago, nothing to do" when idle, so the user sees the model stays
+  asleep (milestone 3); next wake time as today.
+- **Server:** the picked task's title, or why nothing is startable (cap reached, budget step,
+  weekly limit).
+- **Session:** the current run's task type and how long it has run.
+- **Agents:** one node each; the one running `currentRun` lights up with its edge animated, the
+  others stay dim with their tokens this week as the caption. Text-only runs light the direct
+  session-to-journal edge.
+- **Journal:** the run's result summary once posted, else applied today against the daily cap.
+- Off and offline states keep today's muted look and hints. Same ReactFlow setup, themed
+  surfaces and palette tokens (no new hex values). At phone width the branch stacks vertically
+  instead of shrinking the canvas.
+
+**Other pilot pages.**
+
+- Overview: the status hero and today panel show tokens this week against the budget once
+  milestone 7 lands; until then, tokens this week.
+- Activity: host-written empty cycles (milestone 3, up to 48 a day) collapse into one row per
+  quiet stretch ("Quiet 01:00-07:30, 14 checks") in `journal-feed.tsx` and `cycle-timeline.tsx`.
+  Each run row shows its agent and tokens.
+- Instructions: the `limits-section.tsx` card carries the weekly budget; saved answers link from
+  it.
+- Admin `pilots-table.tsx`: tokens this week per user, so heavy users are visible.
+
+**Public main page** (`marketing/sections/pilot.tsx`, `pilot-cycle.tsx`).
+
+- Redesign the ring as the same graph in visitor language, matching the overview's shape:
+  "checks for work" → "picks the best next step" → one of "finds roles", "scores them",
+  "applies", "reaches out" → "writes the journal". It stays a server component with a CSS-only
+  animation that walks one branch per loop; no ReactFlow, no data, and reduced motion keeps it
+  still.
+- Copy: "Let it work" says it only wakes the model when there is work; "Wake to a journal"
+  mentions the weekly budget next to the daily limits. No internal words (run, task type,
+  agent names) on the public page.
+- `app/docs/pilot/page.mdx`: describe the specialized agents, idle checks and the budget, with
+  the same diagram.
+
+Exit: on a live run the overview lights the agent that matches the current run's task type, and
+idle hours show as collapsed quiet rows. Both graphs look right in light and dark themes and at
+phone width (checked in the browser, not only typechecked).
 
 ## Later, not in this plan
 
@@ -347,7 +429,8 @@ Each needs this plan's telemetry first:
 
 ## Verification
 
-- Each milestone: /verify, plus its exit check on a live overnight run.
+- Each milestone: /verify, plus its exit check on a live overnight run (milestone 8: a live
+  cycle and a browser check of the overview, activity and public pages).
 - Compare `pilot_runs` before and after for each milestone: tokens per application, tokens per
   discovered job, and model runs per idle day.
 - Success for the plan as a whole: more applications per week for the same weekly spend, with
