@@ -6,7 +6,7 @@
 | --- | --- |
 | 1. Rename | Done on `feat/pilot-v2` (commit "refactor(pilot)!: rename agenda to task list and claim to run"). Migration not applied; live run not done. |
 | 0. Spike | Next. |
-| 2-8 | Not started. |
+| 2-7 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 
@@ -34,8 +34,9 @@ Where the tokens go today (reviewed 2026-10-01):
    about 20 KB of shared docs. Content placed after a varying prefix is not reused across workers.
 4. **The worker writes before it checks.** Apply mode tailors the resume and writes the letter
    before it looks at the form, where sponsorship and clearance blockers often show up.
-5. **One model for everything.** The session model (`sonnet`, `plugin/settings/claude.json`) runs
-   discovery, bookkeeping and form filling alike.
+5. **One agent for every kind of work.** `job-worker` carries review, score and apply in one
+   body, so a score call loads apply-only text. `search.discover`, the largest browser task,
+   runs in the main session with no worker at all.
 6. **No token numbers.** `costByTaskType` (`apps/api/src/modules/pilot/pilot.stats.ts`) uses run time
    in place of tokens. Nothing can enforce a budget.
 
@@ -57,6 +58,8 @@ Clearing also stops untrusted page content from carrying into the next cycle.
   savings come from what the agent is given and in what order it works, not from replacing it.
 - **Measure first.** Each change after milestone 2 is judged by tokens per application, before
   and after.
+- **One model: the one the user selected.** The main session and every agent run it; agents
+  inherit it. Savings come from specialized agents with less to read, not from choosing models.
 - **Agents never talk to each other.** Each run returns a small typed result to the API. The API
   decides what runs next.
 - **The server enforces every limit.** The model never polices its own budget.
@@ -79,6 +82,12 @@ Clearing also stops untrusted page content from carrying into the next cycle.
   from noise. Learning, if any, pools results across all users later.
 - **LLM scoring per job, embeddings:** scoring is already code (`modules/scoring/fit.ts`).
 - **Automatic prompt rewriting:** needs a saved-page eval lab first. Out of scope.
+- **Choosing models per task or per agent** (tiers, the host typing `/model`, escalation, a
+  fixed cheaper model per agent): more moving parts for an unmeasured saving, and typing
+  `/model` can land mid-turn or throw away the prompt cache. Everything uses the selected model.
+- **One agent per task type:** about 20 agents, each copying the shared docs, and rare ones would
+  miss the prompt cache on every run. Agents are split by the kind of work, which decides
+  what docs and tools they need.
 
 ## Execution process
 
@@ -105,8 +114,11 @@ Prove that the host can measure and steer a TUI pilot session without headless m
   run's start and its result; the pilot session runs one thing at a time).
 - **Driving the TUI.** Confirm the host can type `/clear`, then a skill call with an argument
   (`/jobpilot:pilot <runId>`, and the Codex equivalent), and that the skill receives it.
-  Confirm the host can switch models mid-session (`/model haiku`, Codex `/model`) by typing, and
-  measure what a switch does to the prompt cache.
+- **Subagents.** Confirm the usage events tag subagent requests (and their model) apart from the
+  main session, so per-agent cost is measurable. Measure what starting one subagent costs in
+  tokens. Confirm agents inherit the session's model on both CLIs. Check whether Claude Code
+  defers plugin MCP tools, or whether every agent with Playwright access pays for its tool
+  schemas on every turn. For Codex, check that `.codex/agents/*.toml` accepts an inlined body.
 - **Cache after `/clear`.** Read cache read versus cache write for a few back-to-back cycles.
   A one-off script in the scratchpad, not committed.
 - **Baseline.** Tokens per cycle by task type, for idle, apply and discover cycles.
@@ -150,7 +162,8 @@ keep the old words.
 
 Kept on purpose: `cycle`, `heartbeat`, `journal`, `digest`, `check-in`, `stuck`,
 `orchestrator`, `networking.warmIntro`, `job.rescanSkipped`. New names this plan introduces
-follow the same rule: "task input" (not "packet") and "tier".
+follow the same rule: "task input" (not "packet"), and agent names that say what the agent does
+(`job-scorer`, `job-applier`, `job-searcher`).
 
 Migration `20261002000000_rename_pilot_task_list_and_runs`: renames the table, constraints,
 indexes, columns and enums, rewrites stored task types, subject ids and payload keys, and nulls
@@ -216,26 +229,50 @@ The session stays in the TUI the whole time.
   post the result. Setup, sense, decide, start, journal and finish move out of the skill.
   Run heartbeats stay with the agent, inside long branches.
 - `tasks/*.md` that write their own journal lines or finish runs stop doing so.
+  `search.discover.md` also loses its campaign-creation and run-result calls to the task input
+  and the result endpoint.
 
 Exit: tokens per `job.apply` and per `search.discover` drop against the milestone 2 numbers, and
 no task type regresses in success rate over one overnight run.
 
-## Milestone 5: the worker checks for blockers first, and costs less to start
+## Milestone 5: specialized agents
 
-- `plugin/agents/job-worker.md` apply mode, new order: open the posting, click Apply, handle
-  login, take a narrowed snapshot of the form's questions, and check them against the profile and
-  eligibility rules. A blocker returns `skipped` with the reason before any tailoring or letter.
-  Then tailor, fill and submit as today. Multi-page forms check each page before moving on.
-- Move what every run needs into the agent's body so it sits before the varying input and gets
-  cached: the parts of `setup.md`, `untrusted-content.md`, `browser-tips.md` and
-  `eligibility.md` that every mode uses. Leave rarely needed docs (`solve-captcha`,
-  `upwork-mcp.md`, `auth.md` registration flow) as reads. Same for `networking-worker.md`.
-- Snapshot limits per mode written into the worker: posting body, form step, and results list
-  each get a stated ceiling (today's guidance in `browser-tips.md` becomes a rule), with "narrow
+Split by the kind of work, so each agent's body holds only what that work reads, and that body
+sits before the varying input where the prompt cache reuses it. Every browser task runs in an
+agent; the main session reads the task input, starts one agent, and posts the result.
+
+| Agent | Work | Task types |
+| --- | --- | --- |
+| `job-scorer` | read a posting, build the digest, score, save the row (today's review and score modes) | `queue.score`, `campaign.scorePending`; review for the `apply` skill |
+| `job-applier` | one application, blockers first (today's apply mode) | `job.apply`, `question.answered` (job), `board.diagnose` |
+| `job-searcher` | one board search: paginate, dedupe, score rows in place, create `pending` rows | `search.discover` |
+| `networking-worker` | unchanged, except `model: inherit` | `networking.*` |
+
+Text-only task types (`interview.*`, `promotion.*`, `campaign.strategyReview`,
+`inbox.review`) stay in the main session: short, and no browser.
+
+- Replace `plugin/agents/job-worker.md` with `job-scorer.md` and `job-applier.md`, and add
+  `job-searcher.md`. Each sets `model: inherit` (today's workers pin `sonnet`) and lists only
+  the tools it uses.
+  Point the `apply`, `auto-apply`, `search` and `resume-campaign` skills and the inline fallback
+  in `_shared/setup.md` at the new names.
+- **Blockers first.** `job-applier` order: open the posting, click Apply, handle login, take a
+  narrowed snapshot of the form's questions, and check them against the profile and eligibility
+  rules. A blocker returns `skipped` with the reason before any tailoring or letter. Then tailor,
+  fill and submit as today. Multi-page forms check each page before moving on.
+- **Docs in the body.** Copy into each agent the parts of `setup.md`, `untrusted-content.md`,
+  `browser-tips.md`, `eligibility.md` and `digest-schema.md` that agent uses on every run.
+  `form-filling.md` goes only into `job-applier`. Leave rarely needed docs (`solve-captcha`,
+  `upwork-mcp.md`, the `auth.md` registration flow) as reads.
+- **Codex.** `.codex/agents/*.toml` today tell Codex to read the `.md` at runtime, so nothing is
+  cached. Generate each TOML from its `.md` (body into `developer_instructions`, no model) in the
+  plugin build, not by hand.
+- **Snapshot limits.** Posting body, form step, and results list each get a stated ceiling in
+  the agent that reads them (today's guidance in `browser-tips.md` becomes a rule), with "narrow
   further" as the required response to an overflow.
 
-Exit: tokens per applied job and per skipped job both drop; skip reasons for blocked jobs show
-the form question that blocked them.
+Exit: tokens per applied job, per skipped job and per discovered job all drop against the
+milestone 4 numbers; skip reasons for blocked jobs show the form question that blocked them.
 
 ## Milestone 6: saved answers and site hints
 
@@ -255,30 +292,7 @@ the form question that blocked them.
 Exit: a second application on the same site uses its hints, and a question answered once is not
 asked again.
 
-## Milestone 7: model per task
-
-- Each task type gets a model tier in one server-side table: `fast` (Haiku-class), `standard`
-  (Sonnet-class), `strong` (Opus-class). The task input carries it.
-- How the tier is applied in the TUI, per milestone 0's findings:
-  - Workers: the skill passes the tier as the subagent's model when it starts a `job-worker` or
-    `networking-worker`. The main session's model and cache stay untouched. This covers most of
-    the spend, since browser work happens in workers.
-  - Main session: the host types `/model <name>` before the run only when the tier differs from
-    the current one. If milestone 0 shows a switch throws away the cache, the host orders
-    same-tier tasks together where the ranking allows.
-- Starting assignments, to be checked against milestone 2 numbers: `search.discover`,
-  `queue.score`, `inbox.review`, `upwork.syncInbox`, `campaign.scorePending` on `fast`;
-  `job.apply`, `networking.*`, `interview.reply` on `standard`; `campaign.strategyReview`,
-  `interview.prep`, `promotion.draft` on `strong` (they run rarely).
-- Escalation: a run may post `outcome: "escalate"` with a reason (an unfamiliar form, a
-  CAPTCHA). The API finishes the run, and the next run of that task uses one tier up.
-  Escalations are counted per task type and domain, so a task type that always escalates gets
-  moved up.
-
-Exit: the `fast` task types keep their success rate over an overnight run at lower tokens per
-run.
-
-## Milestone 8: weekly budget
+## Milestone 7: weekly budget
 
 - Subscription limits are not published in tokens, so the budget is relative. After a week of
   `pilot_runs`, the settings page shows the pilot's real weekly use. The user sets a weekly token
@@ -314,7 +328,7 @@ Each needs this plan's telemetry first:
 
 - **TUI telemetry may be partial.** OpenTelemetry or session logs might miss cache fields or a
   CLI might not export them. Milestone 0 finds out; the budget uses whatever is reported.
-- **Typing into the TUI is less exact than a process API.** A slash command or `/model` typed at
+- **Typing into the TUI is less exact than a process API.** A slash command typed at
   the wrong moment can land mid-turn. The host only types when the session is idle, as
   `PilotLoop` does today.
 - **The agent may skip posting its result.** The stuck ladder covers it, but a high rate means
@@ -323,8 +337,11 @@ Each needs this plan's telemetry first:
   the migration; an old host or plugin against the new API fails on every route.
 - **The browser profile is one folder.** The pilot and a user's interactive session cannot both
   drive the browser. Keep `PilotLoop`'s rule: when the user runs a session, the pilot waits.
-- **Cheaper models may fail more** in ways that cost more than they save. Milestone 7 is judged
-  by tokens per success, not per run.
+- **Two contexts per run.** Each browser task now starts the main session and an agent. If
+  milestone 0 shows starting an agent costs more than the docs it keeps out of the main session,
+  revisit which tasks delegate.
+- **Without a subagent** (or when delegation fails), the main session runs the agent's procedure
+  inline, without the cached body. Track how often it happens.
 - **The budget's 50/80/100 steps are guesses.** Tune them after a few weeks of real spend.
 - **Codex reports usage differently.** Its columns may be partial; the budget uses what is there.
 
