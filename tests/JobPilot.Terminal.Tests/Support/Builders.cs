@@ -1,3 +1,4 @@
+using System.Text.Json;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
@@ -27,6 +28,9 @@ internal static class Builders
 
     public static CompletedCycle Completed(int? sleep, string status = "ok") =>
         new(Guid.NewGuid().ToString(), DateTimeOffset.UtcNow, status, sleep);
+
+    public static PilotTaskList TaskList(int tasks = 0, int sleep = 1800) =>
+        new([.. Enumerable.Repeat(JsonDocument.Parse("{}").RootElement, tasks)], sleep, DateTimeOffset.UtcNow.AddSeconds(sleep));
 
     /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)

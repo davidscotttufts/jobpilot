@@ -24,22 +24,15 @@ jobpilot-api GET /api/pilot
 
 ## 1. Sense
 
-```bash
-jobpilot-api POST /api/pilot/tasks/refresh
-```
-
-Keep the response as the task list: its `version`, `tasks`, and `sleepSeconds` feed the steps below.
-
-A `409` means the pilot was stopped mid-cycle - a rare race the host normally gates. Journal and exit empty.
+The host refreshed the task list just before this cycle and only starts one when there is work. Read that snapshot:
 
 ```bash
-jobpilot-api POST /api/pilot/journal \
-  --data '{"cycleId":"<CYCLE_ID>","entries":[{"kind":"cycle","summary":"Pilot is stopped.","detail":{"status":"empty","sleepSeconds":3600}}]}'
+jobpilot-api GET /api/pilot/tasks
 ```
 
-Print `[[JOBPILOT_CYCLE cycle=<CYCLE_ID> status=empty sleep=3600]]` as the final line, stop.
+Keep `.taskList` as the task list: its `version`, `tasks`, and `sleepSeconds` feed the steps below. If it is null (the snapshot expired), run `jobpilot-api POST /api/pilot/tasks/refresh` and keep that response instead.
 
-If `.tasks` is empty:
+If `.tasks` is empty (rare: the work went away after the host checked):
 
 ```bash
 jobpilot-api POST /api/pilot/journal \
@@ -58,7 +51,7 @@ Take the top task - the server already ranked the task list. If several share pr
 jobpilot-api POST /api/pilot/runs --data '{"taskId":"<taskId>","taskListVersion":"<task list version>"}'
 ```
 
-Read the run's `.id` as `RUN_ID`. On `409`, re-fetch the task list once; if still nothing startable, treat this as an empty cycle (step 1's journal + sentinel). A `409` opening `Already applied` is the duplicate guard - the job is already recorded `skipped`, so start the next task instead of writing a result yourself. `RUN_ID` feeds step 6's finish and the **heartbeat** that long branches send to keep the run alive:
+Read the run's `.id` as `RUN_ID`. On `409`, refresh the task list once (`POST /api/pilot/tasks/refresh`); if still nothing startable, treat this as an empty cycle (step 1's journal + sentinel). A `409` opening `Already applied` is the duplicate guard - the job is already recorded `skipped`, so start the next task instead of writing a result yourself. `RUN_ID` feeds step 6's finish and the **heartbeat** that long branches send to keep the run alive:
 
 ```bash
 jobpilot-api POST /api/pilot/runs/$RUN_ID/heartbeat
@@ -110,7 +103,7 @@ Print exactly one sentinel as the **final line of output**, then stop:
 [[JOBPILOT_CYCLE cycle=<CYCLE_ID> status=ok sleep=<taskList.sleepSeconds>]]
 ```
 
-`status=empty` for the stopped/no-tasks/no-startable-task paths (steps 1/3). `status=error` when the cycle failed unexpectedly.
+`status=empty` for the no-tasks/no-startable-task paths (steps 1/3). `status=error` when the cycle failed unexpectedly.
 
 Error hardening: any API call that fails with a non-2xx other than the documented `409`s, a transport failure, or an orchestrator check-in you can't recover from, ends the cycle. Journal ONE batch - a `kind:"system"` entry naming what failed plus a `kind:"cycle"` entry carrying the error `detail`, never omitted:
 

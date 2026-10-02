@@ -128,6 +128,17 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
     }
 
+    public async Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
+        store.Current is { } settings ? await api.RefreshTasksAsync(settings, ct) : null;
+
+    public async Task JournalEmptyCycleAsync(string summary, int sleepSeconds, CancellationToken ct)
+    {
+        if (store.Current is { } settings)
+        {
+            await api.JournalEmptyCycleAsync(settings, summary, sleepSeconds, ct);
+        }
+    }
+
     public void Dispose() => terminal.Output -= OnOutput;
 
     private async Task SendAsync(string command, Provider provider, CancellationToken ct)

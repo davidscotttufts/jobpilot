@@ -52,6 +52,54 @@ public sealed class PilotApiTests
     }
 
     [Fact]
+    public async Task RefreshTasks_PostsTheRefresh_AndReadsTheTaskList()
+    {
+        const string body = """{"tasks":[{"id":"t1","taskType":"job.apply"}],"emptyReason":null,"sleepSeconds":15,"nextWakeAt":"2026-10-02T12:00:15Z","version":"v"}""";
+        HttpRequestMessage? seen = null;
+        var api = Api((request, _) =>
+        {
+            seen = request;
+            return Respond(HttpStatusCode.OK, body);
+        });
+
+        var taskList = await api.RefreshTasksAsync(Settings(apiUrl: "https://api.example.test/"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpMethod.Post, seen!.Method);
+        Assert.Equal("https://api.example.test/api/pilot/tasks/refresh", seen.RequestUri!.ToString());
+        Assert.Equal("Bearer tok", seen.Headers.Authorization!.ToString());
+        Assert.Single(taskList!.Tasks);
+        Assert.Equal(15, taskList.SleepSeconds);
+        Assert.Equal(new DateTimeOffset(2026, 10, 2, 12, 0, 15, TimeSpan.Zero), taskList.NextWakeAt);
+    }
+
+    [Fact]
+    public async Task RefreshTasks_ReturnsNull_OnAStoppedPilotARejectionOrATransportFailure()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        Assert.Null(await Api((_, _) => Respond(HttpStatusCode.Conflict)).RefreshTasksAsync(Settings(), ct));
+        Assert.Null(await Api((_, _) => Respond(HttpStatusCode.TooManyRequests)).RefreshTasksAsync(Settings(), ct));
+        Assert.Null(await Api((_, _) => throw new HttpRequestException("refused")).RefreshTasksAsync(Settings(), ct));
+    }
+
+    [Fact]
+    public async Task JournalEmptyCycle_PostsACycleEntryWithItsDetail()
+    {
+        string? body = null;
+        var api = Api(async (request, ct) =>
+        {
+            body = await request.Content!.ReadAsStringAsync(ct);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+
+        await api.JournalEmptyCycleAsync(Settings(), "All caught up", 1800, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            """{"entries":[{"kind":"cycle","summary":"All caught up","detail":{"status":"empty","sleepSeconds":1800}}]}""",
+            body);
+    }
+
+    [Fact]
     public async Task Report_PostsTheJournalEntry()
     {
         HttpRequestMessage? seen = null;

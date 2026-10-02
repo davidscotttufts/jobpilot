@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>
@@ -18,6 +20,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     private static readonly TimeSpan BackoffDelay = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
     private static readonly TimeSpan MismatchPoll = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan RefreshRetry = TimeSpan.FromMinutes(1);
 
     // A run that keeps showing activity still hands over to the ladder after this long.
     private static readonly TimeSpan MaxCycleWait = TimeSpan.FromMinutes(60);
@@ -79,6 +82,20 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         }
 
         Conducting = true;
+
+        // Only a cycle with work wakes the model, so an idle pilot spends no tokens and needs no session.
+        // A stopped pilot also fails the refresh; its stop event ends the retry sleep.
+        var taskList = await session.RefreshTasksAsync(ct);
+        if (taskList is null)
+        {
+            return RefreshRetry;
+        }
+
+        if (taskList.Tasks.Length == 0)
+        {
+            return await FinishEmptyAsync(taskList, ct);
+        }
+
         if (running is null)
         {
             session.Start(settings);
@@ -92,6 +109,16 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         await session.SendCycleAsync(settings, ct);
         var (finished, sleep) = await WaitToFinishAsync(SentinelTimeout, ct);
         return finished ? sleep : await ClimbLadderAsync(settings, ct);
+    }
+
+    private async Task<TimeSpan?> FinishEmptyAsync(PilotTaskList taskList, CancellationToken ct)
+    {
+        var sleep = ClampSleep(taskList.SleepSeconds);
+        var wake = taskList.NextWakeAt.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
+        await session.JournalEmptyCycleAsync($"All caught up - nothing needs doing; checking back at {wake}.", sleep, ct);
+        LastCycleAt = DateTimeOffset.UtcNow;
+        LastCycleStatus = CycleStatus.Empty;
+        return TimeSpan.FromSeconds(sleep);
     }
 
     private async Task<TimeSpan?> ClimbLadderAsync(PilotSettings settings, CancellationToken ct)

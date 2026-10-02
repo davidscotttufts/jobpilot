@@ -5,10 +5,13 @@
 | Milestone | State |
 | --- | --- |
 | 1. Rename | Done on `feat/pilot-v2` (commits "refactor(pilot)!: rename agenda to task list and claim to run" and "refactor(pilot)!: rename strategy tasks and the job digest to brief"). Migrations not applied; live run not done. |
-| 0. Spike | Next. |
-| 2-8 | Not started. |
+| 0. Spike | Docs research done (findings below). Live capture next: needs a paired host and real cycles. |
+| 3. Host checks first | Done on `feat/pilot-v2`. Live idle run not done. |
+| 2, 4-8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
+Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
+tokens.
 
 ## Context
 
@@ -128,6 +131,41 @@ Prove that the host can measure and steer a TUI pilot session without headless m
 Exit: a short "Spike findings" section added to this file, with the telemetry route per CLI, the
 TUI commands that work, and the baseline numbers.
 
+### Spike findings (docs and source, 2026-10-02; not yet checked live)
+
+Claude Code (code.claude.com docs):
+
+- OpenTelemetry works in the interactive TUI. Events: `claude_code.api_request` per request,
+  `claude_code.token.usage` metric. `prompt.id` groups the requests of one user turn, so one
+  typed `/jobpilot:pilot` maps to one prompt id. `/clear` keeps `session.id`.
+- Docs show only `grpc` for `OTEL_EXPORTER_OTLP_PROTOCOL`; `http/json` and the exact token
+  attributes on `api_request` (input, output, cache read, cache creation, model) need a live
+  capture.
+- Subagent model: invocation param, then the agent's `model`, then
+  `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's. Omitting `model` inherits. Whether
+  telemetry tags subagent requests apart is undocumented: check live.
+- MCP tool schemas are deferred by default (tool search; `ENABLE_TOOL_SEARCH`), so a Playwright
+  agent pays for names, not every schema, each turn.
+- Skill arguments: `/jobpilot:pilot <runId>` reaches the skill as `$ARGUMENTS`.
+
+Codex (openai/codex source at `09bced5`):
+
+- `[otel] exporter = { otlp-http = { endpoint = ".../v1/logs", protocol = "json" } }` works in
+  the TUI. Pass it as a `-c` override; the host's `-c model=...` already runs the TUI in-process.
+- `codex.sse_event` with `event.kind=response.completed` carries `input_token_count`,
+  `output_token_count`, `cached_token_count`, `cache_write_token_count`,
+  `reasoning_token_count`, plus `model` and `conversation.id`. Fallback: rollout JSONL
+  `token_count` events (`last_token_usage` is per response; sum per run).
+- A subagent has its own `conversation.id` with no parent link in `sse_event`; the time window
+  still attributes it to the run.
+- `.codex/agents/*.toml`: `developer_instructions` takes the full inlined body; omitting `model`
+  inherits. There is no `tools` key.
+- `$pilot <runId>` works: the text after the skill token reaches the model as plain user text (no
+  substitution), so the skill reads the id from the prompt. `/clear` starts a new chat.
+
+Still to measure live: token fields on Claude events, cache read versus write across `/clear`,
+the cost of starting one subagent, and the idle/apply/discover baseline.
+
 ## Milestone 1: rename jargon and ambiguous names (done)
 
 One commit on `feat/pilot-v2` covers the API, contracts, web, host, plugin skills, docs and a data
@@ -211,6 +249,12 @@ baseline within reason.
 
 Exit: an idle overnight run creates no `pilot_runs` rows, only `cycle` journal entries.
 
+As built: `CycleRunner` refreshes after the other-provider check (so a user's own session does not
+poll the refresh) and before starting the CLI, so an idle pilot does not launch it at all. Any
+refresh failure, including the stopped `409`, retries in a minute; the stop event parks the loop
+first. The skill reads `GET /api/pilot/tasks` (the host's fresh snapshot) instead of refreshing
+again, and keeps one empty branch for the race where the work goes away after the host checked.
+
 ## Milestone 4: the host runs the bookkeeping
 
 The model receives one started run and returns one typed result. Everything around it is code.
@@ -230,6 +274,9 @@ The session stays in the TUI the whole time.
   `jobpilot-api POST /api/pilot/runs/:id/result`. The API validates it with the Zod schema
   (a `400` names the bad field, and the agent fixes it and posts again), writes the journal
   batch, finishes the run with its outcome, and publishes an event.
+- The result endpoint also writes the run's `cycle` entry (`status`, the snapshot's
+  `sleepSeconds`), since the activity probe's completion check reads it. A repeat post for a
+  finished run returns that run instead of a `409`, so a retry after a lost response is safe.
 - The host learns the run ended from that event (`PilotEventListener`), replacing the sentinel.
   Remove `SentinelParser` and the sentinel line from the skill.
 - Stuck handling stays as it is: the session is still a TUI, so check-ins and skip directives
@@ -275,8 +322,10 @@ Text-only task types (`interview.*`, `promotion.*`, `campaign.tune`, `search.set
   `form-filling.md` goes only into `job-applier`. Leave rarely needed docs (`solve-captcha`,
   `upwork-mcp.md`, the `auth.md` registration flow) as reads.
 - **Codex.** `.codex/agents/*.toml` today tell Codex to read the `.md` at runtime, so nothing is
-  cached. Generate each TOML from its `.md` (body into `developer_instructions`, no model) in the
-  plugin build, not by hand.
+  cached. Generate each TOML from its `.md` (body into `developer_instructions`, no model) with a
+  script, and add a test that fails when a TOML is stale. Update `.claude/rules/plugin.md`, which
+  says there is no generation step. Codex agent TOML has no `tools` key, so tool lists are
+  Claude-only.
 - **Snapshot limits.** Posting body, form step, and results list each get a stated ceiling in
   the agent that reads them (today's guidance in `browser-tips.md` becomes a rule), with "narrow
   further" as the required response to an overflow.
@@ -290,7 +339,8 @@ milestone 4 numbers; skip reasons for blocked jobs show the form question that b
   `relocation`, `sponsorship`, `start_date`, `travel_percent`), `value`, `source`
   (`user | profile`), `questionId` (nullable), timestamps. When the user answers a
   `PilotQuestion`, the answer is saved if the question is reusable, never per-job ones like
-  pre-submit approval or 2FA. Only user-given answers are stored; the model's guesses never
+  pre-submit approval or 2FA. The agent sets `key` when it files the question; the server never
+  guesses it from the text. Only user-given answers are stored; the model's guesses never
   become answers. The task input includes the answers whose keys match the form's questions; the
   worker uses them instead of asking. A web page lists and edits them.
 - **Site hints.** Today `hint` journal entries (formerly `observation`) carry board facts.

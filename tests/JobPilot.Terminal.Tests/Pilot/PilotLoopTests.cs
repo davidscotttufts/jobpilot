@@ -74,6 +74,21 @@ public sealed class PilotLoopTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task StaysAsleep_WithoutStartingTheAgent_WhileThereIsNoWork()
+    {
+        session.BlockSleep = true;
+        session.DefaultTaskList = TaskList(sleep: 1800);
+        await loop.StartAsync(CancellationToken.None);
+
+        store.Save(Settings());
+
+        await TestWait.Until(() => session.Actions.Contains("sleep:1800"));
+        Assert.Equal(0, CyclesSent);
+        Assert.DoesNotContain("start", session.Actions);
+        Assert.Single(session.EmptyCycles);
+    }
+
+    [Fact]
     public async Task Wake_MidCycle_NeitherRestartsNorInterruptsTheTurn()
     {
         await loop.StartAsync(CancellationToken.None);

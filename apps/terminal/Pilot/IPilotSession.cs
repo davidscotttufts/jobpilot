@@ -51,4 +51,9 @@ public interface IPilotSession
     Task<PilotActivity?> GetActivityAsync(CancellationToken ct);
 
     Task ReportAsync(string summary, CancellationToken ct);
+
+    /// <summary>Null when the refresh fails. Throws only on the caller's cancellation.</summary>
+    Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct);
+
+    Task JournalEmptyCycleAsync(string summary, int sleepSeconds, CancellationToken ct);
 }

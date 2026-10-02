@@ -9,10 +9,20 @@ internal sealed class FakePilotSession : IPilotSession
     private readonly Lock sync = new();
     private readonly List<string> actions = [];
     private readonly List<string> reports = [];
+    private readonly List<string> emptyCycles = [];
 
     public List<string> Actions => Snapshot(actions);
 
     public List<string> Reports => Snapshot(reports);
+
+    /// <summary>Summaries of the empty cycles the host journaled itself.</summary>
+    public List<string> EmptyCycles => Snapshot(emptyCycles);
+
+    /// <summary>Results of successive refreshes; an empty queue returns <see cref="DefaultTaskList"/>.</summary>
+    public Queue<PilotTaskList?> TaskLists { get; } = new();
+
+    /// <summary>One task by default, so a cycle wakes the agent.</summary>
+    public PilotTaskList? DefaultTaskList { get; set; } = Builders.TaskList(tasks: 1);
 
     /// <summary>Results of successive waits; an empty queue times out.</summary>
     public Queue<WaitResult> Signals { get; } = new();
@@ -122,6 +132,24 @@ internal sealed class FakePilotSession : IPilotSession
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, ct);
         }
+    }
+
+    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct)
+    {
+        lock (sync)
+        {
+            return Task.FromResult(TaskLists.Count > 0 ? TaskLists.Dequeue() : DefaultTaskList);
+        }
+    }
+
+    public Task JournalEmptyCycleAsync(string summary, int sleepSeconds, CancellationToken ct)
+    {
+        lock (sync)
+        {
+            emptyCycles.Add(summary);
+        }
+
+        return Task.CompletedTask;
     }
 
     private void Record(string action)

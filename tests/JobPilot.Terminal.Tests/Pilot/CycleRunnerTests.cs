@@ -33,6 +33,36 @@ public class CycleRunnerTests
     }
 
     [Fact]
+    public async Task Run_JournalsAnEmptyCycle_WithoutStartingOrWakingTheAgent()
+    {
+        var session = new FakePilotSession();
+        var taskList = TaskList(sleep: 1800);
+        session.TaskLists.Enqueue(taskList);
+        var runner = Runner(session);
+
+        var sleep = await RunAsync(runner, session);
+
+        Assert.Empty(session.Actions);
+        Assert.Equal(TimeSpan.FromSeconds(1800), sleep);
+        Assert.Equal(
+            [$"All caught up - nothing needs doing; checking back at {taskList.NextWakeAt.ToLocalTime():HH:mm}."],
+            session.EmptyCycles);
+        Assert.Equal(CycleStatus.Empty, runner.LastCycleStatus);
+    }
+
+    [Fact]
+    public async Task Run_RetriesInAMinute_WithoutTheAgent_WhenTheRefreshFails()
+    {
+        var session = new FakePilotSession { RunningProvider = Provider.Claude, DefaultTaskList = null };
+
+        var sleep = await RunAsync(Runner(session), session);
+
+        Assert.Equal(TimeSpan.FromMinutes(1), sleep);
+        Assert.Empty(session.Actions);
+        Assert.Empty(session.EmptyCycles);
+    }
+
+    [Fact]
     public async Task Run_ClampsTheSleep_AndReusesARunningSession()
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
