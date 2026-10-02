@@ -16,7 +16,7 @@ import {
   scorePending,
   send,
   setup,
-  strategyReview,
+  tune,
 } from "./builders";
 import { describe, expect, it } from "bun:test";
 
@@ -124,13 +124,13 @@ describe("buildTaskList gating", () => {
   it("holds setup and campaign reviews back until the pipeline is quiet", () => {
     const quietWork = {
       setup,
-      strategyReviews: [strategyReview("c1")],
+      campaignTunes: [tune("c1")],
       rescanSkipped: [{ campaignId: "c1", skippedCount: 9 }],
       retryFailed: [{ campaignId: "c1", failedCount: 4 }],
     };
     expect(taskTypes(buildTaskList(base(quietWork)))).toEqual([
-      "strategy.setup",
-      "campaign.strategyReview",
+      "search.setup",
+      "campaign.tune",
       "job.rescanSkipped",
       "job.retryFailed",
     ]);
@@ -143,8 +143,8 @@ describe("buildTaskList gating", () => {
     ];
     for (const busy of busyWith) {
       const taskList = buildTaskList(base({ ...quietWork, ...busy }));
-      expect(taskTypes(taskList)).not.toContain("strategy.setup");
-      expect(taskTypes(taskList)).not.toContain("campaign.strategyReview");
+      expect(taskTypes(taskList)).not.toContain("search.setup");
+      expect(taskTypes(taskList)).not.toContain("campaign.tune");
     }
   });
 
@@ -167,13 +167,13 @@ describe("buildTaskList gating", () => {
         warmIntroCandidates: [hotJob("j1", 90), hotJob("j2", 88)],
         followups: [followup("f1"), followup("f2"), followup("f3")],
         duePlatforms: [{ platform: "hn" }, { platform: "reddit" }],
-        strategyReviews: [strategyReview("c1"), strategyReview("c2")],
+        campaignTunes: [tune("c1"), tune("c2")],
       }),
     );
     expect(countOf(quiet, "networking.warmIntro")).toBe(1);
     expect(countOf(quiet, "networking.followup")).toBe(2);
     expect(countOf(quiet, "promotion.draft")).toBe(1);
-    expect(countOf(quiet, "campaign.strategyReview")).toBe(1);
+    expect(countOf(quiet, "campaign.tune")).toBe(1);
   });
 });
 

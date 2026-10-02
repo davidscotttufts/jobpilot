@@ -78,9 +78,9 @@ export async function gatherDueSearches(
 export async function gatherSetup(
   prisma: PrismaClient,
   userId: string,
-  payload: TaskPayload<"strategy.setup">,
+  payload: TaskPayload<"search.setup">,
   now: Date,
-): Promise<TaskPayload<"strategy.setup"> | null> {
-  const last = await latestRun(prisma, userId, "strategy.setup");
+): Promise<TaskPayload<"search.setup"> | null> {
+  const last = await latestRun(prisma, userId, "search.setup");
   return ranRecently(last, now, SETUP_RETRY_MS) ? null : payload;
 }

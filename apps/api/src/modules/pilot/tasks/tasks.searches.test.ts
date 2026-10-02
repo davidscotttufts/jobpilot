@@ -63,10 +63,10 @@ describe("TaskListService search.discover", () => {
   });
 });
 
-describe("TaskListService strategy.setup", () => {
+describe("TaskListService search.setup", () => {
   const goals = "Senior TS roles, remote";
   const setupOf = (taskList: { tasks: { taskType: string; payload: unknown }[] }) =>
-    taskList.tasks.find((i) => i.taskType === "strategy.setup");
+    taskList.tasks.find((i) => i.taskType === "search.setup");
 
   it("derives searches from the goals when none exist", async () => {
     const taskList = await service({

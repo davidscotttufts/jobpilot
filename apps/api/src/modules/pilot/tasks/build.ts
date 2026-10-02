@@ -28,7 +28,7 @@ import {
   reviewPausedTask,
   scorePendingTask,
   setupTask,
-  strategyReviewTask,
+  tuneTask,
   upworkSyncTask,
   warmIntroTask,
 } from "./make-tasks";
@@ -84,10 +84,10 @@ export interface TaskListInput {
   followups: Followup[];
   approvedPromotions: TaskPayload<"promotion.post">[];
   duePlatforms: TaskPayload<"promotion.draft">[];
-  strategyReviews: TaskPayload<"campaign.strategyReview">[];
+  campaignTunes: TaskPayload<"campaign.tune">[];
   rescanSkipped: TaskPayload<"job.rescanSkipped">[];
   retryFailed: TaskPayload<"job.retryFailed">[];
-  setup: TaskPayload<"strategy.setup"> | null;
+  setup: TaskPayload<"search.setup"> | null;
 }
 
 type PipelineWork = Pick<
@@ -169,7 +169,7 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   if (isPipelineQuiet(input)) {
     if (input.setup) tasks.push(setupTask(input.setup));
     tasks.push(
-      ...input.strategyReviews.slice(0, PER_TASK_LIST.maintenance).map(strategyReviewTask),
+      ...input.campaignTunes.slice(0, PER_TASK_LIST.maintenance).map(tuneTask),
       ...input.rescanSkipped.slice(0, PER_TASK_LIST.maintenance).map(rescanSkippedTask),
       ...input.retryFailed.slice(0, PER_TASK_LIST.maintenance).map(retryFailedTask),
     );

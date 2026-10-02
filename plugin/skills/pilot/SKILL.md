@@ -86,10 +86,10 @@ Write the batch to `$JOBPILOT_TEMP/journal.json`, then `jobpilot-api POST /api/p
 
 Write one `action` entry, human and specific ("Applied to Staff TypeScript Engineer at Acme - score 87.", "Discovered 14 jobs for 'senior typescript remote', 9 scored ≥70.", "Parked Stripe application - needs your salary answer."), and one `cycle` entry summarizing the whole cycle. Both carry `cycleId`; the action entry also carries `subjectType`/`subjectId`. The `cycle` entry's `detail:{status, sleepSeconds}` is the authoritative completion signal the host reads back, so this write and step 7's sentinel are both mandatory - the sentinel is only the fast path.
 
-An action entry may also carry a `detail` object - required for the load-bearing markers on `campaign.strategyReview` / `job.rescanSkipped` / `job.retryFailed`. It is an extra field, never a replacement for the batch:
+An action entry may also carry a `detail` object - required for the load-bearing markers on `campaign.tune` / `job.rescanSkipped` / `job.retryFailed`. It is an extra field, never a replacement for the batch:
 
 ```json
-{ "kind": "action", "subjectType": "campaign", "subjectId": "<campaignId>", "summary": "<narrative>", "detail": { "type": "strategyReview" } }
+{ "kind": "action", "subjectType": "campaign", "subjectId": "<campaignId>", "summary": "<narrative>", "detail": { "type": "tune" } }
 ```
 
 If the worker returned `hints`, append each to the **same** journal POST as an extra entry `{kind:"hint", summary:<text>, subjectType:"board", subjectId:<board domain>}` - durable board/site facts only, not per-job trivia.

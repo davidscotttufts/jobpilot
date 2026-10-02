@@ -96,7 +96,7 @@ The scorer hard-skips unverified payment, 50+ proposals, and unproven-plus-unver
 
 Survivors only. Call `find_jobs` action `get` with the row's numeric `id` for three things: the full
 description, `client_record` (the hire count the search row cannot show), and `connects_cost`, which
-the proposal step needs later. Keep only the fields the digest and the client block use - do not
+the proposal step needs later. Keep only the fields the brief and the client block use - do not
 carry the whole payload forward.
 
 Add `clientHires` from `client_record` to `CLIENT` and score once more. The hire count is 20% of the
@@ -105,11 +105,11 @@ here is the soft floor rather than a hard rule; handle it exactly as above.
 
 ### 3.4 Fit
 
-Build the digest (`../_shared/digest-schema.md`) from the posting you already fetched; always
+Build the brief (`../_shared/job-brief.md`) from the posting you already fetched; always
 populate `skills`. Score inline - the MCP returns the full description, so there is never a thin
 card here and no need to delegate to `job-worker`:
 
-Write `{"digest": <digest>, "minScore": <minScore>}` to `"$JOBPILOT_TEMP/fit.json"`:
+Write `{"brief": <brief>, "minScore": <minScore>}` to `"$JOBPILOT_TEMP/fit.json"`:
 
 ```bash
 jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
@@ -121,20 +121,20 @@ Keep the response as `FIT` and its `.score` as `SCORE`. Use it directly when `FI
 
 ### 3.5 Save the recommendation
 
-Stash the client signals, the quality score and the connects cost into the digest so the campaign
+Stash the client signals, the quality score and the connects cost into the brief so the campaign
 card can show them and `rescan-skipped` can re-evaluate. Save the description into `description`
 so "Draft proposal" can seed the proposal later.
 
-The full digest is the fit digest plus `clientStats` (`CLIENT`), `qualityScore`
+The full brief is the fit brief plus `clientStats` (`CLIENT`), `qualityScore`
 (`QUALITY.qualityScore`) and `connectsCost` (`<connects_cost>`). Write the body to
-`"$JOBPILOT_TEMP/job.json"`; `digest` is that full digest stringified, and `matchReason` joins
+`"$JOBPILOT_TEMP/job.json"`; `brief` is that full brief stringified, and `matchReason` joins
 `QUALITY.flags` with `, `:
 
 ```json
 { "key": "<company-title-rank slug>", "title": "<title>", "company": "<clientName>",
   "url": "<job-url>", "board": "upwork.com", "matchScore": <SCORE>,
   "matchReason": "Fit <SCORE> · <flags>", "status": "pending",
-  "digest": "<stringified full digest>", "description": "<description>" }
+  "brief": "<stringified full brief>", "description": "<description>" }
 ```
 
 ```bash

@@ -28,7 +28,8 @@ ALTER INDEX "pilot_claims_released_at_idx" RENAME TO "pilot_runs_finished_at_idx
 
 -- Renamed task types, so run history keeps damping the same subjects
 UPDATE "pilot_runs" SET "task_type" = 'queue.score' WHERE "task_type" = 'queue.drain';
-UPDATE "pilot_runs" SET "task_type" = 'strategy.setup', "subject_id" = 'setup' WHERE "task_type" = 'strategy.bootstrap';
+UPDATE "pilot_runs" SET "task_type" = 'search.setup', "subject_id" = 'setup' WHERE "task_type" = 'strategy.bootstrap';
+UPDATE "pilot_runs" SET "task_type" = 'campaign.tune' WHERE "task_type" = 'campaign.strategyReview';
 UPDATE "pilot_runs" SET "task_type" = 'promotion.draft' WHERE "task_type" = 'promo.compose';
 UPDATE "pilot_runs" SET "task_type" = 'promotion.post' WHERE "task_type" = 'promo.post';
 UPDATE "pilot_runs" SET "task_type" = 'board.diagnose' WHERE "task_type" = 'board.health';
@@ -40,6 +41,11 @@ WHERE "payload" ? 'probeJob';
 UPDATE "pilot_runs"
 SET "payload" = ("payload" - 'releaseNote') || jsonb_build_object('finishNote', "payload" -> 'releaseNote')
 WHERE "payload" ? 'releaseNote';
+
+-- Renamed detail type; the server dedupes campaign tunes on it
+UPDATE "pilot_journal_entries"
+SET "detail" = jsonb_set("detail", '{type}', '"tune"')
+WHERE "detail" ->> 'type' = 'strategyReview';
 
 -- The snapshot embeds the old task list shape; drop it so the server rebuilds on the next refresh.
 UPDATE "pilot_states"

@@ -83,7 +83,7 @@ move on - **don't open a tab.**
 
 ### 2.2 Score
 
-If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the digest (`../_shared/digest-schema.md`), then score server-side. Write `$JOBPILOT_TEMP/fit.json` as `{"digest": <digest object>, "minScore": <MIN_SCORE>, "resumeId": "<RESUME_ID>"}` (drop `resumeId` when there is none):
+If the listing row lacks enough detail, read it from the tab-1 snapshot (don't navigate away). Build the brief (`../_shared/job-brief.md`), then score server-side. Write `$JOBPILOT_TEMP/fit.json` as `{"brief": <brief object>, "minScore": <MIN_SCORE>, "resumeId": "<RESUME_ID>"}` (drop `resumeId` when there is none):
 
 ```bash
 jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
@@ -115,7 +115,7 @@ With a usable score from the listing/tab-1 snapshot alone:
   "matchScore": <0-100>,
   "matchReason": "<one line>",
   "status": "applying",
-  "digest": "<digest, stringified>",
+  "brief": "<brief, stringified>",
   "description": "<posting text, when read>"
 }
 ```
@@ -128,7 +128,7 @@ jobpilot-api POST /api/campaigns/$CAMPAIGN_ID/jobs --data @"$JOBPILOT_TEMP/job.j
 
 Hand the job to the `job-worker` subagent and wait for its compact result. It opens its own tab and runs auth, CAPTCHA, tailoring, form-fill, and submit in isolated context, so the form/posting snapshots never enter this conversation. **One worker at a time** - the browser is shared; never delegate the next job until this one returns.
 
-Delegate with the apply-mode input from `../_shared/campaign-flow.md`, passing the `digest`
+Delegate with the apply-mode input from `../_shared/campaign-flow.md`, passing the `brief`
 built in 2.2 and `preSubmitReview: false`. It returns one of `applied` / `failed` / `skipped` /
 `needs_user` - handle in 2.4.
 

@@ -55,8 +55,8 @@ const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
   dueQueries: [],
   nextSearchRunAt: null,
 };
-const NO_REVIEWS: Pick<Gathered, "strategyReviews" | "rescanSkipped" | "retryFailed"> = {
-  strategyReviews: [],
+const NO_REVIEWS: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFailed"> = {
+  campaignTunes: [],
   rescanSkipped: [],
   retryFailed: [],
 };

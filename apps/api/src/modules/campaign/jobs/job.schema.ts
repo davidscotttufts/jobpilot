@@ -34,7 +34,7 @@ export const campaignJobSchema = z.object({
   retryNotes: z.string().nullable(),
   skipReason: z.string().nullable(),
   description: z.string().nullable(),
-  digest: z.string().nullable(),
+  brief: z.string().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

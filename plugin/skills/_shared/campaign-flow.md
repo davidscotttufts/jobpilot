@@ -45,12 +45,12 @@ candidate actually submitted; without it the application's Documents card has no
 
 ```json
 { "mode": "apply", "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
-  "board": "<domain>", "digest": <DIGEST>, "resumeId": "<RESUME_ID>",
+  "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
   "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
   "preSubmitReview": <bool> }
 ```
 
-Omit `digest` and the worker fetches it from the saved Job. The worker returns one of
+Omit `brief` and the worker fetches it from the saved Job. The worker returns one of
 `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before returning -
 re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
 

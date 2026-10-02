@@ -1,7 +1,7 @@
 ---
 name: tailor-resume
 description: Choose the best existing resume base/variant for a job, or create a new tailored variant when nothing fits.
-argument-hint: "<digest-json | job-url | pasted-jd-text> [--base <resumeId>]"
+argument-hint: "<brief-json | job-url | pasted-jd-text> [--base <resumeId>]"
 ---
 
 # Tailor Resume - Reuse or Create
@@ -16,11 +16,11 @@ Follow `../_shared/setup.md`. The profile response includes `resumes` (every bas
 
 Detect the argument shape:
 
-- Starts with `{` → parse as digest JSON. **No navigation, no snapshot.**
-- Starts with `http` → `browser_navigate`, then `browser_snapshot` the posting body (per `../_shared/browser-tips.md`) and build the digest (`../_shared/digest-schema.md`) from it.
+- Starts with `{` → parse as brief JSON. **No navigation, no snapshot.**
+- Starts with `http` → `browser_navigate`, then `browser_snapshot` the posting body (per `../_shared/browser-tips.md`) and build the brief (`../_shared/job-brief.md`) from it.
 - Otherwise → pasted JD text; parse the same fields manually.
 
-From the digest (`title`, `requirements[]`, `responsibilities[]`, `skills[]`, `yearsExperience`, `descriptionExcerpt`), assemble:
+From the brief (`title`, `requirements[]`, `responsibilities[]`, `skills[]`, `yearsExperience`, `descriptionExcerpt`), assemble:
 
 - `title`, `domain` (fintech/healthtech/devtools/…), `standouts` (clearance, on-call, on-site, …).
 - `roleFamily` ∈ `frontend | backend | fullstack | mobile | data | ml | devops | qa | other` - match `title` + `descriptionExcerpt` against: frontend (`frontend`, `ui`, `react`, `vue`, `angular`), backend (`backend`, `api`, `services`), fullstack (`full-stack`), mobile (`ios`, `android`, `react native`, `flutter`), data (`data engineer/scientist`, `analytics`, `etl`), ml (`ml`, `ai engineer`, `mlops`), devops (`devops`, `sre`, `platform`, `infrastructure`), qa (`qa`, `sdet`, `test engineer`).
@@ -109,7 +109,7 @@ A variant is the base resume with the JD-relevant parts moved to the front. It i
 Send only what changes something:
 
 - **`label`** - `"{Company} - {Title}"`.
-- **`jobUrl`** - whenever the argument was a URL or the digest carried one. It is how the server ties the variant to its application.
+- **`jobUrl`** - whenever the argument was a URL or the brief carried one. It is how the server ties the variant to its application.
 - **`emphasizedTech`** - 4-8 lowercase terms from `JD.keywords`. They move to the front of their skill groups.
 - **`jobKeywords`** - optional, about 10 terms. They rank bullets inside each entry. Defaults to `emphasizedTech`.
 - **`diffNotes`** - one or two sentences on what was emphasized and why.

@@ -21,7 +21,7 @@ export interface TaskJob {
   title: string;
   url: string;
   board: string | null;
-  digest: string | null;
+  brief: string | null;
   matchScore: number | null;
   company: string | null;
   resumeId?: string;
@@ -40,7 +40,7 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
       title: true,
       url: true,
       board: true,
-      digest: true,
+      brief: true,
       matchScore: true,
       company: true,
       campaign: { select: { config: true } },
@@ -82,7 +82,7 @@ export async function gatherWarmIntroCandidates(
   });
   const candidates: TaskJob[] = [
     ...approvedJobs.filter((job) => (job.matchScore ?? 0) >= WARM_INTRO_MIN_SCORE),
-    ...applied.map((job) => ({ ...job, board: null, digest: null })),
+    ...applied.map((job) => ({ ...job, board: null, brief: null })),
   ];
   const startable = await withoutRecentRuns(
     prisma,

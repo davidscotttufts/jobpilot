@@ -31,7 +31,7 @@ model Job {
   retryNotes  String?           @map("retry_notes")
   skipReason  String?           @map("skip_reason")
   description String?
-  digest      String?
+  brief       String?
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @default(now()) @updatedAt @map("updated_at")
 

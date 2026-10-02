@@ -26,8 +26,8 @@ describe("TaskListService campaign.scorePending", () => {
     expect(hasTaskType(taskList, "campaign.scorePending")).toBe(false);
   });
 
-  // Gating on matchScore alone would leave a row scored off the results page without a digest.
-  it("counts rows missing either a score or a digest", async () => {
+  // Gating on matchScore alone would leave a row scored off the results page without a brief.
+  it("counts rows missing either a score or a brief", async () => {
     const { svc, rec } = serviceWithRec({ scorePendingCampaigns: [campaign] });
     await svc.refresh("p1");
     const gather = rec.campaignQueries.find(
@@ -35,7 +35,7 @@ describe("TaskListService campaign.scorePending", () => {
     ) as { jobs: { some: unknown } };
     expect(gather.jobs.some).toEqual({
       status: "pending",
-      OR: [{ matchScore: null }, { digest: null }],
+      OR: [{ matchScore: null }, { brief: null }],
     });
   });
 });
@@ -130,14 +130,14 @@ describe("TaskListService campaign reviews", () => {
     ],
   };
 
-  it("offers a strategy review, a rescan and a retry for a poorly converting campaign", async () => {
+  it("offers a tune, a rescan and a retry for a poorly converting campaign", async () => {
     const taskList = await service({
       ...laggard,
       skipReasonRows: [{ campaignId: "c1", skipReason: "overqualified", _count: { _all: 20 } }],
     }).refresh("p1");
     const payloadOf = (taskType: string) =>
       taskList.tasks.find((i) => i.taskType === taskType)?.payload;
-    expect(payloadOf("campaign.strategyReview")).toMatchObject({
+    expect(payloadOf("campaign.tune")).toMatchObject({
       config: { minScore: 70, board: "linkedin" },
       counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
       topSkipReasons: ["overqualified"],
@@ -150,12 +150,12 @@ describe("TaskListService campaign reviews", () => {
     const taskList = await service({
       ...laggard,
       actionMarkers: [
-        { subjectId: "c1", detail: { type: "strategyReview" } },
+        { subjectId: "c1", detail: { type: "tune" } },
         { subjectId: "c1", detail: { type: "rescanSkipped" } },
         { subjectId: "other", detail: { type: "retryFailed" } },
       ],
     }).refresh("p1");
-    expect(hasTaskType(taskList, "campaign.strategyReview")).toBe(false);
+    expect(hasTaskType(taskList, "campaign.tune")).toBe(false);
     expect(hasTaskType(taskList, "job.rescanSkipped")).toBe(false);
     expect(hasTaskType(taskList, "job.retryFailed")).toBe(true);
   });

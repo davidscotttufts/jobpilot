@@ -60,7 +60,7 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
 
 1. **Mark applying** - PATCH the job to `applying`.
 2. **Apply** - delegate to `job-worker` with the apply-mode input from
-   `../_shared/campaign-flow.md`, `digest` omitted (the worker fetches it from the saved Job)
+   `../_shared/campaign-flow.md`, `brief` omitted (the worker fetches it from the saved Job)
    and `preSubmitReview: <true when MAX_APPS === 1, else false>`.
 
 3. **Record result** - map the worker's `outcome` to a terminal `/result` write and route

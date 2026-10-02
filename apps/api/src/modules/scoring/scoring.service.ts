@@ -3,10 +3,10 @@ import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent } from "@/modules/resume/content";
 import { type FitResult, scoreFit } from "./fit";
 import { deriveProfileFitInputs } from "./profile-fit";
-import type { FitProfile, JobDigest } from "./scoring.schema";
+import type { FitProfile, JobBrief } from "./scoring.schema";
 
 interface ScoreJobFitInput {
-  digest: JobDigest;
+  brief: JobBrief;
   profile?: Partial<FitProfile>;
   resumeId?: string;
   minScore?: number;
@@ -18,11 +18,11 @@ export class ScoringService {
 
   /**
    * Loads the profile's primary resume, derives fit inputs from it, merges any
-   * caller-provided profile overrides, and scores the job digest.
+   * caller-provided profile overrides, and scores the job brief.
    */
   async scoreJobFit(
     userId: string,
-    { digest, profile, resumeId, minScore }: ScoreJobFitInput,
+    { brief, profile, resumeId, minScore }: ScoreJobFitInput,
   ): Promise<FitResult> {
     // Prefer an explicit, owned resume override; otherwise the user's primary.
     const [content, user] = await Promise.all([
@@ -48,7 +48,7 @@ export class ScoringService {
     };
 
     // A caller that omits the threshold gets the user's own auto-apply bar, not a global constant.
-    return scoreFit(digest, fitProfile, minScore ?? user?.autoApply?.minMatchScore);
+    return scoreFit(brief, fitProfile, minScore ?? user?.autoApply?.minMatchScore);
   }
 
   /**

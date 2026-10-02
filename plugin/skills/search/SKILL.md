@@ -45,7 +45,7 @@ record `skipped` through `/jobs/<key>/result`; do not offer them for apply.
 
 ## Phase 4: Fit Review
 
-Score each non-applied result server-side, like every other campaign skill. Build the digest (`../_shared/digest-schema.md`) and write `{"digest": <digest>, "minScore": 0, "resumeId": "<config.resumeId>"}` to `$JOBPILOT_TEMP/fit.json` (drop `resumeId` when the campaign has none; the server uses the primary):
+Score each non-applied result server-side, like every other campaign skill. Build the brief (`../_shared/job-brief.md`) and write `{"brief": <brief>, "minScore": 0, "resumeId": "<config.resumeId>"}` to `$JOBPILOT_TEMP/fit.json` (drop `resumeId` when the campaign has none; the server uses the primary):
 
 ```bash
 jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
@@ -57,7 +57,7 @@ Use `.score` when `.verdict` is `trust`; on `deliberate`, adjust it from `strong
 
 Save every result as a `Job` on `<campaign-id>` so it appears on the campaigns detail page. **Don't offer apply/search-again commands** - the user applies from there. Use a stable, shell-safe `key` per result (slug of `company-title` + rank, no spaces).
 
-Carry the `digest` you scored from (`../_shared/digest-schema.md`). Per result, write `{key, title, company, location, url, board:"<domain>", matchScore, matchReason:"<one-line verdict>", status:"pending", digest}` (`digest` as a JSON string) to `$JOBPILOT_TEMP/job-<key>.json`, then:
+Carry the `brief` you scored from (`../_shared/job-brief.md`). Per result, write `{key, title, company, location, url, board:"<domain>", matchScore, matchReason:"<one-line verdict>", status:"pending", brief}` (`brief` as a JSON string) to `$JOBPILOT_TEMP/job-<key>.json`, then:
 
 ```bash
 jobpilot-api POST /api/campaigns/<campaign-id>/jobs --data @"$JOBPILOT_TEMP/job-<key>.json"

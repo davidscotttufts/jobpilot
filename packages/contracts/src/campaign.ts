@@ -6,12 +6,12 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-/** The agent's job digest, as JSON text. An unset shell variable renders the digest as `""`, which read back
- *  as "has a digest" while the public index skipped the row - so empty drops to `undefined`. */
-const jobDigest = z
+/** The agent's job brief, as JSON text. An unset shell variable renders the brief as `""`, which read back
+ *  as "has a brief" while the public index skipped the row - so empty drops to `undefined`. */
+const jobBrief = z
   .string()
   .refine((value) => value.trim() === "" || isJsonObject(value), {
-    message: "digest must be a JSON object.",
+    message: "brief must be a JSON object.",
   })
   .transform((value) => value.trim() || undefined);
 
@@ -154,7 +154,7 @@ export const addCampaignJobSchema = z.object({
   matchReason: reasonText.optional().nullable(),
   status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
   description: z.string().optional().nullable(),
-  digest: jobDigest.optional().nullable(),
+  brief: jobBrief.optional().nullable(),
 });
 
 export const patchCampaignJobSchema = z.object({
@@ -170,7 +170,7 @@ export const patchCampaignJobSchema = z.object({
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: reasonText.optional().nullable(),
   description: z.string().optional().nullable(),
-  digest: jobDigest.optional().nullable(),
+  brief: jobBrief.optional().nullable(),
 });
 
 export const rescanCampaignJobSchema = z
@@ -180,7 +180,7 @@ export const rescanCampaignJobSchema = z
     matchReason: reasonText,
     skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
     description: z.string().optional().nullable(),
-    digest: jobDigest.optional().nullable(),
+    brief: jobBrief.optional().nullable(),
   })
   .refine((value) => value.decision !== "skipped" || !!value.skipReason, {
     message: "A skipped rescan decision requires skipReason.",

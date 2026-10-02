@@ -88,7 +88,7 @@ Best effort; continue if it fails. Write `{"content":"<final letter>","jobUrl":"
 jobpilot-api POST /api/cover-letters --data @"$JOBPILOT_TEMP/cover-letter.json"
 ```
 
-Take `jobUrl`/`jobTitle`/`company` from the JD argument (`$DIGEST` fields when present). `source` is the caller: `apply`, `auto_apply`, or `manual` (the default).
+Take `jobUrl`/`jobTitle`/`company` from the JD argument (`$BRIEF` fields when present). `source` is the caller: `apply`, `auto_apply`, or `manual` (the default).
 
 ## Output
 

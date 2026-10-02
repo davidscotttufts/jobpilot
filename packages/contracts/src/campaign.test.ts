@@ -1,39 +1,39 @@
-// The public job index is built from the digest, so a garbled or empty one silently loses the job.
+// The public job index is built from the brief, so a garbled or empty one silently loses the job.
 
 import { addCampaignJobSchema, patchCampaignJobSchema } from "./campaign";
 import { describe, expect, it } from "bun:test";
 
-const job = (digest?: string) => ({
+const job = (brief?: string) => ({
   key: "acme-engineer-1",
   title: "Engineer",
   company: "Acme",
   url: "https://acme.example/jobs/1",
-  ...(digest !== undefined && { digest }),
+  ...(brief !== undefined && { brief }),
 });
 
-const digest = JSON.stringify({ skills: ["Go"] });
+const brief = JSON.stringify({ skills: ["Go"] });
 
-describe("job digest contract", () => {
+describe("job brief contract", () => {
   it("accepts a JSON object", () => {
-    expect(addCampaignJobSchema.parse(job(digest)).digest).toBe(digest);
+    expect(addCampaignJobSchema.parse(job(brief)).brief).toBe(brief);
   });
 
-  // A skill templating `"digest":"$DIGEST"` renders an unset digest as "".
-  it("drops an empty digest instead of storing it", () => {
-    expect(addCampaignJobSchema.parse(job("")).digest).toBeUndefined();
-    expect(addCampaignJobSchema.parse(job("   ")).digest).toBeUndefined();
+  // A skill templating `"brief":"$BRIEF"` renders an unset brief as "".
+  it("drops an empty brief instead of storing it", () => {
+    expect(addCampaignJobSchema.parse(job("")).brief).toBeUndefined();
+    expect(addCampaignJobSchema.parse(job("   ")).brief).toBeUndefined();
   });
 
-  it("rejects a digest that is not a JSON object", () => {
+  it("rejects a brief that is not a JSON object", () => {
     expect(addCampaignJobSchema.safeParse(job("{truncated")).success).toBe(false);
     expect(addCampaignJobSchema.safeParse(job('["Go"]')).success).toBe(false);
     expect(addCampaignJobSchema.safeParse(job('"Go"')).success).toBe(false);
   });
 
-  // Undefined leaves the stored digest alone; an explicit null is the caller clearing it.
-  it("distinguishes an omitted digest from an explicit null on patch", () => {
-    expect(patchCampaignJobSchema.parse({}).digest).toBeUndefined();
-    expect(patchCampaignJobSchema.parse({ digest: null }).digest).toBeNull();
-    expect(patchCampaignJobSchema.parse({ digest: "" }).digest).toBeUndefined();
+  // Undefined leaves the stored brief alone; an explicit null is the caller clearing it.
+  it("distinguishes an omitted brief from an explicit null on patch", () => {
+    expect(patchCampaignJobSchema.parse({}).brief).toBeUndefined();
+    expect(patchCampaignJobSchema.parse({ brief: null }).brief).toBeNull();
+    expect(patchCampaignJobSchema.parse({ brief: "" }).brief).toBeUndefined();
   });
 });

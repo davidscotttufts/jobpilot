@@ -5,13 +5,12 @@ enum JobListingStatus {
   @@map("job_listing_status")
 }
 
-// The public job index: one row per posting, deduped across every user's campaigns. Digest fields
+// The public job index: one row per posting, deduped across every user's campaigns. Brief fields
 // only - it must never carry who discovered or applied. Grows into the fleet-wide shared job index.
 model JobListing {
   id        String @id @default(uuid())
   slug      String @unique
-  // sha256(normTitle|normCompany|normLocation). Not to be confused with `Job.digest`, which is the
-  // agent's JSON content summary, not a hash.
+  // sha256(normTitle|normCompany|normLocation).
   dedupeKey String @unique @map("dedupe_key")
 
   title              String
@@ -22,7 +21,7 @@ model JobListing {
   employmentType     String?  @map("employment_type")
   skills             String[] @map("skills")
   descriptionExcerpt String?  @map("description_excerpt")
-  // From the agent's digest. Empty until a posting is re-scraped - there is no backfill.
+  // From the agent's brief. Empty until a posting is re-scraped - there is no backfill.
   requirements       String[] @map("requirements")
   responsibilities   String[] @map("responsibilities")
   yearsExperience    Int?     @map("years_experience")

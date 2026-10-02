@@ -20,7 +20,7 @@ const applyTask: PilotTask = {
     jobKey: "j1",
     url: "https://example.test/job",
     board: null,
-    digest: null,
+    brief: null,
     matchScore: 90,
   },
 };

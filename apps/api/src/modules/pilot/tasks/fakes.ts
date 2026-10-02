@@ -79,7 +79,7 @@ function fakePilotRun(over: Over) {
     "search.discover": over.searchRuns,
   };
   const latestByTaskType: Record<string, unknown> = {
-    "strategy.setup": over.setupRun,
+    "search.setup": over.setupRun,
     "upwork.syncInbox": over.upworkSyncRun,
   };
   return {
@@ -277,7 +277,7 @@ export const approvedJob = (over: Row = {}) => ({
   title: "Engineer",
   url: "https://x/1",
   board: null,
-  digest: null,
+  brief: null,
   company: "Acme",
   matchScore: 80,
   campaign: { config: {} },

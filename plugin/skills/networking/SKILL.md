@@ -82,7 +82,7 @@ jobpilot-api POST /api/campaigns/<campaign-id>/jobs --data @"$JOBPILOT_TEMP/job.
 
 ```json
 { "campaignId": "<campaign-id>",
-  "target": { "jobUrl": "<job-url>", "title": "<title>", "company": "<company>", "digest": <digest-or-null> },
+  "target": { "jobUrl": "<job-url>", "title": "<title>", "company": "<company>", "brief": <brief-or-null> },
   "channels": <config.networking.channels>, "linkedinTier": "<config.networking.linkedinTier>", "resumeUrl": "<RESUME_URL>" }
 ```
 

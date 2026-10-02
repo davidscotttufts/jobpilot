@@ -146,11 +146,11 @@ export class CampaignJobService {
         matchReason: body.matchReason,
         skipReason: body.decision === "skipped" ? body.skipReason : null,
         description: body.description,
-        digest: body.digest,
+        brief: body.brief,
       },
       rejection: (status) => `Only skipped jobs can be rescanned; job is ${status}.`,
     });
-    // A rescan opens the posting, so it is often the first write carrying a publishable digest.
+    // A rescan opens the posting, so it is often the first write carrying a publishable brief.
     if (changed) {
       this.listings.publishInBackground(job);
     }

@@ -20,10 +20,10 @@ const TASK_TYPES = [
   "interview.prep",
   "queue.score",
   "board.diagnose",
-  "campaign.strategyReview",
+  "campaign.tune",
   "job.rescanSkipped",
   "job.retryFailed",
-  "strategy.setup",
+  "search.setup",
   "upwork.syncInbox",
 ] as const;
 
@@ -83,7 +83,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       jobKey: z.string(),
       url: z.string(),
       board: nullableString,
-      digest: nullableString,
+      brief: nullableString,
       resumeId: optionalString,
       matchScore: z.number().nullable(),
       warmContacts: z.array(warmContactSchema).optional(),
@@ -245,7 +245,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     }),
   ),
   taskVariant(
-    "campaign.strategyReview",
+    "campaign.tune",
     "campaign",
     z.object({
       campaignId: z.string(),
@@ -271,7 +271,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     z.object({ campaignId: z.string(), failedCount: z.number().int() }),
   ),
   taskVariant(
-    "strategy.setup",
+    "search.setup",
     "pilot",
     z.object({
       goals: z.string(),

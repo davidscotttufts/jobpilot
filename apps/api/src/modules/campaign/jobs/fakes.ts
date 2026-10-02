@@ -33,7 +33,7 @@ export function setup() {
     retryNotes: null,
     skipReason: null,
     description: null,
-    digest: null,
+    brief: null,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

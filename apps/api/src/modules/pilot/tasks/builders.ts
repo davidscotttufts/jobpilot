@@ -46,7 +46,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   followups: [],
   approvedPromotions: [],
   duePlatforms: [],
-  strategyReviews: [],
+  campaignTunes: [],
   rescanSkipped: [],
   retryFailed: [],
   setup: null,
@@ -59,7 +59,7 @@ export const job = (key: string, matchScore: number | null, over: Partial<TaskJo
   title: `Job ${key}`,
   url: `https://x/${key}`,
   board: null,
-  digest: null,
+  brief: null,
   matchScore,
   company: null,
   ...over,
@@ -161,7 +161,7 @@ export const scorePending = (campaignId: string): TaskPayload<"campaign.scorePen
   entries: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
 });
 
-export const strategyReview = (campaignId: string): TaskPayload<"campaign.strategyReview"> => ({
+export const tune = (campaignId: string): TaskPayload<"campaign.tune"> => ({
   campaignId,
   query: "react",
   config: { minScore: 70, board: "linkedin" },
@@ -169,7 +169,7 @@ export const strategyReview = (campaignId: string): TaskPayload<"campaign.strate
   topSkipReasons: ["overqualified"],
 });
 
-export const setup: TaskPayload<"strategy.setup"> = {
+export const setup: TaskPayload<"search.setup"> = {
   goals: "Senior TypeScript roles, remote",
   minScore: 60,
 };

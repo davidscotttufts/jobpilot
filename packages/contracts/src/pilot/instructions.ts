@@ -43,7 +43,7 @@ export const pilotInstructionsConfigSchema = z.object({
 
 /** What to retire from the old goals. Nothing by default, so the web asks before sending any. */
 export const pilotInstructionsChangeSchema = z.object({
-  // `strategy.setup` only runs once no searches exist, so deleting them is what re-derives.
+  // `search.setup` only runs once no searches exist, so deleting them is what re-derives.
   rederiveSearches: z.boolean().default(false),
   completeCampaigns: z.boolean().default(false),
   dropApprovedJobs: z.boolean().default(false),

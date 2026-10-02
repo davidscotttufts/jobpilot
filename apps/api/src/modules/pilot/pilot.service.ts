@@ -141,7 +141,7 @@ export class PilotService {
       writes.push(
         this.prisma.pilotSearch.deleteMany({ where: { userId } }),
         // Setup's damper would otherwise hold the re-derive back for a day.
-        this.prisma.pilotRun.deleteMany({ where: { userId, taskType: "strategy.setup" } }),
+        this.prisma.pilotRun.deleteMany({ where: { userId, taskType: "search.setup" } }),
       );
     }
     if (change.dropApprovedJobs) {

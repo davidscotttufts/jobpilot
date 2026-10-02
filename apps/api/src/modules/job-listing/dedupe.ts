@@ -75,8 +75,7 @@ export interface DedupeInput {
 
 /**
  * The dedupe key: sha256 of the normalized posting. Location is in it because the same role opened
- * in two cities is two postings. (`Job.digest` is the agent's JSON summary, not a hash - different
- * thing entirely, despite the name.)
+ * in two cities is two postings.
  */
 export function dedupeKey(input: DedupeInput): string {
   const parts = [

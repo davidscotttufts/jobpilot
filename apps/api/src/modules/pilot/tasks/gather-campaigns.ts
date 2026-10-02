@@ -12,22 +12,22 @@ const BATCH_COOLDOWN_MS = HOUR_MS;
 const PAUSED_CANDIDATES = 20;
 /** Damps resume/re-pause loops. */
 const PAUSED_REVIEW_RETRY_MS = DAY_MS;
-const STRATEGY_MIN_JOBS = 20;
-const STRATEGY_MAX_QUALIFIED_RATIO = 0.2;
+const TUNE_MIN_JOBS = 20;
+const TUNE_MAX_QUALIFIED_RATIO = 0.2;
 const RESCAN_MIN_SKIPPED = 5;
 const RETRY_MIN_FAILED = 3;
 const TOP_SKIP_REASONS = 3;
 const REVIEW_REPEAT_MS = 7 * DAY_MS;
 
-/** Pending rows a worker must open: never scored, or scored off a results row without a digest. */
+/** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
 export const NEEDS_WORKER_VISIT = {
   status: "pending",
-  OR: [{ matchScore: null }, { digest: null }],
+  OR: [{ matchScore: null }, { brief: null }],
 } satisfies Prisma.JobWhereInput;
 
 const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;
 
-/** Auto-apply campaigns holding rows that still need a score or a digest. */
+/** Auto-apply campaigns holding rows that still need a score or a brief. */
 export async function gatherScorePending(
   prisma: PrismaClient,
   userId: string,
@@ -171,7 +171,7 @@ export async function gatherPausedCampaigns(
 const reviewMarkerSchema = z.object({ type: z.string().optional() }).loose();
 
 /**
- * Strategy reviews, skipped-job rescans and failed-job retries for a quiet task list. The agent
+ * Campaign tunes, skipped-job rescans and failed-job retries for a quiet task list. The agent
  * journals an action with `detail.type` after each, which holds the campaign back for a week.
  */
 export async function gatherCampaignReviews(prisma: PrismaClient, userId: string, now: Date) {
@@ -195,21 +195,17 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   );
   const isFresh = (type: string, campaignId: string) => !marked.has(`${type}:${campaignId}`);
 
-  const strategyReviews: TaskPayload<"campaign.strategyReview">[] = [];
+  const campaignTunes: TaskPayload<"campaign.tune">[] = [];
   const rescanSkipped: TaskPayload<"job.rescanSkipped">[] = [];
   const retryFailed: TaskPayload<"job.retryFailed">[] = [];
 
   const summaries = await summarizeCampaigns(prisma, campaigns);
   for (const { campaignId, query, config, summary } of summaries) {
     if (summary.kind !== "jobs") continue;
-    const converting = summary.qualified / summary.totalFound >= STRATEGY_MAX_QUALIFIED_RATIO;
-    if (
-      summary.totalFound >= STRATEGY_MIN_JOBS &&
-      !converting &&
-      isFresh("strategyReview", campaignId)
-    ) {
+    const converting = summary.qualified / summary.totalFound >= TUNE_MAX_QUALIFIED_RATIO;
+    if (summary.totalFound >= TUNE_MIN_JOBS && !converting && isFresh("tune", campaignId)) {
       const { minScore, board } = campaignConfigSchema.parse(config);
-      strategyReviews.push({
+      campaignTunes.push({
         campaignId,
         query,
         config: { minScore: minScore ?? null, board: board ?? null },
@@ -230,11 +226,11 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
     }
   }
 
-  if (strategyReviews.length > 0) {
+  if (campaignTunes.length > 0) {
     const reasons = await prisma.job.groupBy({
       by: ["campaignId", "skipReason"],
       where: {
-        campaignId: { in: strategyReviews.map((review) => review.campaignId) },
+        campaignId: { in: campaignTunes.map((review) => review.campaignId) },
         status: "skipped",
         skipReason: { not: null },
       },
@@ -242,11 +238,11 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
       orderBy: { _count: { skipReason: "desc" } },
     });
     const reasonsByCampaign = Map.groupBy(reasons, (row) => row.campaignId);
-    for (const review of strategyReviews) {
+    for (const review of campaignTunes) {
       review.topSkipReasons = (reasonsByCampaign.get(review.campaignId) ?? [])
         .flatMap((row) => (row.skipReason ? [row.skipReason] : []))
         .slice(0, TOP_SKIP_REASONS);
     }
   }
-  return { strategyReviews, rescanSkipped, retryFailed };
+  return { campaignTunes, rescanSkipped, retryFailed };
 }

@@ -8,7 +8,7 @@ const job = (url: string): ListingSourceJob => ({
   company: "Acme",
   url,
   location: "Austin, TX",
-  digest: JSON.stringify({ skills: ["Go"] }),
+  brief: JSON.stringify({ skills: ["Go"] }),
 });
 
 interface FakeOptions {
@@ -87,7 +87,7 @@ describe("publish", () => {
     const fake = fakePrisma();
     const svc = new JobListingPublisher(fake.prisma);
 
-    expect(await svc.publish({ ...job("https://x.com/1"), digest: null })).toBe("skipped");
+    expect(await svc.publish({ ...job("https://x.com/1"), brief: null })).toBe("skipped");
     expect(fake.calls).toEqual([]);
   });
 
@@ -128,15 +128,15 @@ describe("publish", () => {
 });
 
 describe("enrich", () => {
-  const withDigest = (extra: Record<string, unknown>): ListingSourceJob => ({
+  const withBrief = (extra: Record<string, unknown>): ListingSourceJob => ({
     ...job("https://x.com/1"),
-    digest: JSON.stringify({ skills: ["Go"], ...extra }),
+    brief: JSON.stringify({ skills: ["Go"], ...extra }),
   });
 
-  it("writes the digest fields when the scrape has them", async () => {
+  it("writes the brief fields when the scrape has them", async () => {
     const fake = fakePrisma({ seenUrl: true });
     await new JobListingPublisher(fake.prisma).publish(
-      withDigest({ requirements: ["Go"], responsibilities: ["Ship"], yearsExperience: 4 }),
+      withBrief({ requirements: ["Go"], responsibilities: ["Ship"], yearsExperience: 4 }),
     );
 
     expect(fake.updates[0]).toMatchObject({
@@ -146,9 +146,9 @@ describe("enrich", () => {
     });
   });
 
-  it("leaves the digest fields untouched when a thinner scrape omits them", async () => {
+  it("leaves the brief fields untouched when a thinner scrape omits them", async () => {
     const fake = fakePrisma({ seenUrl: true });
-    await new JobListingPublisher(fake.prisma).publish(withDigest({}));
+    await new JobListingPublisher(fake.prisma).publish(withBrief({}));
 
     const data = fake.updates[0] ?? {};
     expect(data).not.toHaveProperty("requirements");

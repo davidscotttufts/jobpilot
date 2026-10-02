@@ -44,7 +44,7 @@ confirm with type `proposal_accept_invitation`.
 `manage_proposals` action `create` with:
 
 - `job_reference` - the **numeric** job id, not the `~02…` ciphertext. Resolve it from the
-  proposal's `jobUrl` via `find_jobs` action `get` if the id is not already in the digest.
+  proposal's `jobUrl` via `find_jobs` action `get` if the id is not already in the brief.
 - `cover_letter` - the proposal's `proposalText`. Max 5000 characters; if it is longer, stop and
   ask the user to shorten it rather than truncating their words.
 - `charged_amount` - the bid, as a number.

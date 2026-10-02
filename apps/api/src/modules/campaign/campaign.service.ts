@@ -110,8 +110,8 @@ export class CampaignService {
         "config.resumeId is required for search, auto-apply, and networking campaigns.",
       );
     }
-    // Guarded in the write: comparing against `existing` leaves a window for the pilot's strategy
-    // review and a user edit to clobber each other.
+    // Guarded in the write: comparing against `existing` leaves a window for the pilot's campaign
+    // tune and a user edit to clobber each other.
     const updated = await this.prisma.campaign.updateMany({
       where: {
         campaignId: id,

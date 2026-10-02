@@ -17,6 +17,6 @@ export const scoringController = new Elysia({
     detail: {
       summary: "Score job fit",
       description:
-        "Deterministically scores a job digest against the profile's resume-derived inputs plus any overrides. The verdict says whether to trust the score as-is or deliberate over the match evidence.",
+        "Deterministically scores a job brief against the profile's resume-derived inputs plus any overrides. The verdict says whether to trust the score as-is or deliberate over the match evidence.",
     },
   });

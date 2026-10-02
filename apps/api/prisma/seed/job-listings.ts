@@ -30,7 +30,7 @@ export async function seedJobListings(): Promise<void> {
         type: true,
         board: true,
         description: true,
-        digest: true,
+        brief: true,
       },
     });
 
@@ -57,6 +57,6 @@ export async function seedJobListings(): Promise<void> {
   console.log(
     `✅ Job listings: scanned ${counts.scanned}, published ${counts.created}, ` +
       `merged as repost ${counts.merged}, refreshed ${counts.refreshed}, ` +
-      `skipped (no digest) ${counts.skipped}, failed ${counts.failed}.`,
+      `skipped (no brief) ${counts.skipped}, failed ${counts.failed}.`,
   );
 }

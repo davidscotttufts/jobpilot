@@ -1,6 +1,6 @@
 /**
  * Turn a campaign `Job` row into a publishable public listing - or reject it. Pure and Prisma-free:
- * this is both the privacy boundary (only digest fields cross it) and the quality gate, so it is
+ * this is both the privacy boundary (only brief fields cross it) and the quality gate, so it is
  * the part that unit-tests with no database.
  */
 
@@ -15,10 +15,10 @@ const MAX_BULLETS = 12;
 const MAX_BULLET_LENGTH = 300;
 
 /**
- * Looser than scoring's `jobDigestSchema`, which strips the posting-shaped keys
- * (location/salary/remote) this index wants. `Job.digest` is raw JSON, so they are usually present.
+ * Looser than scoring's `jobBriefSchema`, which strips the posting-shaped keys
+ * (location/salary/remote) this index wants. `Job.brief` is raw JSON, so they are usually present.
  */
-const digestSchema = z.object({
+const briefSchema = z.object({
   skills: z.array(z.string()).optional(),
   descriptionExcerpt: z.string().optional(),
   location: z.string().optional(),
@@ -41,7 +41,7 @@ export interface ListingSourceJob {
   type?: string | null;
   board?: string | null;
   description?: string | null;
-  digest?: string | null;
+  brief?: string | null;
 }
 
 export interface ListingDraft {
@@ -62,15 +62,15 @@ export interface ListingDraft {
   url: string;
 }
 
-function parseDigest(raw: string | null | undefined): z.infer<typeof digestSchema> {
+function parseBrief(raw: string | null | undefined): z.infer<typeof briefSchema> {
   if (!raw) {
     return {};
   }
   try {
-    const parsed = digestSchema.safeParse(JSON.parse(raw));
+    const parsed = briefSchema.safeParse(JSON.parse(raw));
     return parsed.success ? parsed.data : {};
   } catch {
-    // A malformed digest is a thin job, not an error - the next PATCH usually fixes it.
+    // A malformed brief is a thin job, not an error - the next PATCH usually fixes it.
     return {};
   }
 }
@@ -106,7 +106,7 @@ function yearsExperience(value: number | undefined): number | null {
 
 /**
  * Build the draft, or null when the job is too thin to publish - the one gate every publish path
- * routes through, so callers never pre-filter. A stub the agent never opened has no digest; the
+ * routes through, so callers never pre-filter. A stub the agent never opened has no brief; the
  * PATCH that adds one re-runs this.
  */
 export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
@@ -121,14 +121,14 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     return null;
   }
 
-  const digest = parseDigest(job.digest);
+  const brief = parseBrief(job.brief);
   // A posting with no named skills has nothing to filter or match on, so it never gets published.
-  const skills = (digest.skills ?? []).map((skill) => skill.trim()).filter(Boolean);
+  const skills = (brief.skills ?? []).map((skill) => skill.trim()).filter(Boolean);
   if (skills.length === 0) {
     return null;
   }
 
-  const location = clean(job.location) ?? clean(digest.location);
+  const location = clean(job.location) ?? clean(brief.location);
   const key = dedupeKey({ title, company, location });
 
   return {
@@ -137,14 +137,14 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     title,
     company,
     location,
-    remote: digest.remote === true || normalizeListingLocation(location) === "remote",
-    salary: clean(job.salary) ?? clean(digest.salary),
-    employmentType: clean(job.type) ?? clean(digest.employmentType),
+    remote: brief.remote === true || normalizeListingLocation(location) === "remote",
+    salary: clean(job.salary) ?? clean(brief.salary),
+    employmentType: clean(job.type) ?? clean(brief.employmentType),
     skills,
-    descriptionExcerpt: excerpt(clean(digest.descriptionExcerpt) ?? clean(job.description)),
-    requirements: bullets(digest.requirements),
-    responsibilities: bullets(digest.responsibilities),
-    yearsExperience: yearsExperience(digest.yearsExperience),
+    descriptionExcerpt: excerpt(clean(brief.descriptionExcerpt) ?? clean(job.description)),
+    requirements: bullets(brief.requirements),
+    responsibilities: bullets(brief.responsibilities),
+    yearsExperience: yearsExperience(brief.yearsExperience),
     // Lowercased so the `?board=` filter is an indexed equality hit, not an ILIKE scan.
     board: clean(job.board)?.toLowerCase() ?? null,
     url: canonicalizeUrl(url),

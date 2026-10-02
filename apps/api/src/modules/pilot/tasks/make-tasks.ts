@@ -19,12 +19,12 @@ const PRIORITY = {
   upworkSync: 640,
   promotionPost: 600,
   warmIntro: 550,
-  strategySetup: 520,
+  searchSetup: 520,
   // Finish scoring what was found before discovering more.
   scorePending: 510,
   discover: 500,
   followup: 400,
-  strategyReview: 350,
+  tune: 350,
   promotionDraft: 300,
   rescanSkipped: 250,
   retryFailed: 240,
@@ -52,7 +52,7 @@ export const applyTask = (job: TaskJob): PilotTask => ({
     jobKey: job.key,
     url: job.url,
     board: job.board,
-    digest: job.digest,
+    brief: job.brief,
     resumeId: job.resumeId,
     matchScore: job.matchScore,
     warmContacts: job.warmContacts,
@@ -208,11 +208,11 @@ export const boardDiagnoseTask = (payload: TaskPayload<"board.diagnose">): Pilot
   payload,
 });
 
-export const strategyReviewTask = (payload: TaskPayload<"campaign.strategyReview">): PilotTask => ({
-  id: `campaign.strategyReview:${payload.campaignId}`,
-  taskType: "campaign.strategyReview",
-  priority: PRIORITY.strategyReview,
-  title: `Review strategy: ${payload.query}`,
+export const tuneTask = (payload: TaskPayload<"campaign.tune">): PilotTask => ({
+  id: `campaign.tune:${payload.campaignId}`,
+  taskType: "campaign.tune",
+  priority: PRIORITY.tune,
+  title: `Tune campaign: ${payload.query}`,
   subjectType: "campaign",
   subjectId: payload.campaignId,
   payload,
@@ -238,10 +238,10 @@ export const retryFailedTask = (payload: TaskPayload<"job.retryFailed">): PilotT
   payload,
 });
 
-export const setupTask = (payload: TaskPayload<"strategy.setup">): PilotTask => ({
-  id: "strategy.setup",
-  taskType: "strategy.setup",
-  priority: PRIORITY.strategySetup,
+export const setupTask = (payload: TaskPayload<"search.setup">): PilotTask => ({
+  id: "search.setup",
+  taskType: "search.setup",
+  priority: PRIORITY.searchSetup,
   title: "Set up searches from your goals",
   subjectType: "pilot",
   subjectId: "setup",

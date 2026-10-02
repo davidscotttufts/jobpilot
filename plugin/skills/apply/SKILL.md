@@ -45,9 +45,9 @@ If the argument is pasted content (HTML / text), extract description, Apply URL,
 
 ### 1.1 Fit Review
 
-**URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`recommendation` to fill the review below; keep its `digest` as `DIGEST` for 1.4.
+**URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`recommendation` to fill the review below; keep its `brief` as `BRIEF` for 1.4.
 
-**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../_shared/digest-schema.md`), and `POST /api/score-fit {digest, minScore:<minMatchScore>}` for the score. Its `fit.verdict` drives the recommendation below: `trust` → report the score as-is; `deliberate` → reason from `strongMatches`/`partialMatches`/`gaps` first. Keep the digest in `DIGEST=...` for 1.4.
+**Pasted input** → parse the fields yourself (the content is already in hand), build the brief (`../_shared/job-brief.md`), and `POST /api/score-fit {brief, minScore:<minMatchScore>}` for the score. Its `fit.verdict` drives the recommendation below: `trust` → report the score as-is; `deliberate` → reason from `strongMatches`/`partialMatches`/`gaps` first. Keep the brief in `BRIEF=...` for 1.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -80,13 +80,13 @@ Keep `.campaignId` from the response as `CAMPAIGN_ID`.
 
 ### 1.4 Add the Job
 
-Pick a `JOB_KEY` of `<unix-seconds>-single`. Write the body to `"$JOBPILOT_TEMP/job.json"` (`digest` is the
-stringified digest, `description` the posting text):
+Pick a `JOB_KEY` of `<unix-seconds>-single`. Write the body to `"$JOBPILOT_TEMP/job.json"` (`brief` is the
+stringified brief, `description` the posting text):
 
 ```json
 { "key": "<JOB_KEY>", "title": "<title>", "company": "<company>", "location": "<location>",
   "url": "<job-url>", "board": "<board>", "matchScore": <0-100>, "matchReason": "<one-line verdict>",
-  "status": "approved", "digest": "<stringified digest>", "description": "<posting text>" }
+  "status": "approved", "brief": "<stringified brief>", "description": "<posting text>" }
 ```
 
 ```bash
@@ -145,7 +145,7 @@ Drop that row from the batch and continue without spawning a worker.
 
 Delegate the surviving rows to the `job-worker` subagent - it opens its own tab, reads each
 posting, fuzzy-dedupes by title+company, scores, applies eligibility
-(`../_shared/eligibility.md`), and **writes each row itself** (so the full posting/digest never
+(`../_shared/eligibility.md`), and **writes each row itself** (so the full posting/brief never
 enters this conversation). Batches of at most 5 rows (the worker's cap), one worker at a time.
 Input JSON:
 
@@ -156,7 +156,7 @@ Input JSON:
 ```
 
 `save:"patch"` keeps this on the existing rows: the worker PATCHes the real title, company,
-location, board, score, and digest onto each eligible row (`queued` → `pending`); an ineligible
+location, board, score, and brief onto each eligible row (`queued` → `pending`); an ineligible
 or already-applied row gets a `/result` `skipped` instead.
 
 It returns one `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence, eligible, skipReason, matchReason }` per row. Collect these summaries for the ranked table (Phase 4).
@@ -204,7 +204,7 @@ jobpilot-api PATCH "/api/campaigns/$CAMPAIGN_ID/jobs/<key>" --data '{"status":"a
 
 ### 5.2 Apply (delegate to `job-worker`)
 
-Delegate to the `job-worker` subagent and wait for its compact result - it navigates, authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of this conversation). One worker at a time. Use the apply-mode input from `../_shared/campaign-flow.md` with `digest` omitted (the worker fetches it from the saved Job) and `preSubmitReview: <true when config.maxApplications === 1, else false>`.
+Delegate to the `job-worker` subagent and wait for its compact result - it navigates, authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of this conversation). One worker at a time. Use the apply-mode input from `../_shared/campaign-flow.md` with `brief` omitted (the worker fetches it from the saved Job) and `preSubmitReview: <true when config.maxApplications === 1, else false>`.
 
 **Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves the form open, and returns `needs_user category:"review"` with a field summary in `context`. Present:
 

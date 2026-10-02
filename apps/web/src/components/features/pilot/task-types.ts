@@ -17,10 +17,10 @@ const TASK_TYPE_LABELS: Record<TaskType, string> = {
   "interview.prep": "Prepare interview notes",
   "queue.score": "Score pasted links",
   "board.diagnose": "Diagnose job board",
-  "campaign.strategyReview": "Review campaign strategy",
+  "campaign.tune": "Tune a campaign",
   "job.rescanSkipped": "Rescan skipped jobs",
   "job.retryFailed": "Retry failed jobs",
-  "strategy.setup": "Set up goals and saved searches",
+  "search.setup": "Set up goals and saved searches",
   "upwork.syncInbox": "Refresh the Upwork inbox",
 };
 
