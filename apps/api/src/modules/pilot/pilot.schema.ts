@@ -17,8 +17,8 @@ export const pilotCostSchema = z.object({
     z.object({
       taskType: z.string(),
       runs: z.number().int(),
-      medianMs: z.number().int(),
-      totalMs: z.number().int(),
+      medianTokens: z.number().int(),
+      totalTokens: z.number().int(),
       failed: z.number().int(),
       abandoned: z.number().int(),
     }),

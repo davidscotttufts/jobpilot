@@ -1,3 +1,4 @@
+using System.Text.Json;
 using JobPilot.Terminal.Hosting;
 using JobPilot.Terminal.Providers;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -58,6 +59,21 @@ public static class PilotEndpoints
                 Running = true,
             });
             return TypedResults.Ok(status.Get());
+        });
+
+        // The provider CLI's OpenTelemetry log exporter (OTLP/HTTP JSON) posts here; see UsageMeter.
+        app.MapPost("/v1/logs", async Task<IResult> (HttpRequest request, UsageMeter meter) =>
+        {
+            try
+            {
+                using var export = await JsonDocument.ParseAsync(request.Body, cancellationToken: request.HttpContext.RequestAborted);
+                meter.Read(export.RootElement);
+                return Results.Text("{}", "application/json");
+            }
+            catch (JsonException)
+            {
+                return TypedResults.BadRequest();
+            }
         });
 
         app.MapPost("/pilot/stop", (PilotStore store, HostStatus status) =>

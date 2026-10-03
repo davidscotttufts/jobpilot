@@ -100,6 +100,27 @@ public sealed class PilotApiTests
     }
 
     [Fact]
+    public async Task ReportUsage_PostsTheCyclesUsage()
+    {
+        HttpRequestMessage? seen = null;
+        string? body = null;
+        var api = Api(async (request, ct) =>
+        {
+            seen = request;
+            body = await request.Content!.ReadAsStringAsync(ct);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        var usage = new PilotUsage(95, "claude-sonnet-5", 4, 320, 130000, 600);
+
+        await api.ReportUsageAsync(Settings(apiUrl: "https://api.example.test/"), usage, TestContext.Current.CancellationToken);
+
+        Assert.Equal("https://api.example.test/api/pilot/usage", seen!.RequestUri!.ToString());
+        Assert.Equal(
+            """{"cycleSeconds":95,"model":"claude-sonnet-5","inputTokens":4,"outputTokens":320,"cacheReadTokens":130000,"cacheWriteTokens":600}""",
+            body);
+    }
+
+    [Fact]
     public async Task Report_PostsTheJournalEntry()
     {
         HttpRequestMessage? seen = null;

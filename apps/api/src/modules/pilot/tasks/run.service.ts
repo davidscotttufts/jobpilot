@@ -3,6 +3,7 @@ import {
   type PilotRun,
   type PilotTask,
   pilotRunSchema,
+  type ReportPilotUsageInput,
 } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
@@ -165,6 +166,19 @@ export class RunService {
     });
     if (!updated) throw conflict("Run is already finished.");
     return toPilotRun(updated);
+  }
+
+  /** A cycle starts at most one run, so the newest run since the cycle began is the one it started. */
+  async reportUsage(userId: string, body: ReportPilotUsageInput) {
+    const { cycleSeconds, ...usage } = body;
+    const run = await this.prisma.pilotRun.findFirst({
+      where: { userId, startedAt: { gte: new Date(Date.now() - cycleSeconds * 1000) } },
+      orderBy: { startedAt: "desc" },
+      select: { id: true },
+    });
+    if (!run) return { runId: null };
+    await this.prisma.pilotRun.update({ where: { id: run.id }, data: usage });
+    return { runId: run.id };
   }
 
   /** Bookkeeping only: an abandoned apply goes back to approved, other results use their own routes. */

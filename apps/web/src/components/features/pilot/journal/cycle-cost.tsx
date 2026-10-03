@@ -6,19 +6,18 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { formatDuration, plural } from "@/utils/format";
+import { formatTokens, plural } from "@/utils/format";
 import { taskTypeLabel } from "../task-types";
 
-/** Wall clock stands in for token spend: nothing measures tokens per cycle, and both rank task types alike. */
 export function CycleCost(): ReactElement {
   const query = useApiQuery(pilotQueries.cost(), { errorMessage: "Failed to load cycle costs" });
   const items = query.data?.items ?? [];
-  const heaviest = items[0]?.totalMs ?? 0;
+  const heaviest = items[0]?.totalTokens ?? 0;
 
   return (
     <SectionCard
-      title="Where the time goes"
-      description="The last 7 days of cycles by task type, heaviest first."
+      title="Where the tokens go"
+      description="The last 7 days of runs by task type, heaviest first."
     >
       <QuerySection
         isLoading={query.isLoading}
@@ -38,17 +37,16 @@ export function CycleCost(): ReactElement {
               >
                 <Typography variant="body2">{taskTypeLabel(item.taskType)}</Typography>
                 <Typography variant="captionMuted">
-                  {formatDuration(Math.round(item.totalMs / 1000))} total
+                  {formatTokens(item.totalTokens)} tokens
                 </Typography>
               </Stack>
               <LinearProgress
                 variant="determinate"
-                value={heaviest > 0 ? (item.totalMs / heaviest) * 100 : 0}
+                value={heaviest > 0 ? (item.totalTokens / heaviest) * 100 : 0}
                 sx={{ my: 0.5 }}
               />
               <Typography variant="captionMuted">
-                {plural(item.runs, "run")} · {formatDuration(Math.round(item.medianMs / 1000))}{" "}
-                typical
+                {plural(item.runs, "run")} · {formatTokens(item.medianTokens)} typical
                 {item.failed > 0 && ` · ${item.failed} failed`}
                 {item.abandoned > 0 && ` · ${item.abandoned} abandoned`}
               </Typography>

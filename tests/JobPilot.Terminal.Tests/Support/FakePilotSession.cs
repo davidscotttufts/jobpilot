@@ -15,6 +15,8 @@ internal sealed class FakePilotSession : IPilotSession
 
     public List<string> Reports => Snapshot(reports);
 
+    public int UsageReports { get; private set; }
+
     /// <summary>Summaries of the empty cycles the host journaled itself.</summary>
     public List<string> EmptyCycles => Snapshot(emptyCycles);
 
@@ -147,6 +149,16 @@ internal sealed class FakePilotSession : IPilotSession
         lock (sync)
         {
             emptyCycles.Add(summary);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task ReportUsageAsync(CancellationToken ct)
+    {
+        lock (sync)
+        {
+            UsageReports++;
         }
 
         return Task.CompletedTask;

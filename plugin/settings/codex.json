@@ -2,6 +2,7 @@
   "configOverrides": [
     "model=\"gpt-6-luna\"",
     "sandbox_workspace_write.network_access=true",
-    "windows.sandbox=\"unelevated\""
+    "windows.sandbox=\"unelevated\"",
+    "otel.exporter={otlp-http={endpoint=\"http://localhost:4102/v1/logs\",protocol=\"json\"}}"
   ]
 }

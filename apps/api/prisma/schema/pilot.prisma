@@ -94,18 +94,24 @@ model PilotSearch {
 }
 
 model PilotRun {
-  id          String           @id @default(uuid())
-  userId      String           @map("user_id")
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  taskType    String           @map("task_type")
-  subjectType String           @map("subject_type")
-  subjectId   String           @map("subject_id")
-  payload     Json             @default("{}")
-  startedAt   DateTime         @default(now()) @map("started_at")
-  heartbeatAt DateTime?        @map("heartbeat_at")
-  expiresAt   DateTime         @map("expires_at")
-  finishedAt  DateTime?        @map("finished_at")
-  outcome     PilotRunOutcome?
+  id               String           @id @default(uuid())
+  userId           String           @map("user_id")
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType         String           @map("task_type")
+  subjectType      String           @map("subject_type")
+  subjectId        String           @map("subject_id")
+  payload          Json             @default("{}")
+  startedAt        DateTime         @default(now()) @map("started_at")
+  heartbeatAt      DateTime?        @map("heartbeat_at")
+  expiresAt        DateTime         @map("expires_at")
+  finishedAt       DateTime?        @map("finished_at")
+  outcome          PilotRunOutcome?
+  // Null until the host reports the usage of the cycle that started this run.
+  model            String?
+  inputTokens      Int              @default(0) @map("input_tokens")
+  outputTokens     Int              @default(0) @map("output_tokens")
+  cacheReadTokens  Int              @default(0) @map("cache_read_tokens")
+  cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
   @@index([userId, expiresAt])
   @@index([userId, subjectType, subjectId])

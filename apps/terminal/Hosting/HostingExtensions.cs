@@ -35,6 +35,7 @@ public static class HostingExtensions
             PilotStore.ResolvePath(sp.GetRequiredService<HostInstall>()),
             sp.GetRequiredService<ILogger<PilotStore>>()));
         services.AddSingleton<PilotApi>();
+        services.AddSingleton<UsageMeter>();
         services.AddSingleton<IPilotSession, PilotSession>();
         services.AddSingleton<PilotLoop>();
         services.AddHostedService(sp => sp.GetRequiredService<PilotLoop>());

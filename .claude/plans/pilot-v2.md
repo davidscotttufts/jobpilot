@@ -5,9 +5,10 @@
 | Milestone | State |
 | --- | --- |
 | 1. Rename | Done on `feat/pilot-v2` (commits "refactor(pilot)!: rename agenda to task list and claim to run" and "refactor(pilot)!: rename strategy tasks and the job digest to brief"). Migrations not applied; live run not done. |
-| 0. Spike | Docs research done (findings below). Live capture next: needs a paired host and real cycles. |
-| 3. Host checks first | Done on `feat/pilot-v2`. Live idle run not done. |
-| 2, 4-8 | Not started. |
+| 0. Spike | Done (findings below). Subagent cost and Codex-in-TUI still unmeasured. |
+| 3. Host checks first | Done on `feat/pilot-v2`. Checked live: an idle cycle wrote its own entry and woke no model. |
+| 2. Token telemetry | Done on `feat/pilot-v2`. Migration `20261003000000` applied only to the local spike database. |
+| 4-8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
@@ -131,40 +132,44 @@ Prove that the host can measure and steer a TUI pilot session without headless m
 Exit: a short "Spike findings" section added to this file, with the telemetry route per CLI, the
 TUI commands that work, and the baseline numbers.
 
-### Spike findings (docs and source, 2026-10-02; not yet checked live)
+### Spike findings (live, 2026-10-03, local DB, Claude Code 2.1.283, `claude-sonnet-5`)
 
-Claude Code (code.claude.com docs):
+Telemetry route: OpenTelemetry for both CLIs, no session-log reader.
 
-- OpenTelemetry works in the interactive TUI. Events: `claude_code.api_request` per request,
-  `claude_code.token.usage` metric. `prompt.id` groups the requests of one user turn, so one
-  typed `/jobpilot:pilot` maps to one prompt id. `/clear` keeps `session.id`.
-- Docs show only `grpc` for `OTEL_EXPORTER_OTLP_PROTOCOL`; `http/json` and the exact token
-  attributes on `api_request` (input, output, cache read, cache creation, model) need a live
-  capture.
-- Subagent model: invocation param, then the agent's `model`, then
-  `CLAUDE_CODE_SUBAGENT_MODEL`, then the main session's. Omitting `model` inherits. Whether
-  telemetry tags subagent requests apart is undocumented: check live.
-- MCP tool schemas are deferred by default (tool search; `ENABLE_TOOL_SEARCH`), so a Playwright
-  agent pays for names, not every schema, each turn.
-- Skill arguments: `/jobpilot:pilot <runId>` reaches the skill as `$ARGUMENTS`.
+- **Claude Code.** OTLP/HTTP JSON works in the TUI (`OTEL_EXPORTER_OTLP_PROTOCOL=http/json`), set
+  from the settings file's `env` block. Each `api_request` log record carries `input_tokens`,
+  `output_tokens`, `cache_read_tokens`, `cache_creation_tokens`, `model`, `cost_usd`,
+  `prompt.id`, `query_source` and `skill.name`. One typed `/jobpilot:pilot` is one `prompt.id`;
+  `/clear` keeps `session.id`. Records also carry the account email, so nothing stores them raw.
+- **Codex** (`codex-cli 0.160.0`, checked with one `exec` call; the TUI uses the same exporter).
+  `otel.exporter={otlp-http={endpoint=".../v1/logs",protocol="json"}}` works. `codex.sse_event`
+  with `event.kind=response.completed` carries `input_token_count` (cached tokens included),
+  `output_token_count`, `cached_token_count`, `cache_write_token_count` and `model`; some counts
+  arrive as `stringValue`.
+- **Prompt suggestions.** Claude Code makes an extra `prompt_suggestion` request after each turn.
+  `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false` turns it off.
+- **Driving the TUI.** The host's `/clear` then `/jobpilot:pilot` lands and runs on Claude.
+  Arguments reach a skill as `$ARGUMENTS` (Claude) or as plain prompt text after `$pilot` (Codex);
+  not yet tried live with an argument.
+- **Not measured yet:** subagent tagging and start cost (no task in the spike delegated), Codex in
+  the TUI, and apply cycles (the spike account must never submit a real application).
 
-Codex (openai/codex source at `09bced5`):
+Baseline (dev host, so the session also loads the repo's CLAUDE.md and rules; an installed host
+starts smaller). "usd" is `cost_usd`, the API-price equivalent, used here only to compare cycles.
 
-- `[otel] exporter = { otlp-http = { endpoint = ".../v1/logs", protocol = "json" } }` works in
-  the TUI. Pass it as a `-c` override; the host's `-c model=...` already runs the TUI in-process.
-- `codex.sse_event` with `event.kind=response.completed` carries `input_token_count`,
-  `output_token_count`, `cached_token_count`, `cache_write_token_count`,
-  `reasoning_token_count`, plus `model` and `conversation.id`. Fallback: rollout JSONL
-  `token_count` events (`last_token_usage` is per response; sum per run).
-- A subagent has its own `conversation.id` with no parent link in `sse_event`; the time window
-  still attributes it to the run.
-- `.codex/agents/*.toml`: `developer_instructions` takes the full inlined body; omitting `model`
-  inherits. There is no `tools` key.
-- `$pilot <runId>` works: the text after the skill token reaches the model as plain user text (no
-  substitution), so the skill reads the id from the prompt. `/clear` starts a new chat.
+| Cycle | Requests | Output | Cache read | Cache write | usd |
+| --- | --- | --- | --- | --- | --- |
+| Error exit (no resume), cold cache | 14 | 2.2K | 871K | 70K | 0.48 |
+| Idle, after milestone 3 | 0 | 0 | 0 | 0 | 0 |
+| `search.setup` | 14 | 2.7K | 948K | 31K | 0.34 |
+| `search.discover`, 10 jobs saved, 7 min | 57 | 21K | 5.4M | 107K | 1.72 |
 
-Still to measure live: token fields on Claude events, cache read versus write across `/clear`,
-the cost of starting one subagent, and the idle/apply/discover baseline.
+What it shows:
+
+- The fixed context is about 62K tokens, re-read on every request. Cost tracks requests times
+  context, so fewer turns (milestone 4) and smaller per-agent context (milestone 5) are the levers.
+- Bookkeeping is most of a short cycle: setup's real work is two POSTs, yet it took 14 requests.
+- Discover runs in the main session with no worker, as the context section says.
 
 ## Milestone 1: rename jargon and ambiguous names (done)
 
@@ -236,6 +241,21 @@ Remaining before merge:
 
 Exit: an overnight run fills usage on `pilot_runs` for every task type, and the totals match the
 baseline within reason.
+
+As built, simpler than above:
+
+- The host serves `POST /v1/logs` (OTLP/HTTP JSON) and `UsageMeter` sums `api_request` and
+  Codex `response.completed` records. The shipped `plugin/settings/claude.json` (`env`) and
+  `codex.json` (`otel.exporter`) point the CLIs at it; no launch code changed. The Claude settings
+  also turn off prompt suggestions.
+- The meter restarts when the cycle command is sent. After the cycle, the host posts the total to
+  `POST /api/pilot/usage` with `cycleSeconds` (elapsed on the host's own clock, so clock skew
+  can't miss the run), and the server sets it on the newest run started in that window. No run id
+  is needed before milestone 4. A cycle that started no run (an error exit) is not stored.
+- Columns: `model`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`.
+  No `provider` column: the model name says which CLI ran.
+- `costByTaskType` and the activity page's cost card use the sum of all four token counts. No
+  per-day view yet; milestone 7's weekly spend is the next consumer.
 
 ## Milestone 3: the host checks for work before waking the model
 

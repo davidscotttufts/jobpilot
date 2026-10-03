@@ -85,6 +85,25 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
         return PostJournalAsync(settings, new JournalRequest([entry]), ct);
     }
 
+    public async Task ReportUsageAsync(PilotSettings settings, PilotUsage usage, CancellationToken ct)
+    {
+        try
+        {
+            using var timeout = TimeoutAfter(RequestTimeout, ct);
+            using var request = Request(settings, HttpMethod.Post, "/api/pilot/usage");
+            request.Content = JsonContent.Create(usage, AppJsonContext.Default.PilotUsage);
+            using var response = await http.SendAsync(request, timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Pilot usage report was rejected ({Status}).", (int)response.StatusCode);
+            }
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            logger.LogWarning(ex, "Pilot usage report could not be delivered.");
+        }
+    }
+
     /// <summary>Null when the server rejects the stream. Unlike the calls above, transport failures throw.</summary>
     public async Task<HttpResponseMessage?> OpenEventsAsync(PilotSettings settings, CancellationToken ct)
     {

@@ -14,6 +14,9 @@ public sealed class PilotSession : IPilotSession, IDisposable
     // Redraw time between /clear and the cycle command landing on the fresh prompt.
     private static readonly TimeSpan ClearSettle = TimeSpan.FromSeconds(2);
 
+    // The CLIs export logs every second or so, so the last request's usage lands just after the cycle ends.
+    private static readonly TimeSpan UsageFlush = TimeSpan.FromSeconds(3);
+
     // Without the cycle detail spelled out, /api/pilot/activity can't read the entry as a completion.
     private const string ErrorExit =
         "journal the error batch (system + cycle with detail:{\"status\":\"error\",\"sleepSeconds\":300}), "
@@ -25,6 +28,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
     private readonly TerminalSession terminal;
     private readonly PilotStore store;
     private readonly PilotApi api;
+    private readonly UsageMeter usage;
     private readonly ILogger<PilotSession> logger;
     private readonly SentinelParser sentinels = new();
     private readonly StuckDetector stuck = new();
@@ -33,11 +37,12 @@ public sealed class PilotSession : IPilotSession, IDisposable
     // the PTY thread writes while the loop re-queues sentinels it drained.
     private readonly Channel<CycleResult?> signals = Channel.CreateUnbounded<CycleResult?>(new UnboundedChannelOptions { SingleReader = true });
 
-    public PilotSession(TerminalSession terminal, PilotStore store, PilotApi api, ILogger<PilotSession> logger)
+    public PilotSession(TerminalSession terminal, PilotStore store, PilotApi api, UsageMeter usage, ILogger<PilotSession> logger)
     {
         this.terminal = terminal;
         this.store = store;
         this.api = api;
+        this.usage = usage;
         this.logger = logger;
         terminal.Output += OnOutput;
     }
@@ -59,6 +64,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
 
         stuck.Reset();
+        usage.Start();
         await SendAsync(settings.Provider.SkillCommand(PilotSkill), settings.Provider, ct);
     }
 
@@ -136,6 +142,15 @@ public sealed class PilotSession : IPilotSession, IDisposable
         if (store.Current is { } settings)
         {
             await api.JournalEmptyCycleAsync(settings, summary, sleepSeconds, ct);
+        }
+    }
+
+    public async Task ReportUsageAsync(CancellationToken ct)
+    {
+        await Task.Delay(UsageFlush, ct);
+        if (usage.Take() is { } measured && store.Current is { } settings)
+        {
+            await api.ReportUsageAsync(settings, measured, ct);
         }
     }
 

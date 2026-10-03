@@ -2,11 +2,13 @@ import {
   currentTaskListSchema,
   finishPilotRunSchema,
   pilotRunSchema,
+  reportPilotUsageSchema,
   startPilotRunSchema,
   taskListSchema,
 } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
+import { z } from "zod/v4";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
@@ -66,5 +68,15 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
       summary: "Finish a run",
       description:
         "Closes a run (done/failed/abandoned); abandoned reverts the job to approved. Bookkeeping only - terminal job results go through the campaign result route.",
+    },
+  })
+  .post("/usage", ({ user, body }) => runs.reportUsage(user.id, body), {
+    body: reportPilotUsageSchema,
+    beforeHandle: limitRun,
+    response: z.object({ runId: z.uuid().nullable() }),
+    detail: {
+      summary: "Report a cycle's token usage",
+      description:
+        "The host posts the cycle's measured usage and the server attaches it to the run that cycle started (the newest run started within the last cycleSeconds). A cycle that started no run returns runId null and stores nothing.",
     },
   });

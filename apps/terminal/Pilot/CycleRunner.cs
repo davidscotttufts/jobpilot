@@ -108,7 +108,9 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
         await session.SendCycleAsync(settings, ct);
         var (finished, sleep) = await WaitToFinishAsync(SentinelTimeout, ct);
-        return finished ? sleep : await ClimbLadderAsync(settings, ct);
+        var next = finished ? sleep : await ClimbLadderAsync(settings, ct);
+        await session.ReportUsageAsync(ct);
+        return next;
     }
 
     private async Task<TimeSpan?> FinishEmptyAsync(PilotTaskList taskList, CancellationToken ct)

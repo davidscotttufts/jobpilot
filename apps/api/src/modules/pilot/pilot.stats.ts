@@ -65,10 +65,7 @@ function median(sorted: number[]): number {
   return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
-/**
- * Where the week's cycles went, by task type, heaviest first. A finished run already brackets
- * one run of one task type, so its wall clock stands in for token spend without a telemetry write.
- */
+/** Where the week's tokens went, by task type, heaviest first. A run carries its cycle's usage. */
 export async function costByTaskType(
   prisma: Pick<PrismaClient, "pilotRun">,
   userId: string,
@@ -81,23 +78,31 @@ export async function costByTaskType(
       startedAt: { gte: new Date(now.getTime() - COST_WINDOW_MS) },
     },
     // Uncapped: any cap short enough to matter would quietly shorten the week being reported.
-    select: { taskType: true, startedAt: true, finishedAt: true, outcome: true },
+    select: {
+      taskType: true,
+      outcome: true,
+      inputTokens: true,
+      outputTokens: true,
+      cacheReadTokens: true,
+      cacheWriteTokens: true,
+    },
   });
 
-  const finished = rows.flatMap(({ finishedAt, ...run }) =>
-    finishedAt ? [{ ...run, ms: finishedAt.getTime() - run.startedAt.getTime() }] : [],
-  );
-  return [...Map.groupBy(finished, (run) => run.taskType)]
+  return [...Map.groupBy(rows, (run) => run.taskType)]
     .map(([taskType, runs]) => {
-      const durations = runs.map((run) => run.ms).sort((a, b) => a - b);
+      const tokens = runs
+        .map(
+          (run) => run.inputTokens + run.outputTokens + run.cacheReadTokens + run.cacheWriteTokens,
+        )
+        .sort((a, b) => a - b);
       return {
         taskType,
         runs: runs.length,
-        medianMs: median(durations),
-        totalMs: durations.reduce((sum, ms) => sum + ms, 0),
+        medianTokens: median(tokens),
+        totalTokens: tokens.reduce((sum, count) => sum + count, 0),
         failed: runs.filter((run) => run.outcome === "failed").length,
         abandoned: runs.filter((run) => isCrash(run.outcome)).length,
       };
     })
-    .sort((a, b) => b.totalMs - a.totalMs);
+    .sort((a, b) => b.totalTokens - a.totalTokens);
 }

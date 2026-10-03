@@ -16,6 +16,16 @@ export const finishPilotRunSchema = z.object({
   note: z.string().optional(),
 });
 
+export const reportPilotUsageSchema = z.object({
+  // Elapsed time on the host's own clock, so a skewed machine clock still finds the cycle's run.
+  cycleSeconds: z.number().int().min(0),
+  model: z.string().min(1),
+  inputTokens: z.number().int().min(0),
+  outputTokens: z.number().int().min(0),
+  cacheReadTokens: z.number().int().min(0),
+  cacheWriteTokens: z.number().int().min(0),
+});
+
 const pilotRunBaseSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
@@ -30,3 +40,4 @@ export const pilotRunSchema = z.intersection(pilotRunBaseSchema, taskFieldsSchem
 
 export type FinishPilotRunInput = z.infer<typeof finishPilotRunSchema>;
 export type PilotRun = z.infer<typeof pilotRunSchema>;
+export type ReportPilotUsageInput = z.infer<typeof reportPilotUsageSchema>;

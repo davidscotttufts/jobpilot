@@ -163,3 +163,39 @@ describe("RunService.heartbeat", () => {
     expect(await heartbeat(90)).toBeLessThan(0);
   });
 });
+
+describe("RunService.reportUsage", () => {
+  const usage = {
+    cycleSeconds: 90,
+    model: "claude-opus-5-5",
+    inputTokens: 1200,
+    outputTokens: 300,
+    cacheReadTokens: 40_000,
+    cacheWriteTokens: 2000,
+  };
+
+  const report = async (newestRun: { id: string } | null) => {
+    const updates: { where: { id: string }; data: Record<string, unknown> }[] = [];
+    const db = {
+      pilotRun: {
+        findFirst: async () => newestRun,
+        update: async (a: (typeof updates)[number]) => updates.push(a),
+      },
+    };
+    const result = await new RunService(db as unknown as PrismaClient).reportUsage(USER_ID, usage);
+    return { result, updates };
+  };
+
+  it("sets the usage on the run the cycle started", async () => {
+    const { result, updates } = await report({ id: RUN_ID });
+    const { cycleSeconds, ...stored } = usage;
+    expect(result).toEqual({ runId: RUN_ID });
+    expect(updates).toEqual([{ where: { id: RUN_ID }, data: stored }]);
+  });
+
+  it("stores nothing for a cycle that started no run", async () => {
+    const { result, updates } = await report(null);
+    expect(result).toEqual({ runId: null });
+    expect(updates).toHaveLength(0);
+  });
+});

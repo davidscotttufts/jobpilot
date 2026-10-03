@@ -55,6 +55,16 @@ export function formatDuration(seconds: number): string {
   return formatSpanBetween(new Date(0), new Date(seconds * 1000));
 }
 
+const tokenFormat = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+/** Compact token count, e.g. `950`, `12.3K`, `1.2M`. */
+export function formatTokens(count: number): string {
+  return tokenFormat.format(count);
+}
+
 /** Human-readable date in the viewer's locale, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) {

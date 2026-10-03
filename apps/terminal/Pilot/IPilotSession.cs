@@ -56,4 +56,7 @@ public interface IPilotSession
     Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct);
 
     Task JournalEmptyCycleAsync(string summary, int sleepSeconds, CancellationToken ct);
+
+    /// <summary>Posts the token usage measured since the last <see cref="SendCycleAsync"/>, if any.</summary>
+    Task ReportUsageAsync(CancellationToken ct);
 }

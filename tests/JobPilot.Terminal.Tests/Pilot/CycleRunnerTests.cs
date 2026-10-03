@@ -30,6 +30,7 @@ public class CycleRunnerTests
         Assert.Equal(CycleStatus.Empty, runner.LastCycleStatus);
         Assert.NotNull(runner.LastCycleAt);
         Assert.True(runner.Conducting);
+        Assert.Equal(1, session.UsageReports);
     }
 
     [Fact]
@@ -43,6 +44,7 @@ public class CycleRunnerTests
         var sleep = await RunAsync(runner, session);
 
         Assert.Empty(session.Actions);
+        Assert.Equal(0, session.UsageReports);
         Assert.Equal(TimeSpan.FromSeconds(1800), sleep);
         Assert.Equal(
             [$"All caught up - nothing needs doing; checking back at {taskList.NextWakeAt.ToLocalTime():HH:mm}."],
@@ -148,6 +150,7 @@ public class CycleRunnerTests
         Assert.Null(sleep);
         Assert.Equal(FullLadder, session.Actions);
         Assert.Equal([Reports.CheckIn, Reports.Skip, Reports.Restart], session.Reports);
+        Assert.Equal(1, session.UsageReports);
         Assert.Equal(1, runner.ConsecutiveRestarts);
     }
 
