@@ -1,6 +1,7 @@
 import { makePush } from "@/common/push/push.fake";
 import type { PushPayload } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { ProfileAnswerService } from "./answer.service";
 import { PilotQuestionService } from "./question.service";
 import { describe, expect, it } from "bun:test";
 
@@ -10,6 +11,7 @@ function makeService(over: Row = {}) {
   const rec = {
     created: null as Row | null,
     pushes: [] as { userId: string; payload: PushPayload }[],
+    savedAnswers: [] as unknown[],
   };
   const question: Row = {
     id: "e1",
@@ -22,6 +24,7 @@ function makeService(over: Row = {}) {
     options: [],
     deepLink: null,
     answer: null,
+    answerKey: null,
     answeredAt: null,
     expiresAt: null,
     createdAt: new Date(),
@@ -40,8 +43,14 @@ function makeService(over: Row = {}) {
         return [question];
       },
     },
+    profileAnswer: { upsert: async (args: unknown) => rec.savedAnswers.push(args) },
   };
-  const svc = new PilotQuestionService(db as unknown as PrismaClient, makePush(rec.pushes));
+  const prisma = db as unknown as PrismaClient;
+  const svc = new PilotQuestionService(
+    prisma,
+    makePush(rec.pushes),
+    new ProfileAnswerService(prisma),
+  );
   return { svc, rec, question };
 }
 
@@ -84,6 +93,23 @@ describe("PilotQuestionService.answerQuestion", () => {
       answer: "2 weeks",
       answeredAt: expect.any(Date),
     });
+  });
+
+  it("saves the answer to a keyed question for reuse", async () => {
+    const { svc, rec } = makeService({ answerKey: "relocation" });
+    await svc.answerQuestion("p1", "e1", { answer: "Yes, anywhere in the US" });
+    expect(rec.savedAnswers).toEqual([
+      expect.objectContaining({
+        where: { userId_key: { userId: "p1", key: "relocation" } },
+        update: { value: "Yes, anywhere in the US" },
+      }),
+    ]);
+  });
+
+  it("never saves a 2FA code, even when keyed", async () => {
+    const { svc, rec } = makeService({ kind: "two_factor", answerKey: "otp" });
+    await svc.answerQuestion("p1", "e1", { answer: "123456" });
+    expect(rec.savedAnswers).toHaveLength(0);
   });
 
   it("refuses a question that expired, leaving it as it was", async () => {

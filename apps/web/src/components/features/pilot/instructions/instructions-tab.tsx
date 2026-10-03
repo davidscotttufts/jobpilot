@@ -40,6 +40,7 @@ import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
+import { SavedAnswers } from "./saved-answers";
 import { SearchesList } from "./searches-list";
 
 const NAV_ANCHORS: SectionAnchor[] = [
@@ -57,7 +58,13 @@ export function InstructionsTab(): ReactElement {
     return <Skeleton variant="rounded" height={480} />;
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
-  return <InstructionsEditor state={stateQuery.data} />;
+  // Saved answers sit outside the instructions form so their own submits can't save it.
+  return (
+    <Stack spacing={3}>
+      <InstructionsEditor state={stateQuery.data} />
+      <SavedAnswers />
+    </Stack>
+  );
 }
 
 interface InstructionsEditorProps {

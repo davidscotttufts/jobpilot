@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { answerKeySchema } from "./answers";
 import { webLinkSchema } from "./web-link";
 
 export const PILOT_QUESTION_KINDS = ["question", "choice", "two_factor", "approval"] as const;
@@ -15,6 +16,8 @@ export const createPilotQuestionSchema = z.object({
   options: z.array(z.string()).default([]),
   deepLink: webLinkSchema.optional(),
   expiresAt: z.iso.datetime().optional(),
+  // Set only for a reusable fact, so answering it saves a profile answer.
+  answerKey: answerKeySchema.optional(),
 });
 
 export const answerPilotQuestionSchema = z.object({ answer: z.string().min(1) });
@@ -34,6 +37,7 @@ export const pilotQuestionSchema = z.object({
   options: z.array(z.string()),
   deepLink: z.string().nullable(),
   answer: z.string().nullable(),
+  answerKey: answerKeySchema.nullable(),
   answeredAt: z.date().nullable(),
   expiresAt: z.date().nullable(),
   createdAt: z.date(),

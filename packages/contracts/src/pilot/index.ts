@@ -1,3 +1,5 @@
+export * from "./answers";
+export * from "./hints";
 export * from "./instructions";
 export * from "./journal";
 export * from "./promotion";

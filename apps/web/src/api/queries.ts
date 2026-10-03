@@ -216,6 +216,10 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.searches(),
     queryFn: () => api.pilot.searches.get(),
   }),
+  answers: () => ({
+    queryKey: queryKeys.pilot.answers(),
+    queryFn: () => api.pilot.answers.get(),
+  }),
   instructionsImpact: () => ({
     queryKey: queryKeys.pilot.instructionsImpact(),
     queryFn: () => api.pilot.instructions.impact.get(),

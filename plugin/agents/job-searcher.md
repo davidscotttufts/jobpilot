@@ -17,6 +17,8 @@ Run one board search, save its rows to the campaign, return one compact JSON obj
 
 `{ runId, campaignId, query, board, resumeId, minScore, newJobsTarget, maxPages }`. `board` is a domain; absent fields are null.
 
+Once the board is known, read its hints: `jobpilot-api GET /api/pilot/site-hints --query domain=<board>`. Each `.hint` is advice from earlier runs on this site ("use /classic for a plain results list"); follow it unless the page shows it no longer holds.
+
 ## API
 
 Call the API only with `jobpilot-api` (on `PATH`; it adds the token). Never `curl` or `Invoke-RestMethod`, never put the token in a command. It prints the body on success; on an HTTP error it exits non-zero with the API's `{ code, message }` - read it, don't retry blind. Write request bodies to files under `$JOBPILOT_TEMP`, prefixed with the job key, and pass `--data @file`. On Windows, build them as a PowerShell hashtable piped through `ConvertTo-Json -Depth 8 | Out-File -Encoding utf8`, never by string concatenation.

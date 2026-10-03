@@ -5,7 +5,7 @@ Delegate ONE `job-applier` invocation - the input JSON from `../../_shared/campa
 - `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` with the shared payload shapes. Pass the worker's `resumeId`/`resumeVariantId` straight through on `applied`.
 - `needs_user` → ask the user, then park the job:
 
-Pass the worker's `kind`, `question`, and `options` through verbatim (`options` defaults `[]`).
+Pass the worker's `kind`, `question`, `options` and `answerKey` through verbatim (`options` defaults `[]`; leave `answerKey` out when null).
 
 ```json
 {
@@ -14,6 +14,7 @@ Pass the worker's `kind`, `question`, and `options` through verbatim (`options` 
   "subjectId": "<campaignId>:<jobKey>",
   "prompt": "<worker question>",
   "options": <worker options, else []>,
+  "answerKey": "<worker answerKey>",
   "deepLink": "<JOBPILOT_WEB>/campaigns/<campaignId>"
 }
 ```

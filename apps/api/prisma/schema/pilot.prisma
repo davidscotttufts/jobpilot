@@ -133,6 +133,7 @@ model PilotQuestion {
   options     Json                @default("[]")
   deepLink    String?             @map("deep_link")
   answer      String?
+  answerKey   String?             @map("answer_key")
   answeredAt  DateTime?           @map("answered_at")
   expiresAt   DateTime?           @map("expires_at")
   createdAt   DateTime            @default(now()) @map("created_at")
@@ -140,6 +141,34 @@ model PilotQuestion {
   @@index([userId, status])
   @@index([status, expiresAt])
   @@map("pilot_questions")
+}
+
+// Only user-given answers land here; the model's guesses never do.
+model ProfileAnswer {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, key])
+  @@map("profile_answers")
+}
+
+// Shared across users: what one user's run learns about a site helps everyone's.
+model SiteHint {
+  id         String   @id @default(uuid())
+  domain     String
+  hint       String
+  seenCount  Int      @default(1) @map("seen_count")
+  lastSeenAt DateTime @default(now()) @map("last_seen_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([domain, hint])
+  @@index([domain, lastSeenAt])
+  @@map("site_hints")
 }
 
 model PilotJournalEntry {

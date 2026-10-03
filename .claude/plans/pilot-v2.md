@@ -10,7 +10,8 @@
 | 2. Token telemetry | Done on `feat/pilot-v2`. Migration `20261003000000` applied only to the local spike database. |
 | 4. Host bookkeeping | Done on `feat/pilot-v2`. Checked live with a `search.setup` run; overnight run not done. |
 | 5. Specialized agents | Done on `feat/pilot-v2`. `job-searcher` checked live; `job-scorer` and `job-applier` not run live (the spike account never applies). |
-| 6-8 | Not started. |
+| 6. Saved answers, site hints | Done on `feat/pilot-v2`. Migration `20261003120000` applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
+| 7-8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
@@ -412,6 +413,21 @@ As built:
 
 Exit: a second application on the same site uses its hints, and a question answered once is not
 asked again.
+
+As built, simpler than above:
+
+- `profile_answers` has no `source` or `questionId`: only user-given answers are stored, and
+  questions are swept after 30 days, so the id would dangle. `PilotQuestion.answerKey` (set by
+  `job-applier` for a reusable fact) is what makes an answer saved; `two_factor` and `approval`
+  answers never are.
+- No task input endpoint: callers load `GET /api/pilot/answers` and
+  `GET /api/pilot/site-hints?domain=` into the applier input (`campaign-flow.md`), and
+  `job-searcher` reads its board's hints itself. `job-scorer` gets no hints yet.
+- Hints are upserted on `(normalized domain, text)` from every posted result, read up to 5 per
+  domain within 60 days, and swept after 60 days by the retention job.
+- The web card sits on the Instructions tab below the instructions form (outside it), with edit
+  and delete; there is no create, since answers come from questions. The web app has one (dark)
+  theme, so "light and dark" is one check.
 
 ## Milestone 7: weekly budget
 

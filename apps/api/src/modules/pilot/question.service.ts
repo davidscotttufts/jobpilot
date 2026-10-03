@@ -11,9 +11,13 @@ import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push/push.service";
 import { publish } from "@/common/sse";
 import { type PilotQuestion as PilotQuestionModel, PrismaClient } from "@/generated/prisma/client";
+import { ProfileAnswerService } from "./answer.service";
 
 /** An unanswered 2FA code is useless within minutes, and expiring it frees the job it parked. */
 const TWO_FACTOR_TTL_MS = 5 * 60 * 1000;
+
+/** A 2FA code or a per-job approval is never a reusable fact, whatever key the agent set. */
+const SAVED_ANSWER_KINDS: PilotQuestionModel["kind"][] = ["question", "choice"];
 
 function toPilotQuestion(row: PilotQuestionModel): PilotQuestion {
   return { ...row, options: z.array(z.string()).parse(row.options) };
@@ -30,6 +34,7 @@ export class PilotQuestionService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly push: PushService,
+    private readonly answers: ProfileAnswerService,
   ) {}
 
   async createQuestion(userId: string, body: CreatePilotQuestionInput) {
@@ -43,6 +48,7 @@ export class PilotQuestionService {
         options: body.options,
         deepLink: body.deepLink ?? null,
         expiresAt: expiryOf(body),
+        answerKey: body.answerKey ?? null,
       },
     });
     const question = toPilotQuestion(row);
@@ -79,6 +85,9 @@ export class PilotQuestionService {
         "Question",
       );
       throw conflict("Question is no longer open.");
+    }
+    if (row.answerKey && SAVED_ANSWER_KINDS.includes(row.kind)) {
+      await this.answers.save(userId, row.answerKey, body.answer);
     }
 
     const question = toPilotQuestion(row);

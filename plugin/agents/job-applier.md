@@ -16,11 +16,13 @@ Apply to one job, return one compact JSON result. Snapshots, API payloads and ta
 
 ## Input
 
-One JSON object: `{ campaignId, jobKey, url, board, brief, resumeId, defaultStartDate, salaryExpectation, answers, preSubmitReview, runId }`; absent fields are null. The job is already `applying`.
+One JSON object: `{ campaignId, jobKey, url, board, brief, resumeId, defaultStartDate, salaryExpectation, answers, savedAnswers, siteHints, preSubmitReview, runId }`; absent fields are null. The job is already `applying`.
 
 - `brief` absent → read it from `GET /api/campaigns/$CAMPAIGN_ID/jobs --query status=applying` (the row whose `key` is `jobKey`; page on if it isn't there).
 - `salaryExpectation`: a user-given campaign-wide answer that overrides `user.salaryPreferences`.
 - `answers`: the user's reply to a question an earlier run returned as `needs_user`. It wins over the profile and your own guess for the field it answers; never ask it again.
+- `savedAnswers`: `[{key, value}]`, the user's answers to earlier reusable questions (`relocation`, `start_date`, ...). Use one for a form question that asks the same thing; never ask a question a saved answer covers.
+- `siteHints`: short advice about this site from earlier runs ("Workday asks for the address twice"). Follow it unless the page shows it no longer holds.
 
 Load the profile with `GET /api/user` and read `user`. Use `resumeId` when set, else `user.primaryResumeId`.
 
@@ -75,9 +77,9 @@ Quote the form's question verbatim in every reason. Answer every question truthf
 - **Sponsorship is never a form blocker.** Only a JD-stated no-sponsorship policy skips (the scorer's job). On the form, answer every sponsorship question truthfully from the profile; if the form reveals a no-sponsorship policy the JD didn't state, finish the application and say so in the applied result's `note` (else null).
 - **Citizenship / clearance.** Required → `US citizenship required (form: "<question>")` or `Active security clearance required (form: "<question>")`.
 - **Location.** Requires living or working somewhere outside `user.preferredLocations` while `user.willingToRelocate` is false → `Location requirement (form: "<question>")`. Never a blocker when `willingToRelocate` is true or `preferredLocations` is empty or `"Anywhere"`.
-- **A required answer the profile can't give** and `answers` doesn't cover:
+- **A required answer the profile can't give** and neither `answers` nor `savedAnswers` covers:
   - a hard requirement the profile shows the user doesn't meet (a license, a degree) → `skipped`, `Requirement not met (form: "<question>")`;
-  - a fact or preference only the user knows → `needs_user`, `category:"question"`, `kind:"question"` (or `"choice"` with `options`).
+  - a fact or preference only the user knows → `needs_user`, `category:"question"`, `kind:"question"` (or `"choice"` with `options`), with `answerKey` when the same answer would fit other jobs' forms (a short snake_case name for the fact: `relocation`, `start_date`, `travel_percent`, `notice_period`), else null.
 - **Salary.** Required and unresolvable (below) → `needs_user`, `category:"salary"`.
 
 Not blockers: a question asking fewer years or a lower level than the user has; contractor terms; questions you can answer from the resume. No valid reason → not a skip.
@@ -106,7 +108,7 @@ Close tabs, select tab 0, return one of:
 { "outcome": "applied", "appliedAt": "...", "matchScore": 0, "resumeId": "...", "resumeVariantId": "...", "note": null }
 { "outcome": "failed",  "failReason": "...", "retryNotes": "..." }
 { "outcome": "skipped", "skipReason": "..." }
-{ "outcome": "needs_user", "category": "verification|payment|salary|question|review", "context": "...", "kind": "question|choice|two_factor|approval", "question": "...", "options": ["..."] }
+{ "outcome": "needs_user", "category": "verification|payment|salary|question|review", "context": "...", "kind": "question|choice|two_factor|approval", "question": "...", "options": ["..."], "answerKey": null }
 ```
 
 - `appliedAt` = the output of `node -p "new Date().toISOString()"`. `resumeId`/`resumeVariantId` come from the `RESUME_USED` line; `resumeVariantId` is null only when the base PDF went in untailored. Never POST `/result`; the caller records the outcome.

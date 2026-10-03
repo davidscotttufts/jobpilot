@@ -47,17 +47,21 @@ candidate actually submitted; without it the application's Documents card has no
 { "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
   "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
-  "preSubmitReview": <bool> }
+  "preSubmitReview": <bool>, "savedAnswers": <SAVED_ANSWERS>, "siteHints": <SITE_HINTS> }
 ```
 
-Omit `brief` and the worker fetches it from the saved Job. The worker returns one of
+Omit `brief` and the worker fetches it from the saved Job. `SAVED_ANSWERS` is
+`jobpilot-api GET /api/pilot/answers` as `[{key, value}]` (load once per campaign run);
+`SITE_HINTS` is the `.hint` of each `jobpilot-api GET /api/pilot/site-hints --query domain=<job url host>`
+(`[]` when none). The worker returns one of
 `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before returning -
 re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
 
 - `category:"salary"` (no profile salary preference matched) - ask the user once, remember the
   answer for the campaign, re-delegate with `salaryExpectation` set.
 - `category:"question"` (a required form question the profile can't answer) - ask the user
-  `question`, re-delegate with the reply as `answers`.
+  `question`, re-delegate with the reply as `answers`. File the question with the worker's
+  `answerKey` when it set one, so the answer is saved and never asked again.
 - `category:"verification"` (2FA) - pause and ask; one-time per board.
 - `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment required"}`.
 
