@@ -11,7 +11,8 @@
 | 4. Host bookkeeping | Done on `feat/pilot-v2`. Checked live with a `search.setup` run; overnight run not done. |
 | 5. Specialized agents | Done on `feat/pilot-v2`. `job-searcher` checked live; `job-scorer` and `job-applier` not run live (the spike account never applies). |
 | 6. Saved answers, site hints | Done on `feat/pilot-v2`. Migration `20261003120000` applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
-| 7-8 | Not started. |
+| 7. Weekly budget | Dropped 2026-10-03 (see Rejected). |
+| 8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
@@ -45,7 +46,7 @@ Where the tokens go today (reviewed 2026-10-01):
    body, so a score call loads apply-only text. `search.discover`, the largest browser task,
    runs in the main session with no worker at all.
 6. **No token numbers.** `costByTaskType` (`apps/api/src/modules/pilot/pilot.stats.ts`) uses run time
-   in place of tokens. Nothing can enforce a budget.
+   in place of tokens.
 
 `/clear` itself is not a cost problem and stays. The prompt cache matches the prompt's opening
 text, not the session. After `/clear`, the CLI system prompt and tools still hit a warm cache.
@@ -58,7 +59,7 @@ Clearing also stops untrusted page content from carrying into the next cycle.
   sessions in the PTY host, so the user watches every step live in the web terminal and can type
   into it. No headless mode (`claude -p`, `codex exec`) for the pilot.
 - **Code does what is fixed; the model does what needs judgment.** Bookkeeping, ranking, policy,
-  caps and budget live in the host and the API. The host drives the TUI by typing commands into
+  and caps live in the host and the API. The host drives the TUI by typing commands into
   the PTY, as `PilotLoop` does today. "Code" here never means scripted browser automation.
 - **Browser work stays agent-driven.** No replay scripts, recorded selectors, or Playwright
   scripts that read forms. Sites change too often; adapting to them is the agent's job. The
@@ -69,7 +70,7 @@ Clearing also stops untrusted page content from carrying into the next cycle.
   inherit it. Savings come from specialized agents with less to read, not from choosing models.
 - **Agents never talk to each other.** Each run returns a small typed result to the API. The API
   decides what runs next.
-- **The server enforces every limit.** The model never polices its own budget.
+- **The server enforces every limit.** The model never polices its own caps.
 - **Names say what the thing is.** One word per concept, everyday words over jargon, and no word
   reused for two different things.
 
@@ -89,6 +90,9 @@ Clearing also stops untrusted page content from carrying into the next cycle.
   from noise. Learning, if any, pools results across all users later.
 - **LLM scoring per job, embeddings:** scoring is already code (`modules/scoring/fit.ts`).
 - **Automatic prompt rewriting:** needs a saved-page eval lab first. Out of scope.
+- **A weekly token budget** (dropped as milestone 7 on 2026-10-03): the Claude or Codex
+  subscription already caps weekly use, so a second, guessed budget in JobPilot is redundant.
+  Savings come from spending fewer tokens per application, not from rationing them.
 - **Choosing models per task or per agent** (tiers, the host typing `/model`, escalation, a
   fixed cheaper model per agent): more moving parts for an unmeasured saving, and typing
   `/model` can land mid-turn or throw away the prompt cache. Everything uses the selected model.
@@ -261,7 +265,7 @@ As built, simpler than above:
 - Columns: `model`, `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`.
   No `provider` column: the model name says which CLI ran.
 - `costByTaskType` and the activity page's cost card use the sum of all four token counts. No
-  per-day view yet; milestone 7's weekly spend is the next consumer.
+  per-day view.
 
 ## Milestone 3: the host checks for work before waking the model
 
@@ -429,33 +433,12 @@ As built, simpler than above:
   and delete; there is no create, since answers come from questions. The web app has one (dark)
   theme, so "light and dark" is one check.
 
-## Milestone 7: weekly budget
-
-- Subscription limits are not published in tokens, so the budget is relative. After a week of
-  `pilot_runs`, the settings page shows the pilot's real weekly use. The user sets a weekly token
-  budget, defaulting to that measured week.
-- The server enforces it in `RunService`. As the week's spend rises, lower-value task types
-  stop being startable:
-  - under 50%: everything;
-  - 50-80%: no `job.rescanSkipped`, `job.retryFailed`, `promotion.draft`,
-    `campaign.tune`;
-  - 80-100%: only `question.answered`, `interview.*`, and `job.apply` above the campaign's
-    minimum score plus 10;
-  - 100%: nothing until the weekly reset. The tasks response's `sleepSeconds` runs until then,
-    and the journal says why.
-- Starting a run reserves the task type's median cost (`pilot_runs`, last 7 days) and the run's real
-  usage replaces the estimate when it lands.
-- The web pilot page shows spend this week against the budget, by task type.
-
-Exit: a deliberately low budget stops the pilot cleanly at its limit, and the journal explains it.
-
 ## Milestone 8: pilot pages, agent graph and public page
 
-Milestones 2, 6 and 7 each ship their own small UI (token cost panel, saved answers page,
-budget setting). This milestone brings the rest of the web in line with the new shape (the host
+Milestones 2 and 6 each ship their own small UI (token cost panel, saved answers card). This
+milestone brings the rest of the web in line with the new shape (the host
 checks first, the server picks one task, one specialized agent does it) and redesigns the
-agent graph. It starts after milestone 5, when the shape is settled; budget UI from milestone 7
-fits into it if that lands first.
+agent graph. It starts after milestone 5, when the shape is settled.
 
 **Data the graph needs.** Today the overview guesses the active stage from the newest journal
 entry's kind (`STAGE_BY_KIND` in `orchestration-panel.tsx`), and the state carries only an
@@ -482,8 +465,8 @@ Host ──► Server ──► Session ─┬─► Searcher ──┐
 
 - **Host:** "checked 4 min ago, nothing to do" when idle, so the user sees the model stays
   asleep (milestone 3); next wake time as today.
-- **Server:** the picked task's title, or why nothing is startable (cap reached, budget step,
-  weekly limit).
+- **Server:** the picked task's title, or why nothing is startable (cap reached, awaiting
+  setup).
 - **Session:** the current run's task type and how long it has run.
 - **Agents:** one node each; the one running `currentRun` lights up with its edge animated, the
   others stay dim with their tokens this week as the caption. Text-only runs light the direct
@@ -495,13 +478,10 @@ Host ──► Server ──► Session ─┬─► Searcher ──┐
 
 **Other pilot pages.**
 
-- Overview: the status hero and today panel show tokens this week against the budget once
-  milestone 7 lands; until then, tokens this week.
+- Overview: the status hero and today panel show tokens this week.
 - Activity: host-written empty cycles (milestone 3, up to 48 a day) collapse into one row per
   quiet stretch ("Quiet 01:00-07:30, 14 checks") in `journal-feed.tsx` and `cycle-timeline.tsx`.
   Each run row shows its agent and tokens.
-- Instructions: the `limits-section.tsx` card carries the weekly budget; saved answers link from
-  it.
 - Admin `pilots-table.tsx`: tokens this week per user, so heavy users are visible.
 
 **Public main page** (`marketing/sections/pilot.tsx`, `pilot-cycle.tsx`).
@@ -511,10 +491,9 @@ Host ──► Server ──► Session ─┬─► Searcher ──┐
   "applies", "reaches out" → "writes the journal". It stays a server component with a CSS-only
   animation that walks one branch per loop; no ReactFlow, no data, and reduced motion keeps it
   still.
-- Copy: "Let it work" says it only wakes the model when there is work; "Wake to a journal"
-  mentions the weekly budget next to the daily limits. No internal words (run, task type,
+- Copy: "Let it work" says it only wakes the model when there is work. No internal words (run, task type,
   agent names) on the public page.
-- `app/docs/pilot/page.mdx`: describe the specialized agents, idle checks and the budget, with
+- `app/docs/pilot/page.mdx`: describe the specialized agents and idle checks, with
   the same diagram.
 
 Exit: on a live run the overview lights the agent that matches the current run's task type, and
@@ -536,7 +515,7 @@ Each needs this plan's telemetry first:
 ## Risks
 
 - **TUI telemetry may be partial.** OpenTelemetry or session logs might miss cache fields or a
-  CLI might not export them. Milestone 0 finds out; the budget uses whatever is reported.
+  CLI might not export them. Milestone 0 found both CLIs report what is needed.
 - **Typing into the TUI is less exact than a process API.** A slash command typed at
   the wrong moment can land mid-turn. The host only types when the session is idle, as
   `PilotLoop` does today.
@@ -551,8 +530,8 @@ Each needs this plan's telemetry first:
   revisit which tasks delegate.
 - **Without a subagent** (or when delegation fails), the main session runs the agent's procedure
   inline, without the cached body. Track how often it happens.
-- **The budget's 50/80/100 steps are guesses.** Tune them after a few weeks of real spend.
-- **Codex reports usage differently.** Its columns may be partial; the budget uses what is there.
+- **Codex reports usage differently.** Its cached tokens sit inside its input count; the
+  host splits them out so both CLIs fill the same columns.
 
 ## Verification
 
