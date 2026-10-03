@@ -11,6 +11,8 @@ const WARM_INTRO_APPLIED_WINDOW_MS = 48 * HOUR_MS;
 const BOARD_HEALTH_SCAN = 500;
 const BOARD_HEALTH_MIN_FAILURES = 3;
 const FAIL_REASON_CAP = 3;
+/** A board still broken after a diagnosis waits for the user rather than burning a run each cycle. */
+const BOARD_DIAGNOSE_COOLDOWN_MS = 24 * HOUR_MS;
 
 type WarmContact = NonNullable<TaskPayload<"job.apply">["warmContacts"]>[number];
 
@@ -129,12 +131,21 @@ export async function attachWarmContacts(
 export async function gatherBoardDiagnoses(
   prisma: PrismaClient,
   userId: string,
+  now: Date,
 ): Promise<TaskPayload<"board.diagnose">[]> {
   const rows = await prisma.job.findMany({
     where: { status: { in: ["applied", "failed"] }, board: { not: null }, campaign: { userId } },
     orderBy: { createdAt: "desc" },
     take: BOARD_HEALTH_SCAN,
-    select: { campaignId: true, key: true, url: true, board: true, status: true, failReason: true },
+    select: {
+      campaignId: true,
+      key: true,
+      url: true,
+      board: true,
+      status: true,
+      failReason: true,
+      campaign: { select: { status: true } },
+    },
   });
 
   const unhealthy: TaskPayload<"board.diagnose">[] = [];
@@ -143,15 +154,25 @@ export async function gatherBoardDiagnoses(
     const failed = firstSuccess === -1 ? jobs : jobs.slice(0, firstSuccess);
     if (failed.length < BOARD_HEALTH_MIN_FAILURES) continue;
 
-    const probe = failed[0];
+    // The agent retries the test job into the apply queue, which only reads in-progress campaigns.
+    const probe = failed.find((job) => job.campaign.status === "in_progress");
     unhealthy.push({
       board,
       consecutiveFailures: failed.length,
       recentFailReasons: failed
         .flatMap((job) => (job.failReason ? [job.failReason] : []))
         .slice(0, FAIL_REASON_CAP),
-      testJob: { campaignId: probe.campaignId, jobKey: probe.key, url: probe.url },
+      testJob: probe ? { campaignId: probe.campaignId, jobKey: probe.key, url: probe.url } : null,
     });
   }
-  return unhealthy.sort((a, b) => b.consecutiveFailures - a.consecutiveFailures);
+  const due = await withoutRecentRuns(
+    prisma,
+    userId,
+    "board.diagnose",
+    now,
+    BOARD_DIAGNOSE_COOLDOWN_MS,
+    unhealthy,
+    (diagnosis) => diagnosis.board,
+  );
+  return due.sort((a, b) => b.consecutiveFailures - a.consecutiveFailures);
 }

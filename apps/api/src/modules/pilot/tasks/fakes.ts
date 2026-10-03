@@ -46,6 +46,7 @@ export interface Over {
   queuedCampaigns?: Row[];
   queueScoreRuns?: RunRow[];
   boardDiagnoseJobs?: Row[];
+  boardDiagnoseRuns?: RunRow[];
   platformPosts?: { platform: string; createdAt: Date }[];
   interviewReplyApps?: Row[];
   interviewPrepApps?: Row[];
@@ -75,6 +76,7 @@ function fakePilotRun(over: Over) {
     "networking.warmIntro": over.warmIntroRuns,
     "campaign.reviewPaused": over.pausedReviewRuns,
     "search.discover": over.searchRuns,
+    "board.diagnose": over.boardDiagnoseRuns,
   };
   const latestByTaskType: Record<string, unknown> = {
     "search.setup": over.setupRun,

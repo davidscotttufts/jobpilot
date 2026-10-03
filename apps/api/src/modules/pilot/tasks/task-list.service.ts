@@ -157,7 +157,7 @@ export class TaskListService {
       approvedJobs: gatherApprovedJobs(prisma, userId),
       queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
       pausedCampaigns: gatherPausedCampaigns(prisma, userId, now),
-      boardDiagnose: gatherBoardDiagnoses(prisma, userId),
+      boardDiagnose: gatherBoardDiagnoses(prisma, userId, now),
       inbox: gatherInbox(prisma, userId),
       interviewReplies: gatherInterviewReplies(prisma, userId),
       interviewPreps: gatherInterviewPreps(prisma, userId),

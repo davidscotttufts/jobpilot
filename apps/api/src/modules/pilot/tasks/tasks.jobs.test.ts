@@ -54,27 +54,45 @@ describe("TaskListService warm intros", () => {
 
 describe("TaskListService board.diagnose", () => {
   // Newest-first apply outcomes for one board.
-  const failed = (key: string) => ({
+  const failed = (key: string, campaignStatus = "in_progress") => ({
     campaignId: "c1",
     key,
     url: `https://x/${key}`,
     board: "linkedin",
     status: "failed",
     failReason: "captcha wall",
+    campaign: { status: campaignStatus },
   });
   const applied = (key: string) => ({ ...failed(key), status: "applied", failReason: null });
 
-  it("flags a board whose latest three applies failed, probing the newest failure", async () => {
+  it("flags a board whose latest three applies failed, probing the newest retryable failure", async () => {
     const taskList = await service({
-      boardDiagnoseJobs: [failed("a"), failed("b"), failed("c"), applied("d")],
+      boardDiagnoseJobs: [failed("a", "completed"), failed("b"), failed("c"), applied("d")],
     }).refresh("p1");
     const task = findTask(taskList, "board.diagnose");
     expect(task?.payload).toEqual({
       board: "linkedin",
       consecutiveFailures: 3,
       recentFailReasons: ["captcha wall", "captcha wall", "captcha wall"],
-      testJob: { campaignId: "c1", jobKey: "a", url: "https://x/a" },
+      testJob: { campaignId: "c1", jobKey: "b", url: "https://x/b" },
     });
+  });
+
+  it("offers no test job when every failure sits in a closed campaign", async () => {
+    const taskList = await service({
+      boardDiagnoseJobs: ["a", "b", "c"].map((key) => failed(key, "completed")),
+    }).refresh("p1");
+    expect(findTask(taskList, "board.diagnose")?.payload).toMatchObject({ testJob: null });
+  });
+
+  it("waits a day before diagnosing the same board again", async () => {
+    const taskList = await service({
+      boardDiagnoseJobs: [failed("a"), failed("b"), failed("c")],
+      boardDiagnoseRuns: [
+        { subjectId: "linkedin", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+      ],
+    }).refresh("p1");
+    expect(hasTaskType(taskList, "board.diagnose")).toBe(false);
   });
 
   it("does not flag a board whose streak a recent success broke", async () => {
