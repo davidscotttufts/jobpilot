@@ -12,7 +12,6 @@ import {
   resumeVariantWhere,
   runDiscoverWhere,
   runFinishedWhere,
-  siteHintWhere,
   verificationTokenWhere,
 } from "./retention";
 import { describe, expect, it } from "bun:test";
@@ -36,7 +35,6 @@ describe("cutoffs", () => {
     expect(c.emailBody).toEqual(daysBefore(RETENTION_DAYS.emailBody));
     expect(c.applicationEvent).toEqual(daysBefore(RETENTION_DAYS.applicationEvent));
     expect(c.resumeVariant).toEqual(daysBefore(RETENTION_DAYS.resumeVariant));
-    expect(c.siteHint).toEqual(daysBefore(RETENTION_DAYS.siteHint));
   });
 });
 
@@ -127,10 +125,6 @@ describe("where-builders", () => {
         (applicationEventWhere(c).application as { status: { in: string[] } }).status.in,
       ).not.toContain(live);
     }
-  });
-
-  it("siteHintWhere drops hints unseen past the window", () => {
-    expect(siteHintWhere(c)).toEqual({ lastSeenAt: { lt: c.siteHint } });
   });
 
   it("resumeVariantWhere never matches a variant linked to an application", () => {

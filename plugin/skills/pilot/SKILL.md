@@ -40,8 +40,7 @@ Your last step, always - also when the task failed or you were told to stop. Wri
   "summary": "Applied to Staff TypeScript Engineer at Acme - score 87.",
   "subjectType": "job",
   "subjectId": "<subjectId>",
-  "detail": { "type": "tune" },
-  "hints": [{ "domain": "boards.greenhouse.io", "text": "Login wall after the second page; search via the company site instead." }]
+  "detail": { "type": "tune" }
 }
 ```
 
@@ -49,7 +48,6 @@ Your last step, always - also when the task failed or you were told to stop. Wri
 - `summary`: one human, specific line ("Discovered 14 jobs for 'senior typescript remote', 9 scored >=70.", "Parked Stripe application - needs your salary answer.").
 - `subjectType` / `subjectId`: only when they differ from the run's.
 - `detail`: only when the task file asks for one.
-- `hints`: 0-3 durable board or site facts a worker returned, never per-job trivia.
 
 A `400` names the bad field: fix it and post again. Then stop.
 

@@ -21,7 +21,6 @@ export const RETENTION_DAYS = {
   applicationEvent: 90,
   // Under the scorer's 180d recency floor, so a swept variant is one it had stopped preferring.
   resumeVariant: UNUSED_VARIANT_DAYS,
-  siteHint: 60,
 } as const;
 
 export type RetentionCutoffs = Record<keyof typeof RETENTION_DAYS, Date>;
@@ -97,10 +96,6 @@ export function resumeVariantWhere(c: RetentionCutoffs): Prisma.ResumeVariantWhe
     applicationId: null,
     ...notProtectedVariant,
   };
-}
-
-export function siteHintWhere(c: RetentionCutoffs): Prisma.SiteHintWhereInput {
-  return { lastSeenAt: { lt: c.siteHint } };
 }
 
 export function applicationEventWhere(c: RetentionCutoffs): Prisma.ApplicationEventWhereInput {

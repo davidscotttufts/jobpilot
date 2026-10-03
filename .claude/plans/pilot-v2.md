@@ -10,7 +10,7 @@
 | 2. Token telemetry | Done on `feat/pilot-v2`. Migration `20261003000000` applied only to the local spike database. |
 | 4. Host bookkeeping | Done on `feat/pilot-v2`. Checked live with a `search.setup` run; overnight run not done. |
 | 5. Specialized agents | Done on `feat/pilot-v2`. `job-searcher` checked live; `job-scorer` and `job-applier` not run live (the spike account never applies). |
-| 6. Saved answers, site hints | Done on `feat/pilot-v2`. Migration `20261003120000` applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
+| 6. Saved answers | Done on `feat/pilot-v2`; site hints dropped (see Rejected). Migration `20261003120000` applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
 | 7. Weekly budget | Dropped 2026-10-03 (see Rejected). |
 | 8 | Not started. |
 
@@ -93,6 +93,9 @@ Clearing also stops untrusted page content from carrying into the next cycle.
 - **A weekly token budget** (dropped as milestone 7 on 2026-10-03): the Claude or Codex
   subscription already caps weekly use, so a second, guessed budget in JobPilot is redundant.
   Savings come from spending fewer tokens per application, not from rationing them.
+- **Site hints** (dropped from milestone 6 on 2026-10-03, along with worker `hints` and result
+  `hints`): redundant, and a table shared across users would carry model-written text from
+  untrusted pages into every other user's agent. The `hint` journal kind stays for old entries.
 - **Choosing models per task or per agent** (tiers, the host typing `/model`, escalation, a
   fixed cheaper model per agent): more moving parts for an unmeasured saving, and typing
   `/model` can land mid-turn or throw away the prompt cache. Everything uses the selected model.
@@ -295,12 +298,12 @@ The session stays in the TUI the whole time.
   wait for the result, post usage.
 - Task input: built server-side as `GET /api/pilot/runs/:id/input`: the task payload plus
   what the task type needs, such as profile fields for applies, the resume id, relevant saved
-  answers and site hints (milestone 6). The skill makes this one call in place of its own `GET`s
+  answers (milestone 6). The skill makes this one call in place of its own `GET`s
   for the same data.
 - Typed result in `@jobpilot/contracts`: `pilotRunResultSchema` with `outcome`
   (`done | failed | needs_user`), `summary` (the journal action line), `subjectType`,
   `subjectId`, optional `detail` (the tune, rescanSkipped and retryFailed detail
-  types), and `hints` (0-3). The agent posts it as its last step:
+  types). The agent posts it as its last step:
   `jobpilot-api POST /api/pilot/runs/:id/result`. The API validates it with the Zod schema
   (a `400` names the bad field, and the agent fixes it and posts again), writes the journal
   batch, finishes the run with its outcome, and publishes an event.
@@ -330,10 +333,10 @@ As built, simpler than above:
 - Usage posts to `POST /api/pilot/runs/:id/usage` now that the host holds the run id; the
   milestone 2 time-window match is gone.
 - No task input endpoint yet: the skill reads `GET /api/pilot/runs/:id` (task type, subject,
-  payload) and its task file loads the rest as before. Profile, saved answers and site hints in
+  payload) and its task file loads the rest as before. Profile and saved answers in
   one call come with milestones 5 and 6, when the agents that use them exist.
 - `pilotRunResultSchema` outcome is `done | failed`; a parked job is `done` with a question
-  filed, so `needs_user` added nothing. `POST /runs/:id/result` journals the action and hints
+  filed, so `needs_user` added nothing. `POST /runs/:id/result` journals the action
   under `cycleId = runId`, finishes the run, and publishes `run.finished`; a repeat post for a
   finished run returns it unchanged.
 - The host writes every `cycle` entry (status, the refresh's `sleepSeconds`), fails a run that
@@ -399,7 +402,7 @@ As built:
 - Snapshot ceilings: posting body ~12 KB, form step ~16 KB, results list ~4k tokens; over the
   ceiling means narrow further.
 
-## Milestone 6: saved answers and site hints
+## Milestone 6: saved answers
 
 - **Saved answers.** New table `profile_answers`: `userId`, `key` (normalized question, e.g.
   `relocation`, `sponsorship`, `start_date`, `travel_percent`), `value`, `source`
@@ -409,14 +412,7 @@ As built:
   guesses it from the text. Only user-given answers are stored; the model's guesses never
   become answers. The task input includes the answers whose keys match the form's questions; the
   worker uses them instead of asking. A web page lists and edits them.
-- **Site hints.** Today `hint` journal entries (formerly `observation`) carry board facts.
-  Promote them to a table `site_hints`: `domain`, `hint` (short text), `seenCount`,
-  `lastSeenAt`, shared across users. A new hint that matches an existing one increments it. The
-  task input includes the top few hints for the job's domain, as text advice the agent can ignore
-  when the site has changed. Hints unseen for 60 days drop out.
-
-Exit: a second application on the same site uses its hints, and a question answered once is not
-asked again.
+Exit: a question answered once is not asked again.
 
 As built, simpler than above:
 
@@ -424,11 +420,8 @@ As built, simpler than above:
   questions are swept after 30 days, so the id would dangle. `PilotQuestion.answerKey` (set by
   `job-applier` for a reusable fact) is what makes an answer saved; `two_factor` and `approval`
   answers never are.
-- No task input endpoint: callers load `GET /api/pilot/answers` and
-  `GET /api/pilot/site-hints?domain=` into the applier input (`campaign-flow.md`), and
-  `job-searcher` reads its board's hints itself. `job-scorer` gets no hints yet.
-- Hints are upserted on `(normalized domain, text)` from every posted result, read up to 5 per
-  domain within 60 days, and swept after 60 days by the retention job.
+- No task input endpoint: callers load `GET /api/pilot/answers` into the applier input
+  (`campaign-flow.md`).
 - The web card sits on the Instructions tab below the instructions form (outside it), with edit
   and delete; there is no create, since answers come from questions. The web app has one (dark)
   theme, so "light and dark" is one check.
@@ -507,7 +500,6 @@ Each needs this plan's telemetry first:
 - A second, text-only lane beside the browser lane (needs a `resourceKey` on runs).
 - Ranking by expected value per token instead of fixed priorities.
 - Strategist runs triggered by outcomes (every N new outcomes, or daily) with counts, not prose.
-- A critic run after repeated identical failures on one domain, writing site hints.
 - Public JSON job feeds (Greenhouse, Lever, Ashby) as API sources, following
   `api-job-sources.md`.
 - Pooled learning across users.

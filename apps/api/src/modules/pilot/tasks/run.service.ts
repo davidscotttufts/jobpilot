@@ -20,7 +20,6 @@ import {
 import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
 import { PilotJournalService } from "../journal.service";
-import { SiteHintService } from "../site-hint.service";
 import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
 import { parseJobRef, revertApplyingJobs } from "./runs";
 import { parseTaskListSnapshot } from "./snapshot";
@@ -87,7 +86,6 @@ export class RunService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly journal: PilotJournalService,
-    private readonly siteHints: SiteHintService,
   ) {}
 
   async start(userId: string, taskListVersion: string, taskId: string) {
@@ -239,14 +237,7 @@ export class RunService {
       subjectId: body.subjectId ?? run.subjectId,
       detail: body.detail,
     };
-    const hints = body.hints.map((hint) => ({
-      kind: "hint" as const,
-      summary: hint.text,
-      subjectType: "board",
-      subjectId: hint.domain,
-    }));
-    await this.journal.appendJournal(userId, { cycleId: id, entries: [action, ...hints] });
-    await this.siteHints.record(body.hints);
+    await this.journal.appendJournal(userId, { cycleId: id, entries: [action] });
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
     return run;
   }

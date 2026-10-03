@@ -34,7 +34,6 @@ import { pilotController } from "@/modules/pilot/pilot.controller";
 import { promotionController } from "@/modules/pilot/promotion.controller";
 import { pilotQuestionsController } from "@/modules/pilot/question.controller";
 import { pilotSearchController } from "@/modules/pilot/search.controller";
-import { siteHintsController } from "@/modules/pilot/site-hint.controller";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
 import { pushController } from "@/modules/push/push.controller";
@@ -88,7 +87,6 @@ const app = new Elysia()
       .use(pilotJournalController)
       .use(pilotQuestionsController)
       .use(profileAnswersController)
-      .use(siteHintsController)
       .use(promotionController)
       .use(pushController)
       .use(workspaceController)

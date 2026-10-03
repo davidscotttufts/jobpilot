@@ -51,11 +51,10 @@ Then invoke the `humanizer` skill in embedded mode on each message.
 ```json
 { "found": true,
   "contact": { "name", "title", "company", "linkedinUrl", "email", "emailSource", "discoverySource", "relatedJobUrl" },
-  "messages": [ { "channel": "email|linkedin", "subject", "body", "linkedinKind": "connect_note|inmail|dm|null" } ],
-  "hints": [] }
+  "messages": [ { "channel": "email|linkedin", "subject", "body", "linkedinKind": "connect_note|inmail|dm|null" } ] }
 ```
 
-One message per requested channel; `linkedinKind` for LinkedIn only; `hints` optional (rule 7).
+One message per requested channel; `linkedinKind` for LinkedIn only.
 
 ## Rules
 
@@ -65,4 +64,3 @@ One message per requested channel; `linkedinKind` for LinkedIn only; `hints` opt
 4. `AskUserQuestion` is unavailable; a too-vague target returns `found:false` with a reason.
 5. One contact per invocation.
 6. Every file you write goes under `$JOBPILOT_TEMP`, prefixed with the target key (setup.md → "Scratch files"). Never the repo root.
-7. Optionally add `hints` to your return: an array of 0-3 short strings, **durable site facts only** (e.g. "lever.co contact pages now hide emails behind a login"), never per-contact trivia. Omit when there's nothing lasting to report.

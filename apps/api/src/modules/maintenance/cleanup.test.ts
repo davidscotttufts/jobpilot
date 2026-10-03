@@ -34,7 +34,6 @@ function fakePrisma() {
     emailMessage: model("emailMessage", 9),
     applicationEvent: model("applicationEvent", 10),
     resumeVariant: model("resumeVariant", 11),
-    siteHint: model("siteHint", 12),
   };
 
   return { db: db as unknown as PrismaClient, calls };
@@ -87,8 +86,6 @@ describe("runRetentionCleanup", () => {
     expect(calls.resumeVariant?.[0]?.where).toMatchObject({ applicationId: null });
     expect(JSON.stringify(calls.resumeVariant?.[0]?.where)).toContain("Suggested rewrite");
 
-    expect(calls.siteHint).toHaveLength(1);
-
     expect(counts).toEqual({
       journal: 1,
       journalDigests: 2,
@@ -101,7 +98,6 @@ describe("runRetentionCleanup", () => {
       emailBodiesBlanked: 9,
       applicationEvents: 10,
       resumeVariants: 11,
-      siteHints: 12,
     });
   });
 });

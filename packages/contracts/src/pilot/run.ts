@@ -23,11 +23,6 @@ export const pilotRunResultSchema = z.object({
   subjectType: z.string().min(1).optional(),
   subjectId: z.string().min(1).optional(),
   detail: z.record(z.string(), z.json()).optional(),
-  // Durable board/site facts, journaled as `hint` entries.
-  hints: z
-    .array(z.object({ domain: z.string().min(1), text: z.string().trim().min(1) }))
-    .max(3)
-    .default([]),
 });
 
 export const reportPilotUsageSchema = z.object({

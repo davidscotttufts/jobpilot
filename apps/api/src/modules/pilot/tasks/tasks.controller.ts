@@ -88,7 +88,7 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     detail: {
       summary: "Post a run's result",
       description:
-        "The agent's last step: journals the action line and any hints, finishes the run with its outcome, and publishes run.finished. A repeat post for a finished run returns it unchanged, so a retry after a lost response is safe.",
+        "The agent's last step: journals the action line, finishes the run with its outcome, and publishes run.finished. A repeat post for a finished run returns it unchanged, so a retry after a lost response is safe.",
     },
   })
   .post("/runs/:id/usage", ({ user, params, body }) => runs.reportUsage(user.id, params.id, body), {

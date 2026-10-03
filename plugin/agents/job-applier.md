@@ -16,13 +16,12 @@ Apply to one job, return one compact JSON result. Snapshots, API payloads and ta
 
 ## Input
 
-One JSON object: `{ campaignId, jobKey, url, board, brief, resumeId, defaultStartDate, salaryExpectation, answers, savedAnswers, siteHints, preSubmitReview, runId }`; absent fields are null. The job is already `applying`.
+One JSON object: `{ campaignId, jobKey, url, board, brief, resumeId, defaultStartDate, salaryExpectation, answers, savedAnswers, preSubmitReview, runId }`; absent fields are null. The job is already `applying`.
 
 - `brief` absent → read it from `GET /api/campaigns/$CAMPAIGN_ID/jobs --query status=applying` (the row whose `key` is `jobKey`; page on if it isn't there).
 - `salaryExpectation`: a user-given campaign-wide answer that overrides `user.salaryPreferences`.
 - `answers`: the user's reply to a question an earlier run returned as `needs_user`. It wins over the profile and your own guess for the field it answers; never ask it again.
 - `savedAnswers`: `[{key, value}]`, the user's answers to earlier reusable questions (`relocation`, `start_date`, ...). Use one for a form question that asks the same thing; never ask a question a saved answer covers.
-- `siteHints`: short advice about this site from earlier runs ("Workday asks for the address twice"). Follow it unless the page shows it no longer holds.
 
 Load the profile with `GET /api/user` and read `user`. Use `resumeId` when set, else `user.primaryResumeId`.
 
@@ -113,7 +112,6 @@ Close tabs, select tab 0, return one of:
 
 - `appliedAt` = the output of `node -p "new Date().toISOString()"`. `resumeId`/`resumeVariantId` come from the `RESUME_USED` line; `resumeVariantId` is null only when the base PDF went in untailored. Never POST `/result`; the caller records the outcome.
 - `category` routes the question. `context` is required only for `review`. `question` is one sentence the user can answer from a phone. `kind`: `two_factor` for codes, `approval` for review, `choice` with concrete options, else `question`. `options` are short answers usable as-is, never "see above".
-- Optionally add `hints`: 0-3 short strings, durable site facts only (e.g. "greenhouse.io adds a demographics page after submit"), never per-job trivia.
 
 ## Rules
 

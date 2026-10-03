@@ -101,4 +101,3 @@ Close tabs and return one object for a one-row input, else an array, each `{ "ou
 1. Final message = the JSON only.
 2. You can't reach the user: never ask a question or wait for an answer.
 3. One input per invocation; no pagination beyond the given rows.
-4. Optionally add `hints`: 0-3 short strings, durable board facts only (e.g. "linkedin.com hides the posting body until login"), never per-job trivia.

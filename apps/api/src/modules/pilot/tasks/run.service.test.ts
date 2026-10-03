@@ -3,7 +3,6 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { subscribe } from "@/common/sse/server";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { PilotJournalService } from "../journal.service";
-import { SiteHintService } from "../site-hint.service";
 import { RunService } from "./run.service";
 import { describe, expect, it } from "bun:test";
 
@@ -67,8 +66,7 @@ function fakeJournal() {
 }
 
 function makeRunService(db: unknown, journal = fakeJournal().journal) {
-  const prisma = db as PrismaClient;
-  return new RunService(prisma, journal, new SiteHintService(prisma));
+  return new RunService(db as PrismaClient, journal);
 }
 
 interface RunSetup {
@@ -216,7 +214,6 @@ describe("RunService.postResult", () => {
   const result = {
     outcome: "done" as const,
     summary: "Applied to Engineer at Acme",
-    hints: [{ domain: "WWW.Example.test", text: "Login wall after three pages" }],
   };
 
   const post = async (userId: string, finishedAt: Date | null) => {
@@ -230,7 +227,6 @@ describe("RunService.postResult", () => {
       finishedAt,
       outcome: null,
     };
-    const upserts: unknown[] = [];
     const db = {
       pilotRun: {
         findFirst: async () => row,
@@ -238,15 +234,14 @@ describe("RunService.postResult", () => {
           { ...row, ...a.data },
         ],
       },
-      siteHint: { upsert: async (args: unknown) => upserts.push(args) },
       $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
     };
     const { journal, appended } = fakeJournal();
     const run = await makeRunService(db, journal).postResult(userId, RUN_ID, result);
-    return { run, appended, upserts };
+    return { run, appended };
   };
 
-  it("journals the action and hints under the run id, finishes the run, and publishes", async () => {
+  it("journals the action under the run id, finishes the run, and publishes", async () => {
     const userId = crypto.randomUUID();
     const stream = subscribe(pilotChannel, { userId });
     await stream.next();
@@ -258,12 +253,6 @@ describe("RunService.postResult", () => {
         cycleId: RUN_ID,
         entries: [
           { kind: "action", summary: result.summary, subjectType: "job", subjectId: "c1:j1" },
-          {
-            kind: "hint",
-            summary: result.hints[0].text,
-            subjectType: "board",
-            subjectId: "WWW.Example.test",
-          },
         ],
       },
     ]);
@@ -272,22 +261,9 @@ describe("RunService.postResult", () => {
     await stream.return();
   });
 
-  it("counts each hint once more under its normalized domain", async () => {
-    const { upserts } = await post(USER_ID, null);
-    const key = { domain: "example.test", hint: result.hints[0].text };
-    expect(upserts).toEqual([
-      {
-        where: { domain_hint: key },
-        create: key,
-        update: { seenCount: { increment: 1 }, lastSeenAt: expect.any(Date) },
-      },
-    ]);
-  });
-
   it("returns a finished run unchanged and journals nothing", async () => {
-    const { run, appended, upserts } = await post(USER_ID, now);
+    const { run, appended } = await post(USER_ID, now);
     expect(run.finishedAt).toEqual(now);
     expect(appended).toHaveLength(0);
-    expect(upserts).toHaveLength(0);
   });
 });

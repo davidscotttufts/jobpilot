@@ -157,20 +157,6 @@ model ProfileAnswer {
   @@map("profile_answers")
 }
 
-// Shared across users: what one user's run learns about a site helps everyone's.
-model SiteHint {
-  id         String   @id @default(uuid())
-  domain     String
-  hint       String
-  seenCount  Int      @default(1) @map("seen_count")
-  lastSeenAt DateTime @default(now()) @map("last_seen_at")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  @@unique([domain, hint])
-  @@index([domain, lastSeenAt])
-  @@map("site_hints")
-}
-
 model PilotJournalEntry {
   id          String           @id @default(uuid())
   userId      String           @map("user_id")

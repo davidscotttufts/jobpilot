@@ -47,13 +47,12 @@ candidate actually submitted; without it the application's Documents card has no
 { "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
   "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
-  "preSubmitReview": <bool>, "savedAnswers": <SAVED_ANSWERS>, "siteHints": <SITE_HINTS> }
+  "preSubmitReview": <bool>, "savedAnswers": <SAVED_ANSWERS> }
 ```
 
 Omit `brief` and the worker fetches it from the saved Job. `SAVED_ANSWERS` is
-`jobpilot-api GET /api/pilot/answers` as `[{key, value}]` (load once per campaign run);
-`SITE_HINTS` is the `.hint` of each `jobpilot-api GET /api/pilot/site-hints --query domain=<job url host>`
-(`[]` when none). The worker returns one of
+`jobpilot-api GET /api/pilot/answers` as `[{key, value}]` (load once per campaign run). The
+worker returns one of
 `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before returning -
 re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
 

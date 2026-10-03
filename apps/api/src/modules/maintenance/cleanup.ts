@@ -12,7 +12,6 @@ import {
   resumeVariantWhere,
   runDiscoverWhere,
   runFinishedWhere,
-  siteHintWhere,
   verificationTokenWhere,
 } from "./retention";
 
@@ -64,7 +63,6 @@ const RULES = [
     key: "resumeVariants",
     run: (db, c) => db.resumeVariant.deleteMany({ where: resumeVariantWhere(c) }),
   },
-  { key: "siteHints", run: (db, c) => db.siteHint.deleteMany({ where: siteHintWhere(c) }) },
 ] as const satisfies readonly RetentionRule[];
 
 export type RetentionCounts = Record<(typeof RULES)[number]["key"], number>;
