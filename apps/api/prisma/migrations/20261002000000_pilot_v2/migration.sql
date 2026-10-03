@@ -44,9 +44,6 @@ UPDATE "pilot_runs" SET "task_type" = 'board.diagnose' WHERE "task_type" = 'boar
 UPDATE "pilot_runs"
 SET "payload" = ("payload" - 'probeJob') || jsonb_build_object('testJob', "payload" -> 'probeJob')
 WHERE "payload" ? 'probeJob';
-UPDATE "pilot_runs"
-SET "payload" = ("payload" - 'releaseNote') || jsonb_build_object('finishNote', "payload" -> 'releaseNote')
-WHERE "payload" ? 'releaseNote';
 
 -- Renamed detail type; the server dedupes campaign tunes on it
 UPDATE "pilot_journal_entries"
@@ -59,3 +56,53 @@ SET "task_list_version" = NULL,
     "task_list_built_at" = NULL,
     "task_list_expires_at" = NULL,
     "task_list_snapshot" = NULL;
+
+-- The posting's structured summary is the job brief; "digest" now means only the morning journal entry.
+ALTER TABLE "jobs" RENAME COLUMN "digest" TO "brief";
+
+-- Run payloads embed the job's brief for job.apply
+UPDATE "pilot_runs"
+SET "payload" = ("payload" - 'digest') || jsonb_build_object('brief', "payload" -> 'digest')
+WHERE "payload" ? 'digest';
+
+-- Token usage the host measures per cycle, attached to the run that cycle started
+ALTER TABLE "pilot_runs" ADD COLUMN "model" TEXT,
+ADD COLUMN "input_tokens" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "output_tokens" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "cache_read_tokens" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "cache_write_tokens" INTEGER NOT NULL DEFAULT 0;
+
+-- The agent keys a question only when its answer is a reusable fact
+ALTER TABLE "pilot_questions" ADD COLUMN "answer_key" TEXT;
+
+CREATE TABLE "profile_answers" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "key" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "profile_answers_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX "profile_answers_user_id_key_key" ON "profile_answers"("user_id", "key");
+
+ALTER TABLE "profile_answers" ADD CONSTRAINT "profile_answers_user_id_fkey"
+    FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Idle checks no longer journal; the state row holds the next wake instead
+ALTER TABLE "pilot_states" ADD COLUMN "next_wake_at" TIMESTAMP(3);
+
+UPDATE "pilot_states" AS s
+SET "next_wake_at" = latest."created_at" + make_interval(secs => (latest."detail" ->> 'sleepSeconds')::int)
+FROM (
+  SELECT DISTINCT ON ("user_id") "user_id", "created_at", "detail"
+  FROM "pilot_journal_entries"
+  WHERE "kind" = 'cycle'
+  ORDER BY "user_id", "created_at" DESC, "id" DESC
+) AS latest
+WHERE latest."user_id" = s."user_id"
+  AND jsonb_typeof(latest."detail" -> 'sleepSeconds') = 'number';
+
+DELETE FROM "pilot_journal_entries" WHERE "kind" = 'cycle' AND "detail" ->> 'status' = 'empty';

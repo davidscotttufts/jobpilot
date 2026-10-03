@@ -7,10 +7,10 @@
 | 1. Rename | Done on `feat/pilot-v2` (commits "refactor(pilot)!: rename agenda to task list and claim to run" and "refactor(pilot)!: rename strategy tasks and the job digest to brief"). Migrations not applied; live run not done. |
 | 0. Spike | Done (findings below). Subagent cost and Codex-in-TUI still unmeasured. |
 | 3. Host checks first | Done on `feat/pilot-v2`. Checked live: an idle cycle wrote its own entry and woke no model. |
-| 2. Token telemetry | Done on `feat/pilot-v2`. Migration `20261003000000` applied only to the local spike database. |
+| 2. Token telemetry | Done on `feat/pilot-v2`. Migration (now in `20261002000000_pilot_v2`) applied only to the local spike database. |
 | 4. Host bookkeeping | Done on `feat/pilot-v2`. Checked live with a `search.setup` run; overnight run not done. |
 | 5. Specialized agents | Done on `feat/pilot-v2`. `job-searcher` checked live; `job-scorer` and `job-applier` not run live (the spike account never applies). |
-| 6. Saved answers | Done on `feat/pilot-v2`; site hints dropped (see Rejected). Migration `20261003120000` applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
+| 6. Saved answers | Done on `feat/pilot-v2`; site hints dropped (see Rejected). Migration (now in `20261002000000_pilot_v2`) applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
 | 7. Weekly budget | Dropped 2026-10-03 (see Rejected). |
 | 8. Pilot pages, graph, public page | Done on `feat/pilot-v2`. Checked live in the browser (desktop and phone; the app is dark-only). |
 
@@ -226,13 +226,13 @@ summary), `check-in`, `stuck`,
 follow the same rule: "task input" (not "packet"), and agent names that say what the agent does
 (`job-scorer`, `job-applier`, `job-searcher`).
 
-Migration `20261002000000_rename_pilot_task_list_and_runs`: renames the table, constraints,
+Migration `20261002000000_pilot_v2` (all pilot v2 schema changes, squashed): renames the table, constraints,
 indexes, columns and enums, rewrites stored task types, subject ids and payload keys, and nulls
 the `task_list_*` columns so the server rebuilds the snapshot. It also rewrites the `strategy`
 task types and the `strategyReview` detail type in journal entries; it was edited in place since
 it has never been applied.
 
-Migration `20261002120000_rename_job_digest_to_brief`: renames `jobs.digest` to `jobs.brief`
+The same migration renames `jobs.digest` to `jobs.brief`
 and the `digest` key in stored run payloads.
 
 Remaining before merge:
