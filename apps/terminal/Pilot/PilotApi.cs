@@ -8,10 +8,10 @@ namespace JobPilot.Terminal.Pilot;
 /// <summary>GET /api/pilot/activity.</summary>
 public sealed record PilotActivity(bool Running, DateTimeOffset? LastActivityAt, CompletedCycle? LastCycle);
 
-public sealed record CompletedCycle(string? CycleId, DateTimeOffset CompletedAt, string? Status, int? SleepSeconds);
+public sealed record CompletedCycle(DateTimeOffset CompletedAt, int? SleepSeconds);
 
 /// <summary>The fields of POST /api/pilot/tasks/refresh the host reads.</summary>
-public sealed record PilotTaskList(PilotTaskStub[] Tasks, string Version, int SleepSeconds, DateTimeOffset NextWakeAt);
+public sealed record PilotTaskList(PilotTaskStub[] Tasks, string Version, int SleepSeconds);
 
 public sealed record PilotTaskStub(string Id, string TaskType, string Title);
 
@@ -22,6 +22,8 @@ internal sealed record StartRunRequest(string TaskId, string TaskListVersion);
 
 internal sealed record FinishRunRequest(string Outcome);
 
+internal sealed record IdleCycleRequest(int SleepSeconds);
+
 internal sealed record JournalRequest(
     JournalEntry[] Entries,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CycleId = null);
@@ -31,12 +33,8 @@ internal sealed record JournalEntry(
     string Summary,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CycleDetail? Detail = null);
 
-/// <summary>The cycle journal entry's detail; the task type and token total are set only for a working cycle.</summary>
-public sealed record CycleDetail(
-    string Status,
-    int SleepSeconds,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TaskType = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? Tokens = null);
+/// <summary>A working cycle's journal entry detail; the API reads the run's task type and tokens from the run itself.</summary>
+public sealed record CycleDetail(string Status, int SleepSeconds);
 
 /// <summary>Probes and reports throw only on the caller's cancellation, so a briefly unreachable API cannot take the loop down.</summary>
 public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
@@ -57,8 +55,15 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("system", summary)]), ct);
 
     /// <summary>The cycle entry's detail is what the activity probe reads back as the cycle's completion.</summary>
-    public Task JournalCycleAsync(PilotSettings settings, string? cycleId, string summary, CycleDetail detail, CancellationToken ct) =>
+    public Task JournalCycleAsync(PilotSettings settings, string cycleId, string summary, CycleDetail detail, CancellationToken ct) =>
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("cycle", summary, detail)], cycleId), ct);
+
+    /// <summary>An idle check writes no journal entry; the API records it on the pilot state, which the activity probe reads back.</summary>
+    public Task RecordIdleCycleAsync(PilotSettings settings, int sleepSeconds, CancellationToken ct)
+    {
+        var content = JsonContent.Create(new IdleCycleRequest(sleepSeconds), AppJsonContext.Default.IdleCycleRequest);
+        return SendAsync<object>(settings, HttpMethod.Post, "/api/pilot/cycles/idle", content, null, RequestTimeout, ct);
+    }
 
     public Task<PilotRunState?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
     {

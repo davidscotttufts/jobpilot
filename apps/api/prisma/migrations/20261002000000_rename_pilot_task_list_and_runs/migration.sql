@@ -1,8 +1,13 @@
 -- Rename the run outcome enum
 ALTER TYPE "pilot_claim_outcome" RENAME TO "pilot_run_outcome";
 
--- Rename the observation journal kind
-ALTER TYPE "pilot_journal_kind" RENAME VALUE 'observation' TO 'hint';
+-- Drop the observation journal kind: nothing writes it, and Postgres cannot drop an enum value in place
+DELETE FROM "pilot_journal_entries" WHERE "kind" = 'observation';
+ALTER TYPE "pilot_journal_kind" RENAME TO "pilot_journal_kind_old";
+CREATE TYPE "pilot_journal_kind" AS ENUM ('cycle', 'action', 'question', 'system', 'digest', 'correction');
+ALTER TABLE "pilot_journal_entries"
+  ALTER COLUMN "kind" TYPE "pilot_journal_kind" USING "kind"::text::"pilot_journal_kind";
+DROP TYPE "pilot_journal_kind_old";
 
 -- Rename the claims table to runs
 ALTER TABLE "pilot_claims" RENAME TO "pilot_runs";

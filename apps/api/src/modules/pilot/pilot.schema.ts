@@ -1,4 +1,4 @@
-import { pilotCycleStatusSchema, pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
+import { pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { SKIP_BUCKETS } from "./skip-reasons";
 
@@ -33,9 +33,7 @@ export const pilotActivityResponseSchema = z.object({
   // The last cycle's planned sleep, so a restarted host waits out the break.
   lastCycle: z
     .object({
-      cycleId: z.string().nullable(),
       completedAt: z.date(),
-      status: pilotCycleStatusSchema.nullable(),
       sleepSeconds: z.number().int().nullable(),
     })
     .nullable(),

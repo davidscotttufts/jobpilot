@@ -28,7 +28,7 @@ function fromEvent(entry: unknown): PilotJournalEntry {
 }
 
 /** Prepends a streamed entry to every journal cache that takes its kind, so nothing refetches. */
-export function appendJournalEntry(queryClient: QueryClient, streamed: unknown): void {
+export function appendJournalEntry(queryClient: QueryClient, streamed: unknown): PilotJournalEntry {
   const entry = fromEvent(streamed);
   queryClient.setQueriesData<PilotJournalPage>(
     {
@@ -37,6 +37,7 @@ export function appendJournalEntry(queryClient: QueryClient, streamed: unknown):
     },
     (page) => page && { ...page, items: dedupeById([entry, ...page.items]).slice(0, CACHE_CAP) },
   );
+  return entry;
 }
 
 /** The pilot stream's connection; the shared source means this opens no second connection. */

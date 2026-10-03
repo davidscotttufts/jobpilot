@@ -2,8 +2,8 @@ import {
   type PilotInstructionsChange,
   type PilotInstructionsImpact,
   type PilotState,
-  pilotCycleDetailSchema,
   pilotInstructionsConfigSchema,
+  type RecordIdleCycleInput,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -47,6 +47,7 @@ export class PilotService {
       instructionsConfig: config,
       instructionsUpdatedAt: row.instructionsUpdatedAt,
       lastCycleAt: row.lastCycleAt,
+      nextWakeAt: row.nextWakeAt,
       cycleCount: row.cycleCount,
       appliedToday,
       networkingSentToday,
@@ -212,8 +213,25 @@ export class PilotService {
       return tx.pilotState.upsert({
         where: { userId },
         create: { userId },
-        update: { cycleCount: 0, lastCycleAt: null, ...TASK_LIST_SNAPSHOT_RESET },
+        update: {
+          cycleCount: 0,
+          lastCycleAt: null,
+          nextWakeAt: null,
+          ...TASK_LIST_SNAPSHOT_RESET,
+        },
       });
+    });
+    return this.publishState(row);
+  }
+
+  /** Counts as a cycle like a journaled one, so board rotation still advances while idle. */
+  async recordIdleCycle(userId: string, body: RecordIdleCycleInput) {
+    const now = new Date();
+    const nextWakeAt = new Date(now.getTime() + body.sleepSeconds * 1000);
+    const row = await this.prisma.pilotState.upsert({
+      where: { userId },
+      create: { userId, lastCycleAt: now, cycleCount: 1, nextWakeAt },
+      update: { lastCycleAt: now, cycleCount: { increment: 1 }, nextWakeAt },
     });
     return this.publishState(row);
   }
@@ -229,7 +247,7 @@ export class PilotService {
   /** Newest server-side activity, so the terminal can tell a slow live cycle from a stuck one. */
   async getActivity(userId: string) {
     const { prisma } = this;
-    const [runs, journal, campaign, job, lastCycle, state] = await Promise.all([
+    const [runs, journal, campaign, job, state] = await Promise.all([
       prisma.pilotRun.findMany({
         where: { userId, finishedAt: null },
         select: { startedAt: true, heartbeatAt: true, expiresAt: true },
@@ -237,12 +255,10 @@ export class PilotService {
       prisma.pilotJournalEntry.aggregate({ where: { userId }, _max: { createdAt: true } }),
       prisma.campaign.aggregate({ where: { userId }, _max: { updatedAt: true } }),
       prisma.job.aggregate({ where: { campaign: { userId } }, _max: { updatedAt: true } }),
-      prisma.pilotJournalEntry.findFirst({
-        where: { userId, kind: "cycle" },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        select: { cycleId: true, createdAt: true, detail: true },
+      prisma.pilotState.findUnique({
+        where: { userId },
+        select: { running: true, lastCycleAt: true, nextWakeAt: true },
       }),
-      prisma.pilotState.findUnique({ where: { userId }, select: { running: true } }),
     ]);
 
     const times = [
@@ -252,8 +268,8 @@ export class PilotService {
       job._max.updatedAt,
     ].filter((time) => time != null);
     const now = new Date();
-    // Stuck-recovery cycles journal an empty detail, and the host still needs their completedAt.
-    const detail = lastCycle ? pilotCycleDetailSchema.safeParse(lastCycle.detail).data : undefined;
+    const lastCycleAt = state?.lastCycleAt ?? null;
+    const nextWakeAt = state?.nextWakeAt ?? null;
 
     return {
       lastActivityAt: times.reduce<Date | null>(
@@ -263,11 +279,12 @@ export class PilotService {
       // An expired run nobody has swept yet still counts as activity, but not as active.
       activeRuns: runs.filter((run) => run.expiresAt > now).length,
       running: state?.running ?? false,
-      lastCycle: lastCycle && {
-        cycleId: lastCycle.cycleId,
-        completedAt: lastCycle.createdAt,
-        status: detail?.status ?? null,
-        sleepSeconds: detail?.sleepSeconds ?? null,
+      // A stuck-recovery cycle plans no wake, and the host still needs its completedAt.
+      lastCycle: lastCycleAt && {
+        completedAt: lastCycleAt,
+        sleepSeconds: nextWakeAt
+          ? Math.round((nextWakeAt.getTime() - lastCycleAt.getTime()) / 1000)
+          : null,
       },
     };
   }

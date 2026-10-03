@@ -26,7 +26,7 @@ interface StatusHeroProps {
 export function StatusHero(props: StatusHeroProps): ReactElement {
   const { state, controls, health, pilot } = props;
   const confirm = useConfirm();
-  const nextWakeAt = useNextWake();
+  const nextWakeAt = useNextWake(state);
   const costItems = useApiQuery(pilotQueries.cost()).data?.items;
   const weekTokens = costItems ? costItems.reduce((sum, item) => sum + item.totalTokens, 0) : null;
 

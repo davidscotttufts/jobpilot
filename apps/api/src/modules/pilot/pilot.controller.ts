@@ -1,6 +1,7 @@
 import {
   pilotInstructionsImpactSchema,
   pilotStateSchema,
+  recordIdleCycleSchema,
   updatePilotInstructionsSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
@@ -74,6 +75,16 @@ export const pilotController = new Elysia({
       summary: "Reset the pilot's run history",
       description:
         "Deletes every journal entry, sets the cycle counter back to 0, and drops the cached task list. Instructions, searches and the running flag are untouched.",
+    },
+  })
+  .post("/cycles/idle", ({ user, body }) => pilot.recordIdleCycle(user.id, body), {
+    body: recordIdleCycleSchema,
+    beforeHandle: limitTaskList,
+    response: pilotStateSchema,
+    detail: {
+      summary: "Record an idle check",
+      description:
+        "The host found no task to run. Advances the cycle count and the planned next wake without a journal entry, and returns the updated state.",
     },
   })
   .get("/stats/today", ({ user }) => pilot.getTodayOutcomes(user.id), {

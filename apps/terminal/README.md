@@ -22,8 +22,8 @@ Each folder is one feature and holds its endpoints, request and response records
   `PtyProcess`. `TerminalRelay` broadcasts output to every WebSocket and keeps a 512 KB replay for reconnects.
 - **Pilot.** `/pilot/start` saves `PilotSettings` to `pilot.json`; every save wakes `PilotLoop`. Each cycle
   starts with one `/api/pilot/activity` probe that gates on the server's run-state. `CycleRunner` then refreshes
-  the task list. With no tasks it journals the empty cycle itself and sleeps, so an idle pilot never wakes the
-  model. With tasks it starts a run for the top one, types `/clear` and the pilot skill with the run id, and
+  the task list. With no tasks it records an idle check on the pilot state (no journal entry) and sleeps, so an
+  idle pilot never wakes the model. With tasks it starts a run for the top one, types `/clear` and the pilot skill with the run id, and
   waits for the run to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A
   stuck run climbs check-in, skip, then restart, and a run with no result is failed by the host. The host then
   journals the cycle and posts its token usage, which `UsageMeter` sums from the CLI's OTLP logs on `/v1/logs`.

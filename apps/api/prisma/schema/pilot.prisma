@@ -28,7 +28,6 @@ enum PilotQuestionStatus {
 enum PilotJournalKind {
   cycle
   action
-  hint
   question
   system
   digest
@@ -61,6 +60,8 @@ model PilotState {
   taskListExpiresAt     DateTime? @map("task_list_expires_at")
   taskListSnapshot      Json?     @map("task_list_snapshot")
   lastCycleAt           DateTime? @map("last_cycle_at")
+  // When the host plans its next task list check; idle checks write here, not to the journal.
+  nextWakeAt            DateTime? @map("next_wake_at")
   cycleCount            Int       @default(0) @map("cycle_count")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")

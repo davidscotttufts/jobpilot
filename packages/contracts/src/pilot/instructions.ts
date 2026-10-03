@@ -75,6 +75,7 @@ export const pilotStateSchema = z.object({
   instructionsConfig: pilotInstructionsConfigSchema,
   instructionsUpdatedAt: z.date().nullable(),
   lastCycleAt: z.date().nullable(),
+  nextWakeAt: z.date().nullable(),
   cycleCount: z.number().int(),
   appliedToday: z.number().int(),
   capReached: z.boolean(),

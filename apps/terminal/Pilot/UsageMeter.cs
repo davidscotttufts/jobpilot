@@ -1,16 +1,11 @@
 using System.Globalization;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>POST /api/pilot/runs/:id/usage: one run's token usage.</summary>
 public sealed record PilotUsage(
-    string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens)
-{
-    [JsonIgnore]
-    public long Total => InputTokens + OutputTokens + CacheReadTokens + CacheWriteTokens;
-}
+    string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens);
 
 /// <summary>Sums the per-request usage both provider CLIs export to the host's OTLP/HTTP JSON logs endpoint.</summary>
 public sealed class UsageMeter

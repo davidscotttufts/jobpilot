@@ -472,9 +472,8 @@ Host ──► Server ──► Session ─┬─► Searcher ──┐
 **Other pilot pages.**
 
 - Overview: the status hero and today panel show tokens this week.
-- Activity: host-written empty cycles (milestone 3, up to 48 a day) collapse into one row per
-  quiet stretch ("Quiet 01:00-07:30, 14 checks") in `journal-feed.tsx` and `cycle-timeline.tsx`.
-  Each run row shows its agent and tokens.
+- Activity: idle checks write `PilotState.nextWakeAt` through `POST /api/pilot/cycles/idle`
+  instead of a journal entry. Each run row shows its agent and tokens, joined from `PilotRun`.
 - Admin `pilots-table.tsx`: tokens this week per user, so heavy users are visible.
 
 **Public main page** (`marketing/sections/pilot.tsx`, `pilot-cycle.tsx`).

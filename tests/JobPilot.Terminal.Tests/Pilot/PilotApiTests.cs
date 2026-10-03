@@ -9,7 +9,7 @@ namespace JobPilot.Terminal.Tests;
 public sealed class PilotApiTests
 {
     private const string ActivityJson =
-        """{"running":true,"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"cycleId":"1f2e3d4c-5b6a-7089-90ab-cdef01234567","completedAt":"2026-07-19T18:30:00Z","status":"ok","sleepSeconds":300},"activeRuns":2}""";
+        """{"running":true,"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"completedAt":"2026-07-19T18:30:00Z","sleepSeconds":300},"activeRuns":2}""";
 
     private static PilotApi Api(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) =>
         new(new HttpClient(new StubHandler(respond)), NullLogger<PilotApi>.Instance);
@@ -36,7 +36,7 @@ public sealed class PilotApiTests
             new PilotActivity(
                 true,
                 new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero),
-                new CompletedCycle("1f2e3d4c-5b6a-7089-90ab-cdef01234567", new DateTimeOffset(2026, 7, 19, 18, 30, 0, TimeSpan.Zero), "ok", 300)),
+                new CompletedCycle(new DateTimeOffset(2026, 7, 19, 18, 30, 0, TimeSpan.Zero), 300)),
             activity);
     }
 
@@ -70,7 +70,6 @@ public sealed class PilotApiTests
         Assert.Equal([new PilotTaskStub("t1", "job.apply", "Apply to Acme")], taskList!.Tasks);
         Assert.Equal("v1", taskList.Version);
         Assert.Equal(15, taskList.SleepSeconds);
-        Assert.Equal(new DateTimeOffset(2026, 10, 2, 12, 0, 15, TimeSpan.Zero), taskList.NextWakeAt);
     }
 
     [Fact]
@@ -94,10 +93,10 @@ public sealed class PilotApiTests
         });
 
         await api.JournalCycleAsync(
-            Settings(), "run-1", "Task 1 - done.", new CycleDetail("ok", 30, "job.apply", 1200), TestContext.Current.CancellationToken);
+            Settings(), "run-1", "Task 1 - done.", new CycleDetail("ok", 30), TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            """{"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30,"taskType":"job.apply","tokens":1200}}],"cycleId":"run-1"}""",
+            """{"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30}}],"cycleId":"run-1"}""",
             body);
     }
 
@@ -148,6 +147,21 @@ public sealed class PilotApiTests
                 """POST /api/pilot/runs/run-1/finish {"outcome":"failed"}""",
             ],
             seen);
+    }
+
+    [Fact]
+    public async Task RecordIdleCycle_PostsTheSleep()
+    {
+        string? seen = null;
+        var api = Api(async (request, ct) =>
+        {
+            seen = $"{request.Method} {request.RequestUri!.AbsolutePath} {await request.Content!.ReadAsStringAsync(ct)}";
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+
+        await api.RecordIdleCycleAsync(Settings(), 1800, TestContext.Current.CancellationToken);
+
+        Assert.Equal("""POST /api/pilot/cycles/idle {"sleepSeconds":1800}""", seen);
     }
 
     [Fact]

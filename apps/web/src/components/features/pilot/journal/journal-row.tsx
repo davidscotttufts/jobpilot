@@ -1,10 +1,10 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import type {
-  PilotCycleDetail,
   PilotJournalEntry,
   PilotJournalKind,
+  PilotJournalRun,
 } from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
@@ -14,7 +14,6 @@ import {
   Rule,
   Summarize,
   Terminal,
-  Visibility,
 } from "@mui/icons-material";
 import { Box, Chip, type ChipProps, Stack, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
@@ -27,7 +26,6 @@ export const KIND_META: Record<
 > = {
   cycle: { icon: Autorenew, color: "primary", label: "Cycle" },
   action: { icon: Bolt, color: "info", label: "Action" },
-  hint: { icon: Visibility, color: "default", label: "Hint" },
   question: { icon: NotificationImportant, color: "warning", label: "Question" },
   system: { icon: Terminal, color: "default", label: "System" },
   digest: { icon: Summarize, color: "success", label: "Summary" },
@@ -60,38 +58,31 @@ function DigestCounts(props: DigestCountsProps): ReactElement {
 }
 
 interface RunMetaProps {
-  run: PilotCycleDetail;
+  run: PilotJournalRun;
 }
 
-/** Older cycle entries carry neither the task type nor the tokens. */
-export function RunMeta(props: RunMetaProps): ReactNode {
+export function RunMeta(props: RunMetaProps): ReactElement {
   const { run } = props;
-  if (!run.taskType && run.tokens == null) {
-    return null;
-  }
-
   return (
     <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-      {run.taskType && (
-        <Chip size="small" variant="outlined" label={AGENT_LABELS[taskTypeAgent(run.taskType)]} />
-      )}
-      {run.tokens != null && (
+      <Chip size="small" variant="outlined" label={AGENT_LABELS[taskTypeAgent(run.taskType)]} />
+      {run.tokens !== null && (
         <Typography variant="captionMuted">{formatTokens(run.tokens)} tokens</Typography>
       )}
     </Stack>
   );
 }
 
-interface JournalRowFrameProps {
-  kind: PilotJournalKind;
-  createdAt: Date;
-  children: ReactNode;
+interface JournalRowProps {
+  entry: PilotJournalEntry;
+  /** Overrides the entry's own copy of its run, which may predate the usage report. */
+  run?: PilotJournalRun | null;
 }
 
-/** The kind chip, body and timestamp every feed row shares. */
-export function JournalRowFrame(props: JournalRowFrameProps): ReactElement {
-  const { kind, createdAt, children } = props;
-  const meta = KIND_META[kind];
+export function JournalRow(props: JournalRowProps): ReactElement {
+  const { entry } = props;
+  const run = props.run ?? entry.run;
+  const meta = KIND_META[entry.kind];
   const Icon = meta.icon;
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
@@ -102,24 +93,12 @@ export function JournalRowFrame(props: JournalRowFrameProps): ReactElement {
         label={meta.label}
         sx={{ minWidth: 110 }}
       />
-      <Box sx={{ flex: 1, minWidth: 0 }}>{children}</Box>
-      <RelativeTime value={createdAt} sx={{ whiteSpace: "nowrap" }} />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
+        {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
+        {run && <RunMeta run={run} />}
+      </Box>
+      <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap" }} />
     </Stack>
-  );
-}
-
-interface JournalRowProps {
-  entry: PilotJournalEntry;
-  run?: PilotCycleDetail;
-}
-
-export function JournalRow(props: JournalRowProps): ReactElement {
-  const { entry, run } = props;
-  return (
-    <JournalRowFrame kind={entry.kind} createdAt={entry.createdAt}>
-      <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
-      {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
-      {run && <RunMeta run={run} />}
-    </JournalRowFrame>
   );
 }

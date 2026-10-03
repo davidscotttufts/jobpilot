@@ -23,11 +23,10 @@ internal static class Builders
     public static PilotActivity Activity(DateTimeOffset? at = null, CompletedCycle? lastCycle = null, bool running = true) =>
         new(running, at, lastCycle);
 
-    public static CompletedCycle Completed(int? sleep, string status = "ok") =>
-        new(Guid.NewGuid().ToString(), DateTimeOffset.UtcNow, status, sleep);
+    public static CompletedCycle Completed(int? sleep) => new(DateTimeOffset.UtcNow, sleep);
 
     public static PilotTaskList TaskList(int tasks = 0, int sleep = 1800) =>
-        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTaskStub($"t{i}", "job.apply", $"Task {i}"))], "v1", sleep, DateTimeOffset.UtcNow.AddSeconds(sleep));
+        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTaskStub($"t{i}", "job.apply", $"Task {i}"))], "v1", sleep);
 
     /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)

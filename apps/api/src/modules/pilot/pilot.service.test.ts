@@ -13,6 +13,7 @@ const stateRow = (over: Record<string, unknown>) => ({
   instructionsConfig: {},
   instructionsUpdatedAt: new Date(),
   lastCycleAt: null,
+  nextWakeAt: null,
   cycleCount: 0,
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -130,17 +131,26 @@ describe("PilotService.start", () => {
   });
 });
 
+describe("PilotService.recordIdleCycle", () => {
+  it("counts the check as a cycle and plans the next wake", async () => {
+    const { svc } = stateService("goals");
+    const before = Date.now();
+    const state = await svc.recordIdleCycle("p1", { sleepSeconds: 1800 });
+    expect(state.lastCycleAt).toBeInstanceOf(Date);
+    expect(state.nextWakeAt?.getTime()).toBeGreaterThanOrEqual(before + 1_800_000);
+  });
+});
+
 describe("PilotService.getActivity", () => {
   const completedAt = new Date("2026-07-20T12:00:00Z");
 
   function activityService(
-    cycleEntry: Record<string, unknown> | null,
-    state: { running: boolean } | null = { running: true },
+    state: { running: boolean; lastCycleAt: Date | null; nextWakeAt: Date | null } | null,
   ) {
     const noMax = { _max: { createdAt: null, updatedAt: null } };
     const db = {
       pilotRun: { findMany: async () => [] },
-      pilotJournalEntry: { aggregate: async () => noMax, findFirst: async () => cycleEntry },
+      pilotJournalEntry: { aggregate: async () => noMax },
       campaign: { aggregate: async () => noMax },
       job: { aggregate: async () => noMax },
       pilotState: { findUnique: async () => state },
@@ -148,33 +158,24 @@ describe("PilotService.getActivity", () => {
     return new PilotService(db as unknown as PrismaClient);
   }
 
-  it("reports the newest cycle's status and sleep", async () => {
-    const svc = activityService({
-      cycleId: "cyc-1",
-      createdAt: completedAt,
-      detail: { status: "ok", sleepSeconds: 300 },
-    });
-    expect((await svc.getActivity("p1")).lastCycle).toEqual({
-      cycleId: "cyc-1",
-      completedAt,
-      status: "ok",
-      sleepSeconds: 300,
-    });
+  it("reports the last cycle's planned sleep from the state row", async () => {
+    const nextWakeAt = new Date(completedAt.getTime() + 300_000);
+    const svc = activityService({ running: true, lastCycleAt: completedAt, nextWakeAt });
+    expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds: 300 });
   });
 
-  it("still reports a stuck-recovery cycle that journaled no detail", async () => {
-    const svc = activityService({ cycleId: null, createdAt: completedAt, detail: {} });
-    expect((await svc.getActivity("p1")).lastCycle).toEqual({
-      cycleId: null,
-      completedAt,
-      status: null,
-      sleepSeconds: null,
-    });
+  it("still reports a stuck-recovery cycle that planned no wake", async () => {
+    const svc = activityService({ running: true, lastCycleAt: completedAt, nextWakeAt: null });
+    expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds: null });
   });
 
-  it("reads a profile with no cycle or state row as never run and stopped", async () => {
-    const activity = await activityService(null, null).getActivity("p1");
+  it("reads a profile with no state row as never run and stopped", async () => {
+    const activity = await activityService(null).getActivity("p1");
     expect(activity).toMatchObject({ lastCycle: null, running: false, lastActivityAt: null });
-    expect((await activityService(null).getActivity("p1")).running).toBe(true);
+    const idle = { running: true, lastCycleAt: null, nextWakeAt: null };
+    expect(await activityService(idle).getActivity("p1")).toMatchObject({
+      lastCycle: null,
+      running: true,
+    });
   });
 });

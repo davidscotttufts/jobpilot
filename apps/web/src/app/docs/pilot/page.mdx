@@ -34,7 +34,7 @@ checks for work ──► picks the best next step ─┬─► finds roles ─�
 1. **Check for work.** A small orchestrator on your machine asks the server
    for its task list, ranked fresh from your data: your answers to act on,
    approved jobs, replies to review, searches that are due. With nothing to do
-   it journals a quiet check and goes back to sleep without waking the AI, so
+   it goes back to sleep without waking the AI or adding to the journal, so
    an idle Pilot uses none of your Claude or Codex subscription.
 2. **Pick the best next step.** When there is work, the orchestrator takes
    only the top task and wakes the AI with it, starting from a clean context.

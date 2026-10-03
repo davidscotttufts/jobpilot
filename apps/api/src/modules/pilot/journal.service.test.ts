@@ -6,7 +6,7 @@ import { describe, expect, it } from "bun:test";
 
 type Row = Record<string, unknown>;
 
-function makeService(rows: Row[] = [], pageSize = 2) {
+function makeService(rows: Row[] = [], pageSize = 2, runs: Row[] = []) {
   const rec = {
     creates: [] as Row[],
     stateUpserts: [] as { update: Row }[],
@@ -25,6 +25,7 @@ function makeService(rows: Row[] = [], pageSize = 2) {
         return rows.slice(start, start + pageSize);
       },
     },
+    pilotRun: { findMany: async () => runs },
     pilotState: {
       upsert: async (a: { update: Row }) => {
         rec.stateUpserts.push(a);
@@ -56,6 +57,43 @@ describe("PilotJournalService.appendJournal", () => {
 
     await svc.appendJournal("p1", { entries: [{ kind: "action", summary: "did a thing" }] });
     expect(rec.stateUpserts).toHaveLength(1);
+  });
+
+  it("plans the next wake from the cycle's sleep, and none for a cycle without one", async () => {
+    const { svc, rec } = makeService();
+    const before = Date.now();
+    await svc.appendJournal("p1", {
+      cycleId: "run-1",
+      entries: [{ kind: "cycle", summary: "Task - done.", detail: { sleepSeconds: 60 } }],
+    });
+    await svc.appendJournal("p1", { entries: [{ kind: "cycle", summary: "Recovered." }] });
+    const [planned, recovered] = rec.stateUpserts.map((upsert) => upsert.update.nextWakeAt);
+    expect((planned as Date).getTime()).toBeGreaterThanOrEqual(before + 60_000);
+    expect(recovered).toBeNull();
+  });
+
+  it("attaches the run each entry's cycle worked, with tokens only once usage is reported", async () => {
+    const tokens = {
+      inputTokens: 100,
+      outputTokens: 20,
+      cacheReadTokens: 300,
+      cacheWriteTokens: 0,
+    };
+    const { svc } = makeService([], 2, [
+      { id: "run-1", taskType: "job.apply", model: "claude-opus-5-5", ...tokens },
+      { id: "run-2", taskType: "queue.score", model: null, ...tokens },
+    ]);
+    const res = await svc.appendJournal("p1", {
+      cycleId: "run-1",
+      entries: [{ kind: "action", summary: "Applied" }],
+    });
+    expect(res.items[0].run).toEqual({ taskType: "job.apply", tokens: 420 });
+
+    const pending = await svc.appendJournal("p1", {
+      cycleId: "run-2",
+      entries: [{ kind: "action", summary: "Scored" }],
+    });
+    expect(pending.items[0].run).toEqual({ taskType: "queue.score", tokens: null });
   });
 
   it("pushes an alert for a system entry only", async () => {

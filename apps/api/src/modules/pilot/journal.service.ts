@@ -1,11 +1,45 @@
 import { cursorPage } from "@jobpilot/contracts/pagination";
 import type { CreatePilotJournalInput, PilotJournalKind } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
-import { publishActivity, toActivityEntry, writeActivity } from "@/common/activity-log";
+import {
+  publishActivity,
+  type RunsByCycle,
+  toActivityEntry,
+  writeActivity,
+} from "@/common/activity-log";
 import { PushService } from "@/common/push/push.service";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
+import { totalTokens } from "./tasks/runs";
 
 const EXPORT_BATCH = 500;
+
+/** A run's id is the cycleId of every entry it journals, so one read covers a page. */
+async function loadRuns(
+  prisma: Pick<PrismaClient, "pilotRun">,
+  userId: string,
+  rows: PilotJournalEntry[],
+): Promise<RunsByCycle> {
+  const cycleIds = [...new Set(rows.flatMap((row) => (row.cycleId ? [row.cycleId] : [])))];
+  if (cycleIds.length === 0) return new Map();
+  const runs = await prisma.pilotRun.findMany({
+    where: { userId, id: { in: cycleIds } },
+    select: {
+      id: true,
+      taskType: true,
+      model: true,
+      inputTokens: true,
+      outputTokens: true,
+      cacheReadTokens: true,
+      cacheWriteTokens: true,
+    },
+  });
+  return new Map(
+    runs.map((run) => [
+      run.id,
+      { taskType: run.taskType, tokens: run.model === null ? null : totalTokens(run) },
+    ]),
+  );
+}
 
 @singleton()
 export class PilotJournalService {
@@ -16,7 +50,7 @@ export class PilotJournalService {
 
   async appendJournal(userId: string, body: CreatePilotJournalInput) {
     const rows = await this.prisma.$transaction((tx) => writeActivity(tx, userId, body));
-    const items = publishActivity(userId, rows);
+    const items = publishActivity(userId, rows, await loadRuns(this.prisma, userId, rows));
     // The host journals orchestrator failures as system entries; push them so they reach the phone.
     for (const entry of items.filter((item) => item.kind === "system")) {
       void this.push.sendToUser(userId, {
@@ -43,7 +77,8 @@ export class PilotJournalService {
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
     const { items, nextCursor } = cursorPage(rows, limit);
-    return { items: items.map(toActivityEntry), nextCursor };
+    const runs = await loadRuns(this.prisma, userId, items);
+    return { items: items.map((row) => toActivityEntry(row, runs)), nextCursor };
   }
 
   /** The whole journal as NDJSON, oldest first, read in batches so it is never all in memory. */
@@ -64,8 +99,9 @@ export class PilotJournalService {
           controller.close();
           return;
         }
+        const runs = await loadRuns(prisma, userId, rows);
         for (const row of rows) {
-          controller.enqueue(encoder.encode(`${JSON.stringify(toActivityEntry(row))}\n`));
+          controller.enqueue(encoder.encode(`${JSON.stringify(toActivityEntry(row, runs))}\n`));
         }
         cursor = rows[rows.length - 1].id;
       },

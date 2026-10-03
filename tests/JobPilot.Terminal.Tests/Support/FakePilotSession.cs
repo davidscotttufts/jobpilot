@@ -26,8 +26,10 @@ internal sealed class FakePilotSession : IPilotSession
     /// <summary>The details of the journaled cycles; read after the run, when nothing else writes.</summary>
     public List<CycleDetail> CycleDetails { get; } = [];
 
+    /// <summary>The sleep of each idle check recorded in place of a cycle entry.</summary>
+    public List<int> IdleCycles { get; } = [];
+
     /// <summary>The token total each usage report returns.</summary>
-    public long? MeasuredTokens { get; set; }
 
     /// <summary>The id every run start returns; null makes the server refuse the start.</summary>
     public string? StartedRunId { get; set; } = "run-1";
@@ -174,7 +176,7 @@ internal sealed class FakePilotSession : IPilotSession
         return Task.CompletedTask;
     }
 
-    public Task JournalCycleAsync(string? cycleId, string summary, CycleDetail detail, CancellationToken ct)
+    public Task JournalCycleAsync(string cycleId, string summary, CycleDetail detail, CancellationToken ct)
     {
         lock (sync)
         {
@@ -185,14 +187,24 @@ internal sealed class FakePilotSession : IPilotSession
         return Task.CompletedTask;
     }
 
-    public Task<long?> ReportUsageAsync(string runId, CancellationToken ct)
+    public Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct)
+    {
+        lock (sync)
+        {
+            IdleCycles.Add(sleepSeconds);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task ReportUsageAsync(string runId, CancellationToken ct)
     {
         lock (sync)
         {
             UsageReports++;
         }
 
-        return Task.FromResult(MeasuredTokens);
+        return Task.CompletedTask;
     }
 
     private void Record(string action)

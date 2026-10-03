@@ -2,12 +2,11 @@
 
 import { type ReactElement, useState } from "react";
 import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
-import {
-  type PilotCycleDetail,
-  type PilotJournalEntry,
-  type PilotJournalKind,
-  type PilotJournalPage,
-  pilotCycleDetailSchema,
+import type {
+  PilotJournalEntry,
+  PilotJournalKind,
+  PilotJournalPage,
+  PilotJournalRun,
 } from "@jobpilot/contracts/pilot";
 import { DeleteSweep, Download } from "@mui/icons-material";
 import {
@@ -34,13 +33,12 @@ import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
-import { groupQuietStretches, QuietStretchRow } from "./quiet-stretch";
 import { useJournalLiveStatus } from "./use-journal-live";
 
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
 
-/** Drops cycle rows whose actions already repeat them; lone (empty/error) cycle rows stay. */
+/** Drops cycle rows whose actions already repeat them; lone (error) cycle rows stay. */
 function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const covered = new Set<string>();
   for (const entry of entries) {
@@ -51,16 +49,15 @@ function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[
   return entries.filter((e) => !(e.kind === "cycle" && e.cycleId && covered.has(e.cycleId)));
 }
 
-/** Built from every entry: a covered cycle row is hidden, but its run's other rows still show the agent and tokens. */
-function runsByCycle(entries: PilotJournalEntry[]): Map<string, PilotCycleDetail> {
-  const runs = new Map<string, PilotCycleDetail>();
+/**
+ * The newest copy of each run. An action streams in before the host reports usage, so its own copy
+ * lacks tokens until the run's cycle entry arrives with them.
+ */
+function latestRuns(entries: PilotJournalEntry[]): Map<string, PilotJournalRun> {
+  const runs = new Map<string, PilotJournalRun>();
   for (const entry of entries) {
-    if (entry.kind !== "cycle" || !entry.cycleId) {
-      continue;
-    }
-    const detail = pilotCycleDetailSchema.safeParse(entry.detail).data;
-    if (detail) {
-      runs.set(entry.cycleId, detail);
+    if (entry.cycleId && entry.run && !runs.has(entry.cycleId)) {
+      runs.set(entry.cycleId, entry.run);
     }
   }
   return runs;
@@ -138,7 +135,7 @@ export function JournalFeed(): ReactElement {
   const older = pages.flatMap((page) => page.items);
   const entries = dedupeById([...(firstPage.data?.items ?? []), ...older]);
   const visible = view === "flat" && collapseCycles ? collapseCoveredCycles(entries) : entries;
-  const runs = runsByCycle(entries);
+  const runs = latestRuns(entries);
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -223,12 +220,8 @@ export function JournalFeed(): ReactElement {
             <CycleTimeline entries={visible} />
           ) : (
             <Stack spacing={1.5} divider={<Divider />}>
-              {groupQuietStretches(visible).map((item) => {
-                if (item.type === "quiet") {
-                  return <QuietStretchRow key={item.entries[0].id} entries={item.entries} />;
-                }
-                const { entry } = item;
-                const run = entry.cycleId ? runs.get(entry.cycleId) : undefined;
+              {visible.map((entry) => {
+                const run = entry.cycleId ? runs.get(entry.cycleId) : null;
                 return <JournalRow key={entry.id} entry={entry} run={run} />;
               })}
             </Stack>

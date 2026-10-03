@@ -158,7 +158,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
     }
 
-    public async Task JournalCycleAsync(string? cycleId, string summary, CycleDetail detail, CancellationToken ct)
+    public async Task JournalCycleAsync(string cycleId, string summary, CycleDetail detail, CancellationToken ct)
     {
         if (store.Current is { } settings)
         {
@@ -166,16 +166,21 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
     }
 
-    public async Task<long?> ReportUsageAsync(string runId, CancellationToken ct)
+    public async Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct)
+    {
+        if (store.Current is { } settings)
+        {
+            await api.RecordIdleCycleAsync(settings, sleepSeconds, ct);
+        }
+    }
+
+    public async Task ReportUsageAsync(string runId, CancellationToken ct)
     {
         await Task.Delay(UsageFlush, ct);
-        if (usage.Take() is not { } measured || store.Current is not { } settings)
+        if (usage.Take() is { } measured && store.Current is { } settings)
         {
-            return null;
+            await api.ReportUsageAsync(settings, runId, measured, ct);
         }
-
-        await api.ReportUsageAsync(settings, runId, measured, ct);
-        return measured.Total;
     }
 
     public void Dispose() => terminal.Output -= OnOutput;

@@ -26,7 +26,13 @@ export function PilotLive(): ReactNode {
       "state.changed": refreshState,
       "run.started": refreshState,
       "run.finished": refreshState,
-      "journal.appended": (event) => appendJournalEntry(queryClient, event.entry),
+      "journal.appended": (event) => {
+        const entry = appendJournalEntry(queryClient, event.entry);
+        // A cycle entry moves the state's last cycle and next wake.
+        if (entry.kind === "cycle") {
+          refreshState();
+        }
+      },
       "question.created": refreshQuestions,
       "question.answered": refreshQuestions,
       "promotion.created": refreshPromotions,

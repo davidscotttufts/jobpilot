@@ -192,7 +192,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const narrow = useMediaQuery(theme.breakpoints.down("sm"));
   const journal = useApiQuery(pilotQueries.journal());
   const cost = useApiQuery(pilotQueries.cost());
-  const nextWakeAt = useNextWake();
+  const nextWakeAt = useNextWake(state);
   const taskList = useTaskList();
 
   // ReactFlow measures the DOM, so the canvas must never render during SSR.
