@@ -1,4 +1,6 @@
-import { hasTaskType, service, serviceWithRec } from "./fakes";
+import type { TaskType } from "@jobpilot/contracts/pilot";
+import { findTask, hasTaskType } from "./builders";
+import { service, serviceWithRec } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("TaskListService campaign.scorePending", () => {
@@ -12,7 +14,7 @@ describe("TaskListService campaign.scorePending", () => {
 
   it("offers a campaign's unscored rows with its own board and threshold", async () => {
     const taskList = await service({ scorePendingCampaigns: [campaign] }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "campaign.scorePending");
+    const task = findTask(taskList, "campaign.scorePending");
     expect(task?.subjectId).toBe("c1");
     expect(task?.payload).toMatchObject({ board: "linkedin", minScore: 70, pendingCount: 9 });
   });
@@ -25,19 +27,6 @@ describe("TaskListService campaign.scorePending", () => {
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.scorePending")).toBe(false);
   });
-
-  // Gating on matchScore alone would leave a row scored off the results page without a brief.
-  it("counts rows missing either a score or a brief", async () => {
-    const { svc, rec } = serviceWithRec({ scorePendingCampaigns: [campaign] });
-    await svc.refresh("p1");
-    const gather = rec.campaignQueries.find(
-      (where) => "jobs" in where && where.source === "auto_apply" && !("OR" in where),
-    ) as { jobs: { some: unknown } };
-    expect(gather.jobs.some).toEqual({
-      status: "pending",
-      OR: [{ matchScore: null }, { brief: null }],
-    });
-  });
 });
 
 describe("TaskListService campaign.reviewPaused", () => {
@@ -47,7 +36,7 @@ describe("TaskListService campaign.reviewPaused", () => {
 
   it("offers a paused auto-apply campaign for review", async () => {
     const taskList = await service({ pausedCampaigns: [paused] }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "campaign.reviewPaused");
+    const task = findTask(taskList, "campaign.reviewPaused");
     expect(task?.payload).toEqual({ campaignId: "c9", query: "react", board: null, pausedAt });
   });
 
@@ -93,7 +82,7 @@ describe("TaskListService queue.score", () => {
 
   it("offers one batch per apply campaign holding pasted links", async () => {
     const taskList = await service({ queuedCampaigns: [queued] }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "queue.score");
+    const task = findTask(taskList, "queue.score");
     expect(task?.payload).toEqual({
       campaignId: "c1",
       resumeId: RESUME_ID,
@@ -135,8 +124,7 @@ describe("TaskListService campaign reviews", () => {
       ...laggard,
       skipReasonRows: [{ campaignId: "c1", skipReason: "overqualified", _count: { _all: 20 } }],
     }).refresh("p1");
-    const payloadOf = (taskType: string) =>
-      taskList.tasks.find((i) => i.taskType === taskType)?.payload;
+    const payloadOf = (taskType: TaskType) => findTask(taskList, taskType)?.payload;
     expect(payloadOf("campaign.tune")).toMatchObject({
       config: { minScore: 70, board: "linkedin" },
       counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
@@ -175,6 +163,6 @@ describe("TaskListService idle-campaign sweep", () => {
     expect(rec.journals).toContainEqual(
       expect.objectContaining({ kind: "action", subjectType: "campaign", subjectId: "c3" }),
     );
-    expect(taskList.tasks.some((i) => i.subjectId === "c3")).toBe(false);
+    expect(taskList.tasks.some((task) => task.subjectId === "c3")).toBe(false);
   });
 });

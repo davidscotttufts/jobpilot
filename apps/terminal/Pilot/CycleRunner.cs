@@ -7,11 +7,7 @@ public enum CycleStatus
     Error,
 }
 
-/// <summary>
-/// Runs one cycle: refresh the task list, start a run for its top task, hand that run to the agent, and record the
-/// cycle. A stuck run climbs check-in, skip, then restart. It returns the inter-cycle sleep instead of sleeping, so
-/// the loop can cut the sleep short on a wake.
-/// </summary>
+/// <summary>Runs one cycle. It returns the inter-cycle sleep instead of sleeping, so a wake can cut it short.</summary>
 /// <param name="checkInterval">Tests pass one at least as long as every wait, so each wait is a single slice.</param>
 internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval = null)
 {
@@ -31,7 +27,6 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     // A run that keeps showing activity still hands over to the ladder after this long.
     private static readonly TimeSpan MaxCycleWait = TimeSpan.FromMinutes(60);
 
-    // Back off only after this many restarts or exits in a row, so a broken install cannot hot-loop.
     private const int BackoffThreshold = 3;
 
     // How often a wait asks the server whether the run finished, in case its event was missed.
@@ -40,10 +35,9 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     private TimeSpan totalWaited;
     private bool extensionReported;
 
-    /// <summary>Reset by any run that posts its result.</summary>
     public int ConsecutiveRestarts { get; private set; }
 
-    /// <summary>Sessions that died on their own mid-wait; reset by any run that posts its result.</summary>
+    /// <summary>Sessions that died on their own mid-wait.</summary>
     public int ConsecutiveExits { get; private set; }
 
     public DateTimeOffset? LastCycleAt { get; private set; }
@@ -85,20 +79,19 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
         Conducting = true;
 
-        // Only a cycle with work wakes the model, so an idle pilot spends no tokens and needs no session.
-        // A stopped pilot also fails the refresh; its stop event ends the retry sleep.
+        // Only a cycle with work wakes the model. A stopped pilot also fails the refresh; its stop event ends the retry sleep.
         var taskList = await session.RefreshTasksAsync(ct);
         if (taskList is null)
         {
             return RefreshRetry;
         }
 
+        var sleep = ClampSleep(taskList.SleepSeconds);
         if (taskList.Tasks.Length == 0)
         {
-            return await FinishEmptyAsync(taskList, ct);
+            return await FinishEmptyAsync(sleep, ct);
         }
 
-        // The server's ranking is final, so the top task is the one to run.
         var task = taskList.Tasks[0];
         var runId = await session.StartRunAsync(task.Id, taskList.Version, ct);
         if (runId is null)
@@ -117,77 +110,68 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         extensionReported = false;
 
         await session.SendCycleAsync(settings, runId, ct);
-        var result = await WaitToFinishAsync(runId, ResultTimeout, ct);
-        if (result.Outcome is not (WaitOutcome.Finished or WaitOutcome.SessionExited))
-        {
-            result = await ClimbLadderAsync(settings, runId, ct);
-        }
-
-        // Usage before the cycle entry, which observers treat as the end of the cycle.
-        await session.ReportUsageAsync(runId, ct);
-        return await RecordRunAsync(task, runId, taskList, result, ct);
+        var result = await WaitForResultAsync(settings, runId, ct);
+        await TrackStreaksAsync(result, ct);
+        return await RecordRunAsync(task, runId, sleep, result, ct);
     }
 
-    private async Task<TimeSpan?> FinishEmptyAsync(PilotTaskList taskList, CancellationToken ct)
+    private async Task<TimeSpan?> FinishEmptyAsync(int sleep, CancellationToken ct)
     {
-        var sleep = ClampSleep(taskList.SleepSeconds);
         await session.RecordIdleCycleAsync(sleep, ct);
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = CycleStatus.Empty;
         return TimeSpan.FromSeconds(sleep);
     }
 
-    /// <summary>Journals the cycle. A run the agent never finished is failed here, so it does not hold its task.</summary>
-    private async Task<TimeSpan?> RecordRunAsync(
-        PilotTaskStub task, string runId, PilotTaskList taskList, WaitResult result, CancellationToken ct)
+    /// <summary>A run the agent never finished is cancelled here, so it does not hold its task.</summary>
+    private async Task<TimeSpan?> RecordRunAsync(PilotTask task, string runId, int sleep, WaitResult result, CancellationToken ct)
     {
         var posted = result.Outcome is WaitOutcome.Finished;
         if (!posted)
         {
-            await session.FailRunAsync(runId, ct);
+            await session.CancelRunAsync(runId, ct);
         }
 
         var ok = posted && result.RunOutcome == "done";
-        var sleep = ClampSleep(taskList.SleepSeconds);
-        var ending = posted ? result.RunOutcome : "no result, failed by the host";
-        var detail = new CycleDetail(ok ? "ok" : "error", sleep);
-        await session.JournalCycleAsync(runId, $"{task.Title} - {ending}.", detail, ct);
+        var ending = posted ? result.RunOutcome : "no result, cancelled by the host";
+        await session.RecordCycleAsync(runId, $"{task.Title} - {ending}.", new CycleDetail(ok ? "ok" : "error", sleep), ct);
 
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = ok ? CycleStatus.Ok : CycleStatus.Error;
         return posted ? TimeSpan.FromSeconds(sleep) : null;
     }
 
-    private async Task<WaitResult> ClimbLadderAsync(PilotSettings settings, string runId, CancellationToken ct)
+    /// <summary>Waits for the result; a stuck run climbs check-in, skip, then restart.</summary>
+    private async Task<WaitResult> WaitForResultAsync(PilotSettings settings, string runId, CancellationToken ct)
     {
+        var result = await WaitAsync(runId, ResultTimeout, ct);
+
         // No server check between rungs: every unfinished wait has just checked whether the run finished.
         (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, Reports.CheckIn), (Directive.Skip, Reports.Skip)];
         foreach (var (directive, report) in rungs)
         {
-            await session.ReportAsync(report, ct);
-            await session.SendDirectiveAsync(settings, directive, ct);
-            var result = await WaitToFinishAsync(runId, CheckInGrace, ct);
-            if (result.Outcome is WaitOutcome.Finished or WaitOutcome.SessionExited)
+            if (result.Ended)
             {
                 return result;
             }
+
+            await session.ReportAsync(report, ct);
+            await session.SendDirectiveAsync(settings, directive, ct);
+            result = await WaitAsync(runId, CheckInGrace, ct);
         }
 
-        ConsecutiveRestarts++;
-        await session.ReportAsync(Reports.Restart, ct);
-        session.Stop();
-        if (ConsecutiveRestarts >= BackoffThreshold)
+        if (!result.Ended)
         {
-            await session.ReportAsync(Reports.Backoff, ct);
-            await session.DelayAsync(BackoffDelay, ct);
+            await session.ReportAsync(Reports.Restart, ct);
+            session.Stop();
         }
 
-        return WaitResult.Timeout;
+        return result;
     }
 
-    private async Task<WaitResult> WaitToFinishAsync(string runId, TimeSpan quietBudget, CancellationToken ct)
+    /// <summary>Backs off after a streak of restarts or exits, so a broken install or sign-in cannot hot-loop.</summary>
+    private async Task TrackStreaksAsync(WaitResult result, CancellationToken ct)
     {
-        var result = await WaitAsync(runId, quietBudget, ct);
         if (result.Outcome is WaitOutcome.Finished)
         {
             ConsecutiveRestarts = 0;
@@ -195,24 +179,21 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         }
         else if (result.Outcome is WaitOutcome.SessionExited)
         {
-            // The next cycle restarts the session, but a CLI that keeps dying at startup (broken install or sign-in)
-            // backs off instead of restarting every few seconds.
-            ConsecutiveExits++;
-            if (ConsecutiveExits >= BackoffThreshold)
+            if (++ConsecutiveExits >= BackoffThreshold)
             {
+                ConsecutiveExits = 0;
                 await session.ReportAsync(Reports.ExitBackoff, ct);
                 await session.DelayAsync(BackoffDelay, ct);
-                ConsecutiveExits = 0;
             }
         }
-
-        return result;
+        else if (++ConsecutiveRestarts >= BackoffThreshold)
+        {
+            await session.ReportAsync(Reports.Backoff, ct);
+            await session.DelayAsync(BackoffDelay, ct);
+        }
     }
 
-    /// <summary>
-    /// Waits in slices, checking the server after each. A finished run ends the wait and fresh activity extends it,
-    /// up to <see cref="MaxCycleWait"/> per cycle; otherwise it returns after the quiet budget or a stuck signal.
-    /// </summary>
+    /// <summary>Checks the server after each slice, since the run's event can be missed; fresh activity extends the wait.</summary>
     private async Task<WaitResult> WaitAsync(string runId, TimeSpan quietBudget, CancellationToken ct)
     {
         var slice = checkInterval < quietBudget ? checkInterval : quietBudget;
@@ -221,7 +202,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         while (true)
         {
             var result = await session.WaitForSignalAsync(slice, ct);
-            if (result.Outcome is WaitOutcome.Finished or WaitOutcome.SessionExited)
+            if (result.Ended)
             {
                 return result;
             }
@@ -269,7 +250,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     {
         public const string CheckIn = "Pilot orchestrator: the current run looks stuck - sent the agent a check-in reminder.";
         public const string Skip = "Pilot orchestrator: still stuck after the check-in - told the agent to set the task aside as failed and move on.";
-        public const string Restart = "Pilot orchestrator: the agent stopped responding - restarted its session and set the task aside as failed.";
+        public const string Restart = "Pilot orchestrator: the agent stopped responding - restarted its session and cancelled the run.";
         public const string Backoff = "Pilot orchestrator: 3 runs in a row got stuck - taking a 30-minute break before trying again.";
         public const string ExitBackoff = "Pilot orchestrator: the provider CLI keeps exiting right after startup - check its install and sign-in - taking a 30-minute break.";
         public const string Extend = "Pilot orchestrator: this run is taking longer than usual but is still making progress - giving it more time.";

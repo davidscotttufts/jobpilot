@@ -48,7 +48,7 @@ export function CycleCost(): ReactElement {
               <Typography variant="captionMuted">
                 {plural(item.runs, "run")} · {formatTokens(item.medianTokens)} typical
                 {item.failed > 0 && ` · ${item.failed} failed`}
-                {item.abandoned > 0 && ` · ${item.abandoned} abandoned`}
+                {item.unfinished > 0 && ` · ${item.unfinished} unfinished`}
               </Typography>
             </Box>
           ))}

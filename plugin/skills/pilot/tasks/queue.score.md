@@ -1,3 +1,5 @@
 # `queue.score`
 
-Payload `{campaignId, resumeId, minScore, queuedCount, entries: [{key,url}]}` - `queued` pasted links in an existing `apply` campaign; never create or look one up. Delegate ONE `job-scorer` batch score: `{mode:"score", campaignId, jobs:<entries as {jobKey:key,url}, ≤5>, resumeId, minMatchScore:<minScore>, save:"patch", runId:$RUN_ID}` - the worker fills each row's real title/company/board and moves it `queued` → `pending`, or writes a `skipped` result. **Do not apply** this cycle - promotion to `approved` is server-side on the next task list refresh. Heartbeat after the worker returns. Journal: "Scored 4 pasted links - 3 eligible."
+Payload `{campaignId, resumeId, minScore, queuedCount, entries: [{key,url}]}`: links the user pasted into an `apply` campaign. Delegate one `job-scorer` run: `{mode:"score", campaignId, jobs:<up to 5 entries as {jobKey:key,url}>, resumeId, minMatchScore:<minScore>, save:"patch", runId:$RUN_ID}`. It fills each row's real title, company and board and moves it to `pending`, or skips it. Don't apply; the server promotes scored rows on the next task list.
+
+Summary: "Scored 4 pasted links - 3 eligible."

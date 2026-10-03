@@ -1,5 +1,4 @@
 import {
-  type FinishPilotRunInput,
   type PilotRun,
   type PilotRunResultInput,
   type PilotTask,
@@ -8,12 +7,12 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
-import { z } from "zod/v4";
 import { conflict, findOwned, notFound } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
   type PilotRun as PilotRunModel,
+  type PilotRunOutcome,
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
@@ -21,21 +20,18 @@ import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
 import { PilotJournalService } from "../journal.service";
 import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
-import { parseJobRef, revertApplyingJobs } from "./runs";
+import { parseJobRef, revertApplyingJobs } from "./run-history";
 import { parseTaskListSnapshot } from "./snapshot";
 
 const RUN_TTL_MS = 15 * 60 * 1000;
 /** Counted from `startedAt`, so a stuck driver that keeps heartbeating still expires. */
 const MAX_RUN_LIFETIME_MS = 25 * 60 * 1000;
-const STALE_TASK_LIST = "Task list is stale; refresh it before starting a run.";
-
-const payloadSchema = z.record(z.string(), z.json());
 
 function toPilotRun(row: PilotRunModel): PilotRun {
   return pilotRunSchema.parse({ ...row, payload: reviveJsonDates(row.payload) });
 }
 
-/** Task types whose row can change after the task list was built are re-checked rather than trusted. */
+/** Re-checks task types whose row can change after the task list was built. */
 async function assertStillStartable(
   tx: Prisma.TransactionClient,
   userId: string,
@@ -80,7 +76,6 @@ async function assertStillStartable(
   if (remaining === 0) throw conflict(gone);
 }
 
-/** Starts tasks off a versioned task list snapshot, and keeps those runs alive or finishes them. */
 @singleton()
 export class RunService {
   constructor(
@@ -121,10 +116,13 @@ export class RunService {
         where: { userId },
         select: { running: true },
       });
-      throw conflict(state?.running ? STALE_TASK_LIST : "Pilot is stopped.");
+      const stale = "Task list is stale; refresh it before starting a run.";
+      throw conflict(state?.running ? stale : "Pilot is stopped.");
     }
 
-    const task = parseTaskListSnapshot(locked.taskListSnapshot).tasks.find((i) => i.id === taskId);
+    const task = parseTaskListSnapshot(locked.taskListSnapshot).tasks.find(
+      (entry) => entry.id === taskId,
+    );
     if (!task) throw conflict("Task is no longer available.");
 
     const open = await tx.pilotRun.findFirst({
@@ -193,15 +191,12 @@ export class RunService {
     return toPilotRun(updated);
   }
 
-  /** Bookkeeping only: an abandoned apply goes back to approved, other results use their own routes. */
-  async finish(userId: string, id: string, body: FinishPilotRunInput) {
+  /** The host gave up on the run. A repeat call returns it unchanged. */
+  async cancel(userId: string, id: string) {
     const existing = await this.findRow(userId, id);
-    if (existing.finishedAt) {
-      if (existing.outcome === body.outcome) return toPilotRun(existing);
-      throw conflict(`Run already finished with outcome ${existing.outcome}.`);
-    }
-    const run = await this.close(userId, existing, body);
-    publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
+    if (existing.finishedAt) return toPilotRun(existing);
+    const run = await this.close(userId, existing, "cancelled");
+    publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: "cancelled" });
     return run;
   }
 
@@ -209,20 +204,15 @@ export class RunService {
     return findOwned((where) => this.prisma.pilotRun.findFirst({ where }), { id, userId }, "Run");
   }
 
-  private async close(userId: string, existing: PilotRunModel, body: FinishPilotRunInput) {
-    const { id } = existing;
-    const payload = payloadSchema.parse(existing.payload);
+  private async close(userId: string, existing: PilotRunModel, outcome: PilotRunOutcome) {
     const finished = await this.prisma.$transaction(async (tx) => {
-      if (body.outcome === "abandoned" && existing.taskType === "job.apply") {
-        await revertApplyingJobs(tx, userId, [parseJobRef(payload)]);
+      // Otherwise the job stays `applying` until the stale sweep.
+      if (outcome === "cancelled" && existing.taskType === "job.apply") {
+        await revertApplyingJobs(tx, userId, [parseJobRef(existing.payload)]);
       }
       const [row] = await tx.pilotRun.updateManyAndReturn({
-        where: { id, userId, finishedAt: null },
-        data: {
-          finishedAt: new Date(),
-          outcome: body.outcome,
-          payload: toInputJson(body.note ? { ...payload, finishNote: body.note } : payload),
-        },
+        where: { id: existing.id, userId, finishedAt: null },
+        data: { finishedAt: new Date(), outcome },
       });
       if (!row) throw conflict("Run was finished concurrently.");
       return row;
@@ -235,8 +225,7 @@ export class RunService {
     const existing = await this.findRow(userId, id);
     if (existing.finishedAt) return toPilotRun(existing);
 
-    // Not `finish`: run.finished must follow the journal line, so a listener sees the result.
-    const run = await this.close(userId, existing, { outcome: body.outcome });
+    const run = await this.close(userId, existing, body.outcome);
     const action = {
       kind: "action" as const,
       summary: body.summary,
@@ -245,6 +234,7 @@ export class RunService {
       detail: body.detail,
     };
     await this.journal.appendJournal(userId, { cycleId: id, entries: [action] });
+    // After the journal line, so a run.finished listener already sees the result.
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
     return run;
   }

@@ -1,7 +1,9 @@
 import {
   type PilotInstructionsConfig,
   pilotInstructionsConfigSchema,
+  type TaskListContent,
   type TaskPayload,
+  type TaskType,
 } from "@jobpilot/contracts/pilot";
 import type { z } from "zod/v4";
 import type { TaskListInput } from "./build";
@@ -173,3 +175,11 @@ export const setup: TaskPayload<"search.setup"> = {
   goals: "Senior TypeScript roles, remote",
   minScore: 60,
 };
+
+type Tasks = Pick<TaskListContent, "tasks">;
+
+export const findTask = (taskList: Tasks, taskType: TaskType) =>
+  taskList.tasks.find((task) => task.taskType === taskType);
+
+export const hasTaskType = (taskList: Tasks, taskType: TaskType) =>
+  findTask(taskList, taskType) !== undefined;

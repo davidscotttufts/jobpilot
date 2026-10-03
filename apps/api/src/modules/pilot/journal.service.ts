@@ -9,7 +9,7 @@ import {
 } from "@/common/activity-log";
 import { PushService } from "@/common/push/push.service";
 import { type PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
-import { totalTokens } from "./tasks/runs";
+import { totalTokens } from "./tasks/run-history";
 
 const EXPORT_BATCH = 500;
 

@@ -19,16 +19,12 @@ export type RunsByCycle = ReadonlyMap<string, PilotJournalRun>;
 
 const NO_RUNS: RunsByCycle = new Map();
 
-/** Validates and maps a stored activity row to its wire DTO. */
-export function toActivityEntry(
-  row: PilotJournalEntryModel,
-  runs: RunsByCycle = NO_RUNS,
-): PilotJournalEntry {
+export function toActivityEntry(row: PilotJournalEntryModel, runs: RunsByCycle): PilotJournalEntry {
   const run = row.cycleId ? (runs.get(row.cycleId) ?? null) : null;
   return { ...row, detail: z.record(z.string(), z.json()).parse(row.detail), run };
 }
 
-/** Writes activity entries with cycle accounting inside the caller's transaction. */
+/** Runs inside the caller's transaction, so cycle accounting commits with the entries. */
 export async function writeActivity(
   tx: ActivityTransaction,
   userId: string,
@@ -65,7 +61,6 @@ export async function writeActivity(
   return rows;
 }
 
-/** Publishes committed activity rows and returns their wire DTOs. */
 export function publishActivity(
   userId: string,
   rows: PilotJournalEntryModel[],

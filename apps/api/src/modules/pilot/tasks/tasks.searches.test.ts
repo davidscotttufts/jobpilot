@@ -1,4 +1,5 @@
 import { HOUR_MS } from "@/common/date/buckets";
+import { findTask } from "./builders";
 import { approvedJob, pilotSearchRow, service } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
@@ -7,9 +8,8 @@ const dueRow = (over: Record<string, unknown> = {}) =>
 const futureRow = (over: Record<string, unknown> = {}) =>
   pilotSearchRow({ nextRunAt: new Date(Date.now() + HOUR_MS), ...over });
 
-const discoverOf = (taskList: {
-  tasks: { taskType: string; subjectId: string; payload: unknown }[];
-}) => taskList.tasks.find((i) => i.taskType === "search.discover");
+const discoverOf = (taskList: Parameters<typeof findTask>[0]) =>
+  findTask(taskList, "search.discover");
 
 describe("TaskListService search.discover", () => {
   it("offers a due search, keyed by its id", async () => {
@@ -65,8 +65,7 @@ describe("TaskListService search.discover", () => {
 
 describe("TaskListService search.setup", () => {
   const goals = "Senior TS roles, remote";
-  const setupOf = (taskList: { tasks: { taskType: string; payload: unknown }[] }) =>
-    taskList.tasks.find((i) => i.taskType === "search.setup");
+  const setupOf = (taskList: Parameters<typeof findTask>[0]) => findTask(taskList, "search.setup");
 
   it("derives searches from the goals when none exist", async () => {
     const taskList = await service({

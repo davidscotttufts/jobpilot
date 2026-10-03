@@ -1,3 +1,5 @@
 # `job.retryFailed`
 
-Payload `{campaignId, failedCount}`. Follow `auto-apply`'s retry-failed mode for this campaign, but score/queue only - POST each retryable job's `/retry` command so normal `job.apply` cycles retry it; do **not** apply this cycle. Retryable = transient `failReason`s (timeouts, 5xx, session lost), never eligibility skips. Journal with detail `{type:"retryFailed"}`.
+Payload `{campaignId, failedCount}`. Page through `GET /api/campaigns/$CID/jobs --query status=failed`. For each job whose `failReason` is transient (timeout, 5xx, session lost; never an eligibility skip), `POST /api/campaigns/$CID/jobs/<key>/retry` with `{"retryNotes":"<its retryNotes>"}`. Don't apply; `job.apply` runs pick them up.
+
+Detail `{"type":"retryFailed"}`. Summary: "Queued 3 of 5 failed jobs for retry - 2 were eligibility failures."

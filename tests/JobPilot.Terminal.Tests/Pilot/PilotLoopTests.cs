@@ -77,7 +77,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     public async Task StaysAsleep_WithoutStartingTheAgent_WhileThereIsNoWork()
     {
         session.BlockSleep = true;
-        session.DefaultTaskList = TaskList(sleep: 1800);
+        session.TaskList = TaskList(sleep: 1800);
         await loop.StartAsync(CancellationToken.None);
 
         store.Save(Settings());
@@ -107,7 +107,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     public async Task Wake_DuringTheInterCycleSleep_StartsTheNextCycleNow()
     {
         session.BlockSleep = true;
-        session.DefaultTaskList = TaskList(tasks: 1, sleep: 3600);
+        session.TaskList = TaskList(tasks: 1, sleep: 3600);
         session.Signals.Enqueue(WaitResult.Finished("done"));
         await loop.StartAsync(CancellationToken.None);
         store.Save(Settings());
@@ -161,7 +161,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     [Fact]
     public async Task GetStatus_ReportsTheLastCycle()
     {
-        session.DefaultTaskList = TaskList(sleep: 3600);
+        session.TaskList = TaskList(sleep: 3600);
         await loop.StartAsync(CancellationToken.None);
 
         store.Save(Settings());

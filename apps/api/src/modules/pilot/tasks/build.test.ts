@@ -5,6 +5,7 @@ import {
   cfg,
   contact,
   dueQuery,
+  findTask,
   followup,
   hotJob,
   job,
@@ -21,10 +22,10 @@ import {
 import { describe, expect, it } from "bun:test";
 
 const NETWORKING_OFF = cfg({ networking: { email: "off", linkedIn: "off" } });
-const taskTypes = (taskList: ReturnType<typeof buildTaskList>) =>
-  taskList.tasks.map((i) => i.taskType);
-const countOf = (taskList: ReturnType<typeof buildTaskList>, taskType: string) =>
-  taskList.tasks.filter((i) => i.taskType === taskType).length;
+type Built = ReturnType<typeof buildTaskList>;
+const taskTypes = (taskList: Built) => taskList.tasks.map((task) => task.taskType);
+const countOf = (taskList: Built, taskType: string) =>
+  taskTypes(taskList).filter((type) => type === taskType).length;
 
 describe("buildTaskList ranking", () => {
   it("puts humans and failing boards above any apply, and the rest of the queue below it", () => {
@@ -86,7 +87,11 @@ describe("buildTaskList ranking", () => {
       base({ config: NETWORKING_OFF, approvedJobs: jobs, pausedCampaigns: [pausedCampaign("c9")] }),
     );
     expect(taskList.tasks).toHaveLength(10);
-    expect(taskList.tasks.map((i) => i.subjectId).slice(0, 3)).toEqual(["c9", "c1:j14", "c1:j13"]);
+    expect(taskList.tasks.map((task) => task.subjectId).slice(0, 3)).toEqual([
+      "c9",
+      "c1:j14",
+      "c1:j13",
+    ]);
   });
 
   it("caps long titles", () => {
@@ -223,8 +228,8 @@ describe("buildTaskList networking", () => {
         followups: [followup("f1")],
       }),
     );
-    const intro = bothOn.tasks.find((i) => i.taskType === "networking.warmIntro");
-    const followupTask = bothOn.tasks.find((i) => i.taskType === "networking.followup");
+    const intro = findTask(bothOn, "networking.warmIntro");
+    const followupTask = findTask(bothOn, "networking.followup");
     expect(intro?.payload).toMatchObject({ channel: "email", autonomy: "auto" });
     expect(followupTask?.payload).toMatchObject({ channel: "email", autonomy: "auto" });
 
@@ -247,8 +252,8 @@ describe("buildTaskList networking", () => {
     const insider = contact("w1");
     const known = hotJob("j1", 90, [insider]);
     const taskList = buildTaskList(base({ approvedJobs: [known], warmIntroCandidates: [known] }));
-    const apply = taskList.tasks.find((i) => i.taskType === "job.apply");
-    const intro = taskList.tasks.find((i) => i.taskType === "networking.warmIntro");
+    const apply = findTask(taskList, "job.apply");
+    const intro = findTask(taskList, "networking.warmIntro");
     expect(apply?.payload).toMatchObject({ warmContacts: [insider] });
     expect(intro?.payload).toMatchObject({ contacts: [insider] });
 

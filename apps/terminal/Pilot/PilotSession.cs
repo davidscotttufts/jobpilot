@@ -24,8 +24,8 @@ public sealed class PilotSession : IPilotSession, IDisposable
     private readonly ILogger<PilotSession> logger;
     private readonly StuckDetector stuck = new();
 
-    // A finished run's outcome, or null for a stuck signal, in one channel so a wait sees whichever comes first.
-    // Not single-writer: the PTY thread and the event listener both write, and a directive re-queues outcomes.
+    // A finished run's outcome, or null for a stuck signal, so a wait sees whichever comes first. Not single-writer:
+    // the PTY thread and the event listener both write, and a directive re-queues outcomes.
     private readonly Channel<string?> signals = Channel.CreateUnbounded<string?>(new UnboundedChannelOptions { SingleReader = true });
 
     private volatile string? currentRunId;
@@ -74,7 +74,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
         return SendAsync(text, settings.Provider, ct);
     }
 
-    /// <summary>Called by the event listener for every run.finished event; only the handed-over run counts.</summary>
+    /// <summary>Only the handed-over run counts.</summary>
     public void OnRunFinished(string runId, string outcome)
     {
         if (runId == currentRunId)
@@ -130,58 +130,42 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     public Task DelayAsync(TimeSpan duration, CancellationToken ct) => Task.Delay(duration, ct);
 
-    public async Task<PilotActivity?> GetActivityAsync(CancellationToken ct) =>
-        store.Current is { } settings ? await api.GetActivityAsync(settings, ct) : null;
+    public Task<PilotActivity?> GetActivityAsync(CancellationToken ct) =>
+        store.Current is { } settings ? api.GetActivityAsync(settings, ct) : Task.FromResult<PilotActivity?>(null);
 
-    public async Task ReportAsync(string summary, CancellationToken ct)
-    {
-        if (store.Current is { } settings)
-        {
-            await api.ReportAsync(settings, summary, ct);
-        }
-    }
+    public Task ReportAsync(string summary, CancellationToken ct) =>
+        store.Current is { } settings ? api.ReportAsync(settings, summary, ct) : Task.CompletedTask;
 
-    public async Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
-        store.Current is { } settings ? await api.RefreshTasksAsync(settings, ct) : null;
+    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
+        store.Current is { } settings ? api.RefreshTasksAsync(settings, ct) : Task.FromResult<PilotTaskList?>(null);
 
     public async Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
         store.Current is { } settings ? (await api.StartRunAsync(settings, taskId, taskListVersion, ct))?.Id : null;
 
-    public async Task<PilotRunState?> GetRunAsync(string runId, CancellationToken ct) =>
-        store.Current is { } settings ? await api.GetRunAsync(settings, runId, ct) : null;
+    public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) =>
+        store.Current is { } settings ? api.GetRunAsync(settings, runId, ct) : Task.FromResult<PilotRun?>(null);
 
-    public async Task FailRunAsync(string runId, CancellationToken ct)
-    {
-        if (store.Current is { } settings)
-        {
-            await api.FailRunAsync(settings, runId, ct);
-        }
-    }
+    public Task CancelRunAsync(string runId, CancellationToken ct) =>
+        store.Current is { } settings ? api.CancelRunAsync(settings, runId, ct) : Task.CompletedTask;
 
-    public async Task JournalCycleAsync(string cycleId, string summary, CycleDetail detail, CancellationToken ct)
-    {
-        if (store.Current is { } settings)
-        {
-            await api.JournalCycleAsync(settings, cycleId, summary, detail, ct);
-        }
-    }
-
-    public async Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct)
-    {
-        if (store.Current is { } settings)
-        {
-            await api.RecordIdleCycleAsync(settings, sleepSeconds, ct);
-        }
-    }
-
-    public async Task ReportUsageAsync(string runId, CancellationToken ct)
+    public async Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct)
     {
         await Task.Delay(UsageFlush, ct);
-        if (usage.Take() is { } measured && store.Current is { } settings)
+        if (store.Current is not { } settings)
+        {
+            return;
+        }
+
+        if (usage.Take() is { } measured)
         {
             await api.ReportUsageAsync(settings, runId, measured, ct);
         }
+
+        await api.JournalCycleAsync(settings, runId, summary, detail, ct);
     }
+
+    public Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct) =>
+        store.Current is { } settings ? api.RecordIdleCycleAsync(settings, sleepSeconds, ct) : Task.CompletedTask;
 
     public void Dispose() => terminal.Output -= OnOutput;
 
@@ -196,7 +180,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private void OnOutput(byte[] data)
     {
-        // Interactive sessions skip the stuck heuristic. Nothing is lost: start saves the store before the first cycle.
+        // Interactive sessions skip the stuck heuristic; start saves the store before the first cycle.
         if (store.Current is not { Running: true })
         {
             return;

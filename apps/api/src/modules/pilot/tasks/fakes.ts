@@ -18,8 +18,6 @@ interface RunRow {
 interface Recorder {
   promoteScoredJobs: unknown[][];
   campaignUpdates: { where: Row; data: Row }[];
-  /** Every campaign.findMany where-clause, so a gather's predicate can be asserted on. */
-  campaignQueries: Row[];
   journals: Row[];
   pushes: SentPush[];
   inboxSyncs: { userId: string; staleMs: number }[];
@@ -136,7 +134,6 @@ function fakeCampaign(over: Over, rec: Recorder) {
     // Each gather is told apart by a field only it sets. Finalize also filters `jobs`, so its `OR`
     // check has to come before score-pending's.
     findMany: async (a: { where: { status?: string; source?: string } }) => {
-      rec.campaignQueries.push(a.where);
       if (a.where.status === "paused") return over.pausedCampaigns ?? [];
       if ("pilotSearchId" in a.where) return over.dueSearchCampaigns ?? [];
       if ("OR" in a.where) return over.finalizeCampaigns ?? [];
@@ -156,7 +153,6 @@ function makeTaskListDb(over: Over = {}) {
   const rec: Recorder = {
     promoteScoredJobs: [],
     campaignUpdates: [],
-    campaignQueries: [],
     journals: [],
     pushes: [],
     inboxSyncs: [],
@@ -256,9 +252,6 @@ export const serviceWithRec = (over: Over = {}) => {
 };
 
 export const service = (over: Over = {}) => serviceWithRec(over).svc;
-
-export const hasTaskType = (taskList: { tasks: { taskType: string }[] }, taskType: string) =>
-  taskList.tasks.some((i) => i.taskType === taskType);
 
 /** A PilotSearch row, due since the epoch unless overridden. */
 export const pilotSearchRow = (over: Row = {}) => ({

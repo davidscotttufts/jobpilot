@@ -7,10 +7,7 @@ import { queryKeys } from "@/api/query-keys";
 import { useSseChannel } from "@/lib/sse/client";
 import { appendJournalEntry } from "./journal/use-journal-live";
 
-/**
- * The pilot layout's one SSE subscription, fanned out to query invalidations. `journal.appended`
- * writes straight into the journal caches instead, so it costs no refetch.
- */
+/** The pilot layout's one SSE subscription; journal entries go straight into the cache, not a refetch. */
 export function PilotLive(): ReactNode {
   const queryClient = useQueryClient();
 

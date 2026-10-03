@@ -127,8 +127,8 @@ cycle for as long as it's enabled:
   the orchestrator.
 - **Record.** The orchestrator journals the cycle, with the run's token usage,
   and schedules the next one. A quiet or stuck run gets a check-in reminder,
-  then a session restart; a run that never posts a result is set aside as
-  failed.
+  then a session restart. A run that never posts a result is cancelled by the
+  host, which returns an unfinished application to the queue.
 
 Two things let this run without a browser tab open: **one-time pairing**
 stores your login token securely with the host when you first enable the

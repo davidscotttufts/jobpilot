@@ -158,15 +158,13 @@ describe("PilotService.getActivity", () => {
     return new PilotService(db as unknown as PrismaClient);
   }
 
-  it("reports the last cycle's planned sleep from the state row", async () => {
-    const nextWakeAt = new Date(completedAt.getTime() + 300_000);
+  // A stuck-recovery cycle plans no wake but still reports when it completed.
+  it.each([
+    [new Date(completedAt.getTime() + 300_000), 300],
+    [null, null],
+  ])("reports the last cycle's planned sleep (wake %p)", async (nextWakeAt, sleepSeconds) => {
     const svc = activityService({ running: true, lastCycleAt: completedAt, nextWakeAt });
-    expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds: 300 });
-  });
-
-  it("still reports a stuck-recovery cycle that planned no wake", async () => {
-    const svc = activityService({ running: true, lastCycleAt: completedAt, nextWakeAt: null });
-    expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds: null });
+    expect((await svc.getActivity("p1")).lastCycle).toEqual({ completedAt, sleepSeconds });
   });
 
   it("reads a profile with no state row as never run and stopped", async () => {

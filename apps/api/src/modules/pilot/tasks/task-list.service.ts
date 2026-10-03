@@ -17,7 +17,7 @@ import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
 import { writeDigestIfDue } from "./digest";
 import {
-  gatherCampaignTunes,
+  gatherCampaignReviews,
   gatherPausedCampaigns,
   gatherQueueScores,
   gatherScorePending,
@@ -55,7 +55,7 @@ const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
   dueQueries: [],
   nextSearchRunAt: null,
 };
-const NO_TUNES: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFailed"> = {
+const NO_REVIEWS: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFailed"> = {
   campaignTunes: [],
   rescanSkipped: [],
   retryFailed: [],
@@ -86,14 +86,9 @@ export class TaskListService {
   async getCurrent(userId: string) {
     const state = await this.prisma.pilotState.findUnique({ where: { userId } });
     if (!state?.running) throw conflict("Pilot is stopped.");
-    if (
-      !state.taskListSnapshot ||
-      !state.taskListExpiresAt ||
-      state.taskListExpiresAt <= new Date()
-    ) {
-      return { taskList: null };
-    }
-    return { taskList: parseTaskListSnapshot(state.taskListSnapshot) };
+    const expiresAt = state.taskListExpiresAt;
+    const live = state.taskListSnapshot && expiresAt && expiresAt > new Date();
+    return { taskList: live ? parseTaskListSnapshot(state.taskListSnapshot) : null };
   }
 
   async refresh(userId: string): Promise<TaskList> {
@@ -193,7 +188,7 @@ export class TaskListService {
     // Blank goals need no task: emptyReason "awaitingSetup" already says so.
     const canSetUp = quiet && searchCount === 0 && goals !== "";
     const [reviews, setup] = await Promise.all([
-      quiet ? gatherCampaignTunes(prisma, userId, now) : NO_TUNES,
+      quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
     ]);
 

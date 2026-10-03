@@ -1,7 +1,7 @@
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./runs";
+import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./run-history";
 
 /** With room left under the apply cap, a search idle this long re-runs before it is due. */
 const HUNGRY_RERUN_MS = 6 * HOUR_MS;

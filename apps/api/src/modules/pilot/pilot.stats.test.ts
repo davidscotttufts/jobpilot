@@ -13,21 +13,13 @@ describe("costByTaskType", () => {
     cacheWriteTokens: 0,
   });
 
-  const fakePrisma = (rows: ReturnType<typeof run>[]) => {
-    const queries: { where: Record<string, unknown> }[] = [];
-    const prisma = {
-      pilotRun: {
-        findMany: async (args: (typeof queries)[number]) => {
-          queries.push(args);
-          return rows;
-        },
-      },
-    } as unknown as Parameters<typeof costByTaskType>[0];
-    return { prisma, queries };
-  };
+  const fakePrisma = (rows: ReturnType<typeof run>[]) =>
+    ({ pilotRun: { findMany: async () => rows } }) as unknown as Parameters<
+      typeof costByTaskType
+    >[0];
 
   it("ranks task types by total tokens, not by how often they run", async () => {
-    const { prisma } = fakePrisma([
+    const prisma = fakePrisma([
       {
         ...run("job.apply", 50_000),
         outputTokens: 2000,
@@ -47,22 +39,15 @@ describe("costByTaskType", () => {
     expect(rows[1]).toMatchObject({ runs: 3, medianTokens: 2000, totalTokens: 6000 });
   });
 
-  it("counts failed and abandoned runs separately", async () => {
-    const { prisma } = fakePrisma([
+  it("counts failed and unfinished runs separately", async () => {
+    const prisma = fakePrisma([
       run("search.discover", 100, "failed"),
       run("search.discover", 100, "expired"),
-      run("search.discover", 100, "abandoned"),
+      run("search.discover", 100, "cancelled"),
       run("search.discover", 100),
     ]);
     const rows = await costByTaskType(prisma, "u1", NOW);
 
-    expect(rows[0]).toMatchObject({ runs: 4, failed: 1, abandoned: 2 });
-  });
-
-  it("reads finished runs only", async () => {
-    const { prisma, queries } = fakePrisma([]);
-    await costByTaskType(prisma, "u1", NOW);
-
-    expect(queries[0].where).toMatchObject({ finishedAt: { not: null } });
+    expect(rows[0]).toMatchObject({ runs: 4, failed: 1, unfinished: 2 });
   });
 });

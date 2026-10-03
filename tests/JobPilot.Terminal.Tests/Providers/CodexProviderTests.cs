@@ -94,13 +94,14 @@ public sealed class CodexProviderTests : IDisposable
     }
 
     [Fact]
-    public void PrepareWorkspace_MirrorsTheBundledSkills_WithoutTheBootstrapOrStaleFiles()
+    public void PrepareWorkspace_MirrorsSkillsAndAgents_WithoutTheBootstrapOrStaleFiles()
     {
         temp.File(Path.Combine("plugin", "skills", "pilot", "SKILL.md"), "pilot-v1");
         temp.File(Path.Combine("plugin", "skills", "retired", "SKILL.md"), "retired");
         temp.File(Path.Combine("plugin", "skills", "setup", "SKILL.md"), "bootstrap");
         temp.File(Path.Combine("plugin", "skills", "_shared", "setup.md"), "shared");
         temp.File(Path.Combine("plugin", "agents", "job-scorer.md"), "---\nname: job-scorer\ndescription: Scores.\n---\nBody");
+        temp.File(Path.Combine(".codex", "agents", "job-worker.toml"), "stale");
         var paths = new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") };
         var mirrored = Path.Combine(temp.Root, ".agents", "skills");
 
@@ -115,6 +116,10 @@ public sealed class CodexProviderTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(mirrored, "setup")));
         Assert.False(Directory.Exists(Path.Combine(mirrored, "retired")));
         Assert.False(File.Exists(Path.Combine(mirrored, "pilot", "stale.md")));
+
+        var agents = Path.Combine(temp.Root, ".codex", "agents");
+        Assert.Equal(["job-scorer.toml"], Directory.GetFiles(agents).Select(Path.GetFileName));
+        Assert.Contains("developer_instructions = \"Body\"", File.ReadAllText(Path.Combine(agents, "job-scorer.toml")));
     }
 
     [Fact]
@@ -141,20 +146,5 @@ public sealed class CodexProviderTests : IDisposable
             + "developer_instructions = \"# Job Scorer\\n\\nSay \\u0022hi\\u0022.\"\n",
             CodexProvider.AgentToml(markdown));
         Assert.Null(CodexProvider.AgentToml("# No frontmatter"));
-    }
-
-    [Fact]
-    public void PrepareWorkspace_WritesOneCodexAgentPerAgentFile_AndDropsStaleOnes()
-    {
-        temp.File(Path.Combine("plugin", "skills", "_shared", "setup.md"), "shared");
-        temp.File(Path.Combine("plugin", "agents", "job-scorer.md"), "---\nname: job-scorer\ndescription: Scores.\n---\nBody");
-        temp.File(Path.Combine(".codex", "agents", "job-worker.toml"), "stale");
-        var paths = new InstallPaths { WorkingDir = temp.Root, PluginDir = Path.Combine(temp.Root, "plugin") };
-
-        Provider.Codex.PrepareWorkspace(paths);
-
-        var agents = Path.Combine(temp.Root, ".codex", "agents");
-        Assert.Equal(["job-scorer.toml"], Directory.GetFiles(agents).Select(Path.GetFileName));
-        Assert.Contains("developer_instructions = \"Body\"", File.ReadAllText(Path.Combine(agents, "job-scorer.toml")));
     }
 }

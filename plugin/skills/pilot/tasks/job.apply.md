@@ -1,11 +1,10 @@
 # `job.apply`
 
-Delegate ONE `job-applier` invocation - the input JSON from `../../_shared/campaign-flow.md` (campaignId, jobKey, url, board, brief, resumeId, plus profile fields per `../../_shared/setup.md`) plus `runId:$RUN_ID` (lets the worker heartbeat through a long apply), all read from the task payload. Heartbeat once more when it returns. Handle the four outcomes per `../../_shared/campaign-flow.md` (Terminal result writes):
+Delegate one `job-applier` run with the payload's `campaignId`, `jobKey`, `url`, `board`, `brief` and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
 
-- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` with the shared payload shapes. Pass the worker's `resumeId`/`resumeVariantId` straight through on `applied`.
-- `needs_user` → ask the user, then park the job:
-
-Pass the worker's `kind`, `question`, `options` and `answerKey` through verbatim (`options` defaults `[]`; leave `answerKey` out when null).
+- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` in the shapes of `../../_shared/campaign-flow.md` ("Terminal result writes"), passing the worker's `resumeId`/`resumeVariantId` through.
+- `needs_user` with `category:"payment"` → `failed`, `failReason:"Payment required"`.
+- Any other `needs_user` → ask, then park the job. Copy the worker's `kind`, `question`, `options` and `answerKey` verbatim (`options` defaults to `[]`; omit a null `answerKey`) into `$JOBPILOT_TEMP/question.json`:
 
 ```json
 {
@@ -13,17 +12,17 @@ Pass the worker's `kind`, `question`, `options` and `answerKey` through verbatim
   "subjectType": "job",
   "subjectId": "<campaignId>:<jobKey>",
   "prompt": "<worker question>",
-  "options": <worker options, else []>,
+  "options": ["<worker options>"],
   "answerKey": "<worker answerKey>",
   "deepLink": "<JOBPILOT_WEB>/campaigns/<campaignId>"
 }
 ```
-
-Write that to `$JOBPILOT_TEMP/question.json`, then:
 
 ```bash
 jobpilot-api POST /api/pilot/questions --data @"$JOBPILOT_TEMP/question.json"
 jobpilot-api PATCH /api/campaigns/$CID/jobs/$KEY --data '{"status":"needs_user"}'
 ```
 
-For `two_factor`: the server auto-expires the question in ~5 minutes and the parked job is skipped cleanly - do nothing special, keep moving.
+A `two_factor` question expires after about 5 minutes and the server skips the parked job; do nothing more.
+
+Summary: "Applied to <title> at <company> - score 87." / "Parked <company> application - needs your salary answer."

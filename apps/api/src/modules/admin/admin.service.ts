@@ -7,7 +7,7 @@ import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/bucket
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
-import { totalTokens } from "@/modules/pilot/tasks/runs";
+import { totalTokens } from "@/modules/pilot/tasks/run-history";
 
 /** The columns every admin user row is built from - shared by the list and the role mutation. */
 const USER_SELECT = {

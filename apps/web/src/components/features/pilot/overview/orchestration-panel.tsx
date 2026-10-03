@@ -4,14 +4,7 @@ import "@xyflow/react/dist/style.css";
 import { type ReactElement, useEffect, useState } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
 import { Box, Skeleton, Typography, useMediaQuery, useTheme } from "@mui/material";
-import {
-  Background,
-  BackgroundVariant,
-  type BuiltInEdge,
-  Position,
-  ReactFlow,
-  type XYPosition,
-} from "@xyflow/react";
+import { Background, BackgroundVariant, type BuiltInEdge, ReactFlow } from "@xyflow/react";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
@@ -24,118 +17,33 @@ import {
 } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline } from "../host-status";
-import { AGENT_LABELS, type PilotAgent, taskTypeAgent, taskTypeLabel } from "../task-types";
+import { type PilotAgent, taskTypeAgent, taskTypeLabel } from "../task-types";
 import { type StageFlowNode, stageNodeTypes } from "./flow-nodes";
+import {
+  AGENTS,
+  HOST,
+  JOURNAL,
+  LINKS,
+  NARROW_LAYOUT,
+  SERVER,
+  SESSION,
+  type Stage,
+  WIDE_LAYOUT,
+} from "./orchestration-graph";
 import { useTaskList } from "./task-list-preview";
 import { useNextWake } from "./use-next-wake";
 
-type BranchAgent = Exclude<PilotAgent, "session">;
-type NodeId = "host" | "server" | "session" | BranchAgent | "journal";
-type EdgeKind = "spine" | "fanOut" | "fanIn" | "text";
 type Mode = "off" | "offline" | "working" | "sleeping";
-
-interface Stage {
-  id: NodeId;
-  title: string;
-  role: string;
-  tone: StageFlowNode["data"]["tone"];
-}
-
-interface AgentStage extends Stage {
-  id: BranchAgent;
-}
-
-const HOST: Stage = { id: "host", title: "Host", role: "Checks for work", tone: "blue" };
-const SERVER: Stage = { id: "server", title: "Server", role: "Picks a task", tone: "peach" };
-const SESSION: Stage = { id: "session", title: "Session", role: "Runs the task", tone: "violet" };
-const JOURNAL: Stage = { id: "journal", title: "Journal", role: "Results", tone: "green" };
-
-const AGENTS: AgentStage[] = [
-  { id: "job-searcher", title: AGENT_LABELS["job-searcher"], role: "Finds jobs", tone: "amber" },
-  { id: "job-scorer", title: AGENT_LABELS["job-scorer"], role: "Scores jobs", tone: "amber" },
-  { id: "job-applier", title: AGENT_LABELS["job-applier"], role: "Applies", tone: "amber" },
-  {
-    id: "networking-worker",
-    title: AGENT_LABELS["networking-worker"],
-    role: "Reaches out",
-    tone: "amber",
-  },
-];
-
-interface Link {
-  source: NodeId;
-  target: NodeId;
-  kind: EdgeKind;
-  /** The agent whose run lights this edge; `session` is a text-only run. */
-  agent: PilotAgent | null;
-}
-
-const LINKS: Link[] = [
-  { source: "host", target: "server", kind: "spine", agent: null },
-  { source: "server", target: "session", kind: "spine", agent: null },
-  ...AGENTS.flatMap((agent): Link[] => [
-    { source: "session", target: agent.id, kind: "fanOut", agent: agent.id },
-    { source: agent.id, target: "journal", kind: "fanIn", agent: agent.id },
-  ]),
-  { source: "session", target: "journal", kind: "text", agent: "session" },
-];
-
-interface Layout {
-  height: number;
-  positions: Record<NodeId, XYPosition>;
-  /** Source and target handle sides for each kind of edge. */
-  sides: Record<EdgeKind, [Position, Position]>;
-  /** How far the text-task edge runs out before turning, so it clears the agent column. */
-  textOffset: number;
-}
-
-const WIDE_LAYOUT: Layout = {
-  height: 420,
-  positions: {
-    host: { x: 0, y: 135 },
-    server: { x: 185, y: 135 },
-    session: { x: 370, y: 135 },
-    "job-searcher": { x: 555, y: 0 },
-    "job-scorer": { x: 555, y: 90 },
-    "job-applier": { x: 555, y: 180 },
-    "networking-worker": { x: 555, y: 270 },
-    journal: { x: 740, y: 135 },
-  },
-  sides: {
-    spine: [Position.Right, Position.Left],
-    fanOut: [Position.Right, Position.Left],
-    fanIn: [Position.Right, Position.Left],
-    text: [Position.Bottom, Position.Bottom],
-  },
-  textOffset: 150,
-};
-
-/** Phone width: one column, agents indented so their edges run down either side. */
-const NARROW_LAYOUT: Layout = {
-  height: 900,
-  positions: {
-    host: { x: 0, y: 0 },
-    server: { x: 0, y: 125 },
-    session: { x: 0, y: 250 },
-    "job-searcher": { x: 40, y: 365 },
-    "job-scorer": { x: 40, y: 470 },
-    "job-applier": { x: 40, y: 575 },
-    "networking-worker": { x: 40, y: 680 },
-    journal: { x: 0, y: 795 },
-  },
-  sides: {
-    spine: [Position.Bottom, Position.Top],
-    fanOut: [Position.Left, Position.Left],
-    fanIn: [Position.Right, Position.Right],
-    text: [Position.Left, Position.Left],
-  },
-  textOffset: 20,
-};
 
 const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string> = {
   capReached: "Daily cap reached",
   awaitingSetup: "Waiting for your goals",
   clear: "Nothing to do",
+};
+
+const MODE_NOTICES: Partial<Record<Mode, string>> = {
+  off: "Enable the pilot to watch it run cycles.",
+  offline: "Start the JobPilot agent so the pilot can run cycles.",
 };
 
 function truncate(text: string, max = 48): string {
@@ -212,9 +120,10 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   }
 
   // A run's id is the cycleId of the action it posts.
-  const runId = run ? run.id : null;
-  const posted =
-    journal.data?.items.find((entry) => entry.kind === "action" && entry.cycleId === runId) ?? null;
+  const journalItems = journal.data?.items ?? [];
+  const posted = run
+    ? (journalItems.find((entry) => entry.kind === "action" && entry.cycleId === run.id) ?? null)
+    : null;
   const journalCaption = posted
     ? truncate(humanizeIsoInText(posted.summary))
     : `${state.appliedToday} / ${state.instructionsConfig.dailyApplyCap} applied today`;
@@ -244,12 +153,12 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     toNode(JOURNAL, journalCaption, false, muted),
   ];
 
-  const flame = theme.palette.accent.primary;
-  const dim = theme.palette.divider;
+  const litStroke = theme.palette.accent.primary;
+  const idleStroke = theme.palette.divider;
   const edges: BuiltInEdge[] = LINKS.map((link) => {
     const lit = link.agent !== null && link.agent === branch;
-    const [sourceHandle, targetHandle] = layout.sides[link.kind];
-    const text = link.kind === "text";
+    const [sourceHandle, targetHandle] = layout.sides[link.route];
+    const text = link.route === "text";
     return {
       id: `${link.source}-${link.target}`,
       source: link.source,
@@ -260,7 +169,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
       animated: lit,
       // Branch edges share their first and last segments; the lit one draws on top.
       zIndex: lit ? 1 : 0,
-      style: { stroke: lit ? flame : dim, strokeWidth: lit ? 2 : 1.5 },
+      style: { stroke: lit ? litStroke : idleStroke, strokeWidth: lit ? 2 : 1.5 },
       pathOptions: text ? { offset: layout.textOffset } : undefined,
       label: text ? "text tasks" : null,
       labelStyle: { fill: theme.palette.text.secondary },
@@ -268,12 +177,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     };
   });
 
-  let hint: string | null = null;
-  if (mode === "off") {
-    hint = "Enable the pilot to watch it run cycles.";
-  } else if (mode === "offline") {
-    hint = "Start the JobPilot agent so the pilot can run cycles.";
-  }
+  const notice = MODE_NOTICES[mode] ?? null;
 
   return (
     <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">
@@ -308,15 +212,15 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
             maxZoom={1.5}
             colorMode={theme.palette.mode}
           >
-            <Background variant={BackgroundVariant.Dots} gap={22} size={1} color={dim} />
+            <Background variant={BackgroundVariant.Dots} gap={22} size={1} color={idleStroke} />
           </ReactFlow>
         </Box>
       ) : (
         <Skeleton variant="rounded" height={layout.height} />
       )}
       <Box sx={{ mt: 1 }}>
-        {hint ? (
-          <Typography variant="body2Muted">{hint}</Typography>
+        {notice ? (
+          <Typography variant="body2Muted">{notice}</Typography>
         ) : (
           <Typography variant="captionMuted">
             Each cycle the host checks for work, the server picks one task, and the pilot session

@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { summarizeCampaigns } from "@/modules/campaign/campaign.summary";
-import { GATHER_CAP, latestRunBySubject, ranRecently, withoutRecentRuns } from "./runs";
+import { GATHER_CAP, latestRunBySubject, ranRecently, withoutRecentRuns } from "./run-history";
 
 const BATCH_SIZE = 5;
 /** A row nothing can visit (dead URL, login wall) stays a candidate, so it must not win every cycle. */
@@ -170,11 +170,8 @@ export async function gatherPausedCampaigns(
 
 const reviewMarkerSchema = z.object({ type: z.string().optional() }).loose();
 
-/**
- * Campaign tunes, skipped-job rescans and failed-job retries for a quiet task list. The agent
- * journals an action with `detail.type` after each, which holds the campaign back for a week.
- */
-export async function gatherCampaignTunes(prisma: PrismaClient, userId: string, now: Date) {
+/** Tunes, rescans and retries; the agent's action journaled with `detail.type` holds each back a week. */
+export async function gatherCampaignReviews(prisma: PrismaClient, userId: string, now: Date) {
   const [campaigns, markers] = await Promise.all([
     prisma.campaign.findMany({
       where: { userId, status: "in_progress", source: { not: "networking" } },

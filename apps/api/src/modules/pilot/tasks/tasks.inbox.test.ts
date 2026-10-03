@@ -1,4 +1,5 @@
-import { hasTaskType, service, serviceWithRec } from "./fakes";
+import { findTask, hasTaskType } from "./builders";
+import { service, serviceWithRec } from "./fakes";
 import { INBOX_SYNC_STALE_MS } from "./task-list.service";
 import { describe, expect, it } from "bun:test";
 
@@ -14,7 +15,7 @@ describe("TaskListService answered questions", () => {
 
   it("hands the worker the question, its subject and the answer", async () => {
     const taskList = await service({ answered: [answered] }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "question.answered");
+    const task = findTask(taskList, "question.answered");
     expect(task?.payload).toEqual({
       questionId: "E1",
       questionKind: "approval",
@@ -51,7 +52,7 @@ describe("TaskListService interviews", () => {
 
   it("offers a reply to an interview email, unless one is drafted or approved", async () => {
     const taskList = await service({ interviewReplyApps: [replyApp([invite])] }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "interview.reply");
+    const task = findTask(taskList, "interview.reply");
     expect(task?.payload).toMatchObject({ applicationId: "app1", emailMessageId: "em1" });
 
     const handled = await service({
@@ -70,13 +71,13 @@ describe("TaskListService interviews", () => {
     const taskList = await service({
       interviewPrepApps: [{ ...app, campaign: { config: { resumeId } } }],
     }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "interview.prep");
+    const task = findTask(taskList, "interview.prep");
     expect(task?.payload).toMatchObject({ applicationId: "app1", resumeId });
 
     const orphan = await service({
       interviewPrepApps: [{ ...app, campaign: null }],
     }).refresh("p1");
-    expect(orphan.tasks.find((i) => i.taskType === "interview.prep")?.payload).toMatchObject({
+    expect(findTask(orphan, "interview.prep")?.payload).toMatchObject({
       resumeId: null,
     });
   });
@@ -92,16 +93,14 @@ describe("TaskListService mail and Upwork sync", () => {
   it("offers an Upwork pull only to Upwork users, and only once the mirror is stale", async () => {
     const hour = 60 * 60 * 1000;
     const first = await service({ upworkProfiles: 1 }).refresh("p1");
-    expect(first.tasks.find((i) => i.taskType === "upwork.syncInbox")?.title).toBe(
-      "Pull the Upwork inbox",
-    );
+    expect(findTask(first, "upwork.syncInbox")?.title).toBe("Pull the Upwork inbox");
 
     const stale = await service({
       upworkProfiles: 1,
       upworkUnread: 3,
       upworkAccount: { lastSyncedAt: new Date(Date.now() - 7 * hour) },
     }).refresh("p1");
-    const task = stale.tasks.find((i) => i.taskType === "upwork.syncInbox");
+    const task = findTask(stale, "upwork.syncInbox");
     expect(task?.title).toBe("Refresh the Upwork inbox");
     expect(task?.payload).toMatchObject({ unreadCount: 3 });
 

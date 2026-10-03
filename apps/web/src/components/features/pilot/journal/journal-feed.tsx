@@ -49,18 +49,18 @@ function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[
   return entries.filter((e) => !(e.kind === "cycle" && e.cycleId && covered.has(e.cycleId)));
 }
 
-/**
- * The newest copy of each run. An action streams in before the host reports usage, so its own copy
- * lacks tokens until the run's cycle entry arrives with them.
- */
-function latestRuns(entries: PilotJournalEntry[]): Map<string, PilotJournalRun> {
+/** Streamed actions predate the host's usage report, so every row takes its run's newest copy. */
+function withLatestRuns(entries: PilotJournalEntry[]): PilotJournalEntry[] {
   const runs = new Map<string, PilotJournalRun>();
   for (const entry of entries) {
     if (entry.cycleId && entry.run && !runs.has(entry.cycleId)) {
       runs.set(entry.cycleId, entry.run);
     }
   }
-  return runs;
+  return entries.map((entry) => {
+    const run = entry.cycleId ? runs.get(entry.cycleId) : null;
+    return run ? { ...entry, run } : entry;
+  });
 }
 
 /** Kind filters run server-side, so paging under a filter stays on one stream. */
@@ -133,9 +133,8 @@ export function JournalFeed(): ReactElement {
 
   // Live prepends keep the first page's tail, which the first older page repeats.
   const older = pages.flatMap((page) => page.items);
-  const entries = dedupeById([...(firstPage.data?.items ?? []), ...older]);
+  const entries = withLatestRuns(dedupeById([...(firstPage.data?.items ?? []), ...older]));
   const visible = view === "flat" && collapseCycles ? collapseCoveredCycles(entries) : entries;
-  const runs = latestRuns(entries);
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -220,10 +219,9 @@ export function JournalFeed(): ReactElement {
             <CycleTimeline entries={visible} />
           ) : (
             <Stack spacing={1.5} divider={<Divider />}>
-              {visible.map((entry) => {
-                const run = entry.cycleId ? runs.get(entry.cycleId) : null;
-                return <JournalRow key={entry.id} entry={entry} run={run} />;
-              })}
+              {visible.map((entry) => (
+                <JournalRow key={entry.id} entry={entry} />
+              ))}
             </Stack>
           )}
         </QuerySection>

@@ -5,8 +5,7 @@ import { accent, fontFamilies } from "@/theme";
 import { SectionEyebrow } from "../section-eyebrow";
 import { PilotCycle } from "./pilot-cycle";
 
-// A server component, so sx must stay a plain object - a `(theme) => …` callback
-// is a function, and functions cannot cross the RSC boundary.
+// A server component: a `(theme) => …` sx callback can't cross the RSC boundary.
 const emberWash = `radial-gradient(ellipse 70% 70% at 50% 0%, ${alpha(accent.primary, 0.08)}, transparent 60%)`;
 
 interface Step {

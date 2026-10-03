@@ -1,7 +1,7 @@
 enum PilotRunOutcome {
   done
   failed
-  abandoned
+  cancelled
   expired
 
   @@map("pilot_run_outcome")

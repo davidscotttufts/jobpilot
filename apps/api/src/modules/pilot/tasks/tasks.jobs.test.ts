@@ -1,4 +1,5 @@
-import { approvedJob, hasTaskType, service } from "./fakes";
+import { findTask, hasTaskType } from "./builders";
+import { approvedJob, service } from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("TaskListService warm intros", () => {
@@ -15,8 +16,8 @@ describe("TaskListService warm intros", () => {
       approvedJobs: [approvedJob({ matchScore: 90, company: "Acme" })],
       contacts: [insider],
     }).refresh("p1");
-    const apply = taskList.tasks.find((i) => i.taskType === "job.apply");
-    const intro = taskList.tasks.find((i) => i.taskType === "networking.warmIntro");
+    const apply = findTask(taskList, "job.apply");
+    const intro = findTask(taskList, "networking.warmIntro");
     expect(apply?.payload).toMatchObject({ warmContacts: [{ id: "ct1" }] });
     expect(intro?.payload).toMatchObject({ contacts: [{ id: "ct1" }] });
   });
@@ -33,7 +34,7 @@ describe("TaskListService warm intros", () => {
     const taskList = await service({
       recentAppliedJobs: [approvedJob({ matchScore: 90, key: "done1" })],
     }).refresh("p1");
-    const intro = taskList.tasks.find((i) => i.taskType === "networking.warmIntro");
+    const intro = findTask(taskList, "networking.warmIntro");
     expect(intro?.subjectId).toBe("c1:done1");
   });
 
@@ -46,7 +47,7 @@ describe("TaskListService warm intros", () => {
       contacts: [insider],
     }).refresh("p1");
     expect(hasTaskType(taskList, "networking.warmIntro")).toBe(false);
-    const apply = taskList.tasks.find((i) => i.taskType === "job.apply");
+    const apply = findTask(taskList, "job.apply");
     expect(apply?.payload).toMatchObject({ warmContacts: [{ id: "ct1" }] });
   });
 });
@@ -67,7 +68,7 @@ describe("TaskListService board.diagnose", () => {
     const taskList = await service({
       boardDiagnoseJobs: [failed("a"), failed("b"), failed("c"), applied("d")],
     }).refresh("p1");
-    const task = taskList.tasks.find((i) => i.taskType === "board.diagnose");
+    const task = findTask(taskList, "board.diagnose");
     expect(task?.payload).toEqual({
       board: "linkedin",
       consecutiveFailures: 3,

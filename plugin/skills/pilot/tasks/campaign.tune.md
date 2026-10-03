@@ -1,13 +1,8 @@
 # `campaign.tune`
 
-Payload `{campaignId, query, config, counts, topSkipReasons}`. Quiet task list, deep think, **no browser**. Reason over the yield: is the query too broad/narrow, `minScore` mistuned, skip reasons clustered? Decide ONE concrete adjustment (rewrite query and/or shift `minScore` by at most ±10 within [50,95]). Build the updated config from a fresh `GET /api/campaigns/$CID` and pass its `updatedAt` as the guard; a `409` = the user edited mid-review - re-fetch and re-decide once:
+Payload `{campaignId, query, config, counts, topSkipReasons}`. No browser. Judge the yield: query too broad or narrow, `minScore` off, skip reasons clustered? Make one change:
 
-```bash
-jobpilot-api PATCH /api/campaigns/$CID --data @"$JOBPILOT_TEMP/campaign.json"
-```
+- **Config**: rewrite the query and/or move `minScore` by at most 10, staying within 50-95. Start from a fresh `GET /api/campaigns/$CID`, write `{"config": <updated config>, "expectedUpdatedAt": "<its updatedAt>"}` to `$JOBPILOT_TEMP/campaign.json`, then `PATCH /api/campaigns/$CID --data @...`. A `409` means the user edited it meanwhile: re-fetch and decide once more. A bigger change → ask a `choice` question instead.
+- **Search**: when the search itself is dry or off-target, change one saved search instead, via `POST`/`PATCH`/`DELETE /api/pilot/searches[/:id]` (`GET /api/pilot/searches` for ids), with `reason` saying why.
 
-`$JOBPILOT_TEMP/campaign.json` is `{"config": <updated config>, "expectedUpdatedAt": "<campaign updatedAt>"}`.
-
-Journal with detail `{type:"tune"}` (the result's `detail`, SKILL.md step 3): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
-
-**Search stewardship.** When the diagnosis implicates the search itself - fundamentally dry or mistargeted, not merely campaign tuning - make at most ONE search change per cycle, instead of or alongside config tuning: `POST`/`PATCH`/`DELETE /api/pilot/searches[/:id]` (`GET /api/pilot/searches` for ids). Update `reason` to say why, and journal the change.
+Detail `{"type":"tune"}` (the server dedupes reviews on it). Summary: "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65."

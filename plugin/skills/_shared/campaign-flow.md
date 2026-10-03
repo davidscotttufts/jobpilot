@@ -46,14 +46,11 @@ candidate actually submitted; without it the application's Documents card has no
 ```json
 { "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
-  "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
-  "preSubmitReview": <bool>, "savedAnswers": <SAVED_ANSWERS> }
+  "salaryExpectation": <remembered-or-null>, "preSubmitReview": <bool> }
 ```
 
-Omit `brief` and the worker fetches it from the saved Job. `SAVED_ANSWERS` is
-`jobpilot-api GET /api/pilot/answers` as `[{key, value}]` (load once per campaign run). The
-worker returns one of
-`applied` / `failed` / `skipped` / `needs_user` and closes its tabs before returning -
+Omit `brief` and the worker fetches it from the saved Job; it loads the profile and saved answers
+itself. It returns one of `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before returning -
 re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
 
 - `category:"salary"` (no profile salary preference matched) - ask the user once, remember the

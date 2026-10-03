@@ -25,7 +25,7 @@ Each folder is one feature and holds its endpoints, request and response records
   the task list. With no tasks it records an idle check on the pilot state (no journal entry) and sleeps, so an
   idle pilot never wakes the model. With tasks it starts a run for the top one, types `/clear` and the pilot skill with the run id, and
   waits for the run to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A
-  stuck run climbs check-in, skip, then restart, and a run with no result is failed by the host. The host then
+  stuck run climbs check-in, skip, then restart, and a run with no result is cancelled by the host. The host then
   journals the cycle and posts its token usage, which `UsageMeter` sums from the CLI's OTLP logs on `/v1/logs`.
   `PilotEventListener` holds the API's event stream open, passes `run.finished` to the session, and wakes the
   loop when new work can start the next cycle early.

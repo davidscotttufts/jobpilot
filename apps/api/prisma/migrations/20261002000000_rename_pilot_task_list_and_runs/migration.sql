@@ -1,5 +1,6 @@
--- Rename the run outcome enum
+-- Rename the run outcome enum; a run the host closes without a result is cancelled
 ALTER TYPE "pilot_claim_outcome" RENAME TO "pilot_run_outcome";
+ALTER TYPE "pilot_run_outcome" RENAME VALUE 'abandoned' TO 'cancelled';
 
 -- Drop the observation journal kind: nothing writes it, and Postgres cannot drop an enum value in place
 DELETE FROM "pilot_journal_entries" WHERE "kind" = 'observation';

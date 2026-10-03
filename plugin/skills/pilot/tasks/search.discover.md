@@ -1,36 +1,23 @@
 # `search.discover`
 
-Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`. Run ONE board search through the `job-searcher` subagent. `SEARCH_ID=<payload.searchId>`.
+Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`.
 
-## 1. Campaign
+1. **Campaign.** Use `campaignId` when set; never open a second campaign for one search. Otherwise create one and read `.campaignId` as `CID` (`pilotSearchId` is how later runs find it):
 
-A `campaignId` in the payload means reuse it (`CID=<payload.campaignId>`); never open a second campaign for one search. Only when it is absent, create one - `pilotSearchId` is load-bearing, it is how the next cycle finds this campaign again:
+   ```bash
+   jobpilot-api POST /api/campaigns \
+     --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<searchId>","config":{"resumeId":"<resumeId>","minScore":<minScore>,"board":"<board>"}}'
+   ```
 
-```bash
-jobpilot-api POST /api/campaigns \
-  --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<SEARCH_ID>","config":{"resumeId":"<resumeId>","minScore":<n>,"board":"<board>"}}'
-```
+2. **Search.** Delegate one `job-searcher` run with `{runId:$RUN_ID, campaignId:CID, query, board, resumeId, minScore, newJobsTarget, maxPages}`. Without subagent support, or if the delegation fails, follow `$JOBPILOT_SKILLS_ROOT/../agents/job-searcher.md` inline.
 
-Read `.campaignId` from the response as `CID`.
+3. **Report** its counts (a `404` means the search was deleted meanwhile: say so in the summary):
 
-## 2. Search
+   ```bash
+   jobpilot-api POST /api/pilot/searches/$SEARCH_ID/run-result \
+     --data '{"jobsSeen":<jobsSeen>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
+   ```
 
-Delegate to the `job-searcher` subagent with:
+An `error` with no new jobs is `outcome:"failed"`; otherwise `done`, naming any `error` in the summary.
 
-```json
-{ "runId": "<RUN_ID>", "campaignId": "<CID>", "query": "<query>", "board": "<board>", "resumeId": "<resumeId>",
-  "minScore": <minScore>, "newJobsTarget": <newJobsTarget>, "maxPages": <maxPages> }
-```
-
-It searches, dedupes, scores and saves the rows, heartbeats the run, and returns `{jobsSeen, newJobs, reachedEnd, pagesRead, best, skipped, error}`. No subagent support, or the delegation fails: read `$JOBPILOT_SKILLS_ROOT/../agents/job-searcher.md` and follow it inline. Same behavior, just no context isolation.
-
-## 3. Report
-
-Report the search run with the agent's counts - a `404` means the search was deleted mid-run, so say so in the summary and move on:
-
-```bash
-jobpilot-api POST /api/pilot/searches/$SEARCH_ID/run-result \
-  --data '{"jobsSeen":<jobsSeen>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
-```
-
-Journal the pages read, new jobs and best scores ("Discovered 8 jobs on linkedin.com for 'senior typescript remote' over 3 pages; best Acme 88, Globex 81."). A non-null `error` with no new jobs is `outcome:"failed"`, the error in the summary; otherwise `done`, with the error named in the summary.
+Summary: "Discovered 8 jobs on linkedin.com for 'senior typescript remote' over 3 pages; best Acme 88, Globex 81."

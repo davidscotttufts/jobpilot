@@ -1,14 +1,16 @@
 # `promotion.post`
 
-Payload `{promotionId, platform, target, title, body}` - a post the user approved in the dashboard. Post the content **verbatim** (the user approved this exact text; never rewrite it):
+Payload `{promotionId, platform, target, title, body}`: a post the user approved. Post it verbatim; never rewrite it.
 
-1. Log in to the platform per `../../_shared/auth.md` (credentials resolver; CAPTCHA via the `solve-captcha` skill). No credentials → result `skipped` with note.
-2. Navigate to `target`. For `hn-whoishiring`, if `target` is stale or empty, find the current month's "Ask HN: Who wants to be hired?" thread first.
-3. Submit `title`/`body` per the platform's form, then capture the permalink of the new post.
+1. Log in per `../../_shared/auth.md` (a CAPTCHA goes to the `solve-captcha` skill).
+2. Go to `target`. For `hn-whoishiring` with a stale or empty `target`, find this month's "Ask HN: Who wants to be hired?" thread.
+3. Submit `title`/`body` and capture the new post's permalink.
 
 ```bash
 jobpilot-api POST /api/pilot/promotions/$PROMO_ID/result \
   --data '{"outcome":"posted","postedUrl":"<permalink>"}'
 ```
 
-`{outcome:"failed"|"skipped", note}` when the thread is locked, rules forbid the post, or login fails. Journal with the URL: "Posted to hn-whoishiring - <url>."
+No credentials, a failed login, a locked thread or rules that forbid the post → `{"outcome":"skipped"|"failed","note":"<why>"}`.
+
+Summary: "Posted to hn-whoishiring - <url>."

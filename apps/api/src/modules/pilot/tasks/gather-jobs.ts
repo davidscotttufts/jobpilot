@@ -3,7 +3,7 @@ import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
-import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./runs";
+import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
 
 const WARM_INTRO_MIN_SCORE = 80;
 /** "I just applied" outreach still lands this long after the apply. */

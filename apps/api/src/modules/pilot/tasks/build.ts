@@ -44,7 +44,7 @@ const PER_TASK_LIST = {
   warmIntro: 1,
   followup: 2,
   promotionDraft: 1,
-  maintenance: 1,
+  campaignReview: 1,
 } as const;
 const ACTIVE_SLEEP_SECONDS = 15;
 /** Floors a tiny `checkIntervalMinutes` so the loop can't spin. */
@@ -169,9 +169,9 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   if (isPipelineQuiet(input)) {
     if (input.setup) tasks.push(setupTask(input.setup));
     tasks.push(
-      ...input.campaignTunes.slice(0, PER_TASK_LIST.maintenance).map(tuneTask),
-      ...input.rescanSkipped.slice(0, PER_TASK_LIST.maintenance).map(rescanSkippedTask),
-      ...input.retryFailed.slice(0, PER_TASK_LIST.maintenance).map(retryFailedTask),
+      ...input.campaignTunes.slice(0, PER_TASK_LIST.campaignReview).map(tuneTask),
+      ...input.rescanSkipped.slice(0, PER_TASK_LIST.campaignReview).map(rescanSkippedTask),
+      ...input.retryFailed.slice(0, PER_TASK_LIST.campaignReview).map(retryFailedTask),
     );
   }
 
@@ -213,13 +213,13 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   };
 }
 
-/** Named so clients render why the task list is empty instead of re-deriving the gating rules. */
+/** Named so clients needn't re-derive the gating rules. */
 function emptyReason(
-  itemCount: number,
+  taskCount: number,
   capReached: boolean,
   awaitingSetup: boolean,
 ): TaskListContent["emptyReason"] {
-  if (itemCount > 0) return null;
+  if (taskCount > 0) return null;
   if (capReached) return "capReached";
   if (awaitingSetup) return "awaitingSetup";
   return "clear";

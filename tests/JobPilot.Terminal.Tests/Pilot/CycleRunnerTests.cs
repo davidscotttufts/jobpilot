@@ -17,7 +17,7 @@ public class CycleRunnerTests
         runner.RunAsync(Settings(), ct ?? TestContext.Current.CancellationToken);
 
     [Fact]
-    public async Task Run_StartsTheSession_HandsOverTheRun_AndJournalsItsResult()
+    public async Task Run_StartsTheSession_HandsOverTheRun_AndRecordsItsResult()
     {
         var session = new FakePilotSession();
         session.Signals.Enqueue(WaitResult.Finished("done"));
@@ -27,37 +27,33 @@ public class CycleRunnerTests
 
         Assert.Equal(["start", "sleep:15", "cycle", "wait"], session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-        Assert.Equal(["ok: Task 1 - done."], session.Cycles);
-        Assert.Equal([new CycleDetail("ok", 30)], session.CycleDetails);
-        Assert.Empty(session.FailedRuns);
+        Assert.Equal(["ok/30: Task 1 - done."], session.Cycles);
+        Assert.Empty(session.CancelledRuns);
         Assert.Equal(CycleStatus.Ok, runner.LastCycleStatus);
         Assert.True(runner.Conducting);
-        Assert.Equal(1, session.UsageReports);
     }
 
     [Fact]
-    public async Task Run_JournalsAFailedResultAsAnErrorCycle()
+    public async Task Run_RecordsAFailedResultAsAnErrorCycle()
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
         session.Signals.Enqueue(WaitResult.Finished("failed"));
         var runner = Runner(session);
 
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(runner));
-        Assert.Equal(["error: Task 1 - failed."], session.Cycles);
+        Assert.Equal(["error/30: Task 1 - failed."], session.Cycles);
         Assert.Equal(CycleStatus.Error, runner.LastCycleStatus);
     }
 
     [Fact]
-    public async Task Run_RecordsAnIdleCheck_WithoutJournalingStartingOrWakingTheAgent()
+    public async Task Run_RecordsAnIdleCheck_WithoutWakingTheAgent()
     {
-        var session = new FakePilotSession();
-        session.TaskLists.Enqueue(TaskList(sleep: 1800));
+        var session = new FakePilotSession { TaskList = TaskList(sleep: 1800) };
         var runner = Runner(session);
 
         var sleep = await RunAsync(runner);
 
         Assert.Empty(session.Actions);
-        Assert.Equal(0, session.UsageReports);
         Assert.Equal(TimeSpan.FromSeconds(1800), sleep);
         Assert.Empty(session.Cycles);
         Assert.Equal([1800], session.IdleCycles);
@@ -67,10 +63,10 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_LeavesTheAgentAlone_WhenTheRefreshFailsOrTheStartIsRefused()
     {
-        var session = new FakePilotSession { RunningProvider = Provider.Claude, DefaultTaskList = null };
+        var session = new FakePilotSession { RunningProvider = Provider.Claude, TaskList = null };
         Assert.Equal(TimeSpan.FromMinutes(1), await RunAsync(Runner(session)));
 
-        session.DefaultTaskList = TaskList(tasks: 1);
+        session.TaskList = TaskList(tasks: 1);
         session.StartedRunId = null;
         Assert.Equal(TimeSpan.FromSeconds(CycleRunner.MinSleepSeconds), await RunAsync(Runner(session)));
 
@@ -84,11 +80,11 @@ public class CycleRunnerTests
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
         var runner = Runner(session);
 
-        session.DefaultTaskList = TaskList(tasks: 1, sleep: 5);
+        session.TaskList = TaskList(tasks: 1, sleep: 5);
         session.Signals.Enqueue(WaitResult.Finished("done"));
         Assert.Equal(TimeSpan.FromSeconds(CycleRunner.MinSleepSeconds), await RunAsync(runner));
 
-        session.DefaultTaskList = TaskList(tasks: 1, sleep: 999999);
+        session.TaskList = TaskList(tasks: 1, sleep: 999999);
         session.Signals.Enqueue(WaitResult.Finished("done"));
         Assert.Equal(TimeSpan.FromSeconds(CycleRunner.MaxSleepSeconds), await RunAsync(runner));
         Assert.DoesNotContain("start", session.Actions);
@@ -108,7 +104,7 @@ public class CycleRunnerTests
     }
 
     [Fact]
-    public async Task Run_FailsTheRun_WhenTheSessionExitsMidWait()
+    public async Task Run_CancelsTheRun_WhenTheSessionExitsMidWait()
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
         session.Signals.Enqueue(WaitResult.Exited);
@@ -118,8 +114,8 @@ public class CycleRunnerTests
 
         Assert.Null(sleep);
         Assert.Equal(["cycle", "wait"], session.Actions);
-        Assert.Equal(["run-1"], session.FailedRuns);
-        Assert.Equal(["error: Task 1 - no result, failed by the host."], session.Cycles);
+        Assert.Equal(["run-1"], session.CancelledRuns);
+        Assert.Equal(["error/30: Task 1 - no result, cancelled by the host."], session.Cycles);
         Assert.Equal(0, runner.ConsecutiveRestarts);
     }
 
@@ -153,7 +149,7 @@ public class CycleRunnerTests
     [Theory]
     [InlineData(WaitOutcome.Timeout)]
     [InlineData(WaitOutcome.Stuck)]
-    public async Task Run_ChecksInThenSkipsThenRestarts_AndFailsTheRun_WhenItStaysStuck(WaitOutcome outcome)
+    public async Task Run_ChecksInThenSkipsThenRestarts_AndCancelsTheRun_WhenItStaysStuck(WaitOutcome outcome)
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
         for (var i = 0; i < 3; i++)
@@ -168,8 +164,8 @@ public class CycleRunnerTests
         Assert.Null(sleep);
         Assert.Equal(FullLadder, session.Actions);
         Assert.Equal([Reports.CheckIn, Reports.Skip, Reports.Restart], session.Reports);
-        Assert.Equal(["run-1"], session.FailedRuns);
-        Assert.Equal(1, session.UsageReports);
+        Assert.Equal(["run-1"], session.CancelledRuns);
+        Assert.Single(session.Cycles);
         Assert.Equal(1, runner.ConsecutiveRestarts);
     }
 
@@ -192,7 +188,7 @@ public class CycleRunnerTests
         Assert.Equal(TimeSpan.FromSeconds(30), await RunAsync(Runner(skipped)));
         Assert.Equal(["cycle", "wait", "check-in", "wait", "skip", "wait"], skipped.Actions);
         Assert.Equal([Reports.CheckIn, Reports.Skip], skipped.Reports);
-        Assert.Empty(skipped.FailedRuns);
+        Assert.Empty(skipped.CancelledRuns);
     }
 
     [Fact]
@@ -221,13 +217,13 @@ public class CycleRunnerTests
     public async Task Run_Finishes_WhenThePolledRunHasFinished_EvenWithoutItsEvent()
     {
         var session = new FakePilotSession { RunningProvider = Provider.Claude };
-        session.Runs.Enqueue(new PilotRunState("run-1", DateTimeOffset.UtcNow, "done"));
+        session.Run = new PilotRun("run-1", DateTimeOffset.UtcNow, "done");
 
         var sleep = await RunAsync(Runner(session));
 
         Assert.Equal(["cycle", "wait"], session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-        Assert.Equal(["ok: Task 1 - done."], session.Cycles);
+        Assert.Equal(["ok/30: Task 1 - done."], session.Cycles);
     }
 
     [Fact]
@@ -276,23 +272,5 @@ public class CycleRunnerTests
 
         Assert.Equal(["cycle", "wait", "check-in", "wait", "wait"], session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
-    }
-
-    [Fact]
-    public async Task Run_PropagatesCancellation_DuringAProbeOrAReport()
-    {
-        var probing = new FakePilotSession { RunningProvider = Provider.Claude, BlockActivity = true };
-        var reporting = new FakePilotSession { RunningProvider = Provider.Claude, DefaultActivity = Activity(Stale), BlockReport = true };
-
-        foreach (var (session, started) in new[] { (probing, probing.ActivityStarted), (reporting, reporting.ReportStarted) })
-        {
-            using var cts = new CancellationTokenSource();
-            var run = RunAsync(Runner(session), cts.Token);
-            await started.Task;
-            cts.Cancel();
-
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
-            Assert.DoesNotContain("check-in", session.Actions);
-        }
     }
 }

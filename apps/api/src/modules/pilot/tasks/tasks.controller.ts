@@ -1,6 +1,5 @@
 import {
   currentTaskListSchema,
-  finishPilotRunSchema,
   pilotRunResultSchema,
   pilotRunSchema,
   reportPilotUsageSchema,
@@ -27,8 +26,7 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     response: currentTaskListSchema,
     detail: {
       summary: "Get the current task list",
-      description:
-        "Returns the current unexpired task list snapshot without running expiry, promotion, digest, or any other mutation.",
+      description: "Returns the unexpired task list snapshot, or null. Read-only.",
     },
   })
   .post("/tasks/refresh", ({ user }) => taskList.refresh(user.id), {
@@ -36,8 +34,7 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     response: taskListSchema,
     detail: {
       summary: "Refresh the task list",
-      description:
-        "Runs lifecycle maintenance, builds a typed task list, persists a new expiring version, and returns that snapshot.",
+      description: "Runs maintenance, then builds and stores a new expiring task list version.",
     },
   })
   .post("/runs", ({ user, body }) => runs.start(user.id, body.taskListVersion, body.taskId), {
@@ -47,7 +44,7 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     detail: {
       summary: "Start a task run",
       description:
-        "Atomically starts a task from the supplied task list version and creates its 15-minute run; stale versions and races return 409.",
+        "Starts a task from the given task list version as a 15-minute run. A stale version or a race returns 409.",
     },
   })
   .get("/runs/:id", ({ user, params }) => runs.get(user.id, params.id), {
@@ -56,8 +53,7 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     response: pilotRunSchema,
     detail: {
       summary: "Get a run",
-      description:
-        "Returns one run with its task type and payload. The agent reads its task from here; the host polls it to see the run finish.",
+      description: "Returns one run with its task type and payload.",
     },
   })
   .post("/runs/:id/heartbeat", ({ user, params }) => runs.heartbeat(user.id, params.id), {
@@ -69,15 +65,14 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
       description: "Extends the run TTL by 15 minutes and records the heartbeat.",
     },
   })
-  .post("/runs/:id/finish", ({ user, params, body }) => runs.finish(user.id, params.id, body), {
+  .post("/runs/:id/cancel", ({ user, params }) => runs.cancel(user.id, params.id), {
     params: idParam,
-    body: finishPilotRunSchema,
     beforeHandle: limitRun,
     response: pilotRunSchema,
     detail: {
-      summary: "Finish a run",
+      summary: "Cancel a run",
       description:
-        "Closes a run (done/failed/abandoned); abandoned reverts the job to approved. Bookkeeping only - terminal job results go through the campaign result route.",
+        "Closes an open run as cancelled and returns an applying job to approved. A finished run is returned unchanged.",
     },
   })
   .post("/runs/:id/result", ({ user, params, body }) => runs.postResult(user.id, params.id, body), {
@@ -88,7 +83,7 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     detail: {
       summary: "Post a run's result",
       description:
-        "The agent's last step: journals the action line, finishes the run with its outcome, and publishes run.finished. A repeat post for a finished run returns it unchanged, so a retry after a lost response is safe.",
+        "The agent's last step: journals the action line and finishes the run. A finished run is returned unchanged, so retries are safe.",
     },
   })
   .post("/runs/:id/usage", ({ user, params, body }) => runs.reportUsage(user.id, params.id, body), {
@@ -98,7 +93,6 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
     response: pilotRunSchema,
     detail: {
       summary: "Report a run's token usage",
-      description:
-        "The host posts the token usage it measured from the provider CLI's telemetry while the run was handed to the agent.",
+      description: "Stores the token usage the host measured for the run.",
     },
   });

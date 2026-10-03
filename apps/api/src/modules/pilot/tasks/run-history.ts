@@ -11,14 +11,14 @@ import type {
 /** Row cap for the unbounded gather and expiry scans. */
 export const GATHER_CAP = 200;
 
-/** A crash (expired/abandoned run) was not a decision, so it retries sooner than any cooldown. */
+/** A crash (expired/cancelled run) was not a decision, so it retries sooner than any cooldown. */
 const CRASH_RETRY_MS = 2 * HOUR_MS;
 
-/** Outcomes that mean the agent never finished, as opposed to deciding. */
-export const CRASH_OUTCOMES = ["expired", "abandoned"] satisfies PilotRunOutcome[];
+/** The agent never finished, as opposed to deciding. */
+export const CRASH_OUTCOMES: PilotRunOutcome[] = ["expired", "cancelled"];
 
 export function isCrash(outcome: PilotRunOutcome | null): boolean {
-  return outcome === "expired" || outcome === "abandoned";
+  return outcome !== null && CRASH_OUTCOMES.includes(outcome);
 }
 
 type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens";
@@ -26,7 +26,6 @@ type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWr
 /** Nullable so a Prisma `_sum` fits as is. */
 type TokenCounts = Record<TokenColumn, number | null>;
 
-/** Every token a run consumed, cached or not. */
 export function totalTokens(counts: TokenCounts): number {
   return (
     (counts.inputTokens ?? 0) +
@@ -97,7 +96,7 @@ export async function withoutRecentRuns<T>(
   return rows.filter((row) => !ranRecently(latest.get(subjectOf(row)), now, cooldownMs));
 }
 
-/** A job's run subject. Every producer and damper read must agree on it byte for byte. */
+/** Every producer and damper read must agree on a job's subject byte for byte. */
 export function jobSubjectId(job: JobRef): string {
   return `${job.campaignId}:${job.key}`;
 }

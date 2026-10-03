@@ -20,7 +20,7 @@ export const pilotCostSchema = z.object({
       medianTokens: z.number().int(),
       totalTokens: z.number().int(),
       failed: z.number().int(),
-      abandoned: z.number().int(),
+      unfinished: z.number().int(),
     }),
   ),
 });

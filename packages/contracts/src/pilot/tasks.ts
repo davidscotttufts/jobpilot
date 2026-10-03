@@ -4,29 +4,6 @@ import { networkingModeSchema } from "../networking";
 // An "off" channel is never emitted, so a worker only ever sees a resolved channel and mode.
 const outgoingMode = networkingModeSchema.shape;
 
-const TASK_TYPES = [
-  "question.answered",
-  "job.apply",
-  "search.discover",
-  "campaign.scorePending",
-  "campaign.reviewPaused",
-  "inbox.review",
-  "networking.send",
-  "networking.followup",
-  "networking.warmIntro",
-  "promotion.draft",
-  "promotion.post",
-  "interview.reply",
-  "interview.prep",
-  "queue.score",
-  "board.diagnose",
-  "campaign.tune",
-  "job.rescanSkipped",
-  "job.retryFailed",
-  "search.setup",
-  "upwork.syncInbox",
-] as const;
-
 const TASK_SUBJECT_TYPES = [
   "job",
   "campaign",
@@ -50,7 +27,7 @@ const warmContactSchema = z.object({
   email: nullableString,
 });
 
-const taskVariant = <K extends (typeof TASK_TYPES)[number], P extends z.ZodType>(
+const taskVariant = <K extends string, P extends z.ZodType>(
   taskType: K,
   subjectType: (typeof TASK_SUBJECT_TYPES)[number],
   payload: P,

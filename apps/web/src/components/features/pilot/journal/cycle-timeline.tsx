@@ -88,7 +88,6 @@ function CycleCard(props: CycleCardProps): ReactElement {
     entries.length < 2 ? "" : formatSpanBetween(chronological[0].createdAt, entries[0].createdAt);
   const cycleEntry = entries.find((entry) => entry.kind === "cycle");
   const detail = cycleEntry && pilotCycleDetailSchema.safeParse(cycleEntry.detail).data;
-  // Newest first, so the first copy found is the one written after the usage report.
   const run = entries.find((entry) => entry.run)?.run ?? null;
 
   return (

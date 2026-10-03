@@ -5,7 +5,7 @@ import { PROMOTABLE_SOURCES, publishCampaignStatus } from "@/modules/campaign/ca
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { PilotJournalService } from "../journal.service";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
-import { GATHER_CAP, parseJobRef, parseJobSubject, revertApplyingJobs } from "./runs";
+import { GATHER_CAP, parseJobRef, parseJobSubject, revertApplyingJobs } from "./run-history";
 
 /** An `applying` job with no open run and no update for this long lost its driver. */
 const STALE_APPLYING_MS = 30 * 60 * 1000;
@@ -15,7 +15,7 @@ const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
 const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 const MAX_OPEN_APPLY_RUNS = 20;
 
-/** Finishes expired runs, expires questions, and returns what they held to a workable state. */
+/** Expires runs and questions, and returns what they held to a workable state. */
 export async function runExpiry(prisma: PrismaClient, userId: string, now: Date): Promise<void> {
   await prisma.$transaction(async (tx) => {
     const expiredRuns = await tx.pilotRun.findMany({
@@ -89,10 +89,7 @@ export async function runExpiry(prisma: PrismaClient, userId: string, now: Date)
   });
 }
 
-/**
- * Settles scored pending jobs against their campaign's `minScore`, so they reach the task list (or
- * skip) now instead of waiting for the next discovery run to re-fire.
- */
+/** Settles scored pending jobs now instead of waiting for the next discovery run. */
 export async function promoteScoredPendingJobs(
   prisma: PrismaClient,
   campaignJobs: CampaignJobService,
@@ -126,10 +123,7 @@ export async function promoteScoredPendingJobs(
   }
 }
 
-/**
- * Completes in-progress campaigns with no active work left. A bare status flip needs no agent
- * cycle, and as the lowest-priority task it used to be starved forever.
- */
+/** Server-side because a bare status flip needs no agent, and as a task it starved forever. */
 export async function finalizeIdleCampaigns(
   prisma: PrismaClient,
   journal: PilotJournalService,

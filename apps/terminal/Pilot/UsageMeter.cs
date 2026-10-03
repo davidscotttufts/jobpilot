@@ -46,14 +46,8 @@ public sealed class UsageMeter
     {
         foreach (var record in LogRecords(export))
         {
-            // Codex exports one record per streamed SSE event; skip them before building the lookup.
-            var name = EventName(record);
-            if (name is not ("api_request" or "codex.sse_event"))
-            {
-                continue;
-            }
-
             var attributes = Attributes(record);
+            var name = Text(attributes, "event.name");
             if (name == "api_request")
             {
                 Add(
@@ -106,20 +100,6 @@ public sealed class UsageMeter
             ? array.EnumerateArray()
             : [];
 
-    private static string? EventName(JsonElement record)
-    {
-        foreach (var attribute in Array(record, "attributes"))
-        {
-            if (attribute.TryGetProperty("key", out var key) && key.ValueEquals("event.name")
-                && attribute.TryGetProperty("value", out var value) && value.TryGetProperty("stringValue", out var text))
-            {
-                return text.GetString();
-            }
-        }
-
-        return null;
-    }
-
     private static Dictionary<string, JsonElement> Attributes(JsonElement record)
     {
         Dictionary<string, JsonElement> attributes = [];
@@ -148,13 +128,8 @@ public sealed class UsageMeter
         foreach (var property in value.EnumerateObject())
         {
             var raw = property.Value;
-            if (raw.ValueKind == JsonValueKind.Number && raw.TryGetInt64(out var number))
-            {
-                return number;
-            }
-
-            if (raw.ValueKind == JsonValueKind.String
-                && long.TryParse(raw.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out number))
+            var text = raw.ValueKind == JsonValueKind.String ? raw.GetString() : raw.GetRawText();
+            if (long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
             {
                 return number;
             }

@@ -115,6 +115,44 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
   return { service: makeRunService(db), creates };
 }
 
+const runRow = (over: Record<string, unknown> = {}) => {
+  const { taskType, subjectType, subjectId, payload } = applyTask;
+  return {
+    ...{ id: RUN_ID, userId: USER_ID, taskType, subjectType, subjectId, payload },
+    ...{ startedAt: now, heartbeatAt: null, expiresAt: now, finishedAt: null, outcome: null },
+    ...over,
+  };
+};
+
+/** A fake for the close path: one owned row, updated in place. */
+function closeDb(row: ReturnType<typeof runRow>) {
+  const jobReverts: unknown[] = [];
+  const db = {
+    pilotRun: {
+      findFirst: async () => row,
+      updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [{ ...row, ...a.data }],
+    },
+    job: {
+      updateMany: async (a: unknown) => {
+        jobReverts.push(a);
+        return { count: 1 };
+      },
+    },
+    $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
+  };
+  return { db, jobReverts };
+}
+
+/** Runs `act` and returns its result with the pilot event it published. */
+async function withEvent<T>(userId: string, act: () => Promise<T>): Promise<[T, unknown]> {
+  const stream = subscribe(pilotChannel, { userId });
+  await stream.next();
+  const result = await act();
+  const frame = (await stream.next()).value as unknown as { data: unknown };
+  await stream.return();
+  return [result, frame.data];
+}
+
 describe("RunService.start", () => {
   it("starts a task off the supplied snapshot and stores its payload", async () => {
     const { service, creates } = runDb({});
@@ -124,16 +162,14 @@ describe("RunService.start", () => {
   });
 
   it("publishes run.started", async () => {
-    const stream = subscribe(pilotChannel, { userId: USER_ID });
-    await stream.next();
-    await runDb({}).service.start(USER_ID, VERSION, pausedTask.id);
-    const frame = (await stream.next()).value as unknown as { data: unknown };
-    expect(frame.data).toEqual({
+    const [, event] = await withEvent(USER_ID, () =>
+      runDb({}).service.start(USER_ID, VERSION, pausedTask.id),
+    );
+    expect(event).toEqual({
       type: "run.started",
       runId: RUN_ID,
       taskType: "campaign.reviewPaused",
     });
-    await stream.return();
   });
 
   it("refuses a stale snapshot, a held subject, or a row that changed since the build", async () => {
@@ -159,18 +195,7 @@ describe("RunService.heartbeat", () => {
         findFirst: async () => ({ startedAt, finishedAt: null }),
         updateManyAndReturn: async (a: { data: { expiresAt: Date } }) => {
           expiresAt = a.data.expiresAt;
-          const { taskType, subjectType, subjectId, payload } = applyTask;
-          const run = { id: RUN_ID, userId: USER_ID, taskType, subjectType, subjectId, payload };
-          return [
-            {
-              ...run,
-              startedAt,
-              heartbeatAt: new Date(),
-              expiresAt,
-              finishedAt: null,
-              outcome: null,
-            },
-          ];
+          return [runRow({ startedAt, expiresAt })];
         },
       },
     };
@@ -192,74 +217,51 @@ describe("RunService.heartbeat", () => {
   });
 });
 
-describe("RunService.reportUsage", () => {
-  it("sets the measured usage on the run", async () => {
-    const usage = {
-      model: "claude-opus-5-5",
-      inputTokens: 1200,
-      outputTokens: 300,
-      cacheReadTokens: 40_000,
-      cacheWriteTokens: 2000,
-    };
-    const { taskType, subjectType, subjectId, payload } = applyTask;
-    const row = {
-      ...{ id: RUN_ID, userId: USER_ID, taskType, subjectType, subjectId, payload },
-      ...{ startedAt: now, heartbeatAt: null, expiresAt: now, finishedAt: null, outcome: null },
-    };
-    const updates: unknown[] = [];
-    const db = {
-      pilotRun: {
-        updateManyAndReturn: async (args: { data: typeof usage }) => {
-          updates.push(args);
-          return [{ ...row, ...args.data }];
-        },
-      },
-    };
+describe("RunService.cancel", () => {
+  it("closes an open apply run, returns its job to approved, and publishes", async () => {
+    const userId = crypto.randomUUID();
+    const { db, jobReverts } = closeDb(runRow({ userId }));
+    const [run, event] = await withEvent(userId, () => makeRunService(db).cancel(userId, RUN_ID));
 
-    await makeRunService(db).reportUsage(USER_ID, RUN_ID, usage);
+    expect(run.outcome).toBe("cancelled");
+    expect(jobReverts).toEqual([
+      expect.objectContaining({
+        where: expect.objectContaining({
+          status: "applying",
+          OR: [{ campaignId: "c1", key: "j1" }],
+        }),
+        data: { status: "approved" },
+      }),
+    ]);
+    expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "cancelled" });
+  });
 
-    expect(updates).toEqual([{ where: { id: RUN_ID, userId: USER_ID }, data: usage }]);
+  it("returns a finished run unchanged", async () => {
+    const { db, jobReverts } = closeDb(runRow({ finishedAt: now, outcome: "done" }));
+    const run = await makeRunService(db).cancel(USER_ID, RUN_ID);
+    expect(run.outcome).toBe("done");
+    expect(jobReverts).toHaveLength(0);
   });
 });
 
 describe("RunService.postResult", () => {
-  const result = {
-    outcome: "done" as const,
-    summary: "Applied to Engineer at Acme",
-  };
+  const result = { outcome: "done" as const, summary: "Applied to Engineer at Acme" };
 
   const post = async (userId: string, finishedAt: Date | null) => {
-    const { taskType, subjectType, subjectId, payload } = applyTask;
-    const fields = { id: RUN_ID, userId, taskType, subjectType, subjectId, payload };
-    const row = {
-      ...fields,
-      startedAt: now,
-      heartbeatAt: null,
-      expiresAt: now,
-      finishedAt,
-      outcome: null,
-    };
-    const db = {
-      pilotRun: {
-        findFirst: async () => row,
-        updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [
-          { ...row, ...a.data },
-        ],
-      },
-      $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
-    };
+    const { db, jobReverts } = closeDb(runRow({ userId, finishedAt }));
     const { journal, appended } = fakeJournal();
     const run = await makeRunService(db, journal).postResult(userId, RUN_ID, result);
-    return { run, appended };
+    return { run, appended, jobReverts };
   };
 
   it("journals the action under the run id, finishes the run, and publishes", async () => {
     const userId = crypto.randomUUID();
-    const stream = subscribe(pilotChannel, { userId });
-    await stream.next();
-    const { run, appended } = await post(userId, null);
+    const [{ run, appended, jobReverts }, event] = await withEvent(userId, () =>
+      post(userId, null),
+    );
 
     expect(run.outcome).toBe("done");
+    expect(jobReverts).toHaveLength(0);
     expect(appended).toEqual([
       {
         cycleId: RUN_ID,
@@ -268,9 +270,7 @@ describe("RunService.postResult", () => {
         ],
       },
     ]);
-    const frame = (await stream.next()).value as unknown as { data: unknown };
-    expect(frame.data).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });
-    await stream.return();
+    expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });
   });
 
   it("returns a finished run unchanged and journals nothing", async () => {

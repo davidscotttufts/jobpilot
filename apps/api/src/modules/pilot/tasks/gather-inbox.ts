@@ -2,7 +2,7 @@ import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { CRASH_OUTCOMES, GATHER_CAP, latestRun, ranRecently } from "./runs";
+import { CRASH_OUTCOMES, GATHER_CAP, latestRun, ranRecently } from "./run-history";
 
 const INBOX_BATCH = 10;
 const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;

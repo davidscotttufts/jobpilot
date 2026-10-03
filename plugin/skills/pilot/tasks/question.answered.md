@@ -1,8 +1,10 @@
 # `question.answered`
 
-The task payload is enriched: `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Route by `subjectType`:
+Payload `{questionId, questionKind, subjectType, subjectId, prompt, answer}`. Route by `subjectType`:
 
-- **`job`** → delegate `job-applier` per `./job.apply.md` with `answer` included in its input as `answers` (pre-provided user answers the worker reads instead of asking again); record the result exactly as that file does.
-- **`email`** → the answer to an `interview.reply` approval. `"Send"` → send the drafted reply (recovered from the question `prompt`) via the email module (`POST /api/email/send {to,subject,body}`, adding `threadId` when the payload carries one, else send to `from`); free-text answer → treat it as availability/corrections, adjust the draft, then send; `"Skip"` → journal the skip. Journal the sent reply.
-- **`networking`** → `subjectId` = a draft networking messageId (filed by `networking.followup`/`networking.warmIntro`). Recover the draft and its campaign from paginated campaign `.items` and `GET /api/campaigns/<id>/networking?page=1&limit=100` `.items`. `"Send"` → send and record exactly as `./networking.send.md`; `"Skip"` → record result `skipped`.
-- **`campaign`** → a `campaign.reviewPaused` answer; `subjectId` = the campaignId. `"Resume"` → `POST /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`; `"Complete campaign"` → same route with `completed`; `"Keep paused"` → journal only; free text → interpret as one of the three. Journal the outcome.
+- **`job`** (`subjectId` = `<campaignId>:<jobKey>`) → apply as `./job.apply.md` does, adding `answers:<answer>` to the `job-applier` input so it never asks again.
+- **`email`** (an `interview.reply` approval) → `"Send"`: send the draft from `prompt` with `POST /api/email/send {to,subject,body,threadId}`, replying to the `from` and `threadId` of `GET /api/email/messages/<subjectId>`. Free text: treat it as availability or corrections, revise the draft, then send. `"Skip"`: send nothing.
+- **`networking`** (`subjectId` = a draft message id) → find the draft by `id` in `GET /api/networking/messages --query status=draft` `.items` (it carries `campaignId`). `"Send"`: send and record as `./networking.send.md` does. `"Skip"`: record `/result` `{"outcome":"skipped"}`.
+- **`campaign`** (a `campaign.reviewPaused` answer, `subjectId` = campaign id) → `"Resume"`: `POST /api/campaigns/$SID/status {"status":"in_progress","actor":"pilot"}`. `"Complete campaign"`: the same with `"completed"`. `"Keep paused"`: nothing. Free text: read it as one of the three.
+
+Summary: what you did with the answer ("Sent the Acme interview reply - Tuesday 10am.").

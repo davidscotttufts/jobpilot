@@ -10,38 +10,26 @@ internal sealed class FakePilotSession : IPilotSession
     private readonly List<string> actions = [];
     private readonly List<string> reports = [];
     private readonly List<string> cycles = [];
-    private readonly List<string> failedRuns = [];
+    private readonly List<string> cancelledRuns = [];
 
     public List<string> Actions => Snapshot(actions);
 
     public List<string> Reports => Snapshot(reports);
 
-    public int UsageReports { get; private set; }
-
-    /// <summary>The cycle entries the host journaled, as "status: summary".</summary>
+    /// <summary>The recorded cycles, as "status/sleep: summary".</summary>
     public List<string> Cycles => Snapshot(cycles);
 
-    public List<string> FailedRuns => Snapshot(failedRuns);
+    public List<string> CancelledRuns => Snapshot(cancelledRuns);
 
-    /// <summary>The details of the journaled cycles; read after the run, when nothing else writes.</summary>
-    public List<CycleDetail> CycleDetails { get; } = [];
-
-    /// <summary>The sleep of each idle check recorded in place of a cycle entry.</summary>
     public List<int> IdleCycles { get; } = [];
 
-    /// <summary>The token total each usage report returns.</summary>
-
-    /// <summary>The id every run start returns; null makes the server refuse the start.</summary>
+    /// <summary>Null makes the server refuse the start.</summary>
     public string? StartedRunId { get; set; } = "run-1";
 
-    /// <summary>Results of successive run reads; an empty queue returns null, a failed read.</summary>
-    public Queue<PilotRunState?> Runs { get; } = new();
+    /// <summary>Null by default: a failed read, so the run never looks finished.</summary>
+    public PilotRun? Run { get; set; }
 
-    /// <summary>Results of successive refreshes; an empty queue returns <see cref="DefaultTaskList"/>.</summary>
-    public Queue<PilotTaskList?> TaskLists { get; } = new();
-
-    /// <summary>One task by default, so a cycle wakes the agent.</summary>
-    public PilotTaskList? DefaultTaskList { get; set; } = Builders.TaskList(tasks: 1, sleep: 30);
+    public PilotTaskList? TaskList { get; set; } = Builders.TaskList(tasks: 1, sleep: 30);
 
     /// <summary>Results of successive waits; an empty queue times out.</summary>
     public Queue<WaitResult> Signals { get; } = new();
@@ -51,14 +39,6 @@ internal sealed class FakePilotSession : IPilotSession
 
     /// <summary>Null by default: a failed probe, so no run looks active.</summary>
     public PilotActivity? DefaultActivity { get; set; }
-
-    public bool BlockActivity { get; set; }
-
-    public TaskCompletionSource ActivityStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-
-    public bool BlockReport { get; set; }
-
-    public TaskCompletionSource ReportStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <summary>Blocks delays over a minute until cancelled, like a real inter-cycle sleep.</summary>
     public bool BlockSleep { get; set; }
@@ -119,69 +99,46 @@ internal sealed class FakePilotSession : IPilotSession
         }
     }
 
-    public async Task<PilotActivity?> GetActivityAsync(CancellationToken ct)
+    public Task<PilotActivity?> GetActivityAsync(CancellationToken ct)
     {
-        ActivityStarted.TrySetResult();
-        if (BlockActivity)
-        {
-            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
-        }
-
         lock (sync)
         {
-            return Activities.Count > 0 ? Activities.Dequeue() : DefaultActivity;
+            return Task.FromResult(Activities.Count > 0 ? Activities.Dequeue() : DefaultActivity);
         }
     }
 
-    public async Task ReportAsync(string summary, CancellationToken ct)
+    public Task ReportAsync(string summary, CancellationToken ct)
     {
         lock (sync)
         {
             reports.Add(summary);
         }
 
-        ReportStarted.TrySetResult();
-        if (BlockReport)
-        {
-            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
-        }
+        return Task.CompletedTask;
     }
 
-    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct)
-    {
-        lock (sync)
-        {
-            return Task.FromResult(TaskLists.Count > 0 ? TaskLists.Dequeue() : DefaultTaskList);
-        }
-    }
+    public Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) => Task.FromResult(TaskList);
 
     public Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
         Task.FromResult(StartedRunId);
 
-    public Task<PilotRunState?> GetRunAsync(string runId, CancellationToken ct)
-    {
-        lock (sync)
-        {
-            return Task.FromResult(Runs.Count > 0 ? Runs.Dequeue() : null);
-        }
-    }
+    public Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct) => Task.FromResult(Run);
 
-    public Task FailRunAsync(string runId, CancellationToken ct)
+    public Task CancelRunAsync(string runId, CancellationToken ct)
     {
         lock (sync)
         {
-            failedRuns.Add(runId);
+            cancelledRuns.Add(runId);
         }
 
         return Task.CompletedTask;
     }
 
-    public Task JournalCycleAsync(string cycleId, string summary, CycleDetail detail, CancellationToken ct)
+    public Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct)
     {
         lock (sync)
         {
-            cycles.Add($"{detail.Status}: {summary}");
-            CycleDetails.Add(detail);
+            cycles.Add($"{detail.Status}/{detail.SleepSeconds}: {summary}");
         }
 
         return Task.CompletedTask;
@@ -192,16 +149,6 @@ internal sealed class FakePilotSession : IPilotSession
         lock (sync)
         {
             IdleCycles.Add(sleepSeconds);
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task ReportUsageAsync(string runId, CancellationToken ct)
-    {
-        lock (sync)
-        {
-            UsageReports++;
         }
 
         return Task.CompletedTask;

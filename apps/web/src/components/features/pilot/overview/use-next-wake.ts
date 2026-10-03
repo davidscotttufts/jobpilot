@@ -5,12 +5,11 @@ import { useEffect, useState } from "react";
 
 const TICK_MS = 30_000;
 
-/** The host's planned next check, re-rendering the caller so its countdown keeps moving. */
+/** The host's next check; re-renders the caller while it is pending so a countdown keeps moving. */
 export function useNextWake(state: PilotState): Date | null {
   const { nextWakeAt } = state;
   const wakeMs = nextWakeAt ? nextWakeAt.getTime() : null;
 
-  // Only a pending wake has a countdown to keep moving; callers render a static label after it.
   const [, setTick] = useState(0);
   useEffect(() => {
     if (wakeMs === null || wakeMs <= Date.now()) {

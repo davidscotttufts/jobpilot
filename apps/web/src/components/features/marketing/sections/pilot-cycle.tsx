@@ -5,8 +5,7 @@ import { accent, fontFamilies, line, radii } from "@/theme";
 // Plain visitor language, no internal Pilot vocabulary.
 const BRANCHES = ["finds roles", "scores them", "applies", "reaches out"];
 
-// A loop lights four stops (check, pick, one branch, journal), so a branch comes round every
-// fourth loop.
+// Each loop lights four stops, so one branch comes round every fourth loop.
 const BEAT_MS = 1500;
 const LOOP_MS = BEAT_MS * 4;
 const TOUR_MS = LOOP_MS * BRANCHES.length;
@@ -59,10 +58,7 @@ function Stop({ label, animation }: StopProps): ReactElement {
   );
 }
 
-/**
- * The Pilot loop as a small graph of plain-language stops; the glow walks one branch per
- * loop so it reads as motion without any real data or JS.
- */
+/** CSS-only: the glow walks one branch per loop, so it reads as motion without data or JS. */
 export function PilotCycle(): ReactElement {
   return (
     <Stack aria-hidden sx={graphSx}>

@@ -10,7 +10,7 @@ public enum WaitOutcome
     Stuck,
 }
 
-/// <summary><see cref="RunOutcome"/> is the run's server outcome, set only for <see cref="WaitOutcome.Finished"/>.</summary>
+/// <summary><see cref="RunOutcome"/> is set only for <see cref="WaitOutcome.Finished"/>.</summary>
 public readonly record struct WaitResult(WaitOutcome Outcome, string? RunOutcome = null)
 {
     public static readonly WaitResult Timeout = new(WaitOutcome.Timeout);
@@ -18,6 +18,9 @@ public readonly record struct WaitResult(WaitOutcome Outcome, string? RunOutcome
     public static readonly WaitResult Stuck = new(WaitOutcome.Stuck);
 
     public static WaitResult Finished(string runOutcome) => new(WaitOutcome.Finished, runOutcome);
+
+    /// <summary>The run has its result or lost its agent, so no directive can help.</summary>
+    public bool Ended => Outcome is WaitOutcome.Finished or WaitOutcome.SessionExited;
 }
 
 /// <summary>CheckIn asks the agent to post its result; Skip makes it post a failed one.</summary>
@@ -40,7 +43,6 @@ public interface IPilotSession
 
     Task SendDirectiveAsync(PilotSettings settings, Directive directive, CancellationToken ct);
 
-    /// <summary>Returns when the handed-over run finishes, the session exits, a stuck signal fires, or the timeout passes.</summary>
     Task<WaitResult> WaitForSignalAsync(TimeSpan timeout, CancellationToken ct);
 
     void Stop();
@@ -57,18 +59,15 @@ public interface IPilotSession
 
     Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct);
 
-    /// <summary>The new run's id, or null when the server refuses the start.</summary>
+    /// <summary>Null when the server refuses the start.</summary>
     Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct);
 
-    Task<PilotRunState?> GetRunAsync(string runId, CancellationToken ct);
+    Task<PilotRun?> GetRunAsync(string runId, CancellationToken ct);
 
-    Task FailRunAsync(string runId, CancellationToken ct);
+    Task CancelRunAsync(string runId, CancellationToken ct);
 
-    /// <param name="cycleId">The run id, so the cycle entry groups with the agent's.</param>
-    Task JournalCycleAsync(string cycleId, string summary, CycleDetail detail, CancellationToken ct);
+    /// <summary>Posts the run's measured token usage, then the cycle entry observers treat as the cycle's end.</summary>
+    Task RecordCycleAsync(string runId, string summary, CycleDetail detail, CancellationToken ct);
 
     Task RecordIdleCycleAsync(int sleepSeconds, CancellationToken ct);
-
-    /// <summary>Posts the token usage measured since the last <see cref="SendCycleAsync"/> to the run, if any was measured.</summary>
-    Task ReportUsageAsync(string runId, CancellationToken ct);
 }

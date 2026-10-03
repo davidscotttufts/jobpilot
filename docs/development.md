@@ -132,8 +132,9 @@ Claude.
   (`../_shared/<doc>.md`), so the same text serves both providers.
 - `agents/*.md`: worker subagents (`job-scorer`, `job-applier`,
   `job-searcher`, `networking-worker`) that campaign skills delegate
-  per-iteration work to, isolating heavy browser output. Each holds the shared
-  docs it reads on every run, and inherits the session's model. Claude
+  per-iteration work to, isolating heavy browser output. Each inlines the
+  rules it needs rather than reading shared docs, and inherits the session's
+  model. Claude
   auto-discovers them; the host writes Codex copies (see below). Runtimes
   without subagents run inline.
 - `.mcp.json`: Playwright MCP server.

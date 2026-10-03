@@ -75,13 +75,10 @@ export function RunMeta(props: RunMetaProps): ReactElement {
 
 interface JournalRowProps {
   entry: PilotJournalEntry;
-  /** Overrides the entry's own copy of its run, which may predate the usage report. */
-  run?: PilotJournalRun | null;
 }
 
 export function JournalRow(props: JournalRowProps): ReactElement {
   const { entry } = props;
-  const run = props.run ?? entry.run;
   const meta = KIND_META[entry.kind];
   const Icon = meta.icon;
   return (
@@ -96,7 +93,7 @@ export function JournalRow(props: JournalRowProps): ReactElement {
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
         {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
-        {run && <RunMeta run={run} />}
+        {entry.run && <RunMeta run={entry.run} />}
       </Box>
       <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap" }} />
     </Stack>

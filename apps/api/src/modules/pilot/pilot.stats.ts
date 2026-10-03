@@ -1,7 +1,7 @@
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { classifySkipReason, type SkipBucket } from "./skip-reasons";
-import { isCrash, totalTokens } from "./tasks/runs";
+import { isCrash, totalTokens } from "./tasks/run-history";
 
 /** Runs older than a week describe a version of the agent you are no longer running. */
 export const COST_WINDOW_MS = 7 * DAY_MS;
@@ -97,7 +97,7 @@ export async function costByTaskType(
         medianTokens: median(tokens),
         totalTokens: tokens.reduce((sum, count) => sum + count, 0),
         failed: runs.filter((run) => run.outcome === "failed").length,
-        abandoned: runs.filter((run) => isCrash(run.outcome)).length,
+        unfinished: runs.filter((run) => isCrash(run.outcome)).length,
       };
     })
     .sort((a, b) => b.totalTokens - a.totalTokens);
