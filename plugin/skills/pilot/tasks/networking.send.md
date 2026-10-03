@@ -1,6 +1,8 @@
 # `networking.send`
 
-Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, body}`. Email only. Send it as the `networking` skill's Phase 4 does (`POST /api/email/send {to,subject,body}`), then record:
+Payload `{campaignId, messageId, contactId, contactName, contactEmail, subject, body}`. Email only.
+Send it as the `networking` skill's Phase 4 does (`POST /api/email/send {to,subject,body}`), then
+record:
 
 ```bash
 jobpilot-api POST /api/campaigns/$CID/networking/$MSGID/result \

@@ -138,9 +138,9 @@ search, the removal is a question for the author.
 
 - **Fix now**: behavior stays the same and the PR's tests still prove it. This includes
   deleting a redundant or over-engineered test under the Tests rules.
-- **Ask the author**: anything that changes behavior, drops the only test for a branch,
-  changes the API or database shape, questions the design, or looks like a bug. Exception: fix an obvious one-line
-  bug and put it first in the summary.
+- **Ask the author**: anything that changes behavior, drops the only test for a branch, changes the
+  API or database shape, questions the design, or looks like a bug. Exception: fix an obvious
+  one-line bug and put it first in the summary.
 
 If the PR needs a different design, make no edits. Draft the reason as the comment and go to
 step 6.

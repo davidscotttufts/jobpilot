@@ -26,8 +26,9 @@ sends it with the `upwork-submit` skill.
      `source:"search"` create requires `config.resumeId` - default to the profile's
      `primaryResumeId`).
 4. Resolve the board: `jobpilot-api GET /api/job-boards` and find the row whose `domain` is
-   `upwork.com`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign` was given,
-   first command it to `failed` with `POST /api/campaigns/<id>/status {"status":"failed"}`.
+   `upwork.com`. No row → abort: "Upwork is not configured. Add it on /boards." If a `--campaign`
+   was given, first command it to `failed` with `POST /api/campaigns/<id>/status
+   {"status":"failed"}`.
 
 ## Phase 1: Parse Query
 
@@ -116,8 +117,8 @@ jobpilot-api POST /api/score-fit --data @"$JOBPILOT_TEMP/fit.json"
 ```
 
 Keep the response as `FIT` and its `.score` as `SCORE`. Use it directly when `FIT.verdict` is
-`trust`; otherwise rescore from `strongMatches`, `partialMatches` and `gaps`. A below-level posting is **not** a skip - judge on skills fit
-(`../_shared/eligibility.md`).
+`trust`; otherwise rescore from `strongMatches`, `partialMatches` and `gaps`. A below-level posting
+is **not** a skip - judge on skills fit (`../_shared/eligibility.md`).
 
 ### 3.5 Save the recommendation
 

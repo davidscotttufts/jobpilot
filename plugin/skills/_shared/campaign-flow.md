@@ -16,17 +16,18 @@ Exact URL match plus fuzzy title+company over a 30-day window; `.match.kind` is 
 and move on without opening a tab. Skills that deviate (e.g. `networking` keeps applied jobs and
 records `.match.application.id` as `relatedAppId`) say so inline.
 
-The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the
-pilot's run start - 409s on a duplicate with a message opening `Already applied (<kind>)`. That is the
+The server enforces the same rule: moving a job into `applying` - the `PATCH` below or the pilot's
+run start - 409s on a duplicate with a message opening `Already applied (<kind>)`. That is the
 verdict, not a transient failure, and the server has already written the job's `skipped` result.
 Move to the next item; never retry the transition or re-write the result.
 
 ## Terminal result writes
 
-Non-terminal transitions go through `PATCH /api/campaigns/$CID/jobs/<key>`
-(`pending` → `approved` → `applying`). A terminal outcome goes through ONE call -
-`POST /api/campaigns/$CID/jobs/<key>/result` - which atomically updates the Job and creates the
-Application + initial event on `applied`. Payload shapes (`appliedAt` is the current UTC time, ISO 8601):
+Non-terminal transitions go through `PATCH /api/campaigns/$CID/jobs/<key>` (`pending` → `approved` →
+`applying`). A terminal outcome goes through ONE call - `POST
+/api/campaigns/$CID/jobs/<key>/result` - which atomically updates the Job and creates the
+Application + initial event on `applied`. Payload shapes (`appliedAt` is the current UTC time, ISO
+8601):
 
 ```jsonc
 // applied - resumeId/resumeVariantId name the resume that was uploaded (see below); omit either when empty
@@ -38,8 +39,8 @@ Application + initial event on `applied`. Payload shapes (`appliedAt` is the cur
 ```
 
 **Always send `resumeId` on `applied`**, and `resumeVariantId` too whenever a tailored variant was
-uploaded - including when `tailor-resume` reused an existing one. This is the only record of what the
-candidate actually submitted; without it the application's Documents card has nothing to show.
+uploaded - including when `tailor-resume` reused an existing one. This is the only record of what
+the candidate actually submitted; without it the application's Documents card has nothing to show.
 
 ## job-applier input
 
@@ -50,8 +51,8 @@ candidate actually submitted; without it the application's Documents card has no
 ```
 
 Omit `brief` and the worker fetches it from the saved Job; it loads the profile and saved answers
-itself. It returns one of `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before returning -
-re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
+itself. It returns one of `applied` / `failed` / `skipped` / `needs_user` and closes its tabs before
+returning - re-select tab 0, then map the outcome to a terminal write (above). `needs_user` routing:
 
 - `category:"salary"` (no profile salary preference matched) - ask the user once, remember the
   answer for the campaign, re-delegate with `salaryExpectation` set.
@@ -59,7 +60,8 @@ re-select tab 0, then map the outcome to a terminal write (above). `needs_user` 
   `question`, re-delegate with the reply as `answers`. File the question with the worker's
   `answerKey` when it set one, so the answer is saved and never asked again.
 - `category:"verification"` (2FA) - pause and ask; one-time per board.
-- `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment required"}`.
+- `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment
+  required"}`.
 
 ## Rules
 

@@ -56,7 +56,9 @@ condition below.
 
 ## Phase 2: Replay Apply Loop
 
-For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending - the **same per-job flow as the apply skill's Apply Loop**, delegated to the `job-applier` subagent one at a time:
+For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending -
+the **same per-job flow as the apply skill's Apply Loop**, delegated to the `job-applier` subagent
+one at a time:
 
 1. **Mark applying** - PATCH the job to `applying`.
 2. **Apply** - delegate to `job-applier` with its input from
@@ -65,7 +67,9 @@ For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-
 
 3. **Record result** - map the worker's `outcome` to a terminal `/result` write and route
    `needs_user` per `../_shared/campaign-flow.md` (on `salary`, ask once then re-delegate).
-4. **Limit** - if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result` `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved` job and end the loop.
+4. **Limit** - if `MAX_APPS` set and `summary.applied >= MAX_APPS`, POST `/result`
+   `outcome:"skipped"`, `skipReason:"Max applications limit reached"` for each remaining `approved`
+   job and end the loop.
 
 ### Between jobs: honor user Stop
 
@@ -91,6 +95,9 @@ Suggest re-running the `auto-apply` skill in `retry-failed <CAMPAIGN_ID>` mode i
 
 The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
-1. **No new confirmation gate.** The user already approved the fit when the campaign was first launched.
-2. **`source` is automatic.** `/result` records the campaign's original `source` (`apply` or `auto_apply`) on the Application; don't pass one.
-3. **Idempotent.** Resuming the same campaign a second time should be a no-op when no `approved` jobs remain.
+1. **No new confirmation gate.** The user already approved the fit when the campaign was first
+   launched.
+2. **`source` is automatic.** `/result` records the campaign's original `source` (`apply` or
+   `auto_apply`) on the Application; don't pass one.
+3. **Idempotent.** Resuming the same campaign a second time should be a no-op when no `approved`
+   jobs remain.
