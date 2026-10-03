@@ -209,17 +209,16 @@ describe("RunService.reportUsage", () => {
     const updates: unknown[] = [];
     const db = {
       pilotRun: {
-        findFirst: async () => ({ id: RUN_ID }),
-        update: async (args: { data: typeof usage }) => {
+        updateManyAndReturn: async (args: { data: typeof usage }) => {
           updates.push(args);
-          return { ...row, ...args.data };
+          return [{ ...row, ...args.data }];
         },
       },
     };
 
     await makeRunService(db).reportUsage(USER_ID, RUN_ID, usage);
 
-    expect(updates).toEqual([{ where: { id: RUN_ID }, data: usage }]);
+    expect(updates).toEqual([{ where: { id: RUN_ID, userId: USER_ID }, data: usage }]);
   });
 });
 

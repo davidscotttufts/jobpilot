@@ -211,12 +211,10 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     weekTokens.set(agent, (weekTokens.get(agent) ?? 0) + item.totalTokens);
   }
 
-  const runStartMs = run ? run.startedAt.getTime() : null;
+  // A run's id is the cycleId of the action it posts.
+  const runId = run ? run.id : null;
   const posted =
-    journal.data?.items.find(
-      (entry) =>
-        entry.kind === "action" && runStartMs !== null && entry.createdAt.getTime() >= runStartMs,
-    ) ?? null;
+    journal.data?.items.find((entry) => entry.kind === "action" && entry.cycleId === runId) ?? null;
   const journalCaption = posted
     ? truncate(humanizeIsoInText(posted.summary))
     : `${state.appliedToday} / ${state.instructionsConfig.dailyApplyCap} applied today`;
@@ -229,8 +227,6 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     type: "stage",
     position: layout.positions[stage.id],
     data: { title: stage.title, role: stage.role, tone: stage.tone, caption, active, muted: dim },
-    draggable: false,
-    selectable: false,
   });
 
   const nodes: StageFlowNode[] = [
@@ -286,7 +282,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
           sx={{
             height: layout.height,
             width: "100%",
-            // Strip the library's node/handle/attribution chrome so only our themed surfaces show.
+            // Strip the library's node and handle chrome so only our themed surfaces show.
             "& .react-flow__node": {
               background: "transparent",
               border: 0,
@@ -294,7 +290,6 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
               fontFamily: "inherit",
             },
             "& .react-flow__handle": { opacity: 0 },
-            "& .react-flow__attribution": { display: "none" },
           }}
         >
           <ReactFlow

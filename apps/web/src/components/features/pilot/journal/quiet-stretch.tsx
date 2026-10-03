@@ -2,11 +2,10 @@
 
 import type { ReactElement } from "react";
 import type { PilotJournalEntry } from "@jobpilot/contracts/pilot";
-import { Box, Chip, Stack, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
 import { format } from "date-fns";
-import { RelativeTime } from "@/components/ui/display";
 import { plural } from "@/utils/format";
-import { KIND_META } from "./journal-row";
+import { JournalRowFrame } from "./journal-row";
 
 interface QuietStretch {
   type: "quiet";
@@ -40,28 +39,16 @@ interface QuietStretchRowProps {
 /** Entries arrive newest first, like the feed. */
 export function QuietStretchRow(props: QuietStretchRowProps): ReactElement {
   const { entries } = props;
-  const meta = KIND_META.cycle;
-  const Icon = meta.icon;
   const newest = entries[0];
   const oldest = entries[entries.length - 1];
   const end = format(newest.createdAt, "HH:mm");
   const span = entries.length === 1 ? end : `${format(oldest.createdAt, "HH:mm")}-${end}`;
 
   return (
-    <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-      <Chip
-        size="small"
-        color={meta.color}
-        icon={<Icon fontSize="sm" />}
-        label={meta.label}
-        sx={{ minWidth: 110 }}
-      />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="body2Muted">
-          Quiet {span}, {plural(entries.length, "check")}
-        </Typography>
-      </Box>
-      <RelativeTime value={newest.createdAt} sx={{ whiteSpace: "nowrap" }} />
-    </Stack>
+    <JournalRowFrame kind="cycle" createdAt={newest.createdAt}>
+      <Typography variant="body2Muted">
+        Quiet {span}, {plural(entries.length, "check")}
+      </Typography>
+    </JournalRowFrame>
   );
 }

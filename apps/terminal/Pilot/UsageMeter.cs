@@ -1,11 +1,16 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>POST /api/pilot/runs/:id/usage: one run's token usage.</summary>
 public sealed record PilotUsage(
-    string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens);
+    string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens)
+{
+    [JsonIgnore]
+    public long Total => InputTokens + OutputTokens + CacheReadTokens + CacheWriteTokens;
+}
 
 /// <summary>Sums the per-request usage both provider CLIs export to the host's OTLP/HTTP JSON logs endpoint.</summary>
 public sealed class UsageMeter
@@ -22,8 +27,7 @@ public sealed class UsageMeter
     {
         lock (sync)
         {
-            model = null;
-            input = output = cacheRead = cacheWrite = 0;
+            Reset();
         }
     }
 
@@ -38,8 +42,7 @@ public sealed class UsageMeter
             }
 
             var usage = new PilotUsage(model, input, output, cacheRead, cacheWrite);
-            model = null;
-            input = output = cacheRead = cacheWrite = 0;
+            Reset();
             return usage;
         }
     }
@@ -48,8 +51,14 @@ public sealed class UsageMeter
     {
         foreach (var record in LogRecords(export))
         {
+            // Codex exports one record per streamed SSE event; skip them before building the lookup.
+            var name = EventName(record);
+            if (name is not ("api_request" or "codex.sse_event"))
+            {
+                continue;
+            }
+
             var attributes = Attributes(record);
-            var name = Text(attributes, "event.name");
             if (name == "api_request")
             {
                 Add(
@@ -71,6 +80,12 @@ public sealed class UsageMeter
                     Number(attributes, "cache_write_token_count"));
             }
         }
+    }
+
+    private void Reset()
+    {
+        model = null;
+        input = output = cacheRead = cacheWrite = 0;
     }
 
     private void Add(string? requestModel, long requestInput, long requestOutput, long requestCacheRead, long requestCacheWrite)
@@ -95,6 +110,20 @@ public sealed class UsageMeter
         parent.ValueKind == JsonValueKind.Object && parent.TryGetProperty(name, out var array) && array.ValueKind == JsonValueKind.Array
             ? array.EnumerateArray()
             : [];
+
+    private static string? EventName(JsonElement record)
+    {
+        foreach (var attribute in Array(record, "attributes"))
+        {
+            if (attribute.TryGetProperty("key", out var key) && key.ValueEquals("event.name")
+                && attribute.TryGetProperty("value", out var value) && value.TryGetProperty("stringValue", out var text))
+            {
+                return text.GetString();
+            }
+        }
+
+        return null;
+    }
 
     private static Dictionary<string, JsonElement> Attributes(JsonElement record)
     {

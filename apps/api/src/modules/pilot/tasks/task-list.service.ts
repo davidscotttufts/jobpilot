@@ -17,9 +17,9 @@ import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
 import { writeDigestIfDue } from "./digest";
 import {
-  gatherCampaignReviews,
+  gatherCampaignTunes,
   gatherPausedCampaigns,
-  gatherQueueDrains,
+  gatherQueueScores,
   gatherScorePending,
 } from "./gather-campaigns";
 import {
@@ -32,7 +32,7 @@ import {
 import {
   attachWarmContacts,
   gatherApprovedJobs,
-  gatherBoardHealth,
+  gatherBoardDiagnoses,
   gatherWarmIntroCandidates,
 } from "./gather-jobs";
 import {
@@ -55,7 +55,7 @@ const NO_DUE_SEARCHES: Pick<Gathered, "dueQueries" | "nextSearchRunAt"> = {
   dueQueries: [],
   nextSearchRunAt: null,
 };
-const NO_REVIEWS: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFailed"> = {
+const NO_TUNES: Pick<Gathered, "campaignTunes" | "rescanSkipped" | "retryFailed"> = {
   campaignTunes: [],
   rescanSkipped: [],
   retryFailed: [],
@@ -160,9 +160,9 @@ export class TaskListService {
       networkingSentToday: outreachOn ? countSentToday(prisma, userId, now) : 0,
       answeredQuestions: gatherAnsweredQuestions(prisma, userId),
       approvedJobs: gatherApprovedJobs(prisma, userId),
-      queueScores: gatherQueueDrains(prisma, userId, config.minScore, now),
+      queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
       pausedCampaigns: gatherPausedCampaigns(prisma, userId, now),
-      boardDiagnose: gatherBoardHealth(prisma, userId),
+      boardDiagnose: gatherBoardDiagnoses(prisma, userId),
       inbox: gatherInbox(prisma, userId),
       interviewReplies: gatherInterviewReplies(prisma, userId),
       interviewPreps: gatherInterviewPreps(prisma, userId),
@@ -193,7 +193,7 @@ export class TaskListService {
     // Blank goals need no task: emptyReason "awaitingSetup" already says so.
     const canSetUp = quiet && searchCount === 0 && goals !== "";
     const [reviews, setup] = await Promise.all([
-      quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
+      quiet ? gatherCampaignTunes(prisma, userId, now) : NO_TUNES,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
     ]);
 

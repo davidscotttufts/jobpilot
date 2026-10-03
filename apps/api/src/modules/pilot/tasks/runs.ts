@@ -21,6 +21,21 @@ export function isCrash(outcome: PilotRunOutcome | null): boolean {
   return outcome === "expired" || outcome === "abandoned";
 }
 
+type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens";
+
+/** Nullable so a Prisma `_sum` fits as is. */
+type TokenCounts = Record<TokenColumn, number | null>;
+
+/** Every token a run consumed, cached or not. */
+export function totalTokens(counts: TokenCounts): number {
+  return (
+    (counts.inputTokens ?? 0) +
+    (counts.outputTokens ?? 0) +
+    (counts.cacheReadTokens ?? 0) +
+    (counts.cacheWriteTokens ?? 0)
+  );
+}
+
 type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;
 
 type JobRef = Pick<Job, "campaignId" | "key">;

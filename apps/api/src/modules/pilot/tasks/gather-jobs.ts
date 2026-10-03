@@ -126,7 +126,7 @@ export async function attachWarmContacts(
 }
 
 /** Boards whose latest apply outcomes are a failure streak, longest streak first. */
-export async function gatherBoardHealth(
+export async function gatherBoardDiagnoses(
   prisma: PrismaClient,
   userId: string,
 ): Promise<TaskPayload<"board.diagnose">[]> {

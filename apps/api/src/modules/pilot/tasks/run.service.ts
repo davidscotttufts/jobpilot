@@ -9,7 +9,7 @@ import {
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
-import { conflict, findOwned } from "@/common/errors";
+import { conflict, findOwned, notFound } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
@@ -185,12 +185,12 @@ export class RunService {
   }
 
   async reportUsage(userId: string, id: string, body: ReportPilotUsageInput) {
-    await findOwned(
-      (where) => this.prisma.pilotRun.findFirst({ where, select: { id: true } }),
-      { id, userId },
-      "Run",
-    );
-    return toPilotRun(await this.prisma.pilotRun.update({ where: { id }, data: body }));
+    const [updated] = await this.prisma.pilotRun.updateManyAndReturn({
+      where: { id, userId },
+      data: body,
+    });
+    if (!updated) throw notFound("Run not found");
+    return toPilotRun(updated);
   }
 
   /** Bookkeeping only: an abandoned apply goes back to approved, other results use their own routes. */

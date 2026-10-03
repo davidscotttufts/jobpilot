@@ -3,9 +3,11 @@ import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { singleton } from "tsyringe";
 import type { AuthUser } from "@/common/auth";
-import { bucketPerDay, DAY_MS, startOfTimeline, startOfWeek } from "@/common/date/buckets";
+import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
+import { totalTokens } from "@/modules/pilot/tasks/runs";
 
 /** The columns every admin user row is built from - shared by the list and the role mutation. */
 const USER_SELECT = {
@@ -129,7 +131,10 @@ export class AdminService {
       }),
       this.prisma.pilotRun.groupBy({
         by: ["userId"],
-        where: { userId: { in: userIds }, startedAt: { gte: new Date(Date.now() - 7 * DAY_MS) } },
+        where: {
+          userId: { in: userIds },
+          startedAt: { gte: new Date(Date.now() - COST_WINDOW_MS) },
+        },
         _sum: {
           inputTokens: true,
           outputTokens: true,
@@ -139,15 +144,7 @@ export class AdminService {
       }),
     ]);
     const openByUser = new Map(questionRows.map((row) => [row.userId, row._count._all]));
-    const tokensByUser = new Map(
-      runRows.map(({ userId, _sum }) => [
-        userId,
-        (_sum.inputTokens ?? 0) +
-          (_sum.outputTokens ?? 0) +
-          (_sum.cacheReadTokens ?? 0) +
-          (_sum.cacheWriteTokens ?? 0),
-      ]),
-    );
+    const tokensByUser = new Map(runRows.map(({ userId, _sum }) => [userId, totalTokens(_sum)]));
 
     const items = rows.map((row) => ({
       userEmail: row.user.email,

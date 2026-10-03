@@ -1,10 +1,10 @@
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { classifySkipReason, type SkipBucket } from "./skip-reasons";
-import { isCrash } from "./tasks/runs";
+import { isCrash, totalTokens } from "./tasks/runs";
 
 /** Runs older than a week describe a version of the agent you are no longer running. */
-const COST_WINDOW_MS = 7 * DAY_MS;
+export const COST_WINDOW_MS = 7 * DAY_MS;
 
 export function countAppliedToday(
   prisma: Pick<PrismaClient, "application">,
@@ -90,11 +90,7 @@ export async function costByTaskType(
 
   return [...Map.groupBy(rows, (run) => run.taskType)]
     .map(([taskType, runs]) => {
-      const tokens = runs
-        .map(
-          (run) => run.inputTokens + run.outputTokens + run.cacheReadTokens + run.cacheWriteTokens,
-        )
-        .sort((a, b) => a - b);
+      const tokens = runs.map(totalTokens).sort((a, b) => a - b);
       return {
         taskType,
         runs: runs.length,

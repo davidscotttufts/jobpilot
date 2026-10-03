@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 
 namespace JobPilot.Terminal.Pilot;
 
@@ -45,50 +46,12 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
     // A refresh runs maintenance and may pull mail first.
     private static readonly TimeSpan RefreshTimeout = TimeSpan.FromSeconds(60);
 
-    public async Task<PilotActivity?> GetActivityAsync(PilotSettings settings, CancellationToken ct)
-    {
-        try
-        {
-            using var timeout = TimeoutAfter(RequestTimeout, ct);
-            using var request = Request(settings, HttpMethod.Get, "/api/pilot/activity");
-            using var response = await http.SendAsync(request, timeout.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Pilot activity probe was rejected ({Status}).", (int)response.StatusCode);
-                return null;
-            }
-
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Default.PilotActivity, timeout.Token);
-        }
-        catch (Exception ex) when (!ct.IsCancellationRequested)
-        {
-            logger.LogWarning(ex, "Pilot activity probe failed.");
-            return null;
-        }
-    }
+    public Task<PilotActivity?> GetActivityAsync(PilotSettings settings, CancellationToken ct) =>
+        SendAsync(settings, HttpMethod.Get, "/api/pilot/activity", null, AppJsonContext.Default.PilotActivity, RequestTimeout, ct);
 
     /// <summary>Null when the refresh fails, including the 409 of a stopped pilot.</summary>
-    public async Task<PilotTaskList?> RefreshTasksAsync(PilotSettings settings, CancellationToken ct)
-    {
-        try
-        {
-            using var timeout = TimeoutAfter(RefreshTimeout, ct);
-            using var request = Request(settings, HttpMethod.Post, "/api/pilot/tasks/refresh");
-            using var response = await http.SendAsync(request, timeout.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Pilot task list refresh was rejected ({Status}).", (int)response.StatusCode);
-                return null;
-            }
-
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Default.PilotTaskList, timeout.Token);
-        }
-        catch (Exception ex) when (!ct.IsCancellationRequested)
-        {
-            logger.LogWarning(ex, "Pilot task list refresh failed.");
-            return null;
-        }
-    }
+    public Task<PilotTaskList?> RefreshTasksAsync(PilotSettings settings, CancellationToken ct) =>
+        SendAsync(settings, HttpMethod.Post, "/api/pilot/tasks/refresh", null, AppJsonContext.Default.PilotTaskList, RefreshTimeout, ct);
 
     public Task ReportAsync(PilotSettings settings, string summary, CancellationToken ct) =>
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("system", summary)]), ct);
@@ -97,38 +60,25 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
     public Task JournalCycleAsync(PilotSettings settings, string? cycleId, string summary, CycleDetail detail, CancellationToken ct) =>
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("cycle", summary, detail)], cycleId), ct);
 
-    public async Task<PilotRunState?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
+    public Task<PilotRunState?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
     {
         var content = JsonContent.Create(new StartRunRequest(taskId, taskListVersion), AppJsonContext.Default.StartRunRequest);
-        return await SendForRunAsync(settings, HttpMethod.Post, "/api/pilot/runs", content, ct);
+        return SendForRunAsync(settings, HttpMethod.Post, "/api/pilot/runs", content, ct);
     }
 
     public Task<PilotRunState?> GetRunAsync(PilotSettings settings, string runId, CancellationToken ct) =>
         SendForRunAsync(settings, HttpMethod.Get, $"/api/pilot/runs/{runId}", null, ct);
 
-    public async Task FailRunAsync(PilotSettings settings, string runId, CancellationToken ct)
+    public Task FailRunAsync(PilotSettings settings, string runId, CancellationToken ct)
     {
         var content = JsonContent.Create(new FinishRunRequest("failed"), AppJsonContext.Default.FinishRunRequest);
-        await SendForRunAsync(settings, HttpMethod.Post, $"/api/pilot/runs/{runId}/finish", content, ct);
+        return SendForRunAsync(settings, HttpMethod.Post, $"/api/pilot/runs/{runId}/finish", content, ct);
     }
 
-    public async Task ReportUsageAsync(PilotSettings settings, string runId, PilotUsage usage, CancellationToken ct)
+    public Task ReportUsageAsync(PilotSettings settings, string runId, PilotUsage usage, CancellationToken ct)
     {
-        try
-        {
-            using var timeout = TimeoutAfter(RequestTimeout, ct);
-            using var request = Request(settings, HttpMethod.Post, $"/api/pilot/runs/{runId}/usage");
-            request.Content = JsonContent.Create(usage, AppJsonContext.Default.PilotUsage);
-            using var response = await http.SendAsync(request, timeout.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Pilot usage report was rejected ({Status}).", (int)response.StatusCode);
-            }
-        }
-        catch (Exception ex) when (!ct.IsCancellationRequested)
-        {
-            logger.LogWarning(ex, "Pilot usage report could not be delivered.");
-        }
+        var content = JsonContent.Create(usage, AppJsonContext.Default.PilotUsage);
+        return SendAsync<object>(settings, HttpMethod.Post, $"/api/pilot/runs/{runId}/usage", content, null, RequestTimeout, ct);
     }
 
     /// <summary>Null when the server rejects the stream. Unlike the calls above, transport failures throw.</summary>
@@ -147,46 +97,45 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
         return null;
     }
 
-    private async Task<PilotRunState?> SendForRunAsync(
-        PilotSettings settings, HttpMethod method, string path, HttpContent? content, CancellationToken ct)
+    private Task<PilotRunState?> SendForRunAsync(
+        PilotSettings settings, HttpMethod method, string path, HttpContent? content, CancellationToken ct) =>
+        SendAsync(settings, method, path, content, AppJsonContext.Default.PilotRunState, RequestTimeout, ct);
+
+    private Task PostJournalAsync(PilotSettings settings, JournalRequest body, CancellationToken ct)
+    {
+        var content = JsonContent.Create(body, AppJsonContext.Default.JournalRequest);
+        return SendAsync<object>(settings, HttpMethod.Post, "/api/pilot/journal", content, null, RequestTimeout, ct);
+    }
+
+    /// <summary>Reads the body only when <paramref name="read"/> is given; null on any rejection or failure.</summary>
+    private async Task<T?> SendAsync<T>(
+        PilotSettings settings,
+        HttpMethod method,
+        string path,
+        HttpContent? content,
+        JsonTypeInfo<T>? read,
+        TimeSpan timeoutAfter,
+        CancellationToken ct)
+        where T : class
     {
         try
         {
-            using var timeout = TimeoutAfter(RequestTimeout, ct);
+            using var timeout = TimeoutAfter(timeoutAfter, ct);
             using var request = Request(settings, method, path);
             request.Content = content;
             using var response = await http.SendAsync(request, timeout.Token);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("Pilot run call {Method} {Path} was rejected ({Status}).", method, path, (int)response.StatusCode);
+                logger.LogWarning("Pilot call {Method} {Path} was rejected ({Status}).", method, path, (int)response.StatusCode);
                 return null;
             }
 
-            return await response.Content.ReadFromJsonAsync(AppJsonContext.Default.PilotRunState, timeout.Token);
+            return read is null ? null : await response.Content.ReadFromJsonAsync(read, timeout.Token);
         }
         catch (Exception ex) when (!ct.IsCancellationRequested)
         {
-            logger.LogWarning(ex, "Pilot run call {Method} {Path} failed.", method, path);
+            logger.LogWarning(ex, "Pilot call {Method} {Path} failed.", method, path);
             return null;
-        }
-    }
-
-    private async Task PostJournalAsync(PilotSettings settings, JournalRequest body, CancellationToken ct)
-    {
-        try
-        {
-            using var timeout = TimeoutAfter(RequestTimeout, ct);
-            using var request = Request(settings, HttpMethod.Post, "/api/pilot/journal");
-            request.Content = JsonContent.Create(body, AppJsonContext.Default.JournalRequest);
-            using var response = await http.SendAsync(request, timeout.Token);
-            if (!response.IsSuccessStatusCode)
-            {
-                logger.LogWarning("Pilot journal write was rejected ({Status}).", (int)response.StatusCode);
-            }
-        }
-        catch (Exception ex) when (!ct.IsCancellationRequested)
-        {
-            logger.LogWarning(ex, "Pilot journal write could not be delivered.");
         }
     }
 

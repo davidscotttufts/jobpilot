@@ -79,7 +79,7 @@ export async function gatherScorePending(
 }
 
 /** Apply campaigns holding pasted links nothing has visited yet. */
-export async function gatherQueueDrains(
+export async function gatherQueueScores(
   prisma: PrismaClient,
   userId: string,
   fallbackMinScore: number,
@@ -174,7 +174,7 @@ const reviewMarkerSchema = z.object({ type: z.string().optional() }).loose();
  * Campaign tunes, skipped-job rescans and failed-job retries for a quiet task list. The agent
  * journals an action with `detail.type` after each, which holds the campaign back for a week.
  */
-export async function gatherCampaignReviews(prisma: PrismaClient, userId: string, now: Date) {
+export async function gatherCampaignTunes(prisma: PrismaClient, userId: string, now: Date) {
   const [campaigns, markers] = await Promise.all([
     prisma.campaign.findMany({
       where: { userId, status: "in_progress", source: { not: "networking" } },
@@ -230,7 +230,7 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
     const reasons = await prisma.job.groupBy({
       by: ["campaignId", "skipReason"],
       where: {
-        campaignId: { in: campaignTunes.map((review) => review.campaignId) },
+        campaignId: { in: campaignTunes.map((tune) => tune.campaignId) },
         status: "skipped",
         skipReason: { not: null },
       },
@@ -238,8 +238,8 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
       orderBy: { _count: { skipReason: "desc" } },
     });
     const reasonsByCampaign = Map.groupBy(reasons, (row) => row.campaignId);
-    for (const review of campaignTunes) {
-      review.topSkipReasons = (reasonsByCampaign.get(review.campaignId) ?? [])
+    for (const tune of campaignTunes) {
+      tune.topSkipReasons = (reasonsByCampaign.get(tune.campaignId) ?? [])
         .flatMap((row) => (row.skipReason ? [row.skipReason] : []))
         .slice(0, TOP_SKIP_REASONS);
     }

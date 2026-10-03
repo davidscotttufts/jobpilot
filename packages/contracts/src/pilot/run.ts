@@ -4,7 +4,7 @@ import { taskFieldsSchema } from "./tasks";
 export const PILOT_RUN_OUTCOMES = ["done", "failed", "abandoned", "expired"] as const;
 
 /** The subset an agent may report on finish; "expired" is only ever set server-side. */
-const finishableOutcomeSchema = z.enum(["done", "failed", "abandoned"]);
+const finishableOutcomeSchema = z.enum(PILOT_RUN_OUTCOMES).exclude(["expired"]);
 
 export const startPilotRunSchema = z.object({
   taskListVersion: z.uuid(),
@@ -17,7 +17,7 @@ export const finishPilotRunSchema = z.object({
 });
 
 export const pilotRunResultSchema = z.object({
-  outcome: z.enum(["done", "failed"]),
+  outcome: z.enum(PILOT_RUN_OUTCOMES).extract(["done", "failed"]),
   // The journal action line, human and specific.
   summary: z.string().trim().min(1),
   subjectType: z.string().min(1).optional(),

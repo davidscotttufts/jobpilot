@@ -175,7 +175,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
 
         await api.ReportUsageAsync(settings, runId, measured, ct);
-        return measured.InputTokens + measured.OutputTokens + measured.CacheReadTokens + measured.CacheWriteTokens;
+        return measured.Total;
     }
 
     public void Dispose() => terminal.Output -= OnOutput;
