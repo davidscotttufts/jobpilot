@@ -126,7 +126,7 @@ jobs:
         run: dotnet publish -c Release -r linux-x64 -o publish/
         working-directory: apps/terminal
 
-      # InstallPaths.Resolve() requires the plugin tree; Codex workers are repo-scoped runtime assets.
+      # InstallPaths.Resolve() requires the plugin tree; the host writes Codex's agents from plugin/agents/ at session start.
       - name: Verify publish root ships provider assets
         working-directory: apps/terminal/publish
         run: |
@@ -136,8 +136,7 @@ jobs:
                    plugin/.mcp.json \
                    plugin/skills/_shared/setup.md \
                    plugin/skills/auto-apply/SKILL.md \
-                   .codex/agents/job-worker.toml \
-                   .codex/agents/networking-worker.toml; do
+                   plugin/agents/job-applier.md; do
             test -e "$f" || { echo "missing from publish root: $f"; exit 1; }
           done
           test ! -e .agents/plugins/marketplace.json || {

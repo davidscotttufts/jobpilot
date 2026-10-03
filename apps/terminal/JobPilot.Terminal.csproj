@@ -40,11 +40,6 @@
       <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
-    <!-- Codex loads the user-installed marketplace plugin; these repo-scoped agents provide worker parity with Claude. -->
-    <Content Include="..\..\.codex\agents\*.toml">
-      <Link>.codex\agents\%(Filename)%(Extension)</Link>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
   </ItemGroup>
 
 </Project>

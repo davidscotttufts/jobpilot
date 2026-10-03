@@ -9,7 +9,8 @@
 | 3. Host checks first | Done on `feat/pilot-v2`. Checked live: an idle cycle wrote its own entry and woke no model. |
 | 2. Token telemetry | Done on `feat/pilot-v2`. Migration `20261003000000` applied only to the local spike database. |
 | 4. Host bookkeeping | Done on `feat/pilot-v2`. Checked live with a `search.setup` run; overnight run not done. |
-| 5-8 | Not started. |
+| 5. Specialized agents | Done on `feat/pilot-v2`. `job-searcher` checked live; `job-scorer` and `job-applier` not run live (the spike account never applies). |
+| 6-8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
@@ -166,6 +167,7 @@ starts smaller). "usd" is `cost_usd`, the API-price equivalent, used here only t
 | `search.discover`, 10 jobs saved, 7 min | 57 | 21K | 5.4M | 107K | 1.72 |
 | `search.discover`, prompt suggestions off (milestone 2) | - | 19K | 3.2M | 118K | - |
 | `search.setup`, milestone 4 (host bookkeeping) | - | 1.0K | 294K | 27K | - |
+| `search.discover` via `job-searcher`, 10 jobs, 2.4 min (milestone 5) | - | 13K | 1.6M | 93K | - |
 
 What it shows:
 
@@ -376,6 +378,21 @@ Text-only task types (`interview.*`, `promotion.*`, `campaign.tune`, `search.set
 
 Exit: tokens per applied job, per skipped job and per discovered job all drop against the
 milestone 4 numbers; skip reasons for blocked jobs show the form question that blocked them.
+
+As built:
+
+- Measured: a 10-job `search.discover` went from 5.4M cache-read tokens (baseline) and 3.2M
+  (after milestone 2) to 1.6M, in 2.4 minutes instead of 7.
+- Codex agents are not generated in a build: `CodexProvider.PrepareWorkspace` writes
+  `.codex/agents/*.toml` from `plugin/agents/*.md` (body inlined as `developer_instructions`) at
+  every Codex session start, as it already mirrors skills. Nothing can go stale, so no check is
+  needed; the repo's hand-written TOMLs are gone and `.codex/agents/` is ignored.
+- Sponsorship stays as the 2026-07-15 rule set it: only a JD-stated no-sponsorship policy skips.
+  A form that reveals one is answered truthfully and the application finishes, with a `note`.
+  `job-applier`'s form blockers are citizenship, clearance, location, an unmet hard requirement
+  and an answer only the user can give (`needs_user` `category:"question"`, new).
+- Snapshot ceilings: posting body ~12 KB, form step ~16 KB, results list ~4k tokens; over the
+  ceiling means narrow further.
 
 ## Milestone 6: saved answers and site hints
 

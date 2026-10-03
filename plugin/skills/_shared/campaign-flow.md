@@ -41,10 +41,10 @@ Application + initial event on `applied`. Payload shapes (`appliedAt` is the cur
 uploaded - including when `tailor-resume` reused an existing one. This is the only record of what the
 candidate actually submitted; without it the application's Documents card has nothing to show.
 
-## job-worker apply-mode input
+## job-applier input
 
 ```json
-{ "mode": "apply", "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
+{ "campaignId": "<CID>", "jobKey": "<key>", "url": "<job-url>",
   "board": "<domain>", "brief": <BRIEF>, "resumeId": "<RESUME_ID>",
   "defaultStartDate": "<autoApply.defaultStartDate>", "salaryExpectation": <remembered-or-null>,
   "preSubmitReview": <bool> }
@@ -56,6 +56,8 @@ re-select tab 0, then map the outcome to a terminal write (above). `needs_user` 
 
 - `category:"salary"` (no profile salary preference matched) - ask the user once, remember the
   answer for the campaign, re-delegate with `salaryExpectation` set.
+- `category:"question"` (a required form question the profile can't answer) - ask the user
+  `question`, re-delegate with the reply as `answers`.
 - `category:"verification"` (2FA) - pause and ask; one-time per board.
 - `category:"payment"` - never pay: POST `/result` `{outcome:"failed", failReason:"Payment required"}`.
 

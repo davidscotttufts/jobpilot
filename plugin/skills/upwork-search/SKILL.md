@@ -107,7 +107,7 @@ here is the soft floor rather than a hard rule; handle it exactly as above.
 
 Build the brief (`../_shared/job-brief.md`) from the posting you already fetched; always
 populate `skills`. Score inline - the MCP returns the full description, so there is never a thin
-card here and no need to delegate to `job-worker`:
+card here and no need to delegate to `job-scorer`:
 
 Write `{"brief": <brief>, "minScore": <minScore>}` to `"$JOBPILOT_TEMP/fit.json"`:
 

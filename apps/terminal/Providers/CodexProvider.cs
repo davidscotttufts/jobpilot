@@ -36,13 +36,75 @@ internal sealed partial class CodexProvider : Provider
     public override string[] BuildArgs(string pluginDir, ILogger logger) =>
         ["--no-alt-screen", "--approve-for-me", .. ConfigOverrides(pluginDir, logger, ExecutablePath.Find).SelectMany(o => new[] { "-c", o })];
 
-    /// <summary>Codex discovers skills from the workspace .agents/skills, which is wholly ours to rebuild.</summary>
+    /// <summary>Codex discovers skills from .agents/skills and agents from .codex/agents, both wholly ours to rebuild.</summary>
     public override void PrepareWorkspace(InstallPaths paths)
     {
         var target = Path.Combine(paths.WorkingDir, ".agents", "skills");
         FileTree.DeleteIfExists(target);
         FileTree.Copy(paths.SkillsDir, target);
         FileTree.DeleteIfExists(Path.Combine(target, BootstrapSkill));
+
+        var agents = Path.Combine(paths.WorkingDir, ".codex", "agents");
+        FileTree.DeleteIfExists(agents);
+        Directory.CreateDirectory(agents);
+        foreach (var source in Directory.EnumerateFiles(Path.Combine(paths.PluginDir, "agents"), "*.md"))
+        {
+            if (AgentToml(File.ReadAllText(source)) is { } toml)
+            {
+                File.WriteAllText(Path.Combine(agents, Path.GetFileNameWithoutExtension(source) + ".toml"), toml);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A Claude agent file as a Codex agent, with its body inlined so the prompt cache can reuse it. Codex agents take
+    /// no tool list and inherit the session model, so only the name and description carry over. Null without both.
+    /// </summary>
+    internal static string? AgentToml(string markdown)
+    {
+        var lines = markdown.ReplaceLineEndings("\n").Split('\n');
+        var end = lines.Length > 0 && lines[0] == "---" ? Array.IndexOf(lines, "---", 1) : -1;
+        if (end < 0)
+        {
+            return null;
+        }
+
+        var fields = FrontmatterFields(lines[1..end]);
+        if (!fields.TryGetValue("name", out var name) || !fields.TryGetValue("description", out var description))
+        {
+            return null;
+        }
+
+        var body = string.Join('\n', lines[(end + 1)..]).Trim();
+        return $"name = {TomlString(name)}\ndescription = {TomlString(description)}\ndeveloper_instructions = {TomlString(body)}\n";
+    }
+
+    // Only the YAML the agent files use: `key: value`, or a folded `key: >-` with indented lines.
+    private static Dictionary<string, string> FrontmatterFields(string[] lines)
+    {
+        Dictionary<string, string> fields = [];
+        string? key = null;
+        foreach (var line in lines)
+        {
+            if (key is not null && line.StartsWith(' '))
+            {
+                fields[key] = $"{fields[key]} {line.Trim()}".Trim();
+                continue;
+            }
+
+            var colon = line.IndexOf(':');
+            if (colon <= 0)
+            {
+                key = null;
+                continue;
+            }
+
+            key = line[..colon].Trim();
+            var value = line[(colon + 1)..].Trim();
+            fields[key] = value is ">-" or ">" ? "" : value.Trim('"');
+        }
+
+        return fields;
     }
 
     public override string SkillCommand(string skill) => SkillPrefix + skill;

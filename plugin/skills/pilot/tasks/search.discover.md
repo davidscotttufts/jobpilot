@@ -1,6 +1,10 @@
 # `search.discover`
 
-Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`. Run ONE board search, modeled on the `search` skill (login per `../../_shared/auth.md`). `SEARCH_ID=<payload.searchId>` - the run is reported against it before Record. A `campaignId` in the payload means reuse it (`CID=<payload.campaignId>`); never open a second campaign for one search. Only when it is absent, create one - `pilotSearchId` is load-bearing, it is how the next cycle finds this campaign again:
+Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`. Run ONE board search through the `job-searcher` subagent. `SEARCH_ID=<payload.searchId>`.
+
+## 1. Campaign
+
+A `campaignId` in the payload means reuse it (`CID=<payload.campaignId>`); never open a second campaign for one search. Only when it is absent, create one - `pilotSearchId` is load-bearing, it is how the next cycle finds this campaign again:
 
 ```bash
 jobpilot-api POST /api/campaigns \
@@ -9,15 +13,24 @@ jobpilot-api POST /api/campaigns \
 
 Read `.campaignId` from the response as `CID`.
 
-Paginate per `../../_shared/browser-tips.md` (**Pagination & infinite scroll**) up to `maxPages` pages. Score every row **in-context** - no per-job navigation, no worker delegation, since the shared browser tab would serialize them anyway. Per row: dedupe via `GET /api/applied/check`, then create every Job as a non-terminal `pending` row carrying the `brief` you scored it from (`../../_shared/job-brief.md`; row shape per the `search` skill) - a row with no `skills` simply has none. Already-applied or ineligible → immediately POST its `skipped` outcome and reason to `/jobs/<key>/result`. Eligible rows keep their score and stay `pending`; one too thin to score confidently stays `pending` without `matchScore` for `campaign.scorePending` later. The server auto-promotes rows scoring ≥ threshold on the next task list refresh, so **do not apply** in this cycle.
+## 2. Search
 
-Track `JOBS_SEEN` (rows read) and `NEW_JOBS` (fresh eligible `pending` rows you created - not dupes or ineligible rows). Stop when `NEW_JOBS >= newJobsTarget`, the page cap (`maxPages`) is hit, or the board has no next page (`REACHED_END=true`; leave it `false` if you stopped for either other reason). Heartbeat after each page and at least every ~10 minutes.
+Delegate to the `job-searcher` subagent with:
 
-Before posting the result (SKILL.md step 3), report the search run - a `404` means the search was deleted mid-run, so journal that and move on:
+```json
+{ "runId": "<RUN_ID>", "campaignId": "<CID>", "query": "<query>", "board": "<board>", "resumeId": "<resumeId>",
+  "minScore": <minScore>, "newJobsTarget": <newJobsTarget>, "maxPages": <maxPages> }
+```
+
+It searches, dedupes, scores and saves the rows, heartbeats the run, and returns `{jobsSeen, newJobs, reachedEnd, pagesRead, best, skipped, hints, error}`. No subagent support, or the delegation fails: read `$JOBPILOT_SKILLS_ROOT/../agents/job-searcher.md` and follow it inline. Same behavior, just no context isolation.
+
+## 3. Report
+
+Report the search run with the agent's counts - a `404` means the search was deleted mid-run, so say so in the summary and move on:
 
 ```bash
 jobpilot-api POST /api/pilot/searches/$SEARCH_ID/run-result \
-  --data '{"jobsSeen":<JOBS_SEEN>,"newJobs":<NEW_JOBS>,"reachedEnd":<REACHED_END>}'
+  --data '{"jobsSeen":<jobsSeen>,"newJobs":<newJobs>,"reachedEnd":<reachedEnd>}'
 ```
 
-The journal narrative should include the pages read and new-jobs count.
+Journal the pages read, new jobs and best scores ("Discovered 8 jobs on linkedin.com for 'senior typescript remote' over 3 pages; best Acme 88, Globex 81."). Pass the agent's `hints` through as the result's `hints`. A non-null `error` with no new jobs is `outcome:"failed"`, the error in the summary; otherwise `done`, with the error named in the summary.

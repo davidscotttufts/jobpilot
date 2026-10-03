@@ -7,7 +7,7 @@ description: >-
   channel in isolated context, returning only a compact draft JSON. Never saves
   or sends. Not for direct user invocation.
 tools: Bash, Read, Skill, WebSearch, WebFetch, mcp__plugin_jobpilot_playwright__*
-model: sonnet
+model: inherit
 ---
 
 # Networking Worker

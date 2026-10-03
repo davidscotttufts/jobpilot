@@ -56,10 +56,10 @@ condition below.
 
 ## Phase 2: Replay Apply Loop
 
-For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending - the **same per-job flow as the apply skill's Apply Loop**, delegated to the `job-worker` subagent one at a time:
+For each job where `status === "approved"`, `"pending"`, or `"applying"`, score-descending - the **same per-job flow as the apply skill's Apply Loop**, delegated to the `job-applier` subagent one at a time:
 
 1. **Mark applying** - PATCH the job to `applying`.
-2. **Apply** - delegate to `job-worker` with the apply-mode input from
+2. **Apply** - delegate to `job-applier` with its input from
    `../_shared/campaign-flow.md`, `brief` omitted (the worker fetches it from the saved Job)
    and `preSubmitReview: <true when MAX_APPS === 1, else false>`.
 

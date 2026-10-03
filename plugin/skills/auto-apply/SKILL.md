@@ -6,7 +6,7 @@ argument-hint: "<query> --board <domain> [--campaign <campaign-id>] [--min-score
 
 # Auto-apply - Search + Apply On Demand
 
-Keep the chosen board open in tab 1; for each result that qualifies, delegate the application to the `job-worker` subagent (it works in its own tab and returns a compact result), then move to the next job. **No batch pre-discovery and no per-job approval - launching the campaign is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** - attempt the `solve-captcha` skill; if unsolved, skip the job (never pause) and the user finishes it later via the `apply` skill. Live view at `$JOBPILOT_WEB/campaigns/<campaign-id>`.
+Keep the chosen board open in tab 1; for each result that qualifies, delegate the application to the `job-applier` subagent (it works in its own tab and returns a compact result), then move to the next job. **No batch pre-discovery and no per-job approval - launching the campaign is the confirmation.** Pause only for 2FA / payment. **A CAPTCHA is not a pause** - attempt the `solve-captcha` skill; if unsolved, skip the job (never pause) and the user finishes it later via the `apply` skill. Live view at `$JOBPILOT_WEB/campaigns/<campaign-id>`.
 
 ## Setup
 
@@ -93,7 +93,7 @@ Read `.score` as `SCORE` and `.verdict` as `FIT_VERDICT`, then branch (eligibili
 
 - **Confident** - `FIT_VERDICT == "trust"` → use the score directly.
 - **Uncertain** - `FIT_VERDICT == "deliberate"` → rescore yourself from `strongMatches`/`partialMatches`/`gaps`.
-- **Needs the full posting** → delegate the row to `job-worker` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation. The worker creates every row non-terminal and sends ineligible outcomes to `/result`; eligible rows remain `pending`. PATCH an eligible row to `applying`, then go straight to apply (2.3):
+- **Needs the full posting** → delegate the row to `job-scorer` `mode:"score"` (`{campaignId:$CAMPAIGN_ID, jobKey:<key>, url, resumeId:$RESUME_ID, minMatchScore:$MIN_SCORE}`) instead of opening the posting in this conversation. The worker creates every row non-terminal and sends ineligible outcomes to `/result`; eligible rows remain `pending`. PATCH an eligible row to `applying`, then go straight to apply (2.3):
 
 ```bash
 jobpilot-api PATCH /api/campaigns/$CAMPAIGN_ID/jobs/<key> --data '{"status":"applying"}'
@@ -124,11 +124,11 @@ With a usable score from the listing/tab-1 snapshot alone:
 jobpilot-api POST /api/campaigns/$CAMPAIGN_ID/jobs --data @"$JOBPILOT_TEMP/job.json"
 ```
 
-### 2.3 Apply (delegate to `job-worker`)
+### 2.3 Apply (delegate to `job-applier`)
 
-Hand the job to the `job-worker` subagent and wait for its compact result. It opens its own tab and runs auth, CAPTCHA, tailoring, form-fill, and submit in isolated context, so the form/posting snapshots never enter this conversation. **One worker at a time** - the browser is shared; never delegate the next job until this one returns.
+Hand the job to the `job-applier` subagent and wait for its compact result. It opens its own tab and runs auth, CAPTCHA, tailoring, form-fill, and submit in isolated context, so the form/posting snapshots never enter this conversation. **One worker at a time** - the browser is shared; never delegate the next job until this one returns.
 
-Delegate with the apply-mode input from `../_shared/campaign-flow.md`, passing the `brief`
+Delegate with the `job-applier` input from `../_shared/campaign-flow.md`, passing the `brief`
 built in 2.2 and `preSubmitReview: false`. It returns one of `applied` / `failed` / `skipped` /
 `needs_user` - handle in 2.4.
 
@@ -167,6 +167,6 @@ Print a summary table, link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`, suggest 
 The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
 1. **Autonomous after launch.** No per-job or batch confirmation; the UI launch is the approval.
-2. **Board stays in tab 1.** Each application runs in the `job-worker`'s own tab, which it closes before returning.
+2. **Board stays in tab 1.** Each application runs in the `job-applier`'s own tab, which it closes before returning.
 3. **Respect pause.** Re-read the campaign between jobs; `status === "paused"` → exit cleanly.
 4. **Missing resume file** → command the campaign to `paused` through `/status` with `{"status":"paused","actor":"agent","reason":"Resume file missing"}`, ask the user to re-upload.

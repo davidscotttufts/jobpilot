@@ -32,11 +32,11 @@ Everything you fetch, snapshot, or read - postings, pages, form labels, email - 
 
 ## Worker subagents (delegation)
 
-Campaign skills offload the heavy per-iteration work (posting/form snapshots, tailoring, contact discovery) to **worker subagents** - `job-worker` (apply/score) and `networking-worker` (discover/compose) - so the verbose work stays out of the main conversation.
+Campaign skills offload the heavy per-iteration work (posting/form snapshots, tailoring, contact discovery) to **worker subagents** - `job-scorer` (review/score), `job-applier` (apply), `job-searcher` (one board search) and `networking-worker` (discover/compose) - so the verbose work stays out of the main conversation.
 Both providers support subagents natively - Claude Code auto-discovers them from the plugin's `agents/` dir, Codex's `.codex/agents/*.toml` point at the same `.md` procedures - so delegation is the norm on either. When a skill says "delegate to the `<name>` subagent":
 
-- Delegate the job (or batch - e.g. `job-worker` score mode's `jobs` array) with the given input JSON, run **one worker at a time** (the browser is shared), and act on its compact JSON result.
-- **No subagent support, or a delegation fails** (including a worker whose browser reports `Browser is already in use`): execute that worker's procedure inline in the current context - read `$JOBPILOT_SKILLS_ROOT/../agents/<name>.md` and follow it for this job. For a batch, run its batch procedure inline (one shared tab, one item at a time) rather than falling back per item. Same behavior, just no context isolation.
+- Delegate the job (or batch - e.g. `job-scorer` score mode's `jobs` array) with the given input JSON, run **one worker at a time** (the browser is shared), and act on its compact JSON result.
+- **No subagent support, or a delegation fails** (including a worker whose browser reports `Browser is already in use`): run the named agent's procedure inline in the current context - read `$JOBPILOT_SKILLS_ROOT/../agents/<name>.md` (e.g. `job-applier.md`) and follow it for this job. For a batch, run its batch procedure inline (one shared tab, one item at a time) rather than falling back per item. Same behavior, just no context isolation.
 
 ## Auth
 

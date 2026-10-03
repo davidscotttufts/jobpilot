@@ -130,10 +130,12 @@ Claude.
   `skills/_shared/` (no `SKILL.md`, so neither provider lists them as skills).
   Skills reference siblings by name and shared docs by relative path
   (`../_shared/<doc>.md`), so the same text serves both providers.
-- `agents/*.md`: worker subagents (`job-worker`, `networking-worker`) that
-  campaign skills delegate per-iteration work to, isolating heavy browser
-  output. Claude auto-discovers them; [.codex/agents/](../.codex/agents/)
-  point at the same `.md` bodies. Runtimes without subagents run inline.
+- `agents/*.md`: worker subagents (`job-scorer`, `job-applier`,
+  `job-searcher`, `networking-worker`) that campaign skills delegate
+  per-iteration work to, isolating heavy browser output. Each holds the shared
+  docs it reads on every run, and inherits the session's model. Claude
+  auto-discovers them; the host writes Codex copies (see below). Runtimes
+  without subagents run inline.
 - `.mcp.json`: Playwright MCP server.
 - `.claude-plugin/plugin.json` + `.codex-plugin/plugin.json`: provider
   manifests (Codex ignores Claude-only frontmatter like `allowed-tools`).
@@ -155,8 +157,9 @@ still launches.
 Codex has no `--plugin-dir` either. Before launch, the host mirrors the bundled
 skill tree into `<root>/.agents/skills`, Codex's repository-local discovery
 location (excluding the marketplace-owned `setup` bootstrap) and translates
-the bundled `.mcp.json` into `-c mcp_servers.*` overrides. The publish output
-also bundles `.codex/agents/*.toml` for worker parity. Both provider
+the bundled `.mcp.json` into `-c mcp_servers.*` overrides. It also writes
+`<root>/.codex/agents/*.toml` from `plugin/agents/*.md`, with each body inlined
+as `developer_instructions`, for worker parity. Both provider
 marketplaces contain only `setup`; the full runtime tree comes from the host.
 The bootstraps are published to the
 [claude-plugins](https://github.com/suxrobGM/claude-plugins) and

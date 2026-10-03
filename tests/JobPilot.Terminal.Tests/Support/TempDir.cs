@@ -26,6 +26,7 @@ internal sealed class TempDir : IDisposable
         File(Path.Combine("plugin", ".mcp.json"), """{"mcpServers":{}}""");
         File(Path.Combine("plugin", ".claude-plugin", "plugin.json"));
         File(Path.Combine("plugin", ".codex-plugin", "plugin.json"));
+        File(Path.Combine("plugin", "agents", "job-scorer.md"), "---\nname: job-scorer\ndescription: Scores.\n---\nBody");
     }
 
     public void Dispose()
