@@ -1,4 +1,3 @@
-using System.Text.Json;
 using JobPilot.Terminal.Pilot;
 using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Sessions;
@@ -17,8 +16,6 @@ internal static class Builders
         Running = running,
     };
 
-    public static CycleResult Cycle(int sleep, CycleStatus status = CycleStatus.Ok) => new(status, sleep);
-
     public static DateTimeOffset Fresh => DateTimeOffset.UtcNow;
 
     public static DateTimeOffset Stale => DateTimeOffset.UtcNow - CycleRunner.ActiveWindow - TimeSpan.FromMinutes(5);
@@ -30,7 +27,7 @@ internal static class Builders
         new(Guid.NewGuid().ToString(), DateTimeOffset.UtcNow, status, sleep);
 
     public static PilotTaskList TaskList(int tasks = 0, int sleep = 1800) =>
-        new([.. Enumerable.Repeat(JsonDocument.Parse("{}").RootElement, tasks)], sleep, DateTimeOffset.UtcNow.AddSeconds(sleep));
+        new([.. Enumerable.Range(1, tasks).Select(i => new PilotTaskStub($"t{i}", $"Task {i}"))], "v1", sleep, DateTimeOffset.UtcNow.AddSeconds(sleep));
 
     /// <summary>A started process over the given fake connection.</summary>
     public static PtyProcess StartedPty(FakePtyConnection connection)

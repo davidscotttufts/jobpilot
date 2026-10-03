@@ -8,7 +8,8 @@
 | 0. Spike | Done (findings below). Subagent cost and Codex-in-TUI still unmeasured. |
 | 3. Host checks first | Done on `feat/pilot-v2`. Checked live: an idle cycle wrote its own entry and woke no model. |
 | 2. Token telemetry | Done on `feat/pilot-v2`. Migration `20261003000000` applied only to the local spike database. |
-| 4-8 | Not started. |
+| 4. Host bookkeeping | Done on `feat/pilot-v2`. Checked live with a `search.setup` run; overnight run not done. |
+| 5-8 | Not started. |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
@@ -163,6 +164,8 @@ starts smaller). "usd" is `cost_usd`, the API-price equivalent, used here only t
 | Idle, after milestone 3 | 0 | 0 | 0 | 0 | 0 |
 | `search.setup` | 14 | 2.7K | 948K | 31K | 0.34 |
 | `search.discover`, 10 jobs saved, 7 min | 57 | 21K | 5.4M | 107K | 1.72 |
+| `search.discover`, prompt suggestions off (milestone 2) | - | 19K | 3.2M | 118K | - |
+| `search.setup`, milestone 4 (host bookkeeping) | - | 1.0K | 294K | 27K | - |
 
 What it shows:
 
@@ -311,6 +314,27 @@ The session stays in the TUI the whole time.
 
 Exit: tokens per `job.apply` and per `search.discover` drop against the milestone 2 numbers, and
 no task type regresses in success rate over one overnight run.
+
+As built, simpler than above:
+
+- Measured: `search.setup` went from 948K to 294K cache-read tokens (about 69% less) and from
+  2.7K to 1.0K output, in about 40 seconds. Rows from milestone 2 on come from `pilot_runs`,
+  which has no request count or `cost_usd`.
+- Usage posts to `POST /api/pilot/runs/:id/usage` now that the host holds the run id; the
+  milestone 2 time-window match is gone.
+- No task input endpoint yet: the skill reads `GET /api/pilot/runs/:id` (task type, subject,
+  payload) and its task file loads the rest as before. Profile, saved answers and site hints in
+  one call come with milestones 5 and 6, when the agents that use them exist.
+- `pilotRunResultSchema` outcome is `done | failed`; a parked job is `done` with a question
+  filed, so `needs_user` added nothing. `POST /runs/:id/result` journals the action and hints
+  under `cycleId = runId`, finishes the run, and publishes `run.finished`; a repeat post for a
+  finished run returns it unchanged.
+- The host writes every `cycle` entry (status, the refresh's `sleepSeconds`), fails a run that
+  never posted a result, and reads the finish from `run.finished` or a poll of the run every
+  2 minutes. `SentinelParser` and the activity probe's completion fallback are gone.
+- Task files keep their "Journal: ..." wording; `SKILL.md` maps a journal line to the result's
+  `summary` and a journal `detail` to its `detail`. `search.discover` keeps its own search
+  run-result call for now.
 
 ## Milestone 5: specialized agents
 

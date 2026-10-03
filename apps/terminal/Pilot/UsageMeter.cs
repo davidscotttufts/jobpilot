@@ -1,18 +1,16 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 
 namespace JobPilot.Terminal.Pilot;
 
-/// <summary>POST /api/pilot/usage: one cycle's token usage.</summary>
+/// <summary>POST /api/pilot/runs/:id/usage: one run's token usage.</summary>
 public sealed record PilotUsage(
-    int CycleSeconds, string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens);
+    string Model, long InputTokens, long OutputTokens, long CacheReadTokens, long CacheWriteTokens);
 
 /// <summary>Sums the per-request usage both provider CLIs export to the host's OTLP/HTTP JSON logs endpoint.</summary>
 public sealed class UsageMeter
 {
     private readonly Lock sync = new();
-    private long startedAt;
     private string? model;
     private long input;
     private long output;
@@ -24,7 +22,6 @@ public sealed class UsageMeter
     {
         lock (sync)
         {
-            startedAt = Stopwatch.GetTimestamp();
             model = null;
             input = output = cacheRead = cacheWrite = 0;
         }
@@ -40,9 +37,7 @@ public sealed class UsageMeter
                 return null;
             }
 
-            // Rounded up, so the server's window still covers the run the cycle started.
-            var cycleSeconds = (int)Math.Ceiling(Stopwatch.GetElapsedTime(startedAt).TotalSeconds);
-            var usage = new PilotUsage(cycleSeconds, model, input, output, cacheRead, cacheWrite);
+            var usage = new PilotUsage(model, input, output, cacheRead, cacheWrite);
             model = null;
             input = output = cacheRead = cacheWrite = 0;
             return usage;

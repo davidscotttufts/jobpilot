@@ -16,9 +16,21 @@ export const finishPilotRunSchema = z.object({
   note: z.string().optional(),
 });
 
+export const pilotRunResultSchema = z.object({
+  outcome: z.enum(["done", "failed"]),
+  // The journal action line, human and specific.
+  summary: z.string().trim().min(1),
+  subjectType: z.string().min(1).optional(),
+  subjectId: z.string().min(1).optional(),
+  detail: z.record(z.string(), z.json()).optional(),
+  // Durable board/site facts, journaled as `hint` entries.
+  hints: z
+    .array(z.object({ domain: z.string().min(1), text: z.string().trim().min(1) }))
+    .max(3)
+    .default([]),
+});
+
 export const reportPilotUsageSchema = z.object({
-  // Elapsed time on the host's own clock, so a skewed machine clock still finds the cycle's run.
-  cycleSeconds: z.number().int().min(0),
   model: z.string().min(1),
   inputTokens: z.number().int().min(0),
   outputTokens: z.number().int().min(0),
@@ -40,4 +52,5 @@ export const pilotRunSchema = z.intersection(pilotRunBaseSchema, taskFieldsSchem
 
 export type FinishPilotRunInput = z.infer<typeof finishPilotRunSchema>;
 export type PilotRun = z.infer<typeof pilotRunSchema>;
+export type PilotRunResultInput = z.infer<typeof pilotRunResultSchema>;
 export type ReportPilotUsageInput = z.infer<typeof reportPilotUsageSchema>;

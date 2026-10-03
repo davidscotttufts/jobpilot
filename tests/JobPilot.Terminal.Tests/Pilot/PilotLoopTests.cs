@@ -85,7 +85,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
         await TestWait.Until(() => session.Actions.Contains("sleep:1800"));
         Assert.Equal(0, CyclesSent);
         Assert.DoesNotContain("start", session.Actions);
-        Assert.Single(session.EmptyCycles);
+        Assert.Single(session.Cycles);
     }
 
     [Fact]
@@ -106,7 +106,8 @@ public sealed class PilotLoopTests : IAsyncLifetime
     public async Task Wake_DuringTheInterCycleSleep_StartsTheNextCycleNow()
     {
         session.BlockSleep = true;
-        session.Signals.Enqueue(WaitResult.Sentinel(Cycle(3600)));
+        session.DefaultTaskList = TaskList(tasks: 1, sleep: 3600);
+        session.Signals.Enqueue(WaitResult.Finished("done"));
         await loop.StartAsync(CancellationToken.None);
         store.Save(Settings());
         await TestWait.Until(() => session.Actions.Contains("sleep:3600"));
@@ -159,7 +160,7 @@ public sealed class PilotLoopTests : IAsyncLifetime
     [Fact]
     public async Task GetStatus_ReportsTheLastCycle()
     {
-        session.Signals.Enqueue(WaitResult.Sentinel(Cycle(3600, CycleStatus.Empty)));
+        session.DefaultTaskList = TaskList(sleep: 3600);
         await loop.StartAsync(CancellationToken.None);
 
         store.Save(Settings());

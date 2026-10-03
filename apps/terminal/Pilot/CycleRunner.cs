@@ -2,9 +2,17 @@ using System.Globalization;
 
 namespace JobPilot.Terminal.Pilot;
 
+public enum CycleStatus
+{
+    Ok,
+    Empty,
+    Error,
+}
+
 /// <summary>
-/// Runs one cycle and recovers a stuck run by climbing check-in, skip, then restart. It returns the inter-cycle
-/// sleep instead of sleeping, so the loop can cut the sleep short on a wake.
+/// Runs one cycle: refresh the task list, start a run for its top task, hand that run to the agent, and record the
+/// cycle. A stuck run climbs check-in, skip, then restart. It returns the inter-cycle sleep instead of sleeping, so
+/// the loop can cut the sleep short on a wake.
 /// </summary>
 /// <param name="checkInterval">Tests pass one at least as long as every wait, so each wait is a single slice.</param>
 internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval = null)
@@ -15,7 +23,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     // Server-side activity newer than this means the run is working, not stuck.
     public static readonly TimeSpan ActiveWindow = TimeSpan.FromMinutes(5);
 
-    private static readonly TimeSpan SentinelTimeout = TimeSpan.FromMinutes(20);
+    private static readonly TimeSpan ResultTimeout = TimeSpan.FromMinutes(20);
     private static readonly TimeSpan CheckInGrace = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan BackoffDelay = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan StartupGrace = TimeSpan.FromSeconds(15);
@@ -28,19 +36,16 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     // Back off only after this many restarts or exits in a row, so a broken install cannot hot-loop.
     private const int BackoffThreshold = 3;
 
-    // How often a wait asks the server for a completion the TUI may have garbled.
+    // How often a wait asks the server whether the run finished, in case its event was missed.
     private readonly TimeSpan checkInterval = checkInterval ?? TimeSpan.FromMinutes(2);
-
-    // The server's newest completion before this cycle, so the previous cycle's completion never ends this one.
-    private CompletedCycle? baseline;
 
     private TimeSpan totalWaited;
     private bool extensionReported;
 
-    /// <summary>Reset by any finished cycle.</summary>
+    /// <summary>Reset by any run that posts its result.</summary>
     public int ConsecutiveRestarts { get; private set; }
 
-    /// <summary>Sessions that died on their own mid-wait; reset by any finished cycle.</summary>
+    /// <summary>Sessions that died on their own mid-wait; reset by any run that posts its result.</summary>
     public int ConsecutiveExits { get; private set; }
 
     public DateTimeOffset? LastCycleAt { get; private set; }
@@ -69,8 +74,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     }
 
     /// <summary>Returns the sleep before the next cycle, or null to go again right away.</summary>
-    /// <param name="activity">The probe taken just before; its last cycle is the baseline for spotting a garbled finish.</param>
-    public async Task<TimeSpan?> RunAsync(PilotSettings settings, PilotActivity activity, CancellationToken ct)
+    public async Task<TimeSpan?> RunAsync(PilotSettings settings, CancellationToken ct)
     {
         // Never fight a user who launched the other provider by hand: pause instead of killing their session.
         var running = session.RunningProvider;
@@ -96,45 +100,78 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             return await FinishEmptyAsync(taskList, ct);
         }
 
+        // The server's ranking is final, so the top task is the one to run.
+        var task = taskList.Tasks[0];
+        var runId = await session.StartRunAsync(task.Id, taskList.Version, ct);
+        if (runId is null)
+        {
+            // A lost race or the duplicate-apply guard; the next refresh moves past it.
+            return TimeSpan.FromSeconds(MinSleepSeconds);
+        }
+
         if (running is null)
         {
             session.Start(settings);
             await session.DelayAsync(StartupGrace, ct);
         }
 
-        baseline = activity.LastCycle;
         totalWaited = TimeSpan.Zero;
         extensionReported = false;
 
-        await session.SendCycleAsync(settings, ct);
-        var (finished, sleep) = await WaitToFinishAsync(SentinelTimeout, ct);
-        var next = finished ? sleep : await ClimbLadderAsync(settings, ct);
-        await session.ReportUsageAsync(ct);
-        return next;
+        await session.SendCycleAsync(settings, runId, ct);
+        var result = await WaitToFinishAsync(runId, ResultTimeout, ct);
+        if (result.Outcome is not (WaitOutcome.Finished or WaitOutcome.SessionExited))
+        {
+            result = await ClimbLadderAsync(settings, runId, ct);
+        }
+
+        // Usage before the cycle entry, which observers treat as the end of the cycle.
+        await session.ReportUsageAsync(runId, ct);
+        return await RecordRunAsync(task, runId, taskList, result, ct);
     }
 
     private async Task<TimeSpan?> FinishEmptyAsync(PilotTaskList taskList, CancellationToken ct)
     {
         var sleep = ClampSleep(taskList.SleepSeconds);
         var wake = taskList.NextWakeAt.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
-        await session.JournalEmptyCycleAsync($"All caught up - nothing needs doing; checking back at {wake}.", sleep, ct);
+        await session.JournalCycleAsync(null, $"All caught up - nothing needs doing; checking back at {wake}.", "empty", sleep, ct);
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = CycleStatus.Empty;
         return TimeSpan.FromSeconds(sleep);
     }
 
-    private async Task<TimeSpan?> ClimbLadderAsync(PilotSettings settings, CancellationToken ct)
+    /// <summary>Journals the cycle. A run the agent never finished is failed here, so it does not hold its task.</summary>
+    private async Task<TimeSpan?> RecordRunAsync(
+        PilotTaskStub task, string runId, PilotTaskList taskList, WaitResult result, CancellationToken ct)
     {
-        // No server check between rungs: every unfinished wait has just checked for a completion.
+        var posted = result.Outcome is WaitOutcome.Finished;
+        if (!posted)
+        {
+            await session.FailRunAsync(runId, ct);
+        }
+
+        var ok = posted && result.RunOutcome == "done";
+        var sleep = ClampSleep(taskList.SleepSeconds);
+        var ending = posted ? result.RunOutcome : "no result, failed by the host";
+        await session.JournalCycleAsync(runId, $"{task.Title} - {ending}.", ok ? "ok" : "error", sleep, ct);
+
+        LastCycleAt = DateTimeOffset.UtcNow;
+        LastCycleStatus = ok ? CycleStatus.Ok : CycleStatus.Error;
+        return posted ? TimeSpan.FromSeconds(sleep) : null;
+    }
+
+    private async Task<WaitResult> ClimbLadderAsync(PilotSettings settings, string runId, CancellationToken ct)
+    {
+        // No server check between rungs: every unfinished wait has just checked whether the run finished.
         (Directive Directive, string Report)[] rungs = [(Directive.CheckIn, Reports.CheckIn), (Directive.Skip, Reports.Skip)];
         foreach (var (directive, report) in rungs)
         {
             await session.ReportAsync(report, ct);
             await session.SendDirectiveAsync(settings, directive, ct);
-            var (finished, sleep) = await WaitToFinishAsync(CheckInGrace, ct);
-            if (finished)
+            var result = await WaitToFinishAsync(runId, CheckInGrace, ct);
+            if (result.Outcome is WaitOutcome.Finished or WaitOutcome.SessionExited)
             {
-                return sleep;
+                return result;
             }
         }
 
@@ -147,45 +184,38 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
             await session.DelayAsync(BackoffDelay, ct);
         }
 
-        return null;
+        return WaitResult.Timeout;
     }
 
-    /// <summary>Finished with a sleep on a sentinel, finished with none when the session died, else not finished.</summary>
-    private async Task<(bool Finished, TimeSpan? Sleep)> WaitToFinishAsync(TimeSpan quietBudget, CancellationToken ct)
+    private async Task<WaitResult> WaitToFinishAsync(string runId, TimeSpan quietBudget, CancellationToken ct)
     {
-        var result = await WaitAsync(quietBudget, ct);
-        if (result.Outcome is WaitOutcome.Sentinel)
+        var result = await WaitAsync(runId, quietBudget, ct);
+        if (result.Outcome is WaitOutcome.Finished)
         {
             ConsecutiveRestarts = 0;
             ConsecutiveExits = 0;
-            LastCycleAt = DateTimeOffset.UtcNow;
-            LastCycleStatus = result.Cycle.Status;
-            return (true, TimeSpan.FromSeconds(ClampSleep(result.Cycle.SleepSeconds)));
         }
-
-        if (result.Outcome is not WaitOutcome.SessionExited)
+        else if (result.Outcome is WaitOutcome.SessionExited)
         {
-            return (false, null);
+            // The next cycle restarts the session, but a CLI that keeps dying at startup (broken install or sign-in)
+            // backs off instead of restarting every few seconds.
+            ConsecutiveExits++;
+            if (ConsecutiveExits >= BackoffThreshold)
+            {
+                await session.ReportAsync(Reports.ExitBackoff, ct);
+                await session.DelayAsync(BackoffDelay, ct);
+                ConsecutiveExits = 0;
+            }
         }
 
-        // The next cycle restarts the session, but a CLI that keeps dying at startup (broken install or sign-in)
-        // backs off instead of restarting every few seconds.
-        ConsecutiveExits++;
-        if (ConsecutiveExits >= BackoffThreshold)
-        {
-            await session.ReportAsync(Reports.ExitBackoff, ct);
-            await session.DelayAsync(BackoffDelay, ct);
-            ConsecutiveExits = 0;
-        }
-
-        return (true, null);
+        return result;
     }
 
     /// <summary>
-    /// Waits in slices, checking the server after each. A garbled completion ends the wait and fresh activity extends
-    /// it, up to <see cref="MaxCycleWait"/> per cycle; otherwise it returns after the quiet budget or a stuck signal.
+    /// Waits in slices, checking the server after each. A finished run ends the wait and fresh activity extends it,
+    /// up to <see cref="MaxCycleWait"/> per cycle; otherwise it returns after the quiet budget or a stuck signal.
     /// </summary>
-    private async Task<WaitResult> WaitAsync(TimeSpan quietBudget, CancellationToken ct)
+    private async Task<WaitResult> WaitAsync(string runId, TimeSpan quietBudget, CancellationToken ct)
     {
         var slice = checkInterval < quietBudget ? checkInterval : quietBudget;
         var quiet = TimeSpan.Zero;
@@ -193,7 +223,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         while (true)
         {
             var result = await session.WaitForSignalAsync(slice, ct);
-            if (result.Outcome is WaitOutcome.Sentinel or WaitOutcome.SessionExited)
+            if (result.Outcome is WaitOutcome.Finished or WaitOutcome.SessionExited)
             {
                 return result;
             }
@@ -206,12 +236,12 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
                 quiet += slice;
             }
 
-            var activity = await session.GetActivityAsync(ct);
-            if (await FindNewCompletionAsync(activity, ct) is { } cycle)
+            if (await session.GetRunAsync(runId, ct) is { FinishedAt: not null } run)
             {
-                return WaitResult.Sentinel(cycle);
+                return WaitResult.Finished(run.Outcome ?? "failed");
             }
 
+            var activity = await session.GetActivityAsync(ct);
             if (activity?.LastActivityAt is { } at && DateTimeOffset.UtcNow - at < ActiveWindow)
             {
                 if (totalWaited >= MaxCycleWait)
@@ -219,7 +249,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
                     return result;
                 }
 
-                if (totalWaited >= SentinelTimeout && !extensionReported)
+                if (totalWaited >= ResultTimeout && !extensionReported)
                 {
                     await session.ReportAsync(Reports.Extend, ct);
                     extensionReported = true;
@@ -234,29 +264,6 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         }
     }
 
-    /// <summary>A server-recorded completion newer than the baseline. Compares server values only, never clocks.</summary>
-    private async Task<CycleResult?> FindNewCompletionAsync(PilotActivity? activity, CancellationToken ct)
-    {
-        if (activity?.LastCycle is not { } latest)
-        {
-            return null;
-        }
-
-        var isNew = baseline is null
-            || latest.CycleId != baseline.CycleId
-            || latest.CompletedAt > baseline.CompletedAt;
-        if (!isNew)
-        {
-            return null;
-        }
-
-        baseline = latest;
-        await session.ReportAsync(Reports.Completion, ct);
-
-        // A completion with no sleep hint is a skill bug; the minimum keeps the next cycle coming soon.
-        return new CycleResult(SentinelParser.ParseStatus(latest.Status), latest.SleepSeconds ?? MinSleepSeconds);
-    }
-
     private static int ClampSleep(int seconds) => Math.Clamp(seconds, MinSleepSeconds, MaxSleepSeconds);
 
     /// <summary>Journal entries the user's phone hears about, so keep the wording stable.</summary>
@@ -264,10 +271,9 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
     {
         public const string CheckIn = "Pilot orchestrator: the current run looks stuck - sent the agent a check-in reminder.";
         public const string Skip = "Pilot orchestrator: still stuck after the check-in - told the agent to set the task aside as failed and move on.";
-        public const string Restart = "Pilot orchestrator: the agent stopped responding - restarted its session; the unfinished task will be picked up again automatically.";
+        public const string Restart = "Pilot orchestrator: the agent stopped responding - restarted its session and set the task aside as failed.";
         public const string Backoff = "Pilot orchestrator: 3 runs in a row got stuck - taking a 30-minute break before trying again.";
         public const string ExitBackoff = "Pilot orchestrator: the provider CLI keeps exiting right after startup - check its install and sign-in - taking a 30-minute break.";
         public const string Extend = "Pilot orchestrator: this run is taking longer than usual but is still making progress - giving it more time.";
-        public const string Completion = "Pilot orchestrator: read this run's result from the server because the terminal output was unreadable.";
     }
 }

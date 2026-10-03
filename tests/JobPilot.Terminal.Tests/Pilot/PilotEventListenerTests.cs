@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using JobPilot.Terminal.Pilot;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -48,6 +49,18 @@ public sealed class PilotEventListenerTests
         await TestWait.Until(() => h.Wakes == 1);
         Assert.Equal("Bearer tok", h.Handler.LastRequest?.Headers.Authorization?.ToString());
         Assert.Contains("text/event-stream", h.Handler.LastRequest?.Headers.Accept.ToString());
+    }
+
+    [Fact]
+    public async Task Listener_PassesAFinishedRunOn_WithoutWakingTheLoop()
+    {
+        await using var h = await Harness.StartAsync();
+
+        h.Push("data: {\"type\":\"run.finished\",\"runId\":\"run-1\",\"outcome\":\"done\"}\n\n");
+
+        await TestWait.Until(() => !h.FinishedRuns.IsEmpty);
+        Assert.Equal(["run-1:done"], h.FinishedRuns);
+        Assert.Equal(0, h.Wakes);
     }
 
     [Fact]
@@ -104,10 +117,17 @@ public sealed class PilotEventListenerTests
             Handler = new FakeSseHandler { Status = status };
             Store = new PilotStore(Path.Combine(temp.Root, "pilot.json"), NullLogger<PilotStore>.Instance);
             var api = new PilotApi(new HttpClient(Handler), NullLogger<PilotApi>.Instance);
-            listener = new PilotEventListener(Store, api, () => Interlocked.Increment(ref wakes), NullLogger<PilotEventListener>.Instance);
+            listener = new PilotEventListener(
+                Store,
+                api,
+                () => Interlocked.Increment(ref wakes),
+                (runId, outcome) => FinishedRuns.Enqueue($"{runId}:{outcome}"),
+                NullLogger<PilotEventListener>.Instance);
         }
 
         public FakeSseHandler Handler { get; }
+
+        public ConcurrentQueue<string> FinishedRuns { get; } = new();
 
         public PilotStore Store { get; }
 

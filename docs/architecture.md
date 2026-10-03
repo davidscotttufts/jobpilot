@@ -106,26 +106,29 @@ networking autonomy, approved posting platforms) and the Pilot repeats one
 cycle for as long as it's enabled:
 
 ```text
-  sense ──► decide ──► act ──► record ──► exit
-    ▲                                        │
-    └──── the orchestrator re-injects ◄───────┘
+  check ──► start a run ──► agent works ──► agent posts result ──► record
+    ▲                                                                │
+    └──────────────── the orchestrator sleeps, then checks ◄─────────┘
 ```
 
-- **Sense.** The agent fetches its task list, a prioritized list the server
-  compiles fresh from your data on every request (jobs to apply to, replies to
-  review, follow-ups due). There is no separate task queue or background cron.
-- **Decide.** It takes the single top task.
-- **Act.** It starts a run on the task, a short-lived lock that has a built-in
-  timeout, and does that one thing: apply to a job, send a follow-up, draft an
-  interview reply. The result is saved to the server before anything else
-  happens, so a crash mid-cycle loses nothing. The run expires and the work
-  returns to the task list.
-- **Record.** The action lands in the live journal.
-- **Exit.** The cycle prints a sentinel line (`[[JOBPILOT_CYCLE ...]]`) and
-  stops. The orchestrator on your machine reads it, confirms completion with
-  the server (garbled terminal output can't fake a finish), and schedules the
-  next run. A quiet or stuck run gets a check-in reminder, then a session
-  restart; the run timeout returns its work to the task list either way.
+- **Check.** The orchestrator on your machine refreshes the task list, a
+  prioritized list the server compiles fresh from your data (jobs to apply to,
+  replies to review, follow-ups due). There is no separate task queue or
+  background cron. With nothing to do it records a quiet cycle and sleeps, and
+  the AI never wakes.
+- **Start a run.** It starts a run on the single top task, a short-lived lock
+  with a built-in timeout, then clears the agent's context and hands it that
+  run.
+- **Agent works.** The agent does that one thing: apply to a job, send a
+  follow-up, draft an interview reply. Job results are saved to the server as
+  they happen, so a crash mid-run loses nothing.
+- **Agent posts result.** Its last step is one typed result (done or failed,
+  plus a one-line summary). The server journals it, finishes the run, and tells
+  the orchestrator.
+- **Record.** The orchestrator journals the cycle, with the run's token usage,
+  and schedules the next one. A quiet or stuck run gets a check-in reminder,
+  then a session restart; a run that never posts a result is set aside as
+  failed.
 
 Two things let this run without a browser tab open: **one-time pairing**
 stores your login token securely with the host when you first enable the

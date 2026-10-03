@@ -143,7 +143,7 @@ public sealed class PilotLoop : BackgroundService
 
     private async Task RunOnceAsync(PilotSettings settings, CancellationToken ct, CancellationToken stoppingToken)
     {
-        // One probe gates the cycle on the server's run-state and gives the runner its completion baseline.
+        // One probe gates the cycle on the server's run-state.
         var activity = await session.GetActivityAsync(ct);
         if (activity is null)
         {
@@ -164,7 +164,7 @@ public sealed class PilotLoop : BackgroundService
         wakes.Reader.TryRead(out _);
 
         working = true;
-        var sleep = await runner.RunAsync(settings, activity, ct);
+        var sleep = await runner.RunAsync(settings, ct);
         if (sleep is { } duration && duration > TimeSpan.Zero)
         {
             await SleepOrWakeAsync(duration, ct);

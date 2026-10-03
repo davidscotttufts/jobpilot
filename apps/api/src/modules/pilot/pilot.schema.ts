@@ -30,7 +30,7 @@ export const pilotActivityResponseSchema = z.object({
   activeRuns: z.number().int(),
   // The host's pre-inject gate reads this, so a probe costs no PilotState write.
   running: z.boolean(),
-  // The durable completion signal the host falls back on when the sentinel is mangled.
+  // The last cycle's planned sleep, so a restarted host waits out the break.
   lastCycle: z
     .object({
       cycleId: z.string().nullable(),

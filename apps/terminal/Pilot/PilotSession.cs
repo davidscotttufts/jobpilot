@@ -17,25 +17,18 @@ public sealed class PilotSession : IPilotSession, IDisposable
     // The CLIs export logs every second or so, so the last request's usage lands just after the cycle ends.
     private static readonly TimeSpan UsageFlush = TimeSpan.FromSeconds(3);
 
-    // Without the cycle detail spelled out, /api/pilot/activity can't read the entry as a completion.
-    private const string ErrorExit =
-        "journal the error batch (system + cycle with detail:{\"status\":\"error\",\"sleepSeconds\":300}), "
-        + "and print the error sentinel.";
-
-    private const string CheckInText = "Checking in: you appear stuck. Finish your run, " + ErrorExit;
-    private const string SkipText = "Stop the current action. Fail the started task, " + ErrorExit;
-
     private readonly TerminalSession terminal;
     private readonly PilotStore store;
     private readonly PilotApi api;
     private readonly UsageMeter usage;
     private readonly ILogger<PilotSession> logger;
-    private readonly SentinelParser sentinels = new();
     private readonly StuckDetector stuck = new();
 
-    // A cycle, or null for a stuck signal, in one channel so a wait sees whichever comes first. Not single-writer:
-    // the PTY thread writes while the loop re-queues sentinels it drained.
-    private readonly Channel<CycleResult?> signals = Channel.CreateUnbounded<CycleResult?>(new UnboundedChannelOptions { SingleReader = true });
+    // A finished run's outcome, or null for a stuck signal, in one channel so a wait sees whichever comes first.
+    // Not single-writer: the PTY thread and the event listener both write, and a directive re-queues outcomes.
+    private readonly Channel<string?> signals = Channel.CreateUnbounded<string?>(new UnboundedChannelOptions { SingleReader = true });
+
+    private volatile string? currentRunId;
 
     public PilotSession(TerminalSession terminal, PilotStore store, PilotApi api, UsageMeter usage, ILogger<PilotSession> logger)
     {
@@ -52,7 +45,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
     public void Start(PilotSettings settings) =>
         terminal.Start(settings.Provider, Cols, Rows, settings.ApiToken, settings.ApiUrl, settings.WebUrl);
 
-    public async Task SendCycleAsync(PilotSettings settings, CancellationToken ct)
+    public async Task SendCycleAsync(PilotSettings settings, string runId, CancellationToken ct)
     {
         // Cycles keep their state in the API. Clearing first prevents mid-cycle auto-compaction and keeps
         // untrusted page content from lingering into the next cycle.
@@ -63,17 +56,31 @@ public sealed class PilotSession : IPilotSession, IDisposable
         {
         }
 
+        currentRunId = runId;
         stuck.Reset();
         usage.Start();
-        await SendAsync(settings.Provider.SkillCommand(PilotSkill), settings.Provider, ct);
+        await SendAsync($"{settings.Provider.SkillCommand(PilotSkill)} {runId}", settings.Provider, ct);
     }
 
     public Task SendDirectiveAsync(PilotSettings settings, Directive directive, CancellationToken ct)
     {
-        // A directive keeps the stuck cycle's context: no /clear, and a sentinel that raced in must survive.
+        // A directive keeps the stuck run's context: no /clear, and a finish that raced in must survive.
         stuck.Reset();
         DropStuckSignals();
-        return SendAsync(directive == Directive.CheckIn ? CheckInText : SkipText, settings.Provider, ct);
+        var result = $"jobpilot-api POST /api/pilot/runs/{currentRunId}/result";
+        var text = directive == Directive.CheckIn
+            ? $"Checking in: you appear stuck. Finish now and post your result with {result} (outcome \"failed\" if you cannot finish)."
+            : $"Stop the current action. Post a failed result now with {result}, saying where it stopped.";
+        return SendAsync(text, settings.Provider, ct);
+    }
+
+    /// <summary>Called by the event listener for every run.finished event; only the handed-over run counts.</summary>
+    public void OnRunFinished(string runId, string outcome)
+    {
+        if (runId == currentRunId)
+        {
+            signals.Writer.TryWrite(outcome);
+        }
     }
 
     public async Task<WaitResult> WaitForSignalAsync(TimeSpan timeout, CancellationToken ct)
@@ -98,7 +105,7 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
             waitCts.CancelAfter(timeout);
             var signal = await signals.Reader.ReadAsync(waitCts.Token);
-            return signal is { } cycle ? WaitResult.Sentinel(cycle) : WaitResult.Stuck;
+            return signal is { } outcome ? WaitResult.Finished(outcome) : WaitResult.Stuck;
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -137,20 +144,34 @@ public sealed class PilotSession : IPilotSession, IDisposable
     public async Task<PilotTaskList?> RefreshTasksAsync(CancellationToken ct) =>
         store.Current is { } settings ? await api.RefreshTasksAsync(settings, ct) : null;
 
-    public async Task JournalEmptyCycleAsync(string summary, int sleepSeconds, CancellationToken ct)
+    public async Task<string?> StartRunAsync(string taskId, string taskListVersion, CancellationToken ct) =>
+        store.Current is { } settings ? (await api.StartRunAsync(settings, taskId, taskListVersion, ct))?.Id : null;
+
+    public async Task<PilotRunState?> GetRunAsync(string runId, CancellationToken ct) =>
+        store.Current is { } settings ? await api.GetRunAsync(settings, runId, ct) : null;
+
+    public async Task FailRunAsync(string runId, CancellationToken ct)
     {
         if (store.Current is { } settings)
         {
-            await api.JournalEmptyCycleAsync(settings, summary, sleepSeconds, ct);
+            await api.FailRunAsync(settings, runId, ct);
         }
     }
 
-    public async Task ReportUsageAsync(CancellationToken ct)
+    public async Task JournalCycleAsync(string? cycleId, string summary, string status, int sleepSeconds, CancellationToken ct)
+    {
+        if (store.Current is { } settings)
+        {
+            await api.JournalCycleAsync(settings, cycleId, summary, status, sleepSeconds, ct);
+        }
+    }
+
+    public async Task ReportUsageAsync(string runId, CancellationToken ct)
     {
         await Task.Delay(UsageFlush, ct);
         if (usage.Take() is { } measured && store.Current is { } settings)
         {
-            await api.ReportUsageAsync(settings, measured, ct);
+            await api.ReportUsageAsync(settings, runId, measured, ct);
         }
     }
 
@@ -167,22 +188,9 @@ public sealed class PilotSession : IPilotSession, IDisposable
 
     private void OnOutput(byte[] data)
     {
-        // Interactive sessions skip the parsers. Nothing is lost: start saves the store before the first cycle.
+        // Interactive sessions skip the stuck heuristic. Nothing is lost: start saves the store before the first cycle.
         if (store.Current is not { Running: true })
         {
-            return;
-        }
-
-        var cycles = sentinels.Feed(data);
-        foreach (var cycle in cycles)
-        {
-            signals.Writer.TryWrite(cycle);
-        }
-
-        // A finished cycle clears stuck evidence before the next one gathers its own.
-        if (cycles.Count > 0)
-        {
-            stuck.Reset();
             return;
         }
 
@@ -193,21 +201,21 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
     }
 
-    // Stuck evidence left over from before a directive would end its grace at once, but a sentinel must survive.
+    // Stuck evidence left over from before a directive would end its grace at once, but a finish must survive.
     private void DropStuckSignals()
     {
-        List<CycleResult> kept = [];
+        List<string> kept = [];
         while (signals.Reader.TryRead(out var signal))
         {
-            if (signal is { } cycle)
+            if (signal is { } outcome)
             {
-                kept.Add(cycle);
+                kept.Add(outcome);
             }
         }
 
-        foreach (var cycle in kept)
+        foreach (var outcome in kept)
         {
-            signals.Writer.TryWrite(cycle);
+            signals.Writer.TryWrite(outcome);
         }
     }
 }

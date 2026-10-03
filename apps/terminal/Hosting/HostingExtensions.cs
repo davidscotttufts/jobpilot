@@ -36,13 +36,15 @@ public static class HostingExtensions
             sp.GetRequiredService<ILogger<PilotStore>>()));
         services.AddSingleton<PilotApi>();
         services.AddSingleton<UsageMeter>();
-        services.AddSingleton<IPilotSession, PilotSession>();
+        services.AddSingleton<PilotSession>();
+        services.AddSingleton<IPilotSession>(sp => sp.GetRequiredService<PilotSession>());
         services.AddSingleton<PilotLoop>();
         services.AddHostedService(sp => sp.GetRequiredService<PilotLoop>());
         services.AddHostedService(sp => new PilotEventListener(
             sp.GetRequiredService<PilotStore>(),
             sp.GetRequiredService<PilotApi>(),
             sp.GetRequiredService<PilotLoop>().Wake,
+            sp.GetRequiredService<PilotSession>().OnRunFinished,
             sp.GetRequiredService<ILogger<PilotEventListener>>()));
 
         services.AddSingleton<HostUpdater>();

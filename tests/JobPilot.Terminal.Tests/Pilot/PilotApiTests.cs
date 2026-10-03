@@ -54,7 +54,7 @@ public sealed class PilotApiTests
     [Fact]
     public async Task RefreshTasks_PostsTheRefresh_AndReadsTheTaskList()
     {
-        const string body = """{"tasks":[{"id":"t1","taskType":"job.apply"}],"emptyReason":null,"sleepSeconds":15,"nextWakeAt":"2026-10-02T12:00:15Z","version":"v"}""";
+        const string body = """{"tasks":[{"id":"t1","title":"Apply to Acme","taskType":"job.apply"}],"emptyReason":null,"sleepSeconds":15,"nextWakeAt":"2026-10-02T12:00:15Z","version":"v1"}""";
         HttpRequestMessage? seen = null;
         var api = Api((request, _) =>
         {
@@ -67,7 +67,8 @@ public sealed class PilotApiTests
         Assert.Equal(HttpMethod.Post, seen!.Method);
         Assert.Equal("https://api.example.test/api/pilot/tasks/refresh", seen.RequestUri!.ToString());
         Assert.Equal("Bearer tok", seen.Headers.Authorization!.ToString());
-        Assert.Single(taskList!.Tasks);
+        Assert.Equal([new PilotTaskStub("t1", "Apply to Acme")], taskList!.Tasks);
+        Assert.Equal("v1", taskList.Version);
         Assert.Equal(15, taskList.SleepSeconds);
         Assert.Equal(new DateTimeOffset(2026, 10, 2, 12, 0, 15, TimeSpan.Zero), taskList.NextWakeAt);
     }
@@ -83,7 +84,7 @@ public sealed class PilotApiTests
     }
 
     [Fact]
-    public async Task JournalEmptyCycle_PostsACycleEntryWithItsDetail()
+    public async Task JournalCycle_PostsACycleEntryWithItsDetail()
     {
         string? body = null;
         var api = Api(async (request, ct) =>
@@ -92,10 +93,10 @@ public sealed class PilotApiTests
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
 
-        await api.JournalEmptyCycleAsync(Settings(), "All caught up", 1800, TestContext.Current.CancellationToken);
+        await api.JournalCycleAsync(Settings(), "run-1", "Task 1 - done.", "ok", 30, TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            """{"entries":[{"kind":"cycle","summary":"All caught up","detail":{"status":"empty","sleepSeconds":1800}}]}""",
+            """{"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30}}],"cycleId":"run-1"}""",
             body);
     }
 
@@ -110,14 +111,50 @@ public sealed class PilotApiTests
             body = await request.Content!.ReadAsStringAsync(ct);
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        var usage = new PilotUsage(95, "claude-sonnet-5", 4, 320, 130000, 600);
+        var usage = new PilotUsage("claude-sonnet-5", 4, 320, 130000, 600);
 
-        await api.ReportUsageAsync(Settings(apiUrl: "https://api.example.test/"), usage, TestContext.Current.CancellationToken);
+        await api.ReportUsageAsync(Settings(apiUrl: "https://api.example.test/"), "run-1", usage, TestContext.Current.CancellationToken);
 
-        Assert.Equal("https://api.example.test/api/pilot/usage", seen!.RequestUri!.ToString());
+        Assert.Equal("https://api.example.test/api/pilot/runs/run-1/usage", seen!.RequestUri!.ToString());
         Assert.Equal(
-            """{"cycleSeconds":95,"model":"claude-sonnet-5","inputTokens":4,"outputTokens":320,"cacheReadTokens":130000,"cacheWriteTokens":600}""",
+            """{"model":"claude-sonnet-5","inputTokens":4,"outputTokens":320,"cacheReadTokens":130000,"cacheWriteTokens":600}""",
             body);
+    }
+
+    [Fact]
+    public async Task Runs_StartReadAndFail_OnTheirRoutes()
+    {
+        List<string> seen = [];
+        var api = Api(async (request, ct) =>
+        {
+            var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
+            seen.Add($"{request.Method} {request.RequestUri!.AbsolutePath} {body}");
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"id":"run-1","finishedAt":null,"outcome":null,"taskType":"job.apply"}"""),
+            };
+        });
+        var ct = TestContext.Current.CancellationToken;
+
+        Assert.Equal(new PilotRunState("run-1", null, null), await api.StartRunAsync(Settings(), "t1", "v1", ct));
+        Assert.NotNull(await api.GetRunAsync(Settings(), "run-1", ct));
+        await api.FailRunAsync(Settings(), "run-1", ct);
+
+        Assert.Equal(
+            [
+                """POST /api/pilot/runs {"taskId":"t1","taskListVersion":"v1"}""",
+                "GET /api/pilot/runs/run-1 ",
+                """POST /api/pilot/runs/run-1/finish {"outcome":"failed"}""",
+            ],
+            seen);
+    }
+
+    [Fact]
+    public async Task StartRun_ReturnsNull_WhenTheServerRefusesIt()
+    {
+        var api = Api((_, _) => Respond(HttpStatusCode.Conflict));
+
+        Assert.Null(await api.StartRunAsync(Settings(), "t1", "v1", TestContext.Current.CancellationToken));
     }
 
     [Fact]

@@ -1,6 +1,7 @@
 import {
   currentTaskListSchema,
   finishPilotRunSchema,
+  pilotRunResultSchema,
   pilotRunSchema,
   reportPilotUsageSchema,
   startPilotRunSchema,
@@ -8,7 +9,6 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { z } from "zod/v4";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
@@ -50,6 +50,16 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
         "Atomically starts a task from the supplied task list version and creates its 15-minute run; stale versions and races return 409.",
     },
   })
+  .get("/runs/:id", ({ user, params }) => runs.get(user.id, params.id), {
+    params: idParam,
+    beforeHandle: limitRun,
+    response: pilotRunSchema,
+    detail: {
+      summary: "Get a run",
+      description:
+        "Returns one run with its task type and payload. The agent reads its task from here; the host polls it to see the run finish.",
+    },
+  })
   .post("/runs/:id/heartbeat", ({ user, params }) => runs.heartbeat(user.id, params.id), {
     params: idParam,
     beforeHandle: limitRun,
@@ -70,13 +80,25 @@ export const pilotTasksController = new Elysia({ prefix: "/pilot", detail: { tag
         "Closes a run (done/failed/abandoned); abandoned reverts the job to approved. Bookkeeping only - terminal job results go through the campaign result route.",
     },
   })
-  .post("/usage", ({ user, body }) => runs.reportUsage(user.id, body), {
+  .post("/runs/:id/result", ({ user, params, body }) => runs.postResult(user.id, params.id, body), {
+    params: idParam,
+    body: pilotRunResultSchema,
+    beforeHandle: limitRun,
+    response: pilotRunSchema,
+    detail: {
+      summary: "Post a run's result",
+      description:
+        "The agent's last step: journals the action line and any hints, finishes the run with its outcome, and publishes run.finished. A repeat post for a finished run returns it unchanged, so a retry after a lost response is safe.",
+    },
+  })
+  .post("/runs/:id/usage", ({ user, params, body }) => runs.reportUsage(user.id, params.id, body), {
+    params: idParam,
     body: reportPilotUsageSchema,
     beforeHandle: limitRun,
-    response: z.object({ runId: z.uuid().nullable() }),
+    response: pilotRunSchema,
     detail: {
-      summary: "Report a cycle's token usage",
+      summary: "Report a run's token usage",
       description:
-        "The host posts the cycle's measured usage and the server attaches it to the run that cycle started (the newest run started within the last cycleSeconds). A cycle that started no run returns runId null and stores nothing.",
+        "The host posts the token usage it measured from the provider CLI's telemetry while the run was handed to the agent.",
     },
   });

@@ -6,14 +6,19 @@ using Microsoft.Extensions.Hosting;
 namespace JobPilot.Terminal.Pilot;
 
 /// <summary>The event type is in the JSON, not the SSE event name.</summary>
-internal sealed record PilotEvent(string? Type, PilotEventPromotion? Promotion, PilotEventState? State);
+internal sealed record PilotEvent(
+    string? Type, PilotEventPromotion? Promotion, PilotEventState? State, string? RunId = null, string? Outcome = null);
 
 internal sealed record PilotEventPromotion(string? Status);
 
 internal sealed record PilotEventState(bool? Running);
 
-/// <summary>Holds the pilot event stream open while the pilot runs, and wakes the loop on events that unblock a cycle.</summary>
-public sealed class PilotEventListener(PilotStore store, PilotApi api, Action wake, ILogger<PilotEventListener> logger)
+/// <summary>
+/// Holds the pilot event stream open while the pilot runs. It wakes the loop on events that unblock a cycle and
+/// passes each finished run to the session waiting on it.
+/// </summary>
+public sealed class PilotEventListener(
+    PilotStore store, PilotApi api, Action wake, Action<string, string> runFinished, ILogger<PilotEventListener> logger)
     : BackgroundService
 {
     private static readonly TimeSpan InitialBackoff = TimeSpan.FromSeconds(5);
@@ -126,6 +131,11 @@ public sealed class PilotEventListener(PilotStore store, PilotApi api, Action wa
         if (IsRemoteStop(e))
         {
             store.SetRunning(false);
+        }
+
+        if (e is { Type: "run.finished", RunId: { } runId })
+        {
+            runFinished(runId, e.Outcome ?? "failed");
         }
 
         if (ShouldWake(e))

@@ -11,7 +11,7 @@ public enum StuckReason
 }
 
 /// <summary>
-/// Spots a stuck agent from its output well before the sentinel timeout: one line repeating, or a burst of error
+/// Spots a stuck agent from its output well before the result timeout: one line repeating, or a burst of error
 /// lines. The caller supplies <c>now</c>, so the thresholds are testable.
 /// </summary>
 public sealed partial class StuckDetector

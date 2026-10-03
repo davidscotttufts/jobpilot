@@ -1,5 +1,8 @@
-import type { PilotTask, TaskList } from "@jobpilot/contracts/pilot";
+import type { CreatePilotJournalInput, PilotTask, TaskList } from "@jobpilot/contracts/pilot";
+import { pilotChannel } from "@jobpilot/contracts/sse";
+import { subscribe } from "@/common/sse/server";
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { PilotJournalService } from "../journal.service";
 import { RunService } from "./run.service";
 import { describe, expect, it } from "bun:test";
 
@@ -54,6 +57,14 @@ const snapshot: TaskList = {
   nextWakeAt: new Date(now.getTime() + 15_000),
 };
 
+function fakeJournal() {
+  const appended: CreatePilotJournalInput[] = [];
+  const journal = {
+    appendJournal: async (_userId: string, body: CreatePilotJournalInput) => appended.push(body),
+  } as unknown as PilotJournalService;
+  return { journal, appended };
+}
+
 interface RunSetup {
   currentVersion?: string;
   openRun?: { id: string } | null;
@@ -97,7 +108,7 @@ function runDb({ currentVersion = VERSION, openRun = null, campaignStillPaused =
     application: { findUnique: async () => null, findMany: async () => [] },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  return { service: new RunService(db as unknown as PrismaClient), creates };
+  return { service: new RunService(db as unknown as PrismaClient, fakeJournal().journal), creates };
 }
 
 describe("RunService.start", () => {
@@ -146,7 +157,10 @@ describe("RunService.heartbeat", () => {
         },
       },
     };
-    await new RunService(db as unknown as PrismaClient).heartbeat(USER_ID, RUN_ID);
+    await new RunService(db as unknown as PrismaClient, fakeJournal().journal).heartbeat(
+      USER_ID,
+      RUN_ID,
+    );
     return (expiresAt.getTime() - Date.now()) / 60_000;
   };
 
@@ -165,37 +179,102 @@ describe("RunService.heartbeat", () => {
 });
 
 describe("RunService.reportUsage", () => {
-  const usage = {
-    cycleSeconds: 90,
-    model: "claude-opus-5-5",
-    inputTokens: 1200,
-    outputTokens: 300,
-    cacheReadTokens: 40_000,
-    cacheWriteTokens: 2000,
-  };
-
-  const report = async (newestRun: { id: string } | null) => {
-    const updates: { where: { id: string }; data: Record<string, unknown> }[] = [];
+  it("sets the measured usage on the run", async () => {
+    const usage = {
+      model: "claude-opus-5-5",
+      inputTokens: 1200,
+      outputTokens: 300,
+      cacheReadTokens: 40_000,
+      cacheWriteTokens: 2000,
+    };
+    const { taskType, subjectType, subjectId, payload } = applyTask;
+    const row = {
+      ...{ id: RUN_ID, userId: USER_ID, taskType, subjectType, subjectId, payload },
+      ...{ startedAt: now, heartbeatAt: null, expiresAt: now, finishedAt: null, outcome: null },
+    };
+    const updates: unknown[] = [];
     const db = {
       pilotRun: {
-        findFirst: async () => newestRun,
-        update: async (a: (typeof updates)[number]) => updates.push(a),
+        findFirst: async () => ({ id: RUN_ID }),
+        update: async (args: { data: typeof usage }) => {
+          updates.push(args);
+          return { ...row, ...args.data };
+        },
       },
     };
-    const result = await new RunService(db as unknown as PrismaClient).reportUsage(USER_ID, usage);
-    return { result, updates };
+
+    await new RunService(db as unknown as PrismaClient, fakeJournal().journal).reportUsage(
+      USER_ID,
+      RUN_ID,
+      usage,
+    );
+
+    expect(updates).toEqual([{ where: { id: RUN_ID }, data: usage }]);
+  });
+});
+
+describe("RunService.postResult", () => {
+  const result = {
+    outcome: "done" as const,
+    summary: "Applied to Engineer at Acme",
+    hints: [{ domain: "example.test", text: "Login wall after three pages" }],
   };
 
-  it("sets the usage on the run the cycle started", async () => {
-    const { result, updates } = await report({ id: RUN_ID });
-    const { cycleSeconds, ...stored } = usage;
-    expect(result).toEqual({ runId: RUN_ID });
-    expect(updates).toEqual([{ where: { id: RUN_ID }, data: stored }]);
+  const post = async (userId: string, finishedAt: Date | null) => {
+    const { taskType, subjectType, subjectId, payload } = applyTask;
+    const fields = { id: RUN_ID, userId, taskType, subjectType, subjectId, payload };
+    const row = {
+      ...fields,
+      startedAt: now,
+      heartbeatAt: null,
+      expiresAt: now,
+      finishedAt,
+      outcome: null,
+    };
+    const db = {
+      pilotRun: {
+        findFirst: async () => row,
+        updateManyAndReturn: async (a: { data: Record<string, unknown> }) => [
+          { ...row, ...a.data },
+        ],
+      },
+      $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
+    };
+    const { journal, appended } = fakeJournal();
+    const service = new RunService(db as unknown as PrismaClient, journal);
+    const run = await service.postResult(userId, RUN_ID, result);
+    return { run, appended };
+  };
+
+  it("journals the action and hints under the run id, finishes the run, and publishes", async () => {
+    const userId = crypto.randomUUID();
+    const stream = subscribe(pilotChannel, { userId });
+    await stream.next();
+    const { run, appended } = await post(userId, null);
+
+    expect(run.outcome).toBe("done");
+    expect(appended).toEqual([
+      {
+        cycleId: RUN_ID,
+        entries: [
+          { kind: "action", summary: result.summary, subjectType: "job", subjectId: "c1:j1" },
+          {
+            kind: "hint",
+            summary: result.hints[0].text,
+            subjectType: "board",
+            subjectId: "example.test",
+          },
+        ],
+      },
+    ]);
+    const frame = (await stream.next()).value as unknown as { data: unknown };
+    expect(frame.data).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });
+    await stream.return();
   });
 
-  it("stores nothing for a cycle that started no run", async () => {
-    const { result, updates } = await report(null);
-    expect(result).toEqual({ runId: null });
-    expect(updates).toHaveLength(0);
+  it("returns a finished run unchanged and journals nothing", async () => {
+    const { run, appended } = await post(USER_ID, now);
+    expect(run.finishedAt).toEqual(now);
+    expect(appended).toHaveLength(0);
   });
 });

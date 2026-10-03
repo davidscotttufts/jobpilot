@@ -8,6 +8,6 @@ jobpilot-api PATCH /api/campaigns/$CID --data @"$JOBPILOT_TEMP/campaign.json"
 
 `$JOBPILOT_TEMP/campaign.json` is `{"config": <updated config>, "expectedUpdatedAt": "<campaign updatedAt>"}`.
 
-Journal with detail `{type:"tune"}` (SKILL.md step 5): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
+Journal with detail `{type:"tune"}` (the result's `detail`, SKILL.md step 3): "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65." The `detail.type` marker is load-bearing - the server dedupes reviews on it. Larger changes than the bounds → ask the user with a `choice` question instead of applying.
 
 **Search stewardship.** When the diagnosis implicates the search itself - fundamentally dry or mistargeted, not merely campaign tuning - make at most ONE search change per cycle, instead of or alongside config tuning: `POST`/`PATCH`/`DELETE /api/pilot/searches[/:id]` (`GET /api/pilot/searches` for ids). Update `reason` to say why, and journal the change.

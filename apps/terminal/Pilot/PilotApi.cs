@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace JobPilot.Terminal.Pilot;
@@ -11,9 +10,20 @@ public sealed record PilotActivity(bool Running, DateTimeOffset? LastActivityAt,
 public sealed record CompletedCycle(string? CycleId, DateTimeOffset CompletedAt, string? Status, int? SleepSeconds);
 
 /// <summary>The fields of POST /api/pilot/tasks/refresh the host reads.</summary>
-public sealed record PilotTaskList(JsonElement[] Tasks, int SleepSeconds, DateTimeOffset NextWakeAt);
+public sealed record PilotTaskList(PilotTaskStub[] Tasks, string Version, int SleepSeconds, DateTimeOffset NextWakeAt);
 
-internal sealed record JournalRequest(JournalEntry[] Entries);
+public sealed record PilotTaskStub(string Id, string Title);
+
+/// <summary>The fields of a run the host reads.</summary>
+public sealed record PilotRunState(string Id, DateTimeOffset? FinishedAt, string? Outcome);
+
+internal sealed record StartRunRequest(string TaskId, string TaskListVersion);
+
+internal sealed record FinishRunRequest(string Outcome);
+
+internal sealed record JournalRequest(
+    JournalEntry[] Entries,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? CycleId = null);
 
 internal sealed record JournalEntry(
     string Kind,
@@ -78,19 +88,35 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
     public Task ReportAsync(PilotSettings settings, string summary, CancellationToken ct) =>
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("system", summary)]), ct);
 
-    /// <summary>Records a cycle the host finished without waking the agent, as the skill's own empty cycles do.</summary>
-    public Task JournalEmptyCycleAsync(PilotSettings settings, string summary, int sleepSeconds, CancellationToken ct)
+    /// <summary>The cycle entry's detail is what the activity probe reads back as the cycle's completion.</summary>
+    public Task JournalCycleAsync(
+        PilotSettings settings, string? cycleId, string summary, string status, int sleepSeconds, CancellationToken ct)
     {
-        var entry = new JournalEntry("cycle", summary, new CycleDetail("empty", sleepSeconds));
-        return PostJournalAsync(settings, new JournalRequest([entry]), ct);
+        var entry = new JournalEntry("cycle", summary, new CycleDetail(status, sleepSeconds));
+        return PostJournalAsync(settings, new JournalRequest([entry], cycleId), ct);
     }
 
-    public async Task ReportUsageAsync(PilotSettings settings, PilotUsage usage, CancellationToken ct)
+    public async Task<PilotRunState?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
+    {
+        var content = JsonContent.Create(new StartRunRequest(taskId, taskListVersion), AppJsonContext.Default.StartRunRequest);
+        return await SendForRunAsync(settings, HttpMethod.Post, "/api/pilot/runs", content, ct);
+    }
+
+    public Task<PilotRunState?> GetRunAsync(PilotSettings settings, string runId, CancellationToken ct) =>
+        SendForRunAsync(settings, HttpMethod.Get, $"/api/pilot/runs/{runId}", null, ct);
+
+    public async Task FailRunAsync(PilotSettings settings, string runId, CancellationToken ct)
+    {
+        var content = JsonContent.Create(new FinishRunRequest("failed"), AppJsonContext.Default.FinishRunRequest);
+        await SendForRunAsync(settings, HttpMethod.Post, $"/api/pilot/runs/{runId}/finish", content, ct);
+    }
+
+    public async Task ReportUsageAsync(PilotSettings settings, string runId, PilotUsage usage, CancellationToken ct)
     {
         try
         {
             using var timeout = TimeoutAfter(RequestTimeout, ct);
-            using var request = Request(settings, HttpMethod.Post, "/api/pilot/usage");
+            using var request = Request(settings, HttpMethod.Post, $"/api/pilot/runs/{runId}/usage");
             request.Content = JsonContent.Create(usage, AppJsonContext.Default.PilotUsage);
             using var response = await http.SendAsync(request, timeout.Token);
             if (!response.IsSuccessStatusCode)
@@ -118,6 +144,30 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
         logger.LogWarning("Pilot event stream was rejected ({Status}).", (int)response.StatusCode);
         response.Dispose();
         return null;
+    }
+
+    private async Task<PilotRunState?> SendForRunAsync(
+        PilotSettings settings, HttpMethod method, string path, HttpContent? content, CancellationToken ct)
+    {
+        try
+        {
+            using var timeout = TimeoutAfter(RequestTimeout, ct);
+            using var request = Request(settings, method, path);
+            request.Content = content;
+            using var response = await http.SendAsync(request, timeout.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogWarning("Pilot run call {Method} {Path} was rejected ({Status}).", method, path, (int)response.StatusCode);
+                return null;
+            }
+
+            return await response.Content.ReadFromJsonAsync(AppJsonContext.Default.PilotRunState, timeout.Token);
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            logger.LogWarning(ex, "Pilot run call {Method} {Path} failed.", method, path);
+            return null;
+        }
     }
 
     private async Task PostJournalAsync(PilotSettings settings, JournalRequest body, CancellationToken ct)

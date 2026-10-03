@@ -1,14 +1,17 @@
 import {
   type FinishPilotRunInput,
   type PilotRun,
+  type PilotRunResultInput,
   type PilotTask,
   pilotRunSchema,
   type ReportPilotUsageInput,
 } from "@jobpilot/contracts/pilot";
+import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
+import { publish } from "@/common/sse";
 import {
   type PilotRun as PilotRunModel,
   type Prisma,
@@ -16,6 +19,7 @@ import {
 } from "@/generated/prisma/client";
 import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
+import { PilotJournalService } from "../journal.service";
 import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
 import { parseJobRef, revertApplyingJobs } from "./runs";
 import { parseTaskListSnapshot } from "./snapshot";
@@ -79,7 +83,10 @@ async function assertStillStartable(
 /** Starts tasks off a versioned task list snapshot, and keeps those runs alive or finishes them. */
 @singleton()
 export class RunService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly journal: PilotJournalService,
+  ) {}
 
   async start(userId: string, taskListVersion: string, taskId: string) {
     const { run, startedJob } = await guardApply(this.prisma, userId, () =>
@@ -146,6 +153,15 @@ export class RunService {
     return { run, startedJob };
   }
 
+  async get(userId: string, id: string) {
+    const run = await findOwned(
+      (where) => this.prisma.pilotRun.findFirst({ where }),
+      { id, userId },
+      "Run",
+    );
+    return toPilotRun(run);
+  }
+
   async heartbeat(userId: string, id: string) {
     const run = await findOwned(
       (where) =>
@@ -168,17 +184,13 @@ export class RunService {
     return toPilotRun(updated);
   }
 
-  /** A cycle starts at most one run, so the newest run since the cycle began is the one it started. */
-  async reportUsage(userId: string, body: ReportPilotUsageInput) {
-    const { cycleSeconds, ...usage } = body;
-    const run = await this.prisma.pilotRun.findFirst({
-      where: { userId, startedAt: { gte: new Date(Date.now() - cycleSeconds * 1000) } },
-      orderBy: { startedAt: "desc" },
-      select: { id: true },
-    });
-    if (!run) return { runId: null };
-    await this.prisma.pilotRun.update({ where: { id: run.id }, data: usage });
-    return { runId: run.id };
+  async reportUsage(userId: string, id: string, body: ReportPilotUsageInput) {
+    await findOwned(
+      (where) => this.prisma.pilotRun.findFirst({ where, select: { id: true } }),
+      { id, userId },
+      "Run",
+    );
+    return toPilotRun(await this.prisma.pilotRun.update({ where: { id }, data: body }));
   }
 
   /** Bookkeeping only: an abandoned apply goes back to approved, other results use their own routes. */
@@ -210,5 +222,29 @@ export class RunService {
       return row;
     });
     return toPilotRun(finished);
+  }
+
+  /** The run id is the journal cycleId, so the host's cycle entry for this run groups with it. */
+  async postResult(userId: string, id: string, body: PilotRunResultInput) {
+    const existing = await this.get(userId, id);
+    if (existing.finishedAt) return existing;
+
+    const run = await this.finish(userId, id, { outcome: body.outcome });
+    const action = {
+      kind: "action" as const,
+      summary: body.summary,
+      subjectType: body.subjectType ?? run.subjectType,
+      subjectId: body.subjectId ?? run.subjectId,
+      detail: body.detail,
+    };
+    const hints = body.hints.map((hint) => ({
+      kind: "hint" as const,
+      summary: hint.text,
+      subjectType: "board",
+      subjectId: hint.domain,
+    }));
+    await this.journal.appendJournal(userId, { cycleId: id, entries: [action, ...hints] });
+    publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
+    return run;
   }
 }

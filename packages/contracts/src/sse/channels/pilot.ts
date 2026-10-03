@@ -6,7 +6,8 @@ export type PilotEvent =
   | { type: "question.answered"; question: unknown }
   | { type: "state.changed"; state: unknown }
   | { type: "promotion.created"; promotion: unknown }
-  | { type: "promotion.updated"; promotion: unknown };
+  | { type: "promotion.updated"; promotion: unknown }
+  | { type: "run.finished"; runId: string; outcome: string };
 
 /** Parameter-free path: the server resolves the profile from the session. */
 export const pilotChannel = defineChannel<PilotEvent, void, { userId: string }>({

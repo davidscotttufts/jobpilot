@@ -50,7 +50,7 @@ export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;
 export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
 export type PilotJournalPage = z.infer<typeof pilotJournalPageSchema>;
 
-/** Shared by the cycle journal detail and the host's sentinel. */
+/** The status the host writes on each cycle journal entry. */
 export const pilotCycleStatusSchema = z.enum(["ok", "empty", "error"]);
 export type PilotCycleStatus = z.infer<typeof pilotCycleStatusSchema>;
 

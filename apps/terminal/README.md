@@ -21,11 +21,14 @@ Each folder is one feature and holds its endpoints, request and response records
   mirrors the bundled skills into `.agents/skills`), builds the `JOBPILOT_*` environment, and spawns a new
   `PtyProcess`. `TerminalRelay` broadcasts output to every WebSocket and keeps a 512 KB replay for reconnects.
 - **Pilot.** `/pilot/start` saves `PilotSettings` to `pilot.json`; every save wakes `PilotLoop`. Each cycle
-  starts with one `/api/pilot/activity` probe that gates on the server's run-state and gives `CycleRunner` its
-  completion baseline. The runner then refreshes the task list. With no tasks it journals the empty cycle
-  itself and sleeps, so an idle pilot never wakes the model. With tasks it sends the cycle, waits for the sentinel (or a server-recorded completion the
-  TUI garbled), and climbs check-in, skip, then restart when a run looks stuck. `PilotEventListener` holds
-  the API's event stream open and wakes the loop when new work can start the next cycle early.
+  starts with one `/api/pilot/activity` probe that gates on the server's run-state. `CycleRunner` then refreshes
+  the task list. With no tasks it journals the empty cycle itself and sleeps, so an idle pilot never wakes the
+  model. With tasks it starts a run for the top one, types `/clear` and the pilot skill with the run id, and
+  waits for the run to finish: the `run.finished` event the agent's result publishes, or a poll of the run. A
+  stuck run climbs check-in, skip, then restart, and a run with no result is failed by the host. The host then
+  journals the cycle and posts its token usage, which `UsageMeter` sums from the CLI's OTLP logs on `/v1/logs`.
+  `PilotEventListener` holds the API's event stream open, passes `run.finished` to the session, and wakes the
+  loop when new work can start the next cycle early.
 - **Update.** `HostUpdater` downloads the release, moves the running executable aside, and copies the release
   over the install. `HostHandoff.Relaunch` starts the new host, which waits for this one to release the port.
   Only the executable and `plugin/` are the updater's; the rest of the install root may be user state.

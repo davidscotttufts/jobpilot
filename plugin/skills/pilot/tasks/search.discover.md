@@ -13,7 +13,7 @@ Paginate per `../../_shared/browser-tips.md` (**Pagination & infinite scroll**) 
 
 Track `JOBS_SEEN` (rows read) and `NEW_JOBS` (fresh eligible `pending` rows you created - not dupes or ineligible rows). Stop when `NEW_JOBS >= newJobsTarget`, the page cap (`maxPages`) is hit, or the board has no next page (`REACHED_END=true`; leave it `false` if you stopped for either other reason). Heartbeat after each page and at least every ~10 minutes.
 
-Before SKILL.md step 5 (Record), report the run - a `404` means the search was deleted mid-run, so journal that and move on:
+Before posting the result (SKILL.md step 3), report the search run - a `404` means the search was deleted mid-run, so journal that and move on:
 
 ```bash
 jobpilot-api POST /api/pilot/searches/$SEARCH_ID/run-result \

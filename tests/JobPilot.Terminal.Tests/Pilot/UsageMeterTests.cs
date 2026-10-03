@@ -28,7 +28,7 @@ public sealed class UsageMeterTests
 
         meter.Read(Export(request, other, request));
 
-        Assert.Equal(new PilotUsage(1, "claude-sonnet-5", 4, 320, 130000, 600), meter.Take());
+        Assert.Equal(new PilotUsage("claude-sonnet-5", 4, 320, 130000, 600), meter.Take());
         Assert.Null(meter.Take());
     }
 
@@ -49,7 +49,7 @@ public sealed class UsageMeterTests
                 ("cache_write_token_count", """{"intValue":"0"}""")),
             Record(("event.name", """{"stringValue":"codex.sse_event"}"""), ("event.kind", """{"stringValue":"response.created"}"""))));
 
-        Assert.Equal(new PilotUsage(1, "gpt-6-sol", 3392, 5, 12032, 0), meter.Take());
+        Assert.Equal(new PilotUsage("gpt-6-sol", 3392, 5, 12032, 0), meter.Take());
     }
 
     [Fact]
