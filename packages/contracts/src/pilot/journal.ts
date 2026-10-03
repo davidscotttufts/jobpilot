@@ -59,5 +59,8 @@ export const pilotCycleDetailSchema = z
   .object({
     status: pilotCycleStatusSchema.optional(),
     sleepSeconds: z.number().int().optional(),
+    taskType: z.string().optional(),
+    tokens: z.number().int().optional(),
   })
   .loose();
+export type PilotCycleDetail = z.infer<typeof pilotCycleDetailSchema>;

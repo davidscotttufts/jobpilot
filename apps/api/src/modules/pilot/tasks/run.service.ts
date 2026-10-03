@@ -95,6 +95,11 @@ export class RunService {
       ),
     );
     if (startedJob) publishJob(userId, startedJob, "updated");
+    publish(
+      pilotChannel,
+      { userId },
+      { type: "run.started", runId: run.id, taskType: run.taskType },
+    );
     return toPilotRun(run);
   }
 
@@ -154,12 +159,7 @@ export class RunService {
   }
 
   async get(userId: string, id: string) {
-    const run = await findOwned(
-      (where) => this.prisma.pilotRun.findFirst({ where }),
-      { id, userId },
-      "Run",
-    );
-    return toPilotRun(run);
+    return toPilotRun(await this.findRow(userId, id));
   }
 
   async heartbeat(userId: string, id: string) {
@@ -195,16 +195,22 @@ export class RunService {
 
   /** Bookkeeping only: an abandoned apply goes back to approved, other results use their own routes. */
   async finish(userId: string, id: string, body: FinishPilotRunInput) {
-    const existing = await findOwned(
-      (where) => this.prisma.pilotRun.findFirst({ where }),
-      { id, userId },
-      "Run",
-    );
+    const existing = await this.findRow(userId, id);
     if (existing.finishedAt) {
       if (existing.outcome === body.outcome) return toPilotRun(existing);
       throw conflict(`Run already finished with outcome ${existing.outcome}.`);
     }
+    const run = await this.close(userId, existing, body);
+    publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
+    return run;
+  }
 
+  private findRow(userId: string, id: string) {
+    return findOwned((where) => this.prisma.pilotRun.findFirst({ where }), { id, userId }, "Run");
+  }
+
+  private async close(userId: string, existing: PilotRunModel, body: FinishPilotRunInput) {
+    const { id } = existing;
     const payload = payloadSchema.parse(existing.payload);
     const finished = await this.prisma.$transaction(async (tx) => {
       if (body.outcome === "abandoned" && existing.taskType === "job.apply") {
@@ -226,10 +232,11 @@ export class RunService {
 
   /** The run id is the journal cycleId, so the host's cycle entry for this run groups with it. */
   async postResult(userId: string, id: string, body: PilotRunResultInput) {
-    const existing = await this.get(userId, id);
-    if (existing.finishedAt) return existing;
+    const existing = await this.findRow(userId, id);
+    if (existing.finishedAt) return toPilotRun(existing);
 
-    const run = await this.finish(userId, id, { outcome: body.outcome });
+    // Not `finish`: run.finished must follow the journal line, so a listener sees the result.
+    const run = await this.close(userId, existing, { outcome: body.outcome });
     const action = {
       kind: "action" as const,
       summary: body.summary,

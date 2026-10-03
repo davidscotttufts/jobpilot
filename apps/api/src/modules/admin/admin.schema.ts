@@ -23,6 +23,8 @@ const adminPilotSchema = z.object({
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
   openQuestions: z.number().int(),
+  /** Input, output and cache tokens over runs started in the last 7 days. */
+  weekTokens: z.number().int(),
 });
 
 export const adminPilotPageSchema = paginatedSchema(adminPilotSchema);

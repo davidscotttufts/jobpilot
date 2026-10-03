@@ -12,7 +12,7 @@ public sealed record CompletedCycle(string? CycleId, DateTimeOffset CompletedAt,
 /// <summary>The fields of POST /api/pilot/tasks/refresh the host reads.</summary>
 public sealed record PilotTaskList(PilotTaskStub[] Tasks, string Version, int SleepSeconds, DateTimeOffset NextWakeAt);
 
-public sealed record PilotTaskStub(string Id, string Title);
+public sealed record PilotTaskStub(string Id, string TaskType, string Title);
 
 /// <summary>The fields of a run the host reads.</summary>
 public sealed record PilotRunState(string Id, DateTimeOffset? FinishedAt, string? Outcome);
@@ -30,7 +30,12 @@ internal sealed record JournalEntry(
     string Summary,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CycleDetail? Detail = null);
 
-internal sealed record CycleDetail(string Status, int SleepSeconds);
+/// <summary>The cycle journal entry's detail; the task type and token total are set only for a working cycle.</summary>
+public sealed record CycleDetail(
+    string Status,
+    int SleepSeconds,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? TaskType = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] long? Tokens = null);
 
 /// <summary>Probes and reports throw only on the caller's cancellation, so a briefly unreachable API cannot take the loop down.</summary>
 public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
@@ -89,12 +94,8 @@ public sealed class PilotApi(HttpClient http, ILogger<PilotApi> logger)
         PostJournalAsync(settings, new JournalRequest([new JournalEntry("system", summary)]), ct);
 
     /// <summary>The cycle entry's detail is what the activity probe reads back as the cycle's completion.</summary>
-    public Task JournalCycleAsync(
-        PilotSettings settings, string? cycleId, string summary, string status, int sleepSeconds, CancellationToken ct)
-    {
-        var entry = new JournalEntry("cycle", summary, new CycleDetail(status, sleepSeconds));
-        return PostJournalAsync(settings, new JournalRequest([entry], cycleId), ct);
-    }
+    public Task JournalCycleAsync(PilotSettings settings, string? cycleId, string summary, CycleDetail detail, CancellationToken ct) =>
+        PostJournalAsync(settings, new JournalRequest([new JournalEntry("cycle", summary, detail)], cycleId), ct);
 
     public async Task<PilotRunState?> StartRunAsync(PilotSettings settings, string taskId, string taskListVersion, CancellationToken ct)
     {

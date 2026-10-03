@@ -1,96 +1,105 @@
 import type { ReactElement } from "react";
-import { alpha, Box, Typography } from "@mui/material";
-import { accent, fontFamilies, line } from "@/theme";
+import { alpha, Box, Stack, Typography } from "@mui/material";
+import { accent, fontFamilies, line, radii } from "@/theme";
 
-// One label per stop, in loop order - plain visitor language, no internal Pilot vocabulary.
-const STOPS = ["finds roles", "applies", "follows up", "asks you", "writes the journal"];
+// Plain visitor language, no internal Pilot vocabulary.
+const BRANCHES = ["finds roles", "scores them", "applies", "reaches out"];
 
-const CYCLE_MS = 7500;
-const STEP_MS = CYCLE_MS / STOPS.length;
-// A stop's slice of the loop - its pill is dark again by the end of it.
-const STEP_PCT = +(100 / STOPS.length).toFixed(2);
+// A loop lights four stops (check, pick, one branch, journal), so a branch comes round every
+// fourth loop.
+const BEAT_MS = 1500;
+const LOOP_MS = BEAT_MS * 4;
+const TOUR_MS = LOOP_MS * BRANCHES.length;
 
-/** Position on the ring for stop `i`, starting at 12 o'clock, clockwise. */
-function ringPosition(i: number): { left: string; top: string } {
-  const angle = ((-90 + (i * 360) / STOPS.length) * Math.PI) / 180;
+/** Keyframes that light a stop through the middle of the first `slicePct` of its animation. */
+function glowFrames(slicePct: number) {
+  const at = (fraction: number) => `${+(slicePct * fraction).toFixed(2)}%`;
   return {
-    left: `${(50 + 50 * Math.cos(angle)).toFixed(1)}%`,
-    top: `${(50 + 50 * Math.sin(angle)).toFixed(1)}%`,
-  };
-}
-
-// Keyframes live on the ring, not each pill, so emotion emits them once.
-const ringSx = {
-  position: "absolute",
-  inset: { xs: "12%", sm: "8%" },
-  borderRadius: "50%",
-  border: `1px dashed ${line.border}`,
-  "@keyframes pilot-stop-glow": {
-    [`0%, ${STEP_PCT}%, 100%`]: { borderColor: line.border, boxShadow: "none" },
-    "6%, 12%": {
+    [`0%, ${at(1)}, 100%`]: { borderColor: line.border, boxShadow: "none" },
+    [`${at(0.3)}, ${at(0.6)}`]: {
       borderColor: accent.primary,
       boxShadow: `0 0 16px -2px ${alpha(accent.primary, 0.55)}`,
     },
-  },
+  };
+}
+
+function stepAnimation(beat: number): string {
+  return `pilot-step-glow ${LOOP_MS}ms linear ${beat * BEAT_MS}ms infinite`;
+}
+
+function branchAnimation(index: number): string {
+  return `pilot-branch-glow ${TOUR_MS}ms linear ${(2 + index * 4) * BEAT_MS}ms infinite`;
+}
+
+// Keyframes live on the root, not each pill, so emotion emits them once.
+const graphSx = {
+  alignItems: "center",
+  "@keyframes pilot-step-glow": glowFrames(100 / 4),
+  "@keyframes pilot-branch-glow": glowFrames(100 / (4 * BRANCHES.length)),
 } as const;
 
 const stopSx = {
-  position: "absolute",
-  transform: "translate(-50%, -50%)",
   fontSize: { xs: "0.6875rem", sm: "0.75rem" },
-  animation: `pilot-stop-glow ${CYCLE_MS}ms linear infinite`,
   "@media (prefers-reduced-motion: reduce)": { animation: "none" },
 } as const;
 
+const connectorSx = { height: 16, borderLeft: 1, borderColor: "line.border" } as const;
+
+interface StopProps {
+  label: string;
+  animation: string;
+}
+
+function Stop({ label, animation }: StopProps): ReactElement {
+  return (
+    // stopSx goes last so its reduced-motion rule overrides the animation.
+    <Typography variant="monoChip" sx={[{ animation }, stopSx]}>
+      {label}
+    </Typography>
+  );
+}
+
 /**
- * The Pilot loop as a ring of plain-language stops; the glow walks the ring so the
- * loop reads as motion without any real data or JS.
+ * The Pilot loop as a small graph of plain-language stops; the glow walks one branch per
+ * loop so it reads as motion without any real data or JS.
  */
 export function PilotCycle(): ReactElement {
   return (
-    <Box
-      aria-hidden
-      sx={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 400,
-        aspectRatio: "1",
-        marginInline: "auto",
-      }}
-    >
+    <Stack aria-hidden sx={graphSx}>
+      <Stop label="checks for work" animation={stepAnimation(0)} />
+      <Box sx={connectorSx} />
+      <Stop label="picks the best next step" animation={stepAnimation(1)} />
+      <Box sx={connectorSx} />
       <Box
         sx={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(2, auto)", sm: `repeat(${BRANCHES.length}, auto)` },
+          gap: 1,
+          justifyItems: "center",
+          p: 1.5,
+          border: 1,
+          borderStyle: "dashed",
+          borderColor: "line.border",
+          borderRadius: radii.lg,
         }}
       >
-        <Typography
-          sx={{
-            fontFamily: fontFamilies.mono,
-            fontSize: "0.75rem",
-            color: "text.disabled",
-            textAlign: "center",
-          }}
-        >
-          runs while
-          <br />
-          you sleep
-        </Typography>
-      </Box>
-      <Box sx={ringSx}>
-        {STOPS.map((label, i) => (
-          <Typography
-            key={label}
-            variant="monoChip"
-            sx={[stopSx, { ...ringPosition(i), animationDelay: `${i * STEP_MS}ms` }]}
-          >
-            {label}
-          </Typography>
+        {BRANCHES.map((label, i) => (
+          <Stop key={label} label={label} animation={branchAnimation(i)} />
         ))}
       </Box>
-    </Box>
+      <Box sx={connectorSx} />
+      <Stop label="writes the journal" animation={stepAnimation(3)} />
+      <Typography
+        sx={{
+          mt: 2,
+          fontFamily: fontFamilies.mono,
+          fontSize: "0.75rem",
+          color: "text.disabled",
+          textAlign: "center",
+        }}
+      >
+        nothing to do? the AI stays asleep
+      </Typography>
+    </Stack>
   );
 }

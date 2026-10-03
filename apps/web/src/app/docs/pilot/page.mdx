@@ -21,21 +21,37 @@ stays available whenever you want to do something by hand.
 
 ## How a cycle works
 
-The Pilot works in short, self-contained **cycles**:
+The Pilot works in short, self-contained **cycles**, each doing one step:
 
-1. **Sense.** The server builds a ranked task list of everything worth doing
-   right now: your answers to act on, approved jobs, replies to review,
-   searches that are due.
-2. **Act.** The agent takes the top task and does exactly that one thing:
-   one application, one inbox review, one search.
-3. **Record.** The outcome is journaled and the agent sleeps, for seconds when
-   work is queued or up to your check interval when idle.
+```text
+checks for work ──► picks the best next step ─┬─► finds roles ──┐
+                                              ├─► scores them ──┤
+                                              ├─► applies ──────┼─► writes the journal
+                                              ├─► reaches out ──┤
+                                              └─► text work ────┘
+```
 
-One task per cycle is deliberate. Every result is saved to the server before
+1. **Check for work.** A small orchestrator on your machine asks the server
+   for its task list, ranked fresh from your data: your answers to act on,
+   approved jobs, replies to review, searches that are due. With nothing to do
+   it journals a quiet check and goes back to sleep without waking the AI, so
+   an idle Pilot uses none of your Claude or Codex subscription.
+2. **Pick the best next step.** When there is work, the orchestrator takes
+   only the top task and wakes the AI with it, starting from a clean context.
+3. **Hand it to a specialist.** Browser work goes to a **specialized agent**
+   that does one job: the searcher finds new roles on a board, the scorer
+   reads postings and scores them, the applier submits one application, and
+   the networker finds a contact and drafts the message. Each one reads only
+   what its job needs, which keeps usage low. Text-only work, like reviewing a
+   reply or drafting a prep sheet, is done directly.
+4. **Write the journal.** The outcome is journaled and the next check comes
+   seconds later when work is queued, or after your check interval when idle.
+
+One step per cycle is deliberate. Every result is saved to the server before
 the next thing starts, so a crash, reboot, or closed lid never loses work; the
-next cycle picks up exactly where the last one stopped. A small orchestrator on
-your machine drives the loop, restarts stuck runs, and starts cycles on its own
-after a reboot, so no browser tab needs to stay open.
+next cycle picks up exactly where the last one stopped. The orchestrator also
+restarts stuck runs and starts cycles on its own after a reboot, so no browser
+tab needs to stay open.
 
 ## Starting it
 

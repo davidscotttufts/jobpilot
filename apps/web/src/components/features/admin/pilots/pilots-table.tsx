@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import type { AdminPilotDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { formatRelativeTime } from "@/utils/format";
+import { formatRelativeTime, formatTokens } from "@/utils/format";
 
 interface AdminPilotsTableProps {
   pilots: AdminPilotDto[];
@@ -35,6 +35,7 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
             <TableCell>Last cycle</TableCell>
             <TableCell align="right">Cycles</TableCell>
             <TableCell align="right">Open questions</TableCell>
+            <TableCell align="right">Tokens (7d)</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -64,6 +65,7 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
                   label={pilot.openQuestions}
                 />
               </TableCell>
+              <TableCell align="right">{formatTokens(pilot.weekTokens)}</TableCell>
             </TableRow>
           ))}
         </TableBody>

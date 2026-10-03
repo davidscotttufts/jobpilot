@@ -126,15 +126,15 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         }
 
         // Usage before the cycle entry, which observers treat as the end of the cycle.
-        await session.ReportUsageAsync(runId, ct);
-        return await RecordRunAsync(task, runId, taskList, result, ct);
+        var tokens = await session.ReportUsageAsync(runId, ct);
+        return await RecordRunAsync(task, runId, taskList, result, tokens, ct);
     }
 
     private async Task<TimeSpan?> FinishEmptyAsync(PilotTaskList taskList, CancellationToken ct)
     {
         var sleep = ClampSleep(taskList.SleepSeconds);
         var wake = taskList.NextWakeAt.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture);
-        await session.JournalCycleAsync(null, $"All caught up - nothing needs doing; checking back at {wake}.", "empty", sleep, ct);
+        await session.JournalCycleAsync(null, $"All caught up - nothing needs doing; checking back at {wake}.", new CycleDetail("empty", sleep), ct);
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = CycleStatus.Empty;
         return TimeSpan.FromSeconds(sleep);
@@ -142,7 +142,7 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
 
     /// <summary>Journals the cycle. A run the agent never finished is failed here, so it does not hold its task.</summary>
     private async Task<TimeSpan?> RecordRunAsync(
-        PilotTaskStub task, string runId, PilotTaskList taskList, WaitResult result, CancellationToken ct)
+        PilotTaskStub task, string runId, PilotTaskList taskList, WaitResult result, long? tokens, CancellationToken ct)
     {
         var posted = result.Outcome is WaitOutcome.Finished;
         if (!posted)
@@ -153,7 +153,8 @@ internal sealed class CycleRunner(IPilotSession session, TimeSpan? checkInterval
         var ok = posted && result.RunOutcome == "done";
         var sleep = ClampSleep(taskList.SleepSeconds);
         var ending = posted ? result.RunOutcome : "no result, failed by the host";
-        await session.JournalCycleAsync(runId, $"{task.Title} - {ending}.", ok ? "ok" : "error", sleep, ct);
+        var detail = new CycleDetail(ok ? "ok" : "error", sleep, task.TaskType, tokens);
+        await session.JournalCycleAsync(runId, $"{task.Title} - {ending}.", detail, ct);
 
         LastCycleAt = DateTimeOffset.UtcNow;
         LastCycleStatus = ok ? CycleStatus.Ok : CycleStatus.Error;

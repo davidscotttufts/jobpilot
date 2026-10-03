@@ -21,7 +21,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Let it work",
-    body: "The agent keeps working while you sleep: it finds and scores new roles, applies to the good matches, looks for someone to introduce you before applying cold, and nudges recruiters who went quiet.",
+    body: "It checks for work through the night and only wakes the AI when there is something to do, so a quiet night costs nothing. Each step goes to a specialist that finds roles, scores them, applies to the good matches, or reaches out to someone who can introduce you.",
   },
   {
     title: "Answer from your phone",
@@ -29,7 +29,7 @@ const STEPS: Step[] = [
   },
   {
     title: "Wake to a journal",
-    body: "Every action lands in a live feed, rolled into a morning digest: applications sent, replies reviewed, questions waiting. The dashboard itself enforces your daily limits, so they hold even if a cycle goes off-script.",
+    body: "Every action lands in a live feed, rolled into a morning digest: applications sent, replies reviewed, questions waiting. The dashboard itself enforces your daily limits, so they hold even if a step goes off-script.",
   },
 ];
 

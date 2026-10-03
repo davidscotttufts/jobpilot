@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement } from "react";
+import { Fragment, type ReactElement } from "react";
 import { Paper, Stack, Typography } from "@mui/material";
 import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
 import { PulseDot, type PulseDotTone, toneColor } from "@/components/ui/feedback";
@@ -19,13 +19,33 @@ export type StageFlowNode = Node<StageNodeData, "stage">;
 /** Edges need a handle to anchor to, but the diagram hides its chrome. */
 const HANDLE_STYLE = { opacity: 0, pointerEvents: "none" as const, border: 0 };
 
+/** A handle of each type on every side, id'd by side, so each layout routes edges its own way. */
+const SIDES = [Position.Left, Position.Top, Position.Right, Position.Bottom];
+
 function StageNode(props: NodeProps<StageFlowNode>): ReactElement {
   const { data } = props;
   const { title, role, caption, active, muted, tone } = data;
 
   return (
     <>
-      <Handle type="target" position={Position.Left} style={HANDLE_STYLE} isConnectable={false} />
+      {SIDES.map((side) => (
+        <Fragment key={side}>
+          <Handle
+            id={side}
+            type="target"
+            position={side}
+            style={HANDLE_STYLE}
+            isConnectable={false}
+          />
+          <Handle
+            id={side}
+            type="source"
+            position={side}
+            style={HANDLE_STYLE}
+            isConnectable={false}
+          />
+        </Fragment>
+      ))}
       <Paper
         elevation={0}
         sx={(theme) => {
@@ -67,7 +87,6 @@ function StageNode(props: NodeProps<StageFlowNode>): ReactElement {
           {caption}
         </Typography>
       </Paper>
-      <Handle type="source" position={Position.Right} style={HANDLE_STYLE} isConnectable={false} />
     </>
   );
 }

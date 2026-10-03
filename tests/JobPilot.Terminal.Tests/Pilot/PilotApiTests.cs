@@ -67,7 +67,7 @@ public sealed class PilotApiTests
         Assert.Equal(HttpMethod.Post, seen!.Method);
         Assert.Equal("https://api.example.test/api/pilot/tasks/refresh", seen.RequestUri!.ToString());
         Assert.Equal("Bearer tok", seen.Headers.Authorization!.ToString());
-        Assert.Equal([new PilotTaskStub("t1", "Apply to Acme")], taskList!.Tasks);
+        Assert.Equal([new PilotTaskStub("t1", "job.apply", "Apply to Acme")], taskList!.Tasks);
         Assert.Equal("v1", taskList.Version);
         Assert.Equal(15, taskList.SleepSeconds);
         Assert.Equal(new DateTimeOffset(2026, 10, 2, 12, 0, 15, TimeSpan.Zero), taskList.NextWakeAt);
@@ -93,10 +93,11 @@ public sealed class PilotApiTests
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
 
-        await api.JournalCycleAsync(Settings(), "run-1", "Task 1 - done.", "ok", 30, TestContext.Current.CancellationToken);
+        await api.JournalCycleAsync(
+            Settings(), "run-1", "Task 1 - done.", new CycleDetail("ok", 30, "job.apply", 1200), TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            """{"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30}}],"cycleId":"run-1"}""",
+            """{"entries":[{"kind":"cycle","summary":"Task 1 - done.","detail":{"status":"ok","sleepSeconds":30,"taskType":"job.apply","tokens":1200}}],"cycleId":"run-1"}""",
             body);
     }
 

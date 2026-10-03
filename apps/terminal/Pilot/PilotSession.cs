@@ -158,21 +158,24 @@ public sealed class PilotSession : IPilotSession, IDisposable
         }
     }
 
-    public async Task JournalCycleAsync(string? cycleId, string summary, string status, int sleepSeconds, CancellationToken ct)
+    public async Task JournalCycleAsync(string? cycleId, string summary, CycleDetail detail, CancellationToken ct)
     {
         if (store.Current is { } settings)
         {
-            await api.JournalCycleAsync(settings, cycleId, summary, status, sleepSeconds, ct);
+            await api.JournalCycleAsync(settings, cycleId, summary, detail, ct);
         }
     }
 
-    public async Task ReportUsageAsync(string runId, CancellationToken ct)
+    public async Task<long?> ReportUsageAsync(string runId, CancellationToken ct)
     {
         await Task.Delay(UsageFlush, ct);
-        if (usage.Take() is { } measured && store.Current is { } settings)
+        if (usage.Take() is not { } measured || store.Current is not { } settings)
         {
-            await api.ReportUsageAsync(settings, runId, measured, ct);
+            return null;
         }
+
+        await api.ReportUsageAsync(settings, runId, measured, ct);
+        return measured.InputTokens + measured.OutputTokens + measured.CacheReadTokens + measured.CacheWriteTokens;
     }
 
     public void Dispose() => terminal.Output -= OnOutput;

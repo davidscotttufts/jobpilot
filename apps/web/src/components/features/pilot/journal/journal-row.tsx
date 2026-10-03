@@ -1,7 +1,11 @@
 "use client";
 
-import type { ReactElement } from "react";
-import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
+import type { ReactElement, ReactNode } from "react";
+import type {
+  PilotCycleDetail,
+  PilotJournalEntry,
+  PilotJournalKind,
+} from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Autorenew,
@@ -14,7 +18,8 @@ import {
 } from "@mui/icons-material";
 import { Box, Chip, type ChipProps, Stack, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
-import { humanizeIsoInText } from "@/utils/format";
+import { formatTokens, humanizeIsoInText } from "@/utils/format";
+import { AGENT_LABELS, taskTypeAgent } from "../task-types";
 
 export const KIND_META: Record<
   PilotJournalKind,
@@ -54,12 +59,36 @@ function DigestCounts(props: DigestCountsProps): ReactElement {
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
 }
 
+interface RunMetaProps {
+  run: PilotCycleDetail;
+}
+
+/** Older cycle entries carry neither the task type nor the tokens. */
+export function RunMeta(props: RunMetaProps): ReactNode {
+  const { run } = props;
+  if (!run.taskType && run.tokens == null) {
+    return null;
+  }
+
+  return (
+    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+      {run.taskType && (
+        <Chip size="small" variant="outlined" label={AGENT_LABELS[taskTypeAgent(run.taskType)]} />
+      )}
+      {run.tokens != null && (
+        <Typography variant="captionMuted">{formatTokens(run.tokens)} tokens</Typography>
+      )}
+    </Stack>
+  );
+}
+
 interface JournalRowProps {
   entry: PilotJournalEntry;
+  run?: PilotCycleDetail;
 }
 
 export function JournalRow(props: JournalRowProps): ReactElement {
-  const { entry } = props;
+  const { entry, run } = props;
   const meta = KIND_META[entry.kind];
   const Icon = meta.icon;
   return (
@@ -74,6 +103,7 @@ export function JournalRow(props: JournalRowProps): ReactElement {
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
         {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
+        {run && <RunMeta run={run} />}
       </Box>
       <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap" }} />
     </Stack>

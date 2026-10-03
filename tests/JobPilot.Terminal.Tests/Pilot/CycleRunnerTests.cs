@@ -19,7 +19,7 @@ public class CycleRunnerTests
     [Fact]
     public async Task Run_StartsTheSession_HandsOverTheRun_AndJournalsItsResult()
     {
-        var session = new FakePilotSession();
+        var session = new FakePilotSession { MeasuredTokens = 1200 };
         session.Signals.Enqueue(WaitResult.Finished("done"));
         var runner = Runner(session);
 
@@ -28,6 +28,7 @@ public class CycleRunnerTests
         Assert.Equal(["start", "sleep:15", "cycle", "wait"], session.Actions);
         Assert.Equal(TimeSpan.FromSeconds(30), sleep);
         Assert.Equal(["ok: Task 1 - done."], session.Cycles);
+        Assert.Equal([new CycleDetail("ok", 30, "job.apply", 1200)], session.CycleDetails);
         Assert.Empty(session.FailedRuns);
         Assert.Equal(CycleStatus.Ok, runner.LastCycleStatus);
         Assert.True(runner.Conducting);

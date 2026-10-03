@@ -3,11 +3,13 @@
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
 import { Alert, Box, Button, Chip, Grid, Stack, Tooltip, Typography } from "@mui/material";
+import { useApiQuery } from "@/api/hooks";
+import { pilotQueries } from "@/api/queries";
 import { ColorChip, RelativeTime } from "@/components/ui/display";
 import { SectionCard } from "@/components/ui/layout";
 import { CYCLE_STATUS_COLOR, type PilotHealth, providerDisplayName } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
-import { formatTimeUntil, plural } from "@/utils/format";
+import { formatTimeUntil, formatTokens, plural } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline, PILOT_HOST_OFFLINE_MESSAGE, PILOT_STARTING_UP_LABEL } from "../host-status";
 import type { PilotControls } from "../use-pilot-controls";
@@ -25,6 +27,8 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
   const { state, controls, health, pilot } = props;
   const confirm = useConfirm();
   const nextWakeAt = useNextWake();
+  const costItems = useApiQuery(pilotQueries.cost()).data?.items;
+  const weekTokens = costItems ? costItems.reduce((sum, item) => sum + item.totalTokens, 0) : null;
 
   const running = state.running;
   const conducting = pilot?.conducting ?? false;
@@ -122,6 +126,14 @@ export function StatusHero(props: StatusHeroProps): ReactElement {
                 <Typography variant="overlineMuted">Cycles run</Typography>
                 <Typography variant="body2">{state.cycleCount}</Typography>
               </Box>
+              {weekTokens !== null && (
+                <Box>
+                  <Typography variant="overlineMuted">Usage</Typography>
+                  <Typography variant="body2">
+                    {formatTokens(weekTokens)} tokens this week
+                  </Typography>
+                </Box>
+              )}
               <Box>
                 <Typography variant="overlineMuted">Last cycle</Typography>
                 <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>

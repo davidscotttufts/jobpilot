@@ -31,9 +31,14 @@ export class PilotService {
   private async toState(row: PilotStateModel): Promise<PilotState> {
     const config = pilotInstructionsConfigSchema.parse(row.instructionsConfig);
     const now = new Date();
-    const [appliedToday, networkingSentToday] = await Promise.all([
+    const [appliedToday, networkingSentToday, currentRun] = await Promise.all([
       countAppliedToday(this.prisma, row.userId, now),
       countSentToday(this.prisma, row.userId, now),
+      this.prisma.pilotRun.findFirst({
+        where: { userId: row.userId, finishedAt: null, expiresAt: { gt: now } },
+        orderBy: { startedAt: "desc" },
+        select: { id: true, taskType: true, startedAt: true },
+      }),
     ]);
     return {
       userId: row.userId,
@@ -47,6 +52,7 @@ export class PilotService {
       networkingSentToday,
       // `>=` so a cap of 0 reads as reached, matching the task list.
       capReached: appliedToday >= config.dailyApplyCap,
+      currentRun,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

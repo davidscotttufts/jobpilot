@@ -2,10 +2,12 @@
 
 import { type ReactElement, useState } from "react";
 import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
-import type {
-  PilotJournalEntry,
-  PilotJournalKind,
-  PilotJournalPage,
+import {
+  type PilotCycleDetail,
+  type PilotJournalEntry,
+  type PilotJournalKind,
+  type PilotJournalPage,
+  pilotCycleDetailSchema,
 } from "@jobpilot/contracts/pilot";
 import { DeleteSweep, Download } from "@mui/icons-material";
 import {
@@ -32,6 +34,7 @@ import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
+import { groupQuietStretches, QuietStretchRow } from "./quiet-stretch";
 import { useJournalLiveStatus } from "./use-journal-live";
 
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
@@ -46,6 +49,21 @@ function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[
     }
   }
   return entries.filter((e) => !(e.kind === "cycle" && e.cycleId && covered.has(e.cycleId)));
+}
+
+/** Built from every entry: a covered cycle row is hidden, but its run's other rows still show the agent and tokens. */
+function runsByCycle(entries: PilotJournalEntry[]): Map<string, PilotCycleDetail> {
+  const runs = new Map<string, PilotCycleDetail>();
+  for (const entry of entries) {
+    if (entry.kind !== "cycle" || !entry.cycleId) {
+      continue;
+    }
+    const detail = pilotCycleDetailSchema.safeParse(entry.detail).data;
+    if (detail) {
+      runs.set(entry.cycleId, detail);
+    }
+  }
+  return runs;
 }
 
 /** Kind filters run server-side, so paging under a filter stays on one stream. */
@@ -120,6 +138,7 @@ export function JournalFeed(): ReactElement {
   const older = pages.flatMap((page) => page.items);
   const entries = dedupeById([...(firstPage.data?.items ?? []), ...older]);
   const visible = view === "flat" && collapseCycles ? collapseCoveredCycles(entries) : entries;
+  const runs = runsByCycle(entries);
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -204,9 +223,14 @@ export function JournalFeed(): ReactElement {
             <CycleTimeline entries={visible} />
           ) : (
             <Stack spacing={1.5} divider={<Divider />}>
-              {visible.map((entry) => (
-                <JournalRow key={entry.id} entry={entry} />
-              ))}
+              {groupQuietStretches(visible).map((item) => {
+                if (item.type === "quiet") {
+                  return <QuietStretchRow key={item.entries[0].id} entries={item.entries} />;
+                }
+                const { entry } = item;
+                const run = entry.cycleId ? runs.get(entry.cycleId) : undefined;
+                return <JournalRow key={entry.id} entry={entry} run={run} />;
+              })}
             </Stack>
           )}
         </QuerySection>

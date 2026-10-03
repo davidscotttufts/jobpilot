@@ -12,7 +12,7 @@
 | 5. Specialized agents | Done on `feat/pilot-v2`. `job-searcher` checked live; `job-scorer` and `job-applier` not run live (the spike account never applies). |
 | 6. Saved answers | Done on `feat/pilot-v2`; site hints dropped (see Rejected). Migration `20261003120000` applied only to the local spike database. Web card checked in the browser at desktop and phone width. |
 | 7. Weekly budget | Dropped 2026-10-03 (see Rejected). |
-| 8 | Not started. |
+| 8. Pilot pages, graph, public page | Done on `feat/pilot-v2`. Checked live in the browser (desktop and phone; the app is dark-only). |
 
 The rename ran before the spike so the spike and every later milestone use the final names.
 Milestone 3 ran before 2 because it needs no telemetry: its exit check counts model runs, not
@@ -492,6 +492,18 @@ Host ──► Server ──► Session ─┬─► Searcher ──┐
 Exit: on a live run the overview lights the agent that matches the current run's task type, and
 idle hours show as collapsed quiet rows. Both graphs look right in light and dark themes and at
 phone width (checked in the browser, not only typechecked).
+
+As built:
+
+- The host's cycle entry for a working cycle carries `taskType` and `tokens` in its detail, so the
+  Activity page shows each run's agent and tokens with no join. `PilotState.currentRun` drives the
+  graph, refreshed by `run.started` (new, from `RunService.start`) and `run.finished` (now also
+  from a host-failed run).
+- The task-type-to-agent map and agent labels live in `task-types.ts` next to the task labels.
+- Checked live with a `job.rescanSkipped` run: Session lit with its task and elapsed time and the
+  "text tasks" edge animated; the run's row read "Session · 525.1K tokens"; one empty cycle read
+  "Quiet 20:10, 1 check". Admin "Tokens (7d)" column added. The public page's demo video still
+  shows the old overview; re-record it with the `teaser-video` skill.
 
 ## Later, not in this plan
 

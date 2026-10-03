@@ -7,6 +7,7 @@ export type PilotEvent =
   | { type: "state.changed"; state: unknown }
   | { type: "promotion.created"; promotion: unknown }
   | { type: "promotion.updated"; promotion: unknown }
+  | { type: "run.started"; runId: string; taskType: string }
   | { type: "run.finished"; runId: string; outcome: string };
 
 /** Parameter-free path: the server resolves the profile from the session. */

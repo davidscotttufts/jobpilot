@@ -11,7 +11,8 @@ import { Box, Chip, Collapse, Divider, Paper, Stack, Typography } from "@mui/mat
 import { ColorChip, RelativeTime } from "@/components/ui/display";
 import { CYCLE_STATUS_COLOR } from "@/lib/terminal";
 import { formatDuration, formatSpanBetween } from "@/utils/format";
-import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
+import { JournalRow, KIND_META, KIND_ORDER, RunMeta } from "./journal-row";
+import { groupQuietStretches, type JournalItem, QuietStretchRow } from "./quiet-stretch";
 
 interface CycleBlock {
   type: "cycle";
@@ -19,16 +20,21 @@ interface CycleBlock {
   entries: PilotJournalEntry[];
 }
 
-type Block = CycleBlock | { type: "entry"; entry: PilotJournalEntry };
+type Block = CycleBlock | JournalItem;
 
-/** Each cycle sits at its newest entry's position; cycle-less (host/system) entries stay standalone. */
+/** Each cycle sits at its newest entry's position; cycle-less (host/system) entries and quiet stretches stay standalone. */
 function toBlocks(entries: PilotJournalEntry[]): Block[] {
   const blocks: Block[] = [];
   const blockByCycle = new Map<string, CycleBlock>();
 
-  for (const entry of entries) {
+  for (const item of groupQuietStretches(entries)) {
+    if (item.type === "quiet") {
+      blocks.push(item);
+      continue;
+    }
+    const { entry } = item;
     if (!entry.cycleId) {
-      blocks.push({ type: "entry", entry });
+      blocks.push(item);
       continue;
     }
     const block = blockByCycle.get(entry.cycleId);
@@ -119,6 +125,7 @@ function CycleCard(props: CycleCardProps): ReactElement {
                 · sleeps {formatDuration(detail.sleepSeconds)}
               </Typography>
             )}
+            {detail && <RunMeta run={detail} />}
           </Stack>
           <KindSummary entries={entries} />
         </Box>
@@ -145,6 +152,9 @@ export function CycleTimeline(props: CycleEntriesProps): ReactElement {
       {blocks.map((block) => {
         if (block.type === "entry") {
           return <JournalRow key={block.entry.id} entry={block.entry} />;
+        }
+        if (block.type === "quiet") {
+          return <QuietStretchRow key={block.entries[0].id} entries={block.entries} />;
         }
         const defaultOpen = !firstCycleSeen;
         firstCycleSeen = true;

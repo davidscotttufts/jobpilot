@@ -123,6 +123,19 @@ describe("RunService.start", () => {
     expect(run.payload).toMatchObject({ campaignId: "c1", jobKey: "j1" });
   });
 
+  it("publishes run.started", async () => {
+    const stream = subscribe(pilotChannel, { userId: USER_ID });
+    await stream.next();
+    await runDb({}).service.start(USER_ID, VERSION, pausedTask.id);
+    const frame = (await stream.next()).value as unknown as { data: unknown };
+    expect(frame.data).toEqual({
+      type: "run.started",
+      runId: RUN_ID,
+      taskType: "campaign.reviewPaused",
+    });
+    await stream.return();
+  });
+
   it("refuses a stale snapshot, a held subject, or a row that changed since the build", async () => {
     const refusals: [RunSetup, string, string][] = [
       [{ currentVersion: "d6579e89-e9af-4f83-a04e-7d2cfad07cf3" }, applyTask.id, "stale"],

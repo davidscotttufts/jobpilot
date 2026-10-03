@@ -23,6 +23,12 @@ internal sealed class FakePilotSession : IPilotSession
 
     public List<string> FailedRuns => Snapshot(failedRuns);
 
+    /// <summary>The details of the journaled cycles; read after the run, when nothing else writes.</summary>
+    public List<CycleDetail> CycleDetails { get; } = [];
+
+    /// <summary>The token total each usage report returns.</summary>
+    public long? MeasuredTokens { get; set; }
+
     /// <summary>The id every run start returns; null makes the server refuse the start.</summary>
     public string? StartedRunId { get; set; } = "run-1";
 
@@ -168,24 +174,25 @@ internal sealed class FakePilotSession : IPilotSession
         return Task.CompletedTask;
     }
 
-    public Task JournalCycleAsync(string? cycleId, string summary, string status, int sleepSeconds, CancellationToken ct)
+    public Task JournalCycleAsync(string? cycleId, string summary, CycleDetail detail, CancellationToken ct)
     {
         lock (sync)
         {
-            cycles.Add($"{status}: {summary}");
+            cycles.Add($"{detail.Status}: {summary}");
+            CycleDetails.Add(detail);
         }
 
         return Task.CompletedTask;
     }
 
-    public Task ReportUsageAsync(string runId, CancellationToken ct)
+    public Task<long?> ReportUsageAsync(string runId, CancellationToken ct)
     {
         lock (sync)
         {
             UsageReports++;
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(MeasuredTokens);
     }
 
     private void Record(string action)

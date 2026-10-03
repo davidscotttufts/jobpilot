@@ -65,8 +65,8 @@ public interface IPilotSession
     Task FailRunAsync(string runId, CancellationToken ct);
 
     /// <param name="cycleId">The run id for a working cycle, so its entries group with the agent's; null for an empty one.</param>
-    Task JournalCycleAsync(string? cycleId, string summary, string status, int sleepSeconds, CancellationToken ct);
+    Task JournalCycleAsync(string? cycleId, string summary, CycleDetail detail, CancellationToken ct);
 
-    /// <summary>Posts the token usage measured since the last <see cref="SendCycleAsync"/> to the run, if any.</summary>
-    Task ReportUsageAsync(string runId, CancellationToken ct);
+    /// <summary>Posts the token usage measured since the last <see cref="SendCycleAsync"/> to the run. Its total, or null when none was measured.</summary>
+    Task<long?> ReportUsageAsync(string runId, CancellationToken ct);
 }

@@ -15,11 +15,24 @@ function fakePrisma(
       count: async () => states.length,
     },
     pilotQuestion: { groupBy: async () => questions },
+    pilotRun: {
+      groupBy: async () => [
+        {
+          userId: "p1",
+          _sum: {
+            inputTokens: 100,
+            outputTokens: 20,
+            cacheReadTokens: 3000,
+            cacheWriteTokens: null,
+          },
+        },
+      ],
+    },
   } as unknown as PrismaClient;
 }
 
 describe("AdminService.listPilots", () => {
-  it("projects each PilotState to owner email, activity, and open-question count", async () => {
+  it("projects each PilotState to owner email, activity, open questions, and week tokens", async () => {
     const svc = new AdminService(
       fakePrisma(
         [
@@ -52,6 +65,7 @@ describe("AdminService.listPilots", () => {
         lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
         cycleCount: 42,
         openQuestions: 2,
+        weekTokens: 3120,
       },
       {
         userEmail: "bob@example.com",
@@ -60,6 +74,7 @@ describe("AdminService.listPilots", () => {
         lastCycleAt: null,
         cycleCount: 0,
         openQuestions: 0,
+        weekTokens: 0,
       },
     ]);
   });

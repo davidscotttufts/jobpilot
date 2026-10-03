@@ -19,7 +19,13 @@ const stateRow = (over: Record<string, unknown>) => ({
   ...over,
 });
 
-function stateService(savedGoals: string) {
+interface OpenRun {
+  id: string;
+  taskType: string;
+  startedAt: Date;
+}
+
+function stateService(savedGoals: string, openRun: OpenRun | null = null) {
   const rec = {
     searchResets: 0,
     searchDeletes: 0,
@@ -27,6 +33,7 @@ function stateService(savedGoals: string) {
     campaignsCompleted: 0,
     jobsDropped: 0,
   };
+  const runQueries: unknown[] = [];
   const count = (key: keyof typeof rec) => async () => {
     rec[key]++;
     return { count: 1 };
@@ -38,7 +45,13 @@ function stateService(savedGoals: string) {
         stateRow({ instructionsGoals: savedGoals, ...a.update }),
     },
     pilotSearch: { updateMany: count("searchResets"), deleteMany: count("searchDeletes") },
-    pilotRun: { deleteMany: count("setupRunDeletes") },
+    pilotRun: {
+      deleteMany: count("setupRunDeletes"),
+      findFirst: async (args: unknown) => {
+        runQueries.push(args);
+        return openRun;
+      },
+    },
     campaign: {
       findMany: async () => [{ campaignId: "c1", source: "auto_apply" }],
       updateMany: count("campaignsCompleted"),
@@ -48,7 +61,7 @@ function stateService(savedGoals: string) {
     networkingMessage: { count: async () => 0 },
     $transaction: async (ops: Promise<unknown>[]) => Promise.all(ops),
   };
-  return { svc: new PilotService(db as unknown as PrismaClient), rec };
+  return { svc: new PilotService(db as unknown as PrismaClient), rec, runQueries };
 }
 
 describe("PilotService.updateInstructions", () => {
@@ -89,6 +102,19 @@ describe("PilotService.updateInstructions", () => {
       body("new goals", { completeCampaigns: true, dropApprovedJobs: true }),
     );
     expect(rec).toMatchObject({ campaignsCompleted: 1, jobsDropped: 1 });
+  });
+});
+
+describe("PilotService.getState", () => {
+  it("reports the newest open, unexpired run as currentRun, or null", async () => {
+    const run = { id: "r1", taskType: "job.apply", startedAt: new Date() };
+    const { svc, runQueries } = stateService("", run);
+    expect((await svc.getState("p1")).currentRun).toEqual(run);
+    expect(runQueries[0]).toMatchObject({
+      where: { userId: "p1", finishedAt: null, expiresAt: { gt: expect.any(Date) } },
+      orderBy: { startedAt: "desc" },
+    });
+    expect((await stateService("").svc.getState("p1")).currentRun).toBeNull();
   });
 });
 

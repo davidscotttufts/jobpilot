@@ -19,10 +19,13 @@ export function PilotLive(): ReactNode {
   };
   const refreshQuestions = (): void => invalidate(queryKeys.pilot.questionsAll());
   const refreshPromotions = (): void => invalidate(queryKeys.pilot.promotionsAll());
+  const refreshState = (): void => invalidate(queryKeys.pilot.state());
 
   const status = useSseChannel(pilotChannel, null, {
     on: {
-      "state.changed": () => invalidate(queryKeys.pilot.state()),
+      "state.changed": refreshState,
+      "run.started": refreshState,
+      "run.finished": refreshState,
       "journal.appended": (event) => appendJournalEntry(queryClient, event.entry),
       "question.created": refreshQuestions,
       "question.answered": refreshQuestions,

@@ -3,7 +3,7 @@ import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { singleton } from "tsyringe";
 import type { AuthUser } from "@/common/auth";
-import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
+import { bucketPerDay, DAY_MS, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
@@ -121,12 +121,33 @@ export class AdminService {
     ]);
 
     const userIds = rows.map((row) => row.userId);
-    const questionRows = await this.prisma.pilotQuestion.groupBy({
-      by: ["userId"],
-      where: { userId: { in: userIds }, status: "open" },
-      _count: { _all: true },
-    });
+    const [questionRows, runRows] = await Promise.all([
+      this.prisma.pilotQuestion.groupBy({
+        by: ["userId"],
+        where: { userId: { in: userIds }, status: "open" },
+        _count: { _all: true },
+      }),
+      this.prisma.pilotRun.groupBy({
+        by: ["userId"],
+        where: { userId: { in: userIds }, startedAt: { gte: new Date(Date.now() - 7 * DAY_MS) } },
+        _sum: {
+          inputTokens: true,
+          outputTokens: true,
+          cacheReadTokens: true,
+          cacheWriteTokens: true,
+        },
+      }),
+    ]);
     const openByUser = new Map(questionRows.map((row) => [row.userId, row._count._all]));
+    const tokensByUser = new Map(
+      runRows.map(({ userId, _sum }) => [
+        userId,
+        (_sum.inputTokens ?? 0) +
+          (_sum.outputTokens ?? 0) +
+          (_sum.cacheReadTokens ?? 0) +
+          (_sum.cacheWriteTokens ?? 0),
+      ]),
+    );
 
     const items = rows.map((row) => ({
       userEmail: row.user.email,
@@ -135,6 +156,7 @@ export class AdminService {
       lastCycleAt: row.lastCycleAt,
       cycleCount: row.cycleCount,
       openQuestions: openByUser.get(row.userId) ?? 0,
+      weekTokens: tokensByUser.get(row.userId) ?? 0,
     }));
     return paginate(items, query, total);
   }
