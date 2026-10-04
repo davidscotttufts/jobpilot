@@ -17,7 +17,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
 import { useSseChannel } from "@/lib/sse/client";
-import type { SessionStatus } from "@/lib/terminal";
+import type { PilotHealth } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
 import { type TerminalHealth, useTerminalHealth } from "../../agent-dock/use-terminal-health";
@@ -27,21 +27,21 @@ import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
 export function PilotStatusCard(): ReactElement {
   const agentAvailable = useAgentAvailable();
   // Split so the host poller never mounts on mobile, where no local host can exist.
-  return agentAvailable ? <PilotCardWithHost /> : <PilotCardBody health={null} hostStatus={null} />;
+  return agentAvailable ? <PilotCardWithHost /> : <PilotCardBody health={null} pilot={null} />;
 }
 
 function PilotCardWithHost(): ReactElement {
   const { health, status } = useTerminalHealth();
-  return <PilotCardBody health={health} hostStatus={status} />;
+  return <PilotCardBody health={health} pilot={status?.pilot ?? null} />;
 }
 
 interface PilotCardBodyProps {
   health: TerminalHealth | null;
-  hostStatus: SessionStatus | null;
+  pilot: PilotHealth | null;
 }
 
 function PilotCardBody(props: PilotCardBodyProps): ReactNode {
-  const { health, hostStatus } = props;
+  const { health, pilot } = props;
   const queryClient = useQueryClient();
   const stateQuery = useApiQuery(pilotQueries.state());
   const openQuestions = useOpenQuestions().questions.length;
@@ -56,7 +56,7 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const state = stateQuery.data;
   if (!state) return null;
 
-  const mode = pilotMode(state, health, hostStatus?.pilot ?? null);
+  const mode = pilotMode(state, health, pilot);
   const look = PILOT_MODE_LOOK[mode];
   const { dailyApplyCap } = state.instructionsConfig;
 

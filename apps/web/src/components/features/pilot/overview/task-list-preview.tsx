@@ -3,12 +3,12 @@
 import type { ReactElement } from "react";
 import type { TaskList } from "@jobpilot/contracts/pilot";
 import { Refresh } from "@mui/icons-material";
-import { Box, Chip, Divider, IconButton, Stack, Typography } from "@mui/material";
+import { Box, Chip, Divider, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { type ApiQueryResult, useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import { LinkButton } from "@/components/ui/buttons";
+import { LinkButton, TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil } from "@/utils/format";
@@ -80,13 +80,13 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
       description="What the pilot plans to work on next cycle."
       actions={
         running && (
-          <IconButton
-            aria-label="Refresh task list"
+          <TooltipIconButton
+            title="Refresh task list"
             disabled={query.isFetching || refresh.isPending}
             onClick={() => refresh.mutate()}
           >
             <Refresh fontSize="sm" />
-          </IconButton>
+          </TooltipIconButton>
         )
       }
     >

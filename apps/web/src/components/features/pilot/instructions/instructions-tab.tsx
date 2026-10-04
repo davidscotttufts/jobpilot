@@ -15,8 +15,12 @@ import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { FormSection } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
-import { SectionCard, StickyFooter } from "@/components/ui/layout";
-import { type SectionAnchor, SectionAnchorNav } from "@/components/ui/layout/section-anchor-nav";
+import {
+  type SectionAnchor,
+  SectionCard,
+  SectionLayout,
+  StickyFooter,
+} from "@/components/ui/layout";
 import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
 import { BoardsSection } from "./boards-section";
@@ -55,22 +59,14 @@ export function InstructionsTab(): ReactElement {
   // The form takes its defaults once, so it mounts only after the state has loaded.
   // Saved answers sit outside the instructions form so their own submits can't save it.
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", lg: "row" },
-        gap: 3,
-        alignItems: "flex-start",
-      }}
-    >
-      <SectionAnchorNav anchors={NAV_ANCHORS} />
-      <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
+    <SectionLayout anchors={NAV_ANCHORS}>
+      <Stack spacing={3}>
         <InstructionsEditor state={stateQuery.data} />
         <Box data-section-id="answers">
           <SavedAnswers />
         </Box>
       </Stack>
-    </Box>
+    </SectionLayout>
   );
 }
 

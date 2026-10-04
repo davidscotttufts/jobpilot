@@ -21,17 +21,23 @@ interface PilotModeLook {
   tone: PulseDotTone;
   label: string;
   pulsing: boolean;
+  /** No cycles can run, so live views grey out. */
+  dimmed: boolean;
 }
 
 export const PILOT_MODE_LOOK: Record<PilotMode, PilotModeLook> = {
-  off: { tone: "muted", label: "Off", pulsing: false },
-  offline: { tone: "amber", label: "Agent offline", pulsing: false },
-  working: { tone: "violet", label: "Working", pulsing: true },
-  starting: { tone: "blue", label: "Starting up", pulsing: true },
-  idle: { tone: "green", label: "Idle", pulsing: false },
-  unpaired: { tone: "blue", label: "Waiting for agent", pulsing: false },
-  unknown: { tone: "green", label: "Running", pulsing: false },
+  off: { tone: "muted", label: "Off", pulsing: false, dimmed: true },
+  offline: { tone: "amber", label: "Agent offline", pulsing: false, dimmed: true },
+  working: { tone: "violet", label: "Working", pulsing: true, dimmed: false },
+  starting: { tone: "blue", label: "Starting up", pulsing: true, dimmed: false },
+  idle: { tone: "green", label: "Idle", pulsing: false, dimmed: false },
+  unpaired: { tone: "blue", label: "Waiting for agent", pulsing: false, dimmed: false },
+  unknown: { tone: "green", label: "Running", pulsing: false, dimmed: false },
 };
+
+export function hasGoals(state: Pick<PilotState, "instructionsGoals">): boolean {
+  return state.instructionsGoals.trim() !== "";
+}
 
 function isHostOffline(health: TerminalHealth | null): boolean {
   return health === "offline" || health === "uninstalled";

@@ -10,6 +10,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
+import { hasGoals } from "../pilot-status";
 
 interface ChecklistStep {
   id: string;
@@ -33,7 +34,7 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
   const mailbox = useApiQuery(emailQueries.account()).data;
 
   const hostReady = health === "reachable";
-  const goalsDone = state.instructionsGoals.trim() !== "";
+  const goalsDone = hasGoals(state);
   const connected = mailbox?.connected === true;
   const needsReauth = connected && mailbox.needsReauth;
   const emailOk = connected && !needsReauth;

@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 const TICK_MS = 30_000;
 
 /** The host's next check; re-renders the caller while it is pending so a countdown keeps moving. */
-export function useNextWake(state: PilotState): Date | null {
-  const { nextWakeAt } = state;
+export function useNextWake(state: PilotState | null): Date | null {
+  const nextWakeAt = state?.nextWakeAt ?? null;
   const wakeMs = nextWakeAt ? nextWakeAt.getTime() : null;
 
   const [, setTick] = useState(0);

@@ -7,6 +7,7 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
 import { formatTokens } from "@/utils/format";
+import { PILOT_MODE_LOOK } from "../pilot-status";
 import { AGENT_LABELS, type PilotAgent, taskTypeAgent } from "../task-types";
 
 export interface Stage {
@@ -32,20 +33,20 @@ interface StageCardProps {
   stage: Stage;
   caption: string;
   active?: boolean;
-  muted: boolean;
+  dimmed: boolean;
 }
 
 export function StageCard(props: StageCardProps): ReactElement {
-  const { stage, caption, active = false, muted } = props;
+  const { stage, caption, active = false, dimmed } = props;
 
   return (
     <Card
       variant={active ? "accent" : undefined}
-      sx={{ flex: { md: "1 1 0" }, minWidth: 0, opacity: muted ? DIM_OPACITY : 1 }}
+      sx={{ flex: { md: "1 1 0" }, minWidth: 0, opacity: dimmed ? DIM_OPACITY : 1 }}
     >
       <CardContent>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <PulseDot tone={muted ? "muted" : stage.tone} size="sm" pulsing={active} />
+          <PulseDot tone={dimmed ? "muted" : stage.tone} size="sm" pulsing={active} />
           <Typography variant="body1Strong">{stage.title}</Typography>
         </Stack>
         <Typography variant="overlineMuted" sx={{ display: "block", ml: 2 }}>
@@ -69,12 +70,12 @@ export function StageCard(props: StageCardProps): ReactElement {
 
 interface AgentListProps {
   branch: PilotAgent | null;
-  muted: boolean;
+  dimmed: boolean;
 }
 
 /** Who the session hands a task to; the agent on the current run is lit. */
 export function AgentList(props: AgentListProps): ReactElement {
-  const { branch, muted } = props;
+  const { branch, dimmed } = props;
   const cost = useApiQuery(pilotQueries.cost());
 
   const weekTokens = new Map<PilotAgent, number>();
@@ -84,7 +85,7 @@ export function AgentList(props: AgentListProps): ReactElement {
   }
 
   return (
-    <Box sx={{ opacity: muted ? DIM_OPACITY : 1 }}>
+    <Box sx={{ opacity: dimmed ? DIM_OPACITY : 1 }}>
       <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
         <Typography variant="overlineMuted">Agents</Typography>
         <Typography variant="overlineMuted">Tokens this week</Typography>
@@ -99,20 +100,17 @@ export function AgentList(props: AgentListProps): ReactElement {
         {AGENTS.map((agent) => {
           const active = agent === branch;
           return (
-            <Box
+            <Card
               key={agent}
-              sx={(theme) => ({
-                px: 1.5,
-                py: 1,
-                borderRadius: theme.radii.sm,
-                border: 1,
-                borderColor: active ? "primary.main" : "divider",
-                backgroundColor: active ? theme.tints.selected : "transparent",
-                opacity: branch !== null && !active ? DIM_OPACITY : 1,
-              })}
+              variant={active ? "accent" : undefined}
+              sx={{ px: 1.5, py: 1, opacity: branch !== null && !active ? DIM_OPACITY : 1 }}
             >
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <PulseDot tone={active ? "amber" : "muted"} size="xs" pulsing={active} />
+                <PulseDot
+                  tone={active ? PILOT_MODE_LOOK.working.tone : "muted"}
+                  size="xs"
+                  pulsing={active}
+                />
                 <Typography variant={active ? "body2Strong" : "body2"} sx={{ flex: 1 }}>
                   {AGENT_LABELS[agent]}
                 </Typography>
@@ -123,7 +121,7 @@ export function AgentList(props: AgentListProps): ReactElement {
               <Typography variant="captionMuted" noWrap sx={{ display: "block", ml: 2 }}>
                 {AGENT_ROLES[agent]}
               </Typography>
-            </Box>
+            </Card>
           );
         })}
       </Box>

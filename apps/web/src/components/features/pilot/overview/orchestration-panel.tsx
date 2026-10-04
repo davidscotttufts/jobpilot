@@ -8,12 +8,10 @@ import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal";
 import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
-import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
-import { idleCaption, type PilotMode, pilotMode } from "../pilot-status";
+import { idleCaption, PILOT_MODE_LOOK, type PilotMode } from "../pilot-status";
 import { taskTypeAgent, taskTypeLabel } from "../task-types";
 import { AgentList, type Stage, StageArrow, StageCard } from "./stage-card";
 import { useTaskList } from "./task-list-preview";
-import { useNextWake } from "./use-next-wake";
 
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
 const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };
@@ -26,27 +24,18 @@ const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string
   clear: "Nothing to do",
 };
 
-const MODE_NOTICES: Partial<Record<PilotMode, string>> = {
-  off: "Enable the pilot to watch it run cycles.",
-  offline: "Start the JobPilot agent so the pilot can run cycles.",
-};
-
 function truncate(text: string, max = 48): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
 function hostCaption(mode: PilotMode, pilot: PilotHealth | null, nextWakeAt: Date | null): string {
-  switch (mode) {
-    case "off":
-      return "Pilot disabled";
-    case "offline":
-      return "Agent offline";
-    case "working":
-      return "Running a cycle";
-    case "starting":
-      return "First cycle begins shortly";
+  if (mode === "working") {
+    return "Running a cycle";
   }
-  return idleCaption(pilot, nextWakeAt) || "Idle";
+  if (mode === "idle" || mode === "unknown") {
+    return idleCaption(pilot, nextWakeAt) || "Idle";
+  }
+  return PILOT_MODE_LOOK[mode].label;
 }
 
 function serverCaption(taskList: TaskList | null | undefined): string {
@@ -59,20 +48,19 @@ function serverCaption(taskList: TaskList | null | undefined): string {
 
 interface OrchestrationPanelProps {
   state: PilotState;
-  health: TerminalHealth;
   pilot: PilotHealth | null;
+  mode: PilotMode;
+  nextWakeAt: Date | null;
 }
 
 export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
-  const { state, health, pilot } = props;
+  const { state, pilot, mode, nextWakeAt } = props;
   const journal = useApiQuery(pilotQueries.journal());
-  const nextWakeAt = useNextWake(state);
   const taskList = useTaskList(state.running);
 
-  const mode = pilotMode(state, health, pilot);
-  const muted = mode === "off" || mode === "offline";
+  const { dimmed } = PILOT_MODE_LOOK[mode];
   const working = mode === "working";
-  const run = muted ? null : state.currentRun;
+  const run = dimmed ? null : state.currentRun;
   const running = run !== null;
   const branch = run ? taskTypeAgent(run.taskType) : null;
 
@@ -88,8 +76,6 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     ? `${taskTypeLabel(run.taskType)} · running ${formatRelativeTime(run.startedAt)}`
     : "Idle";
 
-  const notice = MODE_NOTICES[mode] ?? null;
-
   return (
     <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">
       <Box
@@ -103,32 +89,28 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
           stage={HOST}
           caption={hostCaption(mode, pilot, nextWakeAt)}
           active={working && !run}
-          muted={muted}
+          dimmed={dimmed}
         />
         <StageArrow lit={working} />
-        <StageCard stage={SERVER} caption={serverCaption(taskList.data)} muted={muted} />
+        <StageCard stage={SERVER} caption={serverCaption(taskList.data)} dimmed={dimmed} />
         <StageArrow lit={running} />
-        <StageCard stage={SESSION} caption={sessionCaption} active={running} muted={muted} />
+        <StageCard stage={SESSION} caption={sessionCaption} active={running} dimmed={dimmed} />
         <StageArrow lit={running} />
         <StageCard
           stage={JOURNAL}
           caption={journalCaption}
           active={posted !== null}
-          muted={muted}
+          dimmed={dimmed}
         />
       </Box>
       <Box sx={{ mt: 2 }}>
-        <AgentList branch={branch} muted={muted} />
+        <AgentList branch={branch} dimmed={dimmed} />
       </Box>
       <Box sx={{ mt: 1.5 }}>
-        {notice ? (
-          <Typography variant="body2Muted">{notice}</Typography>
-        ) : (
-          <Typography variant="captionMuted">
-            Each cycle the host checks for work, the server picks one task, and the pilot session
-            hands it to one agent or does it directly.
-          </Typography>
-        )}
+        <Typography variant="captionMuted">
+          Each cycle the host checks for work, the server picks one task, and the pilot session
+          hands it to one agent or does it directly.
+        </Typography>
       </Box>
     </SectionCard>
   );

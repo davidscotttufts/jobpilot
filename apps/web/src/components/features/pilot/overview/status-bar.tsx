@@ -2,23 +2,24 @@
 
 import type { ReactElement } from "react";
 import type { PilotState } from "@jobpilot/contracts/pilot";
-import { Box, Button, Card, CardContent, Chip, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
+import { AgentOnlyButton } from "@/components/ui/buttons";
 import { ColorChip } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
+import { useClockTick } from "@/hooks/use-clock-tick";
 import { CYCLE_STATUS_COLOR, type PilotHealth, providerDisplayName } from "@/lib/terminal";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime, plural } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import {
+  hasGoals,
   idleCaption,
   PILOT_HOST_OFFLINE_MESSAGE,
   PILOT_MODE_LOOK,
   type PilotMode,
-  pilotMode,
 } from "../pilot-status";
 import { AGENT_LABELS, taskTypeAgent, taskTypeLabel } from "../task-types";
 import type { PilotControls } from "../use-pilot-controls";
-import { useNextWake } from "./use-next-wake";
 
 function statusDetail(
   mode: PilotMode,
@@ -29,9 +30,9 @@ function statusDetail(
   const run = state.currentRun;
   switch (mode) {
     case "off":
-      return state.instructionsGoals.trim() === ""
-        ? "Write your goals, then start the pilot."
-        : "Start the pilot to run cycles on your local agent.";
+      return hasGoals(state)
+        ? "Start the pilot to run cycles on your local agent."
+        : "Write your goals, then start the pilot.";
     case "offline":
       return PILOT_HOST_OFFLINE_MESSAGE;
     case "working":
@@ -44,11 +45,7 @@ function statusDetail(
     case "unpaired":
       return "The agent host is up; waiting for the pilot session to connect.";
   }
-  const caption = idleCaption(pilot, nextWakeAt);
-  if (caption !== "") {
-    return caption;
-  }
-  return state.lastCycleAt ? `Last cycle ${formatRelativeTime(state.lastCycleAt)} ago` : "";
+  return idleCaption(pilot, nextWakeAt);
 }
 
 interface StatusBarProps {
@@ -56,18 +53,20 @@ interface StatusBarProps {
   controls: PilotControls;
   health: TerminalHealth;
   pilot: PilotHealth | null;
+  mode: PilotMode;
+  nextWakeAt: Date | null;
 }
 
 /** The pilot's one status readout and its Start/Stop control. */
 export function StatusBar(props: StatusBarProps): ReactElement {
-  const { state, controls, health, pilot } = props;
+  const { state, controls, health, pilot, mode, nextWakeAt } = props;
   const confirm = useConfirm();
-  const nextWakeAt = useNextWake(state);
+  // The run and last-cycle ages are plain text, so they need the shared tick to climb.
+  useClockTick();
 
-  const mode = pilotMode(state, health, pilot);
   const look = PILOT_MODE_LOOK[mode];
   const detail = statusDetail(mode, state, pilot, nextWakeAt);
-  const goalsEmpty = state.instructionsGoals.trim() === "";
+  const goalsEmpty = !hasGoals(state);
   const timeouts = pilot?.consecutiveTimeouts ?? 0;
 
   const stopWithConfirm = async (): Promise<void> => {
@@ -115,12 +114,7 @@ export function StatusBar(props: StatusBarProps): ReactElement {
               >
                 <Typography variant="captionMuted">{meta.join(" · ")}</Typography>
                 {pilot?.lastCycleStatus && (
-                  <ColorChip
-                    value={pilot.lastCycleStatus}
-                    colors={CYCLE_STATUS_COLOR}
-                    variant="outlined"
-                    size="small"
-                  />
+                  <ColorChip value={pilot.lastCycleStatus} colors={CYCLE_STATUS_COLOR} />
                 )}
                 {timeouts > 0 && (
                   <Chip
@@ -143,19 +137,15 @@ export function StatusBar(props: StatusBarProps): ReactElement {
               Stop
             </Button>
           ) : (
-            // A disabled button emits no pointer events, so the tooltip needs an enabled span to hover over.
-            <Tooltip title={goalsEmpty ? "Write the pilot's goals before starting it." : ""}>
-              <Box component="span" sx={{ display: { xs: "flex", sm: "inline-flex" } }}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  disabled={controls.isLoading || health !== "reachable" || goalsEmpty}
-                  onClick={() => void controls.start()}
-                >
-                  Start
-                </Button>
-              </Box>
-            </Tooltip>
+            <AgentOnlyButton
+              variant="contained"
+              fullWidth
+              tooltip={goalsEmpty ? "Write the pilot's goals before starting it." : ""}
+              disabled={controls.isLoading || health !== "reachable" || goalsEmpty}
+              onClick={() => void controls.start()}
+            >
+              Start
+            </AgentOnlyButton>
           )}
         </Stack>
       </CardContent>

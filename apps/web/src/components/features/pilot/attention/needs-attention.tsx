@@ -2,14 +2,14 @@
 
 import { type ReactElement, useState } from "react";
 import type { Promotion } from "@jobpilot/contracts/pilot";
-import { CheckCircleOutlined, ExpandLess, ExpandMore } from "@mui/icons-material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import {
+  Alert,
   Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   Collapse,
+  Divider,
   IconButton,
   Stack,
   Typography,
@@ -93,11 +93,7 @@ export function NeedsAttention(): ReactElement {
         Post history ({history.length})
       </Button>
       <Collapse in={historyOpen} unmountOnExit>
-        <Stack
-          spacing={1.5}
-          divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}
-          sx={{ mt: 1.5 }}
-        >
+        <Stack spacing={1.5} divider={<Divider />} sx={{ mt: 1.5 }}>
           {history.map((promotion) => (
             <PromotionSummary key={promotion.id} promotion={promotion} />
           ))}
@@ -109,17 +105,12 @@ export function NeedsAttention(): ReactElement {
   // All clear shrinks to one line, so the overview's live sections stay above the fold.
   if (!loading && !isError && count === 0) {
     return (
-      <Card>
-        <CardContent>
-          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <CheckCircleOutlined fontSize="small" sx={{ color: "success.main" }} />
-            <Typography variant="body2" sx={{ flex: 1 }}>
-              Nothing needs your attention.
-            </Typography>
-          </Stack>
-          {postHistory}
-        </CardContent>
-      </Card>
+      <Stack spacing={1}>
+        <Alert severity="success" variant="outlined">
+          Nothing needs your attention.
+        </Alert>
+        {postHistory}
+      </Stack>
     );
   }
 
