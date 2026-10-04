@@ -3,14 +3,14 @@
 import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { Add } from "@mui/icons-material";
-import { Button, Skeleton, Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
-import { EmptyState, PaginationFooter } from "@/components/ui/data";
+import { EmptyState, PaginationFooter, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
@@ -33,6 +33,7 @@ export function CampaignGroups(): ReactElement {
 
   const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
   const loading = groups.some((g) => g.isLoading);
+  const isError = groups.some((g) => g.isError);
   const isEmpty = groups.every((g) => !g.pagination?.total);
 
   const open = (c: CampaignDto): void => {
@@ -56,32 +57,41 @@ export function CampaignGroups(): ReactElement {
         )
       }
     >
-      {loading && <Skeleton variant="rounded" height={160} />}
-      {!loading && isEmpty && (
-        <EmptyState
-          variant="inline"
-          title="No campaigns yet"
-          description={
-            agentAvailable
-              ? "Start a campaign, describe the job you want, and pick a board. Choose Search mode if you want to see the matches before anything is sent."
-              : "Open JobPilot on your desktop to start the agent and run your first search."
+      <QuerySection
+        isLoading={loading}
+        isError={isError}
+        onRetry={() => {
+          for (const group of groups) {
+            void group.refetch();
           }
-          action={
-            agentAvailable ? (
-              <Button size="small" variant="outlined" onClick={expand}>
-                Open agent dock
-              </Button>
-            ) : undefined
-          }
-        />
-      )}
-      {!loading && !isEmpty && (
+        }}
+        errorTitle="Couldn't load your campaigns."
+        isEmpty={isEmpty}
+        empty={
+          <EmptyState
+            variant="inline"
+            title="No campaigns yet"
+            description={
+              agentAvailable
+                ? "Start a campaign, describe the job you want, and pick a board. Choose Search mode if you want to see the matches before anything is sent."
+                : "Open JobPilot on your desktop to start the agent and run your first search."
+            }
+            action={
+              agentAvailable ? (
+                <Button size="small" variant="outlined" onClick={expand}>
+                  Open agent dock
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      >
         <Stack spacing={2}>
           {groups.map((group) => (
             <CampaignGroupSection key={group.label} group={group} onOpen={open} />
           ))}
         </Stack>
-      )}
+      </QuerySection>
     </SectionCard>
   );
 }
@@ -130,6 +140,8 @@ function useCampaignGroup(group: (typeof GROUPS)[number]) {
   return {
     label: group.label,
     isLoading: result.isLoading,
+    isError: result.isError,
+    refetch: result.refetch,
     items: result.data?.items ?? [],
     pagination: result.data?.pagination,
     setPage,
