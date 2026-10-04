@@ -47,7 +47,7 @@ export function OverviewTab(): ReactElement {
           <TodayPanel state={state} />
         </Grid>
         <Grid size={{ xs: 12, md: 7 }}>
-          <TaskListPreview />
+          <TaskListPreview running={state.running} />
         </Grid>
       </Grid>
       <RecentActivity />

@@ -7,6 +7,7 @@ import { pilotQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
+import { collapseCoveredCycles, withLatestRuns } from "../journal/journal-entries";
 import { JournalRow } from "../journal/journal-row";
 import { LiveStatusChip } from "../journal/live-status-chip";
 import { useJournalLiveStatus } from "../journal/use-journal-live";
@@ -18,7 +19,8 @@ export function RecentActivity(): ReactElement {
   const firstPage = useApiQuery(pilotQueries.journal());
   const status = useJournalLiveStatus();
 
-  const entries = (firstPage.data?.items ?? []).slice(0, RECENT_LIMIT);
+  const items = firstPage.data?.items ?? [];
+  const entries = collapseCoveredCycles(withLatestRuns(items)).slice(0, RECENT_LIMIT);
 
   return (
     <SectionCard

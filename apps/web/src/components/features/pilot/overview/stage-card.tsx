@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement } from "react";
 import { EastRounded } from "@mui/icons-material";
 import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
@@ -33,17 +33,15 @@ interface StageCardProps {
   caption: string;
   active?: boolean;
   muted: boolean;
-  grow?: number;
-  children?: ReactNode;
 }
 
 export function StageCard(props: StageCardProps): ReactElement {
-  const { stage, caption, active = false, muted, grow = 1, children } = props;
+  const { stage, caption, active = false, muted } = props;
 
   return (
     <Card
       variant={active ? "accent" : undefined}
-      sx={{ flex: { md: `${grow} 1 0` }, minWidth: 0, opacity: muted ? DIM_OPACITY : 1 }}
+      sx={{ flex: { md: "1 1 0" }, minWidth: 0, opacity: muted ? DIM_OPACITY : 1 }}
     >
       <CardContent>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
@@ -64,7 +62,6 @@ export function StageCard(props: StageCardProps): ReactElement {
         >
           {caption}
         </Typography>
-        {children}
       </CardContent>
     </Card>
   );
@@ -72,10 +69,12 @@ export function StageCard(props: StageCardProps): ReactElement {
 
 interface AgentListProps {
   branch: PilotAgent | null;
+  muted: boolean;
 }
 
+/** Who the session hands a task to; the agent on the current run is lit. */
 export function AgentList(props: AgentListProps): ReactElement {
-  const { branch } = props;
+  const { branch, muted } = props;
   const cost = useApiQuery(pilotQueries.cost());
 
   const weekTokens = new Map<PilotAgent, number>();
@@ -85,43 +84,49 @@ export function AgentList(props: AgentListProps): ReactElement {
   }
 
   return (
-    <Box sx={{ mt: 1.5, pt: 1.25, borderTop: 1, borderColor: "divider" }}>
-      <Stack direction="row" sx={{ justifyContent: "space-between", px: 1, mb: 0.5 }}>
-        <Typography variant="overlineMuted">Done by</Typography>
+    <Box sx={{ opacity: muted ? DIM_OPACITY : 1 }}>
+      <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
+        <Typography variant="overlineMuted">Agents</Typography>
         <Typography variant="overlineMuted">Tokens this week</Typography>
       </Stack>
-      <Stack spacing={0.25}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(5, 1fr)" },
+          gap: 1,
+        }}
+      >
         {AGENTS.map((agent) => {
           const active = agent === branch;
-          const dim = branch !== null && !active;
           return (
-            <Stack
+            <Box
               key={agent}
-              direction="row"
-              spacing={1}
               sx={(theme) => ({
-                alignItems: "center",
-                px: 1,
-                py: 0.5,
-                borderRadius: theme.radii.xs,
+                px: 1.5,
+                py: 1,
+                borderRadius: theme.radii.sm,
+                border: 1,
+                borderColor: active ? "primary.main" : "divider",
                 backgroundColor: active ? theme.tints.selected : "transparent",
-                opacity: dim ? DIM_OPACITY : 1,
+                opacity: branch !== null && !active ? DIM_OPACITY : 1,
               })}
             >
-              <PulseDot tone={active ? "amber" : "muted"} size="xs" pulsing={active} />
-              <Typography variant={active ? "body2Strong" : "body2"} sx={{ flexShrink: 0 }}>
-                {AGENT_LABELS[agent]}
-              </Typography>
-              <Typography variant="captionMuted" noWrap sx={{ flex: 1, minWidth: 0 }}>
+              <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                <PulseDot tone={active ? "amber" : "muted"} size="xs" pulsing={active} />
+                <Typography variant={active ? "body2Strong" : "body2"} sx={{ flex: 1 }}>
+                  {AGENT_LABELS[agent]}
+                </Typography>
+                <Typography variant="captionMuted">
+                  {formatTokens(weekTokens.get(agent) ?? 0)}
+                </Typography>
+              </Stack>
+              <Typography variant="captionMuted" noWrap sx={{ display: "block", ml: 2 }}>
                 {AGENT_ROLES[agent]}
               </Typography>
-              <Typography variant="captionMuted" sx={{ flexShrink: 0 }}>
-                {formatTokens(weekTokens.get(agent) ?? 0)}
-              </Typography>
-            </Stack>
+            </Box>
           );
         })}
-      </Stack>
+      </Box>
     </Box>
   );
 }

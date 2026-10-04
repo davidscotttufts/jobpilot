@@ -2,12 +2,7 @@
 
 import { type ReactElement, useState } from "react";
 import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
-import type {
-  PilotJournalEntry,
-  PilotJournalKind,
-  PilotJournalPage,
-  PilotJournalRun,
-} from "@jobpilot/contracts/pilot";
+import type { PilotJournalKind, PilotJournalPage } from "@jobpilot/contracts/pilot";
 import { DeleteSweep, Download } from "@mui/icons-material";
 import {
   Box,
@@ -31,37 +26,13 @@ import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
+import { collapseCoveredCycles, withLatestRuns } from "./journal-entries";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
 import { useJournalLiveStatus } from "./use-journal-live";
 
 /** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
-
-/** Drops cycle rows whose actions already repeat them; lone (error) cycle rows stay. */
-function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[] {
-  const covered = new Set<string>();
-  for (const entry of entries) {
-    if (entry.kind === "action" && entry.cycleId) {
-      covered.add(entry.cycleId);
-    }
-  }
-  return entries.filter((e) => !(e.kind === "cycle" && e.cycleId && covered.has(e.cycleId)));
-}
-
-/** Streamed actions predate the host's usage report, so every row takes its run's newest copy. */
-function withLatestRuns(entries: PilotJournalEntry[]): PilotJournalEntry[] {
-  const runs = new Map<string, PilotJournalRun>();
-  for (const entry of entries) {
-    if (entry.cycleId && entry.run && !runs.has(entry.cycleId)) {
-      runs.set(entry.cycleId, entry.run);
-    }
-  }
-  return entries.map((entry) => {
-    const run = entry.cycleId ? runs.get(entry.cycleId) : null;
-    return run ? { ...entry, run } : entry;
-  });
-}
 
 /** Kind filters run server-side, so paging under a filter stays on one stream. */
 export function JournalFeed(): ReactElement {

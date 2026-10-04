@@ -67,7 +67,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
   const { state, health, pilot } = props;
   const journal = useApiQuery(pilotQueries.journal());
   const nextWakeAt = useNextWake(state);
-  const taskList = useTaskList();
+  const taskList = useTaskList(state.running);
 
   const mode = pilotMode(state, health, pilot);
   const muted = mode === "off" || mode === "offline";
@@ -96,7 +96,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
         sx={{
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
-          alignItems: { xs: "stretch", md: "center" },
+          alignItems: "stretch",
         }}
       >
         <StageCard
@@ -108,15 +108,7 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
         <StageArrow lit={working} />
         <StageCard stage={SERVER} caption={serverCaption(taskList.data)} muted={muted} />
         <StageArrow lit={running} />
-        <StageCard
-          stage={SESSION}
-          caption={sessionCaption}
-          active={running}
-          muted={muted}
-          grow={1.6}
-        >
-          <AgentList branch={branch} />
-        </StageCard>
+        <StageCard stage={SESSION} caption={sessionCaption} active={running} muted={muted} />
         <StageArrow lit={running} />
         <StageCard
           stage={JOURNAL}
@@ -124,6 +116,9 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
           active={posted !== null}
           muted={muted}
         />
+      </Box>
+      <Box sx={{ mt: 2 }}>
+        <AgentList branch={branch} muted={muted} />
       </Box>
       <Box sx={{ mt: 1.5 }}>
         {notice ? (

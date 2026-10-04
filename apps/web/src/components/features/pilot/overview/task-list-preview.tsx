@@ -50,17 +50,23 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
   return <EmptyState variant="inline" title="No tasks right now." />;
 }
 
-/** Pinned to one fetch plus manual refresh: building a task list is costly. */
-export function useTaskList(): ApiQueryResult<TaskList | null> {
+/** Pinned to one fetch plus manual refresh: building a task list is costly. A stopped pilot has none. */
+export function useTaskList(running: boolean): ApiQueryResult<TaskList | null> {
   return useApiQuery(pilotQueries.taskList(), {
+    enabled: running,
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,
     retry: false,
   });
 }
 
-export function TaskListPreview(): ReactElement {
-  const query = useTaskList();
+interface TaskListPreviewProps {
+  running: boolean;
+}
+
+export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
+  const { running } = props;
+  const query = useTaskList(running);
   const refresh = useApiMutation<TaskList, void>(() => api.pilot.tasks.refresh.post(), {
     invalidate: [queryKeys.pilot.taskList()],
   });
@@ -73,62 +79,80 @@ export function TaskListPreview(): ReactElement {
       title="Up next"
       description="What the pilot plans to work on next cycle."
       actions={
-        <IconButton
-          aria-label="Refresh task list"
-          disabled={query.isFetching || refresh.isPending}
-          onClick={() => refresh.mutate()}
-        >
-          <Refresh fontSize="sm" />
-        </IconButton>
+        running && (
+          <IconButton
+            aria-label="Refresh task list"
+            disabled={query.isFetching || refresh.isPending}
+            onClick={() => refresh.mutate()}
+          >
+            <Refresh fontSize="sm" />
+          </IconButton>
+        )
       }
     >
-      <QuerySection
-        isLoading={query.isLoading}
-        isError={query.isError}
-        onRetry={() => void query.refetch()}
-        errorTitle="Couldn't load the task list."
-        isEmpty={!taskList}
-        empty={
-          <EmptyState
-            variant="inline"
-            title="No current task list."
-            description="Refresh to build the pilot's next task list."
-          />
-        }
-      >
-        {taskList && (
-          <Stack spacing={2}>
-            {visible.length === 0 ? (
-              <TaskListEmpty reason={taskList.emptyReason} budget={taskList.budget} />
-            ) : (
-              <Stack spacing={1.5} divider={<Divider />}>
-                {visible.map((task, index) => (
-                  <Stack key={task.id} direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                    <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
-                      {index + 1}
-                    </Typography>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="captionMuted">{taskTypeLabel(task.taskType)}</Typography>
-                      <Typography variant="body2" noWrap>
-                        {task.title}
+      {!running && (
+        <EmptyState
+          variant="inline"
+          title="The pilot is off."
+          description="Start it and it plans its next tasks here."
+        />
+      )}
+      {running && (
+        <QuerySection
+          isLoading={query.isLoading}
+          isError={query.isError}
+          onRetry={() => void query.refetch()}
+          errorTitle="Couldn't load the task list."
+          isEmpty={!taskList}
+          empty={
+            <EmptyState
+              variant="inline"
+              title="No current task list."
+              description="Refresh to build the pilot's next task list."
+            />
+          }
+        >
+          {taskList && (
+            <Stack spacing={2}>
+              {visible.length === 0 ? (
+                <TaskListEmpty reason={taskList.emptyReason} budget={taskList.budget} />
+              ) : (
+                <Stack spacing={1.5} divider={<Divider />}>
+                  {visible.map((task, index) => (
+                    <Stack
+                      key={task.id}
+                      direction="row"
+                      spacing={1.5}
+                      sx={{ alignItems: "center" }}
+                    >
+                      <Typography variant="overlineMuted" sx={{ width: 16, flexShrink: 0 }}>
+                        {index + 1}
                       </Typography>
-                    </Box>
-                    <Chip size="small" variant="outlined" label={task.subjectType} />
-                  </Stack>
-                ))}
-              </Stack>
-            )}
-            {taskList.tasks.length > PREVIEW_COUNT && (
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography variant="captionMuted">
+                          {taskTypeLabel(task.taskType)}
+                        </Typography>
+                        <Typography variant="body2" noWrap>
+                          {task.title}
+                        </Typography>
+                      </Box>
+                      <Chip size="small" variant="outlined" label={task.subjectType} />
+                    </Stack>
+                  ))}
+                </Stack>
+              )}
+              {taskList.tasks.length > PREVIEW_COUNT && (
+                <Typography variant="captionMuted">
+                  +{taskList.tasks.length - PREVIEW_COUNT} more
+                </Typography>
+              )}
               <Typography variant="captionMuted">
-                +{taskList.tasks.length - PREVIEW_COUNT} more
+                Built {formatRelativeTime(taskList.builtAt)} ago
               </Typography>
-            )}
-            <Typography variant="captionMuted">
-              Built {formatRelativeTime(taskList.builtAt)} ago
-            </Typography>
-          </Stack>
-        )}
-      </QuerySection>
+            </Stack>
+          )}
+        </QuerySection>
+      )}
     </SectionCard>
   );
 }

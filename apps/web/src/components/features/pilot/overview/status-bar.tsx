@@ -97,13 +97,40 @@ export function StatusBar(props: StatusBarProps): ReactElement {
           spacing={2}
           sx={{ alignItems: { xs: "stretch", sm: "center" } }}
         >
-          <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0, alignItems: "center" }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{ flex: 1, minWidth: 0, alignItems: "flex-start" }}
+          >
             <PulseDot tone={look.tone} pulsing={look.pulsing} size="md" />
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h5" component="p">
                 {look.label}
               </Typography>
               {detail !== "" && <Typography variant="body2Muted">{detail}</Typography>}
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ mt: 1, alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}
+              >
+                <Typography variant="captionMuted">{meta.join(" · ")}</Typography>
+                {pilot?.lastCycleStatus && (
+                  <ColorChip
+                    value={pilot.lastCycleStatus}
+                    colors={CYCLE_STATUS_COLOR}
+                    variant="outlined"
+                    size="small"
+                  />
+                )}
+                {timeouts > 0 && (
+                  <Chip
+                    color="warning"
+                    variant="outlined"
+                    label={plural(timeouts, "timeout")}
+                    size="small"
+                  />
+                )}
+              </Stack>
             </Box>
           </Stack>
           {state.running ? (
@@ -129,29 +156,6 @@ export function StatusBar(props: StatusBarProps): ReactElement {
                 </Button>
               </Box>
             </Tooltip>
-          )}
-        </Stack>
-        <Stack
-          direction="row"
-          spacing={1}
-          sx={{ mt: 1.5, ml: { sm: 3 }, alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}
-        >
-          <Typography variant="captionMuted">{meta.join(" · ")}</Typography>
-          {pilot?.lastCycleStatus && (
-            <ColorChip
-              value={pilot.lastCycleStatus}
-              colors={CYCLE_STATUS_COLOR}
-              variant="outlined"
-              size="small"
-            />
-          )}
-          {timeouts > 0 && (
-            <Chip
-              color="warning"
-              variant="outlined"
-              label={plural(timeouts, "timeout")}
-              size="small"
-            />
           )}
         </Stack>
       </CardContent>
