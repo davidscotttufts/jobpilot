@@ -1,39 +1,26 @@
 "use client";
 
-import "@xyflow/react/dist/style.css";
-import { type ReactElement, useEffect, useState } from "react";
+import type { ReactElement } from "react";
 import type { PilotState, TaskList } from "@jobpilot/contracts/pilot";
-import { Box, Skeleton, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { Background, BackgroundVariant, type BuiltInEdge, ReactFlow } from "@xyflow/react";
+import { Box, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal";
-import {
-  formatRelativeTime,
-  formatTimeUntil,
-  formatTokens,
-  humanizeIsoInText,
-} from "@/utils/format";
+import { formatRelativeTime, formatTimeUntil, humanizeIsoInText } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
 import { isHostOffline } from "../host-status";
-import { type PilotAgent, taskTypeAgent, taskTypeLabel } from "../task-types";
-import { type StageFlowNode, stageNodeTypes } from "./flow-nodes";
-import {
-  AGENTS,
-  HOST,
-  JOURNAL,
-  LINKS,
-  NARROW_LAYOUT,
-  SERVER,
-  SESSION,
-  type Stage,
-  WIDE_LAYOUT,
-} from "./orchestration-graph";
+import { taskTypeAgent, taskTypeLabel } from "../task-types";
+import { AgentList, type Stage, StageArrow, StageCard } from "./stage-card";
 import { useTaskList } from "./task-list-preview";
 import { useNextWake } from "./use-next-wake";
 
 type Mode = "off" | "offline" | "working" | "sleeping";
+
+const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
+const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };
+const SESSION: Stage = { title: "Session", role: "Runs the task", tone: "violet" };
+const JOURNAL: Stage = { title: "Journal", role: "Records the outcome", tone: "green" };
 
 const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string> = {
   capReached: "Daily cap reached",
@@ -83,7 +70,7 @@ function hostCaption(mode: Mode, pilot: PilotHealth | null, nextWakeAt: Date | n
 function serverCaption(taskList: TaskList | null | undefined): string {
   const next = taskList?.tasks[0];
   if (next) {
-    return `Next: ${truncate(next.title)}`;
+    return `Up next · ${truncate(next.title)}`;
   }
   return EMPTY_REASON_CAPTIONS[taskList?.emptyReason ?? "clear"];
 }
@@ -96,28 +83,16 @@ interface OrchestrationPanelProps {
 
 export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement {
   const { state, health, pilot } = props;
-  const theme = useTheme();
-  const narrow = useMediaQuery(theme.breakpoints.down("sm"));
   const journal = useApiQuery(pilotQueries.journal());
-  const cost = useApiQuery(pilotQueries.cost());
   const nextWakeAt = useNextWake(state);
   const taskList = useTaskList();
 
-  // ReactFlow measures the DOM, so the canvas must never render during SSR.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  const layout = narrow ? NARROW_LAYOUT : WIDE_LAYOUT;
   const mode = pilotMode(state, health, pilot);
   const muted = mode === "off" || mode === "offline";
+  const working = mode === "working";
   const run = muted ? null : state.currentRun;
+  const running = run !== null;
   const branch = run ? taskTypeAgent(run.taskType) : null;
-
-  const weekTokens = new Map<PilotAgent, number>();
-  for (const item of cost.data?.items ?? []) {
-    const agent = taskTypeAgent(item.taskType);
-    weekTokens.set(agent, (weekTokens.get(agent) ?? 0) + item.totalTokens);
-  }
 
   // A run's id is the cycleId of the action it posts.
   const journalItems = journal.data?.items ?? [];
@@ -128,103 +103,53 @@ export function OrchestrationPanel(props: OrchestrationPanelProps): ReactElement
     ? truncate(humanizeIsoInText(posted.summary))
     : `${state.appliedToday} / ${state.instructionsConfig.dailyApplyCap} applied today`;
   const sessionCaption = run
-    ? `${taskTypeLabel(run.taskType)} · ${formatRelativeTime(run.startedAt)}`
+    ? `${taskTypeLabel(run.taskType)} · running ${formatRelativeTime(run.startedAt)}`
     : "Idle";
-
-  const toNode = (stage: Stage, caption: string, active: boolean, dim: boolean): StageFlowNode => ({
-    id: stage.id,
-    type: "stage",
-    position: layout.positions[stage.id],
-    data: { title: stage.title, role: stage.role, tone: stage.tone, caption, active, muted: dim },
-  });
-
-  const nodes: StageFlowNode[] = [
-    toNode(HOST, hostCaption(mode, pilot, nextWakeAt), mode === "working" && !run, muted),
-    toNode(SERVER, serverCaption(taskList.data), false, muted),
-    toNode(SESSION, sessionCaption, run !== null, muted),
-    ...AGENTS.map((agent) =>
-      toNode(
-        agent,
-        `${formatTokens(weekTokens.get(agent.id) ?? 0)} tokens this week`,
-        agent.id === branch,
-        muted || agent.id !== branch,
-      ),
-    ),
-    toNode(JOURNAL, journalCaption, false, muted),
-  ];
-
-  const litStroke = theme.palette.accent.primary;
-  const idleStroke = theme.palette.divider;
-  const edges: BuiltInEdge[] = LINKS.map((link) => {
-    const lit = link.agent !== null && link.agent === branch;
-    const [sourceHandle, targetHandle] = layout.sides[link.route];
-    const text = link.route === "text";
-    return {
-      id: `${link.source}-${link.target}`,
-      source: link.source,
-      target: link.target,
-      sourceHandle,
-      targetHandle,
-      type: "smoothstep",
-      animated: lit,
-      // Branch edges share their first and last segments; the lit one draws on top.
-      zIndex: lit ? 1 : 0,
-      style: { stroke: lit ? litStroke : idleStroke, strokeWidth: lit ? 2 : 1.5 },
-      pathOptions: text ? { offset: layout.textOffset } : undefined,
-      label: text ? "text tasks" : null,
-      labelStyle: { fill: theme.palette.text.secondary },
-      labelBgStyle: { fill: theme.palette.background.paper },
-    };
-  });
 
   const notice = MODE_NOTICES[mode] ?? null;
 
   return (
     <SectionCard title="Orchestration" description="How the pilot works a cycle, live.">
-      {mounted ? (
-        <Box
-          sx={{
-            height: layout.height,
-            width: "100%",
-            // Strip the library's node and handle chrome so only our themed surfaces show.
-            "& .react-flow__node": {
-              background: "transparent",
-              border: 0,
-              padding: 0,
-              fontFamily: "inherit",
-            },
-            "& .react-flow__handle": { opacity: 0 },
-          }}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          alignItems: { xs: "stretch", md: "center" },
+        }}
+      >
+        <StageCard
+          stage={HOST}
+          caption={hostCaption(mode, pilot, nextWakeAt)}
+          active={working && !run}
+          muted={muted}
+        />
+        <StageArrow lit={working} />
+        <StageCard stage={SERVER} caption={serverCaption(taskList.data)} muted={muted} />
+        <StageArrow lit={running} />
+        <StageCard
+          stage={SESSION}
+          caption={sessionCaption}
+          active={running}
+          muted={muted}
+          grow={1.6}
         >
-          <ReactFlow
-            // Remount on a layout switch so fitView reframes the new shape.
-            key={narrow ? "narrow" : "wide"}
-            nodes={nodes}
-            edges={edges}
-            nodeTypes={stageNodeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.12 }}
-            nodesDraggable={false}
-            nodesConnectable={false}
-            elementsSelectable={false}
-            proOptions={{ hideAttribution: true }}
-            minZoom={0.5}
-            maxZoom={1.5}
-            colorMode={theme.palette.mode}
-          >
-            <Background variant={BackgroundVariant.Dots} gap={22} size={1} color={idleStroke} />
-          </ReactFlow>
-        </Box>
-      ) : (
-        <Skeleton variant="rounded" height={layout.height} />
-      )}
-      <Box sx={{ mt: 1 }}>
+          <AgentList branch={branch} />
+        </StageCard>
+        <StageArrow lit={running} />
+        <StageCard
+          stage={JOURNAL}
+          caption={journalCaption}
+          active={posted !== null}
+          muted={muted}
+        />
+      </Box>
+      <Box sx={{ mt: 1.5 }}>
         {notice ? (
           <Typography variant="body2Muted">{notice}</Typography>
         ) : (
           <Typography variant="captionMuted">
             Each cycle the host checks for work, the server picks one task, and the pilot session
-            hands it to one agent or does text-only work itself.
+            hands it to one agent or does it directly.
           </Typography>
         )}
       </Box>

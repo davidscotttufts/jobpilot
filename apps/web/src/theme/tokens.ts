@@ -11,6 +11,11 @@ export const gradients = {
   orb: `conic-gradient(from 200deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary}, ${accent.primary})`,
 } as const;
 
+export const tints = {
+  selected: alpha(accent.primary, 0.16),
+  selectedHover: alpha(accent.primary, 0.24),
+} as const;
+
 export const motion = {
   fast: "160ms cubic-bezier(0.3,0.7,0.2,1)",
   standard: "240ms cubic-bezier(0.2,0.8,0.2,1)",

@@ -29,7 +29,6 @@
     "@tanstack/react-query-devtools": "^5.104.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "@xyflow/react": "^12.12.0",
     "date-fns": "^4.4.0",
     "eventsource": "^5.1.2",
     "libphonenumber-js": "^1.13.14",

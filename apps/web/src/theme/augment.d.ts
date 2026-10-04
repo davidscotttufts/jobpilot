@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { accent, line, stages, surfaces } from "./palette";
-import type { controlHeights, gradients, iconSizes, motion, radii, shadows } from "./tokens";
+import type { controlHeights, gradients, iconSizes, motion, radii, shadows, tints } from "./tokens";
 
 /** Single list of custom variants; the three MUI interfaces below all derive from it. */
 interface CustomTypographyVariants {
@@ -42,6 +42,7 @@ declare module "@mui/material/styles" {
     motion: typeof motion;
     radii: typeof radii;
     shadows_custom: typeof shadows;
+    tints: typeof tints;
     iconSizes: typeof iconSizes;
     controlHeights: typeof controlHeights;
   }
@@ -50,6 +51,7 @@ declare module "@mui/material/styles" {
     motion?: typeof motion;
     radii?: typeof radii;
     shadows_custom?: typeof shadows;
+    tints?: typeof tints;
     iconSizes?: typeof iconSizes;
     controlHeights?: typeof controlHeights;
   }
