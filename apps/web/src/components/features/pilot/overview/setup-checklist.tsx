@@ -10,7 +10,6 @@ import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
-import type { PilotControls } from "../use-pilot-controls";
 
 interface ChecklistStep {
   id: string;
@@ -22,20 +21,18 @@ interface ChecklistStep {
 
 interface PilotSetupChecklistProps {
   state: PilotState;
-  controls: PilotControls;
   health: TerminalHealth;
 }
 
-/** Renders nothing once the pilot is fully set up. */
+/** The pilot's prerequisites; Start lives on the status bar. Renders nothing once all are met. */
 export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode {
-  const { state, controls, health } = props;
+  const { state, health } = props;
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
   const mailbox = useApiQuery(emailQueries.account()).data;
 
   const hostReady = health === "reachable";
-  const running = state.running;
   const goalsDone = state.instructionsGoals.trim() !== "";
   const connected = mailbox?.connected === true;
   const needsReauth = connected && mailbox.needsReauth;
@@ -45,7 +42,7 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
   const hostSettled = hostReady || health === "checking";
   const emailSettled = emailOk || mailbox == null;
 
-  if (hostSettled && running && emailSettled) {
+  if (hostSettled && goalsDone && emailSettled) {
     return null;
   }
 
@@ -89,28 +86,12 @@ export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode 
         </LinkButton>
       ),
     },
-    {
-      id: "start",
-      label: "Start the pilot",
-      description: "Turns on autonomous cycles on your own Claude or Codex subscription.",
-      done: running,
-      action: (
-        <Button
-          size="small"
-          variant="contained"
-          disabled={controls.isLoading || !hostReady || !goalsDone}
-          onClick={() => void controls.start()}
-        >
-          Start
-        </Button>
-      ),
-    },
   ];
 
   return (
     <SectionCard
       title="Set up the pilot"
-      description="Install the agent and start the pilot - it handles the rest."
+      description="Finish these, then start the pilot - it handles the rest."
     >
       <Stack spacing={2}>
         {steps.map((step) => (

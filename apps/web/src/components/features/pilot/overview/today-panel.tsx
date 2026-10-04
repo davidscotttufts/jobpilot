@@ -2,10 +2,11 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { networkingMode, type PilotState } from "@jobpilot/contracts/pilot";
-import { Grid, LinearProgress, Stack, Typography } from "@mui/material";
+import { LinearProgress, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { StatCard } from "@/components/ui/display";
+import { LinkButton } from "@/components/ui/buttons";
+import { SectionCard } from "@/components/ui/layout";
 
 interface MeterProps {
   label: string;
@@ -104,9 +105,15 @@ export function TodayPanel(props: TodayPanelProps): ReactElement {
   const outreachOn = networkingMode(state.instructionsConfig) !== null;
 
   return (
-    <Stack spacing={2}>
-      <Stack spacing={1}>
-        <Typography variant="overlineMuted">Today</Typography>
+    <SectionCard
+      title="Today"
+      actions={
+        <LinkButton size="small" href="/pilot/instructions">
+          Edit limits
+        </LinkButton>
+      }
+    >
+      <Stack spacing={1.5}>
         {dailyApplyCap > 0 ? (
           <Meter label="Applied" value={appliedToday} cap={dailyApplyCap} spent={capReached} />
         ) : (
@@ -123,22 +130,11 @@ export function TodayPanel(props: TodayPanelProps): ReactElement {
           />
         )}
         <TodayOutcomes appliedToday={appliedToday} />
+        <Typography variant="captionMuted">
+          Applies to jobs scoring {minScore} or higher
+          {!outreachOn && " · networking is off"}
+        </Typography>
       </Stack>
-      <Grid container spacing={1.5}>
-        <Grid size={4}>
-          <StatCard label="Min score" value={minScore} />
-        </Grid>
-        <Grid size={4}>
-          <StatCard label="Daily cap" value={dailyApplyCap} />
-        </Grid>
-        <Grid size={4}>
-          <StatCard
-            label="Networking"
-            value={outreachOn ? networking.dailyCap : "Off"}
-            hint={outreachOn ? "per day" : "disabled"}
-          />
-        </Grid>
-      </Grid>
-    </Stack>
+    </SectionCard>
   );
 }

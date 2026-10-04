@@ -7,15 +7,13 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { SectionCard } from "@/components/ui/layout";
 import type { PilotHealth } from "@/lib/terminal";
-import { formatRelativeTime, formatTimeUntil, humanizeIsoInText } from "@/utils/format";
+import { formatRelativeTime, humanizeIsoInText } from "@/utils/format";
 import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
-import { isHostOffline } from "../host-status";
+import { idleCaption, type PilotMode, pilotMode } from "../pilot-status";
 import { taskTypeAgent, taskTypeLabel } from "../task-types";
 import { AgentList, type Stage, StageArrow, StageCard } from "./stage-card";
 import { useTaskList } from "./task-list-preview";
 import { useNextWake } from "./use-next-wake";
-
-type Mode = "off" | "offline" | "working" | "sleeping";
 
 const HOST: Stage = { title: "Host", role: "Checks for work", tone: "blue" };
 const SERVER: Stage = { title: "Server", role: "Picks a task", tone: "peach" };
@@ -28,7 +26,7 @@ const EMPTY_REASON_CAPTIONS: Record<NonNullable<TaskList["emptyReason"]>, string
   clear: "Nothing to do",
 };
 
-const MODE_NOTICES: Partial<Record<Mode, string>> = {
+const MODE_NOTICES: Partial<Record<PilotMode, string>> = {
   off: "Enable the pilot to watch it run cycles.",
   offline: "Start the JobPilot agent so the pilot can run cycles.",
 };
@@ -37,17 +35,7 @@ function truncate(text: string, max = 48): string {
   return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
-function pilotMode(state: PilotState, health: TerminalHealth, pilot: PilotHealth | null): Mode {
-  if (!state.running) {
-    return "off";
-  }
-  if (isHostOffline(health)) {
-    return "offline";
-  }
-  return pilot?.conducting ? "working" : "sleeping";
-}
-
-function hostCaption(mode: Mode, pilot: PilotHealth | null, nextWakeAt: Date | null): string {
+function hostCaption(mode: PilotMode, pilot: PilotHealth | null, nextWakeAt: Date | null): string {
   switch (mode) {
     case "off":
       return "Pilot disabled";
@@ -55,16 +43,10 @@ function hostCaption(mode: Mode, pilot: PilotHealth | null, nextWakeAt: Date | n
       return "Agent offline";
     case "working":
       return "Running a cycle";
+    case "starting":
+      return "First cycle begins shortly";
   }
-  const parts: string[] = [];
-  const lastCycleAt = pilot?.lastCycleAt ?? null;
-  if (pilot?.lastCycleStatus === "empty" && lastCycleAt) {
-    parts.push(`Checked ${formatRelativeTime(lastCycleAt)} ago, nothing to do`);
-  }
-  if (nextWakeAt) {
-    parts.push(`wakes in ${formatTimeUntil(nextWakeAt)}`);
-  }
-  return parts.length > 0 ? parts.join(" · ") : "Idle";
+  return idleCaption(pilot, nextWakeAt) || "Idle";
 }
 
 function serverCaption(taskList: TaskList | null | undefined): string {

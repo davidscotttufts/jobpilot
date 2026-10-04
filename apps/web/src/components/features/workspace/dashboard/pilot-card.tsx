@@ -9,43 +9,20 @@ import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import {
-  isHostOffline,
   PILOT_HOST_OFFLINE_MESSAGE,
-  PILOT_STARTING_UP_LABEL,
-} from "@/components/features/pilot/host-status";
+  PILOT_MODE_LOOK,
+  pilotMode,
+} from "@/components/features/pilot/pilot-status";
 import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
-import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
+import { PulseDot } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
-import type { PilotHealth, SessionStatus } from "@/lib/terminal";
+import type { SessionStatus } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
 import { plural } from "@/utils/format";
 import { type TerminalHealth, useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { useOpenQuestions } from "../../pilot/attention/use-open-questions";
-
-interface PilotIndicator {
-  tone: PulseDotTone;
-  label: string;
-  pulsing?: boolean;
-}
-
-/** Precedence: off > host offline > working > starting up > connected > waiting > running. */
-function deriveIndicator(
-  running: boolean,
-  cycleCount: number,
-  health: TerminalHealth | null,
-  pilot: PilotHealth | null,
-): PilotIndicator {
-  if (!running) return { tone: "muted", label: "Off" };
-  if (isHostOffline(health)) return { tone: "amber", label: "Host offline" };
-  if (pilot?.conducting) return { tone: "violet", label: "Working", pulsing: true };
-  if (cycleCount === 0) return { tone: "blue", label: PILOT_STARTING_UP_LABEL, pulsing: true };
-  if (pilot?.paired) return { tone: "green", label: "Connected" };
-  if (health === "reachable") return { tone: "blue", label: "Waiting for agent" };
-  // Mobile (no host visibility) or first probe still in flight.
-  return { tone: "green", label: "Running" };
-}
 
 /** Compact read-only pilot presence for the workspace overview; controls live on /pilot. */
 export function PilotStatusCard(): ReactElement {
@@ -80,12 +57,8 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const state = stateQuery.data;
   if (!state) return null;
 
-  const indicator = deriveIndicator(
-    state.running,
-    state.cycleCount,
-    health,
-    hostStatus?.pilot ?? null,
-  );
+  const mode = pilotMode(state, health, hostStatus?.pilot ?? null);
+  const look = PILOT_MODE_LOOK[mode];
   const { dailyApplyCap } = state.instructionsConfig;
 
   return (
@@ -99,13 +72,11 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
     >
       <Stack spacing={1.5}>
         <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <PulseDot tone={indicator.tone} pulsing={indicator.pulsing} />
-          <Typography variant="body2">{indicator.label}</Typography>
+          <PulseDot tone={look.tone} pulsing={look.pulsing} />
+          <Typography variant="body2">{look.label}</Typography>
         </Stack>
 
-        {indicator.tone === "amber" && (
-          <Alert severity="warning">{PILOT_HOST_OFFLINE_MESSAGE}</Alert>
-        )}
+        {mode === "offline" && <Alert severity="warning">{PILOT_HOST_OFFLINE_MESSAGE}</Alert>}
 
         <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", gap: 2, alignItems: "center" }}>
           <Stack spacing={0.25}>

@@ -46,7 +46,7 @@ function TaskListEmpty(props: TaskListEmptyProps): ReactElement {
       />
     );
   }
-  // No description: the card's footer already carries the next-wake countdown.
+  // No description: the status bar already carries the next-wake countdown.
   return <EmptyState variant="inline" title="No tasks right now." />;
 }
 
@@ -124,8 +124,7 @@ export function TaskListPreview(): ReactElement {
               </Typography>
             )}
             <Typography variant="captionMuted">
-              Built {formatRelativeTime(taskList.builtAt)} ago · next wake in{" "}
-              {formatTimeUntil(taskList.nextWakeAt)}
+              Built {formatRelativeTime(taskList.builtAt)} ago
             </Typography>
           </Stack>
         )}
