@@ -3,7 +3,6 @@ import {
   PILOT_LINKEDIN_AUTONOMY,
   type PilotInstructionsConfig,
   type PilotState,
-  pilotInstructionsConfigSchema,
   pilotNetworkingSchema,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
@@ -77,11 +76,4 @@ export function toFormValues(state: PilotState): InstructionsFormValues {
       postEveryDays: p.postEveryDays,
     })),
   };
-}
-
-/** A config indistinguishable from `{}` means the user never tuned anything. */
-const DEFAULT_CONFIG_JSON = JSON.stringify(pilotInstructionsConfigSchema.parse({}));
-
-export function hasTunedConfig(state: PilotState): boolean {
-  return JSON.stringify(state.instructionsConfig) !== DEFAULT_CONFIG_JSON;
 }

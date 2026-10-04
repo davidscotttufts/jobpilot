@@ -7,15 +7,7 @@ import {
   type PilotState,
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Skeleton, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -29,7 +21,6 @@ import { useUnsavedChangesGuard } from "@/hooks/use-unsaved-changes-guard";
 import { useToast } from "@/providers/notification-provider";
 import { BoardsSection } from "./boards-section";
 import {
-  hasTunedConfig,
   type InstructionsFormValues,
   instructionsFormSchema,
   toConfig,
@@ -46,7 +37,11 @@ import { SearchesList } from "./searches-list";
 const NAV_ANCHORS: SectionAnchor[] = [
   { id: "goals", label: "Goals" },
   { id: "searches", label: "Searches" },
-  { id: "advanced", label: "Advanced settings" },
+  { id: "limits", label: "Limits" },
+  { id: "networking", label: "Networking" },
+  { id: "boards", label: "Boards" },
+  { id: "platforms", label: "Platforms" },
+  { id: "answers", label: "Saved answers" },
 ];
 
 export function InstructionsTab(): ReactElement {
@@ -60,10 +55,22 @@ export function InstructionsTab(): ReactElement {
   // The form takes its defaults once, so it mounts only after the state has loaded.
   // Saved answers sit outside the instructions form so their own submits can't save it.
   return (
-    <Stack spacing={3}>
-      <InstructionsEditor state={stateQuery.data} />
-      <SavedAnswers />
-    </Stack>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", lg: "row" },
+        gap: 3,
+        alignItems: "flex-start",
+      }}
+    >
+      <SectionAnchorNav anchors={NAV_ANCHORS} />
+      <Stack spacing={3} sx={{ flex: 1, minWidth: 0, width: "100%" }}>
+        <InstructionsEditor state={stateQuery.data} />
+        <Box data-section-id="answers">
+          <SavedAnswers />
+        </Box>
+      </Stack>
+    </Box>
   );
 }
 
@@ -74,8 +81,6 @@ interface InstructionsEditorProps {
 function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
   const toast = useToast();
-  // Open when any advanced value was ever customized, so tuning stays visible to its owner.
-  const [advancedOpen, setAdvancedOpen] = useState(() => hasTunedConfig(state));
 
   const save = useApiMutation<unknown, UpdatePilotInstructionsInput>(
     (body) => api.pilot.instructions.put(body),
@@ -136,72 +141,47 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
         form.handleSubmit();
       }}
     >
-      <SectionCard
-        title="Instructions"
-        description="Goals are all the pilot needs - it creates and maintains its saved searches from them. Everything below is optional tuning."
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", lg: "row" },
-            gap: { xs: 2, sm: 3 },
-            alignItems: "flex-start",
-          }}
+      <Stack spacing={3}>
+        <SectionCard
+          title="Instructions"
+          description="Goals are all the pilot needs - it creates and maintains its saved searches from them."
         >
-          <SectionAnchorNav anchors={NAV_ANCHORS} />
+          <Stack spacing={3}>
+            <Box data-section-id="goals">
+              <GoalsSection form={form} />
+            </Box>
+            {/* Server data the pilot owns, not form state. */}
+            <Box data-section-id="searches">
+              <FormSection
+                title="Searches"
+                description="The pilot creates and maintains these from your goals - shown read-only."
+              >
+                <SearchesList />
+              </FormSection>
+            </Box>
+          </Stack>
+        </SectionCard>
 
-          <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
-            <Stack spacing={3}>
-              <Box data-section-id="goals">
-                <GoalsSection form={form} />
-              </Box>
-
-              {/* Server data the pilot owns, not form state. */}
-              <Box data-section-id="searches">
-                <FormSection
-                  title="Searches"
-                  description="The pilot creates and maintains these from your goals - shown read-only."
-                >
-                  <SearchesList />
-                </FormSection>
-              </Box>
-
-              <Box data-section-id="advanced">
-                <Accordion
-                  expanded={advancedOpen}
-                  onChange={(_, open) => setAdvancedOpen(open)}
-                  sx={(theme) => ({ borderColor: theme.palette.line.divider })}
-                >
-                  <AccordionSummary>
-                    <Stack spacing={0.25}>
-                      <Typography variant="body1Strong">Advanced settings</Typography>
-                      <Typography variant="captionMuted">
-                        Caps, networking, boards, platforms - the defaults work for most people.
-                      </Typography>
-                    </Stack>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Stack spacing={3}>
-                      <Box data-section-id="limits">
-                        <LimitsSection form={form} />
-                      </Box>
-                      <Box data-section-id="networking">
-                        <NetworkingSection form={form} />
-                      </Box>
-                      <Box data-section-id="boards">
-                        <BoardsSection form={form} />
-                      </Box>
-                      <Box data-section-id="platforms">
-                        <PlatformsSection form={form} />
-                      </Box>
-                    </Stack>
-                  </AccordionDetails>
-                </Accordion>
-              </Box>
-            </Stack>
-          </Box>
-        </Box>
-      </SectionCard>
+        <SectionCard
+          title="Tuning"
+          description="Optional - caps, networking, boards and platforms. The defaults work for most people."
+        >
+          <Stack spacing={3}>
+            <Box data-section-id="limits">
+              <LimitsSection form={form} />
+            </Box>
+            <Box data-section-id="networking">
+              <NetworkingSection form={form} />
+            </Box>
+            <Box data-section-id="boards">
+              <BoardsSection form={form} />
+            </Box>
+            <Box data-section-id="platforms">
+              <PlatformsSection form={form} />
+            </Box>
+          </Stack>
+        </SectionCard>
+      </Stack>
 
       {showSaveBar && (
         <StickyFooter>
