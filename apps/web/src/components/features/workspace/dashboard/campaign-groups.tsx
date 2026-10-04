@@ -3,7 +3,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { CampaignStatus } from "@jobpilot/contracts/campaign";
 import { Add } from "@mui/icons-material";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Skeleton, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useApiQuery } from "@/api/hooks";
@@ -15,9 +15,12 @@ import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
 
-/** Each group is its own server-filtered page, so neither can hide behind the other's rows. */
+/**
+ * Each group is its own server-filtered page, so neither can hide behind the other's rows.
+ * Running campaigns live in Now running, so they are left out here.
+ */
 const GROUPS = [
-  { key: "active", label: "Active", statuses: ["in_progress", "paused"] },
+  { key: "paused", label: "Paused", statuses: ["paused"] },
   { key: "completed", label: "Completed", statuses: ["completed", "failed"] },
 ] as const satisfies ReadonlyArray<{ key: string; label: string; statuses: CampaignStatus[] }>;
 
@@ -29,6 +32,7 @@ export function CampaignGroups(): ReactElement {
   const agentAvailable = useAgentAvailable();
 
   const groups = [useCampaignGroup(GROUPS[0]), useCampaignGroup(GROUPS[1])];
+  const loading = groups.some((g) => g.isLoading);
   const isEmpty = groups.every((g) => !g.pagination?.total);
 
   const open = (c: CampaignDto): void => {
@@ -52,7 +56,8 @@ export function CampaignGroups(): ReactElement {
         )
       }
     >
-      {isEmpty ? (
+      {loading && <Skeleton variant="rounded" height={160} />}
+      {!loading && isEmpty && (
         <EmptyState
           variant="inline"
           title="No campaigns yet"
@@ -69,7 +74,8 @@ export function CampaignGroups(): ReactElement {
             ) : undefined
           }
         />
-      ) : (
+      )}
+      {!loading && !isEmpty && (
         <Stack spacing={2}>
           {groups.map((group) => (
             <CampaignGroupSection key={group.label} group={group} onOpen={open} />
@@ -113,7 +119,7 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
   );
 }
 
-/** One paginated status group, with its own `?activePage=` / `?completedPage=` params. */
+/** One paginated status group, with its own `?pausedPage=` / `?completedPage=` params. */
 function useCampaignGroup(group: (typeof GROUPS)[number]) {
   const { query, setPage, setPageSize } = usePaginationParams({
     pageSize: PAGE_SIZE,
@@ -123,6 +129,7 @@ function useCampaignGroup(group: (typeof GROUPS)[number]) {
 
   return {
     label: group.label,
+    isLoading: result.isLoading,
     items: result.data?.items ?? [],
     pagination: result.data?.pagination,
     setPage,

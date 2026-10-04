@@ -9,15 +9,15 @@ import { PilotStatusCard } from "./dashboard/pilot-card";
 import { ProfileChecklistCard } from "./dashboard/profile-checklist-card";
 import { StatTiles } from "./dashboard/stat-tiles";
 
-/** Overview tab - activity-first: what's running, what needs me, campaigns. */
+/** Overview tab - totals first, then what needs me, what's live, and the campaign history. */
 export function OverviewPanel(): ReactElement {
   return (
     <Stack spacing={2}>
+      <StatTiles />
       <ProfileChecklistCard />
+      <AttentionStrip />
       <PilotStatusCard />
       <NowRunning />
-      <AttentionStrip />
-      <StatTiles />
       <CampaignGroups />
     </Stack>
   );

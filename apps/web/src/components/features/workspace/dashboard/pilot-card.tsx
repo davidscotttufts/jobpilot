@@ -2,7 +2,7 @@
 
 import type { ReactElement, ReactNode } from "react";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { Alert, Chip, Stack, Typography } from "@mui/material";
+import { Alert, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useApiQuery } from "@/api/hooks";
@@ -16,7 +16,6 @@ import {
 import { LinkButton } from "@/components/ui/buttons";
 import { RelativeTime } from "@/components/ui/display";
 import { PulseDot } from "@/components/ui/feedback";
-import { SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
 import type { SessionStatus } from "@/lib/terminal";
 import { useAgentAvailable } from "@/providers/agent-provider";
@@ -62,49 +61,56 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
   const { dailyApplyCap } = state.instructionsConfig;
 
   return (
-    <SectionCard
-      title="Pilot"
-      actions={
-        <LinkButton size="small" variant="outlined" href="/pilot">
-          Open
-        </LinkButton>
-      }
-    >
-      <Stack spacing={1.5}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-          <PulseDot tone={look.tone} pulsing={look.pulsing} />
-          <Typography variant="body2">{look.label}</Typography>
-        </Stack>
-
-        {mode === "offline" && <Alert severity="warning">{PILOT_HOST_OFFLINE_MESSAGE}</Alert>}
-
-        <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap", gap: 2, alignItems: "center" }}>
-          <Stack spacing={0.25}>
-            <Typography variant="overlineMuted">Applied today</Typography>
-            <Typography variant="body2" color={state.capReached ? "error.main" : "text.primary"}>
-              {state.appliedToday} / {dailyApplyCap}
-            </Typography>
-          </Stack>
-          <Stack spacing={0.25}>
-            <Typography variant="overlineMuted">Last cycle</Typography>
-            {state.lastCycleAt ? (
-              <RelativeTime value={state.lastCycleAt} variant="body2" />
-            ) : (
-              <Typography variant="body2">-</Typography>
+    <Card>
+      <CardContent>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={{ xs: 1.5, sm: 3 }}
+          sx={{ alignItems: { sm: "center" } }}
+        >
+          <Stack direction="row" spacing={1.25} sx={{ alignItems: "center", flex: 1, minWidth: 0 }}>
+            <PulseDot tone={look.tone} pulsing={look.pulsing} />
+            <Typography variant="body1Strong">Pilot</Typography>
+            <Typography variant="body2Muted">{look.label}</Typography>
+            {openQuestions > 0 && (
+              <Chip
+                component={Link}
+                href="/pilot"
+                clickable
+                color="warning"
+                size="small"
+                label={`${plural(openQuestions, "question")} for you`}
+              />
             )}
           </Stack>
-          {openQuestions > 0 && (
-            <Chip
-              component={Link}
-              href="/pilot"
-              clickable
-              color="warning"
-              size="small"
-              label={`${plural(openQuestions, "question")} for you`}
-            />
-          )}
+          <Stack direction="row" spacing={3} sx={{ alignItems: "center" }}>
+            <Typography variant="body2Muted">
+              Applied today{" "}
+              <Typography
+                component="span"
+                variant="body2"
+                color={state.capReached ? "error.main" : "text.primary"}
+              >
+                {state.appliedToday} / {dailyApplyCap}
+              </Typography>
+            </Typography>
+            {state.lastCycleAt && (
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: "baseline" }}>
+                <Typography variant="body2Muted">Last cycle</Typography>
+                <RelativeTime value={state.lastCycleAt} variant="body2" />
+              </Stack>
+            )}
+            <LinkButton size="small" variant="outlined" href="/pilot">
+              Open
+            </LinkButton>
+          </Stack>
         </Stack>
-      </Stack>
-    </SectionCard>
+        {mode === "offline" && (
+          <Alert severity="warning" sx={{ mt: 1.5 }}>
+            {PILOT_HOST_OFFLINE_MESSAGE}
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 }
