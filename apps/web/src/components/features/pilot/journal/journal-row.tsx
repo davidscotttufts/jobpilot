@@ -15,7 +15,7 @@ import {
   Summarize,
   Terminal,
 } from "@mui/icons-material";
-import { Box, Chip, type ChipProps, Stack, Typography } from "@mui/material";
+import { alpha, Box, type ChipProps, Stack, Tooltip, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
 import { formatTokens, humanizeIsoInText } from "@/utils/format";
 import { AGENT_LABELS, taskTypeAgent } from "../task-types";
@@ -63,14 +63,9 @@ interface RunMetaProps {
 
 export function RunMeta(props: RunMetaProps): ReactElement {
   const { run } = props;
-  return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-      <Chip size="small" variant="outlined" label={AGENT_LABELS[taskTypeAgent(run.taskType)]} />
-      {run.tokens !== null && (
-        <Typography variant="captionMuted">{formatTokens(run.tokens)} tokens</Typography>
-      )}
-    </Stack>
-  );
+  const agent = AGENT_LABELS[taskTypeAgent(run.taskType)];
+  const tokens = run.tokens === null ? "" : ` · ${formatTokens(run.tokens)} tokens`;
+  return <Typography variant="captionMuted">{`${agent}${tokens}`}</Typography>;
 }
 
 interface JournalRowProps {
@@ -83,19 +78,36 @@ export function JournalRow(props: JournalRowProps): ReactElement {
   const Icon = meta.icon;
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-      <Chip
-        size="small"
-        color={meta.color}
-        icon={<Icon fontSize="sm" />}
-        label={meta.label}
-        sx={{ minWidth: 110 }}
-      />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Tooltip title={meta.label}>
+        <Box
+          aria-label={meta.label}
+          sx={(theme) => {
+            const color =
+              meta.color === "default" || meta.color === undefined
+                ? theme.palette.text.secondary
+                : theme.palette[meta.color].main;
+            return {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              width: 28,
+              height: 28,
+              borderRadius: theme.radii.sm,
+              color,
+              backgroundColor: alpha(color, 0.14),
+            };
+          }}
+        >
+          <Icon fontSize="sm" />
+        </Box>
+      </Tooltip>
+      <Box sx={{ flex: 1, minWidth: 0, pt: 0.25 }}>
         <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
         {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
         {entry.run && <RunMeta run={entry.run} />}
       </Box>
-      <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap" }} />
+      <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap", pt: 0.5 }} />
     </Stack>
   );
 }

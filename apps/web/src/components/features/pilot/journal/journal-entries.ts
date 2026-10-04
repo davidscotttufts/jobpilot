@@ -1,4 +1,5 @@
 import type { PilotJournalEntry, PilotJournalRun } from "@jobpilot/contracts/pilot";
+import { format, isThisYear, isToday, isYesterday } from "date-fns";
 
 /** Drops cycle rows whose actions already repeat them; lone (error) cycle rows stay. */
 export function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[] {
@@ -23,4 +24,36 @@ export function withLatestRuns(entries: PilotJournalEntry[]): PilotJournalEntry[
     const run = entry.cycleId ? runs.get(entry.cycleId) : null;
     return run ? { ...entry, run } : entry;
   });
+}
+
+interface JournalDay {
+  key: string;
+  label: string;
+  entries: PilotJournalEntry[];
+}
+
+function dayLabel(date: Date): string {
+  if (isToday(date)) {
+    return "Today";
+  }
+  if (isYesterday(date)) {
+    return "Yesterday";
+  }
+  return format(date, isThisYear(date) ? "EEEE, MMM d" : "MMM d, yyyy");
+}
+
+/** Entries arrive newest first, so each day's rows are contiguous. */
+export function groupByDay(entries: PilotJournalEntry[]): JournalDay[] {
+  const days: JournalDay[] = [];
+  for (const entry of entries) {
+    const date = new Date(entry.createdAt);
+    const key = format(date, "yyyy-MM-dd");
+    const last = days.at(-1);
+    if (last?.key === key) {
+      last.entries.push(entry);
+      continue;
+    }
+    days.push({ key, label: dayLabel(date), entries: [entry] });
+  }
+  return days;
 }
