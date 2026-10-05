@@ -150,8 +150,6 @@ export class EmailAccountService {
     return { email };
   }
 
-  // ── OAuth client config (bring-your-own Google app) ─────────────────────────
-
   /** Config status for the email settings UI. Never returns the client secret. */
   async getOAuthClient(userId: string) {
     const row = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });

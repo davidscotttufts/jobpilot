@@ -40,7 +40,6 @@ const limitPasswordReset = rateLimit(RATE_LIMITS.passwordReset);
 const limitEmailResend = rateLimit(RATE_LIMITS.emailResend);
 
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
-  // --- public ---
   .post(
     "/register",
     async ({ body, cookie }) => {
@@ -155,7 +154,6 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       },
     },
   )
-  // --- authenticated ---
   .use(authGuard)
   .post("/email/resend", ({ user }) => verificationService.resendVerification(user.id), {
     beforeHandle: limitEmailResend,

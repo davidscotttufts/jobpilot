@@ -3,8 +3,6 @@ import { tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { publicUserSchema } from "@/modules/auth/auth.schema";
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
 /** A user as the admin table sees them: the public user plus activity and the caller's rights. */
 export const adminUserSchema = publicUserSchema.extend({
   name: z.string().nullable(),

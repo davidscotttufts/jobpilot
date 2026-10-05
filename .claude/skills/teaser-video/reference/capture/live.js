@@ -35,7 +35,6 @@ const log = (msg) => {
 };
 log(`t0 epoch_ms=${t0}`);
 
-// ---- web camera -------------------------------------------------------------
 const cam = await open({ path: PAGE_PATH, ready: READY });
 const { browser, page } = cam;
 let frames = 0;
@@ -45,7 +44,6 @@ const stopWeb = await roll(page, path.join(dir, "web.mkv"), cam, () => {
 });
 log("web recording");
 
-// ---- agent window camera ----------------------------------------------------
 const windowTakes = [];
 let current = null;
 function findAgentWindow() {
@@ -89,7 +87,6 @@ const watchWindow = setInterval(async () => {
   }
 }, 2000);
 
-// ---- host status log --------------------------------------------------------
 let lastStatus = "";
 const watchHost = setInterval(async () => {
   try {
@@ -102,7 +99,6 @@ const watchHost = setInterval(async () => {
   } catch {}
 }, 1500);
 
-// ---- action -----------------------------------------------------------------
 if (flag("--start")) {
   // A held beat before the cursor moves gives the edit a lead-in.
   await page.waitForTimeout(2500);

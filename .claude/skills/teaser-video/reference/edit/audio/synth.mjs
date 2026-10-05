@@ -16,7 +16,6 @@ const storyboard = JSON.parse(
 const BEAT = 60 / storyboard.bpm;
 const BAR = BEAT * 4;
 
-// ---------- helpers ---------------------------------------------------------
 const TAU = Math.PI * 2;
 let seed = 1337;
 // Seeded LCG so every render of the track is identical.
@@ -142,7 +141,6 @@ function delay([L, R], time, fb = 0.35, mix = 0.25) {
   }
 }
 
-// ---------- instruments ----------------------------------------------------
 function kick(gain = 1) {
   let ph = 0;
   return mono(0.5, (t) => {
@@ -310,7 +308,6 @@ function chime(gain = 0.35) {
   return s;
 }
 
-// ---------- music ----------------------------------------------------------
 // Arrangement per storyboard section (bar numbers come from storyboard.json):
 //  hook    drone + ticking (the grind), riser in its last bar
 //  reveal  impact, pad, no drums
@@ -477,7 +474,6 @@ for (let i = 0; i < mix[0].length; i++) {
 peakNormalize(mix, 0.95);
 writeWav("music.wav", mix, 1.25);
 
-// ---------- SFX -------------------------------------------------------------
 const fx = {
   click: click(0.6),
   whoosh: whoosh(0.45, 0.5),

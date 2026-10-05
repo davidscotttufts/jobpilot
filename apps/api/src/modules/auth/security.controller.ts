@@ -21,7 +21,6 @@ const limitEmailChange = rateLimit(RATE_LIMITS.emailChange);
 
 /** Signed-in account security: password change/set and the two-step email change. */
 export const securityController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
-  // --- public ---
   .post("/email/change/confirm", ({ body }) => verificationService.confirmEmailChange(body.token), {
     body: ConfirmEmailChangeSchema,
     beforeHandle: limitEmailChangeConfirm,
@@ -32,7 +31,6 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
         "Switches the login email to the pending address from an email-change magic link, marks it verified, consumes the token, and revokes all sessions so the user signs back in with the new address.",
     },
   })
-  // --- authenticated ---
   .use(authGuard)
   .post(
     "/password/change",

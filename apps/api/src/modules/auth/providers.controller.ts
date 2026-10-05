@@ -112,7 +112,6 @@ export const authProvidersController = new Elysia({
       },
     },
   )
-  // --- authenticated ---
   .use(authGuard)
   .delete("/:provider", ({ user, params }) => oauthService.unlink(user.id, params.provider), {
     params: oauthProviderParams,
