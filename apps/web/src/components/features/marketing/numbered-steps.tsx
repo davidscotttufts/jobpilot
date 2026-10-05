@@ -10,7 +10,7 @@ export interface NumberedStep {
 interface NumberedStepsProps {
   steps: NumberedStep[];
   /** Columns from md up; phones always stack. */
-  columns: 2 | 3 | 4;
+  columns: 2 | 3;
 }
 
 export function NumberedSteps(props: NumberedStepsProps): ReactElement {

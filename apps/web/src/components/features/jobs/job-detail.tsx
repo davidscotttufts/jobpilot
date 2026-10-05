@@ -14,7 +14,7 @@ import {
 import type { JobListingDto } from "@/api/types";
 import { BackLink, LinkButton } from "@/components/ui/buttons";
 import { formatDate, formatRelativeTime } from "@/utils/format";
-import { showsRemoteBadge } from "./job-meta";
+import { RemoteBadge } from "./job-meta";
 import { JobSources } from "./job-sources";
 import { SkillChips } from "./skill-chips";
 
@@ -97,9 +97,7 @@ function JobHeader(props: JobDetailProps): ReactElement {
         {job.salary && <Typography variant="body1Strong">{job.salary}</Typography>}
         {job.location && <Typography variant="body2Muted">{job.location}</Typography>}
         {job.employmentType && <Typography variant="body2Muted">{job.employmentType}</Typography>}
-        {showsRemoteBadge(job) && (
-          <Chip label="Remote" size="small" color="success" variant="outlined" />
-        )}
+        <RemoteBadge job={job} />
         {job.yearsExperience !== null && (
           <Chip label={`${job.yearsExperience}+ years`} size="small" variant="outlined" />
         )}

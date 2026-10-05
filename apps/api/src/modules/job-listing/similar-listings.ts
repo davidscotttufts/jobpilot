@@ -32,7 +32,7 @@ const FILLER_WORDS = new Set([
   "time",
 ]);
 
-export type SimilarSource = Pick<JobListing, "id" | "skills" | "title" | "remote" | "location">;
+type SimilarSource = Pick<JobListing, "id" | "skills" | "title" | "remote" | "location">;
 
 export function titleWords(title: string): string[] {
   const words = title

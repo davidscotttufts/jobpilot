@@ -2,6 +2,7 @@ import type { ReactElement } from "react";
 import { Box, Grid, Stack, Typography } from "@mui/material";
 import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
+import { formatCount } from "@/utils/format";
 
 const BOARDS = [
   "LinkedIn",
@@ -16,8 +17,6 @@ const BOARDS = [
   "4 Day Week",
   "Upwork",
 ];
-
-const numberFormat = new Intl.NumberFormat("en-US");
 
 interface Stat {
   value: string;
@@ -93,5 +92,5 @@ async function loadStats(): Promise<Stat[]> {
     { value: data.activeUsersLast30Days, label: "People applying this month" },
   ]
     .filter((stat) => stat.value > 0)
-    .map((stat) => ({ value: numberFormat.format(stat.value), label: stat.label }));
+    .map((stat) => ({ value: formatCount(stat.value), label: stat.label }));
 }

@@ -13,7 +13,6 @@ const summary = (row: Row) => ({
   id: row.id,
   slug: row.id,
   skills: row.skills,
-  _count: { sources: row.boards.length },
   sources: row.boards.map((board) => ({ board })),
 });
 
@@ -78,7 +77,6 @@ describe("JobListingService.list", () => {
 
     expect(page.items[0]).toMatchObject({ sourceCount: 4, boards: ["LinkedIn", "naukri.com"] });
     expect(page.items[0]).not.toHaveProperty("sources");
-    expect(page.items[0]).not.toHaveProperty("_count");
   });
 
   it("sorts by first sighting for `newest` and by last sighting by default", async () => {

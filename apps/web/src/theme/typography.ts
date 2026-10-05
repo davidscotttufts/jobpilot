@@ -11,6 +11,16 @@ export const fontFamilies = {
 const displayStretch = "125%";
 
 /** `docsH4` reuses this size so an h4 sits flush with the prose around it. */
+const monoPill = {
+  fontFamily: fontFamilies.mono,
+  display: "inline-block",
+  whiteSpace: "nowrap",
+  borderRadius: radii.pill,
+  color: textColors.secondary,
+  border: `1px solid ${line.border}`,
+  backgroundColor: surfaces.elevated,
+};
+
 const docsBody = {
   fontFamily: fontFamilies.body,
   fontSize: "0.9375rem",
@@ -120,30 +130,8 @@ export const typography: TypographyVariantsOptions = {
     color: textColors.secondary,
   },
   // Callers override `fontSize`: ring labels run smaller than board chips.
-  monoChip: {
-    fontFamily: fontFamilies.mono,
-    fontSize: "0.75rem",
-    lineHeight: 1.55,
-    display: "inline-block",
-    whiteSpace: "nowrap",
-    padding: "4px 10px",
-    borderRadius: radii.pill,
-    color: textColors.secondary,
-    border: `1px solid ${line.border}`,
-    backgroundColor: surfaces.elevated,
-  },
-  skillChip: {
-    fontFamily: fontFamilies.mono,
-    fontSize: "0.7rem",
-    lineHeight: 1.5,
-    display: "inline-block",
-    whiteSpace: "nowrap",
-    padding: "2px 8px",
-    borderRadius: radii.pill,
-    color: textColors.secondary,
-    border: `1px solid ${line.border}`,
-    backgroundColor: surfaces.elevated,
-  },
+  monoChip: { ...monoPill, fontSize: "0.75rem", lineHeight: 1.55, padding: "4px 10px" },
+  skillChip: { ...monoPill, fontSize: "0.7rem", lineHeight: 1.5, padding: "2px 8px" },
   statValue: {
     fontFamily: fontFamilies.mono,
     fontWeight: 600,

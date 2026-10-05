@@ -113,7 +113,7 @@ export function AgentList(props: AgentListProps): ReactElement {
                   {AGENT_LABELS[agent]}
                 </Typography>
                 <Tooltip
-                  title={`${formatNewTokenParts(usage)} · cache read ${formatTokens(usage.cacheRead)}`}
+                  title={`${formatNewTokenParts(usage)} · ${formatTokens(usage.cacheRead)} cached`}
                 >
                   <Typography variant="captionMuted">{formatTokens(newTokens(usage))}</Typography>
                 </Tooltip>

@@ -1,9 +1,8 @@
 import type { ReactElement } from "react";
-import { Chip, ListItemButton, Stack, Typography } from "@mui/material";
+import { ListItemButton, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
-import { formatRelativeTime } from "@/utils/format";
-import { boardsLabel, showsRemoteBadge } from "./job-meta";
+import { jobMetaLine, RemoteBadge } from "./job-meta";
 import { SkillChips } from "./skill-chips";
 
 interface JobRowProps {
@@ -12,9 +11,6 @@ interface JobRowProps {
 
 export function JobRow(props: JobRowProps): ReactElement {
   const { job } = props;
-  const meta = [boardsLabel(job.boards), `Seen ${formatRelativeTime(job.lastSeenAt)} ago`]
-    .filter(Boolean)
-    .join(" · ");
 
   return (
     // ListItemButton is a ButtonBase, so the theme's NextLink default makes `href` a client link.
@@ -41,9 +37,7 @@ export function JobRow(props: JobRowProps): ReactElement {
         >
           <Typography variant="body2">{job.company}</Typography>
           {job.location && <Typography variant="body2Muted">{job.location}</Typography>}
-          {showsRemoteBadge(job) && (
-            <Chip label="Remote" size="small" color="success" variant="outlined" />
-          )}
+          <RemoteBadge job={job} />
         </Stack>
         <SkillChips skills={job.skills} max={4} />
       </Stack>
@@ -59,7 +53,7 @@ export function JobRow(props: JobRowProps): ReactElement {
         }}
       >
         {job.salary && <Typography variant="body2Strong">{job.salary}</Typography>}
-        <Typography variant="captionMuted">{meta}</Typography>
+        <Typography variant="captionMuted">{jobMetaLine(job)}</Typography>
       </Stack>
     </ListItemButton>
   );

@@ -7,38 +7,20 @@ import { formatRelativeTime, plural } from "@/utils/format";
 
 type JobSource = JobListingDto["sources"][number];
 
-interface BoardGroup {
-  board: string;
-  sources: JobSource[];
-}
-
-/** The API sends sources newest first, so groups and their sources stay in last-seen order. */
-function groupByBoard(sources: JobSource[]): BoardGroup[] {
-  const groups = new Map<string, BoardGroup>();
-  for (const source of sources) {
-    const board = source.board ?? "Other boards";
-    const group = groups.get(board);
-    if (group) {
-      group.sources.push(source);
-    } else {
-      groups.set(board, { board, sources: [source] });
-    }
-  }
-  return [...groups.values()];
-}
-
 interface JobSourcesProps {
   sources: JobSource[];
 }
 
 export function JobSources(props: JobSourcesProps): ReactElement {
   const { sources } = props;
+  // The API sends sources newest first, so groups and their sources stay in last-seen order.
+  const groups = Map.groupBy(sources, (source) => source.board ?? "Other boards");
 
   return (
     <Stack component="ul" spacing={2} sx={{ listStyle: "none", m: 0, p: 0 }}>
-      {groupByBoard(sources).map((group) => {
-        const latest = group.sources[0];
-        const count = group.sources.length;
+      {[...groups].map(([board, boardSources]) => {
+        const latest = boardSources[0];
+        const count = boardSources.length;
         const summary = [
           count > 1 && `posted ${plural(count, "time")}`,
           `last seen ${formatRelativeTime(latest.lastSeenAt)} ago`,
@@ -47,21 +29,21 @@ export function JobSources(props: JobSourcesProps): ReactElement {
           .join(" · ");
 
         return (
-          <Stack component="li" key={group.board} spacing={0.75}>
+          <Stack component="li" key={board} spacing={0.75}>
             <Stack
               direction="row"
               sx={{ flexWrap: "wrap", columnGap: 1, rowGap: 0.25, alignItems: "baseline" }}
             >
-              <Typography variant="body1Strong">{group.board}</Typography>
+              <Typography variant="body1Strong">{board}</Typography>
               <Typography variant="captionMuted">{summary}</Typography>
             </Stack>
             <Stack direction="row" sx={{ flexWrap: "wrap", columnGap: 2, rowGap: 0.5 }}>
-              {group.sources.map((source) => (
+              {boardSources.map((source) => (
                 <Typography key={source.url} variant="body2Muted" component="span">
                   <ExternalLink href={source.url}>
                     {count > 1
                       ? `Seen ${formatRelativeTime(source.lastSeenAt)} ago`
-                      : `View on ${group.board}`}{" "}
+                      : `View on ${board}`}{" "}
                     <OpenInNew fontSize="xs" sx={{ verticalAlign: "middle" }} />
                   </ExternalLink>
                 </Typography>

@@ -15,7 +15,6 @@ export const SUMMARY_SELECT = {
   descriptionExcerpt: true,
   firstSeenAt: true,
   lastSeenAt: true,
-  _count: { select: { sources: true } },
   sources: { select: { board: true }, orderBy: { lastSeenAt: "desc" } },
 } satisfies Prisma.JobListingSelect;
 
@@ -37,13 +36,9 @@ export const ADMIN_SELECT = {
 } satisfies Prisma.JobListingSelect;
 
 export interface SummaryRow {
-  _count: { sources: number };
   sources: { board: string | null }[];
 }
 
-export function toSummary<T extends SummaryRow>(
-  { _count, sources, ...row }: T,
-  name: BoardNameLookup,
-) {
-  return { ...row, sourceCount: _count.sources, boards: distinctBoardNames(sources, name) };
+export function toSummary<T extends SummaryRow>({ sources, ...row }: T, name: BoardNameLookup) {
+  return { ...row, sourceCount: sources.length, boards: distinctBoardNames(sources, name) };
 }

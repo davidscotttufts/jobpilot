@@ -58,8 +58,8 @@ const STOPS: TourStop[] = [
 ];
 
 export function ProductTour(): ReactElement {
-  const [activeId, setActiveId] = useState(STOPS[0].id);
-  const active = STOPS.find((stop) => stop.id === activeId) ?? STOPS[0];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const active = STOPS[activeIndex];
 
   return (
     <Section>
@@ -69,8 +69,8 @@ export function ProductTour(): ReactElement {
         lead="The agent works on your computer. The dashboard is where you see the results and step in."
       />
       <Tabs
-        value={activeId}
-        onChange={(_, next: string) => setActiveId(next)}
+        value={activeIndex}
+        onChange={(_, next: number) => setActiveIndex(next)}
         variant="scrollable"
         allowScrollButtonsMobile
         aria-label="Dashboard features"
@@ -79,7 +79,6 @@ export function ProductTour(): ReactElement {
         {STOPS.map((stop) => (
           <Tab
             key={stop.id}
-            value={stop.id}
             label={stop.label}
             id={`tour-tab-${stop.id}`}
             aria-controls="tour-panel"

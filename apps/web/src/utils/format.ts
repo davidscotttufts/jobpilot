@@ -59,6 +59,13 @@ export function formatDuration(seconds: number): string {
   return formatSpanBetween(new Date(0), new Date(seconds * 1000));
 }
 
+const countFormat = new Intl.NumberFormat("en-US");
+
+/** Whole count with a fixed locale, so server and browser render the same digits. */
+export function formatCount(count: number): string {
+  return countFormat.format(count);
+}
+
 const tokenFormat = new Intl.NumberFormat("en-US", {
   notation: "compact",
   maximumFractionDigits: 1,

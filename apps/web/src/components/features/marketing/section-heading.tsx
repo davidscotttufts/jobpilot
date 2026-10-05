@@ -5,23 +5,13 @@ interface SectionHeadingProps {
   eyebrow?: string;
   title: string;
   lead?: ReactNode;
-  align?: "left" | "center";
 }
 
 export function SectionHeading(props: SectionHeadingProps): ReactElement {
-  const { eyebrow, title, lead, align = "left" } = props;
-  const centered = align === "center";
+  const { eyebrow, title, lead } = props;
 
   return (
-    <Stack
-      spacing={1.5}
-      sx={{
-        maxWidth: 640,
-        textAlign: align,
-        alignItems: centered ? "center" : "flex-start",
-        marginInline: centered ? "auto" : 0,
-      }}
-    >
+    <Stack spacing={1.5} sx={{ maxWidth: 640, alignItems: "flex-start" }}>
       {eyebrow && (
         <Typography variant="eyebrow" color="primary">
           {eyebrow}

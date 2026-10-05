@@ -1,18 +1,16 @@
 import type { ReactElement } from "react";
-import { Card, CardActionArea, CardContent, Chip, Stack, Typography } from "@mui/material";
+import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
-import { formatRelativeTime } from "@/utils/format";
-import { boardsLabel, showsRemoteBadge } from "./job-meta";
+import { jobMetaLine, RemoteBadge } from "./job-meta";
 import { SkillChips } from "./skill-chips";
 
 interface JobCardProps {
   job: JobListingSummaryDto;
-  maxSkills?: number;
 }
 
 export function JobCard(props: JobCardProps): ReactElement {
-  const { job, maxSkills = 5 } = props;
+  const { job } = props;
 
   return (
     <Card variant="lift">
@@ -29,19 +27,15 @@ export function JobCard(props: JobCardProps): ReactElement {
           </Stack>
 
           <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
-            {showsRemoteBadge(job) && (
-              <Chip label="Remote" size="small" color="success" variant="outlined" />
-            )}
+            <RemoteBadge job={job} />
             {job.location && <Typography variant="captionMuted">{job.location}</Typography>}
             {job.salary && <Typography variant="body2Strong">{job.salary}</Typography>}
           </Stack>
 
-          <SkillChips skills={job.skills} max={maxSkills} />
+          <SkillChips skills={job.skills} max={4} />
 
           <Typography variant="captionMuted" sx={{ mt: "auto" }}>
-            {[`Seen ${formatRelativeTime(job.lastSeenAt)} ago`, boardsLabel(job.boards)]
-              .filter(Boolean)
-              .join(" · ")}
+            {jobMetaLine(job)}
           </Typography>
         </CardContent>
       </CardActionArea>

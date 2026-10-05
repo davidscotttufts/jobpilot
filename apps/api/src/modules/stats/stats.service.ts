@@ -20,18 +20,21 @@ export class StatsService {
 
   private async load(): Promise<PublicStats> {
     const since = new Date(startOfDay(new Date()).getTime() - (WINDOW_DAYS - 1) * DAY_MS);
-    const [jobListings, applications, appliers, messagers] = await Promise.all([
+    const [jobListings, applications, [active]] = await Promise.all([
       this.prisma.jobListing.count({ where: { status: "published" } }),
       this.prisma.application.count({ where: { appliedAt: { gte: since } } }),
-      this.prisma.application.groupBy({ by: ["userId"], where: { appliedAt: { gte: since } } }),
-      this.prisma.networkingMessage.groupBy({ by: ["userId"], where: { sentAt: { gte: since } } }),
+      this.prisma.$queryRaw<{ users: number }[]>`
+        SELECT count(*)::int AS users FROM (
+          SELECT user_id FROM applications WHERE applied_at >= ${since}
+          UNION
+          SELECT user_id FROM networking_messages WHERE sent_at >= ${since}
+        ) active`,
     ]);
-    const activeUsers = new Set([...appliers, ...messagers].map((row) => row.userId));
 
     return {
       jobListings,
       applicationsLast30Days: applications,
-      activeUsersLast30Days: activeUsers.size,
+      activeUsersLast30Days: active.users,
     };
   }
 }

@@ -15,6 +15,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState, TableSkeleton } from "@/components/ui/data";
 import { breadcrumbLd } from "@/lib/structured-data";
+import { formatCount } from "@/utils/format";
 import { one, pageParam } from "@/utils/search-params";
 import { getSkillFacets, landingParams, landingTitle } from "./landing-views";
 
@@ -144,7 +145,7 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
         }}
       >
         <Typography variant="body2Strong" component="h2">
-          {data.pagination.total.toLocaleString()}{" "}
+          {formatCount(data.pagination.total)}{" "}
           {resultsNoun(landing, isLanding, data.pagination.total)}
         </Typography>
         <JobSortControls />

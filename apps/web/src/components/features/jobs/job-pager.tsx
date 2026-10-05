@@ -5,6 +5,7 @@ import type { Pagination as PageMeta } from "@jobpilot/contracts/pagination";
 import { Pagination, PaginationItem, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import Link from "next/link";
+import { formatCount } from "@/utils/format";
 import { jobsHref } from "./jobs-href";
 
 interface JobPagerProps {
@@ -42,7 +43,7 @@ export function JobPager(props: JobPagerProps): ReactNode {
         }
       />
       <Typography variant="captionMuted">
-        Page {page} of {totalPages} · {total.toLocaleString()} jobs
+        Page {page} of {totalPages} · {formatCount(total)} jobs
       </Typography>
     </Stack>
   );
