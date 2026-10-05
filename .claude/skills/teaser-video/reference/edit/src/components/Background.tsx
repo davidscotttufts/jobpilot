@@ -2,7 +2,8 @@ import type { ReactElement } from "react";
 import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { alpha, c } from "../theme";
 
-/** Warm-carbon stage: slow drifting flame/thrust glows, a faint grid, film grain. */
+// No film grain: an SVG feTurbulence layer cost ~65% of render time and was invisible after encoding (48 dB PSNR).
+/** Warm-carbon stage: slow drifting flame/thrust glows and a faint grid. */
 export function Background(): ReactElement {
   const f = useCurrentFrame();
   const drift = Math.sin(f / 240) * 60;
@@ -24,31 +25,6 @@ export function Background(): ReactElement {
           maskImage: "radial-gradient(ellipse 70% 60% at 50% 50%, black, transparent 85%)",
         }}
       />
-      <Grain />
-    </AbsoluteFill>
-  );
-}
-
-function Grain(): ReactElement {
-  const f = useCurrentFrame();
-  // Re-seed every other frame so grain shimmers like film without strobing.
-  const seed = Math.floor(f / 2) % 50;
-  return (
-    <AbsoluteFill style={{ pointerEvents: "none", mixBlendMode: "overlay", opacity: 0.18 }}>
-      <svg width="100%" height="100%">
-        <title>Film grain</title>
-        <filter id={`g${seed}`}>
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.9"
-            numOctaves="2"
-            seed={seed}
-            stitchTiles="stitch"
-          />
-          <feColorMatrix type="saturate" values="0" />
-        </filter>
-        <rect width="100%" height="100%" filter={`url(#g${seed})`} />
-      </svg>
     </AbsoluteFill>
   );
 }

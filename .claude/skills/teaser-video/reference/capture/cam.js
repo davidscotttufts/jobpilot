@@ -19,7 +19,8 @@ export async function open({
   w = 1600,
   h = 900,
   path: p = "/",
-  settleMs = 5000,
+  ready = null,
+  settleMs = 1000,
   seed = SEED,
 } = {}) {
   const browser = await chromium.launch({
@@ -40,12 +41,19 @@ export async function open({
       localStorage.setItem(k, typeof v === "string" ? v : JSON.stringify(v));
   }, seed);
   const page = await ctx.newPage();
-  await go(page, p, settleMs);
+  await go(page, p, { ready, settleMs });
   return { browser, ctx, page, w, h };
 }
 
-export async function go(page, p, settleMs = 4000) {
+/**
+ * Navigate and wait until `ready` (a selector for the content the shot needs)
+ * is visible, then `settleMs` for entrance animations. Without `ready`, falls
+ * back to network idle.
+ */
+export async function go(page, p, { ready = null, settleMs = 1000 } = {}) {
   await page.goto(BASE + p, { waitUntil: "load" });
+  if (ready) await page.locator(ready).first().waitFor({ timeout: 30_000 });
+  else await page.waitForLoadState("networkidle").catch(() => {});
   await page.waitForTimeout(settleMs);
   if (AUTH_PATHS.test(new URL(page.url()).pathname))
     throw new Error("session expired - re-run login.js");

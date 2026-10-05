@@ -1,6 +1,7 @@
 import { loadFont as loadArchivo } from "@remotion/google-fonts/Archivo";
 import { loadFont as loadMono } from "@remotion/google-fonts/JetBrainsMono";
 import { Easing } from "remotion";
+import storyboard from "../storyboard.json";
 
 // Mirrors apps/web/src/theme/palette.ts (warm carbon + flame/thrust duotone).
 export const c = {
@@ -29,9 +30,23 @@ export function alpha(hex: string, a: number): string {
 }
 
 export const FPS = 60;
-export const BPM = 120;
-export const BEAT = (60 / BPM) * FPS; // 30 frames
+export const BEAT = (60 / storyboard.bpm) * FPS; // 30 frames at 120 BPM
 export const BAR = BEAT * 4; // 120 frames
+
+type SectionName = (typeof storyboard.sections)[number]["name"];
+interface Section {
+  from: number;
+  frames: number;
+}
+
+/** Storyboard sections in frames. audio/synth.mjs reads the same file, so cuts land on the music. */
+export const SECTIONS = {} as Record<SectionName, Section>;
+let bar = 0;
+for (const { name, bars } of storyboard.sections) {
+  SECTIONS[name] = { from: bar * BAR, frames: bars * BAR };
+  bar += bars;
+}
+export const TOTAL_FRAMES = bar * BAR;
 
 const archivo = loadArchivo("normal", {
   weights: ["400", "500", "600", "700", "800"],

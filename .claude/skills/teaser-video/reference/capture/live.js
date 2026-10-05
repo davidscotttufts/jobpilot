@@ -2,7 +2,7 @@
 // Chrome window via Windows Graphics Capture. Everything is stamped against one
 // wall clock so the edit can line the sources up.
 //
-//   node live.js <name> [--start] [--minutes N] [--path /]
+//   node live.js <name> [--start] [--minutes N] [--path /] [--ready <selector>]
 // --start clicks the first button named "Start" on camera (adapt per app).
 // Stop early by creating takes/<name>/STOP.
 import { execFile, spawn } from "node:child_process";
@@ -20,6 +20,7 @@ const flag = (f) => args.includes(f);
 const opt = (f, d) => (args.includes(f) ? args[args.indexOf(f) + 1] : d);
 const MINUTES = Number(opt("--minutes", 30));
 const PAGE_PATH = opt("--path", "/");
+const READY = opt("--ready", null);
 
 const dir = path.resolve("takes", name);
 fs.mkdirSync(dir, { recursive: true });
@@ -35,7 +36,7 @@ const log = (msg) => {
 log(`t0 epoch_ms=${t0}`);
 
 // ---- web camera -------------------------------------------------------------
-const cam = await open({ path: PAGE_PATH, settleMs: 6000 });
+const cam = await open({ path: PAGE_PATH, ready: READY });
 const { browser, page } = cam;
 let frames = 0;
 const stopWeb = await roll(page, path.join(dir, "web.mkv"), cam, () => {
@@ -103,6 +104,7 @@ const watchHost = setInterval(async () => {
 
 // ---- action -----------------------------------------------------------------
 if (flag("--start")) {
+  // A held beat before the cursor moves gives the edit a lead-in.
   await page.waitForTimeout(2500);
   await click(page, page.getByRole("button", { name: /^start$/i }).first(), { ms: 1100 });
   log("click Start");

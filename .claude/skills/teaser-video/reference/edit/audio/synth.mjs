@@ -9,8 +9,11 @@ const OUT = process.argv[2] ?? ".";
 fs.mkdirSync(OUT, { recursive: true });
 
 const SR = 48000;
-const BPM = 120; // keep equal to BPM in src/theme.ts
-const BEAT = 60 / BPM;
+// Shared with src/theme.ts, so the arrangement follows the edit's sections.
+const storyboard = JSON.parse(
+  fs.readFileSync(new URL("../storyboard.json", import.meta.url), "utf8"),
+);
+const BEAT = 60 / storyboard.bpm;
 const BAR = BEAT * 4;
 
 // ---------- helpers ---------------------------------------------------------
@@ -308,16 +311,19 @@ function chime(gain = 0.35) {
 }
 
 // ---------- music ----------------------------------------------------------
-// 22 bars at 120 BPM = 44s. Sections line up with the edit's beats.
-//  0-2   intro: drone + ticking (the grind)
-//  2     riser into 4s impact (reveal)
-//  2-3   reveal: pad, no drums
-//  3-11  groove A: kick, hats, bass, chords
-//  11-17 groove B: + arp lead, claps (payoff/scale)
-//  17-19 breakdown: pad + arp, kick out (trust)
-//  19-20 riser
-//  20-22 final hit + tail (logo)
-const BARS = 22;
+// Arrangement per storyboard section (bar numbers come from storyboard.json):
+//  hook    drone + ticking (the grind), riser in its last bar
+//  reveal  impact, pad, no drums
+//  start, hero  groove A: kick, hats, bass, chords
+//  payoff  groove B: + arp lead, claps
+//  trust   breakdown: pad + arp, kick out, riser in its last bar
+//  close   final hit + tail (logo)
+const S = {};
+let BARS = 0;
+for (const { name, bars } of storyboard.sections) {
+  S[name] = BARS;
+  BARS += bars;
+}
 const LENGTH = BARS * BAR + 3;
 const music = buf(LENGTH);
 const drums = buf(LENGTH);
@@ -334,8 +340,12 @@ const chords = [
 const roots = [45, 41, 48, 43];
 
 // Intro drone + clock ticks
-add(music, pad([45, 52, 57], 2 * BAR, { gain: 0.12, cutoff: 500, attack: 1.5, release: 1 }), 0);
-for (let b = 0; b < 16; b++)
+add(
+  music,
+  pad([45, 52, 57], S.reveal * BAR, { gain: 0.12, cutoff: 500, attack: 1.5, release: 1 }),
+  0,
+);
+for (let b = 0; b < S.reveal * 8; b++)
   add(
     music,
     tick(b % 4 === 0 ? 0.3 : 0.16, b % 4 === 0 ? 2600 : 3400),
@@ -343,16 +353,25 @@ for (let b = 0; b < 16; b++)
     1,
     b % 2 ? 0.3 : -0.3,
   );
-add(music, riser(BAR, 0.35), at(1));
-add(drums, impact(0.9), at(2));
+add(music, riser(BAR, 0.35), at(S.reveal - 1));
+add(drums, impact(0.9), at(S.reveal));
 
 // Reveal pad
-add(music, pad(chords[0], BAR, { gain: 0.12, cutoff: 1400, attack: 0.05, release: 1.2 }), at(2));
+add(
+  music,
+  pad(chords[0], (S.start - S.reveal) * BAR, {
+    gain: 0.12,
+    cutoff: 1400,
+    attack: 0.05,
+    release: 1.2,
+  }),
+  at(S.reveal),
+);
 
-for (let bar = 3; bar < 20; bar++) {
-  const c = (bar - 3) % 4;
-  const inBreak = bar >= 17;
-  const grooveB = bar >= 11 && !inBreak;
+for (let bar = S.start; bar < S.close; bar++) {
+  const c = (bar - S.start) % 4;
+  const inBreak = bar >= S.trust;
+  const grooveB = bar >= S.payoff && !inBreak;
   // chords
   add(
     music,
@@ -394,7 +413,7 @@ for (let bar = 3; bar < 20; bar++) {
     }
   }
   // arp lead
-  if (bar >= 11) {
+  if (bar >= S.payoff) {
     const arp = [0, 2, 3, 1, 2, 3, 1, 2];
     for (let s = 0; s < 8; s++) {
       const n = chords[c][arp[s]] + 12;
@@ -415,14 +434,19 @@ for (let bar = 3; bar < 20; bar++) {
     }
   }
 }
-add(music, riser(BAR, 0.4, { from: 200, to: 11000 }), at(19));
-add(drums, impact(1), at(20));
+add(music, riser(BAR, 0.4, { from: 200, to: 11000 }), at(S.close - 1));
+add(drums, impact(1), at(S.close));
 add(
   music,
-  pad([45, 52, 57, 64, 69], 2 * BAR, { gain: 0.1, cutoff: 1800, attack: 0.02, release: 2.5 }),
-  at(20),
+  pad([45, 52, 57, 64, 69], (BARS - S.close) * BAR, {
+    gain: 0.1,
+    cutoff: 1800,
+    attack: 0.02,
+    release: 2.5,
+  }),
+  at(S.close),
 );
-add(music, chime(0.25), at(20, 0.02));
+add(music, chime(0.25), at(S.close, 0.02));
 
 delay(music, BEAT * 0.75, 0.25, 0.12);
 reverb(music, 0.2, 0.82);

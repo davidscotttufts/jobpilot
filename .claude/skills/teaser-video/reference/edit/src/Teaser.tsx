@@ -3,7 +3,7 @@ import { AbsoluteFill, Sequence } from "remotion";
 import { Background, Vignette } from "./components/Background";
 import { FormStack } from "./components/FormStack";
 import { Kinetic, words } from "./components/Kinetic";
-import { BAR } from "./theme";
+import { SECTIONS } from "./theme";
 
 // Starter timeline: renders with no clips or audio so the setup can be checked
 // with `npm run still`. Grow it scene by scene on the bar grid:
@@ -11,28 +11,25 @@ import { BAR } from "./theme";
 //   - captions over footage: <Caption /> (Caption.tsx)
 //   - logo sting: <LogoReveal /> once public/logo.svg exists (Logo.tsx)
 //   - sound: <SoundTrack cues={...} /> after `npm run synth` (Sound.tsx)
-const T = {
-  hook: 0,
-  title: BAR * 2,
-};
-export const TEASER_FRAMES = T.title + BAR * 2;
+// Section lengths live in storyboard.json, shared with the music.
+const { hook, reveal } = SECTIONS;
 
 export function Teaser(): ReactElement {
   return (
     <AbsoluteFill>
       <Background />
-      <Sequence from={T.hook} durationInFrames={BAR * 2}>
-        <FormStack dur={BAR * 2} />
+      <Sequence from={hook.from} durationInFrames={hook.frames}>
+        <FormStack dur={hook.frames} />
         <AbsoluteFill style={{ display: "grid", placeItems: "center" }}>
           <Kinetic
             lines={[words("Applying to jobs"), words("is a *full-time* *job.*")]}
             at={10}
             size={110}
-            outAt={BAR * 2 - 16}
+            outAt={hook.frames - 16}
           />
         </AbsoluteFill>
       </Sequence>
-      <Sequence from={T.title} durationInFrames={BAR * 2}>
+      <Sequence from={reveal.from} durationInFrames={reveal.frames}>
         <AbsoluteFill style={{ display: "grid", placeItems: "center" }}>
           <Kinetic lines={[words("Replace with your *product.*")]} at={6} size={96} />
         </AbsoluteFill>

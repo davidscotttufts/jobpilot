@@ -53,7 +53,10 @@ read every captured screen, not just the part you meant to film.
 ## 1. Scout and storyboard
 
 Screenshot every candidate screen with the saved session. Write the
-storyboard on the music grid (120 BPM → 1 bar = 2s = 120 frames at 60fps):
+storyboard on the music grid (120 BPM → 1 bar = 2s = 120 frames at 60fps),
+then put the section lengths in `reference/edit/storyboard.json`. `theme.ts`
+(`SECTIONS`) and `audio/synth.mjs` both read it, so retiming a section moves
+the cuts and the music together:
 
 | Beat | Length | Job |
 | --- | --- | --- |
@@ -77,6 +80,8 @@ the success state into the counter) connects them.
   on (`BASE`, `AUTH_PATHS`, `ENCODER`: swap to libx264 there without NVIDIA). `open()`, `roll()` (CDP screencast piped into
   ffmpeg with wall-clock timestamps), `click()`/`glide()` with an injected
   cursor, `scrollTo()`/`scrollToEl()` on the app's inner scroll container.
+  Pass `ready` (a selector for the content the shot needs) to `open()`/`go()`
+  so takes start on loaded UI instead of after a guessed sleep.
 - `live.js`: long unattended takes of a real run. Films the page, auto-detects
   the agent's own Chrome window and records it with `gfxcapture` (works while
   covered by other windows, not while minimized), and logs status changes
