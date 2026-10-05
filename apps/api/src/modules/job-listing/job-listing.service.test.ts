@@ -17,9 +17,15 @@ const summary = (row: Row) => ({
   sources: row.boards.map((board) => ({ board })),
 });
 
+interface ListingFields {
+  id: string;
+  skills: string[];
+  title?: string;
+}
+
 interface FakeOptions {
   /** The listing `findFirst` resolves to; null for an unknown slug. */
-  listing?: { id: string; skills: string[] } | null;
+  listing?: ListingFields | null;
   rows?: Row[];
   /** What the similar-jobs ranking query returns, best match first. */
   rankedIds?: string[];
@@ -31,7 +37,10 @@ function fakePrisma(options: FakeOptions = {}) {
   const rankingValues: unknown[][] = [];
   const prisma = {
     jobListing: {
-      findFirst: async () => options.listing ?? null,
+      findFirst: async () =>
+        options.listing
+          ? { title: "Engineer", remote: true, location: "Austin, TX", ...options.listing }
+          : null,
       findMany: async (args: Record<string, unknown>) => {
         findManyArgs.push(args);
         return (options.rows ?? []).map(summary);
@@ -106,7 +115,22 @@ describe("JobListingService.similar", () => {
 
     await service.similar("self");
 
-    expect(rankingValues[0]).toEqual(["self", ["React", "react"], ["react"], 6]);
+    const [selfId, candidateSkills] = rankingValues[0];
+    expect(selfId).toBe("self");
+    expect(candidateSkills).toEqual(["React", "react"]);
+    expect(rankingValues[0]).toContainEqual(["react"]);
+    expect(rankingValues[0].at(-1)).toBe(6);
+  });
+
+  it("scores the listing's title words and remote flag alongside its skills", async () => {
+    const { service, rankingValues } = fakePrisma({
+      listing: { id: "self", skills: ["Go"], title: "Senior Go Engineer (Remote)" },
+    });
+
+    await service.similar("self");
+
+    expect(rankingValues[0]).toContainEqual(["senior", "go", "engineer"]);
+    expect(rankingValues[0]).toContain(true);
   });
 
   it("keeps the ranked order and names each listing's boards", async () => {

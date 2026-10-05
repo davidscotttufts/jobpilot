@@ -9,9 +9,9 @@ import { singleton } from "tsyringe";
 import { DAY_MS } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { MemoryCache } from "@/common/memory-cache";
-import { type JobListing, type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type JobListing, Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type BoardNameLookup, boardNameLookup, distinctBoardNames } from "./board-names";
-import { inRankedOrder } from "./similar-jobs";
+import { inRankedOrder, TITLE_SPLIT, titleWords } from "./similar-jobs";
 import {
   groupSkillFacets,
   resolveSkillFilter,
@@ -77,6 +77,18 @@ const SIMILAR_LIMIT = 6;
 /** The ranking scores every listing sharing a skill, so it is worth keeping for popular pages. */
 const SIMILAR_TTL_MS = 30 * 60_000;
 const SIMILAR_CACHE_SIZE = 2000;
+/** A shared skill outweighs a shared title word, remote flag, or region. */
+const SKILL_WEIGHT = 3;
+
+type SimilarSource = Pick<JobListing, "id" | "skills" | "title" | "remote" | "location">;
+
+/**
+ * The broadest part of a location: "Nashville, TN (Remote)" is "tn", "United States" is
+ * "united states". Null when the location is.
+ */
+function region(location: Prisma.Sql): Prisma.Sql {
+  return Prisma.sql`lower(trim(regexp_replace(regexp_replace(${location}, '^.*,', ''), '[(].*[)]', '', 'g')))`;
+}
 
 @singleton()
 export class JobListingService {
@@ -217,11 +229,14 @@ export class JobListingService {
     return { ...toSummary(listing, name), sources };
   }
 
-  /** Published listings sharing the most skills with this one, ties newest first. Never itself. */
+  /**
+   * Published listings sharing skills with this one, ranked mostly by how many, then by shared
+   * title words and a matching remote flag and region. Ties newest first. Never itself.
+   */
   async similar(slug: string) {
     const listing = await this.prisma.jobListing.findFirst({
       where: { slug, status: "published" },
-      select: { id: true, skills: true },
+      select: { id: true, skills: true, title: true, remote: true, location: true },
     });
     if (!listing) {
       throw notFound("Job listing not found");
@@ -243,21 +258,29 @@ export class JobListingService {
     return inRankedOrder(rows, ids).map((row) => toSummary(row, name));
   }
 
-  private async rankSimilar(listing: Pick<JobListing, "id" | "skills">): Promise<string[]> {
+  private async rankSimilar(listing: SimilarSource): Promise<string[]> {
     const { variants } = await this.skillVocabulary();
     // Raw because Prisma cannot order by an expression. `&&` takes every stored casing so the GIN
-    // index serves it; the overlap score compares lowercased, so "React" and "react" count once.
+    // index serves it; the overlap scores compare lowercased, so "React" and "react" count once.
     const ranked = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT id FROM job_listings
       WHERE status = 'published'::job_listing_status
         AND id <> ${listing.id}
         AND skills && ${resolveSkillFilter(listing.skills, variants)}::text[]
       ORDER BY
-        cardinality(ARRAY(
+        ${SKILL_WEIGHT} * cardinality(ARRAY(
           SELECT lower(skill) FROM unnest(skills) AS skill
           INTERSECT
           SELECT lower(skill) FROM unnest(${listing.skills}::text[]) AS skill
-        )) DESC,
+        ))
+        + cardinality(ARRAY(
+          SELECT word FROM regexp_split_to_table(lower(title), ${TITLE_SPLIT}) AS word
+          INTERSECT
+          SELECT unnest(${titleWords(listing.title)}::text[])
+        ))
+        + (remote = ${listing.remote})::int
+        + coalesce((${region(Prisma.sql`location`)} = ${region(Prisma.sql`${listing.location}::text`)})::int, 0)
+        DESC,
         first_seen_at DESC
       LIMIT ${SIMILAR_LIMIT}
     `;
