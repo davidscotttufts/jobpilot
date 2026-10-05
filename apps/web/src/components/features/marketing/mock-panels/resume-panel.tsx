@@ -68,14 +68,14 @@ export function ResumePanel(): ReactElement {
                   </Typography>
                 </Box>
                 {variant.score !== null && (
-                  <Typography variant="monoCaption" color="success.main">
+                  <Typography variant="monoCaption" color="success">
                     {variant.score}% match
                   </Typography>
                 )}
               </Stack>
             </Paper>
           ))}
-          <Typography variant="monoCaption" color="text.disabled">
+          <Typography variant="monoCaption" color="textDisabled">
             → rendered to PDF on save
           </Typography>
         </Stack>

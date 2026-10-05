@@ -28,7 +28,7 @@ export function SaveBar(props: SaveBarProps): ReactElement {
     <StickyFooter>
       {conflict}
       <Stack direction="row" spacing={2} sx={{ justifyContent: "flex-end", alignItems: "center" }}>
-        <Typography variant="captionMuted" color={state === "error" ? "error.main" : undefined}>
+        <Typography variant="captionMuted" color={state === "error" ? "error" : undefined}>
           {STATUS[state]}
         </Typography>
         <Button

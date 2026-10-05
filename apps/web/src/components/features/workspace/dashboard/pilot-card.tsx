@@ -89,7 +89,7 @@ function PilotCardBody(props: PilotCardBodyProps): ReactNode {
               <Typography
                 component="span"
                 variant="body2"
-                color={state.capReached ? "error.main" : "text.primary"}
+                color={state.capReached ? "error" : "textPrimary"}
               >
                 {state.appliedToday} / {dailyApplyCap}
               </Typography>

@@ -53,7 +53,7 @@ export function CampaignsPanel(): ReactElement {
             </Typography>
           </Paper>
         ))}
-        <Typography variant="monoCaption" color="text.disabled">
+        <Typography variant="monoCaption" color="textDisabled">
           → you start it, you watch it run
         </Typography>
       </Stack>

@@ -24,7 +24,7 @@ function Meter(props: MeterProps): ReactElement {
     <Stack spacing={0.5}>
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <Typography variant="body2Muted">{label}</Typography>
-        <Typography variant="body2" color={spent ? "error.main" : "text.primary"}>
+        <Typography variant="body2" color={spent ? "error" : "textPrimary"}>
           {value} / {cap}
         </Typography>
       </Stack>
@@ -86,7 +86,7 @@ function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
         </Stack>
       ))}
       {mostlySkipped && (
-        <Typography variant="caption" color="warning.main">
+        <Typography variant="caption" color="warning">
           Most jobs are being skipped. Lower the min score, or point your searches somewhere else.
         </Typography>
       )}

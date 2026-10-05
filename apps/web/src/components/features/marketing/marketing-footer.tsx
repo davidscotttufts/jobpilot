@@ -64,7 +64,7 @@ export function MarketingFooter(): ReactElement {
               <Typography variant="captionMuted">
                 An AI agent that applies to jobs for you.
               </Typography>
-              <Typography variant="monoCaption" color="text.disabled">
+              <Typography variant="monoCaption" color="textDisabled">
                 © 2026 Sukhrob Ilyosbekov
               </Typography>
             </Stack>

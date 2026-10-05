@@ -33,10 +33,10 @@ export function UpworkPanel(): ReactElement {
           </Stack>
         </Paper>
         <Stack spacing={0.5}>
-          <Typography variant="monoCaption" color="text.disabled">
+          <Typography variant="monoCaption" color="textDisabled">
             ✕ 14 jobs dropped · low hire rate, no spend history
           </Typography>
-          <Typography variant="monoCaption" color="success.main">
+          <Typography variant="monoCaption" color="success">
             ✓ proposal drafted · awaiting your review
           </Typography>
         </Stack>

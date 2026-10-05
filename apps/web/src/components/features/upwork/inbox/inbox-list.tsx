@@ -149,7 +149,7 @@ export function InboxList(): ReactElement {
                 </Stack>
                 <Typography variant="body2Strong">{item.title}</Typography>
                 {item.body && (
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="textSecondary">
                     {item.body}
                   </Typography>
                 )}

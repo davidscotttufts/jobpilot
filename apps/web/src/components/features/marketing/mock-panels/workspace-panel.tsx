@@ -68,7 +68,7 @@ export function WorkspacePanel(): ReactElement {
             </Paper>
           ))}
         </Stack>
-        <Typography variant="monoCaption" color="text.disabled">
+        <Typography variant="monoCaption" color="textDisabled">
           6 statuses · applied → offer
         </Typography>
       </Stack>
