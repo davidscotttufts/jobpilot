@@ -2,7 +2,7 @@
 // application/variant/cover-letter writes its result path touches.
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
-import type { JobListingPublisher } from "@/modules/job-listing";
+import type { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { guardApply, startApplying } from "./apply-guard";
 import { CampaignJobService } from "./job.service";
 

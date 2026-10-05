@@ -16,7 +16,7 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { JobListingPublisher } from "@/modules/job-listing";
+import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned, PROMOTABLE_SOURCES } from "../campaign.utils";
 import { assertNotDuplicateApply, guardApply } from "./apply-guard";

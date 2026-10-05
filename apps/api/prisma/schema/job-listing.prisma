@@ -53,7 +53,7 @@ model JobListingSource {
   listingId  String   @map("listing_id")
   // Stored lowercase, so `?board=` is an equality hit rather than an ILIKE scan.
   board      String?
-  // Canonicalized (tracking params stripped) - see canonicalizeUrl in dedupe.ts.
+  // Canonicalized (tracking params stripped) - see canonicalizeUrl in publishing/listing-identity.ts.
   url        String   @unique
   lastSeenAt DateTime @default(now()) @map("last_seen_at")
 

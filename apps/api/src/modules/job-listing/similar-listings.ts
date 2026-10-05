@@ -1,5 +1,5 @@
 import { type JobListing, Prisma, type PrismaClient } from "@/generated/prisma/client";
-import { resolveSkillFilter } from "./skill-facets";
+import { resolveSkillFilter } from "./skill-vocabulary";
 
 const SIMILAR_LIMIT = 6;
 /** A shared skill outweighs a shared title word, remote flag, or region. */

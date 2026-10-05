@@ -1,4 +1,4 @@
-import { groupSkillFacets, resolveSkillFilter } from "./skill-facets";
+import { groupSkillFacets, resolveSkillFilter } from "./skill-vocabulary";
 import { describe, expect, it } from "bun:test";
 
 describe("groupSkillFacets", () => {

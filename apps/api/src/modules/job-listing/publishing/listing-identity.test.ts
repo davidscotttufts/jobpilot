@@ -1,4 +1,9 @@
-import { canonicalizeUrl, dedupeKey, listingSlug, normalizeListingLocation } from "./dedupe";
+import {
+  canonicalizeUrl,
+  dedupeKey,
+  listingSlug,
+  normalizeListingLocation,
+} from "./listing-identity";
 import { describe, expect, it } from "bun:test";
 
 const acme = { title: "Senior Software Engineer", company: "Acme Inc.", location: "New York, NY" };

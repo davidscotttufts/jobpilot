@@ -17,8 +17,8 @@ import {
   type SummaryRow,
   toSummary,
 } from "./listing-selects";
-import { inRankedOrder, rankSimilarIds } from "./similar-jobs";
-import { loadSkillVocabulary, type SkillVocabulary } from "./skill-facets";
+import { inRankedOrder, rankSimilarIds } from "./similar-listings";
+import { loadSkillVocabulary, type SkillVocabulary } from "./skill-vocabulary";
 
 /** With the portfolio feed's 5,000 and the static pages, stays under a sitemap's 50,000 URLs. */
 const SITEMAP_LIMIT = 44_000;

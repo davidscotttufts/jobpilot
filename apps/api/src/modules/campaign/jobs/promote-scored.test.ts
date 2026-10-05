@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { JobListingPublisher } from "@/modules/job-listing";
+import type { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { CampaignJobService } from "./job.service";
 import { describe, expect, it } from "bun:test";
 

@@ -6,7 +6,12 @@
 
 import { z } from "zod/v4";
 import { MAX_YEARS_EXPERIENCE } from "@/modules/scoring/scoring.schema";
-import { canonicalizeUrl, dedupeKey, listingSlug, normalizeListingLocation } from "./dedupe";
+import {
+  canonicalizeUrl,
+  dedupeKey,
+  listingSlug,
+  normalizeListingLocation,
+} from "./listing-identity";
 
 const MAX_EXCERPT = 600;
 

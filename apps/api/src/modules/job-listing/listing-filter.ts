@@ -5,7 +5,7 @@ import {
 } from "@jobpilot/contracts/job-listing";
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
-import { resolveSkillFilter } from "./skill-facets";
+import { resolveSkillFilter } from "./skill-vocabulary";
 
 /** `variants` maps a lowercased skill to its stored casings; `hasSome` itself is case-sensitive. */
 export function listingWhere(

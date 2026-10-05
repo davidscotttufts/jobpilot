@@ -26,7 +26,7 @@ interface ListingFields {
 interface FakeOptions {
   listing?: ListingFields | null;
   rows?: Row[];
-  /** What the similar-jobs ranking query returns, best match first. */
+  /** What the similar-listings ranking query returns, best match first. */
   rankedIds?: string[];
 }
 

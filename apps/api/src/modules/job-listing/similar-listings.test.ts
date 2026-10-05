@@ -1,4 +1,4 @@
-import { inRankedOrder, titleWords } from "./similar-jobs";
+import { inRankedOrder, titleWords } from "./similar-listings";
 import { describe, expect, it } from "bun:test";
 
 describe("titleWords", () => {
