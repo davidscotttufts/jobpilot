@@ -63,7 +63,7 @@ export const publicJobListingController = new Elysia({
     detail: {
       summary: "List similar public job listings",
       description:
-        "Returns up to six other published listings that share skills with this one, most shared skills first, then newest. 404 when the slug is not a published listing. Unauthenticated.",
+        "Returns up to six other published listings that share a skill with this one, ranked by shared skills, then shared title words, matching remote flag and region, then newest. 404 when the slug is not a published listing. Unauthenticated.",
     },
   })
   .get("/:slug", ({ params }) => svc.bySlug(params.slug), {

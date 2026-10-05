@@ -1,15 +1,31 @@
-/** One `unnest(skills)` row: a skill exactly as stored, and how many listings carry it. */
-export interface SkillCountRow {
+import type { PrismaClient } from "@/generated/prisma/client";
+
+/** A skill exactly as stored, and how many published listings carry it. */
+interface SkillCountRow {
   skill: string;
-  /** Published listings only - a hidden-only casing counts 0 and never reaches the option list. */
   count: number;
 }
 
 export interface SkillVocabulary {
-  /** Display options, most common first. One entry per skill, in its most common casing. */
+  /** One entry per skill in its most common casing, most common first. */
   facets: { value: string; count: number }[];
-  /** lowercased skill -> every casing of it present in the table. */
+  /** Lowercased skill to every casing stored for it. */
   variants: Map<string, string[]>;
+}
+
+export async function loadSkillVocabulary(
+  prisma: Pick<PrismaClient, "$queryRaw">,
+): Promise<SkillVocabulary> {
+  // Hidden rows count too, so the admin filter resolves their casings, but only published rows add
+  // to the count: the public list drops zero counts and never leaks a hidden-only skill.
+  // `::int` because count() is a BigInt, which JSON cannot carry.
+  const rows = await prisma.$queryRaw<SkillCountRow[]>`
+    SELECT skill, count(*) FILTER (WHERE status = 'published'::job_listing_status)::int AS count
+    FROM (SELECT unnest(skills) AS skill, status FROM job_listings) entries
+    GROUP BY 1
+    ORDER BY 2 DESC
+  `;
+  return groupSkillFacets(rows);
 }
 
 interface Group {
@@ -19,10 +35,7 @@ interface Group {
   casings: string[];
 }
 
-/**
- * The agent writes skills in whatever casing the posting used ("React", "react", "REACT"), so
- * the raw rows are grouped case-insensitively and the most common casing wins the label.
- */
+/** Agents keep the posting's casing ("React", "react"), so group by lowercase; the most common wins. */
 export function groupSkillFacets(rows: SkillCountRow[]): SkillVocabulary {
   const groups = new Map<string, Group>();
 
@@ -56,11 +69,7 @@ export function groupSkillFacets(rows: SkillCountRow[]): SkillVocabulary {
   return { facets, variants };
 }
 
-/**
- * Expands the requested skills into every casing actually stored, so `?tech=react` still matches a
- * listing saved as "React" - Prisma's array `hasSome` is exact, and this is what keeps the filter
- * case-insensitive without a normalized column.
- */
+/** Expands skills into every stored casing, since array `hasSome` and `&&` are case-sensitive. */
 export function resolveSkillFilter(values: string[], variants: Map<string, string[]>): string[] {
   const resolved = new Set<string>();
 

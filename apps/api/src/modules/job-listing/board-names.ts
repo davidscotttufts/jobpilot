@@ -1,13 +1,14 @@
-/** A catalog row, as the name lookup needs it. */
-export interface CatalogBoard {
+import type { PrismaClient } from "@/generated/prisma/client";
+
+interface CatalogBoard {
   domain: string;
   name: string;
 }
 
-/** Maps a stored `sources.board` value to the name the public pages show. */
+/** Maps a stored `sources.board` value to its display name. */
 export type BoardNameLookup = (board: string) => string;
 
-/** Agents record a board as `https://www.naukri.com/`, `naukri.com` or `linkedin`: reduce to the host. */
+/** Agents store `https://www.naukri.com/`, `naukri.com` or `linkedin` alike; reduce to the host. */
 function boardHost(board: string): string {
   const host = board
     .trim()
@@ -30,10 +31,7 @@ function hostCandidates(host: string): string[] {
   return candidates;
 }
 
-/**
- * Names come from listed catalog rows only: those are curated, while an unlisted row's name is
- * whatever one user typed. A board with no listed row shows its bare host.
- */
+/** Only listed catalog rows name boards: an unlisted row's name is whatever one user typed. */
 export function boardNameLookup(catalog: CatalogBoard[]): BoardNameLookup {
   const names = new Map<string, string>();
   for (const row of catalog) {
@@ -52,14 +50,21 @@ export function boardNameLookup(catalog: CatalogBoard[]): BoardNameLookup {
   };
 }
 
+export async function loadBoardNameLookup(
+  prisma: Pick<PrismaClient, "jobBoard">,
+): Promise<BoardNameLookup> {
+  const catalog = await prisma.jobBoard.findMany({
+    where: { listed: true },
+    select: { domain: true, name: true },
+  });
+  return boardNameLookup(catalog);
+}
+
 interface BoardSource {
   board: string | null;
 }
 
-/**
- * One entry per board, in source order (the callers pass most recent first). Counted by name, not
- * by source row: one posting reposted six times on LinkedIn is one board, not six.
- */
+/** One name per board, in source order: a posting reposted six times on LinkedIn is one board. */
 export function distinctBoardNames(sources: BoardSource[], name: BoardNameLookup): string[] {
   const seen = new Map<string, string>();
   for (const source of sources) {
