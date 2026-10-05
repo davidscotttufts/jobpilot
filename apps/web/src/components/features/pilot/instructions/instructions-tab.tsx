@@ -35,7 +35,6 @@ import { GoalsSection } from "./goals-section";
 import { LimitsSection } from "./limits-section";
 import { NetworkingSection } from "./networking-section";
 import { PlatformsSection } from "./platforms-section";
-import { SavedAnswers } from "./saved-answers";
 import { SearchesList } from "./searches-list";
 
 const NAV_ANCHORS: SectionAnchor[] = [
@@ -45,7 +44,6 @@ const NAV_ANCHORS: SectionAnchor[] = [
   { id: "networking", label: "Networking" },
   { id: "boards", label: "Boards" },
   { id: "platforms", label: "Platforms" },
-  { id: "answers", label: "Saved answers" },
 ];
 
 export function InstructionsTab(): ReactElement {
@@ -57,15 +55,9 @@ export function InstructionsTab(): ReactElement {
     return <Skeleton variant="rounded" height={480} />;
   }
   // The form takes its defaults once, so it mounts only after the state has loaded.
-  // Saved answers sit outside the instructions form so their own submits can't save it.
   return (
     <SectionLayout anchors={NAV_ANCHORS}>
-      <Stack spacing={3}>
-        <InstructionsEditor state={stateQuery.data} />
-        <Box data-section-id="answers">
-          <SavedAnswers />
-        </Box>
-      </Stack>
+      <InstructionsEditor state={stateQuery.data} />
     </SectionLayout>
   );
 }

@@ -10,8 +10,7 @@ import { queryKeys } from "@/api/query-keys";
 import type { SavedAnswerDto } from "@/api/types";
 import { TooltipIconButton } from "@/components/ui/buttons";
 import { EmptyState, QuerySection } from "@/components/ui/data";
-import { FormDialogShell } from "@/components/ui/form";
-import { SectionCard } from "@/components/ui/layout";
+import { FormDialogShell, FormSection } from "@/components/ui/form";
 import { useConfirm } from "@/providers/confirm-provider";
 import { formatRelativeTime } from "@/utils/format";
 
@@ -21,7 +20,7 @@ function answerLabel(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-export function SavedAnswers(): ReactElement {
+export function SavedAnswersSection(): ReactElement {
   const confirm = useConfirm();
   const [editing, setEditing] = useState<SavedAnswerDto | null>(null);
 
@@ -49,7 +48,7 @@ export function SavedAnswers(): ReactElement {
   const handleDelete = async (answer: SavedAnswerDto): Promise<void> => {
     const confirmed = await confirm({
       title: "Delete saved answer?",
-      description: `The pilot will ask about "${answerLabel(answer.key)}" again the next time a form needs it.`,
+      description: `You'll be asked about "${answerLabel(answer.key)}" again the next time a form needs it.`,
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -61,9 +60,9 @@ export function SavedAnswers(): ReactElement {
   const answers = query.data ?? [];
 
   return (
-    <SectionCard
+    <FormSection
       title="Saved answers"
-      description="Answers you gave the pilot that fit other applications. It uses them instead of asking again."
+      description="Answers to application questions that come up again, like start date or relocation. Applications fill them in instead of asking you. Edits save right away."
     >
       <QuerySection
         isLoading={query.isLoading}
@@ -74,7 +73,7 @@ export function SavedAnswers(): ReactElement {
         empty={
           <EmptyState
             variant="inline"
-            title="None yet — answers you give to reusable questions show up here."
+            title="None yet. When an application asks you something that fits other jobs, your answer is saved here."
           />
         }
       >
@@ -98,7 +97,7 @@ export function SavedAnswers(): ReactElement {
           onClose={() => setEditing(null)}
         />
       )}
-    </SectionCard>
+    </FormSection>
   );
 }
 

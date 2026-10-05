@@ -20,6 +20,7 @@ import { EeoSection } from "./sections/eeo-section";
 import { PersonalSection } from "./sections/personal-section";
 import { ReferencesSection } from "./sections/references-section";
 import { SalarySection } from "./sections/salary-section";
+import { SavedAnswersSection } from "./sections/saved-answers-section";
 import { WorkAuthSection } from "./sections/work-auth-section";
 
 export function SettingsContent(): ReactElement {
@@ -120,6 +121,7 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
         <PersonalSection form={form} />
         <AddressSection form={form} />
         <WorkAuthSection form={form} />
+        <SavedAnswersSection />
         <ReferencesSection form={form} />
         <SalarySection form={form} />
         <EeoSection form={form} />
