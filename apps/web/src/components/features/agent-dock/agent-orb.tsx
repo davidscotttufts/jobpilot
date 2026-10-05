@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box } from "@mui/material";
+import { alpha, Box } from "@mui/material";
 import { editorial } from "@/theme/palette";
 import { type IconSizeToken, iconSizes } from "@/theme/tokens";
 
@@ -33,10 +33,10 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
         },
         "@keyframes agent-orb-halo": {
           "0%, 100%": {
-            boxShadow: `0 0 ${glow}px ${theme.palette.accent.primary}33, 0 0 ${Math.round(glow * 0.5)}px ${theme.palette.accent.primary}40`,
+            boxShadow: `0 0 ${glow}px ${alpha(theme.palette.accent.primary, 0.2)}, 0 0 ${Math.round(glow * 0.5)}px ${alpha(theme.palette.accent.primary, 0.25)}`,
           },
           "50%": {
-            boxShadow: `0 0 ${Math.round(glow * 1.6)}px ${theme.palette.accent.primary}66, 0 0 ${glow}px ${theme.palette.accent.primary}55`,
+            boxShadow: `0 0 ${Math.round(glow * 1.6)}px ${alpha(theme.palette.accent.primary, 0.4)}, 0 0 ${glow}px ${alpha(theme.palette.accent.primary, 0.33)}`,
           },
         },
         "@keyframes agent-orb-spin": {

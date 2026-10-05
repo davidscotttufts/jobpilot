@@ -2,7 +2,7 @@
 
 import "@xterm/xterm/css/xterm.css";
 import { type ReactElement, useEffect, useRef } from "react";
-import { Box, useTheme } from "@mui/material";
+import { alpha, Box, useTheme } from "@mui/material";
 import { FitAddon } from "@xterm/addon-fit";
 import { type ITheme, Terminal } from "@xterm/xterm";
 import { API_BASE_URL } from "@/api/base-url";
@@ -151,7 +151,7 @@ export function TerminalPanel(props: TerminalPanelProps): ReactElement {
       background,
       foreground,
       cursor: accent,
-      selectionBackground: `${accent}40`,
+      selectionBackground: alpha(accent, 0.25),
     };
     themeRef.current = theme;
     if (terminalRef.current) {
