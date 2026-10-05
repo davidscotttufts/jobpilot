@@ -106,6 +106,7 @@ export function TodayPanel(props: TodayPanelProps): ReactElement {
 
   return (
     <SectionCard
+      fullHeight
       title="Today"
       actions={
         <LinkButton size="small" href="/pilot/instructions">

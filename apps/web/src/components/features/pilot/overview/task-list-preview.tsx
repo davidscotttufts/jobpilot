@@ -76,6 +76,7 @@ export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
 
   return (
     <SectionCard
+      fullHeight
       title="Up next"
       description="What the pilot plans to work on next cycle."
       actions={
