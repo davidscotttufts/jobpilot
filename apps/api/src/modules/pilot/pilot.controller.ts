@@ -102,7 +102,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Where the last week of tokens went",
       description:
-        "Per task type over the last 7 days: runs, median and total tokens, failed and unfinished runs, heaviest first.",
+        "Per task type over the last 7 days: runs, median new tokens (input, output, cache write), the token breakdown, failed and unfinished runs, most new tokens first.",
     },
   })
   .get("/activity", ({ user }) => pilot.getActivity(user.id), {

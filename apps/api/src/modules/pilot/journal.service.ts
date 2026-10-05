@@ -9,7 +9,7 @@ import {
 } from "@/common/activity-log";
 import { PushService } from "@/common/push/push.service";
 import { type PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
-import { totalTokens } from "./tasks/run-history";
+import { tokenUsage } from "./tasks/run-history";
 
 const EXPORT_BATCH = 500;
 
@@ -36,7 +36,7 @@ async function loadRuns(
   return new Map(
     runs.map((run) => [
       run.id,
-      { taskType: run.taskType, tokens: run.model === null ? null : totalTokens(run) },
+      { taskType: run.taskType, tokens: run.model === null ? null : tokenUsage(run) },
     ]),
   );
 }

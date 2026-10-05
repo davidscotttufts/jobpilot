@@ -87,7 +87,10 @@ describe("PilotJournalService.appendJournal", () => {
       cycleId: "run-1",
       entries: [{ kind: "action", summary: "Applied" }],
     });
-    expect(res.items[0].run).toEqual({ taskType: "job.apply", tokens: 420 });
+    expect(res.items[0].run).toEqual({
+      taskType: "job.apply",
+      tokens: { input: 100, output: 20, cacheRead: 300, cacheWrite: 0 },
+    });
 
     const pending = await svc.appendJournal("p1", {
       cycleId: "run-2",

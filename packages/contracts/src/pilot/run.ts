@@ -25,6 +25,30 @@ export const reportPilotUsageSchema = z.object({
   cacheWriteTokens: z.number().int().min(0),
 });
 
+/** A run's token usage as the web reads it, split because cache reads dwarf the rest. */
+export const tokenUsageSchema = z.object({
+  input: z.number().int(),
+  output: z.number().int(),
+  cacheRead: z.number().int(),
+  cacheWrite: z.number().int(),
+});
+
+export type TokenUsage = z.infer<typeof tokenUsageSchema>;
+
+/** Cache reads re-read context already sent and cost a fraction of the rest, so they are left out. */
+export function newTokens(usage: TokenUsage): number {
+  return usage.input + usage.output + usage.cacheWrite;
+}
+
+export function sumTokenUsage(usages: TokenUsage[]): TokenUsage {
+  return {
+    input: usages.reduce((sum, usage) => sum + usage.input, 0),
+    output: usages.reduce((sum, usage) => sum + usage.output, 0),
+    cacheRead: usages.reduce((sum, usage) => sum + usage.cacheRead, 0),
+    cacheWrite: usages.reduce((sum, usage) => sum + usage.cacheWrite, 0),
+  };
+}
+
 const pilotRunBaseSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),

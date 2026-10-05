@@ -65,7 +65,7 @@ describe("AdminService.listPilots", () => {
         lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
         cycleCount: 42,
         openQuestions: 2,
-        weekTokens: 3120,
+        weekTokens: { input: 100, output: 20, cacheRead: 3000, cacheWrite: 0 },
       },
       {
         userEmail: "bob@example.com",
@@ -74,7 +74,7 @@ describe("AdminService.listPilots", () => {
         lastCycleAt: null,
         cycleCount: 0,
         openQuestions: 0,
-        weekTokens: 0,
+        weekTokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
     ]);
   });

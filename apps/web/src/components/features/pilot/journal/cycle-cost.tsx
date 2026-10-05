@@ -1,23 +1,24 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { newTokens } from "@jobpilot/contracts/pilot";
 import { Box, LinearProgress, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { EmptyState, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
-import { formatTokens, plural } from "@/utils/format";
+import { formatNewTokenParts, formatTokenSplit, formatTokens, plural } from "@/utils/format";
 import { taskTypeLabel } from "../task-types";
 
 export function CycleCost(): ReactElement {
   const query = useApiQuery(pilotQueries.cost(), { errorMessage: "Failed to load cycle costs" });
   const items = query.data?.items ?? [];
-  const heaviest = items[0]?.totalTokens ?? 0;
+  const heaviest = items.length > 0 ? newTokens(items[0].tokens) : 0;
 
   return (
     <SectionCard
       title="Where the tokens go"
-      description="The last 7 days of runs by task type, heaviest first."
+      description="The last 7 days of runs by task type, most new tokens first. Cached tokens are cheap re-reads of context."
     >
       <QuerySection
         isLoading={query.isLoading}
@@ -36,20 +37,21 @@ export function CycleCost(): ReactElement {
                 sx={{ alignItems: "baseline", justifyContent: "space-between" }}
               >
                 <Typography variant="body2">{taskTypeLabel(item.taskType)}</Typography>
-                <Typography variant="captionMuted">
-                  {formatTokens(item.totalTokens)} tokens
-                </Typography>
+                <Typography variant="captionMuted">{formatTokenSplit(item.tokens)}</Typography>
               </Stack>
               <LinearProgress
                 variant="determinate"
-                value={heaviest > 0 ? (item.totalTokens / heaviest) * 100 : 0}
+                value={heaviest > 0 ? (newTokens(item.tokens) / heaviest) * 100 : 0}
                 sx={{ my: 0.5 }}
               />
-              <Typography variant="captionMuted">
-                {plural(item.runs, "run")} · {formatTokens(item.medianTokens)} typical
-                {item.failed > 0 && ` · ${item.failed} failed`}
-                {item.unfinished > 0 && ` · ${item.unfinished} unfinished`}
-              </Typography>
+              <Stack>
+                <Typography variant="captionMuted">{formatNewTokenParts(item.tokens)}</Typography>
+                <Typography variant="captionMuted">
+                  {plural(item.runs, "run")} · {formatTokens(item.medianNewTokens)} typical
+                  {item.failed > 0 && ` · ${item.failed} failed`}
+                  {item.unfinished > 0 && ` · ${item.unfinished} unfinished`}
+                </Typography>
+              </Stack>
             </Box>
           ))}
         </Stack>

@@ -1,4 +1,5 @@
 import { paginatedSchema } from "@jobpilot/contracts/pagination";
+import { tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { publicUserSchema } from "@/modules/auth/auth.schema";
 
@@ -23,8 +24,8 @@ const adminPilotSchema = z.object({
   lastCycleAt: z.date().nullable(),
   cycleCount: z.number().int(),
   openQuestions: z.number().int(),
-  /** Input, output and cache tokens over runs started in the last 7 days. */
-  weekTokens: z.number().int(),
+  /** Token usage over runs started in the last 7 days. */
+  weekTokens: tokenUsageSchema,
 });
 
 export const adminPilotPageSchema = paginatedSchema(adminPilotSchema);

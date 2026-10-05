@@ -1,3 +1,4 @@
+import type { TokenUsage } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { HOUR_MS } from "@/common/date/buckets";
 import type {
@@ -26,13 +27,13 @@ type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWr
 /** Nullable so a Prisma `_sum` fits as is. */
 type TokenCounts = Record<TokenColumn, number | null>;
 
-export function totalTokens(counts: TokenCounts): number {
-  return (
-    (counts.inputTokens ?? 0) +
-    (counts.outputTokens ?? 0) +
-    (counts.cacheReadTokens ?? 0) +
-    (counts.cacheWriteTokens ?? 0)
-  );
+export function tokenUsage(counts: TokenCounts): TokenUsage {
+  return {
+    input: counts.inputTokens ?? 0,
+    output: counts.outputTokens ?? 0,
+    cacheRead: counts.cacheReadTokens ?? 0,
+    cacheWrite: counts.cacheWriteTokens ?? 0,
+  };
 }
 
 type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;

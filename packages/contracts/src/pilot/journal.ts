@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
+import { tokenUsageSchema } from "./run";
 
 export const PILOT_JOURNAL_KINDS = [
   "cycle",
@@ -28,7 +29,7 @@ export const createPilotJournalSchema = z.object({
 /** The run an entry's cycle worked; tokens stay null until the host reports the cycle's usage. */
 const pilotJournalRunSchema = z.object({
   taskType: z.string(),
-  tokens: z.number().int().nullable(),
+  tokens: tokenUsageSchema.nullable(),
 });
 
 export const pilotJournalEntrySchema = z.object({

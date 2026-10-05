@@ -18,7 +18,7 @@ describe("costByTaskType", () => {
       typeof costByTaskType
     >[0];
 
-  it("ranks task types by total tokens, not by how often they run", async () => {
+  it("ranks task types by new tokens, not by how often they run or by cache reads", async () => {
     const prisma = fakePrisma([
       {
         ...run("job.apply", 50_000),
@@ -31,12 +31,23 @@ describe("costByTaskType", () => {
       run("inbox.review", 1000),
       run("inbox.review", 2000),
       run("inbox.review", 3000),
+      // Cache reads dwarf everything else here, yet they are cheap and must not move the ranking.
+      { ...run("queue.score", 100), cacheReadTokens: 5_000_000 },
     ]);
     const rows = await costByTaskType(prisma, "u1", NOW);
 
-    expect(rows.map((r) => r.taskType)).toEqual(["job.apply", "inbox.review"]);
-    expect(rows[0]).toMatchObject({ runs: 2, medianTokens: 45_000, totalTokens: 90_000 });
-    expect(rows[1]).toMatchObject({ runs: 3, medianTokens: 2000, totalTokens: 6000 });
+    expect(rows.map((r) => r.taskType)).toEqual(["job.apply", "inbox.review", "queue.score"]);
+    expect(rows[0]).toMatchObject({
+      runs: 2,
+      medianNewTokens: 42_000,
+      tokens: { input: 80_000, output: 2000, cacheRead: 6000, cacheWrite: 2000 },
+    });
+    expect(rows[1]).toMatchObject({
+      runs: 3,
+      medianNewTokens: 2000,
+      tokens: { input: 6000, output: 0, cacheRead: 0, cacheWrite: 0 },
+    });
+    expect(rows[2]).toMatchObject({ medianNewTokens: 100 });
   });
 
   it("counts failed and unfinished runs separately", async () => {

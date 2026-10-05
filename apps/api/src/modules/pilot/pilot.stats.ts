@@ -1,7 +1,8 @@
+import { newTokens, sumTokenUsage } from "@jobpilot/contracts/pilot";
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { classifySkipReason, type SkipBucket } from "./skip-reasons";
-import { isCrash, totalTokens } from "./tasks/run-history";
+import { isCrash, tokenUsage } from "./tasks/run-history";
 
 /** Runs older than a week describe a version of the agent you are no longer running. */
 export const COST_WINDOW_MS = 7 * DAY_MS;
@@ -65,7 +66,7 @@ function median(sorted: number[]): number {
   return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
-/** Where the week's tokens went, by task type, heaviest first. A run carries its cycle's usage. */
+/** Where the week's tokens went, by task type, most new tokens first. A run carries its cycle's usage. */
 export async function costByTaskType(
   prisma: Pick<PrismaClient, "pilotRun">,
   userId: string,
@@ -90,15 +91,15 @@ export async function costByTaskType(
 
   return [...Map.groupBy(rows, (run) => run.taskType)]
     .map(([taskType, runs]) => {
-      const tokens = runs.map(totalTokens).sort((a, b) => a - b);
+      const usages = runs.map(tokenUsage);
       return {
         taskType,
         runs: runs.length,
-        medianTokens: median(tokens),
-        totalTokens: tokens.reduce((sum, count) => sum + count, 0),
+        medianNewTokens: median(usages.map(newTokens).sort((a, b) => a - b)),
+        tokens: sumTokenUsage(usages),
         failed: runs.filter((run) => run.outcome === "failed").length,
         unfinished: runs.filter((run) => isCrash(run.outcome)).length,
       };
     })
-    .sort((a, b) => b.totalTokens - a.totalTokens);
+    .sort((a, b) => newTokens(b.tokens) - newTokens(a.tokens));
 }

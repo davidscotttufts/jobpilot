@@ -1,12 +1,13 @@
 "use client";
 
 import type { ReactElement } from "react";
+import { newTokens, sumTokenUsage } from "@jobpilot/contracts/pilot";
 import { EastRounded } from "@mui/icons-material";
-import { Box, Card, CardContent, Stack, Typography } from "@mui/material";
+import { Box, Card, CardContent, Stack, Tooltip, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { PulseDot, type PulseDotTone } from "@/components/ui/feedback";
-import { formatTokens } from "@/utils/format";
+import { formatNewTokenParts, formatTokens } from "@/utils/format";
 import { PILOT_MODE_LOOK } from "../pilot-status";
 import { AGENT_LABELS, type PilotAgent, taskTypeAgent } from "../task-types";
 
@@ -78,17 +79,13 @@ export function AgentList(props: AgentListProps): ReactElement {
   const { branch, dimmed } = props;
   const cost = useApiQuery(pilotQueries.cost());
 
-  const weekTokens = new Map<PilotAgent, number>();
-  for (const item of cost.data?.items ?? []) {
-    const agent = taskTypeAgent(item.taskType);
-    weekTokens.set(agent, (weekTokens.get(agent) ?? 0) + item.totalTokens);
-  }
+  const costByAgent = Map.groupBy(cost.data?.items ?? [], (item) => taskTypeAgent(item.taskType));
 
   return (
     <Box sx={{ opacity: dimmed ? DIM_OPACITY : 1 }}>
       <Stack direction="row" sx={{ justifyContent: "space-between", mb: 1 }}>
         <Typography variant="overlineMuted">Agents</Typography>
-        <Typography variant="overlineMuted">Tokens this week</Typography>
+        <Typography variant="overlineMuted">New tokens this week</Typography>
       </Stack>
       <Box
         sx={{
@@ -99,6 +96,7 @@ export function AgentList(props: AgentListProps): ReactElement {
       >
         {AGENTS.map((agent) => {
           const active = agent === branch;
+          const usage = sumTokenUsage((costByAgent.get(agent) ?? []).map((item) => item.tokens));
           return (
             <Card
               key={agent}
@@ -114,9 +112,11 @@ export function AgentList(props: AgentListProps): ReactElement {
                 <Typography variant={active ? "body2Strong" : "body2"} sx={{ flex: 1 }}>
                   {AGENT_LABELS[agent]}
                 </Typography>
-                <Typography variant="captionMuted">
-                  {formatTokens(weekTokens.get(agent) ?? 0)}
-                </Typography>
+                <Tooltip
+                  title={`${formatNewTokenParts(usage)} · cache read ${formatTokens(usage.cacheRead)}`}
+                >
+                  <Typography variant="captionMuted">{formatTokens(newTokens(usage))}</Typography>
+                </Tooltip>
               </Stack>
               <Typography variant="captionMuted" noWrap sx={{ display: "block", ml: 2 }}>
                 {AGENT_ROLES[agent]}

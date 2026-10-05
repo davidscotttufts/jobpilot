@@ -17,7 +17,7 @@ import {
 } from "@mui/icons-material";
 import { alpha, Box, type ChipProps, Stack, Tooltip, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
-import { formatTokens, humanizeIsoInText } from "@/utils/format";
+import { formatTokenSplit, humanizeIsoInText } from "@/utils/format";
 import { AGENT_LABELS, taskTypeAgent } from "../task-types";
 
 export const KIND_META: Record<
@@ -64,7 +64,7 @@ interface RunMetaProps {
 export function RunMeta(props: RunMetaProps): ReactElement {
   const { run } = props;
   const agent = AGENT_LABELS[taskTypeAgent(run.taskType)];
-  const tokens = run.tokens === null ? "" : ` · ${formatTokens(run.tokens)} tokens`;
+  const tokens = run.tokens === null ? "" : ` · ${formatTokenSplit(run.tokens)}`;
   return <Typography variant="captionMuted">{`${agent}${tokens}`}</Typography>;
 }
 

@@ -1,3 +1,4 @@
+import { newTokens, type TokenUsage } from "@jobpilot/contracts/pilot";
 import { format, formatDistanceStrict, formatDistanceToNowStrict, isSameDay } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 
@@ -63,6 +64,20 @@ const tokenFormat = new Intl.NumberFormat("en-US", {
 /** Compact token count, e.g. `950`, `12.3K`, `1.2M`. */
 export function formatTokens(count: number): string {
   return tokenFormat.format(count);
+}
+
+/** New tokens with cache reads beside them, e.g. `184K new · 2.5M cached`. */
+export function formatTokenSplit(usage: TokenUsage): string {
+  return `${formatTokens(newTokens(usage))} new · ${formatTokens(usage.cacheRead)} cached`;
+}
+
+/** What new tokens are made of, e.g. `in 12K · out 41K · cache write 131K`. */
+export function formatNewTokenParts(usage: TokenUsage): string {
+  return [
+    `in ${formatTokens(usage.input)}`,
+    `out ${formatTokens(usage.output)}`,
+    `cache write ${formatTokens(usage.cacheWrite)}`,
+  ].join(" · ");
 }
 
 /** Human-readable date in the viewer's locale, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */

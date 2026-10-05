@@ -1,4 +1,4 @@
-import { pilotJournalEntrySchema } from "@jobpilot/contracts/pilot";
+import { pilotJournalEntrySchema, tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { SKIP_BUCKETS } from "./skip-reasons";
 
@@ -17,8 +17,8 @@ export const pilotCostSchema = z.object({
     z.object({
       taskType: z.string(),
       runs: z.number().int(),
-      medianTokens: z.number().int(),
-      totalTokens: z.number().int(),
+      medianNewTokens: z.number().int(),
+      tokens: tokenUsageSchema,
       failed: z.number().int(),
       unfinished: z.number().int(),
     }),
