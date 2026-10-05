@@ -9,7 +9,7 @@ import { singleton } from "tsyringe";
 import { DAY_MS } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { MemoryCache } from "@/common/memory-cache";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type JobListing, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type BoardNameLookup, boardNameLookup, distinctBoardNames } from "./board-names";
 import { inRankedOrder } from "./similar-jobs";
 import {
@@ -74,6 +74,9 @@ const FACET_LIMIT = 40;
 const FACET_TTL_MS = 10 * 60_000;
 
 const SIMILAR_LIMIT = 6;
+/** The ranking scores every listing sharing a skill, so it is worth keeping for popular pages. */
+const SIMILAR_TTL_MS = 30 * 60_000;
+const SIMILAR_CACHE_SIZE = 2000;
 
 @singleton()
 export class JobListingService {
@@ -84,6 +87,11 @@ export class JobListingService {
   private readonly vocabulary = new MemoryCache<"all", SkillVocabulary>({ ttlMs: FACET_TTL_MS });
   /** The listed board catalog, for naming `sources.board` values. Admin edits are rare. */
   private readonly boardNames = new MemoryCache<"all", BoardNameLookup>({ ttlMs: FACET_TTL_MS });
+  /** Ranked similar-listing ids, keyed by listing id. */
+  private readonly similarIds = new MemoryCache<string, string[]>({
+    ttlMs: SIMILAR_TTL_MS,
+    maxEntries: SIMILAR_CACHE_SIZE,
+  });
 
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -222,7 +230,21 @@ export class JobListingService {
       return [];
     }
 
-    const [{ variants }, name] = await Promise.all([this.skillVocabulary(), this.boardNameFor()]);
+    // Only the ranking is cached. The rows are re-read by id with the published filter, so a
+    // listing an admin hides drops out at once instead of lingering for the TTL.
+    const ids = await this.similarIds.getOrLoad(listing.id, () => this.rankSimilar(listing));
+    const [rows, name] = await Promise.all([
+      this.prisma.jobListing.findMany({
+        where: { id: { in: ids }, status: "published" },
+        select: SUMMARY_SELECT,
+      }),
+      this.boardNameFor(),
+    ]);
+    return inRankedOrder(rows, ids).map((row) => toSummary(row, name));
+  }
+
+  private async rankSimilar(listing: Pick<JobListing, "id" | "skills">): Promise<string[]> {
+    const { variants } = await this.skillVocabulary();
     // Raw because Prisma cannot order by an expression. `&&` takes every stored casing so the GIN
     // index serves it; the overlap score compares lowercased, so "React" and "react" count once.
     const ranked = await this.prisma.$queryRaw<{ id: string }[]>`
@@ -239,12 +261,7 @@ export class JobListingService {
         first_seen_at DESC
       LIMIT ${SIMILAR_LIMIT}
     `;
-    const ids = ranked.map((row) => row.id);
-    const rows = await this.prisma.jobListing.findMany({
-      where: { id: { in: ids }, status: "published" },
-      select: SUMMARY_SELECT,
-    });
-    return inRankedOrder(rows, ids).map((row) => toSummary(row, name));
+    return ranked.map((row) => row.id);
   }
 
   /** The web proxy's 404 check, so it skips the detail payload the page fetches anyway. */

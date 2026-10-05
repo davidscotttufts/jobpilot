@@ -128,6 +128,20 @@ describe("JobListingService.similar", () => {
     expect(similar[0]).toMatchObject({ boards: ["LinkedIn"], sourceCount: 2 });
   });
 
+  it("reuses the ranking for the same listing but re-reads the rows", async () => {
+    const { service, rankingValues, findManyArgs } = fakePrisma({
+      listing: { id: "self", skills: ["Go"] },
+      rankedIds: ["best"],
+      rows: [{ id: "best", skills: ["Go"], boards: [] }],
+    });
+
+    await service.similar("self");
+    await service.similar("self");
+
+    expect(rankingValues).toHaveLength(1);
+    expect(findManyArgs).toHaveLength(2);
+  });
+
   it("skips the search when the listing has no skills to match on", async () => {
     const { service, rankingValues } = fakePrisma({ listing: { id: "self", skills: [] } });
 
