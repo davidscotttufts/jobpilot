@@ -17,6 +17,16 @@ export function serializeTechParam(values: string[]): string {
   return values.join(",");
 }
 
+/** `recent` orders by last sighting, `newest` by first. */
+const JOB_LISTING_SORTS = ["recent", "newest"] as const;
+export const jobListingSortSchema = z.enum(JOB_LISTING_SORTS);
+
+/** `?posted=` windows over `firstSeenAt`, keyed by their URL value. */
+export const JOB_LISTING_POSTED_WITHIN = { "24h": 1, "7d": 7, "30d": 30 } as const;
+export const jobListingPostedSchema = z.enum(
+  Object.keys(JOB_LISTING_POSTED_WITHIN) as [keyof typeof JOB_LISTING_POSTED_WITHIN],
+);
+
 /** Public /jobs filters. Every param is crawlable as a query string, so all are optional. */
 export const jobListingQuerySchema = paginationQuerySchema.extend({
   // Only `page` is re-declared: the crawler cap above is specific to this route.
@@ -35,6 +45,8 @@ export const jobListingQuerySchema = paginationQuerySchema.extend({
     .union([z.string(), z.array(z.string())])
     .transform(parseTechParam)
     .optional(),
+  sort: jobListingSortSchema.optional(),
+  posted: jobListingPostedSchema.optional(),
 });
 
 /**
@@ -56,5 +68,7 @@ export const adminJobListingPatchSchema = z.object({
 
 export type JobListingStatus = z.infer<typeof jobListingStatusSchema>;
 export type JobListingQuery = z.infer<typeof jobListingQuerySchema>;
+export type JobListingSort = z.infer<typeof jobListingSortSchema>;
+export type JobListingPosted = z.infer<typeof jobListingPostedSchema>;
 export type AdminJobListingQuery = z.infer<typeof adminJobListingQuerySchema>;
 export type AdminJobListingPatch = z.infer<typeof adminJobListingPatchSchema>;

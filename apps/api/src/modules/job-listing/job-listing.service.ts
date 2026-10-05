@@ -1,18 +1,22 @@
-import type {
-  AdminJobListingQuery,
-  JobListingQuery,
-  JobListingStatus,
+import {
+  type AdminJobListingQuery,
+  JOB_LISTING_POSTED_WITHIN,
+  type JobListingQuery,
+  type JobListingStatus,
 } from "@jobpilot/contracts/job-listing";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type BoardNameLookup, boardNameLookup, distinctBoardNames } from "./board-names";
+import { inRankedOrder } from "./similar-jobs";
 import {
   groupSkillFacets,
   resolveSkillFilter,
   type SkillCountRow,
   type SkillVocabulary,
 } from "./skill-facets";
+import { TtlCache } from "./ttl-cache";
 
 /** Selected explicitly, not spread: a user column added to the table later must not leak out here. */
 const SUMMARY_SELECT = {
@@ -28,8 +32,9 @@ const SUMMARY_SELECT = {
   descriptionExcerpt: true,
   firstSeenAt: true,
   lastSeenAt: true,
-  // The list only shows "posted on N boards", so count them rather than shipping every source row.
+  // Admin shows the raw source count; the public pages show distinct boards, from the board column.
   _count: { select: { sources: true } },
+  sources: { select: { board: true }, orderBy: { lastSeenAt: "desc" } },
 } satisfies Prisma.JobListingSelect;
 
 /** The detail page is the only view that needs the board links and the long-form brief fields. */
@@ -50,11 +55,14 @@ const ADMIN_SELECT = {
   createdAt: true,
 } satisfies Prisma.JobListingSelect;
 
-type CountedRow = { _count: { sources: number } };
+interface SummaryRow {
+  _count: { sources: number };
+  sources: { board: string | null }[];
+}
 
-/** Flatten Prisma's `_count` into the flat `sourceCount` the contract exposes. */
-function withSourceCount<T extends CountedRow>({ _count, ...row }: T) {
-  return { ...row, sourceCount: _count.sources };
+/** Flatten Prisma's `_count` and the source rows into the contract's `sourceCount` and `boards`. */
+function toSummary<T extends SummaryRow>({ _count, sources, ...row }: T, name: BoardNameLookup) {
+  return { ...row, sourceCount: _count.sources, boards: distinctBoardNames(sources, name) };
 }
 
 /** With the portfolio feed's 5,000 and the static pages, stays under a sitemap's 50,000 URLs. */
@@ -64,48 +72,60 @@ const SITEMAP_LIMIT = 44_000;
 const FACET_LIMIT = 40;
 const FACET_TTL_MS = 10 * 60_000;
 
+const SIMILAR_LIMIT = 6;
+
+const DAY_MS = 24 * 60 * 60_000;
+
 @singleton()
 export class JobListingService {
-  /** The in-flight promise, not the resolved value: N concurrent misses must share one scan. */
-  private vocabulary: { expiresAt: number; value: Promise<SkillVocabulary> } | null = null;
+  /**
+   * Every skill in the index, grouped by casing. Cached: it backs both the option list and the
+   * `?tech=` lookup, so it is read on every filtered request but changes only as jobs are ingested.
+   */
+  private readonly vocabulary = new TtlCache(() => this.loadVocabulary(), FACET_TTL_MS);
+  /** The listed board catalog, for naming `sources.board` values. Admin edits are rare. */
+  private readonly boardNames = new TtlCache(() => this.loadBoardNames(), FACET_TTL_MS);
 
   constructor(private readonly prisma: PrismaClient) {}
 
   /** Public list. Always scoped to published rows - hidden ones exist only for admins. */
   async list(query: JobListingQuery) {
-    const { total, rows } = await this.query({ ...query, status: "published" }, SUMMARY_SELECT);
-    return paginate(rows.map(withSourceCount), query, total);
+    const [{ total, rows }, name] = await Promise.all([
+      this.query({ ...query, status: "published" }, SUMMARY_SELECT),
+      this.boardNames.get(),
+    ]);
+    return paginate(
+      rows.map((row) => toSummary(row, name)),
+      query,
+      total,
+    );
   }
 
   /** Moderation list. The only caller that may see hidden rows. */
   async listForAdmin(query: AdminJobListingQuery) {
-    const { total, rows } = await this.query(query, ADMIN_SELECT);
-    return paginate(rows.map(withSourceCount), query, total);
+    const [{ total, rows }, name] = await Promise.all([
+      this.query(query, ADMIN_SELECT),
+      this.boardNames.get(),
+    ]);
+    return paginate(
+      rows.map((row) => toSummary(row, name)),
+      query,
+      total,
+    );
   }
 
   /** The skill option list behind the `?tech=` filter, most common first. */
   async facets() {
-    const { facets } = await this.skillVocabulary();
+    const { facets } = await this.vocabulary.get();
     return { skills: facets.slice(0, FACET_LIMIT) };
   }
 
-  /**
-   * Every skill in the index, grouped by casing. Cached: it backs both the option list and the
-   * `?tech=` lookup, so it is read on every filtered request but changes only as jobs are ingested.
-   */
-  private skillVocabulary(): Promise<SkillVocabulary> {
-    const now = Date.now();
-    if (this.vocabulary && this.vocabulary.expiresAt > now) {
-      return this.vocabulary.value;
-    }
-
-    const value = this.loadVocabulary();
-    this.vocabulary = { expiresAt: now + FACET_TTL_MS, value };
-    // A failed scan must not be cached for ten minutes.
-    value.catch(() => {
-      this.vocabulary = null;
+  private async loadBoardNames(): Promise<BoardNameLookup> {
+    const catalog = await this.prisma.jobBoard.findMany({
+      where: { listed: true },
+      select: { domain: true, name: true },
     });
-    return value;
+    return boardNameLookup(catalog);
   }
 
   private async loadVocabulary(): Promise<SkillVocabulary> {
@@ -128,7 +148,7 @@ export class JobListingService {
     const [rows, total] = await Promise.all([
       this.prisma.jobListing.findMany({
         where,
-        orderBy: { lastSeenAt: "desc" },
+        orderBy: query.sort === "newest" ? { firstSeenAt: "desc" } : { lastSeenAt: "desc" },
         ...pageSlice(query),
         select,
       }),
@@ -139,10 +159,10 @@ export class JobListingService {
   }
 
   private async where(query: AdminJobListingQuery): Promise<Prisma.JobListingWhereInput> {
-    const { q, location, remote, board, tech, status } = query;
+    const { q, location, remote, board, tech, posted, status } = query;
     // `hasSome` is exact, so the request is expanded into the casings actually stored.
     const skills = tech?.length
-      ? resolveSkillFilter(tech, (await this.skillVocabulary()).variants)
+      ? resolveSkillFilter(tech, (await this.vocabulary.get()).variants)
       : [];
 
     return {
@@ -152,6 +172,9 @@ export class JobListingService {
       ...(skills.length > 0 && { skills: { hasSome: skills } }),
       // `board` is stored lowercase, so this is an indexed equality, not an ILIKE scan.
       ...(board && { sources: { some: { board: board.toLowerCase() } } }),
+      ...(posted && {
+        firstSeenAt: { gte: new Date(Date.now() - JOB_LISTING_POSTED_WITHIN[posted] * DAY_MS) },
+      }),
       ...(q && {
         OR: [
           { title: { contains: q, mode: "insensitive" } },
@@ -162,14 +185,59 @@ export class JobListingService {
   }
 
   async bySlug(slug: string) {
+    const [listing, name] = await Promise.all([
+      this.prisma.jobListing.findFirst({
+        where: { slug, status: "published" },
+        select: DETAIL_SELECT,
+      }),
+      this.boardNames.get(),
+    ]);
+    if (!listing) {
+      throw notFound("Job listing not found");
+    }
+    const sources = listing.sources.map((source) => ({
+      ...source,
+      board: source.board && name(source.board),
+    }));
+    return { ...toSummary(listing, name), sources };
+  }
+
+  /** Published listings sharing the most skills with this one, ties newest first. Never itself. */
+  async similar(slug: string) {
     const listing = await this.prisma.jobListing.findFirst({
       where: { slug, status: "published" },
-      select: DETAIL_SELECT,
+      select: { id: true, skills: true },
     });
     if (!listing) {
       throw notFound("Job listing not found");
     }
-    return withSourceCount(listing);
+    if (listing.skills.length === 0) {
+      return [];
+    }
+
+    const [{ variants }, name] = await Promise.all([this.vocabulary.get(), this.boardNames.get()]);
+    // Raw because Prisma cannot order by an expression. `&&` takes every stored casing so the GIN
+    // index serves it; the overlap score compares lowercased, so "React" and "react" count once.
+    const ranked = await this.prisma.$queryRaw<{ id: string }[]>`
+      SELECT id FROM job_listings
+      WHERE status = 'published'::job_listing_status
+        AND id <> ${listing.id}
+        AND skills && ${resolveSkillFilter(listing.skills, variants)}::text[]
+      ORDER BY
+        cardinality(ARRAY(
+          SELECT lower(skill) FROM unnest(skills) AS skill
+          INTERSECT
+          SELECT lower(skill) FROM unnest(${listing.skills}::text[]) AS skill
+        )) DESC,
+        first_seen_at DESC
+      LIMIT ${SIMILAR_LIMIT}
+    `;
+    const ids = ranked.map((row) => row.id);
+    const rows = await this.prisma.jobListing.findMany({
+      where: { id: { in: ids }, status: "published" },
+      select: SUMMARY_SELECT,
+    });
+    return inRankedOrder(rows, ids).map((row) => toSummary(row, name));
   }
 
   /** The web proxy's 404 check, so it skips the detail payload the page fetches anyway. */
@@ -196,12 +264,11 @@ export class JobListingService {
 
   // No existence pre-check: the error middleware maps Prisma's P2025 to a 404 already.
   async setStatus(id: string, status: JobListingStatus) {
-    const updated = await this.prisma.jobListing.update({
-      where: { id },
-      data: { status },
-      select: ADMIN_SELECT,
-    });
-    return withSourceCount(updated);
+    const [updated, name] = await Promise.all([
+      this.prisma.jobListing.update({ where: { id }, data: { status }, select: ADMIN_SELECT }),
+      this.boardNames.get(),
+    ]);
+    return toSummary(updated, name);
   }
 
   /** Sources cascade with the listing. */

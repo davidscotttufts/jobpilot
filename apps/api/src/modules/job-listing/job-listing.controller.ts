@@ -9,6 +9,7 @@ import {
   jobListingPageSchema,
   jobListingSchema,
   jobListingSitemapSchema,
+  similarJobListingsSchema,
 } from "./job-listing.schema";
 import { JobListingService } from "./job-listing.service";
 
@@ -27,7 +28,7 @@ export const publicJobListingController = new Elysia({
     detail: {
       summary: "List public job listings",
       description:
-        "Returns a page of deduped, published job listings filtered by free text, location, remote, board, and skills. Unauthenticated.",
+        "Returns a page of deduped, published job listings filtered by free text, location, remote, board, skills, and first-seen window, sorted by last or first sighting. Unauthenticated.",
     },
   })
   // Declared before /:slug so the literal path wins the match.
@@ -54,6 +55,15 @@ export const publicJobListingController = new Elysia({
       summary: "Check a public job listing exists",
       description:
         "Ok when the slug is a published listing, 404 otherwise. Lets the web send a real 404 without fetching the detail. Unauthenticated.",
+    },
+  })
+  .get("/:slug/similar", ({ params }) => svc.similar(params.slug), {
+    params: z.object({ slug: z.string().min(1) }),
+    response: similarJobListingsSchema,
+    detail: {
+      summary: "List similar public job listings",
+      description:
+        "Returns up to six other published listings that share skills with this one, most shared skills first, then newest. 404 when the slug is not a published listing. Unauthenticated.",
     },
   })
   .get("/:slug", ({ params }) => svc.bySlug(params.slug), {
