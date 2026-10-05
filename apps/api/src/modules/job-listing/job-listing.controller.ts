@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di/container";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
+import { okResponseSchema } from "@/types/response";
 import {
   jobListingFacetsSchema,
   jobListingPageSchema,
@@ -44,6 +45,15 @@ export const publicJobListingController = new Elysia({
       summary: "Job listing sitemap feed",
       description:
         "Returns the slug and last-seen date of every published listing, capped under the sitemap URL limit, for the web app's sitemap.xml.",
+    },
+  })
+  .get("/:slug/exists", ({ params }) => svc.assertPublished(params.slug), {
+    params: z.object({ slug: z.string().min(1) }),
+    response: okResponseSchema,
+    detail: {
+      summary: "Check a public job listing exists",
+      description:
+        "Ok when the slug is a published listing, 404 otherwise. Lets the web send a real 404 without fetching the detail. Unauthenticated.",
     },
   })
   .get("/:slug", ({ params }) => svc.bySlug(params.slug), {

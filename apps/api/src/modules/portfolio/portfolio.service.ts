@@ -36,6 +36,15 @@ export class PortfolioService {
     return this.build({ username }, "Portfolio not found");
   }
 
+  /** The web proxy's 404 check, so it skips the queries `build` runs. */
+  async assertExists(username: string): Promise<{ ok: true }> {
+    const user = await this.prisma.user.findFirst({ where: { username }, select: { id: true } });
+    if (!user) {
+      throw notFound("Portfolio not found");
+    }
+    return { ok: true };
+  }
+
   /** Authed self-preview by user id (same card the public sees). */
   async previewByUserId(userId: string): Promise<PortfolioResponse> {
     return this.build({ id: userId }, "User not found");

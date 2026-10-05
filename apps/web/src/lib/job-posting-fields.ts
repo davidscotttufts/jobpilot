@@ -224,9 +224,6 @@ for (const code of getCountries()) {
 const WORK_MODE =
   /^(remote|remoto|hybrid|on-?site|in-office|work from home|wfh|global|unverified|everywhere|anywhere.*|worldwide.*)$/i;
 
-/** Location text that marks a job remote even when its `remote` flag is false. */
-export const REMOTE_LOCATION = /remote|remoto|work from home|anywhere|worldwide/i;
-
 function regionOf(part: string): Region | null {
   const byCode = /^[A-Z]{2}$/.test(part);
   const region = byCode ? REGIONS_BY_CODE.get(part) : REGIONS_BY_NAME.get(part.toLowerCase());

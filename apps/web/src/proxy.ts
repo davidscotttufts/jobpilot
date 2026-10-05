@@ -1,17 +1,14 @@
 import { createApiClient } from "@jobpilot/api-client";
 import { type NextRequest, NextResponse } from "next/server";
 import { API_ORIGIN } from "@/api/base-url";
+import { clientIpHeader } from "@/api/client-ip";
 import { isAdminRole } from "@/lib/roles";
 import { isOnboardingIncomplete } from "@/utils/onboarding";
 
 const PUBLIC_DETAIL_PATH = /^\/(?<kind>jobs|u)\/(?<id>[^/]+)$/;
 
-function apiWith(request: NextRequest, header: string) {
-  const value = request.headers.get(header);
-  return createApiClient(API_ORIGIN, {
-    headers: value ? { [header]: value } : {},
-    fetch: { cache: "no-store" },
-  }).api;
+function apiWith(headers: Record<string, string>) {
+  return createApiClient(API_ORIGIN, { headers, fetch: { cache: "no-store" } }).api;
 }
 
 function redirect(request: NextRequest, path: string): NextResponse {
@@ -23,13 +20,12 @@ function redirect(request: NextRequest, path: string): NextResponse {
  * as a soft 404. The proxy is the only place that runs before the status goes out.
  */
 async function checkPublicDetail(request: NextRequest, kind: string, id: string) {
-  // Public rate limits are per IP; without this header every visitor shares one bucket.
-  const api = apiWith(request, "x-real-ip");
+  const api = apiWith(clientIpHeader(request.headers));
   const key = decodeURIComponent(id);
   const { status } =
     kind === "jobs"
-      ? await api.public.jobs({ slug: key }).get()
-      : await api.public.portfolio({ username: key }).get();
+      ? await api.public.jobs({ slug: key }).exists.get()
+      : await api.public.portfolio({ username: key }).exists.get();
 
   // Only a definite 404: a 429 or an API blip must not get a live page deindexed.
   return status === 404 ? NextResponse.rewrite(new URL("/404", request.url)) : NextResponse.next();
@@ -47,7 +43,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return checkPublicDetail(request, detail.kind, detail.id);
   }
 
-  const { data, error } = await apiWith(request, "cookie").auth.me.get();
+  const cookie = request.headers.get("cookie");
+  const { data, error } = await apiWith(cookie ? { cookie } : {}).auth.me.get();
   if (error || data === null) {
     return redirect(request, "/login");
   }

@@ -4,7 +4,6 @@ import {
   type JobLocation,
   monetaryAmount,
   parseJobLocation,
-  REMOTE_LOCATION,
 } from "./job-posting-fields";
 
 interface JobPostingLdInput {
@@ -69,9 +68,9 @@ function jobPlace(location: JobLocation): object {
  * reject the item: a remote job must name a hiring country, an on-site one a place.
  */
 export function jobPostingLd(job: JobPostingLdInput): object | null {
-  const locationText = job.location ?? "";
-  const location = parseJobLocation(locationText);
-  const remote = job.remote || REMOTE_LOCATION.test(locationText);
+  const location = parseJobLocation(job.location ?? "");
+  // The API already sets `remote` from the location text at ingest.
+  const { remote } = job;
   const hasCountry = location.countries.length > 0;
   const hasPlace = location.locality !== null || hasCountry;
   const eligible = remote ? hasCountry : hasPlace;

@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 import { z } from "zod/v4";
 import { container } from "@/common/di/container";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
+import { okResponseSchema } from "@/types/response";
 import {
   leaderboardQuerySchema,
   leaderboardResponseSchema,
@@ -35,6 +36,15 @@ export const publicPortfolioController = new Elysia({
       summary: "Portfolio sitemap feed",
       description:
         "Returns the username and last-updated date of every portfolio, capped at 5000, for the web app's sitemap.xml.",
+    },
+  })
+  .get("/:username/exists", ({ params }) => svc.assertExists(params.username), {
+    params: z.object({ username: z.string().min(1) }),
+    response: okResponseSchema,
+    detail: {
+      summary: "Check a public portfolio exists",
+      description:
+        "Ok when the username has a portfolio, 404 otherwise. Lets the web send a real 404 without building the portfolio. Unauthenticated.",
     },
   })
   .get("/:username", ({ params }) => svc.byUsername(params.username), {

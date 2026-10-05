@@ -57,8 +57,8 @@ function withSourceCount<T extends CountedRow>({ _count, ...row }: T) {
   return { ...row, sourceCount: _count.sources };
 }
 
-/** Under the sitemap's 50,000-URL limit, leaving room for the site's other URLs. */
-const SITEMAP_LIMIT = 45_000;
+/** With the portfolio feed's 5,000 and the static pages, stays under a sitemap's 50,000 URLs. */
+const SITEMAP_LIMIT = 44_000;
 
 /** Enough to cover the long tail a user would plausibly filter by, short enough to ship to a phone. */
 const FACET_LIMIT = 40;
@@ -170,6 +170,18 @@ export class JobListingService {
       throw notFound("Job listing not found");
     }
     return withSourceCount(listing);
+  }
+
+  /** The web proxy's 404 check, so it skips the detail payload the page fetches anyway. */
+  async assertPublished(slug: string): Promise<{ ok: true }> {
+    const listing = await this.prisma.jobListing.findFirst({
+      where: { slug, status: "published" },
+      select: { id: true },
+    });
+    if (!listing) {
+      throw notFound("Job listing not found");
+    }
+    return { ok: true };
   }
 
   /** Slug + freshness for the web's sitemap. Capped - a sitemap file maxes out at 50k URLs. */
