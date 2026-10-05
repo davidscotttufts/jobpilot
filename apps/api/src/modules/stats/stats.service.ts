@@ -1,6 +1,6 @@
 import { singleton } from "tsyringe";
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
-import { TtlCache } from "@/common/ttl-cache";
+import { MemoryCache } from "@/common/memory-cache";
 import { PrismaClient } from "@/generated/prisma/client";
 import type { PublicStats } from "./stats.schema";
 
@@ -9,13 +9,13 @@ const STATS_TTL_MS = 5 * 60_000;
 
 @singleton()
 export class StatsService {
-  private readonly cache = new TtlCache(() => this.load(), STATS_TTL_MS);
+  private readonly cache = new MemoryCache<"public", PublicStats>({ ttlMs: STATS_TTL_MS });
 
   constructor(private readonly prisma: PrismaClient) {}
 
   /** Unauthenticated, so cached: every landing-page render would otherwise rescan the window. */
   publicStats(): Promise<PublicStats> {
-    return this.cache.get();
+    return this.cache.getOrLoad("public", () => this.load());
   }
 
   private async load(): Promise<PublicStats> {

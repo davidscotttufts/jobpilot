@@ -6,8 +6,9 @@
 } from "@jobpilot/contracts/job-listing";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
+import { DAY_MS } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
-import { TtlCache } from "@/common/ttl-cache";
+import { MemoryCache } from "@/common/memory-cache";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type BoardNameLookup, boardNameLookup, distinctBoardNames } from "./board-names";
 import { inRankedOrder } from "./similar-jobs";
@@ -74,17 +75,15 @@ const FACET_TTL_MS = 10 * 60_000;
 
 const SIMILAR_LIMIT = 6;
 
-const DAY_MS = 24 * 60 * 60_000;
-
 @singleton()
 export class JobListingService {
   /**
    * Every skill in the index, grouped by casing. Cached: it backs both the option list and the
    * `?tech=` lookup, so it is read on every filtered request but changes only as jobs are ingested.
    */
-  private readonly vocabulary = new TtlCache(() => this.loadVocabulary(), FACET_TTL_MS);
+  private readonly vocabulary = new MemoryCache<"all", SkillVocabulary>({ ttlMs: FACET_TTL_MS });
   /** The listed board catalog, for naming `sources.board` values. Admin edits are rare. */
-  private readonly boardNames = new TtlCache(() => this.loadBoardNames(), FACET_TTL_MS);
+  private readonly boardNames = new MemoryCache<"all", BoardNameLookup>({ ttlMs: FACET_TTL_MS });
 
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -92,7 +91,7 @@ export class JobListingService {
   async list(query: JobListingQuery) {
     const [{ total, rows }, name] = await Promise.all([
       this.query({ ...query, status: "published" }, SUMMARY_SELECT),
-      this.boardNames.get(),
+      this.boardNameFor(),
     ]);
     return paginate(
       rows.map((row) => toSummary(row, name)),
@@ -105,7 +104,7 @@ export class JobListingService {
   async listForAdmin(query: AdminJobListingQuery) {
     const [{ total, rows }, name] = await Promise.all([
       this.query(query, ADMIN_SELECT),
-      this.boardNames.get(),
+      this.boardNameFor(),
     ]);
     return paginate(
       rows.map((row) => toSummary(row, name)),
@@ -116,8 +115,16 @@ export class JobListingService {
 
   /** The skill option list behind the `?tech=` filter, most common first. */
   async facets() {
-    const { facets } = await this.vocabulary.get();
+    const { facets } = await this.skillVocabulary();
     return { skills: facets.slice(0, FACET_LIMIT) };
+  }
+
+  private skillVocabulary(): Promise<SkillVocabulary> {
+    return this.vocabulary.getOrLoad("all", () => this.loadVocabulary());
+  }
+
+  private boardNameFor(): Promise<BoardNameLookup> {
+    return this.boardNames.getOrLoad("all", () => this.loadBoardNames());
   }
 
   private async loadBoardNames(): Promise<BoardNameLookup> {
@@ -162,7 +169,7 @@ export class JobListingService {
     const { q, location, remote, board, tech, posted, status } = query;
     // `hasSome` is exact, so the request is expanded into the casings actually stored.
     const skills = tech?.length
-      ? resolveSkillFilter(tech, (await this.vocabulary.get()).variants)
+      ? resolveSkillFilter(tech, (await this.skillVocabulary()).variants)
       : [];
 
     return {
@@ -190,7 +197,7 @@ export class JobListingService {
         where: { slug, status: "published" },
         select: DETAIL_SELECT,
       }),
-      this.boardNames.get(),
+      this.boardNameFor(),
     ]);
     if (!listing) {
       throw notFound("Job listing not found");
@@ -215,7 +222,7 @@ export class JobListingService {
       return [];
     }
 
-    const [{ variants }, name] = await Promise.all([this.vocabulary.get(), this.boardNames.get()]);
+    const [{ variants }, name] = await Promise.all([this.skillVocabulary(), this.boardNameFor()]);
     // Raw because Prisma cannot order by an expression. `&&` takes every stored casing so the GIN
     // index serves it; the overlap score compares lowercased, so "React" and "react" count once.
     const ranked = await this.prisma.$queryRaw<{ id: string }[]>`
@@ -266,7 +273,7 @@ export class JobListingService {
   async setStatus(id: string, status: JobListingStatus) {
     const [updated, name] = await Promise.all([
       this.prisma.jobListing.update({ where: { id }, data: { status }, select: ADMIN_SELECT }),
-      this.boardNames.get(),
+      this.boardNameFor(),
     ]);
     return toSummary(updated, name);
   }

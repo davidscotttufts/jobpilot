@@ -2,6 +2,7 @@ import { resumeDataSchema } from "@jobpilot/contracts/resume";
 import { singleton } from "tsyringe";
 import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
+import { MemoryCache } from "@/common/memory-cache";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { LeaderboardResponse, LeaderboardWindow, PortfolioResponse } from "./portfolio.schema";
 
@@ -18,18 +19,14 @@ const activity = (r: { applications: number; messagesSent: number }) =>
 const LEADERBOARD_CAP = 50;
 const LEADERBOARD_TTL_MS = 5 * 60 * 1000;
 
-interface CachedLeaderboard {
-  expires: number;
-  data: LeaderboardResponse;
-}
-
 /** Backs the public /u/[username] page and /leaderboard - deliberately unauthenticated. */
 @singleton()
 export class PortfolioService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  // Cache is keyed by window; monotonic Date.now() TTL, no cross-user data (published only).
-  private readonly leaderboardCache = new Map<LeaderboardWindow, CachedLeaderboard>();
+  private readonly leaderboardCache = new MemoryCache<LeaderboardWindow, LeaderboardResponse>({
+    ttlMs: LEADERBOARD_TTL_MS,
+  });
 
   /** Public view: every account has an always-public portfolio; 404s only on an unknown username. */
   async byUsername(username: string): Promise<PortfolioResponse> {
@@ -154,12 +151,11 @@ export class PortfolioService {
     };
   }
 
-  async leaderboard(window: LeaderboardWindow = "month"): Promise<LeaderboardResponse> {
-    const cached = this.leaderboardCache.get(window);
-    if (cached && cached.expires > Date.now()) {
-      return cached.data;
-    }
+  leaderboard(window: LeaderboardWindow = "month"): Promise<LeaderboardResponse> {
+    return this.leaderboardCache.getOrLoad(window, () => this.loadLeaderboard(window));
+  }
 
+  private async loadLeaderboard(window: LeaderboardWindow): Promise<LeaderboardResponse> {
     const gte =
       window === "all"
         ? undefined
@@ -233,9 +229,7 @@ export class PortfolioService {
         activityCount: activity(r),
       }));
 
-    const data: LeaderboardResponse = { window, totalActive: active.length, rows };
-    this.leaderboardCache.set(window, { expires: Date.now() + LEADERBOARD_TTL_MS, data });
-    return data;
+    return { window, totalActive: active.length, rows };
   }
 
   async sitemap(): Promise<{ username: string; updatedAt: Date }[]> {
