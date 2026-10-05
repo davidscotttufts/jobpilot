@@ -24,8 +24,10 @@ import { loadSkillVocabulary, type SkillVocabulary } from "./skill-vocabulary";
 const SITEMAP_LIMIT = 44_000;
 const FACET_LIMIT = 40;
 const LOOKUP_TTL_MS = 10 * 60_000;
-const SIMILAR_TTL_MS = 30 * 60_000;
-const SIMILAR_CACHE_SIZE = 2000;
+// Rankings drift slowly and rows are re-read as published, so a long TTL is safe; each entry is a
+// handful of ids, so the cap can cover most of the sitemap.
+const SIMILAR_TTL_MS = 6 * 60 * 60_000;
+const SIMILAR_CACHE_SIZE = 20_000;
 
 type PageArgs = Pick<Prisma.JobListingFindManyArgs, "where" | "orderBy" | "skip" | "take">;
 
