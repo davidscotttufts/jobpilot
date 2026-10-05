@@ -35,7 +35,6 @@ const LINE_SX = {
   "@media (prefers-reduced-motion: reduce)": { animation: "none" },
 } as const;
 
-/** A Pilot run as the terminal shows it - the literal thing JobPilot does, not a decorative chart. */
 export function AgentTranscript(): ReactElement {
   return (
     <PanelFrame label="pilot · claude code">

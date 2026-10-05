@@ -19,7 +19,6 @@ const activity = (r: { applications: number; messagesSent: number }) =>
 const LEADERBOARD_CAP = 50;
 const LEADERBOARD_TTL_MS = 5 * 60 * 1000;
 
-/** Backs the public /u/[username] page and /leaderboard - deliberately unauthenticated. */
 @singleton()
 export class PortfolioService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -28,7 +27,7 @@ export class PortfolioService {
     ttlMs: LEADERBOARD_TTL_MS,
   });
 
-  /** Public view: every account has an always-public portfolio; 404s only on an unknown username. */
+  /** Every account's portfolio is public; 404s only on an unknown username. */
   async byUsername(username: string): Promise<PortfolioResponse> {
     return this.build({ username }, "Portfolio not found");
   }
@@ -42,7 +41,6 @@ export class PortfolioService {
     return { ok: true };
   }
 
-  /** Authed self-preview by user id (same card the public sees). */
   async previewByUserId(userId: string): Promise<PortfolioResponse> {
     return this.build({ id: userId }, "User not found");
   }
@@ -78,8 +76,8 @@ export class PortfolioService {
 
     const start = this.heatmapStart();
 
-    // Totals are counts (all-time); the heatmap only fetches rows inside its window, so row
-    // transfer stays bounded to 365 days regardless of how long the account has been active.
+    // Totals are all-time counts; only the heatmap fetches rows, inside its window, so transfer
+    // stays bounded however old the account is.
     const [resume, applicationTotal, interviews, messageTotal, appliedDates, messages] =
       await Promise.all([
         user.primaryResumeId

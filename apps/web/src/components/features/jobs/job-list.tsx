@@ -13,7 +13,6 @@ const rowSx = {
   "& + &": { borderTop: 1, borderColor: "divider" },
 } as const;
 
-/** Listings as one framed, divided list - the /jobs results and the similar-jobs section. */
 export function JobList(props: JobListProps): ReactElement {
   const { jobs } = props;
   return (

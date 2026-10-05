@@ -5,7 +5,6 @@ interface CatalogBoard {
   name: string;
 }
 
-/** Maps a stored `sources.board` value to its display name. */
 export type BoardNameLookup = (board: string) => string;
 
 /** Agents store `https://www.naukri.com/`, `naukri.com` or `linkedin` alike; reduce to the host. */
@@ -31,7 +30,6 @@ function hostCandidates(host: string): string[] {
   return candidates;
 }
 
-/** Only listed catalog rows name boards: an unlisted row's name is whatever one user typed. */
 export function boardNameLookup(catalog: CatalogBoard[]): BoardNameLookup {
   const names = new Map<string, string>();
   for (const row of catalog) {
@@ -54,6 +52,7 @@ export async function loadBoardNameLookup(
   prisma: Pick<PrismaClient, "jobBoard">,
 ): Promise<BoardNameLookup> {
   const catalog = await prisma.jobBoard.findMany({
+    // An unlisted row's name is whatever one user typed.
     where: { listed: true },
     select: { domain: true, name: true },
   });

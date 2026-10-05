@@ -13,7 +13,7 @@ import { toBase64 } from "@/utils/base64";
 
 const RESIZE_DEBOUNCE_MS = 220;
 
-/** Module scope because the race is between mounts: a remount can pass the abort check before cleanup runs. */
+/** Module scope: the race is between mounts, and a remount can pass the abort check before cleanup. */
 let pendingStart: Promise<unknown> | null = null;
 
 const TERMINAL_FONT_FAMILY = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
@@ -38,7 +38,6 @@ function isCtrl(event: KeyboardEvent, code: string): boolean {
   return event.ctrlKey && !event.altKey && !event.metaKey && event.code === code;
 }
 
-/** Shift+Enter as CSI-u, Ctrl+C copy-or-interrupt, Ctrl+V paste; everything else falls through to xterm. */
 function createKeyHandler(
   terminal: Terminal,
   sendInput: SendInput,
@@ -76,7 +75,7 @@ function createKeyHandler(
   };
 }
 
-/** Authenticates and starts the host session; on failure writes the reason and resolves false. */
+/** On failure, writes the reason to the terminal and resolves false. */
 async function openSession(
   terminal: Terminal,
   fit: FitAddon,
@@ -133,7 +132,6 @@ async function openSession(
   }
 }
 
-/** xterm.js bridged to a JobPilot.Terminal PTY over WebSocket; Shift+Enter sent as CSI-u `ESC[13;2u`. */
 export function TerminalPanel(props: TerminalPanelProps): ReactElement {
   const { provider } = props;
   const containerRef = useRef<HTMLDivElement | null>(null);

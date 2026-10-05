@@ -87,12 +87,10 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
         </Typography>
       </Stack>
 
-      {/* The tech options come from the API, so the filter bar streams in too. */}
       <Suspense fallback={<Skeleton variant="rounded" height={98} />}>
         <JobFiltersPanel />
       </Suspense>
 
-      {/* searchParams is dynamic, so the results need their own boundary; the shell prerenders. */}
       <Suspense fallback={<TableSkeleton />}>
         <JobsResults searchParams={props.searchParams} />
       </Suspense>

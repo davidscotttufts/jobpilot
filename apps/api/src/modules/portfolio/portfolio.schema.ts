@@ -1,7 +1,7 @@
 import { availabilitySchema } from "@jobpilot/contracts/user";
 import { z } from "zod/v4";
 
-/** One day's activity count; `date` is UTC midnight of the bucketed day (render in UTC). */
+/** `date` is UTC midnight of the bucketed day, so render it in UTC. */
 const portfolioDayPointSchema = z.object({
   date: z.date(),
   count: z.number().int(),
@@ -16,7 +16,7 @@ const portfolioStatsSchema = z.object({
   longestStreak: z.number().int(),
 });
 
-/** Public portfolio payload - only non-sensitive fields (never email/address/EEO/work-auth). */
+/** Public, so never email, address, EEO answers or work authorization. */
 export const portfolioSchema = z.object({
   username: z.string(),
   displayName: z.string(),

@@ -2,7 +2,7 @@ import { jobListingStatusSchema } from "@jobpilot/contracts/job-listing";
 import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-/** Where one posting was seen. Board + link only - never who found it. */
+/** Board and link only, never who found it. */
 const jobListingSourceSchema = z.object({
   /** The board's display name ("LinkedIn"), or its bare host when the catalog has no listed row. */
   board: z.string().nullable(),
@@ -30,7 +30,6 @@ const jobListingSummarySchema = z.object({
   boards: z.array(z.string()),
 });
 
-/** The detail view adds the board links and the brief fields the list has no room for. */
 export const jobListingSchema = jobListingSummarySchema.extend({
   requirements: z.array(z.string()),
   responsibilities: z.array(z.string()),
@@ -43,12 +42,11 @@ export const jobListingPageSchema = paginatedSchema(jobListingSummarySchema);
 /** Bounded at six, so a bare array. */
 export const similarJobListingsSchema = z.array(jobListingSummarySchema);
 
-/** The `?tech=` option list: what the index actually contains, so the filter can't be guessed wrong. */
+/** Only skills the index holds, so the `?tech=` filter never offers an option with no results. */
 export const jobListingFacetsSchema = z.object({
   skills: z.array(z.object({ value: z.string(), count: z.number().int() })),
 });
 
-/** Slug + freshness only: the web's sitemap needs nothing else. */
 export const jobListingSitemapSchema = z.array(
   z.object({ slug: z.string(), lastSeenAt: z.date() }),
 );

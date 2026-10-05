@@ -74,7 +74,7 @@ interface AgentListProps {
   dimmed: boolean;
 }
 
-/** Who the session hands a task to; the agent on the current run is lit. */
+/** `branch` is the agent on the current run, shown lit. */
 export function AgentList(props: AgentListProps): ReactElement {
   const { branch, dimmed } = props;
   const cost = useApiQuery(pilotQueries.cost());

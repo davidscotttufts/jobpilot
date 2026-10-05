@@ -23,7 +23,7 @@ export function countSentToday(
   return prisma.networkingMessage.count({ where: { userId, sentAt: { gte: startOfDay(now) } } });
 }
 
-/** Today's skipped and failed jobs, with skip reasons bucketed most frequent first. */
+/** Skip reasons are bucketed, most frequent first. */
 export async function countTodayOutcomes(
   prisma: Pick<PrismaClient, "job">,
   userId: string,
@@ -66,7 +66,7 @@ function median(sorted: number[]): number {
   return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
-/** Where the week's tokens went, by task type, most new tokens first. A run carries its cycle's usage. */
+/** Most new tokens first. A run carries its whole cycle's usage. */
 export async function costByTaskType(
   prisma: Pick<PrismaClient, "pilotRun">,
   userId: string,

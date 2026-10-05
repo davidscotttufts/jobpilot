@@ -2,7 +2,6 @@ import type { ReactElement } from "react";
 import { Box, Chip, type ChipProps, Paper, Stack, Typography } from "@mui/material";
 import { PanelFrame } from "./panel-frame";
 
-// Mirrors the real workspace page: funnel-group cards on top, applications beneath.
 const FUNNEL = [
   { label: "Applied", count: 47, dot: "stages.applying" },
   { label: "Screening", count: 4, dot: "warning.main" },

@@ -28,7 +28,6 @@ export class MemoryCache<K, V> {
     this.now = options.now ?? Date.now;
   }
 
-  /** The cached value for `key`, or the result of `load` when it is missing or expired. */
   getOrLoad(key: K, load: () => Promise<V>): Promise<V> {
     const now = this.now();
     const cached = this.entries.get(key);

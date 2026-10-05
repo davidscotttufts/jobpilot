@@ -17,7 +17,7 @@ export function Hero(): ReactElement {
         sx={{
           position: "relative",
           paddingTop: { xs: 6, md: 10 },
-          // Light bottom padding: the hero runs into the demo video rather than sitting a section apart.
+          // Short bottom padding so the hero runs straight into the demo video.
           paddingBottom: { xs: 3, md: 4 },
         }}
       >

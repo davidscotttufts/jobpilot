@@ -4,12 +4,10 @@ import { Box, Card, Stack, Typography } from "@mui/material";
 const TRAFFIC_LIGHTS = ["error.main", "warning.main", "success.main"] as const;
 
 interface PanelFrameProps {
-  /** Mono window-title label, e.g. "workspace". */
   label: string;
   children: ReactNode;
 }
 
-/** Window chrome for the hero transcript and the product-tour mock panels. */
 export function PanelFrame(props: PanelFrameProps): ReactElement {
   const { label, children } = props;
   return (

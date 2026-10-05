@@ -10,10 +10,6 @@ interface JobRowProps {
   job: JobListingSummaryDto;
 }
 
-/**
- * One listing as a dense row; the whole row is one link. Pay, boards and age sit in a right
- * column on sm+ and drop under the title on a phone.
- */
 export function JobRow(props: JobRowProps): ReactElement {
   const { job } = props;
   const meta = [boardsLabel(job.boards), `Seen ${formatRelativeTime(job.lastSeenAt)} ago`]

@@ -9,14 +9,14 @@ import { jobsHref } from "./jobs-href";
 
 interface JobPagerProps {
   pagination: PageMeta;
-  /** The current query, minus `page` - preserved so paging keeps the active filters. */
+  /** The active filters, without `page`. */
   params: Record<string, string>;
 }
 
 /**
- * Real `<a href>` paging, not the shared `PaginationFooter` - a crawler cannot click a React
- * handler, and a rows-per-page control would multiply the crawlable URLs for one index. Client
- * only for `renderItem`; the links are in the server-rendered HTML.
+ * Real `<a href>` links, not `PaginationFooter`: a crawler can't click a React handler, and a
+ * rows-per-page control would multiply the crawlable URLs. Client only for `renderItem`; the
+ * links are still in the server-rendered HTML.
  */
 export function JobPager(props: JobPagerProps): ReactNode {
   const { pagination, params } = props;

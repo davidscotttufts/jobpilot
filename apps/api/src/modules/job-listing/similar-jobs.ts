@@ -34,7 +34,6 @@ const FILLER_WORDS = new Set([
 
 export type SimilarSource = Pick<JobListing, "id" | "skills" | "title" | "remote" | "location">;
 
-/** The distinct, lowercased words of a title that count toward similarity. */
 export function titleWords(title: string): string[] {
   const words = title
     .toLowerCase()

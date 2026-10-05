@@ -3,18 +3,16 @@ import { tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 import { publicUserSchema } from "@/modules/auth/auth.schema";
 
-/** A user as the admin table sees them: the public user plus activity and the caller's rights. */
 export const adminUserSchema = publicUserSchema.extend({
   name: z.string().nullable(),
   applicationCount: z.number().int(),
   lastActiveAt: z.date().nullable(),
-  /** Whether the *calling* admin may change this row's role - the server owns that policy. */
+  /** Whether the calling admin may change this row's role; the UI must not re-derive it. */
   canChangeRole: z.boolean(),
 });
 
 export const adminUserPageSchema = paginatedSchema(adminUserSchema);
 
-/** One Pilot in the admin fleet view: its owner, run state, and cycle/question activity. */
 const adminPilotSchema = z.object({
   userEmail: z.string(),
   userId: z.uuid(),
@@ -28,7 +26,7 @@ const adminPilotSchema = z.object({
 
 export const adminPilotPageSchema = paginatedSchema(adminPilotSchema);
 
-/** Platform-wide counters. `signupsPerDay.date` is UTC midnight of the bucketed day. */
+/** `signupsPerDay.date` is UTC midnight of the bucketed day. */
 export const adminStatsSchema = z.object({
   users: z.object({
     total: z.number().int(),

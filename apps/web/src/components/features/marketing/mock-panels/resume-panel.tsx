@@ -20,7 +20,6 @@ const LINES = [
   { id: "l8", width: 0.75 },
 ];
 
-/** Faux rendered-PDF page: paper block with skeleton text lines. */
 function PagePreview(): ReactElement {
   return (
     <Box

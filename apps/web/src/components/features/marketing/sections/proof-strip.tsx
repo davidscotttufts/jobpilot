@@ -25,9 +25,8 @@ interface Stat {
 }
 
 /**
- * Live totals over the board list, shown under the demo video. A failed fetch drops only the
- * numbers it would have filled - a decorative strip must never 500 the landing page. Cached so it
- * renders inside the prerender.
+ * A failed fetch drops only the numbers it would fill; a decorative strip must never 500 the page.
+ * Cached so it renders inside the prerender.
  */
 export async function ProofStrip(): Promise<ReactElement> {
   "use cache";

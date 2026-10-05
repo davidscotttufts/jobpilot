@@ -27,11 +27,9 @@ describe("costByTaskType", () => {
         cacheWriteTokens: 2000,
       },
       run("job.apply", 30_000),
-      // Runs three times as often but spends little, so it should rank below job.apply.
       run("inbox.review", 1000),
       run("inbox.review", 2000),
       run("inbox.review", 3000),
-      // Cache reads dwarf everything else here, yet they are cheap and must not move the ranking.
       { ...run("queue.score", 100), cacheReadTokens: 5_000_000 },
     ]);
     const rows = await costByTaskType(prisma, "u1", NOW);

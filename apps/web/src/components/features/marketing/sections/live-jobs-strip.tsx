@@ -10,9 +10,9 @@ import { SectionHeading } from "../section-heading";
 const SHOWN = 6;
 
 /**
- * Renders nothing when the index is empty or the API is down - never 500 over a decorative section.
- * Cached so the fetch runs inside the prerender instead of as a dynamic hole; the scope also covers
- * the cards' `Date.now()` ages, which go stale with the entry.
+ * Renders nothing when the index is empty or the API is down; a decorative section must never 500.
+ * Cached so the fetch runs in the prerender, not as a dynamic hole. The cards' `Date.now()` ages
+ * are cached too and go stale with the entry.
  */
 export async function LiveJobsStrip(): Promise<ReactNode> {
   "use cache";
@@ -55,7 +55,7 @@ async function recentJobs() {
   try {
     const { data, error } = await api.public.jobs.get({ query: { page: 1, limit: SHOWN } });
     if (error) {
-      // Logged, not swallowed: a down API used to look exactly like an empty index.
+      // Log it, or a down API looks exactly like an empty index.
       console.error("live jobs strip: job index unavailable", error.value);
       return [];
     }

@@ -44,13 +44,11 @@ export async function generateMetadata(props: JobPageProps): Promise<Metadata> {
 }
 
 export default function JobPage(props: JobPageProps): ReactElement {
-  // The whole page is the listing, so the jobs layout is the shared App Shell.
   return (
     <Stack spacing={6}>
       <Suspense fallback={<DetailSkeleton heights={[220, 400]} />}>
         <Job params={props.params} />
       </Suspense>
-      {/* Its own request, so the listing renders without waiting on it. */}
       <Suspense fallback={<TableSkeleton />}>
         <SimilarJobs params={props.params} />
       </Suspense>

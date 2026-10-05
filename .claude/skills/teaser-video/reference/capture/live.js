@@ -1,10 +1,7 @@
-// Live take: film one page while a real run happens, plus the agent's own
-// Chrome window via Windows Graphics Capture. Everything is stamped against one
-// wall clock so the edit can line the sources up.
-//
+// Films one page during a real run, plus the agent's Chrome via Windows Graphics Capture.
+// Every source is stamped against one wall clock so the edit can line them up.
 //   node live.js <name> [--start] [--minutes N] [--path /] [--ready <selector>]
-// --start clicks the first button named "Start" on camera (adapt per app).
-// Stop early by creating takes/<name>/STOP.
+// --start clicks the first "Start" button on camera. Stop early by creating takes/<name>/STOP.
 import { execFile, spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -47,7 +44,6 @@ log("web recording");
 const windowTakes = [];
 let current = null;
 function findAgentWindow() {
-  // The agent's browser is the Playwright MCP Chrome, recognisable by its profile dir.
   const ps = `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | Where-Object { $_.CommandLine -match '${AGENT_BROWSER}' -and $_.CommandLine -notmatch '--type=' } | ForEach-Object { $p = Get-Process -Id $_.ProcessId -ErrorAction SilentlyContinue; if ($p -and $p.MainWindowHandle -ne 0) { "$($p.Id)|$($p.MainWindowHandle)|$($p.MainWindowTitle)" } }`;
   return new Promise((resolve) =>
     execFile("powershell", ["-NoProfile", "-Command", ps], (_e, out) =>

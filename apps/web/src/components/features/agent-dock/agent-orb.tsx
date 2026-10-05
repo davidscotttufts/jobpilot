@@ -9,7 +9,6 @@ interface AgentOrbProps {
   size?: IconSizeToken;
 }
 
-/** A visual representation of an agent in the dock with a pulsing animation */
 export function AgentOrb(props: AgentOrbProps): ReactElement {
   const { size = "2xxl" } = props;
 
@@ -72,7 +71,6 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           background: `conic-gradient(from 0deg, ${theme.palette.accent.primary}33, ${editorial.amber}26, ${editorial.thrust}1F, ${theme.palette.accent.primary}33)`,
         })}
       />
-      {/* fast bright comet sweep */}
       <Box
         sx={(theme) => ({
           position: "absolute",
@@ -89,7 +87,6 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           mixBlendMode: "screen",
         })}
       />
-      {/* slower counter-rotating dim arc - adds depth */}
       <Box
         sx={{
           position: "absolute",
@@ -115,7 +112,6 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           boxShadow: `inset 0 0 ${Math.round(sizePx * 0.3)}px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)`,
         })}
       />
-      {/* heartbeat core */}
       <Box
         sx={(theme) => ({
           position: "absolute",

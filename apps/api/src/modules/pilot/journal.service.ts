@@ -81,7 +81,7 @@ export class PilotJournalService {
     return { items: items.map((row) => toActivityEntry(row, runs)), nextCursor };
   }
 
-  /** The whole journal as NDJSON, oldest first, read in batches so it is never all in memory. */
+  /** Oldest first, read in batches so the journal is never all in memory. */
   streamJournalExport(userId: string): Response {
     const { prisma } = this;
     const encoder = new TextEncoder();

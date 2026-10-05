@@ -8,7 +8,6 @@ export function showsRemoteBadge(job: RemoteFields): boolean {
   return job.remote && !location.toLowerCase().includes("remote");
 }
 
-/** "LinkedIn", "LinkedIn · Indeed", or "LinkedIn +2" once a third board would crowd the row. */
 export function boardsLabel(boards: readonly string[]): string {
   if (boards.length <= 2) {
     return boards.join(" · ");

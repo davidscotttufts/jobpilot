@@ -15,16 +15,12 @@ const linkedChipSx = {
 
 interface SkillChipsProps {
   skills: readonly string[];
-  /** Cap for dense rows; omit to show them all. */
+  /** Omit to show every skill. */
   max?: number;
-  /**
-   * Make each chip a link into `/jobs?tech=…`. Never set this inside a JobCard or JobRow - the
-   * whole row is already one anchor, and an anchor cannot nest.
-   */
+  /** Links each chip to `/jobs?tech=…`. Never inside a JobCard or JobRow: anchors can't nest. */
   linked?: boolean;
 }
 
-/** Mono pills, matching the board strip on the landing page - the agent's machine voice. */
 export function SkillChips(props: SkillChipsProps): ReactNode {
   const { skills, max, linked = false } = props;
   if (skills.length === 0) {

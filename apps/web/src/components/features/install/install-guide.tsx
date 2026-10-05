@@ -50,7 +50,6 @@ function InstallStep(props: InstallStepProps): ReactElement {
   );
 }
 
-/** Three-step plugin-first install flow, with a separate host repair path. */
 export function InstallGuide(): ReactElement {
   const [provider, setProvider] = useState<InstallProvider>("claude");
 

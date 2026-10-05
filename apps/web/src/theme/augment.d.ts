@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { accent, line, stages, surfaces } from "./palette";
 import type { controlHeights, gradients, iconSizes, motion, radii, shadows, tints } from "./tokens";
 
-/** Single list of custom variants; the three MUI interfaces below all derive from it. */
+/** Add variants here only; the three MUI interfaces below derive from it. */
 interface CustomTypographyVariants {
   body1Muted: CSSProperties;
   body2Muted: CSSProperties;
@@ -89,15 +89,13 @@ declare module "@mui/material/Paper" {
   interface PaperPropsVariantOverrides {
     interactive: true;
     live: true;
-    /** Hover-lift + accent glow, for a whole card that is a link. */
+    /** For a whole card that is a link. */
     lift: true;
-    /** Flame-accent border, for inline CTA cards. */
+    /** For inline CTA cards. */
     accent: true;
-    /** Bordered, radius-md surface for inline panels and framed blocks. */
     panel: true;
-    /** Recessed cell inside a panel: elevated fill, divider border, radius-sm. */
+    /** A cell inside a `panel`. */
     inset: true;
-    /** Raised radius-lg frame for the landing page's showcase surfaces. */
     showcase: true;
   }
 }

@@ -9,11 +9,10 @@ type JobSource = JobListingDto["sources"][number];
 
 interface BoardGroup {
   board: string;
-  /** Most recently seen first, as the API orders them. */
   sources: JobSource[];
 }
 
-/** One group per board, in the order each board was last seen; the API sends newest first. */
+/** The API sends sources newest first, so groups and their sources stay in last-seen order. */
 function groupByBoard(sources: JobSource[]): BoardGroup[] {
   const groups = new Map<string, BoardGroup>();
   for (const source of sources) {
@@ -32,7 +31,6 @@ interface JobSourcesProps {
   sources: JobSource[];
 }
 
-/** "LinkedIn · posted 6 times · last seen 55m ago", with each repost as a readable link. */
 export function JobSources(props: JobSourcesProps): ReactElement {
   const { sources } = props;
 

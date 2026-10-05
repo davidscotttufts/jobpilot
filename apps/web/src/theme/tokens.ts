@@ -1,7 +1,7 @@
 import { alpha } from "@mui/material/styles";
 import { accent, feedback } from "./palette";
 
-// Lighter flame tints used only inside these gradients - no equivalent in palette.ts.
+// Gradient-only tints, so they live here and not in palette.ts.
 const flameLight = "#FF8A5C";
 const flameMid = "#FF7A4D";
 
@@ -11,7 +11,6 @@ export const gradients = {
   orb: `conic-gradient(from 200deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary}, ${accent.primary})`,
 } as const;
 
-/** Soft radial light behind marketing surfaces, keyed by where it is anchored. */
 export const glows = {
   top: `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(accent.primary, 0.09)}, transparent 60%)`,
   corner: `radial-gradient(ellipse 45% 90% at 10% -15%, ${alpha(accent.primary, 0.2)}, transparent 50%)`,
@@ -31,7 +30,6 @@ export const motion = {
 
 export const shadows = {
   sm: "none",
-  // Top-edge highlight so panels read as lit surfaces, not flat rectangles.
   highlight: "inset 0 1px 0 rgba(255,255,255,0.04)",
   md: "0 4px 14px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04)",
   lg: "0 18px 36px -10px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05)",
@@ -47,9 +45,8 @@ export const radii = {
 } as const;
 
 /**
- * The two heights every input, button and toggle snaps to, so a filter row lines up without
- * per-call-site `sx`. `md` is what MUI's `size="small"` outlined input already measures at our
- * 13px body font - the rest are pinned to it.
+ * Every input, button and toggle snaps to these, so filter rows line up without `sx`.
+ * `md` is what MUI's `size="small"` outlined input measures at our 13px body font.
  */
 export const controlHeights = {
   sm: 32,

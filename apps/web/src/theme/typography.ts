@@ -8,10 +8,9 @@ export const fontFamilies = {
   mono: "var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace",
 } as const;
 
-// The display role is Archivo widened to its expanded width axis (athletic headers).
 const displayStretch = "125%";
 
-/** /docs prose metrics; `docsH4` reuses the size so an h4 sits flush with the prose around it. */
+/** `docsH4` reuses this size so an h4 sits flush with the prose around it. */
 const docsBody = {
   fontFamily: fontFamilies.body,
   fontSize: "0.9375rem",
@@ -19,7 +18,7 @@ const docsBody = {
   color: textColors.prose,
 } as const;
 
-/** Skips the expanded display width: that marketing voice at every /docs section break shouts. */
+/** No expanded display width: at every /docs section break it shouts. */
 const docsHeading = {
   fontFamily: fontFamilies.body,
   fontWeight: 600,
@@ -120,7 +119,7 @@ export const typography: TypographyVariantsOptions = {
     letterSpacing: "0",
     color: textColors.secondary,
   },
-  // Outlined mono pill. Callers set `fontSize` - ring labels run smaller than board chips.
+  // Callers override `fontSize`: ring labels run smaller than board chips.
   monoChip: {
     fontFamily: fontFamilies.mono,
     fontSize: "0.75rem",
@@ -133,7 +132,6 @@ export const typography: TypographyVariantsOptions = {
     border: `1px solid ${line.border}`,
     backgroundColor: surfaces.elevated,
   },
-  // The dense sibling of monoChip, for skill tags in job rows and headers.
   skillChip: {
     fontFamily: fontFamilies.mono,
     fontSize: "0.7rem",
@@ -175,14 +173,13 @@ export const typography: TypographyVariantsOptions = {
     lineHeight: 1.5,
     fontWeight: 600,
   },
-  /** Marketing intro paragraph under a section heading. */
   lead: {
     fontFamily: fontFamilies.body,
     fontSize: "clamp(0.875rem, 0.8rem + 0.3vw, 1rem)",
     lineHeight: 1.65,
     color: textColors.secondary,
   },
-  /** Mono kicker above a marketing heading. Callers pick the color. */
+  /** No color; callers pick it. */
   eyebrow: {
     fontFamily: fontFamilies.mono,
     fontSize: "0.75rem",
@@ -190,13 +187,11 @@ export const typography: TypographyVariantsOptions = {
     letterSpacing: "0.18em",
     textTransform: "uppercase",
   },
-  /** Terminal output and command lines. */
   monoBody: {
     fontFamily: fontFamilies.mono,
     fontSize: "0.8125rem",
     lineHeight: 1.6,
   },
-  /** Window titles, footnotes, inline snippets. */
   monoCaption: {
     fontFamily: fontFamilies.mono,
     fontSize: "0.6875rem",
@@ -221,7 +216,6 @@ export const typography: TypographyVariantsOptions = {
     lineHeight: 1.15,
     letterSpacing: "-0.02em",
   },
-  // Prose for /docs
   docsBody,
   docsH1: {
     ...docsHeading,

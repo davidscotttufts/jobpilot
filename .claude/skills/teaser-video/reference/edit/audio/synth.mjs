@@ -1,6 +1,4 @@
-// Offline synth: renders the teaser's music bed and SFX to WAV. Everything here
-// is generated from oscillators and noise, so it is license-free by construction.
-//
+// Renders the teaser's music bed and SFX to WAV from oscillators and noise, so it is license-free.
 //   node synth.mjs [outDir]   -> outDir/music.wav + outDir/sfx-*.wav (default ".")
 import fs from "node:fs";
 import path from "node:path";
@@ -308,13 +306,9 @@ function chime(gain = 0.35) {
   return s;
 }
 
-// Arrangement per storyboard section (bar numbers come from storyboard.json):
-//  hook    drone + ticking (the grind), riser in its last bar
-//  reveal  impact, pad, no drums
-//  start, hero  groove A: kick, hats, bass, chords
-//  payoff  groove B: + arp lead, claps
-//  trust   breakdown: pad + arp, kick out, riser in its last bar
-//  close   final hit + tail (logo)
+// Sections (bars from storyboard.json): hook = drone + ticks, riser in its last bar; reveal =
+// impact + pad, no drums; start/hero = groove A (kick, hats, bass, chords); payoff = groove B
+// (+ arp, claps); trust = breakdown (pad + arp, no kick), riser in its last bar; close = final hit.
 const S = {};
 let BARS = 0;
 for (const { name, bars } of storyboard.sections) {
@@ -336,7 +330,6 @@ const chords = [
 ];
 const roots = [45, 41, 48, 43];
 
-// Intro drone + clock ticks
 add(
   music,
   pad([45, 52, 57], S.reveal * BAR, { gain: 0.12, cutoff: 500, attack: 1.5, release: 1 }),
@@ -353,7 +346,6 @@ for (let b = 0; b < S.reveal * 8; b++)
 add(music, riser(BAR, 0.35), at(S.reveal - 1));
 add(drums, impact(0.9), at(S.reveal));
 
-// Reveal pad
 add(
   music,
   pad(chords[0], (S.start - S.reveal) * BAR, {
@@ -369,7 +361,6 @@ for (let bar = S.start; bar < S.close; bar++) {
   const c = (bar - S.start) % 4;
   const inBreak = bar >= S.trust;
   const grooveB = bar >= S.payoff && !inBreak;
-  // chords
   add(
     music,
     pad(chords[c], BAR, {
@@ -392,7 +383,7 @@ for (let bar = S.start; bar < S.close; bar++) {
       add(drums, clap(0.4), at(bar, 1));
       add(drums, clap(0.4), at(bar, 3));
     }
-    // bass: octave pulse on 8ths, sidechain-ish by sitting off the kick
+    // Octave bass on 8ths, nudged just after each kick so the two don't stack.
     for (let e = 0; e < 8; e++) {
       const n = roots[c] - 12 + (e % 2 ? 12 : 0);
       add(
@@ -409,7 +400,6 @@ for (let bar = S.start; bar < S.close; bar++) {
       );
     }
   }
-  // arp lead
   if (bar >= S.payoff) {
     const arp = [0, 2, 3, 1, 2, 3, 1, 2];
     for (let s = 0; s < 8; s++) {

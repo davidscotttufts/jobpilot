@@ -1,17 +1,13 @@
 import { alpha, type Components, type Theme } from "@mui/material/styles";
 
-/**
- * Global colour rules, kept here rather than in globals.css so the palette stays
- * the one source (CssBaseline already paints body's background/text from it).
- */
+/** Here, not in globals.css, so the palette stays the one color source. */
 export const cssBaselineOverrides: Components<Theme>["MuiCssBaseline"] = {
   styleOverrides: (theme) => ({
     "::selection": {
       background: alpha(theme.palette.accent.primary, 0.3),
       color: theme.palette.text.primary,
     },
-    // Mice only: a styled scrollbar is a classic one, and it steals layout width off the right edge.
-    // Touch keeps its native overlay bar, which costs nothing and leaves content centred.
+    // Mice only: a styled scrollbar takes layout width; touch keeps its free overlay bar.
     "@media (pointer: fine)": {
       "::-webkit-scrollbar": { width: 10, height: 10 },
       "::-webkit-scrollbar-track": { background: "transparent" },
@@ -40,10 +36,7 @@ export const chipOverrides: Components<Theme>["MuiChip"] = {
   },
 };
 
-/**
- * Page containers are vertical stacks that rely on `gap` for spacing between the
- * header and content cards.
- */
+/** A flex column so pages space the header and cards with `gap`. */
 export const containerOverrides: Components<Theme>["MuiContainer"] = {
   styleOverrides: {
     root: ({ theme }) => ({
@@ -99,10 +92,6 @@ export const paperOverrides: Components<Theme>["MuiPaper"] = {
   ],
 };
 
-/**
- * `spacing` as a real flex `gap`, not MUI's default `margin-left` on every child but the first.
- * Margins survive wrapping, so any `flexWrap` row indents its second line by one gap.
- */
 export const skeletonOverrides: Components<Theme>["MuiSkeleton"] = {
   styleOverrides: {
     // `shape.borderRadius` is pinned to 1 so sx radii read as px, which leaves MUI's
@@ -111,6 +100,7 @@ export const skeletonOverrides: Components<Theme>["MuiSkeleton"] = {
   },
 };
 
+/** Real `gap`, not MUI's child margins: margins indent the second line of a wrapped row. */
 export const stackOverrides: Components<Theme>["MuiStack"] = {
   defaultProps: { useFlexGap: true },
 };

@@ -75,7 +75,6 @@ export function JobDetail(props: JobDetailProps): ReactElement {
   );
 }
 
-/** Title, the facts a scanner decides on, skills, and the way out to the original posting. */
 function JobHeader(props: JobDetailProps): ReactElement {
   const { job } = props;
   const latest = job.sources[0];
@@ -129,8 +128,7 @@ interface ApplyOnBoardProps {
 function ApplyOnBoard(props: ApplyOnBoardProps): ReactElement {
   const { source } = props;
   return (
-    // `LinkComponent="a"`: the theme routes ButtonBase hrefs through next/link, which has no
-    // business rendering an off-site URL.
+    // The theme routes ButtonBase hrefs through next/link, which is wrong for an off-site URL.
     <Button
       variant="contained"
       href={source.url}

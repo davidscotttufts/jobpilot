@@ -4,13 +4,11 @@ const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;
 
 /**
- * Every limit in one place. Sized for a human at a keyboard plus a generous multiple for a shared
- * NAT, never for a script's happy path. `/auth/logout` gets none - it is idempotent, and throttling
- * it could only strand a user half-logged-out.
+ * Sized for a human plus headroom for a shared NAT, never for a script. `/auth/logout` has no limit:
+ * it is idempotent, and throttling it could leave a user half-logged-out.
  */
 export const RATE_LIMITS = {
-  /** Credential stuffing against one account. Keyed by (email, IP) so one bad actor can't lock out
-   *  everyone else behind the same office/CGNAT address. */
+  /** Keyed by email and IP so one attacker can't lock out everyone behind the same office NAT. */
   loginPerAccount: {
     key: byEmailAndIp,
     limit: 5,
@@ -24,13 +22,12 @@ export const RATE_LIMITS = {
   /** Account farming. A human registers once; 5/hour still covers a family or a demo booth. */
   register: { key: byIp, limit: 5, windowMs: HOUR },
 
-  /** Sends mail, so it can be weaponized to spam a victim. Per-IP stops a script; per-email stops a
-   *  distributed mail-bomb on one address. */
+  /** Sends mail, so it could spam a victim. Per-IP stops a script; per-email stops many hosts
+   *  flooding one inbox. */
   forgotPerIp: { key: byIp, limit: 5, windowMs: HOUR },
   forgotPerEmail: { key: byEmail, limit: 3, windowMs: HOUR },
 
-  /** Magic-link endpoints. The tokens are high-entropy, so this caps the cost of hammering the DB
-   *  lookup - it is not what makes guessing infeasible. */
+  /** The tokens are high-entropy, so this only caps the cost of hammering the DB lookup. */
   passwordReset: { key: byIp, limit: 10, windowMs: HOUR },
   emailVerify: { key: byIp, limit: 20, windowMs: HOUR },
 
@@ -57,24 +54,21 @@ export const RATE_LIMITS = {
   /** Magic-link consumption; same shape as passwordReset (high-entropy token, DB-cost cap). */
   emailChangeConfirm: { key: byIp, limit: 10, windowMs: HOUR },
 
-  /** The only unauthenticated route that does real work: a cache miss re-renders the PDF. The uuid is
-   *  the capability token, so this caps how fast a leaked link can be replayed - a recruiter opening
-   *  and reloading the link a few times never trips it. */
+  /** The only public route that does real work: a cache miss re-renders the PDF. The uuid is the
+   *  access key, so this slows replay of a leaked link; a recruiter reloading it never trips it. */
   publicResumePdf: { key: byIp, limit: 30, windowMs: HOUR, burst: 10 },
 
-  /** Sized for a crawler walking the paginated public job index, not just a human browsing it -
-   *  too tight here and we deindex ourselves. A scraper brake, not an anti-abuse wall. */
+  /** Sized for a crawler walking the paginated job index; any tighter and search engines drop us. */
   publicJobs: { key: byIp, limit: 1800, windowMs: HOUR, burst: 120 },
 
-  /** Public portfolio + leaderboard pages, crawlable. Same shape as publicJobs: a scraper brake. */
+  /** Portfolio and leaderboard pages are crawlable too, so sized like publicJobs. */
   publicPortfolio: { key: byIp, limit: 1800, windowMs: HOUR, burst: 120 },
 
   /** Landing-page totals. Cached server-side, so this only caps a script hammering it. */
   publicStats: { key: byIp, limit: 600, windowMs: HOUR, burst: 30 },
 
-  /** Burns the *user's own* solver credits (captcha.service.ts decrypts their key), so this is a
-   *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several challenges.
-   *  `maxInFlight` because a rate cap alone still lets several two-minute solves pile up on sockets. */
+  /** Spends the user's own solver credits, so this guards against a runaway agent. Burst 5 covers
+   *  a page with several challenges; `maxInFlight` stops two-minute solves piling up under the cap. */
   captchaSolve: {
     key: byUser,
     limit: 60,
@@ -90,7 +84,7 @@ export const RATE_LIMITS = {
   /** Batched journal writes, several per cycle - the loosest Pilot limit. */
   pilotJournal: { key: byUser, limit: 600, windowMs: HOUR, burst: 20 },
 
-  /** Full-history NDJSON export - heavy (streams every row), user-initiated, rarely needed. */
+  /** Streams every row, and is rarely needed. */
   pilotJournalExport: { key: byUser, limit: 10, windowMs: HOUR },
 
   /** Run/heartbeat/finish bookkeeping, a few per worked item. */
@@ -99,6 +93,6 @@ export const RATE_LIMITS = {
   /** User- or agent-driven Pilot mutations (instructions, enable, questions) - infrequent. */
   pilotMutation: { key: byUser, limit: 120, windowMs: HOUR },
 
-  /** Agent/user appends a timeline note (e.g. an interview prep sheet) to an application - infrequent. */
+  /** Timeline notes such as interview prep sheets are infrequent. */
   applicationNote: { key: byUser, limit: 120, windowMs: HOUR },
 } as const satisfies Record<string, RateLimitPolicy>;

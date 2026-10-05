@@ -10,7 +10,6 @@ import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
 import { tokenUsage } from "@/modules/pilot/tasks/run-history";
 
-/** The columns every admin user row is built from - shared by the list and the role mutation. */
 const USER_SELECT = {
   id: true,
   email: true,
@@ -23,7 +22,6 @@ const USER_SELECT = {
 
 type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
 
-/** Platform-wide reads plus the one mutation an admin surface has: granting/revoking ADMIN. */
 @singleton()
 export class AdminService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -49,7 +47,6 @@ export class AdminService {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { emailVerified: true } }),
       this.prisma.user.count({ where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } } }),
-      // Active = the user applied to something or moved a campaign inside the timeline window.
       this.prisma.user.count({
         where: {
           OR: [
@@ -106,7 +103,6 @@ export class AdminService {
     };
   }
 
-  /** The Pilot fleet: one row per PilotState, joined to its owner's email and open-question count. */
   async listPilots(query: AdminPilotQuery) {
     const [rows, total] = await Promise.all([
       this.prisma.pilotState.findMany({
@@ -180,7 +176,6 @@ export class AdminService {
     return paginate(items, query, total);
   }
 
-  /** Attach activity + the actor's rights. Three aggregates over the page's ids, never one per row. */
   private async project(actor: AuthUser, rows: AdminUserRow[]) {
     const userIds = rows.map((row) => row.id);
 
@@ -196,7 +191,7 @@ export class AdminService {
         where: { userId: { in: userIds } },
         _max: { updatedAt: true },
       }),
-      // The agent PAT's last use is the truest "this account actually runs JobPilot" signal.
+      // The agent token's last use is the best sign the account actually runs JobPilot.
       this.prisma.apiToken.groupBy({
         by: ["userId"],
         where: { userId: { in: userIds } },
@@ -228,7 +223,6 @@ export class AdminService {
         lastActiveAt: stamps.length
           ? new Date(Math.max(...stamps.map((date) => date.getTime())))
           : null,
-        // The server owns the policy; the client renders the capability rather than re-deriving it.
         canChangeRole: this.canChangeRole(actor, row),
       };
     });

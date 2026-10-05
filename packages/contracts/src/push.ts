@@ -17,7 +17,6 @@ export const pushSubscriptionSchema = z.object({
   createdAt: z.date(),
 });
 
-/** Device row for the manage-devices list. */
 const pushSubscriptionListItemSchema = z.object({
   id: z.uuid(),
   endpoint: z.string(),

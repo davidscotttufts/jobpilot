@@ -8,7 +8,7 @@ interface Row {
   boards: (string | null)[];
 }
 
-/** A summary row as SUMMARY_SELECT returns it; only the fields the service reshapes matter. */
+/** Only the SUMMARY_SELECT fields the service reshapes. */
 const summary = (row: Row) => ({
   id: row.id,
   slug: row.id,
@@ -24,14 +24,12 @@ interface ListingFields {
 }
 
 interface FakeOptions {
-  /** The listing `findFirst` resolves to; null for an unknown slug. */
   listing?: ListingFields | null;
   rows?: Row[];
   /** What the similar-jobs ranking query returns, best match first. */
   rankedIds?: string[];
 }
 
-/** Stand-in for Prisma: serves canned rows and records the `findMany` and ranking arguments. */
 function fakePrisma(options: FakeOptions = {}) {
   const findManyArgs: Record<string, unknown>[] = [];
   const rankingValues: unknown[][] = [];

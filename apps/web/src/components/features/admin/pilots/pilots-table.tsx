@@ -18,7 +18,6 @@ interface AdminPilotsTableProps {
   pilots: AdminPilotDto[];
 }
 
-/** Server-rendered fleet view: no per-row actions yet, so there is no client leaf. */
 export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
   const { pilots } = props;
 

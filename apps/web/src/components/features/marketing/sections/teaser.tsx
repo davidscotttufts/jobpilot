@@ -14,7 +14,7 @@ const SOURCE = "/teaser.mp4";
 const scrim = `radial-gradient(ellipse 45% 55% at 50% 50%, ${alpha(surfaces.base, 0.72)}, ${alpha(surfaces.base, 0.5)} 70%)`;
 
 interface TeaserProps {
-  /** Rendered under the caption - the server-fetched proof strip. */
+  /** The server-fetched proof strip, passed in because this is a client component. */
   footer: ReactNode;
 }
 

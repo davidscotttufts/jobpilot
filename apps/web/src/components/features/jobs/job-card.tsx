@@ -8,18 +8,16 @@ import { SkillChips } from "./skill-chips";
 
 interface JobCardProps {
   job: JobListingSummaryDto;
-  /** Cap the chips on dense grids; the detail page shows them all. */
   maxSkills?: number;
 }
 
-/** A listing as a grid card (the landing page strip); the whole card is one link. */
 export function JobCard(props: JobCardProps): ReactElement {
   const { job, maxSkills = 5 } = props;
 
   return (
     <Card variant="lift">
-      {/* CardActionArea is a ButtonBase, so the theme's NextLink default turns a plain href into a
-          client-side link - no `component` prop, and this card stays a server component. */}
+      {/* CardActionArea is a ButtonBase, so the theme's NextLink default makes `href` a client link
+          with no `component` prop, and this card stays a server component. */}
       <CardActionArea href={`/jobs/${job.slug}` as Route} sx={{ height: "100%" }}>
         <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Stack spacing={0.5}>

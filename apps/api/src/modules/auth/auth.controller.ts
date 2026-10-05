@@ -45,8 +45,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     async ({ body, cookie }) => {
       const result = await authService.register(body);
       setAuthCookies(cookie, result.accessToken, result.refreshToken);
-      // Confirm the address unless dev auto-verified it. Best-effort: a mail outage
-      // shouldn't block account creation - the user can re-trigger from the gate.
+      // Best-effort: a mail outage shouldn't block sign-up; the user can resend from the gate.
       if (!result.user.emailVerified) {
         try {
           await verificationService.sendVerificationEmail(result.user.id, result.user.email);

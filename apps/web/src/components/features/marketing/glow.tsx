@@ -8,7 +8,7 @@ interface GlowProps {
   bleed?: number;
 }
 
-/** Decorative radial light. Needs a `position: relative` parent. */
+/** Needs a `position: relative` parent. */
 export function Glow(props: GlowProps): ReactElement {
   const { placement, bleed = 0 } = props;
   return (
@@ -16,7 +16,7 @@ export function Glow(props: GlowProps): ReactElement {
       aria-hidden
       sx={{
         position: "absolute",
-        // No bleed on phones: anything past the edge widens the page into a sideways scroll.
+        // No bleed on phones, or the page scrolls sideways.
         inset: { xs: 0, md: -bleed },
         background: glows[placement],
         pointerEvents: "none",

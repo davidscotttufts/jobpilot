@@ -23,10 +23,7 @@ export const POSTED_OPTIONS: SelectFieldOption<JobListingPosted>[] = [
   { value: "30d", label: "Past 30 days" },
 ];
 
-/**
- * Sort and the first-seen window, URL-backed like the filter bar. `jobsHref` drops `page`, so a
- * change always lands on page 1.
- */
+/** `jobsHref` drops `page`, so a change always lands on page 1. */
 export function JobSortControls(): ReactElement {
   const router = useRouter();
   const params = useSearchParams();
@@ -44,8 +41,8 @@ export function JobSortControls(): ReactElement {
     router.push(jobsHref(next));
   };
 
-  // Not SelectField: its empty "All" option leaves the label sitting in the box as a placeholder,
-  // and these two read as a pair of always-labelled controls ("Posted: Any time").
+  // Not SelectField: its empty "All" option turns the label into a placeholder, and these two
+  // must always show their label ("Posted: Any time").
   return (
     <Stack direction="row" spacing={1.5}>
       <TextField

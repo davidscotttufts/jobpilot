@@ -6,13 +6,11 @@ import type { Route } from "next";
 import { JobPilotMark } from "@/components/brand/jobpilot-mark";
 
 interface BrandMarkProps {
-  /** Hide the "JobPilot" wordmark and show only the badge. */
   iconOnly?: boolean;
-  /** Where the mark points. Home by default - a logo that goes nowhere reads as broken. */
+  /** Defaults to home: a logo that links nowhere reads as broken. */
   href?: Route;
 }
 
-/** The flame "J" badge + wordmark, shared by the marketing nav and footer. */
 export function BrandMark(props: BrandMarkProps): ReactElement {
   const { iconOnly = false, href = "/" as Route } = props;
   return (

@@ -6,20 +6,15 @@ import { MARKETING_NAV_HEIGHT } from "./marketing-link-sx";
 
 interface SectionProps {
   children: ReactNode;
-  /** Container width; prose-heavy sections (FAQ) use "md". */
   maxWidth?: "md" | "lg";
   id?: string;
-  /**
-   * Trim the top padding so this section reads as one thought with the one above it,
-   * instead of sitting a full rhythm apart. Only the lower section owns the pairing.
-   */
+  /** Trims top padding so this section pairs with the one above. Set it on the lower one only. */
   tightTop?: boolean;
-  /** Card-colored full-width band with hairline edges, to set a section apart from its neighbors. */
+  /** Full-width card-colored band with hairline edges. */
   band?: boolean;
   glow?: keyof typeof glows;
 }
 
-/** Shared vertical rhythm for the landing sections. */
 export function Section(props: SectionProps): ReactElement {
   const { children, maxWidth = "lg", id, tightTop = false, band = false, glow } = props;
 

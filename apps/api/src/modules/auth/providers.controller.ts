@@ -15,7 +15,6 @@ const OAUTH_COOKIE_PATH = "/api/auth/providers";
 const STATE_COOKIES = { state: "auth_oauth_state", companion: "auth_oauth_intent" };
 const limitOAuth = rateLimit(RATE_LIMITS.oauthStart);
 
-/** Google/GitHub sign-in, sign-up, and account linking with the shared app clients. */
 export const authProvidersController = new Elysia({
   prefix: "/auth/providers",
   detail: { tags: ["Auth"] },
@@ -58,7 +57,6 @@ export const authProvidersController = new Elysia({
     async ({ params, query, headers, cookie, redirect }) => {
       const stateCookies = oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH);
       const intent = stateCookies.companion() === "link" ? "link" : "login";
-      // Failures surface as a query flag on the page the user came from.
       const errorPage = intent === "link" ? "/account/security" : "/login";
       const fail = (reason: string) => {
         stateCookies.clear();

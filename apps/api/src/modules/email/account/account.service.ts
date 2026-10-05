@@ -44,12 +44,7 @@ export class EmailAccountService {
     return { disconnected: true };
   }
 
-  /**
-   * Send an outbound email from the user's connected mailbox. Used by the
-   * networking skill (and the networking board's "approve & send" action). Refreshes
-   * an expired token first and 4xxs with an actionable message when the account
-   * lacks send scope (needs reconnecting).
-   */
+  /** Refreshes an expired token first; 422s when the mailbox lacks send scope (reconnect it). */
   async send(userId: string, body: SendEmailInput) {
     const loaded = await loadFreshAccount(this.prisma, this.crypto, userId);
     if (!loaded) {
@@ -150,7 +145,6 @@ export class EmailAccountService {
     return { email };
   }
 
-  /** Config status for the email settings UI. Never returns the client secret. */
   async getOAuthClient(userId: string) {
     const row = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });
     return {
@@ -162,7 +156,7 @@ export class EmailAccountService {
     };
   }
 
-  /** Create/update the client; a blank clientSecret keeps the stored one (required on first create). */
+  /** A blank clientSecret keeps the stored one; it is required on first create. */
   async upsertOAuthClient(userId: string, input: OAuthClientUpsertInput) {
     const provider = input.provider ?? "gmail";
     if (provider !== "gmail") {
@@ -194,7 +188,6 @@ export class EmailAccountService {
     return this.getOAuthClient(userId);
   }
 
-  /** Remove the OAuth client. Blocked while a mailbox is still connected. */
   async deleteOAuthClient(userId: string) {
     const account = await this.prisma.emailAccount.findUnique({ where: { userId } });
     if (account) {

@@ -8,7 +8,6 @@ interface SectionHeadingProps {
   align?: "left" | "center";
 }
 
-/** Eyebrow, heading, and intro paragraph that open every landing section. */
 export function SectionHeading(props: SectionHeadingProps): ReactElement {
   const { eyebrow, title, lead, align = "left" } = props;
   const centered = align === "center";

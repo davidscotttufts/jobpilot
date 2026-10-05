@@ -50,7 +50,6 @@ export function latestRun(prisma: PrismaClient, userId: string, taskType: string
   });
 }
 
-/** Newest run of one task type per subject, in one read. */
 export async function latestRunBySubject(
   prisma: PrismaClient,
   userId: string,
@@ -82,7 +81,6 @@ export function ranRecently(
   return now.getTime() - last.finishedAt.getTime() < cooldown;
 }
 
-/** Drops the rows whose subject a run of `taskType` still holds back. */
 export async function withoutRecentRuns<T>(
   prisma: PrismaClient,
   userId: string,
@@ -119,7 +117,6 @@ export function parseJobRef(payload: unknown): JobRef {
   return { campaignId, key: jobKey };
 }
 
-/** Hands jobs whose apply never finished back to the approved queue. */
 export async function revertApplyingJobs(
   tx: Prisma.TransactionClient,
   userId: string,

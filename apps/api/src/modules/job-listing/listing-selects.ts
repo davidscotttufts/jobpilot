@@ -41,7 +41,6 @@ export interface SummaryRow {
   sources: { board: string | null }[];
 }
 
-/** Reshapes a selected row into the contract: `sourceCount` for admin, `boards` for the public. */
 export function toSummary<T extends SummaryRow>(
   { _count, sources, ...row }: T,
   name: BoardNameLookup,

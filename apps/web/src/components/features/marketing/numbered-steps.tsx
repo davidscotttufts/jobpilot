@@ -4,7 +4,6 @@ import { Grid, Paper, Stack, Typography } from "@mui/material";
 export interface NumberedStep {
   title: string;
   body: string;
-  /** A command or path shown under the body. */
   snippet?: string;
 }
 

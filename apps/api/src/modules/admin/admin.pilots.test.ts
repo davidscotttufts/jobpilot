@@ -1,5 +1,4 @@
-// listPilots shape + pagination envelope through AdminService with a fake Prisma. The adminGuard test
-// (admin.guard.test.ts) enumerates every /api/admin route, so /pilots is covered for 401/403 there.
+// 401/403 on /pilots is covered by admin.guard.test.ts, which walks every /api/admin route.
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { AdminService } from "./admin.service";

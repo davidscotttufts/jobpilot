@@ -3,7 +3,6 @@ import { describe, expect, it, mock } from "bun:test";
 
 const TTL_MS = 1000;
 
-/** A cache on a clock the test moves by hand. */
 function cacheWithClock(maxEntries?: number) {
   const clock = { now: 0 };
   const cache = new MemoryCache<string, number>({
