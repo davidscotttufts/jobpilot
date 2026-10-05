@@ -58,52 +58,6 @@ export function faqPageLd(items: readonly { q: string; a: string }[]): object {
   };
 }
 
-export interface JobPostingLdInput {
-  title: string;
-  company: string;
-  location: string | null;
-  remote: boolean;
-  salary: string | null;
-  employmentType: string | null;
-  descriptionExcerpt: string | null;
-  skills: readonly string[];
-  responsibilities: readonly string[];
-  yearsExperience: number | null;
-  /** Eden hands back a `Date`; a string is accepted so callers never have to re-wrap it. */
-  firstSeenAt: Date | string;
-  slug: string;
-}
-
-/** `datePosted` is our first sighting, not the board's post date - we aggregate, we don't publish. */
-export function jobPostingLd(job: JobPostingLdInput): object {
-  return {
-    "@context": "https://schema.org",
-    "@type": "JobPosting",
-    title: job.title,
-    url: abs(`/jobs/${job.slug}`),
-    datePosted: new Date(job.firstSeenAt).toISOString(),
-    description: job.descriptionExcerpt ?? `${job.title} at ${job.company}.`,
-    hiringOrganization: { "@type": "Organization", name: job.company },
-    ...(job.employmentType && { employmentType: job.employmentType }),
-    ...(job.salary && { baseSalary: job.salary }),
-    ...(job.skills.length > 0 && { skills: job.skills.join(", ") }),
-    ...(job.responsibilities.length > 0 && { responsibilities: job.responsibilities.join(" ") }),
-    ...(job.yearsExperience && {
-      experienceRequirements: {
-        "@type": "OccupationalExperienceRequirements",
-        monthsOfExperience: job.yearsExperience * 12,
-      },
-    }),
-    ...(job.remote && { jobLocationType: "TELECOMMUTE" }),
-    ...(job.location && {
-      jobLocation: {
-        "@type": "Place",
-        address: { "@type": "PostalAddress", addressLocality: job.location },
-      },
-    }),
-  };
-}
-
 export interface PersonLdInput {
   name: string;
   username: string;

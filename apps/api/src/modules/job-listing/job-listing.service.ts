@@ -57,7 +57,8 @@ function withSourceCount<T extends CountedRow>({ _count, ...row }: T) {
   return { ...row, sourceCount: _count.sources };
 }
 
-const SITEMAP_LIMIT = 5000;
+/** Under the sitemap's 50,000-URL limit, leaving room for the site's other URLs. */
+const SITEMAP_LIMIT = 45_000;
 
 /** Enough to cover the long tail a user would plausibly filter by, short enough to ship to a phone. */
 const FACET_LIMIT = 40;

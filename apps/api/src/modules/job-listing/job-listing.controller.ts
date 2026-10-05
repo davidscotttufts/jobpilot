@@ -43,7 +43,7 @@ export const publicJobListingController = new Elysia({
     detail: {
       summary: "Job listing sitemap feed",
       description:
-        "Returns the slug and last-seen date of every published listing, capped at 5000, for the web app's sitemap.xml.",
+        "Returns the slug and last-seen date of every published listing, capped under the sitemap URL limit, for the web app's sitemap.xml.",
     },
   })
   .get("/:slug", ({ params }) => svc.bySlug(params.slug), {

@@ -2,25 +2,70 @@ import { type ReactElement, Suspense } from "react";
 import { JOB_LISTING_FILTER_KEYS, JOB_LISTING_MAX_PAGE } from "@jobpilot/contracts/job-listing";
 import { Grid, Skeleton, Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
-import { JobCard, JobFilters, JobGridSkeleton, JobPager } from "@/components/features/jobs";
+import {
+  JobCard,
+  JobFilters,
+  JobGridSkeleton,
+  JobPager,
+  jobsHref,
+} from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/data";
 import { breadcrumbLd } from "@/lib/structured-data";
 import { one, pageParam } from "@/utils/search-params";
+import { getSkillFacets, landingParams, landingTitle } from "./landing-views";
 
-export const metadata: Metadata = {
-  title: "Jobs",
-  description:
-    "Jobs found by JobPilot agents on LinkedIn, Indeed, Wellfound, Y Combinator, and other boards, with each job listed once.",
-  alternates: { canonical: "/jobs" },
-};
+type SearchParams = Record<string, string | string[] | undefined>;
 
 interface JobsPageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<SearchParams>;
+}
+
+function readFilters(params: SearchParams): Record<string, string> {
+  const filters: Record<string, string> = {};
+  for (const key of JOB_LISTING_FILTER_KEYS) {
+    const value = one(params[key]);
+    if (value) {
+      filters[key] = value;
+    }
+  }
+  return filters;
+}
+
+interface JobsView {
+  filters: Record<string, string>;
+  /** The indexable view this one belongs to; itself when `isLanding`. */
+  landing: URLSearchParams;
+  isLanding: boolean;
+  page: number;
+}
+
+async function readView(params: SearchParams): Promise<JobsView> {
+  const filters = readFilters(params);
+  const landing = landingParams(filters, await getSkillFacets());
+  return {
+    filters,
+    landing,
+    isLanding: Object.keys(filters).every((key) => landing.has(key)),
+    page: pageParam(params.page, JOB_LISTING_MAX_PAGE),
+  };
+}
+
+/**
+ * A landing view's pages canonicalize to themselves so every listing stays reachable. Any other
+ * filter (search text, several skills) canonicalizes to its landing view's first page.
+ */
+export async function generateMetadata(props: JobsPageProps): Promise<Metadata> {
+  const { landing, isLanding, page } = await readView(await props.searchParams);
+  const title = landingTitle(landing);
+  return {
+    title: isLanding && page > 1 ? `${title} · Page ${page}` : title,
+    description: `${title} found by JobPilot agents on LinkedIn, Indeed, Wellfound, Y Combinator, and other boards, with each job listed once.`,
+    alternates: { canonical: jobsHref(landing, isLanding ? page : undefined) },
+  };
 }
 
 export default function JobsPage(props: JobsPageProps): ReactElement {
@@ -55,28 +100,15 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
   );
 }
 
-/** The skill vocabulary is identical for every visitor, so it belongs in the prerender, not a per-request hop. */
 async function JobFiltersPanel(): Promise<ReactElement> {
-  "use cache";
-  cacheLife("hours");
-
-  const { data } = await api.public.jobs.facets.get();
-  return <JobFilters skillOptions={data?.skills.map((facet) => facet.value) ?? []} />;
+  return <JobFilters skillOptions={await getSkillFacets()} />;
 }
 
 async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
-  const params = await props.searchParams;
-
-  const filters: Record<string, string> = {};
-  for (const key of JOB_LISTING_FILTER_KEYS) {
-    const value = one(params[key]);
-    if (value) {
-      filters[key] = value;
-    }
-  }
+  const { filters, landing, isLanding, page } = await readView(await props.searchParams);
 
   const { data, error } = await api.public.jobs.get({
-    query: { ...filters, page: pageParam(params.page, JOB_LISTING_MAX_PAGE), limit: 24 },
+    query: { ...filters, page, limit: 24 },
     ...(await getPublicFetchOptions()),
   });
 
@@ -105,8 +137,9 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
 
   return (
     <Stack spacing={3}>
-      <Typography variant="body2Muted">
-        {data.pagination.total.toLocaleString()} {data.pagination.total === 1 ? "job" : "jobs"}
+      <Typography variant="body2Muted" component="h2">
+        {data.pagination.total.toLocaleString()}{" "}
+        {resultsNoun(landing, isLanding, data.pagination.total)}
       </Typography>
       <Grid container spacing={2}>
         {data.items.map((job) => (
@@ -118,4 +151,11 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
       <JobPager pagination={data.pagination} params={filters} />
     </Stack>
   );
+}
+
+function resultsNoun(landing: URLSearchParams, isLanding: boolean, total: number): string {
+  if (isLanding && landing.size > 0) {
+    return landingTitle(landing);
+  }
+  return total === 1 ? "job" : "jobs";
 }

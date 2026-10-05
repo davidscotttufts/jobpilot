@@ -7,7 +7,8 @@ import { getPublicFetchOptions } from "@/api/server";
 import { JobDetail } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { DetailSkeleton } from "@/components/ui/data";
-import { breadcrumbLd, jobPostingLd } from "@/lib/structured-data";
+import { jobPostingLd } from "@/lib/job-posting-ld";
+import { breadcrumbLd } from "@/lib/structured-data";
 
 interface JobPageProps {
   params: Promise<{ slug: string }>;
@@ -57,18 +58,16 @@ async function Job(props: JobPageProps): Promise<ReactElement> {
     notFound();
   }
 
+  const posting = jobPostingLd(job);
+  const breadcrumb = breadcrumbLd([
+    { name: "Home", path: "/" },
+    { name: "Jobs", path: "/jobs" },
+    { name: job.title, path: `/jobs/${job.slug}` },
+  ]);
+
   return (
     <>
-      <JsonLd
-        data={[
-          jobPostingLd({ ...job, firstSeenAt: new Date(job.firstSeenAt) }),
-          breadcrumbLd([
-            { name: "Home", path: "/" },
-            { name: "Jobs", path: "/jobs" },
-            { name: job.title, path: `/jobs/${job.slug}` },
-          ]),
-        ]}
-      />
+      <JsonLd data={posting ? [posting, breadcrumb] : [breadcrumb]} />
       <JobDetail job={job} />
     </>
   );
