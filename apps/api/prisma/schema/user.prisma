@@ -21,20 +21,19 @@ model User {
   passwordHash  String?  @map("password_hash")
   role          UserRole @default(USER)
   emailVerified Boolean  @default(false) @map("email_verified")
-  // Per-user data-encryption key (random 32B), itself encrypted under SECRET_MASTER_KEY.
-  // Decrypts this account's stored secrets (board logins, captcha keys, Gmail tokens).
-  // Dropping it (account delete) crypto-shreds those secrets.
+  // Per-user data key, wrapped under SECRET_MASTER_KEY. Decrypts this account's secrets, so
+  // deleting the account crypto-shreds them.
   wrappedDek    String?  @map("wrapped_dek")
 
-  username     String  @unique @map("username")
+  username     String        @unique @map("username")
   availability Availability? @map("availability")
   // Opt-in, not opt-out: each stays off the public portfolio until the owner turns it on.
-  showResume   Boolean @default(false) @map("show_resume")
-  showWebsite  Boolean @default(false) @map("show_website")
-  showLinkedin Boolean @default(false) @map("show_linkedin")
-  showGithub   Boolean @default(false) @map("show_github")
+  showResume   Boolean       @default(false) @map("show_resume")
+  showWebsite  Boolean       @default(false) @map("show_website")
+  showLinkedin Boolean       @default(false) @map("show_linkedin")
+  showGithub   Boolean       @default(false) @map("show_github")
 
-  // Applicant profile (merged from the former Profile model): populated at onboarding.
+  // Applicant profile, filled at onboarding.
   firstName    String  @default("") @map("first_name")
   lastName     String  @default("") @map("last_name")
   // Distinct from `email` (login); the contact address shown on applications.

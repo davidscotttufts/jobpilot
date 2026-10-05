@@ -46,9 +46,9 @@ enum UpworkInboxStatus {
 }
 
 model UpworkProposal {
-  id        String  @id @default(uuid())
-  userId    String  @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   jobTitle       String  @map("job_title")
   clientName     String? @map("client_name")
@@ -58,15 +58,14 @@ model UpworkProposal {
   proposalText     String @default("") @map("proposal_text")
   screeningAnswers String @default("[]") @map("screening_answers") // JSON: { question: string, answer: string }[]
 
-  status  UpworkProposalStatus  @default(draft)
+  status  UpworkProposalStatus   @default(draft)
   outcome UpworkProposalOutcome?
   notes   String?
 
-  // Set when the draft came from an Upwork search recommendation rather than a
-  // pasted JD, which is what `source` records. Loose columns, not foreign keys.
+  // campaignId and jobKey are set only for search recommendations; loose columns, not FKs.
   source     UpworkProposalSource @default(manual)
-  campaignId String? @map("campaign_id")
-  jobKey     String? @map("job_key")
+  campaignId String?              @map("campaign_id")
+  jobKey     String?              @map("job_key")
 
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
@@ -82,9 +81,9 @@ model UpworkProposal {
 // { title, description, url?, skills?: string[] }[]; the MCP cannot write portfolio or
 // hourly rate, so those two stay advisory.
 model UpworkProfile {
-  id        String  @id @default(uuid())
-  userId    String  @unique @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   currentTitle      String? @map("current_title")
   currentOverview   String? @map("current_overview")
@@ -99,8 +98,8 @@ model UpworkProfile {
   suggestedSkills     String  @default("[]") @map("suggested_skills")
 
   status    UpworkProfileStatus @default(empty)
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  appliedAt DateTime? @map("applied_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  appliedAt DateTime?           @map("applied_at")
 
   @@map("upwork_profiles")
 }
@@ -108,9 +107,9 @@ model UpworkProfile {
 // The MCP runs in the user's local agent, so the browser cannot reach it. The
 // sync skill mirrors the account here and the web reads it like any other row.
 model UpworkAccount {
-  id        String  @id @default(uuid())
-  userId    String  @unique @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   connectsBalance Int? @map("connects_balance")
 
@@ -123,20 +122,20 @@ model UpworkAccount {
 // `upworkId` is Upwork's own id and makes the sync idempotent; `raw` keeps the
 // payload so a later feature can read a field this model does not name yet.
 model UpworkInboxItem {
-  id        String  @id @default(uuid())
-  userId    String  @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  upworkId String  @map("upwork_id")
-  kind     UpworkInboxKind
-  title    String
-  clientName String? @map("client_name")
-  jobUrl     String? @map("job_url")
+  upworkId   String          @map("upwork_id")
+  kind       UpworkInboxKind
+  title      String
+  clientName String?         @map("client_name")
+  jobUrl     String?         @map("job_url")
   body       String?
 
   status     UpworkInboxStatus @default(unread)
-  receivedAt DateTime @map("received_at")
-  raw        String   @default("{}")
+  receivedAt DateTime          @map("received_at")
+  raw        String            @default("{}")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")

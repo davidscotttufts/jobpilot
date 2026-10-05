@@ -52,21 +52,21 @@ enum ContactDiscoverySource {
 }
 
 model Contact {
-  id        String  @id @default(uuid())
-  userId    String  @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name            String
   title           String?
   company         String?
-  linkedinUrl     String? @map("linkedin_url")
+  linkedinUrl     String?             @map("linkedin_url")
   email           String?
   emailSource     ContactEmailSource? @map("email_source")
-  emailConfidence Float?  @map("email_confidence")
+  emailConfidence Float?              @map("email_confidence")
 
   linkedinConnection ContactLinkedinConnection @default(none) @map("linkedin_connection")
-  discoverySource    ContactDiscoverySource?    @map("discovery_source")
-  matchConfidence    Float?                     @map("match_confidence")
+  discoverySource    ContactDiscoverySource?   @map("discovery_source")
+  matchConfidence    Float?                    @map("match_confidence")
 
   relatedAppId  String?      @map("related_app_id")
   relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)

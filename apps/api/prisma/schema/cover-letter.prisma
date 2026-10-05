@@ -7,18 +7,18 @@ enum CoverLetterSource {
 }
 
 model CoverLetter {
-  id       String @id @default(uuid())
-  userId   String @map("user_id")
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   applicationId String?      @map("application_id")
   application   Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
 
-  jobUrl   String? @map("job_url")
-  jobTitle String? @map("job_title")
+  jobUrl   String?           @map("job_url")
+  jobTitle String?           @map("job_title")
   company  String?
   source   CoverLetterSource @default(manual)
-  content  String // the full plain-text letter
+  content  String // plain text
 
   createdAt DateTime @default(now()) @map("created_at")
 

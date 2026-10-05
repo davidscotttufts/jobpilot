@@ -16,8 +16,7 @@ enum CampaignStatus {
   @@map("campaign_status")
 }
 
-// Who performed an action: the user in the web UI, the terminal agent on their behalf,
-// or the autonomous pilot. Self-reported by callers (all run under the user's own PAT).
+// Who performed an action. Self-reported: every actor calls with the user's own PAT.
 enum CampaignActor {
   user
   agent
@@ -40,8 +39,7 @@ model Campaign {
   updatedAt     DateTime       @updatedAt @map("updated_at")
   completedAt   DateTime?      @map("completed_at")
   config        Json           @default("{}")
-  // The pilot search that spawned this campaign. Discovery reuses a campaign by this id, never by
-  // matching query strings: the pilot may rewrite a search's query, which would orphan the campaign.
+  // Discovery reuses a campaign by this id, not by query text: the pilot may rewrite a search's query.
   pilotSearchId String?        @map("pilot_search_id")
 
   jobs               Job[]

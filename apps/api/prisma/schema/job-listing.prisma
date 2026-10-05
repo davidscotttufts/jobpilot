@@ -5,8 +5,8 @@ enum JobListingStatus {
   @@map("job_listing_status")
 }
 
-// The public job index: one row per posting, deduped across every user's campaigns. Brief fields
-// only - it must never carry who discovered or applied. Grows into the fleet-wide shared job index.
+// The public job index: one row per posting, deduped across all users. Must never record who
+// discovered or applied.
 model JobListing {
   id        String @id @default(uuid())
   slug      String @unique
@@ -35,9 +35,9 @@ model JobListing {
 
   sources JobListingSource[]
 
-  // Serves the default list and the sitemap: `where status ORDER BY last_seen_at DESC`.
+  // Default list and sitemap.
   @@index([status, lastSeenAt])
-  // Serves `?sort=newest` and the `?posted=` window.
+  // `?sort=newest` and `?posted=`.
   @@index([status, firstSeenAt])
   // `?tech=` is a `skills @> ARRAY[..]` containment test - btree cannot serve it.
   @@index([skills], type: Gin)
@@ -55,7 +55,7 @@ model JobListingSource {
   listingId  String   @map("listing_id")
   // Stored lowercase, so `?board=` is an equality hit rather than an ILIKE scan.
   board      String?
-  // Canonicalized (tracking params stripped) - see canonicalizeUrl in publishing/listing-identity.ts.
+  // Tracking params stripped by canonicalizeUrl.
   url        String   @unique
   lastSeenAt DateTime @default(now()) @map("last_seen_at")
 

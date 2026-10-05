@@ -87,7 +87,7 @@ model PilotSearch {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  // Campaigns this search spawned; a completed one is left behind when the next run opens a new campaign.
+  // A run opens a new campaign once the previous one completes.
   campaigns Campaign[]
 
   @@index([userId, nextRunAt])

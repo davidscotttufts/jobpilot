@@ -4,7 +4,7 @@ model JobBoard {
   name      String
   domain    String   @unique
   searchUrl String?  @map("search_url")
-  // Offered to other users in the board picker. User-created boards start unlisted.
+  // Offered to other users in the board picker.
   listed    Boolean  @default(false)
   // Auto-linked to every new user at registration.
   isDefault Boolean  @default(false) @map("is_default")
