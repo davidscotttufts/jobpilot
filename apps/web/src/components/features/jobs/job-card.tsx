@@ -2,8 +2,8 @@ import type { ReactElement } from "react";
 import { Card, CardActionArea, CardContent, Chip, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
-import { fontFamilies } from "@/theme";
 import { formatRelativeTime } from "@/utils/format";
+import { boardsLabel, showsRemoteBadge } from "./job-meta";
 import { SkillChips } from "./skill-chips";
 
 interface JobCardProps {
@@ -12,7 +12,7 @@ interface JobCardProps {
   maxSkills?: number;
 }
 
-/** A listing in the public index; the whole card is one link. */
+/** A listing as a grid card (the landing page strip); the whole card is one link. */
 export function JobCard(props: JobCardProps): ReactElement {
   const { job, maxSkills = 5 } = props;
 
@@ -31,31 +31,20 @@ export function JobCard(props: JobCardProps): ReactElement {
           </Stack>
 
           <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
-            {job.remote && <Chip label="Remote" size="small" color="success" variant="outlined" />}
-            {job.location && <Typography variant="captionMuted">{job.location}</Typography>}
-            {job.salary && (
-              <Typography
-                variant="caption"
-                sx={{ fontFamily: fontFamilies.mono, color: "accent.primary" }}
-              >
-                {job.salary}
-              </Typography>
+            {showsRemoteBadge(job) && (
+              <Chip label="Remote" size="small" color="success" variant="outlined" />
             )}
+            {job.location && <Typography variant="captionMuted">{job.location}</Typography>}
+            {job.salary && <Typography variant="body2Strong">{job.salary}</Typography>}
           </Stack>
 
           <SkillChips skills={job.skills} max={maxSkills} />
 
-          <Stack
-            direction="row"
-            sx={{ mt: "auto", flexWrap: "wrap", gap: 1, alignItems: "center" }}
-          >
-            <Typography variant="captionMuted">
-              Seen {formatRelativeTime(job.lastSeenAt)} ago
-            </Typography>
-            {job.sourceCount > 1 && (
-              <Typography variant="captionMuted">· {job.sourceCount} boards</Typography>
-            )}
-          </Stack>
+          <Typography variant="captionMuted" sx={{ mt: "auto" }}>
+            {[`Seen ${formatRelativeTime(job.lastSeenAt)} ago`, boardsLabel(job.boards)]
+              .filter(Boolean)
+              .join(" · ")}
+          </Typography>
         </CardContent>
       </CardActionArea>
     </Card>
