@@ -2,14 +2,16 @@
 
 import { type ReactElement, useRef, useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
-import { alpha, Box, Card, IconButton, Stack, Typography } from "@mui/material";
-import { accent, line, surfaces } from "@/theme";
+import { alpha, Box, Card, IconButton, Typography } from "@mui/material";
+import { accent, motion, surfaces } from "@/theme";
+import { Glow } from "../glow";
 import { Section } from "../section";
-import { SectionEyebrow } from "../section-eyebrow";
-import { SectionGlow } from "../section-glow";
 
 const POSTER = "/teaser-poster.jpg";
 const SOURCE = "/teaser.mp4";
+
+// The poster is a busy UI screenshot; the play button needs a strong scrim.
+const scrim = `radial-gradient(ellipse 45% 55% at 50% 50%, ${alpha(surfaces.base, 0.72)}, ${alpha(surfaces.base, 0.5)} 70%)`;
 
 /** Poster + `preload="none"`: the 9 MB cut costs nothing until a visitor asks for it. */
 export function Teaser(): ReactElement {
@@ -22,18 +24,9 @@ export function Teaser(): ReactElement {
   };
 
   return (
-    <Section id="see-it-run" tightTop>
-      <Stack spacing={1.5} sx={{ mb: 3, maxWidth: 620 }}>
-        <SectionEyebrow color="accent.primary">SEE IT RUN</SectionEyebrow>
-        <Typography variant="h2">Watch the agent apply to a job.</Typography>
-        <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-          A real Pilot run, start to finish. You press start, the agent applies to a job on
-          LinkedIn, and the application shows up on your dashboard.
-        </Typography>
-      </Stack>
-
+    <Section id="demo" tightTop>
       <Box sx={{ position: "relative" }}>
-        <SectionGlow color={alpha(accent.primary, 0.09)} spread={56} />
+        <Glow placement="center" bleed={56} />
         <Card variant="showcase" sx={{ position: "relative" }}>
           <Box
             component="video"
@@ -46,7 +39,6 @@ export function Teaser(): ReactElement {
             onEnded={() => setStarted(false)}
             sx={{ display: "block", width: "100%", height: "auto", aspectRatio: "16 / 9" }}
           />
-
           {!started && (
             <Box
               sx={{
@@ -54,21 +46,21 @@ export function Teaser(): ReactElement {
                 inset: 0,
                 display: "grid",
                 placeItems: "center",
-                // The poster is a busy UI screenshot; the play button needs a strong scrim.
-                background: `radial-gradient(ellipse 45% 55% at 50% 50%, ${alpha(surfaces.base, 0.72)}, ${alpha(surfaces.base, 0.5)} 70%)`,
+                background: scrim,
               }}
             >
               <IconButton
                 onClick={play}
-                aria-label="Play the JobPilot teaser"
+                aria-label="Play the JobPilot demo"
                 sx={{
                   width: { xs: 64, md: 84 },
                   height: { xs: 64, md: 84 },
                   color: "common.white",
-                  border: `1px solid ${alpha(accent.primary, 0.55)}`,
+                  border: 1,
+                  borderColor: alpha(accent.primary, 0.55),
                   backgroundColor: alpha(accent.primary, 0.22),
                   backdropFilter: "blur(4px)",
-                  transition: "transform 240ms, background-color 240ms",
+                  transition: `transform ${motion.standard}, background-color ${motion.standard}`,
                   "&:hover": {
                     backgroundColor: alpha(accent.primary, 0.36),
                     transform: "scale(1.06)",
@@ -79,28 +71,16 @@ export function Teaser(): ReactElement {
                   },
                 }}
               >
-                <PlayArrow sx={{ fontSize: { xs: 32, md: 42 } }} />
+                <PlayArrow fontSize="2xxl" />
               </IconButton>
-
-              {/* Corner pill, not under the button, where it would collide with the poster's UI. */}
-              <Typography
-                variant="monoChip"
-                sx={{
-                  position: "absolute",
-                  left: { xs: 12, md: 16 },
-                  bottom: { xs: 12, md: 16 },
-                  fontSize: "0.6875rem",
-                  color: "common.white",
-                  borderColor: line.divider,
-                  backgroundColor: alpha(surfaces.base, 0.7),
-                }}
-              >
-                Sound on
-              </Typography>
             </Box>
           )}
         </Card>
       </Box>
+      <Typography variant="body2Muted" sx={{ mt: 2, textAlign: "center" }}>
+        A real Pilot run, start to finish: it applies to a job on LinkedIn and the application shows
+        up on your dashboard. Sound on.
+      </Typography>
     </Section>
   );
 }

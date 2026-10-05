@@ -1,8 +1,18 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useState } from "react";
-import { ExpandMore } from "@mui/icons-material";
-import { Box, Button, Collapse, Paper, Stack, Tab, Tabs, Typography } from "@mui/material";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Avatar,
+  alpha,
+  Paper,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
+} from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
 import { CopyField } from "@/components/ui/display";
 import { HostInstallCommands } from "./host-install-commands";
@@ -19,21 +29,18 @@ function InstallStep(props: InstallStepProps): ReactElement {
   return (
     <Paper component={Stack} variant="panel" spacing={1.5} sx={{ padding: { xs: 2.5, md: 3 } }}>
       <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-        <Box
+        <Avatar
           sx={(theme) => ({
             width: 28,
             height: 28,
-            borderRadius: "50%",
-            display: "grid",
-            placeItems: "center",
-            fontSize: "0.8125rem",
-            fontWeight: 600,
+            ...theme.typography.body1Strong,
             color: theme.palette.accent.primary,
-            border: `1px solid ${theme.palette.accent.primary}66`,
+            backgroundColor: "transparent",
+            border: `1px solid ${alpha(theme.palette.accent.primary, 0.4)}`,
           })}
         >
           {number}
-        </Box>
+        </Avatar>
         <Typography variant="h4" component="h6">
           {title}
         </Typography>
@@ -46,16 +53,11 @@ function InstallStep(props: InstallStepProps): ReactElement {
 /** Three-step plugin-first install flow, with a separate host repair path. */
 export function InstallGuide(): ReactElement {
   const [provider, setProvider] = useState<InstallProvider>("claude");
-  const [showDirect, setShowDirect] = useState(false);
 
   return (
     <Stack spacing={3}>
       <InstallStep number={1} title="Add the JobPilot plugin">
-        <Tabs
-          value={provider}
-          onChange={(_, next: InstallProvider) => setProvider(next)}
-          sx={{ minHeight: 36, "& .MuiTab-root": { minHeight: 36 } }}
-        >
+        <Tabs value={provider} onChange={(_, next: InstallProvider) => setProvider(next)}>
           <Tab value="claude" label="Claude Code" />
           <Tab value="codex" label="Codex" />
         </Tabs>
@@ -91,32 +93,21 @@ export function InstallGuide(): ReactElement {
 
       <InstallStep number={3} title="Create your account">
         <Typography variant="body2Muted">
-          Sign up and upload your resume. The agent connects to your account by itself, and you
-          start your first campaign from the dashboard.
+          Sign up and upload your resume. The agent connects to your account by itself. Then turn on
+          the Pilot from the dashboard.
         </Typography>
         <LinkButton href="/register" variant="contained" size="large" sx={{ alignSelf: "start" }}>
           Create account
         </LinkButton>
       </InstallStep>
 
-      <Stack spacing={1.5}>
-        <Button
-          variant="text"
-          size="small"
-          onClick={() => setShowDirect((v) => !v)}
-          endIcon={
-            <ExpandMore
-              sx={{
-                transform: showDirect ? "rotate(180deg)" : "none",
-                transition: "transform .2s",
-              }}
-            />
-          }
-          sx={{ alignSelf: "flex-start", color: "text.secondary" }}
-        >
-          Need to reinstall the agent without the plugin?
-        </Button>
-        <Collapse in={showDirect}>
+      <Accordion>
+        <AccordionSummary>
+          <Typography variant="body1Muted">
+            Need to reinstall the agent without the plugin?
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails>
           <Stack spacing={1.5}>
             <Typography variant="body2Muted">
               Run the command for your system, then type <code>jobpilot</code> to start it. Codex
@@ -124,8 +115,8 @@ export function InstallGuide(): ReactElement {
             </Typography>
             <HostInstallCommands />
           </Stack>
-        </Collapse>
-      </Stack>
+        </AccordionDetails>
+      </Accordion>
     </Stack>
   );
 }

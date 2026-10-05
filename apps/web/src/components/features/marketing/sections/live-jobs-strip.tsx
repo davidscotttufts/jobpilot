@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid, Stack } from "@mui/material";
 import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { JobCard } from "@/components/features/jobs";
 import { LinkButton } from "@/components/ui/buttons";
 import { Section } from "../section";
-import { SectionEyebrow } from "../section-eyebrow";
+import { SectionHeading } from "../section-heading";
 
 const SHOWN = 6;
 
@@ -31,15 +31,12 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
         spacing={2}
         sx={{ mb: 4, alignItems: { sm: "flex-end" }, justifyContent: "space-between" }}
       >
-        <Stack spacing={1}>
-          <SectionEyebrow>JOB LISTINGS</SectionEyebrow>
-          <Typography variant="h2">Recently found jobs.</Typography>
-          <Typography variant="body2Muted">
-            Agents run by JobPilot users found these across many job boards. Each job is listed
-            once.
-          </Typography>
-        </Stack>
-        <LinkButton href="/jobs" variant="outlined">
+        <SectionHeading
+          eyebrow="Job listings"
+          title="Recently found jobs."
+          lead="Every job a JobPilot agent finds is listed once, with links to each board it appeared on."
+        />
+        <LinkButton href="/jobs" variant="outlined" sx={{ flexShrink: 0 }}>
           Browse all jobs
         </LinkButton>
       </Stack>

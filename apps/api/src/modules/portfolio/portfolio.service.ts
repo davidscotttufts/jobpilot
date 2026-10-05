@@ -3,7 +3,12 @@ import { singleton } from "tsyringe";
 import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import type { LeaderboardResponse, LeaderboardWindow, PortfolioResponse } from "./portfolio.schema";
+import type {
+  CommunityStats,
+  LeaderboardResponse,
+  LeaderboardWindow,
+  PortfolioResponse,
+} from "./portfolio.schema";
 
 const HEATMAP_DAYS = 365;
 
@@ -119,12 +124,12 @@ export class PortfolioService {
     const username = user.username ?? "";
     const displayName = `${user.firstName} ${user.lastName}`.trim() || username;
     const location =
-      [user.city, user.state].filter(Boolean).join(", ") || content?.basics.location || null;
+      [user.city?.trim(), user.state?.trim()].filter(Boolean).join(", ") ||
+      content?.basics.location ||
+      null;
 
     const cutoff = startOfDay(new Date()).getTime() - 29 * DAY_MS;
-    const activityLast30 = perDay
-      .filter((p) => p.date.getTime() >= cutoff)
-      .reduce((n, p) => n + p.count, 0);
+    const applicationsLast30 = appliedDates.filter((a) => a.appliedAt.getTime() >= cutoff).length;
     const streaks = this.streaks(perDay);
 
     return {
@@ -147,11 +152,21 @@ export class PortfolioService {
         applications: applicationTotal,
         interviews,
         messagesSent: messageTotal,
-        activityLast30,
+        applicationsLast30,
         currentStreak: streaks.current,
         longestStreak: streaks.longest,
       },
     };
+  }
+
+  /** Rides the month leaderboard's cache, which already scans every active user. */
+  async community(): Promise<CommunityStats> {
+    const month = await this.leaderboard("month");
+    const since = new Date(startOfDay(new Date()).getTime() - (WINDOW_DAYS.month - 1) * DAY_MS);
+    const applications = await this.prisma.application.count({
+      where: { appliedAt: { gte: since } },
+    });
+    return { applications, activeUsers: month.totalActive };
   }
 
   async leaderboard(window: LeaderboardWindow = "month"): Promise<LeaderboardResponse> {

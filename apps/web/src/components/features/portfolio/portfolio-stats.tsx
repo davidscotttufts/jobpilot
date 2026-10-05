@@ -20,7 +20,7 @@ export function PortfolioStatsRow(props: PortfolioStatsRowProps): ReactElement {
     {
       label: "Applications",
       value: stats.applications,
-      hint: `${stats.activityLast30} in the last 30 days`,
+      hint: `${stats.applicationsLast30} in the last 30 days`,
     },
     { label: "Interviewing", value: stats.interviews, accent: "warning" },
     { label: "Messages sent", value: stats.messagesSent },

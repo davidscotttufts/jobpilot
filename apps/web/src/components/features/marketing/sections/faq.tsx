@@ -1,7 +1,4 @@
-"use client";
-
 import type { ReactElement } from "react";
-import { ExpandMore } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -11,32 +8,30 @@ import {
   Typography,
 } from "@mui/material";
 import { Section } from "../section";
+import { SectionHeading } from "../section-heading";
 import { FAQ_ITEMS } from "./faq-items";
 
 export function Faq(): ReactElement {
   return (
     <Section maxWidth="md">
-      <Stack spacing={1} sx={{ mb: 4 }}>
-        <Typography variant="h2">Common questions</Typography>
-        <Typography variant="body2Muted">
-          See the <Link href="/docs/faq">full FAQ</Link> for more.
-        </Typography>
-      </Stack>
-      <Stack spacing={1}>
+      <SectionHeading
+        title="Common questions"
+        lead={
+          <>
+            See the <Link href="/docs/faq">full FAQ</Link> for more.
+          </>
+        }
+      />
+      <Stack spacing={1} sx={{ mt: 4 }}>
         {FAQ_ITEMS.map((item) => (
-          <Accordion
-            key={item.q}
-            sx={(theme) => ({
-              backgroundColor: theme.palette.surfaces.card,
-              transition: theme.motion.fast,
-              "&:hover": { borderColor: theme.palette.line.borderHi },
-            })}
-          >
-            <AccordionSummary expandIcon={<ExpandMore fontSize="sm" />}>
-              <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{item.q}</Typography>
+          <Accordion key={item.q}>
+            <AccordionSummary>
+              <Typography variant="h5" component="h3">
+                {item.q}
+              </Typography>
             </AccordionSummary>
             <AccordionDetails sx={{ pt: 0 }}>
-              <Typography variant="body2Muted">{item.a}</Typography>
+              <Typography variant="body1Muted">{item.a}</Typography>
             </AccordionDetails>
           </Accordion>
         ))}

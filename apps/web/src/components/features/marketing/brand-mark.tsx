@@ -32,7 +32,7 @@ export function BrandMark(props: BrandMarkProps): ReactElement {
     >
       <JobPilotMark size={32} />
       {!iconOnly && (
-        <Typography variant="h3" sx={{ fontSize: "1.1rem", letterSpacing: "-0.01em" }}>
+        <Typography variant="h4" component="span">
           JobPilot
         </Typography>
       )}

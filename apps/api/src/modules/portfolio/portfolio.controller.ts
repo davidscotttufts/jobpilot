@@ -4,6 +4,7 @@ import { container } from "@/common/di/container";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
 import {
+  communityStatsSchema,
   leaderboardQuerySchema,
   leaderboardResponseSchema,
   portfolioSchema,
@@ -18,9 +19,7 @@ export const publicPortfolioController = new Elysia({
   prefix: "/public/portfolio",
   detail: { tags: ["Portfolio"] },
 })
-  // Scoped once, so a route added later cannot forget it.
   .guard({ beforeHandle: rateLimit(RATE_LIMITS.publicPortfolio) })
-  // Literal routes declared before /:username so they win the match.
   .get("/leaderboard", ({ query }) => svc.leaderboard(query.window), {
     query: leaderboardQuerySchema,
     response: leaderboardResponseSchema,
@@ -28,6 +27,14 @@ export const publicPortfolioController = new Elysia({
       summary: "Trending users leaderboard",
       description:
         "Ranks users by activity (applications + networking messages) over the requested window (week/month/all), capped at 50 rows. `totalActive` counts everyone active in the window, before the cap. Unauthenticated.",
+    },
+  })
+  .get("/community", () => svc.community(), {
+    response: communityStatsSchema,
+    detail: {
+      summary: "Community activity totals",
+      description:
+        "Applications sent and people active across all users over the last 30 days, for the landing page. Cached for five minutes. Unauthenticated.",
     },
   })
   .get("/sitemap", () => svc.sitemap(), {

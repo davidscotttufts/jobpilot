@@ -88,6 +88,14 @@ export const paperOverrides: Components<Theme>["MuiPaper"] = {
         borderRadius: theme.radii.md,
       }),
     },
+    {
+      props: { variant: "inset" },
+      style: ({ theme }) => ({
+        border: `1px solid ${theme.palette.line.divider}`,
+        borderRadius: theme.radii.sm,
+        backgroundColor: theme.palette.surfaces.elevated,
+      }),
+    },
   ],
 };
 
@@ -117,6 +125,10 @@ export const typographyOverrides: Components<Theme>["MuiTypography"] = {
       overlineMuted: "span",
       body1Strong: "p",
       body2Strong: "p",
+      lead: "p",
+      eyebrow: "p",
+      monoBody: "p",
+      monoCaption: "span",
       displayLg: "h1",
       displayMd: "h2",
       docsBody: "p",

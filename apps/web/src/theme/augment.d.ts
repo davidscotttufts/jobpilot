@@ -14,6 +14,10 @@ interface CustomTypographyVariants {
   statLabel: CSSProperties;
   body1Strong: CSSProperties;
   body2Strong: CSSProperties;
+  lead: CSSProperties;
+  eyebrow: CSSProperties;
+  monoBody: CSSProperties;
+  monoCaption: CSSProperties;
   displayLg: CSSProperties;
   displayMd: CSSProperties;
   docsBody: CSSProperties;
@@ -90,6 +94,8 @@ declare module "@mui/material/Paper" {
     accent: true;
     /** Bordered, radius-md surface for inline panels and framed blocks. */
     panel: true;
+    /** Recessed cell inside a panel: elevated fill, divider border, radius-sm. */
+    inset: true;
     /** Raised radius-lg frame for the landing page's showcase surfaces. */
     showcase: true;
   }

@@ -1,7 +1,6 @@
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
-import { PanelBadge, PanelFrame, panelCellSx } from "./panel-frame";
+import { Paper, Stack, Typography } from "@mui/material";
+import { PanelFrame } from "./panel-frame";
 
 const CLIENT_MARKERS = ["$40k+ spent", "92% hire rate", "4.9 rating", "payment verified"];
 
@@ -9,7 +8,7 @@ export function UpworkPanel(): ReactElement {
   return (
     <PanelFrame label="upwork">
       <Stack spacing={1.5}>
-        <Box sx={[panelCellSx, { padding: 1.5 }]}>
+        <Paper variant="inset" sx={{ padding: 1.5 }}>
           <Stack spacing={1}>
             <Typography variant="body1Strong">
               Build a Next.js dashboard for a logistics startup
@@ -17,22 +16,27 @@ export function UpworkPanel(): ReactElement {
             <Typography variant="captionMuted">Fixed price · $4,500 · Expert</Typography>
             <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
               {CLIENT_MARKERS.map((marker) => (
-                <PanelBadge key={marker} mono color="text.secondary" borderColor="line.border">
+                <Typography key={marker} variant="monoChip">
                   {marker}
-                </PanelBadge>
+                </Typography>
               ))}
             </Stack>
           </Stack>
-        </Box>
+        </Paper>
+        <Paper variant="inset" sx={{ padding: 1.5 }}>
+          <Stack spacing={0.75}>
+            <Typography variant="overlineMuted">Proposal draft</Typography>
+            <Typography variant="body2Muted">
+              Hi Dana - I've shipped three Next.js dashboards for logistics teams, most recently a
+              live fleet tracker with 2,000 vehicles. Here is how I'd approach yours...
+            </Typography>
+          </Stack>
+        </Paper>
         <Stack spacing={0.5}>
-          <Typography
-            sx={{ fontFamily: fontFamilies.mono, fontSize: "0.6875rem", color: "text.disabled" }}
-          >
+          <Typography variant="monoCaption" color="text.disabled">
             ✕ 14 jobs dropped · low hire rate, no spend history
           </Typography>
-          <Typography
-            sx={{ fontFamily: fontFamilies.mono, fontSize: "0.6875rem", color: "success.main" }}
-          >
+          <Typography variant="monoCaption" color="success.main">
             ✓ proposal drafted · awaiting your review
           </Typography>
         </Stack>

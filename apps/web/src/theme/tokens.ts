@@ -11,6 +11,13 @@ export const gradients = {
   orb: `conic-gradient(from 200deg, ${accent.primary}, ${feedback.warning}, ${accent.secondary}, ${accent.primary})`,
 } as const;
 
+/** Soft radial light behind marketing surfaces, keyed by where it is anchored. */
+export const glows = {
+  top: `radial-gradient(ellipse 80% 60% at 50% -10%, ${alpha(accent.primary, 0.09)}, transparent 60%)`,
+  corner: `radial-gradient(ellipse 45% 90% at 10% -15%, ${alpha(accent.primary, 0.2)}, transparent 50%)`,
+  center: `radial-gradient(ellipse 60% 60% at 50% 50%, ${alpha(accent.primary, 0.08)}, transparent 70%)`,
+} as const;
+
 export const tints = {
   selected: alpha(accent.primary, 0.16),
   selectedHover: alpha(accent.primary, 0.24),
@@ -24,6 +31,8 @@ export const motion = {
 
 export const shadows = {
   sm: "none",
+  // Top-edge highlight so panels read as lit surfaces, not flat rectangles.
+  highlight: "inset 0 1px 0 rgba(255,255,255,0.04)",
   md: "0 4px 14px rgba(0,0,0,0.45), 0 0 0 0.5px rgba(255,255,255,0.04)",
   lg: "0 18px 36px -10px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.05)",
   focus: `0 0 0 2px ${alpha(accent.primary, 0.5)}`,

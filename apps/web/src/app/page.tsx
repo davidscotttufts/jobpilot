@@ -2,20 +2,18 @@ import type { ReactElement } from "react";
 import { Box } from "@mui/material";
 import type { Metadata } from "next";
 import {
-  BoardStrip,
-  CampaignTypes,
   CtaBand,
   FAQ_ITEMS,
   Faq,
   Hero,
-  HowItWorks,
   LiveJobsStrip,
   MarketingFooter,
   MarketingNav,
   Pilot,
-  PrivacyGrid,
   ProductTour,
+  ProofStrip,
   Teaser,
+  Trust,
 } from "@/components/features/marketing";
 import { JsonLd } from "@/components/seo/json-ld";
 import { faqPageLd, organizationLd, softwareApplicationLd, websiteLd } from "@/lib/structured-data";
@@ -42,14 +40,12 @@ export default function LandingPage(): ReactElement {
       <MarketingNav />
       <Box component="main">
         <Hero />
+        <ProofStrip />
         <Teaser />
         <Pilot />
-        <BoardStrip />
-        <CampaignTypes />
         <ProductTour />
-        <PrivacyGrid />
+        <Trust />
         <LiveJobsStrip />
-        <HowItWorks />
         <Faq />
         <CtaBand />
       </Box>

@@ -162,6 +162,34 @@ export const typography: TypographyVariantsOptions = {
     lineHeight: 1.5,
     fontWeight: 600,
   },
+  /** Marketing intro paragraph under a section heading. */
+  lead: {
+    fontFamily: fontFamilies.body,
+    fontSize: "clamp(0.875rem, 0.8rem + 0.3vw, 1rem)",
+    lineHeight: 1.65,
+    color: textColors.secondary,
+  },
+  /** Mono kicker above a marketing heading. Callers pick the color. */
+  eyebrow: {
+    fontFamily: fontFamilies.mono,
+    fontSize: "0.75rem",
+    lineHeight: 1.4,
+    letterSpacing: "0.18em",
+    textTransform: "uppercase",
+  },
+  /** Terminal output and command lines. */
+  monoBody: {
+    fontFamily: fontFamilies.mono,
+    fontSize: "0.8125rem",
+    lineHeight: 1.6,
+  },
+  /** Window titles, footnotes, inline snippets. */
+  monoCaption: {
+    fontFamily: fontFamilies.mono,
+    fontSize: "0.6875rem",
+    lineHeight: 1.5,
+    color: textColors.secondary,
+  },
   displayLg: {
     fontFamily: fontFamilies.display,
     fontStretch: displayStretch,

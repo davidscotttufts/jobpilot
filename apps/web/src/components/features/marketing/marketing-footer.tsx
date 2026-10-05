@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { Box, Container, Grid, Link, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
-import { fontFamilies } from "@/theme";
 import { BrandMark } from "./brand-mark";
 import { marketingLinkSx } from "./marketing-link-sx";
 
@@ -65,13 +64,7 @@ export function MarketingFooter(): ReactElement {
               <Typography variant="captionMuted">
                 An AI agent that applies to jobs for you.
               </Typography>
-              <Typography
-                sx={{
-                  fontFamily: fontFamilies.mono,
-                  fontSize: "0.6875rem",
-                  color: "text.disabled",
-                }}
-              >
+              <Typography variant="monoCaption" color="text.disabled">
                 © 2026 Sukhrob Ilyosbekov
               </Typography>
             </Stack>
