@@ -1,0 +1,24 @@
+{
+  "name": "teaser-edit",
+  "private": true,
+  "type": "module",
+  "description": "Copy into a scratch directory (never the project), npm install, then grow src/Teaser.tsx.",
+  "scripts": {
+    "synth": "node audio/synth.mjs public/audio",
+    "studio": "remotion studio src/index.ts",
+    "still": "remotion still src/index.ts Teaser out/still.png",
+    "render": "remotion render src/index.ts Teaser out/teaser.mp4 --codec=h264 --crf=16 --audio-codec=aac --audio-bitrate=192k",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.532",
+    "@remotion/google-fonts": "^4.0.532",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.532"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

@@ -4,19 +4,10 @@
 //   node login.js [/login]
 //
 // Sessions expire (often ~1 day) - re-run when takes start bouncing to /login.
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { AUTH_PATHS, BASE } from "./cam.js";
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const BASE = process.env.TEASER_BASE_URL || "http://localhost:3000";
-const STATE = process.env.TEASER_STATE || path.join(HERE, "storageState.json");
-
-// Paths that mean "not signed in yet". Adjust per app.
-const AUTH_PATHS = /\/(login|register|signin|sign-in|forgot-password|reset-password)/;
-
-// UI preferences worth pinning so every take looks identical. Adjust per app.
-const UI_PREFS = {};
+const STATE = "storageState.json";
 
 async function main() {
   const loginPath = process.argv[2] || "/login";
@@ -31,12 +22,6 @@ async function main() {
     { timeout: 10 * 60 * 1000 },
   );
   await page.waitForLoadState("networkidle").catch(() => {});
-
-  if (Object.keys(UI_PREFS).length > 0) {
-    await page.evaluate((prefs) => {
-      for (const [k, v] of Object.entries(prefs)) localStorage.setItem(k, v);
-    }, UI_PREFS);
-  }
 
   await context.storageState({ path: STATE });
   console.log("saved:", STATE, "| landed on:", page.url());

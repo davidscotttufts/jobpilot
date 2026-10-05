@@ -1,190 +1,164 @@
 ---
 name: teaser-video
-description: Film, cut, and deliver a short teaser/demo video of any app by driving it with Playwright and editing with ffmpeg - storyboard, authenticated capture, PII review, animated title cards, MP4 + GIF. Use for "make a teaser", "record a demo video", "product launch video", "screen recording for the README".
+description: Film, edit, and deliver a launch-quality teaser of any web app - real footage captured at 2x with Playwright + CDP (and Windows Graphics Capture for external windows such as an agent's browser), edited in Remotion with a virtual camera, motion graphics, kinetic type, and a synthesized license-free soundtrack. Use for "make a teaser", "record a demo video", "product launch video", "screen recording for the README".
 user-invocable: true
-version: 1.0.0
-updated: 2026-08-01
-portable: true
-requires:
-  - node >=24
-  - npm packages (installed into a scratch dir, not the project): playwright, ffmpeg-static, pngjs
-  - a Chromium/Chrome channel available to Playwright
-files:
-  - SKILL.md
-  - reference/package.json
-  - reference/login.js
-  - reference/scout.js
-  - reference/rig.js
-  - reference/build.js
-  - reference/cards.js
-  - reference/jitter.js
+compatibility: Node 24+, ffmpeg 8+ on PATH (gfxcapture + h264_nvenc on Windows; swap `ENCODER` in cam.js elsewhere), and a Chrome channel for Playwright. npm packages come from reference/capture and reference/edit package.json, installed in a scratch dir, never the project.
+metadata:
+  version: "1.1"
+  updated: "2026-10-04"
+  portable: "true"
 ---
 
 # Teaser video
 
-Produce a launch-quality teaser (~30-45s) of a running app: storyboard it, film
-it by driving the real UI, cut it with ffmpeg, and hand back an MP4 plus a GIF
-for the README.
+A ~40s teaser that looks like a product film, not a screen recording. The
+difference is direction: one story, real proof, a camera that moves with
+intent, graphics that explain cause and effect, and sound cut to a beat.
 
-The output must look like a product video, not a screen recording. The
-difference is direction - staging, framing, and rhythm - not resolution.
+Pipeline: **capture** real footage (Playwright drives, CDP films at 2x) →
+**edit** in Remotion (React components rendered frame by frame) → **review**
+every frame for PII → deliver MP4 + poster + README GIF.
 
-Reference implementations live in `reference/`; they are working ESM modules,
-not pseudocode. Set up in a scratch directory - never inside the project:
+Work in a scratch directory, never in the project:
 
 ```bash
-cp -r <skill>/reference/* "$SCRATCH/" && cd "$SCRATCH" && npm install
+cp -r <skill>/reference/capture "$SCRATCH/film" && (cd "$SCRATCH/film" && npm install)
+cp -r <skill>/reference/edit "$SCRATCH/edit" && (cd "$SCRATCH/edit" && npm install && npm run synth && npm run still)
 export TEASER_BASE_URL="https://the-app.example.com"
+export TEASER_LOCAL_STORAGE='{"some:ui-pref":"value"}'   # optional UI state to pin
 ```
 
-`reference/package.json` declares `"type": "module"` and the three
-dependencies. Every script reads `TEASER_BASE_URL`, so nothing is hardcoded to
-one app.
+`npm run still` renders the starter `Teaser.tsx` (no clips needed), proving the
+toolchain works before any filming. Keep every `remotion` / `@remotion/*`
+package on the same version; mismatches fail at render time.
 
-## Before anything else: the two hard rules
+## The two hard rules
 
-**1. Never trigger real-world side effects without explicit, itemized consent.**
+**1. Real side effects need explicit, itemized consent.** Filming a real app
+clicks real buttons: applications get submitted, emails sent, accounts
+touched. Agree the scope with the user before rolling. Answer the app's own
+prompts only within that scope; anything that creates accounts, picks a
+sign-in method, or answers personal questions (tax, demographics) stays parked
+for the user. Before stopping a long-running process, let the in-flight unit of
+work finish instead of cutting it mid-way. Report every outcome, including
+failures and anything the product did on its own (password resets, etc.).
 
-Filming a real app means clicking real buttons. Some of those send email, post
-publicly, charge money, or submit forms to third parties. Before you touch the
-app:
+**2. Every frame is public.** Agree what may show (e.g. name + email) and treat
+everything else as private: phone numbers, other people's names (chat
+bubbles), security answers, tokens. Hide by framing, by masking in the edit,
+or by not filming that part of the page. Dashboards can quote secrets
+verbatim (a "failure reasons" list once showed a security-question answer) -
+read every captured screen, not just the part you meant to film.
 
-- Enumerate every action in your storyboard that leaves the machine.
-- Tell the user exactly what each one does and how many times, then get
-  agreement on the count.
-- Prefer a mode that stops short of the irreversible step (a preview, a
-  dry-run, a confirmation gate you can film and then decline).
+## 1. Scout and storyboard
 
-There is no such thing as a read-only probe against a live system. A
-"diagnostic" click that lands in an already-running session fires for real. If
-you are debugging why an action did not work, assume your next click *will*
-work, and be ready for it.
+Screenshot every candidate screen with the saved session. Write the
+storyboard on the music grid (120 BPM → 1 bar = 2s = 120 frames at 60fps):
 
-If something fires that you did not intend: stop the process at its source
-immediately (kill the session/worker, not just the UI button, which may not
-take effect), verify the stopped state by reading it back, and tell the user
-plainly in your final message - count included.
+| Beat | Length | Job |
+| --- | --- | --- |
+| Hook | 2 bars | The pain, as a pure motion graphic (no UI yet) |
+| Reveal | 1 bar | Logo on the impact |
+| Start | 4 bars | The one action the user takes |
+| Hero | 5 bars | The product doing the thing, split-screen if two surfaces |
+| Payoff | 5 bars | Results landing in the app (counters, lists, charts) |
+| Trust | 3 bars | Control and where it runs |
+| Close | 2 bars | Logo, URL, CTA |
 
-**2. Assume every frame is public and full of PII.**
+The hero is the reason the video exists. Show cause and effect: the agent acts
+in one pane, the result appears in another, and a graphic (a chip flying from
+the success state into the counter) connects them.
 
-Real accounts carry names, emails, addresses, and documents. Decide the policy
-with the user up front:
+## 2. Capture
 
-- **Frame around it** (default) - compose shots that exclude identity. Crop
-  persistent chrome (sidebars, avatars, account menus) at the ffmpeg stage.
-- **Hide before rolling** - `page.evaluate` a `visibility: hidden` on offending
-  cards *before* the camera rolls. Never film it and hope to cut around it.
-- **Use a seeded demo account** - cleanest when one exists.
+- `login.js`: headed login once, saves `storageState.json`. In Git Bash set
+  `MSYS_NO_PATHCONV=1` or path args like `/login` become Windows paths.
+- `cam.js`: choreographed takes, and the shared kit `login.js`/`live.js` build
+  on (`BASE`, `AUTH_PATHS`, `ENCODER`: swap to libx264 there without NVIDIA). `open()`, `roll()` (CDP screencast piped into
+  ffmpeg with wall-clock timestamps), `click()`/`glide()` with an injected
+  cursor, `scrollTo()`/`scrollToEl()` on the app's inner scroll container.
+- `live.js`: long unattended takes of a real run. Films the page, auto-detects
+  the agent's own Chrome window and records it with `gfxcapture` (works while
+  covered by other windows, not while minimized), and logs status changes
+  with timestamps so you can find the moments afterwards. Stop it by touching
+  `takes/<name>/STOP`.
 
-Review every frame of the final cut at full resolution before delivering. Not
-the contact sheet - the frames.
+Film at **1600x900 CSS with `--force-device-scale-factor=2`** (3200x1800
+frames). Without the flag, headless screencast silently returns 1x frames even
+with `deviceScaleFactor: 2`. 2x is what lets the edit push in on a number or a
+terminal line and stay sharp. Always check `ffprobe` width after the first take.
 
-## Workflow
+## 3. Prepare clips
 
-### 1. Scout and storyboard
+Captures are variable-frame-rate (frames only arrive on repaint) and window
+captures start at a non-zero timestamp with long gaps while nothing changes.
+Normalize every clip before Remotion sees it:
 
-Take authenticated screenshots of every candidate screen first (`reference/scout.js`).
-Look at them. Then write a storyboard table: beat, shot, what the viewer should
-*feel*, and length. A shot with no assigned job gets cut before it is filmed.
+```bash
+ffmpeg -i take.mkv -vf "setpts=PTS-STARTPTS,crop=W:H:X:Y,fps=60,format=yuv420p" -c:v libx264 -crf 14 -g 30 -an clips/x.mp4
+```
 
-Arc that works: tension (the problem) → reveal (the product) → proof (it really
-does the thing) → scale (the results) → trust (where it runs) → close.
+`crop` needs even dimensions. Map the clip with a 1-second contact sheet
+(`fps=1,scale=200:-1,tile=15x6`) and read times off it. Don't trust `-ss`
+seeks on the raw VFR capture.
 
-Note in the storyboard which screens hold PII and which are safe.
+## 4. Edit (Remotion)
 
-### 2. Stage the set
+Components in `reference/edit/src/components` (palette, fonts, `BRAND`, `alpha()`
+and `clamp` in `src/theme.ts`):
 
-Curate before rolling, never after:
+- `Shot.tsx`: `Footage` = footage seen through a virtual camera. Keyframes
+  `{f, x, y, z}` in source pixels, eased, zoom interpolated in log space,
+  clamped to the footage edge. Overlays passed as children live in source
+  pixel space and track the camera. `AppWindow` frames it as a browser.
+  There's no ffmpeg `zoompan` anywhere (it quantizes and shakes).
+- `Kinetic.tsx` / `Caption.tsx`: word-by-word rise + unblur, `*accent*`
+  spans in the brand color, a scrim so text reads over any frame.
+- `Overlays.tsx`: `Pulse` (look here), `Spotlight` (dim the rest),
+  `FlyingChip` (the result travelling between scenes), `CountUp`, `Callout`.
+- `Background.tsx`, `Logo.tsx`, `FormStack.tsx`: stage, logo sting, a sample
+  hook graphic.
+- `Sound.tsx`: music bed + SFX cues by frame.
 
-- Pick views where the data looks its best - full charts, active lists,
-  recognizable names, non-zero counts. Never film a spinner, an empty state, or
-  a half-rendered chart.
-- Set UI state deliberately (panel widths, collapsed/expanded, filters, scroll
-  position) via `localStorage` in an init script or a pre-roll `page.evaluate`.
-- Dismiss toasts, banners, and cookie bars off-camera.
-- Let data settle: `networkidle` plus a few seconds.
+Rules that made the difference:
 
-### 3. Film
+- Copy the app's palette and fonts into `theme.ts`. Use its easing curve for
+  every move.
+- Speed-ramp real footage per segment (`Sequence` + `startFrom` + `rate`):
+  compress the waiting, play the payoff near real time.
+- One camera move per shot, motivated by what changes on screen.
+- Prefer honest overlays: point at the real number and pop a "+1" instead of
+  faking a count-up over the UI.
+- Masks for PII must be on from the first frame the data renders. Find that
+  frame (`crop` + `signalstats`, or a frame stack), don't guess.
+- Render stills (`npx remotion still ... --frame=N`) at every beat and read
+  them before any full render.
 
-Use **CDP screencast** (`Page.startScreencast`), not screen recording. It
-captures the page off-screen at ~100fps, so nothing the user is doing appears in
-frame and the machine stays usable. Playwright drives; CDP films.
-`reference/rig.js` implements it.
+## 5. Sound
 
-- One subject per shot. Frame the thing, not "the whole app".
-- Camera moves come from **scripted eased scrolling inside the page**
-  (`cameraScroll`), never from a filter. See the zoompan warning below.
-- The cursor is an actor: use the injected SVG cursor (`cursorClick`) that
-  glides with easing and dips on press, or hide it. No idle drift.
-- Rehearse each take, extract frames, look at them, adjust, then film for real.
+`audio/synth.mjs` renders the music bed and SFX from oscillators and noise, so
+everything is license-free by construction. Structure follows the storyboard
+bars: ticking intro, riser into an impact on the reveal, groove under the
+product, adds an arp for the payoff, breakdown for trust, final impact. Mix
+with separate drum/tonal stems, kick sidechain, and a limiter, then check
+`ebur128` loudness (aim around -14 LUFS) and the waveform. You can't listen
+to it, so say so and invite the user to swap in a track (cuts sit on the bar
+grid, so any 120 BPM track drops in).
 
-**Filming an external window** (a browser the app itself opens, a desktop app)
-needs OS capture - `gdigrab`/`x11grab`/`avfoundation` (`recordDesktop` in the
-rig). This captures *everything on screen*, including the user's own work. Warn
-the user, ask them to step away, and review the result frame by frame; delete it
-if it caught anything private.
+The video must also work muted: captions carry the story.
 
-### 4. Title cards
+## 6. Review and deliver
 
-Animated HTML/CSS filmed in-browser, not static images. Inject the card markup
-into a blank page **on the app's own origin** so its web fonts and palette
-resolve, then screencast it. Pull the real display font off the live page
-(`getComputedStyle`) and pin a known-good mono stack rather than sniffing one.
+- Render: `npm run render` (h264 + AAC into `out/teaser.mp4`).
+- Full-resolution frames at 2fps for the PII read, plus a contact sheet.
+- Poster: a frame that explains the product without motion (usually the hero
+  split).
+- README GIF: GitHub won't inline a committed MP4. Encode from the clean MP4,
+  aim for 3-4 MB. Bayer dither + `diff_mode=rectangle` keeps static UI identical
+  between frames; error-diffusion dither on moving footage bloats the file:
+  `ffmpeg -i out/teaser.mp4 -vf "fps=10,scale=720:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" teaser.gif`
+- Update any page copy that states the duration or "no sound".
 
-Match the app's motion language (its own easing curves and durations). Load the
-`frontend-design` skill before designing them if the project has no established
-card style.
-
-### 5. Cut
-
-`reference/build.js` normalizes each segment to a common size/fps, then
-crossfades the chain. Keep cuts every ~2.5-4s. Give the payoff moment room at
-normal speed while compressing the routine around it.
-
-### 6. Review, then deliver
-
-- Generate a contact sheet **and** per-second full-resolution frames.
-- Read the frames for PII, clipped panels, and unreadable text.
-- Verify duration and dimensions with a probe.
-- Deliver an MP4 plus, for READMEs, a palette-optimized GIF (GitHub will not
-  inline-play a committed MP4). Keep the GIF under ~10 MB.
-- Leave it silent unless asked; you cannot license music. Say so.
-
-## Hard-won specifics
-
-**Never use `zoompan` for push-ins.** It recomputes zoom per frame and rounds
-the crop window to whole pixels, so the image snaps back and forth - it reads as
-an earthquake. Use locked-off shots plus real in-page scrolling. If you must
-have a push-in, pre-scale the source 4x first, and verify with a frame-delta
-measurement (`reference/jitter.js`): a locked-off static shot should measure
-well under 1.0 mean delta; visible shake reads 3+.
-
-**Screencast stops emitting frames when animation settles.** A card whose
-animation ends after 1.2s yields a 1.2s clip. Pad with
-`tpad=stop_mode=clone:stop_duration=N` and cut to the length you want with `-t`.
-
-**Assemble timestamped frames, not a fixed rate.** Screencast frames arrive with
-`metadata.timestamp`; write an ffmpeg concat list with real per-frame durations,
-then resample to constant 60fps. Assuming a fixed interval produces judder.
-
-**`ffmpeg-static` as a dev dependency**, resolved by module path. Never depend on
-ffmpeg being on PATH. (`ffprobe` is *not* in that package - parse `ffmpeg -i`
-stderr instead.)
-
-**Authenticated capture:** log in once headed, save `storageState`, reuse it
-across every take (`reference/login.js`). Sessions expire - finish filming the
-same day or re-run it. Also seed any `localStorage` UI preferences there.
-
-**Localhost from a deployed origin is blocked** by Chrome's local-network access
-policy. If the page must reach a local service, launch with
-`--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessChecks,BlockInsecurePrivateNetworkRequests`.
-
-**Crop persistent chrome at a fixed offset.** Film at viewport width
-`1920 + railWidth`, then `crop=1920:1080:railWidth:0` to drop the sidebar and
-land exactly on 1080p.
-
-## Deliverables
-
-Report the path, duration, and dimensions; state plainly what is still needed
-from the user (music, a GitHub-native video upload); and disclose anything that
-happened during filming that they would want to know.
+Report the outputs, what really happened during filming (applications sent,
+failures, items left for the user), and what still needs a human (listening to
+the mix).

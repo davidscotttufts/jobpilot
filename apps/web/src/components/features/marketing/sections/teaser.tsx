@@ -11,7 +11,7 @@ import { SectionGlow } from "../section-glow";
 const POSTER = "/teaser-poster.jpg";
 const SOURCE = "/teaser.mp4";
 
-/** Poster + `preload="none"`: the 3 MB cut costs nothing until a visitor asks for it. */
+/** Poster + `preload="none"`: the 9 MB cut costs nothing until a visitor asks for it. */
 export function Teaser(): ReactElement {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
@@ -27,8 +27,8 @@ export function Teaser(): ReactElement {
         <SectionEyebrow color="accent.primary">SEE IT RUN</SectionEyebrow>
         <Typography variant="h2">Watch the agent apply to a job.</Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-          A 40-second recording of a real run: the agent finds a job, fills in the application, and
-          the dashboard updates.
+          A real Pilot run, start to finish. You press start, the agent applies to a job on
+          LinkedIn, and the application shows up on your dashboard.
         </Typography>
       </Stack>
 
@@ -95,7 +95,7 @@ export function Teaser(): ReactElement {
                   backgroundColor: alpha(surfaces.base, 0.7),
                 }}
               >
-                40s · no sound
+                Sound on
               </Typography>
             </Box>
           )}
