@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Box, Container, Grid, Stack, Typography } from "@mui/material";
+import { Box, Grid, Stack, Typography } from "@mui/material";
 import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 
@@ -25,8 +25,9 @@ interface Stat {
 }
 
 /**
- * Live totals over the board list. A failed fetch drops only the numbers it would have filled -
- * a decorative strip must never 500 the landing page. Cached so it renders inside the prerender.
+ * Live totals over the board list, shown under the demo video. A failed fetch drops only the
+ * numbers it would have filled - a decorative strip must never 500 the landing page. Cached so it
+ * renders inside the prerender.
  */
 export async function ProofStrip(): Promise<ReactElement> {
   "use cache";
@@ -35,45 +36,48 @@ export async function ProofStrip(): Promise<ReactElement> {
   const stats = await loadStats();
 
   return (
-    <Box
-      component="section"
+    <Stack
+      spacing={{ xs: 3, md: 4 }}
       aria-label="JobPilot in numbers"
-      sx={{ borderBlock: 1, borderColor: "line.divider", backgroundColor: "surfaces.card" }}
+      sx={{ mt: { xs: 5, md: 7 } }}
     >
-      <Container maxWidth="lg" sx={{ paddingBlock: { xs: 4, md: 5 } }}>
-        <Stack spacing={{ xs: 3, md: 4 }}>
-          <Grid container spacing={3} sx={{ justifyContent: "center" }}>
-            {stats.map((stat) => (
-              <Grid key={stat.label} size={{ xs: 6, md: 3 }} sx={{ textAlign: "center" }}>
-                <Typography variant="statValue" component="p">
-                  {stat.value}
-                </Typography>
-                <Typography variant="statLabel" component="p" sx={{ mt: 1 }}>
-                  {stat.label}
-                </Typography>
-              </Grid>
-            ))}
-          </Grid>
-          <Box
-            component="ul"
-            sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 1, m: 0, p: 0 }}
+      <Grid container rowSpacing={3} sx={{ justifyContent: "center" }}>
+        {stats.map((stat) => (
+          <Grid
+            key={stat.label}
+            size={{ xs: 6, md: 3 }}
+            sx={{
+              textAlign: "center",
+              "& + &": { borderLeft: { md: 1 }, borderColor: "line.divider" },
+            }}
           >
-            {BOARDS.map((board) => (
-              <Typography key={board} component="li" variant="monoChip" sx={{ listStyle: "none" }}>
-                {board}
-              </Typography>
-            ))}
-            <Typography
-              component="li"
-              variant="monoChip"
-              sx={{ listStyle: "none", color: "primary.main", borderStyle: "dashed" }}
-            >
-              + any site you add
+            <Typography variant="statValue" component="p">
+              {stat.value}
             </Typography>
-          </Box>
-        </Stack>
-      </Container>
-    </Box>
+            <Typography variant="statLabel" component="p" sx={{ mt: 1 }}>
+              {stat.label}
+            </Typography>
+          </Grid>
+        ))}
+      </Grid>
+      <Box
+        component="ul"
+        sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 1, m: 0, p: 0 }}
+      >
+        {BOARDS.map((board) => (
+          <Typography key={board} component="li" variant="monoChip" sx={{ listStyle: "none" }}>
+            {board}
+          </Typography>
+        ))}
+        <Typography
+          component="li"
+          variant="monoChip"
+          sx={{ listStyle: "none", color: "primary.main", borderStyle: "dashed" }}
+        >
+          + any site you add
+        </Typography>
+      </Box>
+    </Stack>
   );
 }
 

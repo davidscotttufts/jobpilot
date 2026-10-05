@@ -40,8 +40,7 @@ export default function LandingPage(): ReactElement {
       <MarketingNav />
       <Box component="main">
         <Hero />
-        <ProofStrip />
-        <Teaser />
+        <Teaser footer={<ProofStrip />} />
         <Pilot />
         <ProductTour />
         <Trust />

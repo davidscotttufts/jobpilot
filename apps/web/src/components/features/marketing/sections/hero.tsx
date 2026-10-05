@@ -16,8 +16,9 @@ export function Hero(): ReactElement {
         maxWidth="lg"
         sx={{
           position: "relative",
-          paddingTop: { xs: 6, md: 11 },
-          paddingBottom: { xs: 6, md: 9 },
+          paddingTop: { xs: 6, md: 10 },
+          // Light bottom padding: the hero runs into the demo video rather than sitting a section apart.
+          paddingBottom: { xs: 3, md: 4 },
         }}
       >
         <Grid container spacing={{ xs: 5, md: 8 }} sx={{ alignItems: "center" }}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactElement, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useRef, useState } from "react";
 import { PlayArrow } from "@mui/icons-material";
 import { alpha, Box, Card, IconButton, Typography } from "@mui/material";
 import { accent, motion, surfaces } from "@/theme";
@@ -13,8 +13,14 @@ const SOURCE = "/teaser.mp4";
 // The poster is a busy UI screenshot; the play button needs a strong scrim.
 const scrim = `radial-gradient(ellipse 45% 55% at 50% 50%, ${alpha(surfaces.base, 0.72)}, ${alpha(surfaces.base, 0.5)} 70%)`;
 
+interface TeaserProps {
+  /** Rendered under the caption - the server-fetched proof strip. */
+  footer: ReactNode;
+}
+
 /** Poster + `preload="none"`: the 9 MB cut costs nothing until a visitor asks for it. */
-export function Teaser(): ReactElement {
+export function Teaser(props: TeaserProps): ReactElement {
+  const { footer } = props;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
 
@@ -81,6 +87,7 @@ export function Teaser(): ReactElement {
         A real Pilot run, start to finish: it applies to a job on LinkedIn and the application shows
         up on your dashboard. Sound on.
       </Typography>
+      {footer}
     </Section>
   );
 }
