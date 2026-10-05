@@ -83,23 +83,16 @@ export async function ProofStrip(): Promise<ReactElement> {
 }
 
 async function loadStats(): Promise<Stat[]> {
-  const [jobs, community] = await Promise.all([
-    api.public.jobs.get({ query: { page: 1, limit: 1 } }).catch(() => null),
-    api.public.portfolio.community.get().catch(() => null),
-  ]);
+  const { data } = await api.public.stats.get().catch(() => ({ data: null }));
+  if (!data) {
+    return [];
+  }
 
-  const stats: Stat[] = [];
-  const jobTotal = jobs?.data?.pagination.total;
-  if (jobTotal) {
-    stats.push({ value: numberFormat.format(jobTotal), label: "Jobs found by agents" });
-  }
-  const applications = community?.data?.applications;
-  if (applications) {
-    stats.push({ value: numberFormat.format(applications), label: "Applications this month" });
-  }
-  const activeUsers = community?.data?.activeUsers;
-  if (activeUsers) {
-    stats.push({ value: numberFormat.format(activeUsers), label: "People applying this month" });
-  }
-  return stats;
+  return [
+    { value: data.jobListings, label: "Jobs found by agents" },
+    { value: data.applicationsLast30Days, label: "Applications this month" },
+    { value: data.activeUsersLast30Days, label: "People applying this month" },
+  ]
+    .filter((stat) => stat.value > 0)
+    .map((stat) => ({ value: numberFormat.format(stat.value), label: stat.label }));
 }

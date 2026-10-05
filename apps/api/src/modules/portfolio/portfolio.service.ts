@@ -3,12 +3,7 @@ import { singleton } from "tsyringe";
 import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import type {
-  CommunityStats,
-  LeaderboardResponse,
-  LeaderboardWindow,
-  PortfolioResponse,
-} from "./portfolio.schema";
+import type { LeaderboardResponse, LeaderboardWindow, PortfolioResponse } from "./portfolio.schema";
 
 const HEATMAP_DAYS = 365;
 
@@ -157,16 +152,6 @@ export class PortfolioService {
         longestStreak: streaks.longest,
       },
     };
-  }
-
-  /** Rides the month leaderboard's cache, which already scans every active user. */
-  async community(): Promise<CommunityStats> {
-    const month = await this.leaderboard("month");
-    const since = new Date(startOfDay(new Date()).getTime() - (WINDOW_DAYS.month - 1) * DAY_MS);
-    const applications = await this.prisma.application.count({
-      where: { appliedAt: { gte: since } },
-    });
-    return { applications, activeUsers: month.totalActive };
   }
 
   async leaderboard(window: LeaderboardWindow = "month"): Promise<LeaderboardResponse> {

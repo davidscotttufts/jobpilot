@@ -59,12 +59,6 @@ export const leaderboardResponseSchema = z.object({
   rows: z.array(leaderboardRowSchema),
 });
 
-/** Totals across every user for the last 30 days - no per-user data. */
-export const communityStatsSchema = z.object({
-  applications: z.number().int(),
-  activeUsers: z.number().int(),
-});
-
 export const portfolioSitemapSchema = z.array(
   z.object({
     username: z.string(),
@@ -75,4 +69,3 @@ export const portfolioSitemapSchema = z.array(
 export type PortfolioResponse = z.infer<typeof portfolioSchema>;
 export type LeaderboardWindow = z.infer<typeof leaderboardWindowSchema>;
 export type LeaderboardResponse = z.infer<typeof leaderboardResponseSchema>;
-export type CommunityStats = z.infer<typeof communityStatsSchema>;

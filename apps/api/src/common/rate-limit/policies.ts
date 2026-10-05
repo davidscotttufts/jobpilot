@@ -69,6 +69,9 @@ export const RATE_LIMITS = {
   /** Public portfolio + leaderboard pages, crawlable. Same shape as publicJobs: a scraper brake. */
   publicPortfolio: { key: byIp, limit: 1800, windowMs: HOUR, burst: 120 },
 
+  /** Landing-page totals. Cached server-side, so this only caps a script hammering it. */
+  publicStats: { key: byIp, limit: 600, windowMs: HOUR, burst: 30 },
+
   /** Burns the *user's own* solver credits (captcha.service.ts decrypts their key), so this is a
    *  runaway-agent guardrail, not an anti-abuse wall. burst 5 covers a page with several challenges.
    *  `maxInFlight` because a rate cap alone still lets several two-minute solves pile up on sockets. */

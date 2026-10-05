@@ -40,6 +40,7 @@ import { pushController } from "@/modules/push/push.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
 import { scoringController } from "@/modules/scoring/scoring.controller";
+import { publicStatsController } from "@/modules/stats/stats.controller";
 import { upworkController } from "@/modules/upwork/upwork.controller";
 import { userController } from "@/modules/user/user.controller";
 import { workspaceController } from "@/modules/workspace/workspace.controller";
@@ -74,6 +75,7 @@ const app = new Elysia()
       .use(publicResumeController)
       .use(publicJobListingController)
       .use(publicPortfolioController)
+      .use(publicStatsController)
       .use(coverLetterController)
       .use(applicationController)
       .use(scoringController)

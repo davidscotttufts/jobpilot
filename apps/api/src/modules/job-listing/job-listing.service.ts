@@ -1,4 +1,4 @@
-import {
+﻿import {
   type AdminJobListingQuery,
   JOB_LISTING_POSTED_WITHIN,
   type JobListingQuery,
@@ -7,6 +7,7 @@ import {
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { singleton } from "tsyringe";
 import { notFound } from "@/common/errors";
+import { TtlCache } from "@/common/ttl-cache";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type BoardNameLookup, boardNameLookup, distinctBoardNames } from "./board-names";
 import { inRankedOrder } from "./similar-jobs";
@@ -16,7 +17,6 @@ import {
   type SkillCountRow,
   type SkillVocabulary,
 } from "./skill-facets";
-import { TtlCache } from "./ttl-cache";
 
 /** Selected explicitly, not spread: a user column added to the table later must not leak out here. */
 const SUMMARY_SELECT = {
