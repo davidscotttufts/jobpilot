@@ -32,10 +32,11 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
         sx={{ mb: 4, alignItems: { sm: "flex-end" }, justifyContent: "space-between" }}
       >
         <Stack spacing={1}>
-          <SectionEyebrow>LIVE JOB INDEX</SectionEyebrow>
-          <Typography variant="h2">Jobs the agents found this week.</Typography>
+          <SectionEyebrow>JOB LISTINGS</SectionEyebrow>
+          <Typography variant="h2">Recently found jobs.</Typography>
           <Typography variant="body2Muted">
-            The agents found these across every board and deduped them into one listing each.
+            Agents run by JobPilot users found these across many job boards. Each job is listed
+            once.
           </Typography>
         </Stack>
         <LinkButton href="/jobs" variant="outlined">

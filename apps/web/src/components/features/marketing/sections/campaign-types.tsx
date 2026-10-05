@@ -17,28 +17,28 @@ const MODES: Mode[] = [
   {
     tag: "search",
     title: "Search",
-    body: "Find and score roles against your resume across every board.",
+    body: "Find jobs and score them against your resume. You pick which ones to apply to.",
     action: "New campaign → Search only",
     tone: "info",
   },
   {
     tag: "auto-apply",
     title: "Auto-apply",
-    body: "Let the agent apply to your high-match roles on its own.",
+    body: "The agent applies to your best matches by itself, up to a limit you set.",
     action: "New campaign → Auto-apply",
     tone: "accent",
   },
   {
     tag: "apply",
     title: "Apply",
-    body: "Paste job links and the agent applies one by one, tailored each time.",
+    body: "Paste links to jobs you found. The agent applies to each one with a tailored resume.",
     action: "New campaign → Apply to links",
     tone: "success",
   },
   {
     tag: "networking",
     title: "Networking",
-    body: "Find the hiring manager and message them by email or LinkedIn.",
+    body: "Find the hiring manager and draft a message to them by email or LinkedIn.",
     action: "New campaign → Networking",
     tone: "warning",
   },
@@ -51,11 +51,11 @@ export function CampaignTypes(): ReactElement {
   return (
     <Section>
       <Stack spacing={1.5} sx={{ mb: 4, maxWidth: 620 }}>
-        <SectionEyebrow>HANDS-ON MODES</SectionEyebrow>
-        <Typography variant="h2">Four modes for driving it yourself.</Typography>
+        <SectionEyebrow>CAMPAIGNS</SectionEyebrow>
+        <Typography variant="h2">Or run each step yourself.</Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-          The Pilot runs all of these for you. Reach for them yourself when you want to steer a
-          single search, application, or message.
+          The Pilot does all of this for you. Use campaigns when you want to handle one search, a
+          list of applications, or a round of messages yourself.
         </Typography>
       </Stack>
       <Grid container spacing={2}>
@@ -120,8 +120,8 @@ export function CampaignTypes(): ReactElement {
         })}
       </Grid>
       <Typography variant="body2Muted" sx={{ mt: 3 }}>
-        Each one starts from a button in the dashboard and runs in the agent dock.{" "}
-        <Link href="/docs/campaigns-and-skills">See the docs</Link>.
+        You start each one from the dashboard and can watch the agent work.{" "}
+        <Link href="/docs/campaigns-and-skills">How campaigns work</Link>.
       </Typography>
     </Section>
   );

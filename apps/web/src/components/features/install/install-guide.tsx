@@ -61,8 +61,8 @@ export function InstallGuide(): ReactElement {
         </Tabs>
         <Typography variant="body2Muted">
           {provider === "claude"
-            ? "Run these in any Claude Code session: the CLI, the desktop app, or the VS Code extension."
-            : "Run these in a shell where the Codex CLI is installed."}
+            ? "Run these in Claude Code. The terminal, desktop app, and VS Code extension all work."
+            : "Run these in a terminal where the Codex CLI is installed."}
         </Typography>
         <Stack spacing={1}>
           {PLUGIN_COMMANDS[provider].map((command) => (
@@ -79,8 +79,8 @@ export function InstallGuide(): ReactElement {
       <InstallStep number={2} title="Run setup">
         <Typography variant="body2Muted">
           {provider === "claude"
-            ? "In the same Claude Code session, run the setup skill. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type; everything else runs from the dashboard."
-            : "Start a new Codex session and run $setup. It installs and starts the local JobPilot agent, or upgrades it to the latest release if you already have one. It's the only command you ever type; everything else runs from the dashboard."}
+            ? "In the same Claude Code session, run setup. It installs the JobPilot agent on your computer and starts it. If it's already installed, setup updates it. This is the only command you need to type."
+            : "Start a new Codex session and run $setup. It installs the JobPilot agent on your computer and starts it. If it's already installed, setup updates it. This is the only command you need to type."}
         </Typography>
         <CopyField
           value={SETUP_COMMANDS[provider]}
@@ -91,8 +91,8 @@ export function InstallGuide(): ReactElement {
 
       <InstallStep number={3} title="Create your account">
         <Typography variant="body2Muted">
-          Sign up, upload a resume, and launch the agent from the dashboard, where it signs in as
-          you automatically. Your first campaign starts from a button there.
+          Sign up and upload your resume. The agent connects to your account by itself, and you
+          start your first campaign from the dashboard.
         </Typography>
         <LinkButton href="/register" variant="contained" size="large" sx={{ alignSelf: "start" }}>
           Create account
@@ -114,13 +114,13 @@ export function InstallGuide(): ReactElement {
           }
           sx={{ alignSelf: "flex-start", color: "text.secondary" }}
         >
-          Need to install or repair the terminal host separately?
+          Need to reinstall the agent without the plugin?
         </Button>
         <Collapse in={showDirect}>
           <Stack spacing={1.5}>
             <Typography variant="body2Muted">
-              Run the one-liner for your OS, then start <code>jobpilot</code>. This does not replace
-              the JobPilot plugin required by Codex.
+              Run the command for your system, then type <code>jobpilot</code> to start it. Codex
+              still needs the plugin installed.
             </Typography>
             <HostInstallCommands />
           </Stack>

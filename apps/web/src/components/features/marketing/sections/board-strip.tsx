@@ -29,11 +29,11 @@ export function BoardStrip(): ReactElement {
       <Container maxWidth="lg" sx={{ paddingBlock: { xs: 3, md: 4 } }}>
         <Stack spacing={2} sx={{ alignItems: "center" }}>
           <Typography variant="overlineMuted" sx={{ textAlign: "center" }}>
-            Works where the jobs are ·{" "}
+            Searches{" "}
             <Box component="span" sx={{ color: "accent.primary" }}>
-              {BOARDS.length} boards built in
+              {BOARDS.length} job boards
             </Box>{" "}
-            · any board you add
+            · plus any site you add
           </Typography>
           <Box
             sx={{

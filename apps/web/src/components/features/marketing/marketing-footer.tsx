@@ -63,7 +63,7 @@ export function MarketingFooter(): ReactElement {
             <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>
               <BrandMark />
               <Typography variant="captionMuted">
-                The job search, run by your own AI agent.
+                An AI agent that applies to jobs for you.
               </Typography>
               <Typography
                 sx={{

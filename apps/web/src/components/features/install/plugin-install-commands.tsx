@@ -31,7 +31,8 @@ export function PluginInstallCommands(): ReactElement {
         ))}
       </Stack>
       <Typography variant="captionMuted">
-        Need to repair the terminal host? The plugin is still required for Codex:
+        To reinstall the agent on its own, run the command for your system. Codex still needs the
+        plugin.
       </Typography>
       <Stack spacing={1}>
         <HostInstallCommands />

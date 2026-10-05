@@ -25,9 +25,9 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const title = "JobPilot - your job search on autopilot";
+const title = "JobPilot - an AI agent that applies to jobs for you";
 const description =
-  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you - running locally on your own Claude Code or Codex subscription.";
+  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you. It runs on your computer with your Claude Code or Codex subscription.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

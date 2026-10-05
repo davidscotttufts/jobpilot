@@ -15,7 +15,7 @@ import { one, pageParam } from "@/utils/search-params";
 export const metadata: Metadata = {
   title: "Jobs",
   description:
-    "Browse software jobs discovered and deduped by JobPilot agents across LinkedIn, Indeed, Wellfound, Y Combinator and more. Apply with your own AI agent.",
+    "Jobs found by JobPilot agents on LinkedIn, Indeed, Wellfound, Y Combinator, and other boards, with each job listed once.",
   alternates: { canonical: "/jobs" },
 };
 
@@ -34,11 +34,11 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
       />
       <Stack spacing={1}>
         <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", md: "2.25rem" } }}>
-          Jobs found by JobPilot agents
+          Jobs found by JobPilot
         </Typography>
         <Typography variant="body1Muted">
-          Real postings scraped across every board, deduped into one listing each. Apply to any of
-          them with your own agent.
+          Real job postings that JobPilot users' agents found on many boards, with each job listed
+          once. Your own agent can apply to any of them.
         </Typography>
       </Stack>
 

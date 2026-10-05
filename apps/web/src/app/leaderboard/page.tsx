@@ -8,7 +8,7 @@ import { LeaderboardView } from "@/components/features/portfolio";
 export const metadata: Metadata = {
   title: "Trending users",
   description:
-    "The most active JobPilot users, ranked by applications sent and networking outreach.",
+    "The most active JobPilot users, ranked by applications sent and networking messages.",
   alternates: { canonical: "/leaderboard" },
 };
 
@@ -20,7 +20,7 @@ export default function LeaderboardPage(): ReactElement {
           Trending users
         </Typography>
         <Typography variant="body1Muted">
-          The most active people on JobPilot, ranked by applications and networking outreach.
+          The most active people on JobPilot, ranked by applications sent and networking messages.
         </Typography>
       </Stack>
       {/* The ranking is live, so it streams rather than taking a guessed cache lifetime. */}

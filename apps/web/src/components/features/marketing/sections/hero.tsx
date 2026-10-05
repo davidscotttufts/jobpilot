@@ -49,14 +49,14 @@ export function Hero(): ReactElement {
         <Grid container spacing={6} sx={{ alignItems: "center" }}>
           <Grid size={{ xs: 12, md: 7 }}>
             <Stack spacing={3}>
-              <SectionEyebrow color="accent.primary">AUTONOMOUS · LOCAL-FIRST</SectionEyebrow>
+              <SectionEyebrow color="accent.primary">FREE · OPEN SOURCE</SectionEyebrow>
               <Typography variant="displayLg" sx={{ textWrap: "balance" }}>
-                Job search on autopilot, on your machine.
+                An AI agent that applies to jobs for you.
               </Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "1.05rem", maxWidth: 560 }}>
-                Tell JobPilot what you're looking for. It finds roles, tailors your resume, applies,
-                and messages recruiters, all on the Claude or Codex subscription you already pay
-                for. Every morning it leaves you a journal of what it did.
+                Tell JobPilot what kind of job you want. It searches the boards, tailors your resume
+                for each posting, fills in the applications, and writes to recruiters. It runs on
+                your computer, using the Claude or Codex subscription you already have.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
                 <LinkButton href="/install" variant="contained" size="large">
@@ -69,7 +69,7 @@ export function Hero(): ReactElement {
               <Typography
                 sx={{ fontFamily: fontFamilies.mono, fontSize: "0.75rem", color: "text.disabled" }}
               >
-                No API keys · Runs on your Claude / Codex subscription
+                No API key needed · Works with Claude Code and Codex
               </Typography>
             </Stack>
           </Grid>

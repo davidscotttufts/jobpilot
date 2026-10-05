@@ -6,20 +6,20 @@ import { SectionEyebrow } from "../section-eyebrow";
 
 const FACTS = [
   {
-    title: "Your subscription",
-    body: "The agent runs on your Claude or Codex plan. JobPilot ships no model keys and adds no per-job fees.",
+    title: "Uses your subscription",
+    body: "The agent runs on your Claude or Codex plan. JobPilot has no AI keys of its own and charges nothing per job.",
   },
   {
-    title: "Your machine",
-    body: "The terminal and browser run locally. Watch every action in the agent dock; stop it whenever you like.",
+    title: "Runs on your computer",
+    body: "The agent and its browser run on your own machine. You can watch everything it does and stop it at any time.",
   },
   {
-    title: "Encrypted credentials",
-    body: "Board logins and captcha keys are encrypted with a key only your account holds. Deleting your account destroys it.",
+    title: "Encrypted logins",
+    body: "Job board passwords and captcha keys are encrypted with a key that belongs only to your account.",
   },
   {
-    title: "Your own Gmail client",
-    body: "Email runs through your personal Google OAuth client. No shared app sits between JobPilot and your mail.",
+    title: "Your own Gmail connection",
+    body: "You connect Gmail through a Google app you create yourself, so your email never passes through a shared one.",
   },
 ];
 
@@ -48,8 +48,8 @@ export function PrivacyGrid(): ReactElement {
   return (
     <Section>
       <Stack spacing={1} sx={{ mb: 4 }}>
-        <SectionEyebrow>TRUST</SectionEyebrow>
-        <Typography variant="h2">Free, open source, and yours to run.</Typography>
+        <SectionEyebrow>PRIVACY</SectionEyebrow>
+        <Typography variant="h2">Free, open source, and on your computer.</Typography>
       </Stack>
       <Grid container spacing={2}>
         {FACTS.map((fact) => (
@@ -59,7 +59,7 @@ export function PrivacyGrid(): ReactElement {
         ))}
         <Grid size={12}>
           <FactCard title="Open source">
-            The dashboard, API, terminal host, and plugin are all{" "}
+            All of JobPilot, from the website to the agent, is{" "}
             {/* component="a": next/link is the theme's MuiLink default, wrong for an off-site URL. */}
             <Link component="a" href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
               public on GitHub

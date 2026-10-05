@@ -25,10 +25,10 @@ export function Teaser(): ReactElement {
     <Section id="see-it-run" tightTop>
       <Stack spacing={1.5} sx={{ mb: 3, maxWidth: 620 }}>
         <SectionEyebrow color="accent.primary">SEE IT RUN</SectionEyebrow>
-        <Typography variant="h2">Forty seconds of the agent working.</Typography>
+        <Typography variant="h2">Watch the agent apply to a job.</Typography>
         <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-          Nothing here is a mockup: it's one real cycle, a real application form, and the pipeline
-          filling up.
+          A 40-second recording of a real run: the agent finds a job, fills in the application, and
+          the dashboard updates.
         </Typography>
       </Stack>
 

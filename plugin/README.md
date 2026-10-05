@@ -1,46 +1,46 @@
 # JobPilot plugin
 
-This plugin turns Claude Code or Codex into your job-search agent. It searches
-job boards, tailors your resume for each posting, fills in applications, writes
-cover letters and outreach messages, and keeps your pipeline in the
+This plugin turns Claude Code or Codex into an agent that looks for jobs for
+you. It searches job boards, tailors your resume for each posting, fills in
+applications, writes cover letters and messages to recruiters, and keeps your
 [JobPilot dashboard](https://jobpilot.suxrobgm.net) up to date.
 
-It runs on your machine, on your own Claude or Codex subscription. Your
-profile, resumes, and applications live in your JobPilot account; the agent
-reads and writes them through the JobPilot API.
+It runs on your computer and uses your own Claude or Codex subscription. Your
+profile, resumes, and applications are stored in your JobPilot account, and
+the agent reads and updates them through the JobPilot API.
 
 ## Install
 
-Install the plugin from your provider's marketplace (commands in the
-[root README](../README.md#install-the-plugin)), then run the `setup` skill. It
-installs the local terminal host, starts it, and sends you to the dashboard.
-From then on you start and watch the agent from the dashboard.
+Install the plugin from your provider's marketplace (the commands are in the
+[main README](../README.md#install-the-plugin)), then run setup. Setup
+installs the terminal host on your computer, starts it, and opens the
+dashboard. After that, you start the agent and watch it from the dashboard.
 
-The marketplace copy contains only `setup`. The terminal host ships the full
-skill tree and keeps it updated.
+The marketplace version only contains `setup`. The terminal host comes with
+the full set of skills and keeps them updated.
 
 ## Skills
 
-The main ones are `search`, `auto-apply`, `apply`, `networking`, and
-`cover-letter`. The [root README](../README.md#skills) lists them all.
+The main skills are `search`, `auto-apply`, `apply`, `networking`, and
+`cover-letter`. The [main README](../README.md#skills) lists all of them.
 
-## What's in here
+## What's in this folder
 
 | Path | What it is |
 | --- | --- |
-| `skills/<name>/SKILL.md` | One skill per directory. The same file serves Claude and Codex. |
-| `skills/_shared/` | Docs several skills read: setup, login, form filling, browser tips, eligibility. No `SKILL.md`, so it isn't listed as a skill. |
-| `skills/pilot/tasks/` | One file per task type the autonomous Pilot can pick up. |
-| `skills/humanizer/` | Rewrites letters, proposals, and messages so they read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
-| `agents/` | `job-scorer`, `job-applier`, `job-searcher` and `networking-worker`, the subagents that handle one job, search or contact at a time so browser output stays out of the main session. |
-| `bin/` | `jobpilot-api`, the helper every skill uses to call the API. |
-| `settings/` | Agent settings the terminal host passes to Claude and Codex. |
+| `skills/<name>/SKILL.md` | One skill per folder. Claude and Codex read the same file. |
+| `skills/_shared/` | Notes that several skills read: setup, signing in, filling forms, browser tips, eligibility. It has no `SKILL.md`, so it doesn't show up as a skill. |
+| `skills/pilot/tasks/` | One file for each kind of task the Pilot can take on. |
+| `skills/humanizer/` | Edits letters, proposals, and messages so they read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
+| `agents/` | `job-scorer`, `job-applier`, `job-searcher`, and `networking-worker`. Each handles one job, search, or contact at a time, which keeps the browser output out of the main session. |
+| `bin/` | `jobpilot-api`, the script every skill uses to call the API. |
+| `settings/` | Settings the terminal host passes to Claude and Codex. |
 | `.mcp.json` | The Playwright browser server. |
 
 ## Editing skills
 
-Edit the files here directly; there's no build step. Skills call sibling skills
-by name and shared docs by relative path (`../_shared/setup.md`), which keeps
-one text working for both providers. The
-[development guide](../docs/development.md) covers how the host loads the
+Edit the files in this folder directly. There's no build step. Skills refer
+to other skills by name and to shared notes by relative path
+(`../_shared/setup.md`), so the same text works for both providers. The
+[development guide](../docs/development.md) explains how the host loads the
 plugin and how releases ship it.

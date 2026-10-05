@@ -19,7 +19,7 @@ export function Faq(): ReactElement {
       <Stack spacing={1} sx={{ mb: 4 }}>
         <Typography variant="h2">Common questions</Typography>
         <Typography variant="body2Muted">
-          More in the <Link href="/docs/faq">full FAQ</Link>.
+          See the <Link href="/docs/faq">full FAQ</Link> for more.
         </Typography>
       </Stack>
       <Stack spacing={1}>

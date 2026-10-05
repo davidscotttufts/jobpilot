@@ -3,7 +3,7 @@ import { alpha, Box, Stack, Typography } from "@mui/material";
 import { accent, fontFamilies, line, radii } from "@/theme";
 
 // Plain visitor language, no internal Pilot vocabulary.
-const BRANCHES = ["finds roles", "scores them", "applies", "reaches out"];
+const BRANCHES = ["finds jobs", "scores them", "applies", "reaches out"];
 
 // Each loop lights four stops, so one branch comes round every fourth loop.
 const BEAT_MS = 1500;
@@ -62,9 +62,9 @@ function Stop({ label, animation }: StopProps): ReactElement {
 export function PilotCycle(): ReactElement {
   return (
     <Stack aria-hidden sx={graphSx}>
-      <Stop label="checks for work" animation={stepAnimation(0)} />
+      <Stop label="looks for work" animation={stepAnimation(0)} />
       <Box sx={connectorSx} />
-      <Stop label="picks the best next step" animation={stepAnimation(1)} />
+      <Stop label="picks the next task" animation={stepAnimation(1)} />
       <Box sx={connectorSx} />
       <Box
         sx={{
@@ -84,7 +84,7 @@ export function PilotCycle(): ReactElement {
         ))}
       </Box>
       <Box sx={connectorSx} />
-      <Stop label="writes the journal" animation={stepAnimation(3)} />
+      <Stop label="logs what it did" animation={stepAnimation(3)} />
       <Typography
         sx={{
           mt: 2,
@@ -94,7 +94,7 @@ export function PilotCycle(): ReactElement {
           textAlign: "center",
         }}
       >
-        nothing to do? the AI stays asleep
+        nothing to do? the AI stays off
       </Typography>
     </Stack>
   );

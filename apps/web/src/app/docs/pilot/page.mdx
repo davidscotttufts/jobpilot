@@ -2,149 +2,157 @@ import { buildDocsMetadata } from "@/components/features/docs";
 
 export const metadata = buildDocsMetadata("pilot", {
   description:
-    "Run JobPilot autonomously: write instructions once, answer the occasional question from your phone, and read the journal in the morning.",
+    "Let JobPilot run your search on its own: set your goals once, answer the odd question from your phone, and check the journal when you like.",
 });
 
 # The Pilot
 
-The Pilot is JobPilot's autonomous mode. Write your **instructions** once, the
-goals and the limits, and the local agent runs your search on its own. It finds
-and scores roles, applies to them, reaches out to contacts and follows up, reads
-recruiter replies, and drafts interview replies, prep sheets, and posts.
+The Pilot runs your job search without you. You tell it what you're looking
+for and set some limits. It then finds and scores jobs, applies, contacts
+people and follows up, reads recruiter replies, and drafts interview replies,
+prep notes, and posts.
 
-Everything it does lands in a live journal. The few decisions only you can make
-arrive as one-tap questions, on your phone if you enable notifications.
+You can see everything it does in a journal that updates live. When it needs
+a decision from you, it asks a short question, and it can send that question
+to your phone.
 
-It runs the [campaign modes](/docs/campaigns-and-skills) for you: searching,
-applying, and networking all happen inside its cycles. Every dashboard action
-stays available whenever you want to do something by hand.
+The Pilot does the same work as [campaigns](/docs/campaigns-and-skills), so
+you don't need to run those yourself. They're all still there if you want to
+do something by hand.
 
-## How a cycle works
+## How it works
 
-The Pilot works in short, self-contained **cycles**, each doing one step:
+The Pilot does its work in small steps called **cycles**. Each cycle does one
+thing:
 
 ```text
-checks for work ──► picks the best next step ─┬─► finds roles ──┐
-                                              ├─► scores them ──┤
-                                              ├─► applies ──────┼─► writes the journal
-                                              ├─► reaches out ──┤
-                                              └─► text work ────┘
+looks for work ──► picks the most useful task ─┬─► finds jobs ────┐
+                                               ├─► scores them ───┤
+                                               ├─► applies ───────┼─► writes to the journal
+                                               ├─► reaches out ───┤
+                                               └─► writing tasks ─┘
 ```
 
-1. **Check for work.** A small orchestrator on your machine asks the server
-   for its task list, ranked fresh from your data: your answers to act on,
-   approved jobs, replies to review, searches that are due. With nothing to do
-   it goes back to sleep without waking the AI or adding to the journal, so
-   an idle Pilot uses none of your Claude or Codex subscription.
-2. **Pick the best next step.** When there is work, the orchestrator takes
-   only the top task and wakes the AI with it, starting from a clean context.
-3. **Hand it to a specialist.** Browser work goes to a **specialized agent**
-   that does one job: the searcher finds new roles on a board, the scorer
-   reads postings and scores them, the applier submits one application, and
-   the networker finds a contact and drafts the message. Each one reads only
-   what its job needs, which keeps usage low. Text-only work, like reviewing a
-   reply or drafting a prep sheet, is done directly.
-4. **Write the journal.** The outcome is journaled and the next check comes
-   seconds later when work is queued, or after your check interval when idle.
+1. **Look for work.** A small program on your computer asks the server what
+   needs doing: questions you've answered, jobs you've approved, replies to
+   read, searches that are due. If there's nothing, it goes back to sleep
+   without starting the AI, so an idle Pilot doesn't use any of your Claude
+   or Codex quota.
+2. **Pick a task.** If there is work, it takes the most important task and
+   starts the AI on it with a fresh, empty context.
+3. **Do the work.** Browser tasks go to a helper agent built for that one
+   job. One finds new jobs on a board, one scores them, one fills in a single
+   application, and one finds a contact and writes the message. Each helper
+   only reads what it needs, which keeps usage down. Tasks that are just
+   writing, like reading a reply or making prep notes, the AI does itself.
+4. **Write it down.** The result goes into the journal. If more work is
+   waiting, the next cycle starts a few seconds later. If not, the Pilot
+   waits for your check interval.
 
-One step per cycle is deliberate. Every result is saved to the server before
-the next thing starts, so a crash, reboot, or closed lid never loses work; the
-next cycle picks up exactly where the last one stopped. The orchestrator also
-restarts stuck runs and starts cycles on its own after a reboot, so no browser
-tab needs to stay open.
+It does one task per cycle on purpose. Each result is saved on the server
+before the next task starts, so if your computer crashes, restarts, or goes to
+sleep, nothing is lost and the next cycle carries on from there. The program
+also restarts runs that get stuck and starts up again after a reboot, so you
+don't have to keep a browser tab open.
 
 ## Starting it
 
-1. Make sure your local agent terminal is running (the dock down the right side
-   of the dashboard). See [Getting started](/docs/getting-started) if it's
-   offline.
+1. Check that the agent is running in the dock on the right of the
+   dashboard. If it's offline, see [Getting started](/docs/getting-started).
 2. Open **Pilot** in the workspace, write your instructions, and save.
-3. Click **Start**.
+3. Press **Start**.
 
-Starting pairs your machine with the Pilot once; after that the host runs
-cycles on boot, crash, or wake until you stop it.
+The first start links your computer to the Pilot. From then on the terminal
+host keeps it running after a reboot, crash, or sleep until you stop it.
 
 ## Your instructions
 
-**Goals** and **Searches** sit at the top of the Instructions tab. The rest is
-optional tuning, folded behind **Advanced settings**.
+The Instructions tab shows **Goals** and **Searches** at the top. Everything
+else is optional and sits under **Advanced settings**.
 
-- **Goals.** Plain-language direction: roles, priorities, constraints
-  ("senior TypeScript remote, at least $150k, by October"). This is the only
-  part you have to write.
-- **Searches.** The Pilot creates these from your goals and re-runs them on
-  demand, soon after a run that turns up new roles and less often once a
-  search keeps coming up dry. The Instructions page shows them read-only, with
-  each one's recent yield and next check.
-- **Operating limits.** Daily apply cap, minimum match score, check interval.
-- **Networking.** Off by default. You set a daily cap and a follow-up delay,
-  then an autonomy level per channel: email can be **draft only**, **review
-  each**, or **auto-send**; LinkedIn stops at **review each**, because nothing
-  is ever sent there without you.
-- **Boards.** Which job boards the Pilot searches, and in what order. It moves
-  to the next board each cycle, so all of them get worked. Leave it empty and
-  each saved search stays on the board it was created with.
-- **Platforms.** Where the Pilot drafts self-promotion posts. Posting is
-  always review-only.
+- **Goals.** Describe what you want in your own words: the kind of role,
+  what matters most, and any hard limits. For example, "senior TypeScript,
+  remote, at least $150k, by October". This is the only part you have to fill
+  in.
+- **Searches.** The Pilot writes these from your goals. A search that keeps
+  finding new jobs runs again soon; one that keeps coming up empty runs less
+  often. You can see each search here, with how many jobs it found recently
+  and when it runs next, but you can't edit them.
+- **Operating limits.** How many applications a day, the lowest match score
+  worth applying to, and how often to check for work.
+- **Networking.** Off until you turn it on. Set a daily limit and how long to
+  wait before following up, then choose how much freedom it has on each
+  channel. Email can be **Draft only**, **Review each**, or **Auto-send**.
+  LinkedIn goes no further than **Review each**, so nothing is ever sent
+  there without you.
+- **Boards.** Which job boards to search, in order. The Pilot moves to the
+  next board each cycle so they all get searched. If you leave this empty,
+  each search sticks to the board it was created on.
+- **Platforms.** Where the Pilot may draft posts about you. It never
+  publishes them; you review every one.
 
-Your goals text handles the judgment calls. The caps are a different thing: the
-server enforces those, so the Pilot can't exceed one no matter how the goals are
-worded. Edit any of it any time, and changes take effect on the next cycle.
+The goals guide the Pilot's judgment, but the limits are hard rules. The
+server enforces them, so the Pilot can't go over a limit however your goals
+are worded. You can change anything at any time, and the next cycle picks up
+the change.
 
-## What runs on its own and what asks you
+## What it does alone and what it asks about
 
-| Runs on its own | Always asks you |
+| Does on its own | Always asks you first |
 | --- | --- |
-| Applies to matching roles within your daily cap | A login code it can't read, from SMS or an authenticator app |
-| Reads emailed sign-in codes from your connected mailbox | Salary and screening questions on an application |
-| Sends networking emails you set to auto-send, within your cap | Sending a LinkedIn message |
-| Follows up on networking messages per your autonomy setting | Posting any self-promotion publicly |
-| Reviews recruiter replies in your inbox (proposes moves) | Sending a drafted interview reply |
-| Drafts emails, follow-ups, interview replies, prep sheets, and posts | Whether to resume a campaign you paused |
+| Applies to good matches, up to your daily limit | Login codes it can't read itself, from SMS or an authenticator app |
+| Reads sign-in codes that arrive in your connected email | Salary and screening questions on an application |
+| Sends networking emails you set to Auto-send, up to your limit | Sending a LinkedIn message |
+| Follows up on networking messages, as your settings allow | Publishing any post |
+| Reads recruiter replies and suggests a new status | Sending an interview reply it drafted |
+| Drafts emails, follow-ups, interview replies, prep notes, and posts | Whether to restart a campaign you paused |
 
-Anything in the right column surfaces as a question. Nothing sends, posts, or
-changes an application's status without you.
+Everything in the right-hand column turns into a question for you. The Pilot
+never sends, posts, or changes an application's status without your say.
 
-## Questions and push notifications
+## Questions and notifications
 
-When the Pilot hits a decision only you can make, it posts a **question**, a
-one-decision card under **Needs attention** on the Overview tab, and parks the
-related work until you answer. Turn on **Notifications** under
-**Settings → Notifications** (per device) to get a web push when a question
-opens, even with the tab closed.
+When the Pilot needs your decision, it creates a **question**: a small card
+under **Needs attention** on the Overview tab. Anything that depends on the
+answer waits until you reply. To get a push notification when a question
+comes in, even with the dashboard closed, turn on notifications under
+**Settings → Notifications**. You do this once per device.
 
-Most questions wait as long as you need. Login codes are the exception: they
+Most questions wait as long as you need. Login codes are different. They
 expire after about five minutes, and if you miss one the Pilot skips that job
-cleanly and moves on. Codes that arrive by email never become a question at
-all, since the agent reads them out of your mailbox itself.
+and moves on. Codes sent by email never reach you as questions, because the
+agent reads them from your inbox.
 
-## The journal and daily digest
+## The journal and daily summary
 
-Every action lands in the **journal** on the Activity tab, a live feed you can
-filter by kind or group **by cycle** to see what each cycle did, its outcome,
-and how long it took. The Overview tab shows the latest activity plus when the
-next cycle will wake. Once a day, after 07:00 UTC, the last 24 hours roll into
-a **digest**: applications, replies reviewed, messages sent, questions waiting.
-**Export** downloads the full history as a file.
+Everything the Pilot does is logged in the **journal** on the Activity tab.
+You can filter it by type, or group it **by cycle** to see what each cycle
+did, how it went, and how long it took. The Overview tab shows the latest
+entries and when the next cycle is due.
 
-## Interview autonomy
+Once a day, after 07:00 UTC, the Pilot writes a summary of the past 24 hours:
+applications sent, replies read, messages sent, and questions waiting for
+you. **Export** downloads the whole history as a file.
 
-When a recruiter's reply is an interview invite, the Pilot drafts a short
-availability reply and posts it as an approval card; it never sends on its
-own. It also builds a **prep sheet** (behavioral, technical, system design,
-company notes) and attaches it to the application.
+## Interviews
+
+When a recruiter invites you to interview, the Pilot drafts a short reply with
+your availability and shows it to you for approval. It never sends that reply
+itself. It also writes prep notes covering behavioral, technical, and system
+design questions plus notes on the company, and attaches them to the
+application.
 
 ## Troubleshooting
 
-- **Host offline.** Start the agent again from the dock: one click on Windows,
-  or one of the commands it offers on macOS and Linux. The Pilot resumes on its
-  own once the host is back.
-- **Pilot paused after repeated stuck runs.** The host takes a break to
-  protect your machine. Check the dock terminal for what got stuck, then
-  start it again.
-- **A board keeps failing.** The Pilot probes it once and journals what it
-  found, usually an expired login it re-establishes on the spot. Everything
-  else keeps running either way.
+- **The host is offline.** Start the agent from the dock: one click on
+  Windows, or one of the commands it shows on macOS and Linux. The Pilot picks
+  up again by itself once the host is back.
+- **The Pilot paused after several stuck runs.** The host stops to avoid
+  wasting your machine's time. Look at the terminal in the dock to see what
+  got stuck, then start the Pilot again.
+- **One board keeps failing.** The Pilot checks that board once and writes
+  what it found in the journal. Usually it's an expired login, and it signs
+  back in on the spot. Other boards keep running either way.
 
-Next up: [Campaigns & skills](/docs/campaigns-and-skills), for the same work
-done by hand.
+Next: [Campaigns & skills](/docs/campaigns-and-skills), for doing the same
+work by hand.

@@ -15,20 +15,20 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Set your instructions",
-    body: "What roles you want, how many applications a day, which searches to keep warm, how bold the recruiter outreach should be. You write it in plain sentences rather than a config file.",
+    title: "Say what you want",
+    body: "Describe the jobs you're after in a few sentences, then set a daily application limit and decide whether it may email recruiters for you.",
   },
   {
-    title: "Let it work",
-    body: "It checks for work through the night and only wakes the AI when there is something to do, so a quiet night costs nothing. Each step goes to a specialist that finds roles, scores them, applies to the good matches, or reaches out to someone who can introduce you.",
+    title: "It gets to work",
+    body: "It looks for jobs, scores them against your resume, applies to the good ones, and finds people worth contacting. When there's nothing to do, the AI stays off and uses none of your quota.",
   },
   {
     title: "Answer from your phone",
-    body: "When it hits something only you can answer (a salary question, a login code, a message it wants to send) you get a one-tap card by push. Answer it and the parked job picks back up.",
+    body: "If it needs you, say for a salary question, a login code, or approval to send a message, you get a notification. Answer it and the job carries on.",
   },
   {
-    title: "Wake to a journal",
-    body: "Every action lands in a live feed, rolled into a morning digest: applications sent, replies reviewed, questions waiting. The dashboard itself enforces your daily limits, so they hold even if a step goes off-script.",
+    title: "See what it did",
+    body: "Everything it does goes into a journal, and each morning you get a summary of applications sent and replies received. Your limits are enforced by the server, so the AI can't go past them.",
   },
 ];
 
@@ -51,12 +51,12 @@ export function Pilot(): ReactElement {
         <Grid container spacing={{ xs: 4, md: 6 }} sx={{ mb: 6, alignItems: "center" }}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={2}>
-              <SectionEyebrow color="accent.primary">THE PILOT · AUTONOMOUS MODE</SectionEyebrow>
-              <Typography variant="h2">Write your goals once. Close the lid.</Typography>
+              <SectionEyebrow color="accent.primary">THE PILOT</SectionEyebrow>
+              <Typography variant="h2">Let it run your job search for you.</Typography>
               <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem" }}>
-                The Pilot is JobPilot running unattended. You give it instructions and limits; it
-                works through your search on its own, asks when it's unsure, and keeps a journal you
-                can read over coffee, so you never have to drive every step by hand.
+                Turn on the Pilot and JobPilot keeps working without you. You set the goals and the
+                limits. It searches, applies, and follows up on its own, and asks you when it needs
+                a decision.
               </Typography>
             </Stack>
           </Grid>
@@ -92,7 +92,7 @@ export function Pilot(): ReactElement {
           sx={{ mt: 5, flexWrap: "wrap", gap: 2, alignItems: "center" }}
         >
           <LinkButton href="/install" variant="contained" size="large">
-            Put it on autopilot
+            Get started
           </LinkButton>
           <Typography variant="body2Muted">
             <Link href="/docs/pilot">Read the Pilot guide</Link>

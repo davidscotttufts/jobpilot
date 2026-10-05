@@ -44,11 +44,11 @@ export function CtaBand(): ReactElement {
         />
         <Stack spacing={3} sx={{ position: "relative", alignItems: "flex-start" }}>
           <Typography variant="displayMd" sx={{ maxWidth: 620 }}>
-            Put your job search on autopilot.
+            Spend less time on applications.
           </Typography>
           <Typography variant="body1Muted" sx={{ fontSize: "0.9375rem", maxWidth: 520 }}>
-            Free and open source. Install the agent, create your account, and run your first
-            campaign tonight.
+            JobPilot is free. Install the agent, upload your resume, and start your first search in
+            about ten minutes.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
             <LinkButton href="/install" variant="contained" size="large">
