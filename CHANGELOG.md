@@ -2,6 +2,49 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.2.0 - 2026-10-04
+
+### Added
+
+- The pilot overview leads with one status bar, shows each stage as a card with its agents
+  underneath, and traces the agent path the pilot actually took, including quiet stretches.
+- Token usage is measured per run from provider telemetry and shown next to each journal entry.
+- The pilot journal is grouped by day, with lighter rows and a side cost column.
+- The pilot instructions nav lists every section, and tuning gets its own card.
+- The pilot saves reusable answers to application questions and uses them on later runs.
+- Data tables say when a load failed, with a Retry, instead of showing an empty table.
+
+### Changed
+
+- Pilot v2: the host starts each run and checks the task list itself before waking the model, and
+  the agent returns one typed result per run. Idle checks no longer write journal entries.
+- The job worker is split into separate scorer, applier, and searcher agents.
+- Pilot vocabulary: the agenda is now the task list, a claim is now a run, and strategy tasks and
+  the job digest are now the job brief. "Digest" means only the morning summary.
+- A run the agent never finished is cancelled instead of failed, so its job returns to the queue
+  right away and retries on the shorter crash cooldown.
+- Site hints and agent hint reports are removed.
+- Workspace tabs are now routes, and the overview no longer repeats running campaigns.
+- Skills call the API through a Node helper instead of curl and jq, and their generated writing
+  keeps the user's voice.
+- Resume content is stored as structured data, and file routes are part of the resume module.
+- Internal: the terminal host is reorganized by provider and feature, with one updater; packages
+  are upgraded and .NET tests run on xunit v3; higher rate limits for public job and portfolio
+  pages, and HTTP/2 in the production nginx config.
+
+### Fixed
+
+- Workspace pages show an error instead of an empty state when a load fails.
+- A failing board's test job is retried instead of being applied from a diagnosis.
+- An exact job URL stays blocked past the dedupe window.
+- Terminal session starts no longer race when the page remounts.
+- A job can't be claimed while a sibling job is applying, and apply claims are keyed by campaign
+  and job so shared keys don't collide.
+- Claim lifetime is capped even while heartbeats continue.
+- Campaigns completed by a goals change now publish their status events.
+- Resume variant application links are scoped to their owner, and an uploaded source file is
+  removed when its row write fails.
+
 ## v2.1.38 - 2026-09-09
 
 ### Changed
