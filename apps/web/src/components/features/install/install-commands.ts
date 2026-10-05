@@ -1,3 +1,5 @@
+import { useSyncExternalStore } from "react";
+
 const GITHUB_REPO = "suxrobGM/jobpilot";
 const INSTALL_BASE = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/apps/terminal`;
 
@@ -11,10 +13,15 @@ const INSTALL_COMMANDS = [
 
 type InstallCommand = (typeof INSTALL_COMMANDS)[number];
 
-const isWindows = (): boolean =>
-  typeof navigator !== "undefined" && /win/i.test(navigator.userAgent);
+const noSubscription = () => () => {};
+
+// The server can't see the visitor's OS, so it renders the fixed order and the client reorders
+// after hydration - reading navigator during render made every Windows visit a hydration error.
+const isWindows = (): boolean => /win/i.test(navigator.userAgent);
+const isWindowsOnServer = (): boolean => true;
 
 /** Install commands with the visitor's OS first. */
-export function orderedInstallCommands(): readonly InstallCommand[] {
-  return isWindows() ? INSTALL_COMMANDS : [INSTALL_COMMANDS[1], INSTALL_COMMANDS[0]];
+export function useOrderedInstallCommands(): readonly InstallCommand[] {
+  const windows = useSyncExternalStore(noSubscription, isWindows, isWindowsOnServer);
+  return windows ? INSTALL_COMMANDS : [INSTALL_COMMANDS[1], INSTALL_COMMANDS[0]];
 }
