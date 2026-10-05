@@ -1,19 +1,19 @@
 import { type ReactElement, Suspense } from "react";
 import { JOB_LISTING_FILTER_KEYS, JOB_LISTING_MAX_PAGE } from "@jobpilot/contracts/job-listing";
-import { Grid, Skeleton, Stack, Typography } from "@mui/material";
+import { Skeleton, Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
 import {
-  JobCard,
   JobFilters,
-  JobGridSkeleton,
+  JobList,
   JobPager,
+  JobSortControls,
   jobsHref,
 } from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, TableSkeleton } from "@/components/ui/data";
 import { breadcrumbLd } from "@/lib/structured-data";
 import { one, pageParam } from "@/utils/search-params";
 import { getSkillFacets, landingParams, landingTitle } from "./landing-views";
@@ -78,7 +78,7 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
         ])}
       />
       <Stack spacing={1}>
-        <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", md: "2.25rem" } }}>
+        <Typography variant="displayMd" component="h1">
           Jobs found by JobPilot
         </Typography>
         <Typography variant="body1Muted">
@@ -93,7 +93,7 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
       </Suspense>
 
       {/* searchParams is dynamic, so the results need their own boundary; the shell prerenders. */}
-      <Suspense fallback={<JobGridSkeleton />}>
+      <Suspense fallback={<TableSkeleton />}>
         <JobsResults searchParams={props.searchParams} />
       </Suspense>
     </Stack>
@@ -136,18 +136,22 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
   }
 
   return (
-    <Stack spacing={3}>
-      <Typography variant="body2Muted" component="h2">
-        {data.pagination.total.toLocaleString()}{" "}
-        {resultsNoun(landing, isLanding, data.pagination.total)}
-      </Typography>
-      <Grid container spacing={2}>
-        {data.items.map((job) => (
-          <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <JobCard job={job} />
-          </Grid>
-        ))}
-      </Grid>
+    <Stack spacing={2}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        sx={{
+          gap: 1.5,
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+        }}
+      >
+        <Typography variant="body2Strong" component="h2">
+          {data.pagination.total.toLocaleString()}{" "}
+          {resultsNoun(landing, isLanding, data.pagination.total)}
+        </Typography>
+        <JobSortControls />
+      </Stack>
+      <JobList jobs={data.items} />
       <JobPager pagination={data.pagination} params={filters} />
     </Stack>
   );

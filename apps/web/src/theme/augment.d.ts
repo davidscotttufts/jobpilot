@@ -10,6 +10,7 @@ interface CustomTypographyVariants {
   overline: CSSProperties;
   overlineMuted: CSSProperties;
   monoChip: CSSProperties;
+  skillChip: CSSProperties;
   statValue: CSSProperties;
   statLabel: CSSProperties;
   body1Strong: CSSProperties;

@@ -133,6 +133,19 @@ export const typography: TypographyVariantsOptions = {
     border: `1px solid ${line.border}`,
     backgroundColor: surfaces.elevated,
   },
+  // The dense sibling of monoChip, for skill tags in job rows and headers.
+  skillChip: {
+    fontFamily: fontFamilies.mono,
+    fontSize: "0.7rem",
+    lineHeight: 1.5,
+    display: "inline-block",
+    whiteSpace: "nowrap",
+    padding: "2px 8px",
+    borderRadius: radii.pill,
+    color: textColors.secondary,
+    border: `1px solid ${line.border}`,
+    backgroundColor: surfaces.elevated,
+  },
   statValue: {
     fontFamily: fontFamilies.mono,
     fontWeight: 600,

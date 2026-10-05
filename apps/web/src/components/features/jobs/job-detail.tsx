@@ -1,9 +1,21 @@
 import type { ReactElement, ReactNode } from "react";
-import { Box, Card, CardContent, Chip, Divider, Grid, Stack, Typography } from "@mui/material";
+import { OpenInNew } from "@mui/icons-material";
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
 import type { JobListingDto } from "@/api/types";
 import { BackLink, LinkButton } from "@/components/ui/buttons";
-import { ExternalLink, LabelValue, RelativeTime } from "@/components/ui/display";
 import { formatDate, formatRelativeTime } from "@/utils/format";
+import { showsRemoteBadge } from "./job-meta";
+import { JobSources } from "./job-sources";
 import { SkillChips } from "./skill-chips";
 
 interface JobDetailProps {
@@ -14,41 +26,14 @@ export function JobDetail(props: JobDetailProps): ReactElement {
   const { job } = props;
 
   return (
-    <Stack spacing={3}>
-      <BackLink href="/jobs">All jobs</BackLink>
-
-      <Stack spacing={1.5}>
-        <Typography variant="displayMd" sx={{ overflowWrap: "anywhere" }}>
-          {job.title}
-        </Typography>
-        <Typography variant="h4" component="h2" sx={{ color: "text.secondary" }}>
-          {job.company}
-        </Typography>
-        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
-          {job.remote && <Chip label="Remote" size="small" color="success" variant="outlined" />}
-          {job.yearsExperience !== null && (
-            <Chip label={`${job.yearsExperience}+ years`} size="small" variant="outlined" />
-          )}
-          {job.location && <Typography variant="body2Muted">{job.location}</Typography>}
-          {job.employmentType && <Typography variant="body2Muted">{job.employmentType}</Typography>}
-          {job.salary && (
-            <Typography variant="body2Strong" sx={{ color: "accent.primary" }}>
-              {job.salary}
-            </Typography>
-          )}
-        </Stack>
+    <Stack spacing={4}>
+      <Stack spacing={3}>
+        <BackLink href="/jobs">All jobs</BackLink>
+        <JobHeader job={job} />
       </Stack>
 
       <Grid container spacing={{ xs: 3, md: 4 }} sx={{ alignItems: "flex-start" }}>
-        {/* CTA is first in source so it leads on a phone; `order` moves it right on md+. */}
-        <Grid size={{ xs: 12, md: 4 }} sx={{ order: { xs: 1, md: 2 } }}>
-          <Stack spacing={3}>
-            <ApplyCard />
-            <SkillsCard job={job} />
-          </Stack>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 8 }} sx={{ order: { xs: 2, md: 1 } }}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={4}>
             {job.descriptionExcerpt && (
               <Section title="About the role">
@@ -77,55 +62,114 @@ export function JobDetail(props: JobDetailProps): ReactElement {
             <Divider />
 
             <Section title="Where this was posted">
-              <Stack component="ul" spacing={1} sx={{ listStyle: "none", m: 0, p: 0 }}>
-                {job.sources.map((source) => (
-                  <Stack
-                    component="li"
-                    key={source.url}
-                    direction="row"
-                    spacing={1}
-                    sx={{ alignItems: "center", flexWrap: "wrap" }}
-                  >
-                    {source.board && <Chip label={source.board} size="small" variant="outlined" />}
-                    <ExternalLink href={source.url} truncateTo={320}>
-                      {source.url}
-                    </ExternalLink>
-                    <RelativeTime value={source.lastSeenAt} />
-                  </Stack>
-                ))}
-              </Stack>
-              {job.sourceCount > 1 && (
-                <Typography variant="captionMuted">
-                  The same posting was found on {job.sourceCount} boards and deduped into this page.
-                </Typography>
-              )}
-              <Typography variant="captionMuted">
-                Seen {formatRelativeTime(job.lastSeenAt)} ago · first found{" "}
-                {formatDate(job.firstSeenAt)}
-              </Typography>
+              <JobSources sources={job.sources} />
             </Section>
           </Stack>
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 4 }}>
+          <ApplyCard />
         </Grid>
       </Grid>
     </Stack>
   );
 }
 
-function Section(props: { title: string; children: ReactNode }): ReactElement {
+/** Title, the facts a scanner decides on, skills, and the way out to the original posting. */
+function JobHeader(props: JobDetailProps): ReactElement {
+  const { job } = props;
+  const latest = job.sources[0];
+
   return (
-    <Stack spacing={1.5}>
-      <Typography variant="h4" component="h3">
-        {props.title}
-      </Typography>
-      {props.children}
+    <Stack spacing={2}>
+      <Stack spacing={1}>
+        <Typography variant="displayMd" component="h1" sx={{ overflowWrap: "anywhere" }}>
+          {job.title}
+        </Typography>
+        <Typography variant="h4" component="p" sx={{ color: "text.secondary" }}>
+          {job.company}
+        </Typography>
+      </Stack>
+
+      <Stack
+        direction="row"
+        sx={{ flexWrap: "wrap", columnGap: 1.5, rowGap: 1, alignItems: "center" }}
+      >
+        {job.salary && <Typography variant="body1Strong">{job.salary}</Typography>}
+        {job.location && <Typography variant="body2Muted">{job.location}</Typography>}
+        {job.employmentType && <Typography variant="body2Muted">{job.employmentType}</Typography>}
+        {showsRemoteBadge(job) && (
+          <Chip label="Remote" size="small" color="success" variant="outlined" />
+        )}
+        {job.yearsExperience !== null && (
+          <Chip label={`${job.yearsExperience}+ years`} size="small" variant="outlined" />
+        )}
+      </Stack>
+
+      <SkillChips skills={job.skills} linked />
+
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        sx={{ columnGap: 2, rowGap: 1.5, alignItems: { xs: "stretch", sm: "center" } }}
+      >
+        {latest && <ApplyOnBoard source={latest} />}
+        <Typography variant="captionMuted">
+          Seen {formatRelativeTime(job.lastSeenAt)} ago · first found {formatDate(job.firstSeenAt)}
+        </Typography>
+      </Stack>
     </Stack>
   );
 }
 
-function BulletList(props: { items: string[] }): ReactElement {
+interface ApplyOnBoardProps {
+  source: JobListingDto["sources"][number];
+}
+
+/** The most recent sighting is the link most likely to still be open. */
+function ApplyOnBoard(props: ApplyOnBoardProps): ReactElement {
+  const { source } = props;
+  return (
+    // `LinkComponent="a"`: the theme routes ButtonBase hrefs through next/link, which has no
+    // business rendering an off-site URL.
+    <Button
+      variant="contained"
+      href={source.url}
+      LinkComponent="a"
+      target="_blank"
+      rel="noopener noreferrer"
+      endIcon={<OpenInNew fontSize="sm" />}
+    >
+      {source.board ? `Apply on ${source.board}` : "Apply on the original posting"}
+    </Button>
+  );
+}
+
+interface SectionProps {
+  title: string;
+  children: ReactNode;
+}
+
+function Section(props: SectionProps): ReactElement {
+  const { title, children } = props;
+  return (
+    <Stack spacing={1.5}>
+      <Typography variant="h4" component="h2">
+        {title}
+      </Typography>
+      {children}
+    </Stack>
+  );
+}
+
+interface BulletListProps {
+  items: string[];
+}
+
+function BulletList(props: BulletListProps): ReactElement {
+  const { items } = props;
   return (
     <Box component="ul" sx={{ m: 0, pl: 3, display: "grid", gap: 1 }}>
-      {props.items.map((item) => (
+      {items.map((item) => (
         <Typography component="li" key={item} variant="body1Muted">
           {item}
         </Typography>
@@ -134,43 +178,23 @@ function BulletList(props: { items: string[] }): ReactElement {
   );
 }
 
+/** The agent pitch sits beside the board link, not above it: applying on the board comes first. */
 function ApplyCard(): ReactElement {
   return (
     <Card variant="accent">
       <CardContent>
         <Stack spacing={1.5}>
-          <Typography variant="h4" component="h3">
+          <Typography variant="h4" component="h2">
             Apply with JobPilot
           </Typography>
           <Typography variant="body2Muted">
             Your own AI agent tailors your resume and fills the form - on your machine, on your
             Claude or Codex plan.
           </Typography>
-          <LinkButton href="/install" variant="contained" fullWidth>
+          <LinkButton href="/install" variant="outlined" fullWidth>
             Get the agent
           </LinkButton>
         </Stack>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Location, salary, employment type and years already sit in the header, so only skills are here. */
-function SkillsCard(props: JobDetailProps): ReactNode {
-  const { job } = props;
-
-  if (job.skills.length === 0) {
-    return null;
-  }
-
-  return (
-    <Card>
-      <CardContent>
-        <LabelValue label="Skills">
-          <Box sx={{ mt: 0.75 }}>
-            <SkillChips skills={job.skills} linked />
-          </Box>
-        </LabelValue>
       </CardContent>
     </Card>
   );
