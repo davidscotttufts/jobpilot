@@ -6,7 +6,7 @@ import { LinkButton } from "@/components/ui/buttons";
 import { Glow } from "../glow";
 import { AgentTranscript } from "./agent-transcript";
 
-const PROMISES = ["No API key", "Claude Code or Codex", "MIT licensed"];
+const PROMISES = ["No API key", "Claude Code or Codex"];
 
 export function Hero(): ReactElement {
   return (

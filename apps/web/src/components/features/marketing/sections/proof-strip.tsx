@@ -45,10 +45,11 @@ export async function ProofStrip(): Promise<ReactElement> {
         {stats.map((stat) => (
           <Grid
             key={stat.label}
-            size={{ xs: 6, md: 3 }}
+            size={4}
             sx={{
               textAlign: "center",
-              "& + &": { borderLeft: { md: 1 }, borderColor: "line.divider" },
+              paddingInline: 1,
+              "& + &": { borderLeft: 1, borderColor: "line.divider" },
             }}
           >
             <Typography variant="statValue" component="p">
@@ -82,7 +83,6 @@ export async function ProofStrip(): Promise<ReactElement> {
 }
 
 async function loadStats(): Promise<Stat[]> {
-  const boards: Stat = { value: String(BOARDS.length), label: "Job boards built in" };
   const [jobs, community] = await Promise.all([
     api.public.jobs.get({ query: { page: 1, limit: 1 } }).catch(() => null),
     api.public.portfolio.community.get().catch(() => null),
@@ -97,7 +97,6 @@ async function loadStats(): Promise<Stat[]> {
   if (applications) {
     stats.push({ value: numberFormat.format(applications), label: "Applications this month" });
   }
-  stats.push(boards);
   const activeUsers = community?.data?.activeUsers;
   if (activeUsers) {
     stats.push({ value: numberFormat.format(activeUsers), label: "People applying this month" });
