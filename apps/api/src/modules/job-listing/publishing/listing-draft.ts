@@ -1,9 +1,3 @@
-/**
- * Turn a campaign `Job` row into a publishable public listing - or reject it. Pure and Prisma-free:
- * this is both the privacy boundary (only brief fields cross it) and the quality gate, so it is
- * the part that unit-tests with no database.
- */
-
 import { z } from "zod/v4";
 import { MAX_YEARS_EXPERIENCE } from "@/modules/scoring/scoring.schema";
 import {

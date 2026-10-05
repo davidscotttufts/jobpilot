@@ -1,10 +1,3 @@
-/**
- * Dedupe keys for the public job index: which two scraped rows are the same posting.
- *
- * Not `normalizeJobTitle` from `scoring/applied-duplicates.ts` - that strips seniority tokens, which
- * would merge a Senior and a Junior opening at one company into a single public listing.
- */
-
 import { createHash } from "node:crypto";
 import { parseCanonicalUrl, slugify } from "@/common/utils";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
