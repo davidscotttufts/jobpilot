@@ -230,8 +230,9 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
 }
 
 /**
- * One batch of the best approved jobs when more than one apply may run at once and the budget has
- * room for two; otherwise upstream's one task per job. The run start rechecks the same budget.
+ * One batch when more than one apply may run at once and the budget has room for two; otherwise one
+ * task per job. A batch takes each campaign's best job, so parallel browsers never work the same
+ * campaign. The run start rechecks the same budget.
  */
 function applyTasks(input: TaskListInput): PilotTask[] {
   const { config, approvedJobs, applyingNow } = input;
@@ -239,8 +240,13 @@ function applyTasks(input: TaskListInput): PilotTask[] {
     config.maxConcurrentApplies - applyingNow,
     config.dailyApplyCap - input.appliedToday - applyingNow,
   );
-  if (room >= 2 && approvedJobs.length >= 2) {
-    return [applyBatchTask(approvedJobs.slice(0, room))];
+  const campaigns = new Set<string>();
+  // Best match first, so the first job seen per campaign is that campaign's best.
+  const bestPerCampaign = approvedJobs.filter(
+    (job) => !campaigns.has(job.campaignId) && campaigns.add(job.campaignId),
+  );
+  if (room >= 2 && bestPerCampaign.length >= 2) {
+    return [applyBatchTask(bestPerCampaign.slice(0, room))];
   }
   return approvedJobs.map(applyTask);
 }

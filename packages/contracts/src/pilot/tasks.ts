@@ -64,7 +64,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     }),
   ),
   taskVariant("job.apply", "job", jobApplyPayloadSchema),
-  // Several approved jobs applied side by side, one browser each; emitted only above one concurrent apply.
+  // One approved job per campaign, applied side by side in its own browser; only above one concurrent apply.
   taskVariant("job.applyBatch", "pilot", z.object({ jobs: z.array(jobApplyPayloadSchema).min(1) })),
   taskVariant(
     "search.discover",
