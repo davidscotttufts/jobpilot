@@ -3,10 +3,20 @@
 import { type ReactElement, useState } from "react";
 import type { Promotion } from "@jobpilot/contracts/pilot";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Box, Button, Chip, Collapse, IconButton, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  Collapse,
+  Divider,
+  IconButton,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
-import { EmptyState, QuerySection } from "@/components/ui/data";
+import { QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime } from "@/utils/format";
 import { PromotionDraftCard, PromotionSummary } from "./promotion-card";
@@ -19,7 +29,6 @@ interface DraftRowProps {
   onToggle: () => void;
 }
 
-/** Collapsed one-liner for a draft post; expands into the full editor on review. */
 function DraftRow(props: DraftRowProps): ReactElement {
   const { promotion, expanded, onToggle } = props;
   return (
@@ -46,7 +55,6 @@ function DraftRow(props: DraftRowProps): ReactElement {
   );
 }
 
-/** One queue for everything blocking the pilot: open questions first, then draft posts. */
 export function NeedsAttention(): ReactElement {
   const questionsQuery = useOpenQuestions();
   const { questions } = questionsQuery;
@@ -74,6 +82,38 @@ export function NeedsAttention(): ReactElement {
     void historyQuery.refetch();
   };
 
+  const postHistory = history.length > 0 && (
+    <Box>
+      <Button
+        variant="text"
+        size="small"
+        endIcon={historyOpen ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
+        onClick={() => setHistoryOpen((open) => !open)}
+      >
+        Post history ({history.length})
+      </Button>
+      <Collapse in={historyOpen} unmountOnExit>
+        <Stack spacing={1.5} divider={<Divider />} sx={{ mt: 1.5 }}>
+          {history.map((promotion) => (
+            <PromotionSummary key={promotion.id} promotion={promotion} />
+          ))}
+        </Stack>
+      </Collapse>
+    </Box>
+  );
+
+  // All clear shrinks to one line, so the overview's live sections stay above the fold.
+  if (!loading && !isError && count === 0) {
+    return (
+      <Stack spacing={1}>
+        <Alert severity="success" variant="outlined">
+          Nothing needs your attention.
+        </Alert>
+        {postHistory}
+      </Stack>
+    );
+  }
+
   return (
     <SectionCard
       title="Needs attention"
@@ -85,8 +125,8 @@ export function NeedsAttention(): ReactElement {
           isError={isError}
           onRetry={retry}
           errorTitle="Couldn't load what needs your attention."
-          isEmpty={count === 0}
-          empty={<EmptyState variant="inline" title="Nothing needs your attention." />}
+          isEmpty={false}
+          empty={null}
         >
           <Stack spacing={2}>
             {questions.map((question) => (
@@ -102,29 +142,7 @@ export function NeedsAttention(): ReactElement {
             ))}
           </Stack>
         </QuerySection>
-        {!loading && !isError && history.length > 0 && (
-          <Box>
-            <Button
-              variant="text"
-              size="small"
-              endIcon={historyOpen ? <ExpandLess fontSize="sm" /> : <ExpandMore fontSize="sm" />}
-              onClick={() => setHistoryOpen((open) => !open)}
-            >
-              Post history ({history.length})
-            </Button>
-            <Collapse in={historyOpen} unmountOnExit>
-              <Stack
-                spacing={1.5}
-                divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}
-                sx={{ mt: 1.5 }}
-              >
-                {history.map((promotion) => (
-                  <PromotionSummary key={promotion.id} promotion={promotion} />
-                ))}
-              </Stack>
-            </Collapse>
-          </Box>
-        )}
+        {!loading && !isError && postHistory}
       </Stack>
     </SectionCard>
   );

@@ -3,18 +3,22 @@ enum PilotSearchCadence {
   weekly
 }
 
-enum PilotClaimOutcome {
+enum PilotRunOutcome {
   done
   failed
-  abandoned
+  cancelled
   expired
+
+  @@map("pilot_run_outcome")
 }
 
 enum PilotQuestionKind {
   question
   choice
-  two_factor @map("2fa")
+  two_factor
   approval
+
+  @@map("pilot_question_kind")
 }
 
 enum PilotQuestionStatus {
@@ -22,16 +26,19 @@ enum PilotQuestionStatus {
   answered
   expired
   cancelled
+
+  @@map("pilot_question_status")
 }
 
 enum PilotJournalKind {
   cycle
   action
-  observation
   question
   system
   digest
   correction
+
+  @@map("pilot_journal_kind")
 }
 
 enum PromotionStatus {
@@ -42,6 +49,8 @@ enum PromotionStatus {
   failed
   skipped
   expired
+
+  @@map("promotion_status")
 }
 
 model PilotState {
@@ -51,13 +60,15 @@ model PilotState {
   instructionsGoals     String    @default("") @map("instructions_goals")
   instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at")
-  agendaVersion         String?   @map("agenda_version")
-  agendaGeneratedAt     DateTime? @map("agenda_generated_at")
-  agendaExpiresAt       DateTime? @map("agenda_expires_at")
-  agendaSnapshot        Json?     @map("agenda_snapshot")
+  taskListVersion       String?   @map("task_list_version")
+  taskListBuiltAt       DateTime? @map("task_list_built_at")
+  taskListExpiresAt     DateTime? @map("task_list_expires_at")
+  taskListSnapshot      Json?     @map("task_list_snapshot")
   lastCycleAt           DateTime? @map("last_cycle_at")
+  // When the host plans its next task list check; idle checks write here, not to the journal.
+  nextWakeAt            DateTime? @map("next_wake_at")
   cycleCount            Int       @default(0) @map("cycle_count")
-  // "Run now" on the job-alert harvest: offered on the next agenda even off-schedule, until a claim
+  // "Run now" on the job-alert harvest: offered on the next task list even off-schedule, until a run
   // after it or JOB_ALERTS_REQUEST_TTL_MS passes.
   jobAlertsRequestedAt  DateTime? @map("job_alerts_requested_at")
   createdAt             DateTime  @default(now()) @map("created_at")
@@ -96,33 +107,39 @@ model PilotSearch {
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
 
-  // Campaigns this search spawned; a completed one is left behind when the next run opens a new campaign.
+  // A run opens a new campaign once the previous one completes.
   campaigns Campaign[]
 
   @@index([userId, nextRunAt])
   @@map("pilot_searches")
 }
 
-model PilotClaim {
-  id          String             @id @default(uuid())
-  userId      String             @map("user_id")
-  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kind        String
-  subjectType String             @map("subject_type")
-  subjectId   String             @map("subject_id")
-  payload     Json               @default("{}")
-  grantedAt   DateTime           @default(now()) @map("granted_at")
-  heartbeatAt DateTime?          @map("heartbeat_at")
-  expiresAt   DateTime           @map("expires_at")
-  releasedAt  DateTime?          @map("released_at")
-  outcome     PilotClaimOutcome?
+model PilotRun {
+  id               String           @id @default(uuid())
+  userId           String           @map("user_id")
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskType         String           @map("task_type")
+  subjectType      String           @map("subject_type")
+  subjectId        String           @map("subject_id")
+  payload          Json             @default("{}")
+  startedAt        DateTime         @default(now()) @map("started_at")
+  heartbeatAt      DateTime?        @map("heartbeat_at")
+  expiresAt        DateTime         @map("expires_at")
+  finishedAt       DateTime?        @map("finished_at")
+  outcome          PilotRunOutcome?
+  // Null until the host reports the usage of the cycle that started this run.
+  model            String?
+  inputTokens      Int              @default(0) @map("input_tokens")
+  outputTokens     Int              @default(0) @map("output_tokens")
+  cacheReadTokens  Int              @default(0) @map("cache_read_tokens")
+  cacheWriteTokens Int              @default(0) @map("cache_write_tokens")
 
   @@index([userId, expiresAt])
   @@index([userId, subjectType, subjectId])
-  @@index([releasedAt])
-  // No @@unique on (userId, kind, subject): one open claim per subject is an *open*-claim rule, and
-  // released rows are kept as history for the retry damper. ClaimService enforces it in-transaction.
-  @@map("pilot_claims")
+  @@index([finishedAt])
+  // No @@unique on (userId, taskType, subject): one open run per subject is an *open*-run rule, and
+  // finished rows are kept as history for the retry damper. RunService enforces it in-transaction.
+  @@map("pilot_runs")
 }
 
 model PilotQuestion {
@@ -137,6 +154,7 @@ model PilotQuestion {
   options     Json                @default("[]")
   deepLink    String?             @map("deep_link")
   answer      String?
+  answerKey   String?             @map("answer_key")
   answeredAt  DateTime?           @map("answered_at")
   expiresAt   DateTime?           @map("expires_at")
   createdAt   DateTime            @default(now()) @map("created_at")
@@ -144,6 +162,20 @@ model PilotQuestion {
   @@index([userId, status])
   @@index([status, expiresAt])
   @@map("pilot_questions")
+}
+
+// Only user-given answers land here; the model's guesses never do.
+model ProfileAnswer {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, key])
+  @@map("profile_answers")
 }
 
 model PilotJournalEntry {

@@ -1,7 +1,7 @@
 import { createTheme, responsiveFontSizes } from "@mui/material/styles";
 import { componentOverrides } from "./overrides";
 import { accent, feedback, line, stages, surfaces, textColors } from "./palette";
-import { controlHeights, gradients, iconSizes, motion, radii, shadows } from "./tokens";
+import { controlHeights, gradients, iconSizes, motion, radii, shadows, tints } from "./tokens";
 import { typography } from "./typography";
 
 const baseTheme = createTheme({
@@ -38,6 +38,7 @@ const baseTheme = createTheme({
   motion,
   radii,
   shadows_custom: shadows,
+  tints,
   iconSizes,
   controlHeights,
   components: componentOverrides,

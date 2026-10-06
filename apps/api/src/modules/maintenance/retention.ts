@@ -3,16 +3,16 @@
 import { UNUSED_VARIANT_DAYS } from "@jobpilot/contracts/resume";
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
-import { notProtectedVariant } from "@/modules/resume/variants/prunable";
+import { notProtectedVariant } from "@/modules/resume/variants/variant.schema";
 
 export const RETENTION_DAYS = {
   journal: 30,
   journalDigest: 90,
-  // Never shorter than `question`: the released claim is the only record an answered question was consumed.
-  claim: 30,
-  // search.discover claims damp on a user-configurable cadence with no upper bound, so a 14d
+  // Never shorter than `question`: the finished run is the only record an answered question was consumed.
+  run: 30,
+  // search.discover runs damp on a user-configurable cadence with no upper bound, so a 14d
   // delete could re-fire a long-cadence saved search early - keep those 90d instead.
-  claimDiscover: 90,
+  runDiscover: 90,
   question: 30,
   /** Grace past expiry/consumption before a token row is swept. */
   token: 3,
@@ -42,13 +42,13 @@ export function journalDigestOldWhere(c: RetentionCutoffs): Prisma.PilotJournalE
   return { kind: "digest", createdAt: { lt: c.journalDigest } };
 }
 
-export function claimReleasedWhere(c: RetentionCutoffs): Prisma.PilotClaimWhereInput {
-  // releasedAt: not null excludes open claims explicitly - never sweep in-flight work.
-  return { releasedAt: { not: null, lt: c.claim }, kind: { not: "search.discover" } };
+export function runFinishedWhere(c: RetentionCutoffs): Prisma.PilotRunWhereInput {
+  // finishedAt: not null excludes open runs explicitly - never sweep in-flight work.
+  return { finishedAt: { not: null, lt: c.run }, taskType: { not: "search.discover" } };
 }
 
-export function claimDiscoverWhere(c: RetentionCutoffs): Prisma.PilotClaimWhereInput {
-  return { kind: "search.discover", releasedAt: { not: null, lt: c.claimDiscover } };
+export function runDiscoverWhere(c: RetentionCutoffs): Prisma.PilotRunWhereInput {
+  return { taskType: "search.discover", finishedAt: { not: null, lt: c.runDiscover } };
 }
 
 /** Subjects that stay live indefinitely and whose only re-offer suppressor is the answered question itself. */

@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box } from "@mui/material";
+import { alpha, Box } from "@mui/material";
 import { editorial } from "@/theme/palette";
 import { type IconSizeToken, iconSizes } from "@/theme/tokens";
 
@@ -9,7 +9,6 @@ interface AgentOrbProps {
   size?: IconSizeToken;
 }
 
-/** A visual representation of an agent in the dock with a pulsing animation */
 export function AgentOrb(props: AgentOrbProps): ReactElement {
   const { size = "2xxl" } = props;
 
@@ -33,10 +32,10 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
         },
         "@keyframes agent-orb-halo": {
           "0%, 100%": {
-            boxShadow: `0 0 ${glow}px ${theme.palette.accent.primary}33, 0 0 ${Math.round(glow * 0.5)}px ${theme.palette.accent.primary}40`,
+            boxShadow: `0 0 ${glow}px ${alpha(theme.palette.accent.primary, 0.2)}, 0 0 ${Math.round(glow * 0.5)}px ${alpha(theme.palette.accent.primary, 0.25)}`,
           },
           "50%": {
-            boxShadow: `0 0 ${Math.round(glow * 1.6)}px ${theme.palette.accent.primary}66, 0 0 ${glow}px ${theme.palette.accent.primary}55`,
+            boxShadow: `0 0 ${Math.round(glow * 1.6)}px ${alpha(theme.palette.accent.primary, 0.4)}, 0 0 ${glow}px ${alpha(theme.palette.accent.primary, 0.33)}`,
           },
         },
         "@keyframes agent-orb-spin": {
@@ -72,7 +71,6 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           background: `conic-gradient(from 0deg, ${theme.palette.accent.primary}33, ${editorial.amber}26, ${editorial.thrust}1F, ${theme.palette.accent.primary}33)`,
         })}
       />
-      {/* fast bright comet sweep */}
       <Box
         sx={(theme) => ({
           position: "absolute",
@@ -89,7 +87,6 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           mixBlendMode: "screen",
         })}
       />
-      {/* slower counter-rotating dim arc - adds depth */}
       <Box
         sx={{
           position: "absolute",
@@ -115,7 +112,6 @@ export function AgentOrb(props: AgentOrbProps): ReactElement {
           boxShadow: `inset 0 0 ${Math.round(sizePx * 0.3)}px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)`,
         })}
       />
-      {/* heartbeat core */}
       <Box
         sx={(theme) => ({
           position: "absolute",

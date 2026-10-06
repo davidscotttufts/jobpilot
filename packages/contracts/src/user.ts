@@ -50,7 +50,7 @@ const optionalEmail = z
   .optional()
   .nullable();
 
-export const referenceSchema = z.object({
+const referenceSchema = z.object({
   name: z.string().min(1, "Required"),
   relationship: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
@@ -68,7 +68,7 @@ export const SALARY_CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "INR"] as c
 
 export type SalaryCurrency = (typeof SALARY_CURRENCIES)[number];
 
-export const salaryPreferenceSchema = z.object({
+const salaryPreferenceSchema = z.object({
   appliesTo: z.string().min(1, "Required"),
   minAmount: z.number().nonnegative().optional().nullable(),
   maxAmount: z.number().nonnegative().optional().nullable(),
@@ -78,7 +78,7 @@ export const salaryPreferenceSchema = z.object({
 
 export type SalaryPreferenceInput = z.infer<typeof salaryPreferenceSchema>;
 
-export const userUpdateSchema = z.object({
+const userUpdateSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   contactEmail: z.email(),
@@ -116,7 +116,7 @@ export const userUpdateSchema = z.object({
 /** Auto-apply threshold when the user has not set one; also the fit scorer's fallback. */
 export const DEFAULT_MIN_MATCH_SCORE = 60;
 
-export const autoApplySettingsSchema = z.object({
+const autoApplySettingsSchema = z.object({
   minMatchScore: z.number().int().min(0).max(100),
   maxApplicationsPerCampaign: z.number().int().min(1).max(500).optional().nullable(),
   defaultStartDate: z.string(),
@@ -131,10 +131,7 @@ export const setPrimaryResumeSchema = z.object({
   resumeId: z.uuid().nullable(),
 });
 
-export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
-export type AutoApplySettingsInput = z.infer<typeof autoApplySettingsSchema>;
 export type UserWithAutoApplyInput = z.infer<typeof userWithAutoApplySchema>;
-export type SetPrimaryResumeInput = z.infer<typeof setPrimaryResumeSchema>;
 
 export const USER_DEFAULT_VALUES: UserWithAutoApplyInput = {
   firstName: "",
@@ -184,14 +181,10 @@ export const usernameSchema = z
     "Use letters, numbers, and hyphens (no leading/trailing hyphen)",
   );
 
-export const availabilitySchema = z.enum(["open", "not_looking"]);
+export const AVAILABILITY = ["open", "not_looking"] as const;
+export const availabilitySchema = z.enum(AVAILABILITY);
 
 export type Availability = z.infer<typeof availabilitySchema>;
-
-/** Coerce a raw nullable DB string to the availability enum, or null. The one place that guards it. */
-export function parseAvailability(value: string | null): Availability | null {
-  return value === null ? null : (availabilitySchema.safeParse(value).data ?? null);
-}
 
 /** What the owner has chosen to publish; every flag is opt-in. */
 export const portfolioVisibilitySchema = z.object({
@@ -200,8 +193,6 @@ export const portfolioVisibilitySchema = z.object({
   showLinkedin: z.boolean(),
   showGithub: z.boolean(),
 });
-
-export type PortfolioVisibility = z.infer<typeof portfolioVisibilitySchema>;
 
 /** Partial update of the user's portfolio settings; every field optional. */
 export const portfolioSettingsPatchSchema = portfolioVisibilitySchema.partial().extend({

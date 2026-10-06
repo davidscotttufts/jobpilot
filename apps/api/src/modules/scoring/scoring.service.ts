@@ -1,12 +1,12 @@
-import type { ResumeData } from "@jobpilot/contracts/resume";
 import { singleton } from "tsyringe";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { readContent } from "@/modules/resume/content";
 import { type FitResult, scoreFit } from "./fit";
 import { deriveProfileFitInputs } from "./profile-fit";
-import type { FitProfile, JobDigest } from "./scoring.schema";
+import type { FitProfile, JobBrief } from "./scoring.schema";
 
 interface ScoreJobFitInput {
-  digest: JobDigest;
+  brief: JobBrief;
   profile?: Partial<FitProfile>;
   resumeId?: string;
   minScore?: number;
@@ -18,11 +18,11 @@ export class ScoringService {
 
   /**
    * Loads the profile's primary resume, derives fit inputs from it, merges any
-   * caller-provided profile overrides, and scores the job digest.
+   * caller-provided profile overrides, and scores the job brief.
    */
   async scoreJobFit(
     userId: string,
-    { digest, profile, resumeId, minScore }: ScoreJobFitInput,
+    { brief, profile, resumeId, minScore }: ScoreJobFitInput,
   ): Promise<FitResult> {
     // Prefer an explicit, owned resume override; otherwise the user's primary.
     const [content, user] = await Promise.all([
@@ -35,12 +35,8 @@ export class ScoringService {
 
     let derived = { skills: [] as string[], yearsExperience: null as number | null };
 
-    if (content) {
-      try {
-        derived = deriveProfileFitInputs(JSON.parse(content) as ResumeData);
-      } catch {
-        // resume content malformed - fall back to caller-provided profile only
-      }
+    if (content !== null) {
+      derived = deriveProfileFitInputs(readContent(content));
     }
 
     const fitProfile = {
@@ -52,7 +48,7 @@ export class ScoringService {
     };
 
     // A caller that omits the threshold gets the user's own auto-apply bar, not a global constant.
-    return scoreFit(digest, fitProfile, minScore ?? user?.autoApply?.minMatchScore);
+    return scoreFit(brief, fitProfile, minScore ?? user?.autoApply?.minMatchScore);
   }
 
   /**
@@ -62,7 +58,7 @@ export class ScoringService {
   private async resolveBaseResumeContent(
     userId: string,
     resumeId?: string,
-  ): Promise<string | null> {
+  ): Promise<Prisma.JsonValue> {
     if (resumeId) {
       const override = await this.prisma.resume.findFirst({
         where: { id: resumeId, userId },

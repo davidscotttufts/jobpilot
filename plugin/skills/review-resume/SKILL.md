@@ -15,22 +15,25 @@ Runs after `extract-resume` on upload: extraction is faithful to the PDF, this p
 Follow `../_shared/setup.md`, then:
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/resumes/$RESUME_ID"
+jobpilot-api GET /api/resumes/$RESUME_ID
 ```
 
 `content: null` → extraction hasn't run; say so and stop. Also `Read` the source PDF (path per `../_shared/setup.md`) - extraction flattens two-column layouts and drops emphasis.
 
 ## What to improve
 
-For a human screener skimming, and the ATS parsing:
+For a human screener skimming, and the ATS parsing. Change only what's weak: where the candidate's own wording already works, keep it. Rewriting every line replaces their voice with one uniform voice, and that uniformity is what reads as generated.
 
-- **`summary`** - what they do, at what level, two strongest specifics. Cut anything true of every candidate.
+- **`summary`** - two or three plain sentences about what they actually work on and their strongest specifics. Don't open with "<Title> with N years of experience" or "Results-driven <title>"; start from the work itself. Cut anything true of every candidate ("strong communicator", "team player").
 - **`basics.headline`** - a role title people search for, not a slogan.
-- **Bullets** - outcome first, consistent tense, no "Responsible for" / "Worked on" / "Helped with". Remove phrasing repeated across entries - one stock phrase in three roles flattens all three.
+- **Bullets** - past tense for past roles; a concrete verb, then what was built or changed. Replace "Responsible for" / "Worked on" / "Helped with" with what the person did. Lead with the result when there is one, but don't force every bullet into "Verb X, resulting in Y%": a resume where every line has the same shape reads as generated. Don't start most bullets with the same verb ("Developed", "Built"). Cut a phrase that repeats across entries - one stock phrase in three roles flattens all three.
+- **Projects** - the same rules for `description` and `bullets`: say what it is and what it does, without "a robust, scalable platform".
 - **Skill groups** - consolidate. Past ~5 groups it reads as a keyword dump.
 - **Ordering** - most relevant experience and projects first.
 
-Then run the `humanizer` skill in **embedded mode** on the summary and bullets.
+Avoid the phrases the server rejects in tailored resumes (listed in `../tailor-resume/SKILL.md`, "Summary"): if the user accepts this rewrite, it becomes the base every tailored variant starts from.
+
+Then run the `humanizer` skill in **embedded mode** on the summary, headline, bullets, and project descriptions you changed.
 
 ## Rules
 
@@ -44,13 +47,10 @@ The user sees a diff and clicks accept, so the diff is the guard - not a server 
 
 ## Save
 
-`label` must be exactly `Suggested rewrite` - the dashboard finds it by that label and the retention sweep skips it.
+`label` must be exactly `Suggested rewrite` - the dashboard finds it by that label and the retention sweep skips it. Write `{"label":"Suggested rewrite","content":<improved content>,"diffNotes":"<diff notes>"}` to `$JOBPILOT_TEMP/suggested-rewrite.json`, then:
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/resumes/$RESUME_ID/variants" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --argjson content "$IMPROVED_CONTENT" --arg notes "$DIFF_NOTES" \
-    '{label:"Suggested rewrite", content:$content, diffNotes:$notes}')"
+jobpilot-api POST /api/resumes/$RESUME_ID/variants --data @"$JOBPILOT_TEMP/suggested-rewrite.json"
 ```
 
 `content` is the full `ResumeData` - same shape `extract-resume` saves, every field carried over. A 400 means it doesn't match the schema; fix and resend.

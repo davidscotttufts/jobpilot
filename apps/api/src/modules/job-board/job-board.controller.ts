@@ -1,7 +1,7 @@
-import { jobBoardPatchSchema, jobBoardSchema } from "@jobpilot/contracts/job-board";
+import { jobBoardSchema } from "@jobpilot/contracts/job-board";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { deletedResponseSchema } from "@/types/response";
 import {
@@ -23,7 +23,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "List job boards",
       description:
-        "Returns all saved job boards owned by the active profile, ordered by their sort order.",
+        "Returns the active profile's boards: listed catalog boards in catalog order, then the profile's own additions. Logins are credentials scoped to the board's domain - see `GET /credentials/resolve`.",
     },
   })
   .get("/catalog", ({ user }) => svc.catalog(user.id), {
@@ -38,27 +38,17 @@ export const jobBoardController = new Elysia({
     body: jobBoardSchema,
     response: jobBoardRecordSchema,
     detail: {
-      summary: "Create job board",
+      summary: "Add job board",
       description:
-        "Creates a new job board for the active profile from the request body and returns the created record.",
-    },
-  })
-  .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
-    params: idParam,
-    body: jobBoardPatchSchema,
-    response: jobBoardRecordSchema,
-    detail: {
-      summary: "Update job board",
-      description:
-        "Applies a partial update to the active profile's job board identified by id and returns the updated record.",
+        "Links the catalog board with the given domain to the active profile. An unknown domain is added to the catalog unlisted, using `name` and `searchUrl`. Linking a board twice returns 409.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
     response: deletedResponseSchema,
     detail: {
-      summary: "Delete job board",
+      summary: "Remove job board",
       description:
-        "Deletes the active profile's job board identified by id and returns the id of the removed record.",
+        "Unlinks the board from the active profile and returns the id of the removed link. The catalog row and any credential for the domain survive.",
     },
   });

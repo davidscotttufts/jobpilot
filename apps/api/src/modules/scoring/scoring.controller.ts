@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { fitResultSchema, scoreFitSchema } from "./scoring.schema";
 import { ScoringService } from "./scoring.service";
@@ -17,6 +17,6 @@ export const scoringController = new Elysia({
     detail: {
       summary: "Score job fit",
       description:
-        "Deterministically scores a job digest against the profile's resume-derived inputs plus any overrides. The verdict says whether to trust the score as-is or deliberate over the match evidence.",
+        "Deterministically scores a job brief against the profile's resume-derived inputs plus any overrides. The verdict says whether to trust the score as-is or deliberate over the match evidence.",
     },
   });

@@ -1,6 +1,7 @@
 export { JobCard } from "./job-card";
 export { JobDetail } from "./job-detail";
 export { JobFilters } from "./job-filters";
-export { JobGridSkeleton } from "./job-grid-skeleton";
+export { JobList } from "./job-list";
 export { JobPager } from "./job-pager";
-export { SkillChips } from "./skill-chips";
+export { JobSortControls } from "./job-sort-controls";
+export { jobsHref } from "./jobs-href";

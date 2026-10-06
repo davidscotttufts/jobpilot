@@ -24,7 +24,7 @@ const ADVANCED: readonly ApplicationStatus[] = ["screening", "interviewing", "of
 /** Below this, report counts and no rate - a percentage here would be read as signal. */
 export const MIN_SAMPLE = 10;
 
-export interface OutcomeRow {
+interface OutcomeRow {
   key: string;
   applications: number;
   advanced: number;

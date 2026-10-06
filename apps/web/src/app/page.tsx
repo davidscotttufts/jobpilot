@@ -2,22 +2,20 @@ import type { ReactElement } from "react";
 import { Box } from "@mui/material";
 import type { Metadata } from "next";
 import {
-  BoardStrip,
-  CampaignTypes,
   CtaBand,
   FAQ_ITEMS,
   Faq,
   Hero,
-  HowItWorks,
   LiveJobsStrip,
   MarketingFooter,
   MarketingNav,
   Pilot,
-  PrivacyGrid,
   ProductTour,
+  ProofStrip,
   Teaser,
+  Trust,
 } from "@/components/features/marketing";
-import { JsonLd } from "@/components/seo";
+import { JsonLd } from "@/components/seo/json-ld";
 import { faqPageLd, organizationLd, softwareApplicationLd, websiteLd } from "@/lib/structured-data";
 
 export const metadata: Metadata = {
@@ -25,7 +23,7 @@ export const metadata: Metadata = {
 };
 
 const SOFTWARE_DESCRIPTION =
-  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you. It runs locally on your own Claude Code or Codex subscription.";
+  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you. It runs on your computer with your Claude Code or Codex subscription.";
 
 export default function LandingPage(): ReactElement {
   return (
@@ -42,14 +40,11 @@ export default function LandingPage(): ReactElement {
       <MarketingNav />
       <Box component="main">
         <Hero />
-        <Teaser />
+        <Teaser footer={<ProofStrip />} />
         <Pilot />
-        <BoardStrip />
-        <CampaignTypes />
         <ProductTour />
-        <PrivacyGrid />
+        <Trust />
         <LiveJobsStrip />
-        <HowItWorks />
         <Faq />
         <CtaBand />
       </Box>

@@ -11,7 +11,7 @@
 // The shared client: it carries the adapter and connection settings this Prisma build requires.
 
 import { applyPhaseTimingsSchema } from "@jobpilot/contracts/campaign";
-import { prisma } from "../src/common/database/prisma.client";
+import { db as prisma } from "../src/common/database/prisma.client";
 import { Prisma } from "../src/generated/prisma/client";
 
 // Derived from the contract: a phase added there must not be silently dropped here.

@@ -7,6 +7,8 @@ enum CampaignJobStatus {
   failed
   skipped
   needs_user
+
+  @@map("campaign_job_status")
 }
 
 model Job {
@@ -33,9 +35,9 @@ model Job {
   retryNotes  String?           @map("retry_notes")
   skipReason  String?           @map("skip_reason")
   description String?
-  digest      String?
+  brief       String?
   /// Per-phase apply durations in ms, as reported by the worker. Nothing else can see inside an
-  /// apply: the claim knows only that five minutes passed.
+  /// apply: the run knows only that five minutes passed.
   phaseTimings Json?    @map("phase_timings")
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @default(now()) @updatedAt @map("updated_at")
@@ -45,7 +47,7 @@ model Job {
   // The application detail resolves its posting by url within the campaign; no FK links the two.
   @@index([campaignId, url])
   @@index([status, updatedAt])
-  // The pilot activity probe takes MAX(updatedAt) across a user's campaigns every two minutes.
+  // Pilot activity probe, as on Campaign.
   @@index([campaignId, updatedAt])
   @@map("jobs")
 }

@@ -5,13 +5,12 @@ enum JobListingStatus {
   @@map("job_listing_status")
 }
 
-// The public job index: one row per posting, deduped across every user's campaigns. Digest fields
-// only - it must never carry who discovered or applied. Grows into the fleet-wide shared job index.
+// The public job index: one row per posting, deduped across all users. Must never record who
+// discovered or applied.
 model JobListing {
   id        String @id @default(uuid())
   slug      String @unique
-  // sha256(normTitle|normCompany|normLocation). Not to be confused with `Job.digest`, which is the
-  // agent's JSON content summary, not a hash.
+  // sha256(normTitle|normCompany|normLocation).
   dedupeKey String @unique @map("dedupe_key")
 
   title              String
@@ -22,7 +21,7 @@ model JobListing {
   employmentType     String?  @map("employment_type")
   skills             String[] @map("skills")
   descriptionExcerpt String?  @map("description_excerpt")
-  // From the agent's digest. Empty until a posting is re-scraped - there is no backfill.
+  // From the agent's brief. Empty until a posting is re-scraped - there is no backfill.
   requirements       String[] @map("requirements")
   responsibilities   String[] @map("responsibilities")
   yearsExperience    Int?     @map("years_experience")
@@ -36,8 +35,10 @@ model JobListing {
 
   sources JobListingSource[]
 
-  // Serves the default list and the sitemap: `where status ORDER BY last_seen_at DESC`.
+  // Default list and sitemap.
   @@index([status, lastSeenAt])
+  // `?sort=newest` and `?posted=`.
+  @@index([status, firstSeenAt])
   // `?tech=` is a `skills @> ARRAY[..]` containment test - btree cannot serve it.
   @@index([skills], type: Gin)
   // Trigram indexes serve the `?q=` ILIKE '%term%' search.
@@ -54,7 +55,7 @@ model JobListingSource {
   listingId  String   @map("listing_id")
   // Stored lowercase, so `?board=` is an equality hit rather than an ILIKE scan.
   board      String?
-  // Canonicalized (tracking params stripped) - see canonicalizeUrl in dedupe.ts.
+  // Tracking params stripped by canonicalizeUrl.
   url        String   @unique
   lastSeenAt DateTime @default(now()) @map("last_seen_at")
 

@@ -4,18 +4,12 @@ using Microsoft.Extensions.Hosting;
 
 namespace JobPilot.Terminal.Sessions;
 
-/// <summary>
-/// Owns workspace scratch cleanup: a full Playwright sweep at session start plus a periodic aged
-/// sweep of .temp and .playwright-mcp. Playwright cleaning never recurses because browser profiles
-/// live beneath the same directory.
-/// </summary>
+/// <summary>Cleans .temp and .playwright-mcp scratch at session start and every few hours.</summary>
 public sealed class ScratchCleaner(HostInstall install, ILogger<ScratchCleaner> logger) : BackgroundService
 {
-    /// <summary>Scratch files older than this are removed by the aged sweeps.</summary>
     public static readonly TimeSpan Retention = TimeSpan.FromHours(24);
 
-    /// <summary>Interval between background sweeps.</summary>
-    public static readonly TimeSpan SweepInterval = TimeSpan.FromHours(6);
+    private static readonly TimeSpan SweepInterval = TimeSpan.FromHours(6);
 
     // Lets Kestrel finish binding before the first sweep touches the disk.
     private static readonly TimeSpan StartupDelay = TimeSpan.FromMinutes(1);
@@ -23,11 +17,11 @@ public sealed class ScratchCleaner(HostInstall install, ILogger<ScratchCleaner> 
     private static readonly string[] PlaywrightScratchExtensions =
         [".log", ".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".md", ".json", ".yml", ".yaml"];
 
-    /// <summary>Cleans before a provider session spawns: every Playwright scratch file plus aged .temp files.</summary>
-    public void CleanSessionStart(string workingDir)
+    /// <summary>Removes every Playwright scratch file plus aged .temp files.</summary>
+    public void CleanSessionStart(InstallPaths paths)
     {
-        CleanPlaywright(workingDir, maxAge: null);
-        CleanTemp(workingDir);
+        CleanPlaywright(paths, maxAge: null);
+        CleanTemp(paths);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -42,30 +36,29 @@ public sealed class ScratchCleaner(HostInstall install, ILogger<ScratchCleaner> 
                 // age-gated so it can't yank a file the live browser session just wrote.
                 if (install.Paths is { } paths)
                 {
-                    CleanTemp(paths.WorkingDir);
-                    CleanPlaywright(paths.WorkingDir, Retention);
+                    CleanTemp(paths);
+                    CleanPlaywright(paths, Retention);
                 }
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));
         }
         catch (OperationCanceledException)
         {
-            // Host shutdown.
         }
     }
 
-    /// <summary>Deletes aged files anywhere under .temp (the whole tree is scratch), then prunes emptied subdirectories.</summary>
-    internal void CleanTemp(string workingDir)
+    // The whole .temp tree is scratch, so it has no extension allowlist.
+    internal void CleanTemp(InstallPaths paths)
     {
-        var dir = Path.Combine(workingDir, ".temp");
+        var dir = paths.ScratchDir;
         DeleteFiles(dir, SearchOption.AllDirectories, extensions: null, DateTime.UtcNow - Retention);
-        DirectoryPrune.DeleteEmptyDirectories(dir);
+        FileTree.DeleteEmptyDirectories(dir);
     }
 
-    /// <summary>Deletes top-level Playwright scratch files; a null <paramref name="maxAge"/> removes them regardless of age.</summary>
-    internal void CleanPlaywright(string workingDir, TimeSpan? maxAge) =>
+    // Top level only: browser profiles live in subdirectories. A null maxAge ignores age.
+    internal void CleanPlaywright(InstallPaths paths, TimeSpan? maxAge) =>
         DeleteFiles(
-            Path.Combine(workingDir, ".playwright-mcp"),
+            paths.PlaywrightDir,
             SearchOption.TopDirectoryOnly,
             PlaywrightScratchExtensions,
             maxAge is { } age ? DateTime.UtcNow - age : null);

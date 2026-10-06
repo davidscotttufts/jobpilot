@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>JobPilot.Terminal</RootNamespace>
     <AssemblyName>jobpilot</AssemblyName>
-    <Version>2.1.35</Version>
+    <Version>2.2.0</Version>
     <ApplicationIcon>jobpilot.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
@@ -19,7 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Quick.PtyNet" Version="1.0.4" />
     <!-- DPAPI for the pilot token at rest on Windows; a P/Invoke shim that is trim/AOT safe. -->
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.9" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,11 +38,6 @@
   <ItemGroup>
     <Content Include="..\..\plugin\**\*">
       <Link>plugin\%(RecursiveDir)%(Filename)%(Extension)</Link>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-    <!-- Codex loads the user-installed marketplace plugin; these repo-scoped agents provide worker parity with Claude. -->
-    <Content Include="..\..\.codex\agents\*.toml">
-      <Link>.codex\agents\%(Filename)%(Extension)</Link>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>

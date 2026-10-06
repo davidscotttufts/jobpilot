@@ -3,23 +3,35 @@
 import type { ReactNode } from "react";
 import { Button, Chip, Stack } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
+import { POSTED_OPTIONS } from "./job-sort-controls";
 import { jobsHref } from "./jobs-href";
 
-/** Chipped one-by-one; `tech` is absent because the multi-select above already renders it as chips. */
-const CHIPPED = ["q", "location", "board", "remote"] as const;
+/** No `tech`: the multi-select already shows it as chips. */
+const CHIPPED = ["q", "location", "board", "remote", "posted"] as const;
 
-/** The applied filters as removable chips, plus the only "clear everything" affordance. */
+type ChippedKey = (typeof CHIPPED)[number];
+
+function chipLabel(key: ChippedKey, value: string): string {
+  if (key === "remote") {
+    return "Remote";
+  }
+  if (key === "posted") {
+    return POSTED_OPTIONS.find((option) => option.value === value)?.label ?? value;
+  }
+  return value;
+}
+
 export function ActiveFilters(): ReactNode {
   const router = useRouter();
   const params = useSearchParams();
 
-  const applied = CHIPPED.filter((key) => params.get(key)).map((key) => ({
-    key,
-    // `?remote=true` reads as a state, not a value.
-    label: key === "remote" ? "Remote" : (params.get(key) as string),
-  }));
+  const applied = CHIPPED.flatMap((key) => {
+    const value = params.get(key);
+    return value ? [{ key, label: chipLabel(key, value) }] : [];
+  });
 
-  const dirty = [...params.keys()].some((key) => key !== "page");
+  // Sort is an ordering, not a filter, so it alone does not offer "Clear all".
+  const dirty = [...params.keys()].some((key) => key !== "page" && key !== "sort");
   if (!dirty) {
     return null;
   }

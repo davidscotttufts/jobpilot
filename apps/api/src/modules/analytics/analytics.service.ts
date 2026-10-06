@@ -1,10 +1,9 @@
 import { type ApplicationStatus, INTERVIEW_STATUSES } from "@jobpilot/contracts/application";
+import { pilotInstructionsConfigSchema } from "@jobpilot/contracts/pilot";
 import { singleton } from "tsyringe";
-import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
+import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { PrismaClient } from "@/generated/prisma/client";
-import { toWireDiscoverySource } from "@/modules/contact";
 import { normalizeJobTitle } from "@/modules/scoring/applied-duplicates";
-import { loadInstructions } from "../pilot/pilot.instructions";
 import { findActionableJobs } from "./needs-you";
 import { buildOutcomeBreakdown } from "./outcomes";
 import { simulateThreshold } from "./score-threshold";
@@ -53,8 +52,11 @@ export class AnalyticsService {
    * those jobs are worth applying to is not a judgment the data can make.
    */
   async scoreThreshold(userId: string) {
-    const [{ config }, skipped] = await Promise.all([
-      loadInstructions(this.prisma, userId),
+    const [state, skipped] = await Promise.all([
+      this.prisma.pilotState.findUnique({
+        where: { userId },
+        select: { instructionsConfig: true },
+      }),
       this.prisma.job.findMany({
         // The reason string is what the agent writes when the score alone caused the skip; other
         // skips (clearance, CAPTCHA, dedupe) would not be admitted by a lower bar.
@@ -70,6 +72,7 @@ export class AnalyticsService {
         take: THRESHOLD_SCAN,
       }),
     ]);
+    const config = pilotInstructionsConfigSchema.parse(state?.instructionsConfig ?? {});
     return simulateThreshold(config.minScore, skipped);
   }
 
@@ -236,7 +239,7 @@ export class AnalyticsService {
     const topContactSources = contactSourceRows
       .filter((r) => r.discoverySource)
       .map((r) => ({
-        source: toWireDiscoverySource(r.discoverySource) as string,
+        source: r.discoverySource as string,
         count: r._count._all,
       }));
 

@@ -1,60 +1,69 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Box, Stack } from "@mui/material";
+import { Grid, Skeleton, Stack } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { useTerminalHealth } from "../../agent-dock/use-terminal-health";
 import { NeedsAttention } from "../attention/needs-attention";
 import { JobAlertsPanel } from "../job-alerts/job-alerts-panel";
+import { pilotMode } from "../pilot-status";
 import { usePilotControls } from "../use-pilot-controls";
-import { AgendaPreview } from "./agenda-preview";
 import { OrchestrationPanel } from "./orchestration-panel";
-import { OverviewSkeleton } from "./overview-skeleton";
-import { PilotStatusProvider } from "./pilot-status-context";
 import { RecentActivity } from "./recent-activity";
 import { PilotSetupChecklist } from "./setup-checklist";
-import { StatusHero } from "./status-hero";
+import { StatusBar } from "./status-bar";
+import { TaskListPreview } from "./task-list-preview";
+import { TodayPanel } from "./today-panel";
+import { useNextWake } from "./use-next-wake";
 
 export function OverviewTab(): ReactElement {
-  // Controls + health are hoisted so the hero and the checklist share one host poll.
+  // Owned here so the status bar, checklist and diagram share one host poll and wake timer.
   const controls = usePilotControls();
   const { health, status } = useTerminalHealth(controls.isLoading);
   const stateQuery = useApiQuery(pilotQueries.state(), {
     errorMessage: "Failed to load pilot state",
   });
-
-  if (stateQuery.isLoading || !stateQuery.data) {
-    return <OverviewSkeleton />;
-  }
+  const nextWakeAt = useNextWake(stateQuery.data ?? null);
 
   const state = stateQuery.data;
-
-  // On xs, Needs-attention hoists above the hero so it's reachable one-handed;
-  // md keeps DOM order. useFlexGap makes `order` reflow cleanly.
-  return (
-    <PilotStatusProvider state={state} controls={controls} health={health} hostStatus={status}>
-      <Stack spacing={3} useFlexGap>
-        <PilotSetupChecklist />
-        <Box sx={{ order: { xs: 2, md: 0 } }}>
-          <StatusHero />
-        </Box>
-        <Box sx={{ order: { xs: 3, md: 0 } }}>
-          <JobAlertsPanel />
-        </Box>
-        <Box sx={{ order: { xs: 4, md: 0 } }}>
-          <OrchestrationPanel />
-        </Box>
-        <Box sx={{ order: { xs: 1, md: 0 } }}>
-          <NeedsAttention />
-        </Box>
-        <Box sx={{ order: { xs: 5, md: 0 } }}>
-          <AgendaPreview />
-        </Box>
-        <Box sx={{ order: { xs: 6, md: 0 } }}>
-          <RecentActivity />
-        </Box>
+  if (stateQuery.isLoading || !state) {
+    return (
+      <Stack spacing={3}>
+        <Skeleton variant="rounded" height={96} />
+        <Skeleton variant="rounded" height={56} />
+        <Skeleton variant="rounded" height={220} />
+        <Skeleton variant="rounded" height={180} />
       </Stack>
-    </PilotStatusProvider>
+    );
+  }
+
+  const pilot = status?.pilot ?? null;
+  const mode = pilotMode(state, health, pilot);
+
+  return (
+    <Stack spacing={3}>
+      <PilotSetupChecklist state={state} health={health} />
+      <StatusBar
+        state={state}
+        controls={controls}
+        health={health}
+        pilot={pilot}
+        mode={mode}
+        nextWakeAt={nextWakeAt}
+      />
+      <JobAlertsPanel />
+      <NeedsAttention />
+      <OrchestrationPanel state={state} pilot={pilot} mode={mode} nextWakeAt={nextWakeAt} />
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 5 }}>
+          <TodayPanel state={state} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 7 }}>
+          <TaskListPreview running={state.running} />
+        </Grid>
+      </Grid>
+      <RecentActivity />
+    </Stack>
   );
 }

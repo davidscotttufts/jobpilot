@@ -20,14 +20,14 @@ export const DRIFT_MIN_HISTORY = 20;
 export const DRIFT_MIN_NEW_HOST_JOBS = 3;
 
 /** The new host must have arrived this long after the established one, at minimum. */
-export const DRIFT_MIN_AGE_GAP_MS = 24 * 60 * 60 * 1000;
+const DRIFT_MIN_AGE_GAP_MS = 24 * 60 * 60 * 1000;
 
 /** ...and that gap must be this share of the established host's own history, so a board that has
  *  always served two domains a day apart is not mistaken for a migration. */
-export const DRIFT_MIN_AGE_GAP_RATIO = 0.25;
+const DRIFT_MIN_AGE_GAP_RATIO = 0.25;
 
 /** ...and must still be in use: a host abandoned this long ago is history, not drift. */
-export const DRIFT_STALE_MS = 14 * 24 * 60 * 60 * 1000;
+const DRIFT_STALE_MS = 14 * 24 * 60 * 60 * 1000;
 
 export interface BoardJobUrl {
   board: string | null;

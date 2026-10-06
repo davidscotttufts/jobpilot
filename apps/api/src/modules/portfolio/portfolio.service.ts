@@ -1,9 +1,9 @@
 import { resumeDataSchema } from "@jobpilot/contracts/resume";
-import { parseAvailability } from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
-import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date";
+import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
-import { PrismaClient } from "@/generated/prisma/client";
+import { MemoryCache } from "@/common/memory-cache";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import type { LeaderboardResponse, LeaderboardWindow, PortfolioResponse } from "./portfolio.schema";
 
 const HEATMAP_DAYS = 365;
@@ -19,25 +19,28 @@ const activity = (r: { applications: number; messagesSent: number }) =>
 const LEADERBOARD_CAP = 50;
 const LEADERBOARD_TTL_MS = 5 * 60 * 1000;
 
-interface CachedLeaderboard {
-  expires: number;
-  data: LeaderboardResponse;
-}
-
-/** Backs the public /u/[username] page and /leaderboard - deliberately unauthenticated. */
 @singleton()
 export class PortfolioService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  // Cache is keyed by window; monotonic Date.now() TTL, no cross-user data (published only).
-  private readonly leaderboardCache = new Map<LeaderboardWindow, CachedLeaderboard>();
+  private readonly leaderboardCache = new MemoryCache<LeaderboardWindow, LeaderboardResponse>({
+    ttlMs: LEADERBOARD_TTL_MS,
+  });
 
-  /** Public view: every account has an always-public portfolio; 404s only on an unknown username. */
+  /** Every account's portfolio is public; 404s only on an unknown username. */
   async byUsername(username: string): Promise<PortfolioResponse> {
     return this.build({ username }, "Portfolio not found");
   }
 
-  /** Authed self-preview by user id (same card the public sees). */
+  /** The web proxy's 404 check, so it skips the queries `build` runs. */
+  async assertExists(username: string): Promise<{ ok: true }> {
+    const user = await this.prisma.user.findFirst({ where: { username }, select: { id: true } });
+    if (!user) {
+      throw notFound("Portfolio not found");
+    }
+    return { ok: true };
+  }
+
   async previewByUserId(userId: string): Promise<PortfolioResponse> {
     return this.build({ id: userId }, "User not found");
   }
@@ -73,8 +76,8 @@ export class PortfolioService {
 
     const start = this.heatmapStart();
 
-    // Totals are counts (all-time); the heatmap only fetches rows inside its window, so row
-    // transfer stays bounded to 365 days regardless of how long the account has been active.
+    // Totals are all-time counts; only the heatmap fetches rows, inside its window, so transfer
+    // stays bounded however old the account is.
     const [resume, applicationTotal, interviews, messageTotal, appliedDates, messages] =
       await Promise.all([
         user.primaryResumeId
@@ -111,12 +114,12 @@ export class PortfolioService {
     const username = user.username ?? "";
     const displayName = `${user.firstName} ${user.lastName}`.trim() || username;
     const location =
-      [user.city, user.state].filter(Boolean).join(", ") || content?.basics.location || null;
+      [user.city?.trim(), user.state?.trim()].filter(Boolean).join(", ") ||
+      content?.basics.location ||
+      null;
 
     const cutoff = startOfDay(new Date()).getTime() - 29 * DAY_MS;
-    const activityLast30 = perDay
-      .filter((p) => p.date.getTime() >= cutoff)
-      .reduce((n, p) => n + p.count, 0);
+    const applicationsLast30 = appliedDates.filter((a) => a.appliedAt.getTime() >= cutoff).length;
     const streaks = this.streaks(perDay);
 
     return {
@@ -124,7 +127,7 @@ export class PortfolioService {
       displayName,
       headline: content?.basics.headline?.trim() || null,
       location,
-      availability: parseAvailability(user.availability),
+      availability: user.availability,
       summary: content?.summary?.trim() || null,
       links: {
         website: user.showWebsite ? user.website || content?.basics.website || null : null,
@@ -139,19 +142,18 @@ export class PortfolioService {
         applications: applicationTotal,
         interviews,
         messagesSent: messageTotal,
-        activityLast30,
+        applicationsLast30,
         currentStreak: streaks.current,
         longestStreak: streaks.longest,
       },
     };
   }
 
-  async leaderboard(window: LeaderboardWindow = "month"): Promise<LeaderboardResponse> {
-    const cached = this.leaderboardCache.get(window);
-    if (cached && cached.expires > Date.now()) {
-      return cached.data;
-    }
+  leaderboard(window: LeaderboardWindow = "month"): Promise<LeaderboardResponse> {
+    return this.leaderboardCache.getOrLoad(window, () => this.loadLeaderboard(window));
+  }
 
+  private async loadLeaderboard(window: LeaderboardWindow): Promise<LeaderboardResponse> {
     const gte =
       window === "all"
         ? undefined
@@ -219,15 +221,13 @@ export class PortfolioService {
         username: user.username,
         displayName: `${user.firstName} ${user.lastName}`.trim() || user.username,
         headline: user.primaryResumeId ? (headlineById.get(user.primaryResumeId) ?? null) : null,
-        availability: parseAvailability(user.availability),
+        availability: user.availability,
         applications: r.applications,
         messagesSent: r.messagesSent,
         activityCount: activity(r),
       }));
 
-    const data: LeaderboardResponse = { window, totalActive: active.length, rows };
-    this.leaderboardCache.set(window, { expires: Date.now() + LEADERBOARD_TTL_MS, data });
-    return data;
+    return { window, totalActive: active.length, rows };
   }
 
   async sitemap(): Promise<{ username: string; updatedAt: Date }[]> {
@@ -256,13 +256,8 @@ export class PortfolioService {
     return { current, longest };
   }
 
-  private parseResume(content: string | null) {
-    if (!content) return null;
-    try {
-      const parsed = resumeDataSchema.safeParse(JSON.parse(content));
-      return parsed.success ? parsed.data : null;
-    } catch {
-      return null;
-    }
+  private parseResume(content: Prisma.JsonValue) {
+    const parsed = resumeDataSchema.safeParse(content);
+    return parsed.success ? parsed.data : null;
   }
 }

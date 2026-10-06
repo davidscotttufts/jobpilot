@@ -30,7 +30,9 @@ export function FormDialogShell(props: FormDialogShellProps): ReactElement {
     <Dialog open={open} onClose={onClose} maxWidth={maxWidth} fullWidth>
       <form
         onSubmit={(e) => {
+          // React bubbles submit through the portal, so an enclosing page form would submit too.
           e.preventDefault();
+          e.stopPropagation();
           onSubmit();
         }}
       >

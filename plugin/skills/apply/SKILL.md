@@ -27,13 +27,19 @@ Read `autoApply` for config (defaults applied per field):
 | `maxApplicationsPerCampaign` | `null` (unlimited) | Sent as `config.maxApplications` when set; omit for unlimited batch. Single-job mode forces `1`. |
 | `defaultStartDate`           | `"2 weeks notice"` | Default start-date answer.                                                                       |
 
-For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in `/api/job-boards`; the `job-worker` handles login/registration there per `../_shared/auth.md`.
+For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a domain that isn't in
+`/api/job-boards`; the `job-applier` handles login/registration there per `../_shared/auth.md`.
 
 ## Phase 0: Dispatch
 
-- Argument is `campaign <campaign-id>` → set `CAMPAIGN_ID=<campaign-id>` and fetch it first (`GET /api/campaigns/$CAMPAIGN_ID`); the summary decides which of the two branches runs:
-  - `summary.byStatus.queued > 0` → the campaign still holds pasted links nobody has visited: go to **Phase 2**, skipping 2.1 (the campaign is already resolved).
-  - otherwise → **re-apply mode**: set `config.maxApplications = null` (unlimited - the user hand-selected these jobs), skip Phases 1-4, and run the Phase 5 loop over its current `approved` jobs. (The campaign viewer - or the `rescan-skipped` skill - promotes the chosen skipped/failed jobs to `approved` before injecting this.)
+- Argument is `campaign <campaign-id>` → set `CAMPAIGN_ID=<campaign-id>` and fetch it first (`GET
+  /api/campaigns/$CAMPAIGN_ID`); the summary decides which of the two branches runs:
+  - `summary.byStatus.queued > 0` → the campaign still holds pasted links nobody has visited: go
+    to **Phase 2**, skipping 2.1 (the campaign is already resolved).
+  - otherwise → **re-apply mode**: set `config.maxApplications = null` (unlimited - the user
+    hand-selected these jobs), skip Phases 1-4, and run the Phase 5 loop over its current `approved`
+    jobs. (The campaign viewer - or the `rescan-skipped` skill - promotes the chosen skipped/failed
+    jobs to `approved` before injecting this.)
 - Any other argument present → **Phase 1** (single-job).
 - No argument → **Phase 2** (batch).
 
@@ -41,13 +47,22 @@ For ATS portals (Greenhouse, Lever, Workday, etc.) the apply step lands on a dom
 
 ## Phase 1: Single-Job Mode
 
-If the argument is pasted content (HTML / text), extract description, Apply URL, company, title. If no Apply URL can be found, stop: **"I need either a job URL or content with a visible Apply link."**
+If the argument is pasted content (HTML / text), extract description, Apply URL, company, title. If
+no Apply URL can be found, stop: **"I need either a job URL or content with a visible Apply link."**
 
 ### 1.1 Fit Review
 
-**URL input** → delegate to the `job-worker` subagent with `mode:"review"` so the posting snapshot stays out of this conversation: `{ "mode":"review", "url":"<job-url>", "resumeId":"<primary-or-empty>" }`. Use its returned `matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`recommendation` to fill the review below; keep its `digest` as `DIGEST` for 1.4.
+**URL input** → delegate to the `job-scorer` subagent with `mode:"review"` so the posting snapshot
+stays out of this conversation: `{ "mode":"review", "url":"<job-url>",
+"resumeId":"<primary-or-empty>" }`. Use its returned
+`matchScore`/`strongMatches`/`partialMatches`/`gaps`/`blockers`/`visaRisk`/`recommendation` to fill
+the review below; keep its `brief` as `BRIEF` for 1.4.
 
-**Pasted input** → parse the fields yourself (the content is already in hand), build the digest (`../_shared/digest-schema.md`), and `POST /api/score-fit {digest, minScore:<minMatchScore>}` for the score. Its `fit.verdict` drives the recommendation below: `trust` → report the score as-is; `deliberate` → reason from `strongMatches`/`partialMatches`/`gaps` first. Keep the digest in `DIGEST=...` for 1.4.
+**Pasted input** → parse the fields yourself (the content is already in hand), build the brief
+(`../_shared/job-brief.md`), and `POST /api/score-fit {brief, minScore:<minMatchScore>}` for the
+score. Its `fit.verdict` drives the recommendation below: `trust` → report the score as-is;
+`deliberate` → reason from `strongMatches`/`partialMatches`/`gaps` first. Keep the brief in
+`BRIEF=...` for 1.4.
 
 ```
 ## Job Fit Review: [Title] at [Company]
@@ -72,27 +87,29 @@ whether to proceed anyway. Stop on no.
 ### 1.3 Create Campaign-of-1
 
 ```bash
-CAMPAIGN=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg query "<title> at <company>" \
-    '{query:$query, source:"apply", config:{maxApplications:1}}')")
-CAMPAIGN_ID=$(printf '%s\n' "$CAMPAIGN" | jq -r '.campaignId')
+jobpilot-api POST /api/campaigns \
+  --data '{"query":"<title> at <company>","source":"apply","config":{"maxApplications":1}}'
 ```
+
+Keep `.campaignId` from the response as `CAMPAIGN_ID`.
 
 ### 1.4 Add the Job
 
-```bash
-JOB_KEY=$(date -u +%s)-single
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg key "$JOB_KEY" --arg title "<title>" --arg company "<company>" \
-    --arg location "<location>" --arg url "<job-url>" --arg board "<board>" \
-    --arg matchReason "<one-line verdict>" --argjson score <0-100> \
-    --arg digest "$DIGEST" --arg desc "<posting text>" \
-    '{key:$key, title:$title, company:$company, location:$location, url:$url, board:$board, matchScore:$score, matchReason:$matchReason, status:"approved", digest:$digest, description:$desc}')"
+Pick a `JOB_KEY` of `<unix-seconds>-single`. Write the body to `"$JOBPILOT_TEMP/job.json"` (`brief`
+is the stringified brief, `description` the posting text):
+
+```json
+{ "key": "<JOB_KEY>", "title": "<title>", "company": "<company>", "location": "<location>",
+  "url": "<job-url>", "board": "<board>", "matchScore": <0-100>, "matchReason": "<one-line verdict>",
+  "status": "approved", "brief": "<stringified brief>", "description": "<posting text>" }
 ```
 
-Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`. Jump to **Phase 5**.
+```bash
+jobpilot-api POST "/api/campaigns/$CAMPAIGN_ID/jobs" --data @"$JOBPILOT_TEMP/job.json"
+```
+
+Keep `$CAMPAIGN_ID` and `$JOB_KEY`. Live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`. Jump
+to **Phase 5**.
 
 ---
 
@@ -108,21 +125,19 @@ Skip this when the `campaign <id>` dispatch already set `CAMPAIGN_ID`. Otherwise
 `apply` campaign still holding queued rows (`.items` is newest-first):
 
 ```bash
-CAMPAIGN_ID=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
-  "$JOBPILOT_API/api/campaigns?status=in_progress&source=apply&jobStatus=queued&page=1&limit=1" \
-  | jq -r '.items[0].campaignId // ""')
+jobpilot-api GET /api/campaigns --query status=in_progress --query source=apply \
+  --query jobStatus=queued --query page=1 --query limit=1
 ```
 
-Empty → **"Nothing queued. Start a campaign at $JOBPILOT_WEB/campaigns/new, pick Apply to
-links, and run this again."** and stop. Otherwise read `config` off that same campaign row:
-`minScore` overrides `minMatchScore`,
-`resumeId` overrides the primary resume, `maxApplications` caps Phase 5.
+Take `.items[0].campaignId` as `CAMPAIGN_ID`. Empty `.items` → **"Nothing queued. Start a campaign
+at $JOBPILOT_WEB/campaigns/new, pick Apply to links, and run this again."** and stop. Otherwise read
+`config` off that same campaign row: `minScore` overrides `minMatchScore`, `resumeId` overrides the
+primary resume, `maxApplications` caps Phase 5.
 
 ### 2.2 Load the Queued Rows
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" \
-  "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs?status=queued&page=1&limit=100"
+jobpilot-api GET "/api/campaigns/$CAMPAIGN_ID/jobs" --query status=queued --query page=1 --query limit=100
 ```
 
 Keep each row's `key` and `url` - those two are all a queued row carries that is worth trusting.
@@ -136,18 +151,17 @@ For each queued row, run the applied-check (`../_shared/campaign-flow.md`) with 
 `.applied`, post the terminal result straight from `queued` (legal from any non-terminal status):
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result" \
-  -H 'content-type: application/json' \
-  -d "$(jq -n --arg r "Already applied (<kind>)" '{outcome:"skipped", skipReason:$r}')"
+jobpilot-api POST "/api/campaigns/$CAMPAIGN_ID/jobs/<key>/result" \
+  --data '{"outcome":"skipped","skipReason":"Already applied (<kind>)"}'
 ```
 
 Drop that row from the batch and continue without spawning a worker.
 
-### 3.2 Score (delegate to `job-worker`)
+### 3.2 Score (delegate to `job-scorer`)
 
-Delegate the surviving rows to the `job-worker` subagent - it opens its own tab, reads each
+Delegate the surviving rows to the `job-scorer` subagent - it opens its own tab, reads each
 posting, fuzzy-dedupes by title+company, scores, applies eligibility
-(`../_shared/eligibility.md`), and **writes each row itself** (so the full posting/digest never
+(`../_shared/eligibility.md`), and **writes each row itself** (so the full posting/brief never
 enters this conversation). Batches of at most 5 rows (the worker's cap), one worker at a time.
 Input JSON:
 
@@ -158,17 +172,20 @@ Input JSON:
 ```
 
 `save:"patch"` keeps this on the existing rows: the worker PATCHes the real title, company,
-location, board, score, and digest onto each eligible row (`queued` → `pending`); an ineligible
+location, board, score, and brief onto each eligible row (`queued` → `pending`); an ineligible
 or already-applied row gets a `/result` `skipped` instead.
 
-It returns one `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence, eligible, skipReason, matchReason }` per row. Collect these summaries for the ranked table (Phase 4).
+It returns one `{ outcome:"scored", jobKey, title, company, location, matchScore, confidence,
+eligible, skipReason, matchReason }` per row. Collect these summaries for the ranked table (Phase
+4).
 
 ## Phase 4: Batch Confirmation (Batch Only)
 
 Rank the rows the worker left `pending` - the ones it skipped are already terminal and out of the
 running.
 
-**Auto mode** (`confirmMode: "auto"` AND every qualified job ≥ threshold): PATCH all to `approved`, go to Phase 5.
+**Auto mode** (`confirmMode: "auto"` AND every qualified job ≥ threshold): PATCH all to `approved`,
+go to Phase 5.
 
 **Batch mode** (default): present ranked table.
 
@@ -188,11 +205,11 @@ Use PATCH only for approval; record every skip through `/result`:
 - `go` → all qualified to `approved`
 - `go N,M` → selected to `approved`; rest to `skipped` (`"Not selected by user"`)
 - `remove N` → that job to `skipped` (`"Removed by user"`); re-present table
-- `stop` → POST `/api/campaigns/$CAMPAIGN_ID/status` with `{status:"paused", actor:"user", reason:"Stopped from the terminal"}` and stop
+- `stop` → POST `/api/campaigns/$CAMPAIGN_ID/status` with `{status:"paused", actor:"user",
+  reason:"Stopped from the terminal"}` and stop
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
-  -H 'content-type: application/json' -d '{"status":"approved"}'
+jobpilot-api PATCH "/api/campaigns/$CAMPAIGN_ID/jobs/<key>" --data '{"status":"approved"}'
 ```
 
 ## Phase 5: Apply Loop
@@ -202,15 +219,20 @@ For each `approved` job, score-descending:
 ### 5.1 Mark Applying
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/jobs/<key>" \
-  -H 'content-type: application/json' -d '{"status":"applying"}'
+jobpilot-api PATCH "/api/campaigns/$CAMPAIGN_ID/jobs/<key>" --data '{"status":"applying"}'
 ```
 
-### 5.2 Apply (delegate to `job-worker`)
+### 5.2 Apply (delegate to `job-applier`)
 
-Delegate to the `job-worker` subagent and wait for its compact result - it navigates, authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of this conversation). One worker at a time. Use the apply-mode input from `../_shared/campaign-flow.md` with `digest` omitted (the worker fetches it from the saved Job) and `preSubmitReview: <true when config.maxApplications === 1, else false>`.
+Delegate to the `job-applier` subagent and wait for its compact result - it navigates,
+authenticates, tailors, fills, and submits in its own tab/context (keeping the form snapshots out of
+this conversation). One worker at a time. Use the `job-applier` input from
+`../_shared/campaign-flow.md` with `brief` omitted (the worker fetches it from the saved Job) and
+`preSubmitReview: <true when config.maxApplications === 1, else false>`.
 
-**Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves the form open, and returns `needs_user category:"review"` with a field summary in `context`. Present:
+**Single-job pre-submit review:** when `preSubmitReview` is true the worker fills everything, leaves
+the form open, and returns `needs_user category:"review"` with a field summary in `context`.
+Present:
 
 ```
 ## Ready to Submit: [Title] at [Company]
@@ -218,7 +240,9 @@ Delegate to the `job-worker` subagent and wait for its compact result - it navig
 <total> fields across <P> page(s). Submit? (yes / no / edit <field>)
 ```
 
-`yes` → re-delegate 5.2 with `preSubmitReview:false` (the worker submits the already-filled form). `no` → POST `/result` `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit <field>` → tell the worker what to change on re-delegation.
+`yes` → re-delegate 5.2 with `preSubmitReview:false` (the worker submits the already-filled form).
+`no` → POST `/result` `outcome:"skipped"`, `skipReason:"User cancelled at pre-submit review"`. `edit
+<field>` → tell the worker what to change on re-delegation.
 
 ### 5.3 Record Result
 
@@ -228,14 +252,13 @@ re-delegate 5.2 with `salaryExpectation` set).
 
 ### 5.4 Limit
 
-If `config.maxApplications` is set and `applied >= config.maxApplications`, stop the loop. Leave remaining `approved` jobs as-is.
+If `config.maxApplications` is set and `applied >= config.maxApplications`, stop the loop. Leave
+remaining `approved` jobs as-is.
 
 ## Phase 6: Summary
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/campaigns/$CAMPAIGN_ID/status" \
-  -H 'content-type: application/json' \
-  -d '{"status":"completed"}'
+jobpilot-api POST "/api/campaigns/$CAMPAIGN_ID/status" --data '{"status":"completed"}'
 ```
 
 Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
@@ -244,4 +267,5 @@ Print a summary table and link to `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.
 
 The shared campaign rules (`../_shared/campaign-flow.md`) apply throughout. On top of them:
 
-1. **Up-front confirmation mandatory** (1.1 or Phase 4); single-job mode adds pre-submit review (5.2).
+1. **Up-front confirmation mandatory** (1.1 or Phase 4); single-job mode adds pre-submit review
+   (5.2).

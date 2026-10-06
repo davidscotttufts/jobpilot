@@ -80,7 +80,7 @@ export function RewriteReviewDialog(props: RewriteReviewDialogProps): ReactEleme
                 <Typography variant="body2Strong">{change.where}</Typography>
                 <Paper variant="panel" sx={{ p: 1.5 }}>
                   <Typography variant="captionMuted">Now</Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="textSecondary">
                     {change.before || "(empty)"}
                   </Typography>
                 </Paper>

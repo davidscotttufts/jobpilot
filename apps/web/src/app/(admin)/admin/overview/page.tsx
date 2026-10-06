@@ -1,5 +1,5 @@
-import type { ReactElement } from "react";
-import { Grid, Stack } from "@mui/material";
+import { type ReactElement, Suspense } from "react";
+import { Grid, Skeleton, Stack } from "@mui/material";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { api } from "@/api/client";
@@ -8,11 +8,48 @@ import { ApplicationsTimelineChart } from "@/components/features/analytics/appli
 import { StatTile } from "@/components/features/analytics/stat-tile";
 import { StatusBreakdownChart } from "@/components/features/analytics/status-breakdown-chart";
 import { TopBoardsList } from "@/components/features/analytics/top-boards-list";
+import { slotKeys } from "@/utils/array";
 
 export const metadata: Metadata = { title: "Overview" };
 
+/** Skeleton and body share one geometry so the tiles can't reflow differently. */
+const TILE_GRID = { spacing: 1.5, size: { xs: 6, sm: 4, md: 3 } } as const;
+const TILE_KEYS = slotKeys(7);
+
+export default function AdminOverviewPage(): ReactElement {
+  // Every tile and chart comes from one stats call, so the whole body streams.
+  return (
+    <Suspense fallback={<AdminOverviewSkeleton />}>
+      <AdminOverview />
+    </Suspense>
+  );
+}
+
+function AdminOverviewSkeleton(): ReactElement {
+  return (
+    <Stack spacing={2}>
+      <Grid container spacing={TILE_GRID.spacing}>
+        {TILE_KEYS.map((key) => (
+          <Grid key={key} size={TILE_GRID.size}>
+            <Skeleton variant="rounded" height={92} />
+          </Grid>
+        ))}
+      </Grid>
+      <Skeleton variant="rounded" height={280} />
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Skeleton variant="rounded" height={320} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Skeleton variant="rounded" height={320} />
+        </Grid>
+      </Grid>
+    </Stack>
+  );
+}
+
 /** Read-only, so it renders entirely on the server; only the charts ship as client leaves. */
-export default async function AdminOverviewPage(): Promise<ReactElement> {
+async function AdminOverview(): Promise<ReactElement> {
   const { data } = await api.admin.stats.get(await getFetchOptions());
 
   if (!data) {
@@ -37,9 +74,9 @@ export default async function AdminOverviewPage(): Promise<ReactElement> {
 
   return (
     <Stack spacing={2}>
-      <Grid container spacing={1.5}>
+      <Grid container spacing={TILE_GRID.spacing}>
         {tiles.map((tile) => (
-          <Grid key={tile.label} size={{ xs: 6, sm: 4, md: 3 }}>
+          <Grid key={tile.label} size={TILE_GRID.size}>
             <StatTile label={tile.label} value={tile.value} hint={tile.hint} />
           </Grid>
         ))}

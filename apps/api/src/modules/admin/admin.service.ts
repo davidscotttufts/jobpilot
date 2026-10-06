@@ -1,13 +1,15 @@
 import type { AdminPilotQuery, AdminUserQuery } from "@jobpilot/contracts/admin";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
+import { sumTokenUsage } from "@jobpilot/contracts/pilot";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { singleton } from "tsyringe";
 import type { AuthUser } from "@/common/auth";
-import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date";
+import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
+import { tokenUsage } from "@/modules/pilot/tasks/run-history";
 
-/** The columns every admin user row is built from - shared by the list and the role mutation. */
 const USER_SELECT = {
   id: true,
   email: true,
@@ -20,7 +22,6 @@ const USER_SELECT = {
 
 type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
 
-/** Platform-wide reads plus the one mutation an admin surface has: granting/revoking ADMIN. */
 @singleton()
 export class AdminService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -46,7 +47,6 @@ export class AdminService {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { emailVerified: true } }),
       this.prisma.user.count({ where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } } }),
-      // Active = the user applied to something or moved a campaign inside the timeline window.
       this.prisma.user.count({
         where: {
           OR: [
@@ -103,7 +103,6 @@ export class AdminService {
     };
   }
 
-  /** The Pilot fleet: one row per PilotState, joined to its owner's email and open-question count. */
   async listPilots(query: AdminPilotQuery) {
     const [rows, total] = await Promise.all([
       this.prisma.pilotState.findMany({
@@ -121,12 +120,28 @@ export class AdminService {
     ]);
 
     const userIds = rows.map((row) => row.userId);
-    const questionRows = await this.prisma.pilotQuestion.groupBy({
-      by: ["userId"],
-      where: { userId: { in: userIds }, status: "open" },
-      _count: { _all: true },
-    });
+    const [questionRows, runRows] = await Promise.all([
+      this.prisma.pilotQuestion.groupBy({
+        by: ["userId"],
+        where: { userId: { in: userIds }, status: "open" },
+        _count: { _all: true },
+      }),
+      this.prisma.pilotRun.groupBy({
+        by: ["userId"],
+        where: {
+          userId: { in: userIds },
+          startedAt: { gte: new Date(Date.now() - COST_WINDOW_MS) },
+        },
+        _sum: {
+          inputTokens: true,
+          outputTokens: true,
+          cacheReadTokens: true,
+          cacheWriteTokens: true,
+        },
+      }),
+    ]);
     const openByUser = new Map(questionRows.map((row) => [row.userId, row._count._all]));
+    const tokensByUser = new Map(runRows.map(({ userId, _sum }) => [userId, tokenUsage(_sum)]));
 
     const items = rows.map((row) => ({
       userEmail: row.user.email,
@@ -135,6 +150,7 @@ export class AdminService {
       lastCycleAt: row.lastCycleAt,
       cycleCount: row.cycleCount,
       openQuestions: openByUser.get(row.userId) ?? 0,
+      weekTokens: tokensByUser.get(row.userId) ?? sumTokenUsage([]),
     }));
     return paginate(items, query, total);
   }
@@ -160,7 +176,6 @@ export class AdminService {
     return paginate(items, query, total);
   }
 
-  /** Attach activity + the actor's rights. Three aggregates over the page's ids, never one per row. */
   private async project(actor: AuthUser, rows: AdminUserRow[]) {
     const userIds = rows.map((row) => row.id);
 
@@ -176,7 +191,7 @@ export class AdminService {
         where: { userId: { in: userIds } },
         _max: { updatedAt: true },
       }),
-      // The agent PAT's last use is the truest "this account actually runs JobPilot" signal.
+      // The agent token's last use is the best sign the account actually runs JobPilot.
       this.prisma.apiToken.groupBy({
         by: ["userId"],
         where: { userId: { in: userIds } },
@@ -208,7 +223,6 @@ export class AdminService {
         lastActiveAt: stamps.length
           ? new Date(Math.max(...stamps.map((date) => date.getTime())))
           : null,
-        // The server owns the policy; the client renders the capability rather than re-deriving it.
         canChangeRole: this.canChangeRole(actor, row),
       };
     });

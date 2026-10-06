@@ -1,31 +1,75 @@
 import { type ReactElement, Suspense } from "react";
 import { JOB_LISTING_FILTER_KEYS, JOB_LISTING_MAX_PAGE } from "@jobpilot/contracts/job-listing";
-import { Grid, Skeleton, Stack, Typography } from "@mui/material";
+import { Skeleton, Stack, Typography } from "@mui/material";
 import type { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { getPublicFetchOptions } from "@/api/server";
-import { JobCard, JobFilters, JobGridSkeleton, JobPager } from "@/components/features/jobs";
+import {
+  JobFilters,
+  JobList,
+  JobPager,
+  JobSortControls,
+  jobsHref,
+} from "@/components/features/jobs";
 import { JsonLd } from "@/components/seo/json-ld";
 import { LinkButton } from "@/components/ui/buttons";
-import { EmptyState } from "@/components/ui/data";
+import { EmptyState, TableSkeleton } from "@/components/ui/data";
 import { breadcrumbLd } from "@/lib/structured-data";
+import { formatCount } from "@/utils/format";
 import { one, pageParam } from "@/utils/search-params";
+import { getSkillFacets, landingParams, landingTitle } from "./landing-views";
 
-export const metadata: Metadata = {
-  title: "Jobs",
-  description:
-    "Browse software jobs discovered and deduped by JobPilot agents across LinkedIn, Indeed, Wellfound, Y Combinator and more. Apply with your own AI agent.",
-  alternates: { canonical: "/jobs" },
-};
+type SearchParams = Record<string, string | string[] | undefined>;
 
 interface JobsPageProps {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<SearchParams>;
+}
+
+function readFilters(params: SearchParams): Record<string, string> {
+  const filters: Record<string, string> = {};
+  for (const key of JOB_LISTING_FILTER_KEYS) {
+    const value = one(params[key]);
+    if (value) {
+      filters[key] = value;
+    }
+  }
+  return filters;
+}
+
+interface JobsView {
+  filters: Record<string, string>;
+  /** The indexable view this one belongs to; itself when `isLanding`. */
+  landing: URLSearchParams;
+  isLanding: boolean;
+  page: number;
+}
+
+async function readView(params: SearchParams): Promise<JobsView> {
+  const filters = readFilters(params);
+  const landing = landingParams(filters, await getSkillFacets());
+  return {
+    filters,
+    landing,
+    isLanding: Object.keys(filters).every((key) => landing.has(key)),
+    page: pageParam(params.page, JOB_LISTING_MAX_PAGE),
+  };
+}
+
+/**
+ * A landing view's pages canonicalize to themselves so every listing stays reachable. Any other
+ * filter (search text, several skills) canonicalizes to its landing view's first page.
+ */
+export async function generateMetadata(props: JobsPageProps): Promise<Metadata> {
+  const { landing, isLanding, page } = await readView(await props.searchParams);
+  const title = landingTitle(landing);
+  return {
+    title: isLanding && page > 1 ? `${title} · Page ${page}` : title,
+    description: `${title} found by JobPilot agents on LinkedIn, Indeed, Wellfound, Y Combinator, and other boards, with each job listed once.`,
+    alternates: { canonical: jobsHref(landing, isLanding ? page : undefined) },
+  };
 }
 
 export default function JobsPage(props: JobsPageProps): ReactElement {
-  const { searchParams } = props;
-
   return (
     <Stack spacing={4}>
       <JsonLd
@@ -35,50 +79,35 @@ export default function JobsPage(props: JobsPageProps): ReactElement {
         ])}
       />
       <Stack spacing={1}>
-        <Typography variant="h1" sx={{ fontSize: { xs: "1.75rem", md: "2.25rem" } }}>
-          Jobs found by JobPilot agents
+        <Typography variant="displayMd" component="h1">
+          Jobs found by JobPilot
         </Typography>
         <Typography variant="body1Muted">
-          Real postings scraped across every board, deduped into one listing each. Apply to any of
-          them with your own agent.
+          Real job postings that JobPilot users' agents found on many boards, with each job listed
+          once. Your own agent can apply to any of them.
         </Typography>
       </Stack>
 
-      {/* The tech options come from the API, so the filter bar streams in too. */}
-      <Suspense fallback={<Skeleton variant="rectangular" height={98} />}>
+      <Suspense fallback={<Skeleton variant="rounded" height={98} />}>
         <JobFiltersPanel />
       </Suspense>
 
-      {/* searchParams is dynamic, so the results need their own boundary; the shell prerenders. */}
-      <Suspense fallback={<JobGridSkeleton />}>
-        <JobsResults searchParams={searchParams} />
+      <Suspense fallback={<TableSkeleton />}>
+        <JobsResults searchParams={props.searchParams} />
       </Suspense>
     </Stack>
   );
 }
 
-/** The skill vocabulary is identical for every visitor, so it belongs in the prerender, not a per-request hop. */
 async function JobFiltersPanel(): Promise<ReactElement> {
-  "use cache";
-  cacheLife("hours");
-
-  const { data } = await api.public.jobs.facets.get();
-  return <JobFilters skillOptions={data?.skills.map((facet) => facet.value) ?? []} />;
+  return <JobFilters skillOptions={await getSkillFacets()} />;
 }
 
 async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
-  const params = await props.searchParams;
-
-  const filters: Record<string, string> = {};
-  for (const key of JOB_LISTING_FILTER_KEYS) {
-    const value = one(params[key]);
-    if (value) {
-      filters[key] = value;
-    }
-  }
+  const { filters, landing, isLanding, page } = await readView(await props.searchParams);
 
   const { data, error } = await api.public.jobs.get({
-    query: { ...filters, page: pageParam(params.page, JOB_LISTING_MAX_PAGE), limit: 24 },
+    query: { ...filters, page, limit: 24 },
     ...(await getPublicFetchOptions()),
   });
 
@@ -106,18 +135,30 @@ async function JobsResults(props: JobsPageProps): Promise<ReactElement> {
   }
 
   return (
-    <Stack spacing={3}>
-      <Typography variant="body2Muted">
-        {data.pagination.total.toLocaleString()} {data.pagination.total === 1 ? "job" : "jobs"}
-      </Typography>
-      <Grid container spacing={2}>
-        {data.items.map((job) => (
-          <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <JobCard job={job} />
-          </Grid>
-        ))}
-      </Grid>
+    <Stack spacing={2}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        sx={{
+          gap: 1.5,
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+        }}
+      >
+        <Typography variant="body2Strong" component="h2">
+          {formatCount(data.pagination.total)}{" "}
+          {resultsNoun(landing, isLanding, data.pagination.total)}
+        </Typography>
+        <JobSortControls />
+      </Stack>
+      <JobList jobs={data.items} />
       <JobPager pagination={data.pagination} params={filters} />
     </Stack>
   );
+}
+
+function resultsNoun(landing: URLSearchParams, isLanding: boolean, total: number): string {
+  if (isLanding && landing.size > 0) {
+    return landingTitle(landing);
+  }
+  return total === 1 ? "job" : "jobs";
 }

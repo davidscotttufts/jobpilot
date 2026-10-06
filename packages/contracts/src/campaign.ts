@@ -6,19 +6,19 @@ import { cleanReplacementChars } from "./utils/text";
 /** A free-text string with mangled replacement-char artifacts cleaned on write. */
 const reasonText = z.string().transform(cleanReplacementChars);
 
-/** The agent's job digest, as JSON text. `jq --arg` renders an unset digest as `""`, which read back
- *  as "has a digest" while the public index skipped the row - so empty drops to `undefined`. */
-const jobDigest = z
+/** The agent's job brief, as JSON text. An unset shell variable renders the brief as `""`, which read back
+ *  as "has a brief" while the public index skipped the row - so empty drops to `undefined`. */
+const jobBrief = z
   .string()
   .refine((value) => value.trim() === "" || isJsonObject(value), {
-    message: "digest must be a JSON object.",
+    message: "brief must be a JSON object.",
   })
   .transform((value) => value.trim() || undefined);
 
 export const CAMPAIGN_STATUSES = ["in_progress", "paused", "completed", "failed"] as const;
 export const campaignStatusSchema = z.enum(CAMPAIGN_STATUSES);
 
-export const CAMPAIGN_SOURCES = ["search", "auto-apply", "apply", "networking"] as const;
+export const CAMPAIGN_SOURCES = ["search", "auto_apply", "apply", "networking"] as const;
 export const campaignSourceSchema = z.enum(CAMPAIGN_SOURCES);
 
 /** Who acted: the web user, the terminal agent on their behalf, or the autonomous pilot. */
@@ -49,7 +49,7 @@ export const campaignConfigSchema = z.object({
   networking: networkingConfigSchema.optional(),
 });
 
-export const campaignJobSummarySchema = z.object({
+const campaignJobSummarySchema = z.object({
   kind: z.literal("jobs"),
   totalFound: z.number().int().min(0).default(0),
   qualified: z.number().int().min(0).default(0),
@@ -65,7 +65,7 @@ export const campaignJobSummarySchema = z.object({
   networkingCount: z.number().int().min(0).default(0),
 });
 
-export const campaignNetworkingSummarySchema = z.object({
+const campaignNetworkingSummarySchema = z.object({
   kind: z.literal("networking"),
   discovered: z.number().int().min(0).default(0),
   drafted: z.number().int().min(0).default(0),
@@ -80,7 +80,7 @@ export const campaignSummarySchema = z.discriminatedUnion("kind", [
 ]);
 
 /** Composer-driven sources require a user-selected base resume; `apply` tailors per job. */
-const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto-apply", "networking"];
+const RESUME_REQUIRED_SOURCES: readonly CampaignSource[] = ["search", "auto_apply", "networking"];
 
 /** Returns whether a configuration satisfies its source's required fields. */
 export function campaignConfigSupportsSource(
@@ -102,13 +102,13 @@ export const createCampaignSchema = z
     source: campaignSourceSchema,
     config: campaignConfigSchema.optional(),
     createdBy: campaignActorSchema.default("user"),
-    /** Set by the pilot's discovery cycle so the search can find this campaign again by id. */
+    /** Set by the pilot's discovery run so the search can find this campaign again by id. */
     pilotSearchId: z.uuid().optional(),
     /** Pasted links seeded as `queued` jobs, before anything is known about the posting. */
     urls: applyUrlsSchema.optional(),
   })
   .refine((v) => campaignConfigSupportsSource(v.source, v.config ?? {}), {
-    message: "config.resumeId is required for search, auto-apply, and networking campaigns.",
+    message: "config.resumeId is required for search, auto_apply, and networking campaigns.",
     path: ["config", "resumeId"],
   })
   .refine((v) => !v.urls || v.source === "apply", {
@@ -166,7 +166,7 @@ export function isAwaitingRecoveryAnswer(job: {
 }
 
 export const CAMPAIGN_JOB_TERMINAL_OUTCOMES = ["applied", "failed", "skipped"] as const;
-export const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
+const campaignJobOutcomeSchema = z.enum(CAMPAIGN_JOB_TERMINAL_OUTCOMES);
 
 /** Non-terminal statuses: a campaign with any such job is still active (not finalizable). */
 export const CAMPAIGN_JOB_ACTIVE_STATUSES = [
@@ -190,7 +190,7 @@ export const addCampaignJobSchema = z.object({
   matchReason: reasonText.optional().nullable(),
   status: z.enum(CAMPAIGN_JOB_ACTIVE_STATUSES).optional(),
   description: z.string().optional().nullable(),
-  digest: jobDigest.optional().nullable(),
+  brief: jobBrief.optional().nullable(),
 });
 
 export const patchCampaignJobSchema = z.object({
@@ -206,7 +206,7 @@ export const patchCampaignJobSchema = z.object({
   matchScore: z.number().int().min(0).max(100).optional().nullable(),
   matchReason: reasonText.optional().nullable(),
   description: z.string().optional().nullable(),
-  digest: jobDigest.optional().nullable(),
+  brief: jobBrief.optional().nullable(),
   /**
    * The user's answer that a crash-recovered apply never reached the employer, which is the only
    * thing that releases the job back to `approved`. Deliberately not a general force flag: the
@@ -222,7 +222,7 @@ export const rescanCampaignJobSchema = z
     matchReason: reasonText,
     skipReason: z.string().min(1).transform(cleanReplacementChars).optional(),
     description: z.string().optional().nullable(),
-    digest: jobDigest.optional().nullable(),
+    brief: jobBrief.optional().nullable(),
   })
   .refine((value) => value.decision !== "skipped" || !!value.skipReason, {
     message: "A skipped rescan decision requires skipReason.",
@@ -241,7 +241,7 @@ export const campaignJobReasonSchema = z.object({
 });
 
 /** No apply phase runs for four hours; one absurd value would poison max and p90 forever. */
-export const APPLY_PHASE_MAX_MS = 4 * 60 * 60 * 1000;
+const APPLY_PHASE_MAX_MS = 4 * 60 * 60 * 1000;
 
 /**
  * Milliseconds spent in each phase of an apply, reported by the worker on the terminal write.
@@ -315,10 +315,7 @@ export const campaignJobResultSchema = z
     },
   );
 
-export type CampaignJobOutcome = z.infer<typeof campaignJobOutcomeSchema>;
 export type CampaignJobResultInput = z.infer<typeof campaignJobResultSchema>;
-export type ApplyPhaseTimings = z.infer<typeof applyPhaseTimingsSchema>;
-export type SubmittedAnswers = z.infer<typeof submittedAnswersSchema>;
 
 export type CampaignStatus = z.infer<typeof campaignStatusSchema>;
 export type CampaignJobStatus = z.infer<typeof campaignJobStatusSchema>;

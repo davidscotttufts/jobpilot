@@ -2,22 +2,19 @@
 
 import { type ReactElement, useState } from "react";
 import { DEFAULT_CURSOR_PAGE_SIZE } from "@jobpilot/contracts/pagination";
-import type {
-  PilotJournalEntry,
-  PilotJournalKind,
-  PilotJournalPage,
-} from "@jobpilot/contracts/pilot";
-import { DeleteSweep, Download } from "@mui/icons-material";
+import type { PilotJournalKind, PilotJournalPage } from "@jobpilot/contracts/pilot";
+import { DeleteSweep, Download, MoreVert } from "@mui/icons-material";
 import {
   Box,
   Button,
   Chip,
   Divider,
-  FormControlLabel,
+  IconButton,
   Stack,
-  Switch,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
@@ -25,49 +22,36 @@ import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
 import { EmptyState, QuerySection } from "@/components/ui/data";
+import { DropdownMenu } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout";
 import { useConfirm } from "@/providers/confirm-provider";
 import { useToast } from "@/providers/notification-provider";
 import { dedupeById } from "@/utils/array";
 import { CycleTimeline } from "./cycle-timeline";
+import { collapseCoveredCycles, groupByDay, withLatestRuns } from "./journal-entries";
 import { JournalRow, KIND_META, KIND_ORDER } from "./journal-row";
 import { LiveStatusChip } from "./live-status-chip";
-import { clearLiveJournal, useJournalLive } from "./use-journal-live";
+import { useJournalLiveStatus } from "./use-journal-live";
 
-/** Same-site cookie rides a top-level anchor download, so no fetch/token handling is needed here. */
+/** A top-level anchor download carries the same-site auth cookie, so no fetch is needed. */
 const JOURNAL_EXPORT_URL = `${API_BASE_URL}/api/pilot/journal/export`;
 
-/** Drops cycle rows whose cycle also logged actions - they just repeat them; lone (empty/error) cycle rows stay. */
-function collapseCoveredCycles(entries: PilotJournalEntry[]): PilotJournalEntry[] {
-  const covered = new Set<string>();
-  for (const entry of entries) {
-    if (entry.kind === "action" && entry.cycleId) {
-      covered.add(entry.cycleId);
-    }
-  }
-  return entries.filter((e) => !(e.kind === "cycle" && e.cycleId && covered.has(e.cycleId)));
-}
-
-/** Full journal feed. Kind filters run server-side, so paging under a filter stays on one stream. */
+/** Kind filters run server-side, so paging under a filter stays on one stream. */
 export function JournalFeed(): ReactElement {
   const toast = useToast();
   const confirm = useConfirm();
   const [selectedKinds, setSelectedKinds] = useState<PilotJournalKind[]>([]);
   const firstPage = useApiQuery(pilotQueries.journal(selectedKinds));
-  const { entries: live, status } = useJournalLive();
-  // Whole pages, so the cursor to resume from is just the newest one's - no paging flag to keep in sync.
+  const status = useJournalLiveStatus();
+  // Whole pages, so the resume cursor is simply the last page's.
   const [pages, setPages] = useState<PilotJournalPage[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [view, setView] = useState<"flat" | "cycle">("flat");
-  const [collapseCycles, setCollapseCycles] = useState(true);
 
   const reset = useApiMutation(() => api.pilot.reset.post(), {
     successMessage: "Pilot reset",
     invalidate: [queryKeys.pilot.all],
-    onSuccess: () => {
-      clearLiveJournal();
-      setPages([]);
-    },
+    onSuccess: () => setPages([]),
   });
 
   const resetWithConfirm = async (): Promise<void> => {
@@ -119,12 +103,10 @@ export function JournalFeed(): ReactElement {
     setPages([]);
   };
 
-  // The live buffer is unfiltered - it carries every kind streamed since mount.
-  const streamed =
-    selectedKinds.length === 0 ? live : live.filter((e) => selectedKinds.includes(e.kind));
+  // Live prepends keep the first page's tail, which the first older page repeats.
   const older = pages.flatMap((page) => page.items);
-  const entries = dedupeById([...streamed, ...(firstPage.data?.items ?? []), ...older]);
-  const visible = view === "flat" && collapseCycles ? collapseCoveredCycles(entries) : entries;
+  const entries = withLatestRuns(dedupeById([...(firstPage.data?.items ?? []), ...older]));
+  const visible = view === "flat" ? collapseCoveredCycles(entries) : entries;
 
   const emptyMessage =
     selectedKinds.length > 0 ? "No entries match the selected filters." : "No journal entries yet.";
@@ -133,46 +115,60 @@ export function JournalFeed(): ReactElement {
     <SectionCard
       title="Journal"
       actions={
-        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
           <LiveStatusChip status={status} />
-          <Button
-            size="small"
-            startIcon={<Download fontSize="sm" />}
-            component="a"
-            href={JOURNAL_EXPORT_URL}
-            download="pilot-journal.ndjson"
-          >
-            Export
-          </Button>
-          <Button
-            size="small"
-            color="error"
-            startIcon={<DeleteSweep fontSize="sm" />}
-            disabled={reset.isPending}
-            onClick={() => void resetWithConfirm()}
-          >
-            Reset pilot
-          </Button>
+          <Tooltip title="Export the journal">
+            <IconButton
+              component="a"
+              href={JOURNAL_EXPORT_URL}
+              download="pilot-journal.ndjson"
+              aria-label="Export the journal"
+            >
+              <Download fontSize="sm" />
+            </IconButton>
+          </Tooltip>
+          <DropdownMenu
+            trigger={({ onOpen }) => (
+              <IconButton aria-label="More journal actions" onClick={onOpen}>
+                <MoreVert fontSize="sm" />
+              </IconButton>
+            )}
+            items={[
+              {
+                kind: "item",
+                key: "reset",
+                label: "Reset pilot…",
+                icon: <DeleteSweep fontSize="sm" />,
+                danger: true,
+                disabled: reset.isPending,
+                onClick: () => void resetWithConfirm(),
+              },
+            ]}
+          />
         </Stack>
       }
     >
       <Stack spacing={2}>
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
-          {KIND_ORDER.map((kind) => {
-            const selected = selectedKinds.includes(kind);
-            return (
-              <Chip
-                key={kind}
-                size="small"
-                label={KIND_META[kind].label}
-                color={selected ? KIND_META[kind].color : "default"}
-                variant={selected ? "filled" : "outlined"}
-                onClick={() => toggleKind(kind)}
-              />
-            );
-          })}
-        </Stack>
-        <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap" }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          sx={{ justifyContent: "space-between", alignItems: { sm: "center" } }}
+        >
+          <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", rowGap: 1 }}>
+            {KIND_ORDER.map((kind) => {
+              const selected = selectedKinds.includes(kind);
+              return (
+                <Chip
+                  key={kind}
+                  size="small"
+                  label={KIND_META[kind].label}
+                  color={selected ? KIND_META[kind].color : "default"}
+                  variant={selected ? "filled" : "outlined"}
+                  onClick={() => toggleKind(kind)}
+                />
+              );
+            })}
+          </Stack>
           <ToggleButtonGroup
             exclusive
             size="small"
@@ -180,22 +176,9 @@ export function JournalFeed(): ReactElement {
             onChange={(_e, next) => next && setView(next)}
             aria-label="Journal view"
           >
-            <ToggleButton value="flat">Flat feed</ToggleButton>
+            <ToggleButton value="flat">By day</ToggleButton>
             <ToggleButton value="cycle">By cycle</ToggleButton>
           </ToggleButtonGroup>
-          {view === "flat" && (
-            <FormControlLabel
-              control={
-                <Switch
-                  size="small"
-                  checked={collapseCycles}
-                  onChange={(e) => setCollapseCycles(e.target.checked)}
-                />
-              }
-              label="Hide cycle rows their actions already cover"
-              slotProps={{ typography: { variant: "body2Muted" } }}
-            />
-          )}
         </Stack>
         <QuerySection
           isLoading={firstPage.isLoading}
@@ -208,9 +191,18 @@ export function JournalFeed(): ReactElement {
           {view === "cycle" ? (
             <CycleTimeline entries={visible} />
           ) : (
-            <Stack spacing={1.5} divider={<Divider />}>
-              {visible.map((entry) => (
-                <JournalRow key={entry.id} entry={entry} />
+            <Stack spacing={3}>
+              {groupByDay(visible).map((day) => (
+                <Box key={day.key}>
+                  <Typography variant="overlineMuted" sx={{ display: "block", mb: 1.5 }}>
+                    {day.label}
+                  </Typography>
+                  <Stack spacing={1.5} divider={<Divider />}>
+                    {day.entries.map((entry) => (
+                      <JournalRow key={entry.id} entry={entry} />
+                    ))}
+                  </Stack>
+                </Box>
               ))}
             </Stack>
           )}

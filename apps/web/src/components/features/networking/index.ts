@@ -1,4 +1,3 @@
-export * from "./contacts-table";
-export * from "./networking-board";
-export * from "./networking-message-dialog";
-export * from "./networking-messages-table";
+export { ContactsTable } from "./contacts-table";
+export { NetworkingBoard } from "./networking-board";
+export { NetworkingMessagesTable } from "./networking-messages-table";

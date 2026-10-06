@@ -14,11 +14,8 @@ export const outlinedInputOverrides: Components<Theme>["MuiOutlinedInput"] = {
       transition: theme.motion.fast,
       "& fieldset": { borderColor: theme.palette.line.border },
       "&:hover fieldset": { borderColor: `${theme.palette.line.borderHi} !important` },
-      "&.Mui-focused fieldset": {
-        borderColor: `${theme.palette.accent.primary} !important`,
-        borderWidth: 1,
-      },
-      "&.Mui-focused": { boxShadow: theme.shadows_custom.focus },
+      // Focus keeps MUI's 2px border, not a box-shadow ring: the ring has no notch and strikes through the floating label.
+      "&.Mui-focused fieldset": { borderColor: `${theme.palette.accent.primary} !important` },
       "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active":
         {
           WebkitBoxShadow: `0 0 0 1000px ${theme.palette.surfaces.base} inset`,

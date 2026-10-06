@@ -24,7 +24,7 @@ export interface SkippedByScore {
   matchReason: string | null;
 }
 
-export interface ThresholdStep {
+interface ThresholdStep {
   threshold: number;
   /** Jobs that scored at or above this threshold but below the current one. */
   additionalJobs: number;

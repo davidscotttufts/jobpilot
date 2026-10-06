@@ -6,7 +6,7 @@ import {
   normalizeMatchPhrase,
   toSearchText,
 } from "./keyword-normalize";
-import type { FitProfile, JobDigest } from "./scoring.schema";
+import type { FitProfile, JobBrief } from "./scoring.schema";
 
 export interface FitResult {
   score: number;
@@ -37,7 +37,7 @@ const termWords = (term: string): string[] => {
   return words.length > 1 ? words.filter((w) => w.length >= WORD_MIN_LENGTH) : [];
 };
 
-/** Full-term variants plus word-level ones, so "ASP.NET Core" still matches a digest's ".NET". */
+/** Full-term variants plus word-level ones, so "ASP.NET Core" still matches a brief's ".NET". */
 const termVariants = (term: string): string[] => {
   const variants = new Set(expandSynonyms(term));
   for (const word of termWords(term)) {
@@ -59,14 +59,14 @@ const termVariants = (term: string): string[] => {
  *   30% keyword density in requirements
  */
 export function scoreFit(
-  digest: JobDigest,
+  brief: JobBrief,
   profile: FitProfile,
   minScore: number = DEFAULT_MIN_MATCH_SCORE,
 ): FitResult {
-  const digestSkills = (digest.skills || []).filter(Boolean);
+  const briefSkills = (brief.skills || []).filter(Boolean);
   const profileSkillsNormed = new Set<string>((profile.skills || []).flatMap(termVariants));
 
-  const reqPhrase = normalizeMatchPhrase((digest.requirements || []).join(" "));
+  const reqPhrase = normalizeMatchPhrase((brief.requirements || []).join(" "));
   const reqSearchText = toSearchText(reqPhrase);
 
   const strongMatches: string[] = [];
@@ -74,7 +74,7 @@ export function scoreFit(
   const gaps: string[] = [];
   let reqHits = 0;
 
-  for (const term of digestSkills) {
+  for (const term of briefSkills) {
     const variants = termVariants(term);
     const strong = variants.some((variant) => profileSkillsNormed.has(variant));
     if (strong) {
@@ -92,15 +92,15 @@ export function scoreFit(
   }
 
   const skillsOverlapScore =
-    digestSkills.length === 0 ? 0 : strongMatches.length / digestSkills.length;
+    briefSkills.length === 0 ? 0 : strongMatches.length / briefSkills.length;
   let yearsScore = 0.5;
 
   if (
-    digest.yearsExperience !== null &&
-    digest.yearsExperience !== undefined &&
+    brief.yearsExperience !== null &&
+    brief.yearsExperience !== undefined &&
     profile.yearsExperience !== null
   ) {
-    const gap = profile.yearsExperience! - digest.yearsExperience;
+    const gap = profile.yearsExperience! - brief.yearsExperience;
     if (gap >= 0) {
       yearsScore = 1;
     } else {
@@ -110,28 +110,28 @@ export function scoreFit(
 
   // No requirements text leaves the density neutral - a perfect skills match must not cap at 70.
   const reqDensityScore =
-    digestSkills.length === 0 || reqPhrase.length === 0
+    briefSkills.length === 0 || reqPhrase.length === 0
       ? skillsOverlapScore
-      : reqHits / digestSkills.length;
+      : reqHits / briefSkills.length;
   const raw = skillsOverlapScore * 0.5 + yearsScore * 0.2 + reqDensityScore * 0.3;
   const score = Math.round(raw * 100);
 
-  // A no-requirements digest tops out at 0.6, under CONFIDENCE_TRUST_BAR.
+  // A no-requirements brief tops out at 0.6, under CONFIDENCE_TRUST_BAR.
   let confidence = 0;
-  if (digestSkills.length > 0) {
+  if (briefSkills.length > 0) {
     confidence += 0.4;
   }
-  if ((digest.requirements || []).length > 0) {
+  if ((brief.requirements || []).length > 0) {
     confidence += 0.4;
   }
-  if (digest.yearsExperience !== null && digest.yearsExperience !== undefined) {
+  if (brief.yearsExperience !== null && brief.yearsExperience !== undefined) {
     confidence += 0.2;
   }
 
   const restrictions = detectEligibilityRestrictions(
-    digest.descriptionExcerpt,
-    ...(digest.requirements ?? []),
-    ...(digest.responsibilities ?? []),
+    brief.descriptionExcerpt,
+    ...(brief.requirements ?? []),
+    ...(brief.responsibilities ?? []),
   );
   // A sponsorship bar is only this candidate's problem when they need sponsorship; a stated
   // citizenship or clearance requirement bars anyone who lacks it, so it is never gated.

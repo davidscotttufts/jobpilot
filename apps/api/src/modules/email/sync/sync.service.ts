@@ -7,7 +7,7 @@ import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { loadFreshAccount } from "../account/account.utils";
-import { getProvider } from "../gmail.provider";
+import { getProvider, rethrowGmailError } from "../gmail.provider";
 
 /** The fields the reply-linker needs from a freshly-synced inbound message. */
 interface InboundForLinking {
@@ -24,9 +24,9 @@ export class EmailSyncService {
   ) {}
 
   /**
-   * Best-effort pull for the pilot's agenda compile: skips when no account is connected or the
+   * Best-effort pull for the pilot's task list refresh: skips when no account is connected or the
    * last sync is fresher than `staleMs`, and swallows failures - a broken mailbox must never
-   * block the agenda.
+   * block the task list.
    */
   async syncIfStale(userId: string, staleMs: number, now: Date): Promise<void> {
     const account = await this.prisma.emailAccount.findUnique({
@@ -72,13 +72,15 @@ export class EmailSyncService {
 
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
-    const result = await provider.syncMessages(config, active, async (ids) => {
-      const stored = await this.prisma.emailMessage.findMany({
-        where: { accountId: active.id, providerId: { in: ids } },
-        select: { providerId: true },
-      });
-      return new Set(stored.map((row) => row.providerId));
-    });
+    const result = await provider
+      .syncMessages(config, active, async (ids) => {
+        const stored = await this.prisma.emailMessage.findMany({
+          where: { accountId: active.id, providerId: { in: ids } },
+          select: { providerId: true },
+        });
+        return new Set(stored.map((row) => row.providerId));
+      })
+      .catch(rethrowGmailError);
 
     let inserted = 0;
     const insertedForLinking: InboundForLinking[] = [];

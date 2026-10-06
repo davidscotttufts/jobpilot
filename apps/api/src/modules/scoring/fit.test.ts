@@ -2,10 +2,10 @@
 
 import { DEFAULT_MIN_MATCH_SCORE } from "@jobpilot/contracts/user";
 import { scoreFit } from "./fit";
-import type { FitProfile, JobDigest } from "./scoring.schema";
+import type { FitProfile, JobBrief } from "./scoring.schema";
 import { describe, expect, it } from "bun:test";
 
-const digest = (over: Partial<JobDigest>): JobDigest => ({
+const brief = (over: Partial<JobBrief>): JobBrief => ({
   title: "",
   company: "",
   skills: [],
@@ -26,7 +26,7 @@ const profile = (over: Partial<FitProfile>): FitProfile => ({
 describe("scoreFit", () => {
   it("scores a perfect match at 100 with full confidence", () => {
     const result = scoreFit(
-      digest({
+      brief({
         skills: ["react"],
         requirements: ["React experience required"],
         yearsExperience: 3,
@@ -41,28 +41,28 @@ describe("scoreFit", () => {
     expect(result.verdict).toBe("trust");
   });
 
-  it("marks unmatched digest skills as gaps and scores low", () => {
-    const result = scoreFit(digest({ skills: ["rust", "go"] }), profile({ skills: ["react"] }));
+  it("marks unmatched brief skills as gaps and scores low", () => {
+    const result = scoreFit(brief({ skills: ["rust", "go"] }), profile({ skills: ["react"] }));
     expect(result.strongMatches).toEqual([]);
     expect(result.gaps).toEqual(["rust", "go"]);
     expect(result.score).toBeLessThan(20);
   });
 
   it("matches through synonyms (js ↔ javascript)", () => {
-    const result = scoreFit(digest({ skills: ["JavaScript"] }), profile({ skills: ["js"] }));
+    const result = scoreFit(brief({ skills: ["JavaScript"] }), profile({ skills: ["js"] }));
     expect(result.strongMatches).toEqual(["JavaScript"]);
     expect(result.gaps).toEqual([]);
   });
 
   it("rewards meeting the years requirement over falling short of it", () => {
-    const base = digest({ skills: ["react"], yearsExperience: 7 });
+    const base = brief({ skills: ["react"], yearsExperience: 7 });
     const meets = scoreFit(base, profile({ skills: ["react"], yearsExperience: 8 }));
     const shortOf = scoreFit(base, profile({ skills: ["react"], yearsExperience: 2 }));
     expect(meets.score).toBeGreaterThan(shortOf.score);
   });
 
-  it("returns zero confidence when the digest has no skills, requirements, or years", () => {
-    const result = scoreFit(digest({}), profile({ skills: ["react"] }));
+  it("returns zero confidence when the brief has no skills, requirements, or years", () => {
+    const result = scoreFit(brief({}), profile({ skills: ["react"] }));
     expect(result.confidence).toBe(0);
     expect(result.strongMatches).toEqual([]);
     expect(result.gaps).toEqual([]);
@@ -70,7 +70,7 @@ describe("scoreFit", () => {
 
   it("matches multi-word profile terms at word level (.NET ↔ ASP.NET Core, SQL Server ↔ MS SQL)", () => {
     const result = scoreFit(
-      digest({ skills: [".NET", "SQL Server", "AWS"] }),
+      brief({ skills: [".NET", "SQL Server", "AWS"] }),
       profile({ skills: ["ASP.NET Core", "MS SQL", "AWS (Amplify, S3, Lambda, Cognito)"] }),
     );
     expect(result.strongMatches).toEqual([".NET", "SQL Server", "AWS"]);
@@ -78,18 +78,18 @@ describe("scoreFit", () => {
   });
 
   it("treats C# and C++ as different languages in both directions", () => {
-    const csharpJob = scoreFit(digest({ skills: ["C#"] }), profile({ skills: ["C++"] }));
+    const csharpJob = scoreFit(brief({ skills: ["C#"] }), profile({ skills: ["C++"] }));
     expect(csharpJob.gaps).toEqual(["C#"]);
     expect(csharpJob.strongMatches).toEqual([]);
 
-    const cppJob = scoreFit(digest({ skills: ["C++"] }), profile({ skills: ["C#"] }));
+    const cppJob = scoreFit(brief({ skills: ["C++"] }), profile({ skills: ["C#"] }));
     expect(cppJob.gaps).toEqual(["C++"]);
     expect(cppJob.strongMatches).toEqual([]);
   });
 
   it("counts requirements hits for punctuated and multi-word terms", () => {
     const result = scoreFit(
-      digest({
+      brief({
         skills: ["Node.js", "SQL Server"],
         requirements: ["Experience with Node.js", "SQL Server 2019 administration"],
       }),
@@ -101,24 +101,24 @@ describe("scoreFit", () => {
   it("does not count a term against unrelated requirements text", () => {
     // "C#" used to compact to "c" and hit any requirement containing the letter.
     const result = scoreFit(
-      digest({ skills: ["C#"], requirements: ["Strong communication skills"] }),
+      brief({ skills: ["C#"], requirements: ["Strong communication skills"] }),
       profile({}),
     );
     expect(result.partialMatches).toEqual([]);
   });
 
-  it("keeps the requirements-density term neutral when the digest has no requirements", () => {
+  it("keeps the requirements-density term neutral when the brief has no requirements", () => {
     const result = scoreFit(
-      digest({ skills: ["react"], yearsExperience: 3 }),
+      brief({ skills: ["react"], yearsExperience: 3 }),
       profile({ skills: ["react"], yearsExperience: 5 }),
     );
-    // 0.5 skills + 0.2 years + 0.3 neutral density - a thin digest must not cap at 70.
+    // 0.5 skills + 0.2 years + 0.3 neutral density - a thin brief must not cap at 70.
     expect(result.score).toBe(100);
   });
 
   it("caps confidence at 0.6 without requirements, under the trust bar", () => {
     const result = scoreFit(
-      digest({ skills: ["react"], yearsExperience: 3 }),
+      brief({ skills: ["react"], yearsExperience: 3 }),
       profile({ skills: ["react"], yearsExperience: 5 }),
     );
     expect(result.confidence).toBe(0.6);
@@ -128,7 +128,7 @@ describe("scoreFit", () => {
 
 describe("scoreFit - verdict", () => {
   // Scores 75 at confidence 1: one strong match of two, both terms in the requirements, years met.
-  const confidentDigest = digest({
+  const confidentBrief = brief({
     skills: ["react", "rust"],
     requirements: ["React and Rust experience"],
     yearsExperience: 3,
@@ -136,27 +136,27 @@ describe("scoreFit - verdict", () => {
   const confidentProfile = profile({ skills: ["react"], yearsExperience: 5 });
 
   it("deliberates when a confident score lands within the threshold margin", () => {
-    const result = scoreFit(confidentDigest, confidentProfile, 70);
+    const result = scoreFit(confidentBrief, confidentProfile, 70);
     expect(result.score).toBe(75);
     expect(result.confidence).toBe(1);
     expect(result.verdict).toBe("deliberate");
   });
 
   it("trusts the same score against a threshold far enough away", () => {
-    const result = scoreFit(confidentDigest, confidentProfile, 40);
+    const result = scoreFit(confidentBrief, confidentProfile, 40);
     expect(result.score).toBe(75);
     expect(result.verdict).toBe("trust");
   });
 
   it("falls back to the default threshold when none is passed", () => {
-    const omitted = scoreFit(confidentDigest, confidentProfile);
-    const explicit = scoreFit(confidentDigest, confidentProfile, DEFAULT_MIN_MATCH_SCORE);
+    const omitted = scoreFit(confidentBrief, confidentProfile);
+    const explicit = scoreFit(confidentBrief, confidentProfile, DEFAULT_MIN_MATCH_SCORE);
     expect(omitted).toEqual(explicit);
   });
 });
 
 describe("scoreFit - eligibility", () => {
-  const restricted = digest({
+  const restricted = brief({
     skills: ["react"],
     descriptionExcerpt: "We are not able to provide visa sponsorship for this position.",
   });
@@ -175,13 +175,13 @@ describe("scoreFit - eligibility", () => {
   it("reports a citizenship or clearance bar regardless of sponsorship need", () => {
     for (const requiresSponsorship of [true, false]) {
       const clearance = scoreFit(
-        digest({ requirements: ["Active security clearance required"] }),
+        brief({ requirements: ["Active security clearance required"] }),
         profile({ requiresSponsorship }),
       );
       expect(clearance.eligibilityBlocked?.kind).toBe("clearance");
 
       const citizen = scoreFit(
-        digest({ requirements: ["Must be a US citizen"] }),
+        brief({ requirements: ["Must be a US citizen"] }),
         profile({ requiresSponsorship }),
       );
       expect(citizen.eligibilityBlocked?.kind).toBe("citizenship");
@@ -197,7 +197,7 @@ describe("scoreFit - eligibility", () => {
 
   it("does not flag a posting that is merely silent on eligibility", () => {
     const result = scoreFit(
-      digest({ skills: ["react"], descriptionExcerpt: "Senior React engineer. Remote." }),
+      brief({ skills: ["react"], descriptionExcerpt: "Senior React engineer. Remote." }),
       profile({ requiresSponsorship: true }),
     );
     expect(result.eligibilityBlocked).toBeUndefined();
@@ -205,7 +205,7 @@ describe("scoreFit - eligibility", () => {
 
   it("reads requirements and responsibilities, not just the excerpt", () => {
     const result = scoreFit(
-      digest({ responsibilities: ["No visa sponsorship is available."] }),
+      brief({ responsibilities: ["No visa sponsorship is available."] }),
       profile({ requiresSponsorship: true }),
     );
     expect(result.eligibilityBlocked?.kind).toBe("sponsorship");

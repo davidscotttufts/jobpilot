@@ -1,12 +1,12 @@
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import { editorial, fontFamilies, radii } from "@/theme";
-import { PanelFrame, panelCellSx } from "./panel-frame";
+import { Box, Paper, Stack, Typography } from "@mui/material";
+import { editorial, radii } from "@/theme";
+import { PanelFrame } from "./panel-frame";
 
 const VARIANTS = [
-  { name: "Base resume", target: "your source of truth", score: "" },
-  { name: "Stripe variant", target: "Senior Frontend Engineer", score: "92" },
-  { name: "Vercel variant", target: "Design Engineer", score: "88" },
+  { name: "Base resume", target: "your source of truth", score: null },
+  { name: "Stripe variant", target: "Senior Frontend Engineer", score: 92 },
+  { name: "Vercel variant", target: "Design Engineer", score: 88 },
 ];
 
 const LINES = [
@@ -20,7 +20,6 @@ const LINES = [
   { id: "l8", width: 0.75 },
 ];
 
-/** Faux rendered-PDF page: paper block with skeleton text lines. */
 function PagePreview(): ReactElement {
   return (
     <Box
@@ -31,7 +30,7 @@ function PagePreview(): ReactElement {
         borderRadius: radii.xs,
         backgroundColor: editorial.paper,
         padding: 1.25,
-        display: "flex",
+        display: { xs: "none", sm: "flex" },
         flexDirection: "column",
         gap: 0.75,
       }}
@@ -58,7 +57,7 @@ export function ResumePanel(): ReactElement {
       <Stack direction="row" spacing={2}>
         <Stack spacing={1} sx={{ flex: 1, minWidth: 0 }}>
           {VARIANTS.map((variant) => (
-            <Box key={variant.name} sx={[panelCellSx, { padding: 1.25 }]}>
+            <Paper key={variant.name} variant="inset" sx={{ padding: 1.25 }}>
               <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between" }}>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="body2Strong" noWrap>
@@ -68,24 +67,15 @@ export function ResumePanel(): ReactElement {
                     {variant.target}
                   </Typography>
                 </Box>
-                {variant.score && (
-                  <Typography
-                    sx={{
-                      fontFamily: fontFamilies.mono,
-                      fontSize: "0.75rem",
-                      color: "success.main",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {variant.score}%
+                {variant.score !== null && (
+                  <Typography variant="monoCaption" color="success">
+                    {variant.score}% match
                   </Typography>
                 )}
               </Stack>
-            </Box>
+            </Paper>
           ))}
-          <Typography
-            sx={{ fontFamily: fontFamilies.mono, fontSize: "0.6875rem", color: "text.disabled" }}
-          >
+          <Typography variant="monoCaption" color="textDisabled">
             → rendered to PDF on save
           </Typography>
         </Stack>

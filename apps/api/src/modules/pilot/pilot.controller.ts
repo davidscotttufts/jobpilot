@@ -1,11 +1,12 @@
 import {
   pilotInstructionsImpactSchema,
   pilotStateSchema,
+  recordIdleCycleSchema,
   updatePilotInstructionsSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { sseStream } from "@/common/sse";
@@ -18,11 +19,9 @@ import { PilotService } from "./pilot.service";
 
 const pilot = container.resolve(PilotService);
 
-const limitAgenda = rateLimit(RATE_LIMITS.pilotAgenda);
+const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
-// Core pilot-state routes. Per-domain routes (searches, agenda, claims, journal, questions) live in
-// sibling `/pilot` controllers, each mounted standalone in app.ts.
 export const pilotController = new Elysia({
   prefix: "/pilot",
   detail: { tags: ["Pilot"] },
@@ -40,7 +39,7 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Preview what an instructions edit leaves running",
       description:
-        "Lists the searches, in-progress pilot campaigns and approved backlog that outlive an instructions edit, so the caller can decide what to retire alongside it.",
+        "Lists the searches, pilot campaigns and approved backlog an instructions edit would leave running, so the caller can choose what to retire.",
     },
   })
   .put("/instructions", ({ user, body }) => pilot.updateInstructions(user.id, body), {
@@ -75,40 +74,49 @@ export const pilotController = new Elysia({
     detail: {
       summary: "Reset the pilot's run history",
       description:
-        "Deletes every journal entry, sets the cycle counter back to 0, and drops the cached agenda. Instructions, searches and the running flag are untouched.",
+        "Deletes the journal, zeroes the cycle count and drops the cached task list. Instructions, searches and the running flag stay.",
+    },
+  })
+  .post("/cycles/idle", ({ user, body }) => pilot.recordIdleCycle(user.id, body), {
+    body: recordIdleCycleSchema,
+    beforeHandle: limitTaskList,
+    response: pilotStateSchema,
+    detail: {
+      summary: "Record an idle check",
+      description:
+        "The host found nothing to run: advances the cycle count and next wake without a journal entry.",
     },
   })
   .get("/stats/today", ({ user }) => pilot.getTodayOutcomes(user.id), {
-    beforeHandle: limitAgenda,
+    beforeHandle: limitTaskList,
     response: pilotTodayOutcomesSchema,
     detail: {
       summary: "Today's non-applied outcomes",
       description:
-        "How many of the profile's jobs were skipped or failed today, with the skip reasons bucketed by frequency. Applied counts come from the pilot state.",
+        "Today's skipped and failed job counts, with skip reasons bucketed by frequency.",
     },
   })
   .get("/stats/cost", ({ user }) => pilot.getCost(user.id), {
-    beforeHandle: limitAgenda,
+    beforeHandle: limitTaskList,
     response: pilotCostSchema,
     detail: {
-      summary: "Where the last week of cycles went",
+      summary: "Where the last week of tokens went",
       description:
-        "Per agenda kind: runs, median and total wall clock, failures, and abandoned claims over the last 7 days, heaviest first. Derived from claim timings - no separate telemetry write.",
+        "Per task type over the last 7 days: runs, median new tokens (input, output, cache write), the token breakdown, failed and unfinished runs, most new tokens first.",
     },
   })
   .get("/activity", ({ user }) => pilot.getActivity(user.id), {
-    beforeHandle: limitAgenda,
+    beforeHandle: limitTaskList,
     response: pilotActivityResponseSchema,
     detail: {
       summary: "Pilot liveness activity",
       description:
-        "Newest server-side agent activity (claims, journal, campaign/job writes) plus the active-claim count, so the terminal orchestrator can tell a live long run from a genuinely stuck one.",
+        "Newest agent activity and the active-run count, so the host can tell a long run from a stuck one.",
     },
   })
   .get("/events", ({ user, headers }) => sseStream(pilotChannel, { userId: user.id }, headers), {
     detail: {
       summary: "Stream pilot events",
-      description:
-        "Server-Sent Events for the profile's Pilot: journal appends, question lifecycle, and state changes.",
+      description: "Server-Sent Events for journal appends, questions, runs and state changes.",
     },
   });

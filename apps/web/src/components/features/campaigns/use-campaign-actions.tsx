@@ -23,13 +23,11 @@ import { type CampaignDto, jobSummary } from "@/api/types";
 import type { DropdownMenuItem } from "@/components/ui/feedback";
 import { useAgent, useAgentAvailable } from "@/providers/agent-provider";
 import { useConfirm } from "@/providers/confirm-provider";
+import { COMPOSER_DEFAULT_VALUES } from "./composer/form-config";
 import { RepeatWeeklyDialog, type WeeklyScheduleValue } from "./detail/repeat-weekly-dialog";
 import { RescanDialog } from "./detail/rescan-dialog";
 
-/** Matches the composer's default so a campaign created without one rescans from the same floor. */
-const DEFAULT_MIN_SCORE = 60;
-
-export type CampaignActionKey =
+type CampaignActionKey =
   | "stop"
   | "resume"
   | "run-again"
@@ -64,6 +62,17 @@ export interface CampaignActions {
   repeatLabel: string | null;
 }
 
+function useStatusMutation(
+  campaignId: string,
+  status: CampaignStatus,
+  successMessage: string,
+): ApiMutationResult<unknown, void> {
+  return useApiMutation<unknown, void>(
+    () => api.campaigns({ id: campaignId }).status.post({ status, actor: "user" }),
+    { successMessage, invalidate: invalidations.campaign },
+  );
+}
+
 /**
  * Every action a campaign offers, in one place: the workspace row menu and the detail actions bar
  * both read from here, so a rule about when an action applies is written once rather than drifting
@@ -78,29 +87,8 @@ export function useCampaignActions(options: CampaignActionsOptions): CampaignAct
 
   const campaignResource = api.campaigns({ id: campaign.campaignId });
 
-  const stop = useApiMutation<unknown, void>(
-    () =>
-      campaignResource.status.post({
-        status: "paused" satisfies CampaignStatus,
-        actor: "user",
-      }),
-    {
-      successMessage: "Campaign paused",
-      invalidate: invalidations.campaign,
-    },
-  );
-
-  const complete = useApiMutation<unknown, void>(
-    () =>
-      campaignResource.status.post({
-        status: "completed" satisfies CampaignStatus,
-        actor: "user",
-      }),
-    {
-      successMessage: "Campaign marked as done",
-      invalidate: invalidations.campaign,
-    },
-  );
+  const stop = useStatusMutation(campaign.campaignId, "paused", "Campaign paused");
+  const complete = useStatusMutation(campaign.campaignId, "completed", "Campaign marked as done");
 
   const [rescanOpen, setRescanOpen] = useState(false);
   const [repeatOpen, setRepeatOpen] = useState(false);
@@ -171,7 +159,7 @@ export function useCampaignActions(options: CampaignActionsOptions): CampaignAct
   const failedCount = summary?.failed ?? 0;
   const skippedCount = summary?.skipped ?? 0;
   const isInProgress = campaign.status === "in_progress";
-  const isAutoApply = campaign.source === "auto-apply";
+  const isAutoApply = campaign.source === "auto_apply";
   const isStopped = campaign.status === "paused";
   const isFinished = campaign.status === "completed" || campaign.status === "failed";
 
@@ -326,7 +314,7 @@ export function useCampaignActions(options: CampaignActionsOptions): CampaignAct
         open={rescanOpen}
         onClose={() => setRescanOpen(false)}
         skippedCount={skippedCount}
-        defaultMinScore={campaign.config.minScore ?? DEFAULT_MIN_SCORE}
+        defaultMinScore={campaign.config.minScore ?? COMPOSER_DEFAULT_VALUES.minScore}
         pending={rescan.isPending}
         onConfirm={(minScore) => void handleRescanConfirm(minScore)}
       />

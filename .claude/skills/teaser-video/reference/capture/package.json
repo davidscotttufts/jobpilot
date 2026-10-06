@@ -1,0 +1,13 @@
+{
+  "name": "teaser-capture",
+  "private": true,
+  "type": "module",
+  "description": "Copy into a scratch directory (never the project), npm install, then adapt the takes.",
+  "scripts": {
+    "login": "node login.js",
+    "live": "node live.js"
+  },
+  "dependencies": {
+    "playwright": "^1.63.0"
+  }
+}

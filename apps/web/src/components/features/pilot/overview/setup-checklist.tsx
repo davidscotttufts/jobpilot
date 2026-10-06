@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import type { PilotState } from "@jobpilot/contracts/pilot";
 import { CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
@@ -8,7 +9,8 @@ import { emailQueries } from "@/api/queries";
 import { LinkButton } from "@/components/ui/buttons";
 import { SectionCard } from "@/components/ui/layout";
 import { useAgentAvailable, useAgentDock } from "@/providers/agent-provider";
-import { usePilotStatus } from "./pilot-status-context";
+import type { TerminalHealth } from "../../agent-dock/use-terminal-health";
+import { hasGoals } from "../pilot-status";
 
 interface ChecklistStep {
   id: string;
@@ -18,26 +20,30 @@ interface ChecklistStep {
   action: ReactNode;
 }
 
-/** Onboarding card; renders nothing once the pilot is fully set up. */
-export function PilotSetupChecklist(): ReactNode {
-  const { state, controls, health } = usePilotStatus();
+interface PilotSetupChecklistProps {
+  state: PilotState;
+  health: TerminalHealth;
+}
+
+/** The pilot's prerequisites; Start lives on the status bar. Renders nothing once all are met. */
+export function PilotSetupChecklist(props: PilotSetupChecklistProps): ReactNode {
+  const { state, health } = props;
   const dock = useAgentDock();
   const agentAvailable = useAgentAvailable();
 
   const mailbox = useApiQuery(emailQueries.account()).data;
 
   const hostReady = health === "reachable";
-  const running = state.running;
-  const goalsDone = state.instructionsGoals.trim() !== "";
+  const goalsDone = hasGoals(state);
   const connected = mailbox?.connected === true;
   const needsReauth = connected && mailbox.needsReauth;
   const emailOk = connected && !needsReauth;
 
-  // Unanswered counts as done here so the checklist doesn't flash; the step rows below stay strict.
+  // An unanswered probe counts as done here so the card doesn't flash; the step rows stay strict.
   const hostSettled = hostReady || health === "checking";
   const emailSettled = emailOk || mailbox == null;
 
-  if (hostSettled && running && emailSettled) {
+  if (hostSettled && goalsDone && emailSettled) {
     return null;
   }
 
@@ -81,28 +87,12 @@ export function PilotSetupChecklist(): ReactNode {
         </LinkButton>
       ),
     },
-    {
-      id: "start",
-      label: "Start the pilot",
-      description: "Turns on autonomous cycles on your own Claude or Codex subscription.",
-      done: running,
-      action: (
-        <Button
-          size="small"
-          variant="contained"
-          disabled={controls.isLoading || !hostReady || !goalsDone}
-          onClick={() => void controls.start()}
-        >
-          Start
-        </Button>
-      ),
-    },
   ];
 
   return (
     <SectionCard
       title="Set up the pilot"
-      description="Install the agent and start the pilot - it handles the rest."
+      description="Finish these, then start the pilot - it handles the rest."
     >
       <Stack spacing={2}>
         {steps.map((step) => (

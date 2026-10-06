@@ -1,7 +1,7 @@
 import type { Data } from "@jobpilot/api-client";
 import type { api } from "@/api/client";
 
-/** A listing as the lists render it, from `GET /api/public/jobs`. Carries `sourceCount`, not links. */
+/** A listing as the lists render it, from `GET /api/public/jobs`. Carries board names, not links. */
 export type JobListingSummaryDto = Data<typeof api.public.jobs.get>["items"][number];
 
 /** One public listing with every board it was seen on, from `GET /api/public/jobs/:slug`. */

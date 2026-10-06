@@ -1,12 +1,16 @@
 enum NetworkingChannel {
   email
   linkedin
+
+  @@map("networking_channel")
 }
 
 enum LinkedinMessageKind {
   inmail
   connect_note
   dm
+
+  @@map("linkedin_message_kind")
 }
 
 enum NetworkingMessageStatus {
@@ -17,44 +21,52 @@ enum NetworkingMessageStatus {
   bounced
   failed
   skipped
+
+  @@map("networking_message_status")
 }
 
 enum ContactEmailSource {
   guessed
   verified
   provided
+
+  @@map("contact_email_source")
 }
 
 enum ContactLinkedinConnection {
   none
   pending
   connected
+
+  @@map("contact_linkedin_connection")
 }
 
 enum ContactDiscoverySource {
   google
-  company_site @map("company-site")
+  company_site
   web
   linkedin
   manual
+
+  @@map("contact_discovery_source")
 }
 
 model Contact {
-  id        String  @id @default(uuid())
-  userId    String  @map("user_id")
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   name            String
   title           String?
   company         String?
-  linkedinUrl     String? @map("linkedin_url")
+  linkedinUrl     String?             @map("linkedin_url")
   email           String?
   emailSource     ContactEmailSource? @map("email_source")
-  emailConfidence Float?  @map("email_confidence")
+  emailConfidence Float?              @map("email_confidence")
 
   linkedinConnection ContactLinkedinConnection @default(none) @map("linkedin_connection")
-  discoverySource    ContactDiscoverySource?    @map("discovery_source")
-  matchConfidence    Float?                     @map("match_confidence")
+  discoverySource    ContactDiscoverySource?   @map("discovery_source")
+  matchConfidence    Float?                    @map("match_confidence")
 
   relatedAppId  String?      @map("related_app_id")
   relatedApp    Application? @relation(fields: [relatedAppId], references: [id], onDelete: SetNull)

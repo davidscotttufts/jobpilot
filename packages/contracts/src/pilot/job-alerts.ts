@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { PILOT_RUN_OUTCOMES } from "./run";
 import { timeZoneSchema } from "./schedule";
 
 /**
@@ -82,16 +83,12 @@ export const markJobAlertsHarvestedSchema = z.object({
   messageIds: z.array(z.uuid()).min(1).max(200),
 });
 
-export type MarkJobAlertsHarvestedInput = z.infer<typeof markJobAlertsHarvestedSchema>;
-
-export const JOB_ALERT_RUN_OUTCOMES = ["done", "failed", "abandoned", "expired"] as const;
-
-/** The most recent harvest claim, and the campaign it opened when it opened one. */
-export const jobAlertsLastRunSchema = z.object({
+/** The most recent harvest run, and the campaign it opened when it opened one. */
+const jobAlertsLastRunSchema = z.object({
   startedAt: z.date(),
   finishedAt: z.date().nullable(),
   // Null while the run is still in flight.
-  outcome: z.enum(JOB_ALERT_RUN_OUTCOMES).nullable(),
+  outcome: z.enum(PILOT_RUN_OUTCOMES).nullable(),
   campaignId: z.uuid().nullable(),
   campaignQuery: z.string().nullable(),
 });

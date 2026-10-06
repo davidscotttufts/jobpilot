@@ -27,17 +27,16 @@ export interface DuplicateLookup {
   company?: string;
 }
 
-export type DuplicateApplication = Prisma.ApplicationGetPayload<{ select: typeof MATCH_SELECT }>;
+type DuplicateApplication = Prisma.ApplicationGetPayload<{ select: typeof MATCH_SELECT }>;
 
 export type AppliedDuplicate =
   | { kind: "url"; application: DuplicateApplication }
   | { kind: "fuzzy"; score: number; application: DuplicateApplication };
 
 /**
- * Exact URL, else fuzzy title+company. Only the fuzzy arm is windowed - it is a similarity score
- * and would otherwise accumulate false positives forever, while an exact URL is the same posting
- * however long ago it was. Shared by `/applied/check` and the apply guard so advice and
- * enforcement cannot drift apart.
+ * Exact URL at any age, else fuzzy title+company inside the window, where old near-matches would
+ * be false positives. Shared by `/applied/check` and the apply guard so advice and enforcement
+ * cannot drift apart.
  */
 export async function findAppliedDuplicate(
   db: DuplicateReader,
@@ -52,11 +51,6 @@ export async function findAppliedDuplicate(
       where: { userId_url: { userId, url } },
       select: MATCH_SELECT,
     });
-    // Deliberately unwindowed, unlike the fuzzy arm below. An exact canonical-URL match is the
-    // same posting, not a guess, and the two costs are not symmetric: skipping a genuine repost
-    // costs one missed application, while re-applying puts a second one in an employer's inbox
-    // and cannot be taken back. Windowing this arm let 6 postings go out twice at gaps of exactly
-    // 30 and 33 days - the window reopening is the whole story.
     if (exact) {
       return { kind: "url", application: exact };
     }

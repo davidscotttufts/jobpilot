@@ -8,7 +8,7 @@ import {
 } from "@jobpilot/contracts";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
-import { container } from "@/common/di";
+import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
@@ -40,14 +40,12 @@ const limitPasswordReset = rateLimit(RATE_LIMITS.passwordReset);
 const limitEmailResend = rateLimit(RATE_LIMITS.emailResend);
 
 export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Auth"] } })
-  // --- public ---
   .post(
     "/register",
     async ({ body, cookie }) => {
       const result = await authService.register(body);
       setAuthCookies(cookie, result.accessToken, result.refreshToken);
-      // Confirm the address unless dev auto-verified it. Best-effort: a mail outage
-      // shouldn't block account creation - the user can re-trigger from the gate.
+      // Best-effort: a mail outage shouldn't block sign-up; the user can resend from the gate.
       if (!result.user.emailVerified) {
         try {
           await verificationService.sendVerificationEmail(result.user.id, result.user.email);
@@ -155,7 +153,6 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       },
     },
   )
-  // --- authenticated ---
   .use(authGuard)
   .post("/email/resend", ({ user }) => verificationService.resendVerification(user.id), {
     beforeHandle: limitEmailResend,

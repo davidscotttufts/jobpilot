@@ -1,3 +1,4 @@
+import { newTokens, type TokenUsage } from "@jobpilot/contracts/pilot";
 import { format, formatDistanceStrict, formatDistanceToNowStrict, isSameDay } from "date-fns";
 import { enUS } from "date-fns/locale/en-US";
 
@@ -10,7 +11,7 @@ const COMPACT_UNIT: Record<string, string> = {
   xYears: "y",
 };
 
-/** Minimal date-fns locale rendering strict-distance tokens as compact units ("3h") instead of words ("3 hours"). */
+/** Renders strict distances as "3h" rather than "3 hours". */
 const compactLocale = {
   ...enUS,
   formatDistance: (token: string, count: number) =>
@@ -31,7 +32,10 @@ export function formatRelativeTime(value: string | Date): string {
     : formatDistanceToNowStrict(date, { locale: compactLocale });
 }
 
-/** Compact countdown to a future timestamp, e.g. `3h`. Strict distance is unsigned, so an already-passed target floors at `0s` rather than reading as time remaining. */
+/**
+ * Compact countdown, e.g. `3h`. A passed target returns `0s`: strict distance is unsigned and
+ * would read as time remaining.
+ */
 export function formatTimeUntil(value: string | Date): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -55,7 +59,38 @@ export function formatDuration(seconds: number): string {
   return formatSpanBetween(new Date(0), new Date(seconds * 1000));
 }
 
-/** Human-readable date in the viewer's locale, e.g. `Jul 19, 2026`. Takes `Date | string` because Eden types `z.date()` fields as `Date`. */
+const countFormat = new Intl.NumberFormat("en-US");
+
+/** Whole count with a fixed locale, so server and browser render the same digits. */
+export function formatCount(count: number): string {
+  return countFormat.format(count);
+}
+
+const tokenFormat = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+/** Compact token count, e.g. `950`, `12.3K`, `1.2M`. */
+export function formatTokens(count: number): string {
+  return tokenFormat.format(count);
+}
+
+/** New tokens with cache reads beside them, e.g. `184K new · 2.5M cached`. */
+export function formatTokenSplit(usage: TokenUsage): string {
+  return `${formatTokens(newTokens(usage))} new · ${formatTokens(usage.cacheRead)} cached`;
+}
+
+/** What new tokens are made of, e.g. `in 12K · out 41K · cache write 131K`. */
+export function formatNewTokenParts(usage: TokenUsage): string {
+  return [
+    `in ${formatTokens(usage.input)}`,
+    `out ${formatTokens(usage.output)}`,
+    `cache write ${formatTokens(usage.cacheWrite)}`,
+  ].join(" · ");
+}
+
+/** Locale date, e.g. `Jul 19, 2026`. Takes `Date` too because Eden types `z.date()` as `Date`. */
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) {
     return "-";
@@ -66,7 +101,7 @@ export function formatDate(value: string | Date | null | undefined): string {
     : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
-/** Locale month + day for a timeline bucket. UTC-pinned: the bucket is UTC midnight, which localises to the previous day west of Greenwich. */
+/** Pinned to UTC: a bucket is UTC midnight, which shows as the previous day west of Greenwich. */
 export function formatDayBucket(value: Date): string {
   if (Number.isNaN(value.getTime())) {
     return "";
@@ -88,7 +123,7 @@ const absoluteTimeFormat = new Intl.DateTimeFormat(undefined, {
   timeZoneName: "short",
 });
 
-/** Absolute local timestamp with timezone, e.g. `Jul 19, 2026, 6:34 PM GMT+5`. Component options only - `dateStyle` + `timeZoneName` throws. */
+/** E.g. `Jul 19, 2026, 6:34 PM GMT+5`. Component options only: `dateStyle` + `timeZoneName` throws. */
 export function formatAbsoluteTime(value: string | Date): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -100,7 +135,7 @@ export function formatAbsoluteTime(value: string | Date): string {
 // ISO timestamps WITH a UTC offset (Z or ±hh:mm) only - offset-less strings parse as local already.
 const ISO_WITH_OFFSET = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})/g;
 
-/** Replaces ISO timestamps embedded in free text with human-local times, e.g. agent log lines like "sleeping until 2026-07-19T18:34:43Z". */
+/** Rewrites ISO timestamps in free text, like agent log lines, as local times. */
 export function humanizeIsoInText(text: string): string {
   return text.replace(ISO_WITH_OFFSET, (match) => {
     const date = new Date(match);

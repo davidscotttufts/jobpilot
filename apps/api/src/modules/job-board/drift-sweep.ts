@@ -1,7 +1,7 @@
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { publish } from "@/common/sse";
 import type { Prisma } from "@/generated/prisma/client";
-import { toPilotQuestion } from "@/modules/pilot/pilot.mapper";
+import { toPilotQuestion } from "@/modules/pilot/question.service";
 import { type BoardDrift, detectBoardDrift } from "./board-drift";
 
 export type DriftSweepClient = Pick<Prisma.TransactionClient, "job" | "pilotQuestion">;
@@ -13,7 +13,7 @@ export const DRIFT_SWEEP_CYCLES = 12;
 const SCAN = 400;
 
 /** Stable per (board, newHost) so a drift is reported once, not every cycle. */
-export function driftSubjectId(drift: BoardDrift): string {
+function driftSubjectId(drift: BoardDrift): string {
   return `${drift.board}->${drift.newHost}`;
 }
 
@@ -26,7 +26,7 @@ export function driftSubjectId(drift: BoardDrift): string {
  * happened with hiring.cafe.
  */
 /** A "same site" answer nobody acted on should resurface rather than be forgotten. */
-export const REASK_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
+const REASK_AFTER_MS = 30 * 24 * 60 * 60 * 1000;
 
 export async function sweepBoardDrift(
   db: DriftSweepClient,

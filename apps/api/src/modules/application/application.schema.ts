@@ -2,12 +2,13 @@ import {
   applicationEventKindSchema,
   applicationEventSourceSchema,
   applicationFilterSchema,
+  applicationSourceSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
 import { submittedAnswersSchema } from "@jobpilot/contracts/campaign";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
-import { campaignJobSchema } from "@/modules/campaign/campaign.schema";
+import { campaignJobSchema } from "@/modules/campaign/jobs/job.schema";
 import { contactSchema } from "@/modules/contact/contact.schema";
 import { emailMessageSchema } from "@/modules/email/email.schema";
 import { resumeSummarySchema } from "@/modules/resume/resume.schema";
@@ -32,7 +33,7 @@ export const appendNoteSchema = z.object({
 // Response schemas
 
 /** A full applied-job row (mirrors the `Application` Prisma model with dates stringified). */
-export const applicationSchema = z.object({
+const applicationSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
   url: z.string(),
@@ -40,9 +41,7 @@ export const applicationSchema = z.object({
   company: z.string(),
   location: z.string().nullable(),
   board: z.string().nullable(),
-  // Free-text column: stores ApplicationSource values *and* campaign sources
-  // ("search"/"networking") written when an Application is created from a campaign job.
-  source: z.string(),
+  source: applicationSourceSchema,
   appliedAt: z.date(),
   status: statusSchema,
   rejectedAt: z.date().nullable(),
@@ -132,7 +131,7 @@ export const applicationDetailSchema = applicationSchema.extend({
 });
 
 /** The application summary embedded in a duplicate-check match. */
-export const duplicateMatchApplicationSchema = z.object({
+const duplicateMatchApplicationSchema = z.object({
   id: z.uuid(),
   url: z.string(),
   title: z.string(),

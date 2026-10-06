@@ -2,9 +2,10 @@
 
 import { Chip, Stack, Typography } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
-import type { JobBoardDto, UserAggregateResponse } from "@/api/types";
+import type { UserAggregateResponse } from "@/api/types";
 import { withForm } from "@/components/ui/form/tanstack";
 import {
+  type BoardOption,
   COMPOSER_DEFAULT_VALUES,
   isUpworkSearch,
   MODE_DESCRIPTIONS,
@@ -15,7 +16,7 @@ import {
 export const CampaignBasicsFields = withForm({
   defaultValues: COMPOSER_DEFAULT_VALUES,
   props: {
-    boards: [] as JobBoardDto[],
+    boards: [] as BoardOption[],
     resumes: [] as UserAggregateResponse["resumes"],
     recentQueries: [] as string[],
   },
@@ -38,7 +39,7 @@ export const CampaignBasicsFields = withForm({
                     ? [{ value: "search", label: "Recommend" }]
                     : [
                         { value: "search", label: "Search only" },
-                        { value: "auto-apply", label: "Auto-apply" },
+                        { value: "auto_apply", label: "Auto-apply" },
                         { value: "networking", label: "Networking" },
                         { value: "apply", label: "Apply to links" },
                       ]
@@ -88,7 +89,7 @@ export const CampaignBasicsFields = withForm({
 
             {/* One board control: required for search/auto-apply, optional for networking, where it
                 toggles board-grounded vs criteria-only discovery. */}
-            {boards.length > 0 ? (
+            {boards.length > 0 && (
               <Stack spacing={0.75}>
                 <form.AppField name="board">
                   {(field) => (
@@ -107,12 +108,12 @@ export const CampaignBasicsFields = withForm({
                   </Typography>
                 )}
               </Stack>
-            ) : (
-              !isNetworking && (
-                <Typography variant="body2Muted">
-                  No boards configured. Add one on the Boards page first.
-                </Typography>
-              )
+            )}
+            {/* Networking can run on criteria alone, so a missing board only blocks the other modes. */}
+            {boards.length === 0 && !isNetworking && (
+              <Typography variant="body2Muted">
+                No boards configured. Add one on the Boards page first.
+              </Typography>
             )}
 
             {resumes.length > 0 ? (

@@ -1,8 +1,10 @@
 import type { SxProps, Theme } from "@mui/material";
 
-/** Muted nav/footer link, brightening to primary on hover. Shared by the marketing chrome. */
+/** The sticky nav's height; anchored sections scroll clear of it. */
+export const MARKETING_NAV_HEIGHT = 64;
+
 export const marketingLinkSx: SxProps<Theme> = {
-  fontSize: "0.8125rem",
+  typography: "body1",
   color: "text.secondary",
   "&:hover": { color: "text.primary" },
 };

@@ -32,7 +32,7 @@ export function useJobAlerts() {
     refetchInterval: (current) => (isActive(current.state.data) ? ACTIVE_POLL_MS : IDLE_POLL_MS),
   });
   const run = useApiMutation<RunJobAlertsResult, void>(() => api.pilot["job-alerts"].run.post(), {
-    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.agenda()],
+    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
     onSuccess: (result) => {
       if (!result.queued) {
         toast.info("No new job alert emails to harvest.");

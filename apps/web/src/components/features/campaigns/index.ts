@@ -1,6 +1,5 @@
-export * from "./campaign-detail";
-export * from "./campaign-repeat-chip";
-export * from "./campaign-row";
-export * from "./campaign-row-menu";
-export * from "./composer/campaign-composer";
-export * from "./use-campaign-actions";
+export { CampaignDetail } from "./campaign-detail";
+export { CampaignRepeatChip } from "./campaign-repeat-chip";
+export { CampaignRow } from "./campaign-row";
+export { CampaignRowMenu } from "./campaign-row-menu";
+export { CampaignComposer } from "./composer/campaign-composer";

@@ -2,6 +2,7 @@ import {
   JOB_ALERT_SENDER_DOMAINS,
   nextDailyRun,
   type PilotJobAlerts,
+  pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { singleton } from "tsyringe";
@@ -9,11 +10,13 @@ import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
-import { findLastHarvestClaim, pendingJobAlertsWhere } from "./agenda/candidates-job-alerts";
-import { JOB_ALERTS_REQUEST_TTL_MS } from "./agenda/constants";
-import { AGENDA_SNAPSHOT_RESET } from "./agenda/snapshot";
-import { loadInstructions } from "./pilot.instructions";
 import { PilotService } from "./pilot.service";
+import {
+  findLastHarvestRun,
+  isLiveRunNowRequest,
+  pendingJobAlertsWhere,
+} from "./tasks/gather-inbox";
+import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 /** The harvest's campaigns are named by the `inbox.jobAlerts` skill; this is how a run finds its own. */
 const HARVEST_CAMPAIGN_PREFIX = "Job alerts ·";
@@ -30,28 +33,36 @@ export class JobAlertsService {
     private readonly pilot: PilotService,
   ) {}
 
+  private async loadConfig(userId: string) {
+    const row = await this.prisma.pilotState.findUnique({
+      where: { userId },
+      select: { instructionsConfig: true },
+    });
+    return pilotInstructionsConfigSchema.parse(row?.instructionsConfig ?? {});
+  }
+
   async getStatus(userId: string) {
     const now = new Date();
-    const [{ config }, state, lastClaim, account] = await Promise.all([
-      loadInstructions(this.prisma, userId),
+    const [config, state, lastRun, account] = await Promise.all([
+      this.loadConfig(userId),
       this.prisma.pilotState.findUnique({
         where: { userId },
         select: { running: true, jobAlertsRequestedAt: true },
       }),
-      findLastHarvestClaim(this.prisma, userId),
+      findLastHarvestRun(this.prisma, userId),
       this.prisma.emailAccount.findUnique({ where: { userId }, select: { id: true } }),
     ]);
     const settings = config.jobAlerts;
 
     const [pendingEmails, campaign] = await Promise.all([
       this.prisma.emailMessage.count({ where: pendingJobAlertsWhere(userId, settings, now) }),
-      lastClaim
+      lastRun
         ? this.prisma.campaign.findFirst({
             where: {
               userId,
               createdBy: "pilot",
               query: { startsWith: HARVEST_CAMPAIGN_PREFIX },
-              startedAt: { gte: lastClaim.grantedAt },
+              startedAt: { gte: lastRun.startedAt },
             },
             orderBy: { startedAt: "asc" },
             select: { campaignId: true, query: true },
@@ -60,11 +71,6 @@ export class JobAlertsService {
     ]);
 
     const requestedAt = state?.jobAlertsRequestedAt ?? null;
-    const requestLive =
-      requestedAt !== null &&
-      now.getTime() - requestedAt.getTime() < JOB_ALERTS_REQUEST_TTL_MS &&
-      (!lastClaim || lastClaim.grantedAt < requestedAt);
-
     return {
       settings,
       builtInSenderDomains: [...JOB_ALERT_SENDER_DOMAINS],
@@ -72,12 +78,12 @@ export class JobAlertsService {
       mailboxConnected: account !== null,
       pendingEmails,
       nextRunAt: settings.enabled ? nextDailyRun(settings.runHours, settings.timeZone, now) : null,
-      requestedAt: requestLive ? requestedAt : null,
-      lastRun: lastClaim
+      requestedAt: isLiveRunNowRequest(requestedAt, lastRun, now) ? requestedAt : null,
+      lastRun: lastRun
         ? {
-            startedAt: lastClaim.grantedAt,
-            finishedAt: lastClaim.releasedAt,
-            outcome: lastClaim.outcome,
+            startedAt: lastRun.startedAt,
+            finishedAt: lastRun.finishedAt,
+            outcome: lastRun.outcome,
             campaignId: campaign?.campaignId ?? null,
             campaignQuery: campaign?.query ?? null,
           }
@@ -87,12 +93,16 @@ export class JobAlertsService {
 
   /** Edits only the harvest block, so it never races the instructions editor's other fields. */
   async updateSettings(userId: string, settings: PilotJobAlerts) {
-    const { config } = await loadInstructions(this.prisma, userId);
+    const config = await this.loadConfig(userId);
     const instructionsConfig = toInputJson({ ...config, jobAlerts: settings });
     await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, instructionsConfig },
-      update: { instructionsConfig, instructionsUpdatedAt: new Date(), ...AGENDA_SNAPSHOT_RESET },
+      update: {
+        instructionsConfig,
+        instructionsUpdatedAt: new Date(),
+        ...TASK_LIST_SNAPSHOT_RESET,
+      },
     });
     await this.wakePilot(userId);
     return this.getStatus(userId);
@@ -101,8 +111,8 @@ export class JobAlertsService {
   async runNow(userId: string) {
     const now = new Date();
     await this.emailSync.syncIfStale(userId, RUN_NOW_SYNC_STALE_MS, now);
-    const [{ config }, state] = await Promise.all([
-      loadInstructions(this.prisma, userId),
+    const [config, state] = await Promise.all([
+      this.loadConfig(userId),
       this.prisma.pilotState.findUnique({ where: { userId }, select: { running: true } }),
     ]);
     const pendingEmails = await this.prisma.emailMessage.count({
@@ -118,7 +128,7 @@ export class JobAlertsService {
     await this.prisma.pilotState.upsert({
       where: { userId },
       create: { userId, jobAlertsRequestedAt: now },
-      update: { jobAlertsRequestedAt: now, ...AGENDA_SNAPSHOT_RESET },
+      update: { jobAlertsRequestedAt: now, ...TASK_LIST_SNAPSHOT_RESET },
     });
     await this.wakePilot(userId);
     return { queued: true, pendingEmails, pilotRunning };

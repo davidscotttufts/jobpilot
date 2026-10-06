@@ -37,7 +37,7 @@ host_allowed() {   # exact domain or a subdomain of it; awk because zsh won't wo
 ## Phase 1: Confirm Mailbox Connected
 
 ```bash
-curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" "$JOBPILOT_API/api/email/account"
+jobpilot-api GET /api/email/account
 ```
 
 If `.connected === false`, print exactly `{}` and exit. Caller falls back to asking the user.
@@ -49,13 +49,12 @@ next one, so sync inside the loop. Reset mail is often slow - poll ~2 minutes. D
 `classification`: fresh mail is unclassified, and resets have been mislabeled `irrelevant`.
 
 ```bash
-SINCE=$(date -u -d '10 minutes ago' +%FT%TZ 2>/dev/null || date -u -v-10M +%FT%TZ)
+SINCE=$(node -p "new Date(Date.now() - 10 * 60 * 1000).toISOString()")
 for i in $(seq 1 24); do
-  curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X POST "$JOBPILOT_API/api/email/sync" >/dev/null
+  jobpilot-api POST /api/email/sync >/dev/null
   FOUND=""
   for d in $(printf '%s\n' "$DOMAINS" | tr ' ' '\n'); do
-    RESULT=$(curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -G "$JOBPILOT_API/api/email/messages" \
-      --data-urlencode "domainHint=$d" --data-urlencode "since=$SINCE")
+    RESULT=$(jobpilot-api GET /api/email/messages --query "domainHint=$d" --query "since=$SINCE")
     FOUND=$(printf '%s\n' "$RESULT" | jq -c '[.items[] | select((.subject + " " + (.snippet // "")) | test("code|verif|password|reset|confirm|sign.?in|log.?in|one.?time"; "i"))]')
     [ "$(printf '%s\n' "$FOUND" | jq 'length')" -gt 0 ] && break
   done
@@ -71,8 +70,8 @@ Nothing after the loop → print `{}` and exit.
 1. **Sender check.** Take the most recent message in `FOUND` (newest first) whose
    `host_allowed "<fromDomain>"` passes - `domainHint` also matches mail that merely mentions the
    domain in its body. None pass → print `{}` and exit.
-2. **`verificationCode`** - 4-8 character code. Patterns: `\b\d{4,8}\b`, `code is (\S+)`,
-   `verification code:\s*(\S+)`. Read `subject`, `snippet`, `rawBody`.
+2. **`verificationCode`** - 4-8 characters, usually digits. Patterns: `\b\d{4,8}\b`,
+   `code is (\S+)`, `verification code:\s*(\S+)`. Read `subject`, `snippet`, `rawBody`.
 3. **`verificationLink`** - from the message's `links` (`{url, text}`), the one whose text or URL
    reads as verify / confirm / sign in / reset password - never "unsubscribe", "premium", or
    marketing links. Then resolve it (below). A link that fails resolution is dropped; return the
@@ -85,13 +84,16 @@ first allowed host without requesting it**: a reset token can be spent by a GET,
 caller's browser should spend it.
 
 ```bash
+next_hop() {   # one request, no redirect following; prints the absolute Location, or nothing
+  node -e 'const u=process.argv[1];fetch(u,{redirect:"manual",signal:AbortSignal.timeout(10000)}).then(r=>{const l=r.headers.get("location");if(l)process.stdout.write(new URL(l,u).href)},()=>{})' "$1"
+}
 resolve_link() {
   url="$1"
   for hop in 1 2 3 4 5 6; do
     host=$(printf '%s' "$url" | sed -E 's#^https?://([^/:?]+).*#\1#')
     if host_allowed "$host"; then printf '%s' "$url"; return 0; fi
     case "$url" in https://*) ;; *) return 1 ;; esac
-    url=$(curl -sS -o /dev/null --max-time 10 -w '%{redirect_url}' "$url") || return 1
+    url=$(next_hop "$url")
     [ -n "$url" ] || return 1   # a tracker that answers 200 (JS/meta redirect) cannot be verified
   done
   return 1
@@ -99,22 +101,13 @@ resolve_link() {
 LINK=$(resolve_link "<candidate url>") || LINK=""
 ```
 
-On Windows, resolve hops with `Invoke-WebRequest -MaximumRedirection 0 -SkipHttpErrorCheck` and
-read the `Location` header - same stop-before-the-allowed-host rule.
-
 4. PATCH the message so the classification sticks:
 
    ```bash
-   curl -sS --fail-with-body -H "authorization: Bearer $JOBPILOT_API_TOKEN" -X PATCH "$JOBPILOT_API/api/email/messages/<id>" \
-     -H 'content-type: application/json' \
-     -d "$(jq -n --arg code "<code>" --arg link "$LINK" --arg domain "<first login domain>" \
-       '{classification:"verification",
-         confidence:1,
-         verificationCode:($code|select(length>0)),
-         verificationLink:($link|select(length>0)),
-         verificationDomain:$domain,
-         reasoning:"Extracted by get-code"}')"
+   jobpilot-api PATCH /api/email/messages/<id> --data '{"classification":"verification","confidence":1,"verificationCode":"<code>","verificationLink":"<LINK>","verificationDomain":"<first login domain>","reasoning":"Extracted by get-code"}'
    ```
+
+   Omit `verificationCode` or `verificationLink` when you have no value for it.
 
 ## Phase 4: Return
 

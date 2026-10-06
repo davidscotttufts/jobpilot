@@ -1,25 +1,21 @@
 import type { ReactElement } from "react";
-import { Card, CardActionArea, CardContent, Chip, Stack, Typography } from "@mui/material";
+import { Card, CardActionArea, CardContent, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
 import type { JobListingSummaryDto } from "@/api/types";
-import { fontFamilies } from "@/theme";
-import { formatRelativeTime } from "@/utils/format";
+import { jobMetaLine, RemoteBadge } from "./job-meta";
 import { SkillChips } from "./skill-chips";
 
 interface JobCardProps {
   job: JobListingSummaryDto;
-  /** Cap the chips on dense grids; the detail page shows them all. */
-  maxSkills?: number;
 }
 
-/** A listing in the public index; the whole card is one link. */
 export function JobCard(props: JobCardProps): ReactElement {
-  const { job, maxSkills = 5 } = props;
+  const { job } = props;
 
   return (
     <Card variant="lift">
-      {/* CardActionArea is a ButtonBase, so the theme's NextLink default turns a plain href into a
-          client-side link - no `component` prop, and this card stays a server component. */}
+      {/* CardActionArea is a ButtonBase, so the theme's NextLink default makes `href` a client link
+          with no `component` prop, and this card stays a server component. */}
       <CardActionArea href={`/jobs/${job.slug}` as Route} sx={{ height: "100%" }}>
         <CardContent sx={{ height: "100%", display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Stack spacing={0.5}>
@@ -31,31 +27,16 @@ export function JobCard(props: JobCardProps): ReactElement {
           </Stack>
 
           <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, alignItems: "center" }}>
-            {job.remote && <Chip label="Remote" size="small" color="success" variant="outlined" />}
+            <RemoteBadge job={job} />
             {job.location && <Typography variant="captionMuted">{job.location}</Typography>}
-            {job.salary && (
-              <Typography
-                variant="caption"
-                sx={{ fontFamily: fontFamilies.mono, color: "accent.primary" }}
-              >
-                {job.salary}
-              </Typography>
-            )}
+            {job.salary && <Typography variant="body2Strong">{job.salary}</Typography>}
           </Stack>
 
-          <SkillChips skills={job.skills} max={maxSkills} />
+          <SkillChips skills={job.skills} max={4} />
 
-          <Stack
-            direction="row"
-            sx={{ mt: "auto", flexWrap: "wrap", gap: 1, alignItems: "center" }}
-          >
-            <Typography variant="captionMuted">
-              Seen {formatRelativeTime(job.lastSeenAt)} ago
-            </Typography>
-            {job.sourceCount > 1 && (
-              <Typography variant="captionMuted">· {job.sourceCount} boards</Typography>
-            )}
-          </Stack>
+          <Typography variant="captionMuted" sx={{ mt: "auto" }}>
+            {jobMetaLine(job)}
+          </Typography>
         </CardContent>
       </CardActionArea>
     </Card>

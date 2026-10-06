@@ -1,5 +1,4 @@
-// listPilots shape + pagination envelope through AdminService with a fake Prisma. The adminGuard test
-// (admin.guard.test.ts) enumerates every /api/admin route, so /pilots is covered for 401/403 there.
+// 401/403 on /pilots is covered by admin.guard.test.ts, which walks every /api/admin route.
 
 import type { PrismaClient } from "@/generated/prisma/client";
 import { AdminService } from "./admin.service";
@@ -15,11 +14,24 @@ function fakePrisma(
       count: async () => states.length,
     },
     pilotQuestion: { groupBy: async () => questions },
+    pilotRun: {
+      groupBy: async () => [
+        {
+          userId: "p1",
+          _sum: {
+            inputTokens: 100,
+            outputTokens: 20,
+            cacheReadTokens: 3000,
+            cacheWriteTokens: null,
+          },
+        },
+      ],
+    },
   } as unknown as PrismaClient;
 }
 
 describe("AdminService.listPilots", () => {
-  it("projects each PilotState to owner email, activity, and open-question count", async () => {
+  it("projects each PilotState to owner email, activity, open questions, and week tokens", async () => {
     const svc = new AdminService(
       fakePrisma(
         [
@@ -52,6 +64,7 @@ describe("AdminService.listPilots", () => {
         lastCycleAt: new Date("2026-07-15T10:00:00.000Z"),
         cycleCount: 42,
         openQuestions: 2,
+        weekTokens: { input: 100, output: 20, cacheRead: 3000, cacheWrite: 0 },
       },
       {
         userEmail: "bob@example.com",
@@ -60,6 +73,7 @@ describe("AdminService.listPilots", () => {
         lastCycleAt: null,
         cycleCount: 0,
         openQuestions: 0,
+        weekTokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
       },
     ]);
   });

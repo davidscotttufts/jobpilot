@@ -1,8 +1,8 @@
-import type { CampaignDto, JobBoardDto, UserAggregateResponse } from "@/api/types";
-import type { ComposerFormValues } from "./form-config";
+import type { CampaignDto, UserAggregateResponse } from "@/api/types";
+import type { BoardOption, ComposerFormValues } from "./form-config";
 
 interface PrefillContext {
-  boards: JobBoardDto[];
+  boards: BoardOption[];
   resumes: UserAggregateResponse["resumes"];
   /** An apply campaign keeps its pasted links as jobs rather than in config, so they come separately. */
   urls: string[];

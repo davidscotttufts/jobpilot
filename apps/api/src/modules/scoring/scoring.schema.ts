@@ -1,10 +1,10 @@
 import { z } from "zod/v4";
 import { ELIGIBILITY_RESTRICTION_KINDS } from "./eligibility";
 
-/** Above this the digest is quoting a salary or a year, not counting experience. */
+/** Above this the brief is quoting a salary or a year, not counting experience. */
 export const MAX_YEARS_EXPERIENCE = 50;
 
-export const jobDigestSchema = z.object({
+const jobBriefSchema = z.object({
   title: z.string().optional().default(""),
   company: z.string().optional().default(""),
   skills: z.array(z.string()).optional().default([]),
@@ -14,9 +14,9 @@ export const jobDigestSchema = z.object({
   descriptionExcerpt: z.string().optional().default(""),
 });
 
-export type JobDigest = z.infer<typeof jobDigestSchema>;
+export type JobBrief = z.infer<typeof jobBriefSchema>;
 
-export const fitProfileSchema = z.object({
+const fitProfileSchema = z.object({
   skills: z.array(z.string()).default([]),
   yearsExperience: z.number().int().min(0).max(MAX_YEARS_EXPERIENCE).nullable().default(null),
   /** Defaults from the profile; only then does the posting's work-authorization language matter. */
@@ -26,7 +26,7 @@ export const fitProfileSchema = z.object({
 export type FitProfile = z.infer<typeof fitProfileSchema>;
 
 export const scoreFitSchema = z.object({
-  digest: jobDigestSchema,
+  brief: jobBriefSchema,
   profile: fitProfileSchema.partial().optional(),
   // Base resume to derive fit inputs from; falls back to the profile's primary.
   resumeId: z.uuid().optional(),

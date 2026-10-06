@@ -15,6 +15,11 @@ import type {
   PilotQuestionStatus,
   PromotionStatus,
 } from "@jobpilot/contracts/pilot";
+import type {
+  UpworkInboxKind,
+  UpworkInboxStatus,
+  UpworkProposalStatus,
+} from "@jobpilot/contracts/upwork";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
 
@@ -76,6 +81,10 @@ export const resumeQueries = {
 
 export const jobBoardQueries = {
   list: () => ({ queryKey: queryKeys.jobBoards.list(), queryFn: () => api["job-boards"].get() }),
+  catalog: () => ({
+    queryKey: queryKeys.jobBoards.catalog(),
+    queryFn: () => api["job-boards"].catalog.get(),
+  }),
 };
 
 export const applicationQueries = {
@@ -151,7 +160,7 @@ export const emailQueries = {
 };
 
 export const upworkProposalQueries = {
-  list: (query: PaginationQuery & { status?: string }) => ({
+  list: (query: PaginationQuery & { status?: UpworkProposalStatus }) => ({
     queryKey: queryKeys.upworkProposals.list(query),
     queryFn: () => api.upwork.proposals.get({ query }),
   }),
@@ -165,6 +174,20 @@ export const upworkProfileQueries = {
   detail: () => ({
     queryKey: queryKeys.upworkProfile.detail(),
     queryFn: () => api.upwork.profile.get(),
+  }),
+};
+
+export const upworkAccountQueries = {
+  detail: () => ({
+    queryKey: queryKeys.upworkAccount.detail(),
+    queryFn: () => api.upwork.account.get(),
+  }),
+};
+
+export const upworkInboxQueries = {
+  list: (query: PaginationQuery & { kind?: UpworkInboxKind; status?: UpworkInboxStatus }) => ({
+    queryKey: queryKeys.upworkInbox.list(query),
+    queryFn: () => api.upwork.inbox.get({ query }),
   }),
 };
 
@@ -205,6 +228,10 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.searches(),
     queryFn: () => api.pilot.searches.get(),
   }),
+  answers: () => ({
+    queryKey: queryKeys.pilot.answers(),
+    queryFn: () => api.pilot.answers.get(),
+  }),
   instructionsImpact: () => ({
     queryKey: queryKeys.pilot.instructionsImpact(),
     queryFn: () => api.pilot.instructions.impact.get(),
@@ -213,11 +240,11 @@ export const pilotQueries = {
     queryKey: queryKeys.pilot.jobAlerts(),
     queryFn: () => api.pilot["job-alerts"].get(),
   }),
-  agenda: () => ({
-    queryKey: queryKeys.pilot.agenda(),
+  taskList: () => ({
+    queryKey: queryKeys.pilot.taskList(),
     queryFn: async () => {
-      const result = await api.pilot.agenda.get();
-      return { ...result, data: result.data?.agenda ?? null };
+      const result = await api.pilot.tasks.get();
+      return { ...result, data: result.data?.taskList ?? null };
     },
   }),
   // Sorted so the same filter set toggled in a different order shares one cache entry.

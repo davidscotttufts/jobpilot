@@ -25,9 +25,9 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-const title = "JobPilot - your job search on autopilot";
+const title = "JobPilot - an AI agent that applies to jobs for you";
 const description =
-  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you - running locally on your own Claude Code or Codex subscription.";
+  "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you. It runs on your computer with your Claude Code or Codex subscription.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -53,11 +53,8 @@ export const metadata: Metadata = {
   // apple-touch-icon comes from app/apple-icon.tsx (file convention); this covers the SVG favicon.
   icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }], shortcut: "/icon.svg" },
   appleWebApp: { capable: true, title: "JobPilot", statusBarStyle: "black-translucent" },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
-  },
+  // No index/follow: they're the default, and 404 pages showed them next to Next's noindex.
+  robots: { googleBot: { "max-image-preview": "large" } },
   openGraph: {
     siteName: "JobPilot",
     url: "/",

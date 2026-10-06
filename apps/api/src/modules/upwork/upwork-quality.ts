@@ -1,33 +1,17 @@
-import type {
-  ProposalsBucket,
-  UpworkClient,
-  UpworkQualityResult,
-} from "@jobpilot/contracts/upwork";
+import type { UpworkClient, UpworkQualityResult } from "@jobpilot/contracts/upwork";
 
 /**
- * Heuristic Upwork client/job quality score. Server-side, deterministic, no LLM
- * (mirrors `scoreFit` in ./fit.ts). The `upwork-search` skill calls this to
- * smart-filter postings before recommending them: a `skip` verdict carries the
- * exact `skipReason` to record on the campaign Job.
- *
- * Every signal is nullable - a partially-readable card degrades toward a
- * neutral 0.5 rather than failing.
- *
- * Quality blend (each component 0..1, null = neutral 0.5):
- *   30% payment verified
- *   20% client hire rate
- *   20% spend + reviews (proven track record)
- *   15% proposal saturation (inverse - fewer competitors is better)
- *   15% recency (fresh posts get seen)
+ * Heuristic Upwork client/job quality score - deterministic, no LLM (mirrors `scoreFit` in
+ * ./fit.ts). Each component returns 0..1 and a signal we could not read scores neutral, so a
+ * partial read never looks bad. A `skip` verdict carries the exact `skipReason` the
+ * `upwork-search` skill records on the campaign Job.
  */
 
 // Soft floor: below this the posting is skipped even without a hard-rule hit.
-export const UPWORK_QUALITY_SKIP_FLOOR = 30;
-export const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
+const UPWORK_QUALITY_SKIP_FLOOR = 30;
+const UPWORK_QUALITY_GOOD_THRESHOLD = 65;
 
-// Hard-rule tuning.
-const LOW_HIRE_RATE_PCT = 10;
-const MIN_REVIEWS_FOR_HIRE_RATE = 3;
+const TOO_MANY_PROPOSALS = 50;
 
 const NEUTRAL = 0.5;
 
@@ -43,7 +27,9 @@ function tier(
   steps: ReadonlyArray<readonly [threshold: number, score: number]>,
   floor: number,
 ): number {
-  if (value == null) return NEUTRAL;
+  if (value == null) {
+    return NEUTRAL;
+  }
   return steps.find(([threshold]) => value >= threshold)?.[1] ?? floor;
 }
 
@@ -73,14 +59,31 @@ function spendReviewScore(
   return (spendTier + reviewTier) / 2;
 }
 
-const SATURATION_BY_BUCKET: Record<ProposalsBucket, number> = {
-  "<5": 1,
-  "5-10": 0.8,
-  "10-15": 0.6,
-  "15-20": 0.4,
-  "20-50": 0.2,
-  "50+": 0,
-};
+function competitionScore(proposals: number | null | undefined): number {
+  return tier(
+    proposals,
+    [
+      [TOO_MANY_PROPOSALS, 0],
+      [20, 0.2],
+      [15, 0.4],
+      [10, 0.6],
+      [5, 0.8],
+    ],
+    1,
+  );
+}
+
+function hireScore(hires: number | null | undefined): number {
+  return tier(
+    hires,
+    [
+      [20, 1],
+      [5, 0.85],
+      [1, 0.7],
+    ],
+    0,
+  );
+}
 
 function recencyScore(hoursAgo: number | null | undefined): number {
   if (hoursAgo == null) return NEUTRAL;
@@ -96,14 +99,14 @@ function buildFlags(client: UpworkClient): string[] {
   if (client.paymentVerified != null) {
     flags.push(client.paymentVerified ? "Payment verified" : "Payment unverified");
   }
-  if (client.hireRate != null) flags.push(`Hire rate ${Math.round(client.hireRate)}%`);
+  if (client.clientHires != null) flags.push(`${client.clientHires} hires`);
   if (client.totalSpent != null)
     flags.push(`$${Math.round(client.totalSpent).toLocaleString()} spent`);
   if (client.reviewsCount != null) {
     const rating = client.rating != null ? ` (${client.rating.toFixed(1)}★)` : "";
     flags.push(`${client.reviewsCount} reviews${rating}`);
   }
-  if (client.proposalsBucket != null) flags.push(`${client.proposalsBucket} proposals`);
+  if (client.proposalsCount != null) flags.push(`${client.proposalsCount} proposals`);
   if (client.postedHoursAgo != null) flags.push(`Posted ${Math.round(client.postedHoursAgo)}h ago`);
   return flags;
 }
@@ -112,10 +115,9 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   const qualityScore = Math.round(
     100 *
       (paymentScore(client.paymentVerified) * 0.3 +
-        (client.hireRate == null ? NEUTRAL : client.hireRate / 100) * 0.2 +
+        hireScore(client.clientHires) * 0.2 +
         spendReviewScore(client.totalSpent, client.reviewsCount) * 0.2 +
-        (client.proposalsBucket == null ? NEUTRAL : SATURATION_BY_BUCKET[client.proposalsBucket]) *
-          0.15 +
+        competitionScore(client.proposalsCount) * 0.15 +
         recencyScore(client.postedHoursAgo) * 0.15),
   );
 
@@ -125,16 +127,10 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
   let skipReason: string | null = null;
   if (client.paymentVerified === false) {
     skipReason = "Unverified payment";
-  } else if (client.proposalsBucket === "50+") {
-    skipReason = "Saturated - 50+ proposals";
+  } else if (client.proposalsCount != null && client.proposalsCount >= TOO_MANY_PROPOSALS) {
+    skipReason = `Too many proposals - ${client.proposalsCount} already`;
   } else if (
-    client.hireRate != null &&
-    client.hireRate < LOW_HIRE_RATE_PCT &&
-    (client.reviewsCount ?? 0) >= MIN_REVIEWS_FOR_HIRE_RATE
-  ) {
-    skipReason = `Low hire rate (${Math.round(client.hireRate)}%) - posts but rarely hires`;
-  } else if (
-    // Observed zeros only - a card we simply couldn't read (null) stays neutral.
+    // Observed zeros only - a signal we could not read (null) stays neutral.
     client.totalSpent === 0 &&
     client.reviewsCount === 0 &&
     client.paymentVerified !== true
@@ -144,11 +140,9 @@ export function scoreUpworkClient(client: UpworkClient): UpworkQualityResult {
     skipReason = `Low client-quality score (${qualityScore})`;
   }
 
-  const verdict = skipReason
-    ? "skip"
-    : qualityScore >= UPWORK_QUALITY_GOOD_THRESHOLD
-      ? "good"
-      : "caution";
-
-  return { qualityScore, verdict, flags, skipReason };
+  if (skipReason) {
+    return { qualityScore, verdict: "skip", flags, skipReason };
+  }
+  const verdict = qualityScore >= UPWORK_QUALITY_GOOD_THRESHOLD ? "good" : "caution";
+  return { qualityScore, verdict, flags, skipReason: null };
 }

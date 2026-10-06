@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid, Stack } from "@mui/material";
 import { cacheLife } from "next/cache";
 import { api } from "@/api/client";
 import { JobCard } from "@/components/features/jobs";
 import { LinkButton } from "@/components/ui/buttons";
 import { Section } from "../section";
-import { SectionEyebrow } from "../section-eyebrow";
+import { SectionHeading } from "../section-heading";
 
 const SHOWN = 6;
 
 /**
- * Renders nothing when the index is empty or the API is down - never 500 over a decorative section.
- * Cached so the fetch runs inside the prerender instead of as a dynamic hole; the scope also covers
- * the cards' `Date.now()` ages, which go stale with the entry.
+ * Renders nothing when the index is empty or the API is down; a decorative section must never 500.
+ * Cached so the fetch runs in the prerender, not as a dynamic hole. The cards' `Date.now()` ages
+ * are cached too and go stale with the entry.
  */
 export async function LiveJobsStrip(): Promise<ReactNode> {
   "use cache";
@@ -31,21 +31,19 @@ export async function LiveJobsStrip(): Promise<ReactNode> {
         spacing={2}
         sx={{ mb: 4, alignItems: { sm: "flex-end" }, justifyContent: "space-between" }}
       >
-        <Stack spacing={1}>
-          <SectionEyebrow>LIVE JOB INDEX</SectionEyebrow>
-          <Typography variant="h2">Jobs the agents found this week.</Typography>
-          <Typography variant="body2Muted">
-            The agents found these across every board and deduped them into one listing each.
-          </Typography>
-        </Stack>
-        <LinkButton href="/jobs" variant="outlined">
+        <SectionHeading
+          eyebrow="Job listings"
+          title="Recently found jobs."
+          lead="Every job a JobPilot agent finds is listed once, with links to each board it appeared on."
+        />
+        <LinkButton href="/jobs" variant="outlined" sx={{ flexShrink: 0 }}>
           Browse all jobs
         </LinkButton>
       </Stack>
       <Grid container spacing={2}>
         {jobs.map((job) => (
           <Grid key={job.id} size={{ xs: 12, sm: 6, md: 4 }}>
-            <JobCard job={job} maxSkills={4} />
+            <JobCard job={job} />
           </Grid>
         ))}
       </Grid>
@@ -57,7 +55,7 @@ async function recentJobs() {
   try {
     const { data, error } = await api.public.jobs.get({ query: { page: 1, limit: SHOWN } });
     if (error) {
-      // Logged, not swallowed: a down API used to look exactly like an empty index.
+      // Log it, or a down API looks exactly like an empty index.
       console.error("live jobs strip: job index unavailable", error.value);
       return [];
     }

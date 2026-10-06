@@ -1,4 +1,3 @@
-export * from "./contexts";
-export * from "./crypto.service";
-export * from "./errors";
-export * from "./secret";
+export { SECRET_CONTEXTS } from "./contexts";
+export { CryptoService } from "./crypto.service";
+export { KeyUnrecoverableError } from "./errors";

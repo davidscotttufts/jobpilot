@@ -26,7 +26,7 @@ function fakePrisma() {
 
   const db = {
     pilotJournalEntry: model("pilotJournalEntry", 1, 2),
-    pilotClaim: model("pilotClaim", 3, 4),
+    pilotRun: model("pilotRun", 3, 4),
     pilotQuestion: model("pilotQuestion", 5),
     verificationToken: model("verificationToken", 6),
     refreshToken: model("refreshToken", 7),
@@ -49,13 +49,13 @@ describe("runRetentionCleanup", () => {
     expect(calls.pilotJournalEntry?.[0]?.where).toMatchObject({ kind: { not: "digest" } });
     expect(calls.pilotJournalEntry?.[1]?.where).toMatchObject({ kind: "digest" });
 
-    // pilot_claims: released ones excluding search.discover, then search.discover on the longer window.
-    // Never touches open claims - releasedAt.not must be null, not omitted.
-    expect(calls.pilotClaim).toHaveLength(2);
-    const releasedWhere = calls.pilotClaim?.[0]?.where as { releasedAt: { not: unknown } };
-    expect(releasedWhere.releasedAt.not).toBeNull();
-    expect(calls.pilotClaim?.[0]?.where).toMatchObject({ kind: { not: "search.discover" } });
-    expect(calls.pilotClaim?.[1]?.where).toMatchObject({ kind: "search.discover" });
+    // pilot_runs: finished ones excluding search.discover, then search.discover on the longer window.
+    // Never touches open runs - finishedAt.not must be null, not omitted.
+    expect(calls.pilotRun).toHaveLength(2);
+    const finishedWhere = calls.pilotRun?.[0]?.where as { finishedAt: { not: unknown } };
+    expect(finishedWhere.finishedAt.not).toBeNull();
+    expect(calls.pilotRun?.[0]?.where).toMatchObject({ taskType: { not: "search.discover" } });
+    expect(calls.pilotRun?.[1]?.where).toMatchObject({ taskType: "search.discover" });
 
     // pilot_questions: terminal statuses only, never open.
     expect(calls.pilotQuestion).toHaveLength(1);
@@ -89,8 +89,8 @@ describe("runRetentionCleanup", () => {
     expect(counts).toEqual({
       journal: 1,
       journalDigests: 2,
-      claims: 3,
-      claimsDiscover: 4,
+      runs: 3,
+      runsDiscover: 4,
       questions: 5,
       verificationTokens: 6,
       refreshTokens: 7,

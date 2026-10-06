@@ -1,14 +1,14 @@
 import { z } from "zod/v4";
 import { csvArray, cursorPageSchema, cursorQuerySchema } from "../pagination";
+import { tokenUsageSchema } from "./run";
 
-const PILOT_JOURNAL_KINDS = [
+export const PILOT_JOURNAL_KINDS = [
   "cycle",
   "action",
-  "observation",
   "question",
   "system",
   "digest",
-  // A user override (declined/edited a draft) captured as a labeled learning signal.
+  // The user declined or edited a draft: a labeled learning signal.
   "correction",
 ] as const;
 const pilotJournalKindSchema = z.enum(PILOT_JOURNAL_KINDS);
@@ -26,6 +26,12 @@ export const createPilotJournalSchema = z.object({
   entries: z.array(pilotJournalEntryInputSchema).min(1),
 });
 
+/** The run an entry's cycle worked; tokens stay null until the host reports the cycle's usage. */
+const pilotJournalRunSchema = z.object({
+  taskType: z.string(),
+  tokens: tokenUsageSchema.nullable(),
+});
+
 export const pilotJournalEntrySchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
@@ -36,6 +42,7 @@ export const pilotJournalEntrySchema = z.object({
   subjectType: z.string().nullable(),
   subjectId: z.string().nullable(),
   createdAt: z.date(),
+  run: pilotJournalRunSchema.nullable(),
 });
 
 /** Cursor-paged, not offset: the feed grows at the head while the orchestrator runs. */
@@ -49,21 +56,20 @@ export type PilotJournalKind = z.infer<typeof pilotJournalKindSchema>;
 export type CreatePilotJournalInput = z.infer<typeof createPilotJournalSchema>;
 export type PilotJournalEntry = z.infer<typeof pilotJournalEntrySchema>;
 export type PilotJournalPage = z.infer<typeof pilotJournalPageSchema>;
+export type PilotJournalRun = z.infer<typeof pilotJournalRunSchema>;
 
-/** Terminal outcome of one orchestrator cycle - the vocabulary shared by the journal detail and the host's sentinel. */
-export const PILOT_CYCLE_STATUSES = ["ok", "empty", "error"] as const;
-export const pilotCycleStatusSchema = z.enum(PILOT_CYCLE_STATUSES);
+/** An idle check: the host found nothing to do and sleeps this long. */
+export const recordIdleCycleSchema = z.object({ sleepSeconds: z.number().int().min(0) });
+export type RecordIdleCycleInput = z.infer<typeof recordIdleCycleSchema>;
+
+/** A cycle's outcome; an empty one is reported in host health, never journaled. */
+const pilotCycleStatusSchema = z.enum(["ok", "empty", "error"]);
 export type PilotCycleStatus = z.infer<typeof pilotCycleStatusSchema>;
 
-/**
- * `kind="cycle"` detail: the host's completion signal when the sentinel is mangled.
- * Fields are optional because stall-recovery cycles usually omit them, and a strict parse would drop those.
- */
+/** Optional fields: stuck-recovery cycles usually journal an empty detail. */
 export const pilotCycleDetailSchema = z
   .object({
     status: pilotCycleStatusSchema.optional(),
     sleepSeconds: z.number().int().optional(),
   })
   .loose();
-
-export type PilotCycleDetail = z.infer<typeof pilotCycleDetailSchema>;

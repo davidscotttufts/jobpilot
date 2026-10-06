@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 export const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 export const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
-export const weekdaySchema = z.number().int().min(0).max(6);
+const weekdaySchema = z.number().int().min(0).max(6);
 
 /**
  * How a pilot search decides when to run again.
@@ -12,7 +12,7 @@ export const weekdaySchema = z.number().int().min(0).max(6);
  * `adaptive` is the pilot's own yield-based ladder (re-run a producing search soon, back a dry one
  * off). `weekly` pins it to days the user picked and takes the ladder out of the decision.
  */
-export const PILOT_SEARCH_CADENCES = ["adaptive", "weekly"] as const;
+const PILOT_SEARCH_CADENCES = ["adaptive", "weekly"] as const;
 export const pilotSearchCadenceSchema = z.enum(PILOT_SEARCH_CADENCES);
 
 export type PilotSearchCadence = z.infer<typeof pilotSearchCadenceSchema>;

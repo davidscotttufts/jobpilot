@@ -1,3 +1,31 @@
+// Superset of CampaignSource: campaign rows inherit the campaign's source; a single apply
+// records how the agent was invoked.
+enum ApplicationSource {
+  apply
+  auto_apply
+  manual
+  search
+  networking
+
+  @@map("application_source")
+}
+
+enum ApplicationEventKind {
+  status_change
+  note
+  email
+
+  @@map("application_event_kind")
+}
+
+enum ApplicationEventSource {
+  manual
+  email
+  campaign
+
+  @@map("application_event_source")
+}
+
 enum ApplicationStatus {
   applied
   screening
@@ -10,16 +38,16 @@ enum ApplicationStatus {
 }
 
 model Application {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String            @id @default(uuid())
+  userId    String            @map("user_id")
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   url       String
   title     String
   company   String
   location  String?
   board     String?
-  source    String
-  appliedAt DateTime @default(now()) @map("applied_at")
+  source    ApplicationSource
+  appliedAt DateTime          @default(now()) @map("applied_at")
 
   status     ApplicationStatus @default(applied)
   rejectedAt DateTime?         @map("rejected_at")
@@ -33,9 +61,8 @@ model Application {
   campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
 
-  // The resume actually submitted: the base, plus the tailored variant when one was used. Reported by
-  // the agent on the job result - `resumeVariants` below is the reverse list of variants created for
-  // this application, which is empty whenever tailoring reused an existing variant.
+  // The resume actually submitted. Not the inverse of `resumeVariants` (variants created for this
+  // application), which stays empty when tailoring reused an existing variant.
   resumeId          String?        @map("resume_id")
   resume            Resume?        @relation(fields: [resumeId], references: [id], onDelete: SetNull)
   resumeVariantId   String?        @map("resume_variant_id")
@@ -59,15 +86,15 @@ model Application {
 }
 
 model ApplicationEvent {
-  id            String             @id @default(uuid())
-  applicationId String             @map("application_id")
-  application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  kind          String // "status_change" | "note" | "email"
-  fromStatus    ApplicationStatus? @map("from_status")
-  toStatus      ApplicationStatus? @map("to_status")
+  id            String                  @id @default(uuid())
+  applicationId String                  @map("application_id")
+  application   Application             @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  kind          ApplicationEventKind
+  fromStatus    ApplicationStatus?      @map("from_status")
+  toStatus      ApplicationStatus?      @map("to_status")
   note          String?
-  source        String? // "manual" | "email" | "campaign"
-  createdAt     DateTime           @default(now()) @map("created_at")
+  source        ApplicationEventSource?
+  createdAt     DateTime                @default(now()) @map("created_at")
 
   @@index([applicationId, createdAt])
   @@index([createdAt])

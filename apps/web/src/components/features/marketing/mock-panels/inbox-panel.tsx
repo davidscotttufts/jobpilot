@@ -1,14 +1,13 @@
 import type { ReactElement } from "react";
-import { Box, Stack, Typography } from "@mui/material";
-import { fontFamilies } from "@/theme";
-import { PanelBadge, PanelFrame, panelCellSx } from "./panel-frame";
+import { Chip, Paper, Stack, Typography } from "@mui/material";
+import { PanelFrame } from "./panel-frame";
 
 interface Message {
   from: string;
   subject: string;
   tag: string;
   tone: string;
-  approve?: boolean;
+  approve: boolean;
 }
 
 const MESSAGES: Message[] = [
@@ -24,12 +23,14 @@ const MESSAGES: Message[] = [
     subject: "We received your application to Datadog",
     tag: "confirmation · matched",
     tone: "text.secondary",
+    approve: false,
   },
   {
     from: "Recruiting · Ramp",
     subject: "Update on your application",
     tag: "rejection → closed",
     tone: "error.main",
+    approve: false,
   },
 ];
 
@@ -38,32 +39,24 @@ export function InboxPanel(): ReactElement {
     <PanelFrame label="inbox">
       <Stack spacing={1}>
         {MESSAGES.map((message) => (
-          <Box key={message.from} sx={[panelCellSx, { padding: 1.25 }]}>
+          <Paper key={message.from} variant="inset" sx={{ padding: 1.25 }}>
             <Stack spacing={0.75}>
               <Stack direction="row" spacing={1} sx={{ justifyContent: "space-between" }}>
                 <Typography variant="body2Strong" noWrap>
                   {message.from}
                 </Typography>
                 {message.approve && (
-                  <PanelBadge color="success.main" sx={{ alignSelf: "flex-start" }}>
-                    Approve
-                  </PanelBadge>
+                  <Chip size="small" variant="outlined" color="success" label="Approve" />
                 )}
               </Stack>
-              <Typography variant="captionMuted" noWrap sx={{ display: "block" }}>
+              <Typography variant="captionMuted" noWrap>
                 {message.subject}
               </Typography>
-              <Typography
-                sx={{
-                  fontFamily: fontFamilies.mono,
-                  fontSize: "0.6875rem",
-                  color: message.tone,
-                }}
-              >
+              <Typography variant="monoCaption" sx={{ color: message.tone }}>
                 {message.tag}
               </Typography>
             </Stack>
-          </Box>
+          </Paper>
         ))}
       </Stack>
     </PanelFrame>

@@ -67,7 +67,11 @@ export function JobAlertsPanel(): ReactElement {
   const save = useApiMutation<JobAlertsStatus, PilotJobAlerts>(
     (body) => api.pilot["job-alerts"].put(body),
     {
-      invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.state(), queryKeys.pilot.agenda()],
+      invalidate: [
+        queryKeys.pilot.jobAlerts(),
+        queryKeys.pilot.state(),
+        queryKeys.pilot.taskList(),
+      ],
       successMessage: "Job alert schedule saved.",
     },
   );

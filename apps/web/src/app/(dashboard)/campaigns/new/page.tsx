@@ -1,4 +1,5 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
+import { Skeleton } from "@mui/material";
 import type { Metadata } from "next";
 import { CampaignComposer } from "@/components/features/campaigns";
 import { PageHeader, PageShell } from "@/components/ui/layout";
@@ -9,12 +10,22 @@ interface NewCampaignPageProps {
   searchParams: Promise<{ board?: string; from?: string }>;
 }
 
-export default async function NewCampaignPage(props: NewCampaignPageProps): Promise<ReactElement> {
-  const { board, from } = await props.searchParams;
-  const isReplay = !!from;
-
+export default function NewCampaignPage(props: NewCampaignPageProps): ReactElement {
   return (
     <PageShell maxWidth="md">
+      {/* `?board=` preselects the board and `?from=` replays a campaign, so both wait on the URL. */}
+      <Suspense fallback={<Skeleton variant="rounded" height={480} />}>
+        <Composer searchParams={props.searchParams} />
+      </Suspense>
+    </PageShell>
+  );
+}
+
+async function Composer(props: NewCampaignPageProps): Promise<ReactElement> {
+  const { board, from } = await props.searchParams;
+  const isReplay = !!from;
+  return (
+    <>
       <PageHeader
         eyebrow="Campaign"
         title={isReplay ? "Run this campaign again" : "Start a new campaign"}
@@ -25,6 +36,6 @@ export default async function NewCampaignPage(props: NewCampaignPageProps): Prom
         }
       />
       <CampaignComposer defaultBoard={board} fromCampaignId={from} />
-    </PageShell>
+    </>
   );
 }

@@ -1,6 +1,8 @@
 using System.Text.Json;
-using JobPilot.Terminal.Contracts;
+using JobPilot.Terminal.Hosting;
+using JobPilot.Terminal.Providers;
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Sessions;
 using Xunit;
 
 namespace JobPilot.Terminal.Tests;
@@ -8,89 +10,49 @@ namespace JobPilot.Terminal.Tests;
 public class AppJsonContextTests
 {
     [Fact]
-    public void PilotActivityResponse_DeserializesTheLastCycleTheServerSends()
+    public void BrowserMessage_ReadsTheEnvelopesTheBrowserSends()
     {
-        var response = JsonSerializer.Deserialize(
-            """{"lastActivityAt":"2026-07-19T18:34:43Z","lastCycle":{"cycleId":"1f2e3d4c-5b6a-7089-90ab-cdef01234567","completedAt":"2026-07-19T18:30:00Z","status":"empty","sleepSeconds":3600}}""",
-            AppJsonContext.Default.PilotActivityResponse);
+        var input = JsonSerializer.Deserialize("""{"type":"input","data":"aGk="}""", AppJsonContext.Default.BrowserMessage);
+        var resize = JsonSerializer.Deserialize("""{"type":"resize","cols":120,"rows":40}""", AppJsonContext.Default.BrowserMessage);
+        var partial = JsonSerializer.Deserialize("""{"type":"resize"}""", AppJsonContext.Default.BrowserMessage);
 
-        Assert.NotNull(response);
-        Assert.Equal(new DateTimeOffset(2026, 7, 19, 18, 34, 43, TimeSpan.Zero), response!.LastActivityAt);
-        Assert.NotNull(response.LastCycle);
-        Assert.Equal("1f2e3d4c-5b6a-7089-90ab-cdef01234567", response.LastCycle!.CycleId);
-        Assert.Equal("empty", response.LastCycle.Status);
-        Assert.Equal(3600, response.LastCycle.SleepSeconds);
+        Assert.Equal(new BrowserMessage("input", "aGk=", null, null), input);
+        Assert.Equal(new BrowserMessage("resize", null, 120, 40), resize);
+        Assert.Equal(new BrowserMessage("resize", null, null, null), partial);
     }
 
     [Fact]
-    public void PilotActivityResponse_LeavesLastCycleNull_WhenTheUserHasNoCompletedCycleYet()
+    public void Requests_BindTheBodiesTheWebSends()
     {
-        var response = JsonSerializer.Deserialize(
-            """{"lastActivityAt":null,"lastCycle":null}""", AppJsonContext.Default.PilotActivityResponse);
+        var start = JsonSerializer.Deserialize(
+            """{"provider":"codex","cols":120,"rows":40,"apiToken":"tok","apiUrl":"https://api","webUrl":"https://web"}""",
+            AppJsonContext.Default.StartSessionRequest);
+        var pilot = JsonSerializer.Deserialize(
+            """{"provider":"claude","apiToken":"tok","apiUrl":"https://api","webUrl":"https://web"}""",
+            AppJsonContext.Default.PilotStartRequest);
+        var inject = JsonSerializer.Deserialize("""{"command":"$pilot"}""", AppJsonContext.Default.InjectRequest);
 
-        Assert.NotNull(response);
-        Assert.Null(response!.LastActivityAt);
-        Assert.Null(response.LastCycle);
+        Assert.Equal(new StartSessionRequest(120, 40, "codex", "tok", "https://api", "https://web"), start);
+        Assert.Equal(new PilotStartRequest("claude", "tok", "https://api", "https://web"), pilot);
+        Assert.Equal(new InjectRequest("$pilot"), inject);
     }
 
     [Fact]
-    public void TerminalClientMessage_DeserializesTheInputEnvelopeTheBrowserSends()
-    {
-        var message = JsonSerializer.Deserialize(
-            """{"type":"input","data":"aGVsbG8="}""", AppJsonContext.Default.TerminalClientMessage);
-
-        Assert.NotNull(message);
-        Assert.Equal("input", message!.Type);
-        Assert.Equal("aGVsbG8=", message.Data);
-        Assert.Equal("hello"u8.ToArray(), Convert.FromBase64String(message.Data!));
-    }
-
-    [Fact]
-    public void TerminalClientMessage_DeserializesTheResizeEnvelopeTheBrowserSends()
-    {
-        var message = JsonSerializer.Deserialize(
-            """{"type":"resize","cols":120,"rows":40}""", AppJsonContext.Default.TerminalClientMessage);
-
-        Assert.NotNull(message);
-        Assert.Equal("resize", message!.Type);
-        Assert.Equal(120, message.Cols);
-        Assert.Equal(40, message.Rows);
-    }
-
-    [Fact]
-    public void TerminalClientMessage_LeavesAbsentFieldsNull_SoAMalformedResizeCannotThrow()
-    {
-        var message = JsonSerializer.Deserialize(
-            """{"type":"resize"}""", AppJsonContext.Default.TerminalClientMessage);
-
-        Assert.Null(message!.Cols);
-        Assert.Null(message.Rows);
-    }
-
-    [Fact]
-    public void TerminalClientMessage_IgnoresUnknownProperties()
-    {
-        var message = JsonSerializer.Deserialize(
-            """{"type":"input","data":"aGk=","nonsense":42}""", AppJsonContext.Default.TerminalClientMessage);
-
-        Assert.Equal("input", message!.Type);
-    }
-
-    [Fact]
-    public void SessionStatus_SerializesCamelCase_ThroughTheContextsOwnOptions()
+    public void StatusResponse_SerializesCamelCase()
     {
         var json = JsonSerializer.Serialize(
-            new SessionStatus
+            new StatusResponse
             {
                 Status = "ok",
                 Session = "stopped",
                 Provider = "claude",
-                Providers = [new TerminalProviderInfo("claude", "Claude Code")],
+                Providers = [new ProviderInfo("claude", "Claude Code")],
                 HostVersion = "2.0.8",
                 CanRelaunch = true,
                 CanUpdate = false,
+                Pilot = new PilotStatus { Running = false, Paired = false, Conducting = false, ConsecutiveTimeouts = 0 },
             },
-            AppJsonContext.Default.SessionStatus);
+            AppJsonContext.Default.StatusResponse);
 
         Assert.Contains("\"hostVersion\":\"2.0.8\"", json);
         Assert.Contains("\"canRelaunch\":true", json);

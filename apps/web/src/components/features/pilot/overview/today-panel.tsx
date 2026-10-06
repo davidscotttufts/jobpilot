@@ -1,9 +1,12 @@
 "use client";
 
 import type { ReactElement, ReactNode } from "react";
+import { networkingMode, type PilotState } from "@jobpilot/contracts/pilot";
 import { LinearProgress, Stack, Typography } from "@mui/material";
 import { useApiQuery } from "@/api/hooks";
 import { pilotQueries } from "@/api/queries";
+import { LinkButton } from "@/components/ui/buttons";
+import { SectionCard } from "@/components/ui/layout";
 
 interface MeterProps {
   label: string;
@@ -13,7 +16,7 @@ interface MeterProps {
   spent: boolean;
 }
 
-export function Meter(props: MeterProps): ReactElement {
+function Meter(props: MeterProps): ReactElement {
   const { label, value, cap, spent } = props;
   const percent = cap > 0 ? Math.min(100, (value / cap) * 100) : 0;
 
@@ -21,7 +24,7 @@ export function Meter(props: MeterProps): ReactElement {
     <Stack spacing={0.5}>
       <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <Typography variant="body2Muted">{label}</Typography>
-        <Typography variant="body2" color={spent ? "error.main" : "text.primary"}>
+        <Typography variant="body2" color={spent ? "error" : "textPrimary"}>
           {value} / {cap}
         </Typography>
       </Stack>
@@ -57,10 +60,9 @@ interface TodayOutcomesProps {
 }
 
 /** Without this, "16 applied" beside 52 quiet skips reads as a slow day, not a bad search. */
-export function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
+function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
   const { appliedToday } = props;
-  const query = useApiQuery(pilotQueries.todayOutcomes());
-  const outcomes = query.data;
+  const outcomes = useApiQuery(pilotQueries.todayOutcomes()).data;
 
   if (!outcomes || outcomes.skipped + outcomes.failed === 0) {
     return null;
@@ -84,10 +86,56 @@ export function TodayOutcomes(props: TodayOutcomesProps): ReactNode {
         </Stack>
       ))}
       {mostlySkipped && (
-        <Typography variant="caption" color="warning.main">
+        <Typography variant="caption" color="warning">
           Most jobs are being skipped. Lower the min score, or point your searches somewhere else.
         </Typography>
       )}
     </Stack>
+  );
+}
+
+interface TodayPanelProps {
+  state: PilotState;
+}
+
+export function TodayPanel(props: TodayPanelProps): ReactElement {
+  const { state } = props;
+  const { appliedToday, capReached, networkingSentToday } = state;
+  const { dailyApplyCap, minScore, networking } = state.instructionsConfig;
+  const outreachOn = networkingMode(state.instructionsConfig) !== null;
+
+  return (
+    <SectionCard
+      fullHeight
+      title="Today"
+      actions={
+        <LinkButton size="small" href="/pilot/instructions">
+          Edit limits
+        </LinkButton>
+      }
+    >
+      <Stack spacing={1.5}>
+        {dailyApplyCap > 0 ? (
+          <Meter label="Applied" value={appliedToday} cap={dailyApplyCap} spent={capReached} />
+        ) : (
+          <Typography variant="body2Muted">
+            Daily apply cap is 0 - the pilot won't apply until you raise it.
+          </Typography>
+        )}
+        {outreachOn && networking.dailyCap > 0 && (
+          <Meter
+            label="Networked"
+            value={networkingSentToday}
+            cap={networking.dailyCap}
+            spent={networkingSentToday >= networking.dailyCap}
+          />
+        )}
+        <TodayOutcomes appliedToday={appliedToday} />
+        <Typography variant="captionMuted">
+          Applies to jobs scoring {minScore} or higher
+          {!outreachOn && " · networking is off"}
+        </Typography>
+      </Stack>
+    </SectionCard>
   );
 }

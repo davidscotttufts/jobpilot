@@ -8,6 +8,7 @@ import {
   isQuotaError,
   nextHistoryCursor,
   readAddedMessageIds,
+  rethrowGmailError,
   scopeCanRead,
   scopeCanSend,
 } from "./gmail.provider";
@@ -117,5 +118,21 @@ describe("isQuotaError", () => {
   it("leaves other failures alone", () => {
     expect(isQuotaError({ status: 500, message: "Backend Error" })).toBe(false);
     expect(isQuotaError(undefined)).toBe(false);
+  });
+});
+
+describe("rethrowGmailError", () => {
+  const disabled = {
+    status: 403,
+    response: { data: { error: { errors: [{ reason: "accessNotConfigured" }] } } },
+  };
+
+  it("turns a disabled Gmail API into an actionable 422", () => {
+    expect(() => rethrowGmailError(disabled)).toThrow(/Gmail API is not enabled/);
+  });
+
+  it("passes any other failure through untouched", () => {
+    const other = new Error("network down");
+    expect(() => rethrowGmailError(other)).toThrow(other);
   });
 });

@@ -1,63 +1,58 @@
 import "@/common/di/container";
 import { Elysia } from "elysia";
-import { db } from "@/common/database";
+import { db } from "@/common/database/prisma.client";
 import { logger } from "@/common/logger";
 import { errorMiddleware } from "@/common/middleware";
-import { corsPlugin, swaggerPlugin } from "@/common/plugins";
+import { corsPlugin } from "@/common/plugins/cors.plugin";
+import { openapiPlugin } from "@/common/plugins/openapi.plugin";
 import { env } from "@/env";
-import { adminController } from "@/modules/admin";
-import { analyticsController } from "@/modules/analytics";
-import { applicationController } from "@/modules/application";
-import { authController, authProvidersController, securityController } from "@/modules/auth";
-import {
-  campaignController,
-  campaignJobController,
-  campaignNetworkingController,
-  networkingMessageController,
-} from "@/modules/campaign";
-import { captchaController } from "@/modules/captcha";
+import { adminController } from "@/modules/admin/admin.controller";
+import { analyticsController } from "@/modules/analytics/analytics.controller";
+import { applicationController } from "@/modules/application/application.controller";
+import { authController } from "@/modules/auth/auth.controller";
+import { authProvidersController } from "@/modules/auth/providers.controller";
+import { securityController } from "@/modules/auth/security.controller";
+import { campaignController } from "@/modules/campaign/campaign.controller";
+import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
+import { captchaController } from "@/modules/captcha/captcha.controller";
 import { contactController } from "@/modules/contact";
-import { coverLetterController } from "@/modules/cover-letter";
-import { credentialController } from "@/modules/credential";
-import {
-  emailAccountController,
-  emailMessagesController,
-  emailOAuthController,
-} from "@/modules/email";
-import { healthController } from "@/modules/health";
-import { adminBoardController, jobBoardController } from "@/modules/job-board";
-import { adminJobListingController, publicJobListingController } from "@/modules/job-listing";
-import { cleanupJob } from "@/modules/maintenance";
-import {
-  pilotAgendaController,
-  pilotClaimsController,
-  pilotController,
-  pilotJobAlertsController,
-  pilotJournalController,
-  pilotQuestionsController,
-  pilotSearchController,
-  promotionController,
-} from "@/modules/pilot";
-import { publicPortfolioController } from "@/modules/portfolio";
-import { pushController } from "@/modules/push";
-import {
-  publicResumeController,
-  resumeController,
-  resumeFileController,
-  resumeJob,
-  resumeVariantController,
-} from "@/modules/resume";
-import { scoringController } from "@/modules/scoring";
-import { upworkController } from "@/modules/upwork";
-import { userController } from "@/modules/user";
-import { workspaceController } from "@/modules/workspace";
+import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
+import { credentialController } from "@/modules/credential/credential.controller";
+import { emailAccountController } from "@/modules/email/account/account.controller";
+import { emailMessagesController } from "@/modules/email/messages.controller";
+import { emailOAuthController } from "@/modules/email/oauth.controller";
+import { healthController } from "@/modules/health/health.controller";
+import { adminBoardController } from "@/modules/job-board/admin-board.controller";
+import { jobBoardController } from "@/modules/job-board/job-board.controller";
+import { adminJobListingController } from "@/modules/job-listing/admin-listing.controller";
+import { publicJobListingController } from "@/modules/job-listing/job-listing.controller";
+import { cleanupJob } from "@/modules/maintenance/cleanup.job";
+import { pdfCacheJob } from "@/modules/maintenance/pdf-cache.job";
+import { networkingController } from "@/modules/networking/networking.controller";
+import { profileAnswersController } from "@/modules/pilot/answer.controller";
+import { pilotJobAlertsController } from "@/modules/pilot/job-alerts.controller";
+import { pilotJournalController } from "@/modules/pilot/journal.controller";
+import { pilotController } from "@/modules/pilot/pilot.controller";
+import { promotionController } from "@/modules/pilot/promotion.controller";
+import { pilotQuestionsController } from "@/modules/pilot/question.controller";
+import { pilotSearchController } from "@/modules/pilot/search.controller";
+import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
+import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
+import { pushController } from "@/modules/push/push.controller";
+import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
+import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
+import { scoringController } from "@/modules/scoring/scoring.controller";
+import { publicStatsController } from "@/modules/stats/stats.controller";
+import { upworkController } from "@/modules/upwork/upwork.controller";
+import { userController } from "@/modules/user/user.controller";
+import { workspaceController } from "@/modules/workspace/workspace.controller";
 import { httpErrorResponses } from "@/types/response";
 
 const app = new Elysia()
   .use(errorMiddleware)
   .use(corsPlugin)
-  .use(swaggerPlugin)
-  .use(resumeJob)
+  .use(openapiPlugin)
+  .use(pdfCacheJob)
   .use(cleanupJob)
   .onStop(async () => {
     await db.$disconnect();
@@ -74,30 +69,29 @@ const app = new Elysia()
       .use(jobBoardController)
       .use(credentialController)
       .use(contactController)
-      .use(networkingMessageController)
       .use(analyticsController)
       .use(captchaController)
       .use(userController)
       .use(resumeController)
-      .use(resumeFileController)
       .use(resumeVariantController)
       .use(publicResumeController)
       .use(publicJobListingController)
       .use(publicPortfolioController)
+      .use(publicStatsController)
       .use(coverLetterController)
       .use(applicationController)
       .use(scoringController)
       .use(upworkController)
       .use(campaignController)
       .use(campaignJobController)
-      .use(campaignNetworkingController)
+      .use(networkingController)
       .use(pilotController)
       .use(pilotSearchController)
-      .use(pilotAgendaController)
-      .use(pilotClaimsController)
+      .use(pilotTasksController)
       .use(pilotJobAlertsController)
       .use(pilotJournalController)
       .use(pilotQuestionsController)
+      .use(profileAnswersController)
       .use(promotionController)
       .use(pushController)
       .use(workspaceController)

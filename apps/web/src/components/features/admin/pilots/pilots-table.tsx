@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { newTokens } from "@jobpilot/contracts/pilot";
 import {
   Chip,
   Table,
@@ -11,13 +12,12 @@ import {
 } from "@mui/material";
 import type { AdminPilotDto } from "@/api/types";
 import { EmptyState } from "@/components/ui/data";
-import { formatRelativeTime } from "@/utils/format";
+import { formatRelativeTime, formatTokens } from "@/utils/format";
 
 interface AdminPilotsTableProps {
   pilots: AdminPilotDto[];
 }
 
-/** Server-rendered fleet view: no per-row actions yet, so there is no client leaf. */
 export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
   const { pilots } = props;
 
@@ -35,6 +35,8 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
             <TableCell>Last cycle</TableCell>
             <TableCell align="right">Cycles</TableCell>
             <TableCell align="right">Open questions</TableCell>
+            <TableCell align="right">New tokens (7d)</TableCell>
+            <TableCell align="right">Cached (7d)</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -63,6 +65,12 @@ export function AdminPilotsTable(props: AdminPilotsTableProps): ReactElement {
                   color={pilot.openQuestions > 0 ? "error" : "default"}
                   label={pilot.openQuestions}
                 />
+              </TableCell>
+              <TableCell align="right">{formatTokens(newTokens(pilot.weekTokens))}</TableCell>
+              <TableCell align="right">
+                <Typography variant="body2Muted">
+                  {formatTokens(pilot.weekTokens.cacheRead)}
+                </Typography>
               </TableCell>
             </TableRow>
           ))}

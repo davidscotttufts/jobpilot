@@ -1,7 +1,2 @@
 export { contactController } from "./contact.controller";
-export {
-  createContactPayload,
-  toContactRow,
-  toNetworkingMessageRow,
-  toWireDiscoverySource,
-} from "./contact.mapper";
+export { createContactPayload } from "./contact.mapper";

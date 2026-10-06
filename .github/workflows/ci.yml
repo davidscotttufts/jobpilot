@@ -39,16 +39,18 @@ jobs:
           mkdir -p "$claude/plugins/jobpilot" \
                    "$codex/plugins/jobpilot/.codex-plugin" \
                    "$codex/.agents/plugins"
-          jq -n '{
-            name: "sukhrob-codex-plugins",
-            interface: { displayName: "Sukhrob Codex Plugins" },
-            plugins: [{
-              name: "jobpilot",
-              source: { source: "local", path: "./plugins/jobpilot" },
-              policy: { installation: "AVAILABLE", authentication: "ON_USE" },
-              category: "Productivity"
+          cat > "$codex/.agents/plugins/marketplace.json" <<'JSON'
+          {
+            "name": "sukhrob-codex-plugins",
+            "interface": { "displayName": "Sukhrob Codex Plugins" },
+            "plugins": [{
+              "name": "jobpilot",
+              "source": { "source": "local", "path": "./plugins/jobpilot" },
+              "policy": { "installation": "AVAILABLE", "authentication": "ON_USE" },
+              "category": "Productivity"
             }]
-          }' > "$codex/.agents/plugins/marketplace.json"
+          }
+          JSON
 
           # Equal size and mtime reproduces the old rsync false-negative.
           cp -p plugin/.codex-plugin/plugin.json "$codex/plugins/jobpilot/.codex-plugin/plugin.json"
@@ -66,6 +68,10 @@ jobs:
         working-directory: apps/api
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
+      # After db:generate: knip reads apps/api's imports of the generated client.
+      - name: Dead code check
+        run: bun run knip
 
       - name: Typecheck API
         run: bun run typecheck
@@ -85,9 +91,13 @@ jobs:
         run: bun run typegen
         working-directory: apps/web
 
-      - name: Typecheck web
-        run: bun run typecheck
-        working-directory: apps/web
+      - name: Cache Next.js build
+        uses: actions/cache@v6
+        with:
+          path: apps/web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-${{ hashFiles('apps/web/src/**', 'apps/web/next.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lock') }}-
 
       - name: Build web
         run: bun run build
@@ -109,14 +119,14 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Test terminal host
-        run: dotnet test tests/JobPilot.Terminal.Tests -c Release
+        run: dotnet test -c Release
 
       # JIT reflection can hide missing JsonSerializable registrations, so publish one Native AOT RID.
       - name: Publish AOT (linux-x64)
         run: dotnet publish -c Release -r linux-x64 -o publish/
         working-directory: apps/terminal
 
-      # InstallPaths.Resolve() requires the plugin tree; Codex workers are repo-scoped runtime assets.
+      # InstallPaths.Resolve() requires the plugin tree; the host writes Codex's agents from plugin/agents/ at session start.
       - name: Verify publish root ships provider assets
         working-directory: apps/terminal/publish
         run: |
@@ -126,8 +136,7 @@ jobs:
                    plugin/.mcp.json \
                    plugin/skills/_shared/setup.md \
                    plugin/skills/auto-apply/SKILL.md \
-                   .codex/agents/job-worker.toml \
-                   .codex/agents/networking-worker.toml; do
+                   plugin/agents/job-applier.md; do
             test -e "$f" || { echo "missing from publish root: $f"; exit 1; }
           done
           test ! -e .agents/plugins/marketplace.json || {

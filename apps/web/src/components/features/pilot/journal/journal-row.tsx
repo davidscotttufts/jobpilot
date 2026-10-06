@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import type { PilotJournalEntry, PilotJournalKind } from "@jobpilot/contracts/pilot";
+import type {
+  PilotJournalEntry,
+  PilotJournalKind,
+  PilotJournalRun,
+} from "@jobpilot/contracts/pilot";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Autorenew,
@@ -10,11 +14,11 @@ import {
   Rule,
   Summarize,
   Terminal,
-  Visibility,
 } from "@mui/icons-material";
-import { Box, Chip, type ChipProps, Stack, Typography } from "@mui/material";
+import { alpha, Box, type ChipProps, Stack, Tooltip, Typography } from "@mui/material";
 import { RelativeTime } from "@/components/ui/display";
-import { humanizeIsoInText } from "@/utils/format";
+import { formatTokenSplit, humanizeIsoInText } from "@/utils/format";
+import { AGENT_LABELS, taskTypeAgent } from "../task-types";
 
 export const KIND_META: Record<
   PilotJournalKind,
@@ -22,19 +26,17 @@ export const KIND_META: Record<
 > = {
   cycle: { icon: Autorenew, color: "primary", label: "Cycle" },
   action: { icon: Bolt, color: "info", label: "Action" },
-  observation: { icon: Visibility, color: "default", label: "Note" },
   question: { icon: NotificationImportant, color: "warning", label: "Question" },
   system: { icon: Terminal, color: "default", label: "System" },
   digest: { icon: Summarize, color: "success", label: "Summary" },
   correction: { icon: Rule, color: "secondary", label: "Adjustment" },
 };
 
-/** Declaration order of KIND_META, which drives both the filter chips and the cycle summary. */
 export const KIND_ORDER = Object.keys(KIND_META) as PilotJournalKind[];
 
 type JournalDetail = PilotJournalEntry["detail"];
 
-function n(detail: JournalDetail, key: string): number {
+function countOf(detail: JournalDetail, key: string): number {
   const value = detail[key];
   return typeof value === "number" ? value : 0;
 }
@@ -43,17 +45,27 @@ interface DigestCountsProps {
   detail: JournalDetail;
 }
 
-/** Glanceable counts from a digest entry's 24h detail, mirroring the summary's fields. */
 function DigestCounts(props: DigestCountsProps): ReactElement {
   const { detail } = props;
   const parts = [
-    `${n(detail, "applicationsCreated")} applied`,
-    `${n(detail, "jobsFailed") + n(detail, "jobsSkipped")} not applied`,
-    `${n(detail, "networkingSent")} networking (${n(detail, "networkingReplies")} replies)`,
-    `${n(detail, "promotionsPosted")} posts`,
-    `${n(detail, "openQuestions")} open`,
+    `${countOf(detail, "applicationsCreated")} applied`,
+    `${countOf(detail, "jobsFailed") + countOf(detail, "jobsSkipped")} not applied`,
+    `${countOf(detail, "networkingSent")} networking (${countOf(detail, "networkingReplies")} replies)`,
+    `${countOf(detail, "promotionsPosted")} posts`,
+    `${countOf(detail, "openQuestions")} open`,
   ];
   return <Typography variant="captionMuted">{parts.join(" · ")}</Typography>;
+}
+
+interface RunMetaProps {
+  run: PilotJournalRun;
+}
+
+export function RunMeta(props: RunMetaProps): ReactElement {
+  const { run } = props;
+  const agent = AGENT_LABELS[taskTypeAgent(run.taskType)];
+  const tokens = run.tokens === null ? "" : ` · ${formatTokenSplit(run.tokens)}`;
+  return <Typography variant="captionMuted">{`${agent}${tokens}`}</Typography>;
 }
 
 interface JournalRowProps {
@@ -66,18 +78,36 @@ export function JournalRow(props: JournalRowProps): ReactElement {
   const Icon = meta.icon;
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: "flex-start" }}>
-      <Chip
-        size="small"
-        color={meta.color}
-        icon={<Icon fontSize="sm" />}
-        label={meta.label}
-        sx={{ minWidth: 110 }}
-      />
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Tooltip title={meta.label}>
+        <Box
+          aria-label={meta.label}
+          sx={(theme) => {
+            const color =
+              meta.color === "default" || meta.color === undefined
+                ? theme.palette.text.secondary
+                : theme.palette[meta.color].main;
+            return {
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              width: 28,
+              height: 28,
+              borderRadius: theme.radii.sm,
+              color,
+              backgroundColor: alpha(color, 0.14),
+            };
+          }}
+        >
+          <Icon fontSize="sm" />
+        </Box>
+      </Tooltip>
+      <Box sx={{ flex: 1, minWidth: 0, pt: 0.25 }}>
         <Typography variant="body2">{humanizeIsoInText(entry.summary)}</Typography>
         {entry.kind === "digest" && <DigestCounts detail={entry.detail} />}
+        {entry.run && <RunMeta run={entry.run} />}
       </Box>
-      <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap" }} />
+      <RelativeTime value={entry.createdAt} sx={{ whiteSpace: "nowrap", pt: 0.5 }} />
     </Stack>
   );
 }

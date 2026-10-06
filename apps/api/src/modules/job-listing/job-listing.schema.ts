@@ -2,15 +2,16 @@ import { jobListingStatusSchema } from "@jobpilot/contracts/job-listing";
 import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
-/** Where one posting was seen. Board + link only - never who found it. */
-export const jobListingSourceSchema = z.object({
+/** Board and link only, never who found it. */
+const jobListingSourceSchema = z.object({
+  /** The board's display name ("LinkedIn"), or its bare host when the catalog has no listed row. */
   board: z.string().nullable(),
   url: z.string(),
   lastSeenAt: z.date(),
 });
 
 /** The privacy contract: no userId, campaignId, matchScore or appliedAt may ever appear here. */
-export const jobListingSummarySchema = z.object({
+const jobListingSummarySchema = z.object({
   id: z.uuid(),
   slug: z.string(),
   title: z.string(),
@@ -23,11 +24,12 @@ export const jobListingSummarySchema = z.object({
   descriptionExcerpt: z.string().nullable(),
   firstSeenAt: z.date(),
   lastSeenAt: z.date(),
-  /** How many boards this posting was found on - the list renders the count, not the links. */
+  /** How many source links were merged into this listing. Reposts count, so this is not boards. */
   sourceCount: z.number().int(),
+  /** Distinct board names, most recently seen first. */
+  boards: z.array(z.string()),
 });
 
-/** The detail view adds the board links and the digest fields the list has no room for. */
 export const jobListingSchema = jobListingSummarySchema.extend({
   requirements: z.array(z.string()),
   responsibilities: z.array(z.string()),
@@ -37,12 +39,14 @@ export const jobListingSchema = jobListingSummarySchema.extend({
 
 export const jobListingPageSchema = paginatedSchema(jobListingSummarySchema);
 
-/** The `?tech=` option list: what the index actually contains, so the filter can't be guessed wrong. */
+/** Bounded at six, so a bare array. */
+export const similarJobListingsSchema = z.array(jobListingSummarySchema);
+
+/** Only skills the index holds, so the `?tech=` filter never offers an option with no results. */
 export const jobListingFacetsSchema = z.object({
   skills: z.array(z.object({ value: z.string(), count: z.number().int() })),
 });
 
-/** Slug + freshness only: the web's sitemap needs nothing else. */
 export const jobListingSitemapSchema = z.array(
   z.object({ slug: z.string(), lastSeenAt: z.date() }),
 );

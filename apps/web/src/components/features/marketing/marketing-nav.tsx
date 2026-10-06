@@ -6,7 +6,7 @@ import { Box, Container, Drawer, IconButton, Link, Stack } from "@mui/material";
 import type { Route } from "next";
 import { LinkButton } from "@/components/ui/buttons";
 import { BrandMark } from "./brand-mark";
-import { marketingLinkSx } from "./marketing-link-sx";
+import { MARKETING_NAV_HEIGHT, marketingLinkSx } from "./marketing-link-sx";
 
 interface NavLink {
   href: Route;
@@ -61,7 +61,11 @@ export function MarketingNav(): ReactElement {
       <Container maxWidth="lg">
         <Stack
           direction="row"
-          sx={{ alignItems: "center", justifyContent: "space-between", height: 64 }}
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: MARKETING_NAV_HEIGHT,
+          }}
         >
           <Stack direction="row" spacing={4} sx={{ alignItems: "center" }}>
             <BrandMark />

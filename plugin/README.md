@@ -1,38 +1,46 @@
 # JobPilot plugin
 
-The plugin that turns Claude Code or Codex into your job-search agent. One
-provider-neutral skill tree serves both: `search`, `auto-apply`, `apply`,
-`networking`, `cover-letter`, and the rest of the commands listed in the
-[root README](../README.md#skills).
+This plugin turns Claude Code or Codex into an agent that looks for jobs for
+you. It searches job boards, tailors your resume for each posting, fills in
+applications, writes cover letters and messages to recruiters, and keeps your
+[JobPilot dashboard](https://jobpilot.suxrobgm.net) up to date.
 
-The agent runs on your own machine and your own Claude/Codex subscription. It
-drives a real browser, reads your profile and resumes from the
-[JobPilot dashboard](https://jobpilot.suxrobgm.net), and writes results back so
-your pipeline updates live.
+It runs on your computer and uses your own Claude or Codex subscription. Your
+profile, resumes, and applications are stored in your JobPilot account, and
+the agent reads and updates them through the JobPilot API.
 
 ## Install
 
-The marketplace commands for Claude Code and Codex live in the
-[root README](../README.md#install-the-plugin).
+Install the plugin from your provider's marketplace (the commands are in the
+[main README](../README.md#install-the-plugin)), then run setup. Setup
+installs the terminal host on your computer, starts it, and opens the
+dashboard. After that, you start the agent and watch it from the dashboard.
 
-Both providers finish by running the `setup` skill, which installs the local
-terminal companion, starts the agent, and opens the dashboard. After that you
-can launch and control the agent from the dashboard's agent dock.
+The marketplace version only contains `setup`. The terminal host comes with
+the full set of skills and keeps them updated.
 
-Provider marketplaces carry only that bootstrap skill. The terminal release
-bundles the full tree and exposes it to dashboard sessions for both providers.
+## Skills
 
-## Layout
+The main skills are `search`, `auto-apply`, `apply`, `networking`, and
+`cover-letter`. The [main README](../README.md#skills) lists all of them.
 
-- `skills/<name>/SKILL.md`: one workflow per directory, referenced by name so
-  the same text serves both providers.
-- `skills/_shared/*.md`: reference docs several skills pull in, by relative
-  path (`../_shared/setup.md`). No `SKILL.md`, so neither provider lists the
-  directory as a skill.
-- `agents/*.md`: worker subagents that campaign skills delegate per-job work
-  to, keeping heavy browser output out of the main session.
-- `.mcp.json`: the Playwright MCP server the skills use to drive the browser.
+## What's in this folder
 
-Edit skills here directly; there is no generation step. See the
-[development guide](../docs/development.md) for how the plugin is loaded and
-published.
+| Path | What it is |
+| --- | --- |
+| `skills/<name>/SKILL.md` | One skill per folder. Claude and Codex read the same file. |
+| `skills/_shared/` | Notes that several skills read: setup, signing in, filling forms, browser tips, eligibility. It has no `SKILL.md`, so it doesn't show up as a skill. |
+| `skills/pilot/tasks/` | One file for each kind of task the Pilot can take on. |
+| `skills/humanizer/` | Edits letters, proposals, and messages so they read like a person wrote them. Adapted from [blader/humanizer](https://github.com/blader/humanizer) (MIT). |
+| `agents/` | `job-scorer`, `job-applier`, `job-searcher`, and `networking-worker`. Each handles one job, search, or contact at a time, which keeps the browser output out of the main session. |
+| `bin/` | `jobpilot-api`, the script every skill uses to call the API. |
+| `settings/` | Settings the terminal host passes to Claude and Codex. |
+| `.mcp.json` | The Playwright browser server. |
+
+## Editing skills
+
+Edit the files in this folder directly. There's no build step. Skills refer
+to other skills by name and to shared notes by relative path
+(`../_shared/setup.md`), so the same text works for both providers. The
+[development guide](../docs/development.md) explains how the host loads the
+plugin and how releases ship it.

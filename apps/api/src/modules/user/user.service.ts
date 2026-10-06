@@ -6,9 +6,9 @@ import {
 } from "@jobpilot/contracts/user";
 import { singleton } from "tsyringe";
 import { conflict, findOwned, notFound } from "@/common/errors";
-import { resumePath } from "@/common/storage";
-import { PrismaClient } from "@/generated/prisma/client";
-import { PORTFOLIO_SETTINGS_SELECT, toPortfolioSettings } from "./user.mapper";
+import { resumePath } from "@/common/storage/storage";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { PORTFOLIO_SETTINGS_SELECT } from "./user.mapper";
 
 const USER_SCALAR_SELECT = {
   id: true,
@@ -73,7 +73,7 @@ export class UserService {
           },
         }),
         this.prisma.resume.findMany({
-          where: { userId, content: { not: null } },
+          where: { userId, content: { not: Prisma.DbNull } },
           select: { id: true },
         }),
         this.prisma.reference.findMany({
@@ -216,7 +216,7 @@ export class UserService {
       select: PORTFOLIO_SETTINGS_SELECT,
     });
     if (!user) throw notFound("User not found");
-    return toPortfolioSettings(user);
+    return user;
   }
 
   /** Free when no other user holds it; the caller's own current username also reads as free.
@@ -253,6 +253,6 @@ export class UserService {
       select: PORTFOLIO_SETTINGS_SELECT,
     });
 
-    return toPortfolioSettings(updated);
+    return updated;
   }
 }

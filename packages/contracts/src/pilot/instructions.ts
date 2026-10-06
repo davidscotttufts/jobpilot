@@ -25,36 +25,15 @@ const pilotPromotionPlatformSchema = z.object({
   postEveryDays: z.number().int().min(1).default(30),
 });
 
-/** Self-promotion config. Review-only in M3: auto-posting is deliberately not offered. */
+/** Review-only: auto-posting is deliberately not offered. */
 const pilotPromotionConfigSchema = z.object({
   platforms: z.array(pilotPromotionPlatformSchema).default([]),
   autonomy: z.literal("review").default("review"),
 });
 
-/**
- * The Pilot's operating envelope, stored as JSON in `PilotState.instructionsConfig`.
- * Every field defaults, so an empty `{}` parses to a full, usable config.
- */
+/** Stored as JSON in `PilotState.instructionsConfig`; `{}` parses to a full config. */
 export const pilotInstructionsConfigSchema = z.object({
   dailyApplyCap: z.number().int().min(0).default(10),
-  /**
-   * How many applies may be in flight at once. Defaults to 1 - the serial loop the pilot has
-   * always run. Raising it is the only lever with a large throughput multiple in it, since one
-   * application is model- and page-bound at ~5 min and will not itself get much faster. Each
-   * concurrent worker needs its own browser profile, and parallel submissions from one identity
-   * are a stronger bot-detection signal than a serial trickle, so raise it a step at a time.
-   * Bounded by MAX_OPEN_APPLY_CLAIMS, past which the stale sweep stops protecting live jobs.
-   */
-  maxConcurrentApplies: z.number().int().min(1).max(20).default(1),
-  /**
-   * Hold the first N applications for approval before they are submitted.
-   *
-   * The scariest moment in an autonomous applier is the first one that goes out unseen, and the
-   * worker already supports `preSubmitReview` - nothing ever set it. Defaults to 1: see one
-   * complete application, with its tailored resume and cover letter, before trusting the rest.
-   * 0 turns it off.
-   */
-  reviewFirstApplies: z.number().int().min(0).max(50).default(1),
   minScore: z.number().min(0).max(100).default(60),
   boards: z.array(z.string()).default([]),
   checkIntervalMinutes: z.number().int().min(5).default(30),
@@ -64,31 +43,24 @@ export const pilotInstructionsConfigSchema = z.object({
   jobAlerts: pilotJobAlertsSchema.prefault({}),
 });
 
-/**
- * What to do with work the pilot started under the old goals. Nothing here happens by default: the
- * searches, campaigns and approved backlog all outlive an instructions edit, which is why rewritten
- * goals otherwise look ignored. The web asks before sending any of it.
- */
+/** What to retire from the old goals. Nothing by default, so the web asks before sending any. */
 export const pilotInstructionsChangeSchema = z.object({
-  // Deletes the searches so `strategy.bootstrap` can derive new ones - it is gated on there being none.
+  // `search.setup` only runs once no searches exist, so deleting them is what re-derives.
   rederiveSearches: z.boolean().default(false),
   completeCampaigns: z.boolean().default(false),
   dropApprovedJobs: z.boolean().default(false),
 });
 
-/** Retire nothing: what a save sends when the goals did not change. */
 export const NO_INSTRUCTIONS_CHANGE: PilotInstructionsChange = pilotInstructionsChangeSchema.parse(
   {},
 );
 
 export const updatePilotInstructionsSchema = z.object({
-  // Goals are mandatory and the pilot's whole steering input: an empty save is rejected.
   goals: z.string().trim().min(1, "Write the pilot's goals before saving."),
   config: pilotInstructionsConfigSchema,
   onChange: pilotInstructionsChangeSchema.prefault({}),
 });
 
-/** What an instructions edit would leave behind, so the user can decide before saving. */
 export const pilotInstructionsImpactSchema = z.object({
   searches: z.array(z.object({ id: z.uuid(), query: z.string(), reason: z.string() })),
   campaigns: z.array(
@@ -105,11 +77,13 @@ export const pilotStateSchema = z.object({
   instructionsConfig: pilotInstructionsConfigSchema,
   instructionsUpdatedAt: z.date().nullable(),
   lastCycleAt: z.date().nullable(),
+  nextWakeAt: z.date().nullable(),
   cycleCount: z.number().int(),
-  // Today's applied count (tz-aware) and whether it has reached the instructions' daily cap.
   appliedToday: z.number().int(),
   capReached: z.boolean(),
   networkingSentToday: z.number().int(),
+  // The newest unfinished, unexpired run.
+  currentRun: z.object({ id: z.uuid(), taskType: z.string(), startedAt: z.date() }).nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -129,7 +103,7 @@ export function channelAutonomy(
   return mode === "off" ? null : mode;
 }
 
-// Which channel a warm intro prefers when both are on
+// A warm intro prefers email when both channels are on.
 const CHANNEL_PREFERENCE = ["email", "linkedin"] as const satisfies readonly NetworkingChannel[];
 
 /** How a new outreach message goes out, or null when every channel is off. */

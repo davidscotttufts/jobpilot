@@ -1,7 +1,5 @@
 import { z } from "zod/v4";
 
-// ── Web push ──────────────────────────────────────────────────────────────────
-
 export const pushSubscriptionInputSchema = z.object({
   endpoint: z.string().min(1),
   keys: z.object({ p256dh: z.string().min(1), auth: z.string().min(1) }),
@@ -19,8 +17,7 @@ export const pushSubscriptionSchema = z.object({
   createdAt: z.date(),
 });
 
-/** Device row for the manage-devices list. */
-export const pushSubscriptionListItemSchema = z.object({
+const pushSubscriptionListItemSchema = z.object({
   id: z.uuid(),
   endpoint: z.string(),
   userAgent: z.string().nullable(),
@@ -30,6 +27,4 @@ export const pushSubscriptionListItemSchema = z.object({
 export const pushSubscriptionListSchema = z.array(pushSubscriptionListItemSchema);
 
 export type PushSubscriptionInput = z.infer<typeof pushSubscriptionInputSchema>;
-export type PushUnsubscribeInput = z.infer<typeof pushUnsubscribeSchema>;
 export type PushSubscriptionDto = z.infer<typeof pushSubscriptionSchema>;
-export type PushSubscriptionListItem = z.infer<typeof pushSubscriptionListItemSchema>;

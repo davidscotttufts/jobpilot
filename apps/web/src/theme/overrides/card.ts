@@ -1,4 +1,4 @@
-import type { Components, Theme } from "@mui/material/styles";
+import { alpha, type Components, type Theme } from "@mui/material/styles";
 
 export const cardOverrides: Components<Theme>["MuiCard"] = {
   defaultProps: { elevation: 0 },
@@ -7,8 +7,7 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
       borderRadius: theme.radii.md,
       border: `1px solid ${theme.palette.line.border}`,
       backgroundColor: theme.palette.surfaces.card,
-      // Top-edge highlight so panels read as lit surfaces, not flat rectangles.
-      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+      boxShadow: theme.shadows_custom.highlight,
       transition: theme.motion.fast,
     }),
   },
@@ -25,16 +24,19 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
     },
     {
       props: { variant: "live" },
-      style: ({ theme }) => ({
-        cursor: "pointer",
-        border: `1px solid ${theme.palette.accent.primary}73`,
-        backgroundColor: `${theme.palette.accent.primary}12`,
-        boxShadow: `0 0 0 1px ${theme.palette.accent.primary}2E, 0 6px 24px ${theme.palette.accent.primary}26`,
-        "&:hover": {
-          borderColor: `${theme.palette.accent.primary}B3`,
-          backgroundColor: `${theme.palette.accent.primary}1C`,
-        },
-      }),
+      style: ({ theme }) => {
+        const flame = theme.palette.accent.primary;
+        return {
+          cursor: "pointer",
+          border: `1px solid ${alpha(flame, 0.45)}`,
+          backgroundColor: alpha(flame, 0.07),
+          boxShadow: `0 0 0 1px ${alpha(flame, 0.18)}, 0 6px 24px ${alpha(flame, 0.15)}`,
+          "&:hover": {
+            borderColor: alpha(flame, 0.7),
+            backgroundColor: alpha(flame, 0.11),
+          },
+        };
+      },
     },
     {
       props: { variant: "lift" },
@@ -42,15 +44,15 @@ export const cardOverrides: Components<Theme>["MuiCard"] = {
         height: "100%",
         "&:hover": {
           transform: "translateY(-2px)",
-          borderColor: `${theme.palette.accent.primary}80`,
-          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 12px 32px -16px ${theme.palette.accent.primary}59`,
+          borderColor: alpha(theme.palette.accent.primary, 0.5),
+          boxShadow: `${theme.shadows_custom.highlight}, 0 12px 32px -16px ${alpha(theme.palette.accent.primary, 0.35)}`,
         },
       }),
     },
     {
       props: { variant: "accent" },
       style: ({ theme }) => ({
-        borderColor: `${theme.palette.accent.primary}59`,
+        borderColor: alpha(theme.palette.accent.primary, 0.35),
       }),
     },
     {

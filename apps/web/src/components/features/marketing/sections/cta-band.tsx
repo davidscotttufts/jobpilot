@@ -1,65 +1,57 @@
 import type { ReactElement } from "react";
-import { alpha, Box, Stack, Typography } from "@mui/material";
+import { Card, CardContent, Stack, Typography } from "@mui/material";
 import { LinkButton } from "@/components/ui/buttons";
-import { accent, gradients, radii } from "@/theme";
+import { radii } from "@/theme";
+import { Glow } from "../glow";
+import { type NumberedStep, NumberedSteps } from "../numbered-steps";
 import { Section } from "../section";
 
-// A server component, so sx must stay a plain object - a `(theme) => …` callback
-// is a function, and functions cannot cross the RSC boundary.
-const emberWash = `radial-gradient(ellipse 45% 90% at 10% -15%, ${alpha(accent.primary, 0.2)}, transparent 50%)`;
+const SETUP: NumberedStep[] = [
+  {
+    title: "Install the plugin",
+    body: "Add JobPilot to Claude Code or Codex and run setup. It installs the agent on your computer and starts it.",
+    snippet: "/jobpilot:setup",
+  },
+  {
+    title: "Create your account",
+    body: "Sign up and upload your resume. The agent reads it and fills in your profile.",
+    snippet: "jobpilot.suxrobgm.net/register",
+  },
+  {
+    title: "Turn on the Pilot",
+    body: "Describe the jobs you want and set your limits. Run a search first if you'd like to check the matches.",
+    snippet: "Dashboard → Pilot → Start",
+  },
+];
 
 export function CtaBand(): ReactElement {
   return (
     <Section>
-      <Box
-        sx={{
-          position: "relative",
-          overflow: "hidden",
-          borderRadius: radii.lg,
-          border: `1px solid ${accent.primary}40`,
-          backgroundColor: "surfaces.card",
-          boxShadow: `0 24px 64px -32px ${accent.primary}33`,
-          paddingBlock: { xs: 6, md: 8 },
-          paddingInline: { xs: 3, md: 6 },
-        }}
+      <Card
+        variant="accent"
+        sx={{ position: "relative", overflow: "hidden", borderRadius: radii.lg }}
       >
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background: gradients.reversed,
-            opacity: 0.05,
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background: emberWash,
-            pointerEvents: "none",
-          }}
-        />
-        <Stack spacing={3} sx={{ position: "relative", alignItems: "flex-start" }}>
-          <Typography variant="displayMd" sx={{ maxWidth: 620 }}>
-            Put your job search on autopilot.
-          </Typography>
-          <Typography variant="lead" sx={{ maxWidth: 520 }}>
-            Free and open source. Install the agent, create your account, and run your first
-            campaign tonight.
-          </Typography>
-          <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", gap: 1.5 }}>
-            <LinkButton href="/install" variant="contained" size="large">
-              Get started
-            </LinkButton>
-            <LinkButton href="/docs" variant="outlined" size="large">
-              Read the docs
-            </LinkButton>
+        <Glow placement="corner" />
+        <CardContent sx={{ position: "relative", padding: { xs: 3, md: 6 } }}>
+          <Stack spacing={{ xs: 4, md: 5 }}>
+            <Stack spacing={2} sx={{ maxWidth: 620 }}>
+              <Typography variant="displayMd">Start your first search in ten minutes.</Typography>
+              <Typography variant="lead">
+                Three steps, and you can stop the agent at any time.
+              </Typography>
+            </Stack>
+            <NumberedSteps steps={SETUP} columns={3} />
+            <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1.5 }}>
+              <LinkButton href="/install" variant="contained" size="large">
+                Get started
+              </LinkButton>
+              <LinkButton href="/docs" variant="outlined" size="large">
+                Read the docs
+              </LinkButton>
+            </Stack>
           </Stack>
-        </Stack>
-      </Box>
+        </CardContent>
+      </Card>
     </Section>
   );
 }

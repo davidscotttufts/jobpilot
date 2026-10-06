@@ -1,12 +1,17 @@
 import { statusSchema } from "@jobpilot/contracts/application";
-import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
+import {
+  classificationSchema,
+  emailProviderSchema,
+  reviewStatusSchema,
+} from "@jobpilot/contracts/email";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
 /** What narrows a set of inbox messages, whether the caller wants the rows or just how many. */
 export const messageFilters = z.object({
-  reviewStatus: z.string().optional(),
-  classification: z.string().optional(),
+  reviewStatus: reviewStatusSchema.optional(),
+  // The literal "null" asks for messages the scan has not classified yet.
+  classification: z.union([classificationSchema, z.literal("null")]).optional(),
   since: z.string().optional(),
   domainHint: z.string().optional(),
   verificationDomain: z.string().optional(),
@@ -16,7 +21,7 @@ export const messagesQuery = paginationQuerySchema.extend(messageFilters.shape);
 
 export const messageCountSchema = z.object({ count: z.number().int().min(0) });
 
-export const startQuery = z.object({ provider: z.string().optional() });
+export const startQuery = z.object({ provider: emailProviderSchema.optional() });
 
 export const callbackQuery = z.object({
   code: z.string().optional(),
@@ -57,7 +62,7 @@ export const oauthClientStatusSchema = z.object({
 export const oauthClientDeletedSchema = z.object({ deleted: z.boolean() });
 
 /** Matched-application summary embedded on a message (`matchedApp` relation). */
-export const matchedAppSchema = z
+const matchedAppSchema = z
   .object({
     id: z.uuid(),
     title: z.string(),
@@ -66,7 +71,10 @@ export const matchedAppSchema = z
   })
   .nullable();
 
-/** A serialized inbox message (`serializeMessage` - Date fields are ISO strings). */
+/** An inbox message row. */
+/** The `links` JSON column: each job-alert link with the text a reader sees for it. */
+export const emailLinksSchema = z.array(z.object({ url: z.string(), text: z.string() }));
+
 export const emailMessageSchema = z.object({
   id: z.uuid(),
   accountId: z.uuid(),
@@ -92,7 +100,7 @@ export const emailMessageSchema = z.object({
   verificationCode: z.string().nullable(),
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
-  links: z.array(z.object({ url: z.string(), text: z.string() })),
+  links: emailLinksSchema,
   harvestedAt: z.date().nullable(),
   matchedApp: matchedAppSchema,
 });

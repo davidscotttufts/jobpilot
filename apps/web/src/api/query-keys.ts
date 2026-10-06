@@ -33,7 +33,7 @@ export const queryKeys = {
   jobBoards: {
     all: ["job-boards"] as const,
     list: () => [...queryKeys.jobBoards.all, "list"] as const,
-    detail: (id: string) => [...queryKeys.jobBoards.all, "detail", id] as const,
+    catalog: () => [...queryKeys.jobBoards.all, "catalog"] as const,
   },
 
   applications: {
@@ -97,6 +97,17 @@ export const queryKeys = {
     detail: () => [...queryKeys.upworkProfile.all, "detail"] as const,
   },
 
+  upworkAccount: {
+    all: ["upwork-account"] as const,
+    detail: () => [...queryKeys.upworkAccount.all, "detail"] as const,
+  },
+
+  upworkInbox: {
+    all: ["upwork-inbox"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+      [...queryKeys.upworkInbox.all, "list", filters] as const,
+  },
+
   coverLetters: {
     all: ["cover-letters"] as const,
     list: (filters: Record<string, unknown> = {}) =>
@@ -111,10 +122,11 @@ export const queryKeys = {
     cost: () => [...queryKeys.pilot.all, "cost"] as const,
     // Read-only view of the pilot's self-managed discovery searches.
     searches: () => [...queryKeys.pilot.all, "searches"] as const,
+    answers: () => [...queryKeys.pilot.all, "answers"] as const,
     // What an instructions edit would leave running; read on demand, never prefetched.
     instructionsImpact: () => [...queryKeys.pilot.all, "instructions-impact"] as const,
-    // Mount-fetch + manual refresh only; PilotLive never invalidates this key (agenda compile is costly).
-    agenda: () => [...queryKeys.pilot.all, "agenda"] as const,
+    // Mount-fetch + manual refresh only; PilotLive never invalidates this key (building the task list is costly).
+    taskList: () => [...queryKeys.pilot.all, "task-list"] as const,
     jobAlerts: () => [...queryKeys.pilot.all, "job-alerts"] as const,
     journalAll: () => [...queryKeys.pilot.all, "journal"] as const,
     journal: (filters: Record<string, unknown> = {}) =>

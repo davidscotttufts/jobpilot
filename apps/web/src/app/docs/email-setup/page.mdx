@@ -6,63 +6,68 @@ export const metadata = buildDocsMetadata("email-setup", {
 
 # Email setup
 
-Connecting email powers the inbox (recruiter replies are classified and
-matched to applications), verification codes (the agent reads sign-in codes
-during applies), and networking (messages are sent from your own address).
+When you connect Gmail, JobPilot can do three more things:
 
-JobPilot connects to Gmail with **your own** Google OAuth client. It ships no
-shared client, so nothing about your mail passes through anyone else's Google
-app, and no Google verification or security audit is needed. Setup is once per
-user and takes about five minutes.
+- Match recruiter replies to your applications.
+- Read the sign-in codes that job boards email you while it's applying.
+- Send networking emails from your own address.
+
+You connect Gmail through a Google OAuth client that you create yourself.
+JobPilot doesn't have a shared Google app, so your mail never goes through
+anyone else's, and Google doesn't need to review anything. You only do this
+once, and it takes about five minutes.
 
 ## Create your OAuth client
 
 1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials),
-   create a new project, then an OAuth 2.0 Client ID (type: **Web application**).
-2. Enable the **Gmail API** for the project under "APIs & Services".
-3. In JobPilot, open **Settings → Email** and copy the **redirect URI** shown
-   there; add it as an authorized redirect URI on your OAuth client.
-4. Add the **`gmail.readonly`** and **`gmail.send`** scopes to the consent
-   screen, under
-   [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes):
-   **Add or remove scopes**, search for each, tick both Gmail API rows, then
-   **Save**. `readonly` powers reply tracking and verification codes; `send`
-   powers networking email.
-5. Keep the app in Testing mode and add your Gmail address under
+   create a project. Then create an OAuth 2.0 Client ID and choose
+   **Web application** as the type.
+2. Under "APIs & Services", turn on the **Gmail API** for the project.
+3. In JobPilot, open **Settings → Email** and copy the **redirect URI**. Add
+   it to your OAuth client as an authorized redirect URI.
+4. Go to
+   [Google Auth Platform → Data access](https://console.cloud.google.com/auth/scopes)
+   and press **Add or remove scopes**. Search for **`gmail.readonly`** and
+   **`gmail.send`**, tick both Gmail API rows, and press **Save**. The first
+   lets JobPilot read replies and sign-in codes. The second lets it send
+   networking emails.
+5. Leave the app in Testing mode and add your Gmail address under
    [Audience → Test users](https://console.cloud.google.com/auth/audience).
-   It's your own project with you as the only user, so Google verification is
-   never required. One catch: Testing-mode refresh tokens expire after about
-   seven days, so expect to reconnect roughly once a week. Publishing the app
-   does not fix this. Gmail scopes are restricted, so a published app without
-   Google verification fails at sign-in.
-6. Back in **Settings → Email**, paste your **Client ID** and **Client
-   secret**, save, then **Connect Gmail**.
+   You're the only user of your own project, so Google never needs to verify
+   it. The downside is that Google signs you out of Testing-mode apps after
+   about seven days, so expect to reconnect about once a week. Publishing the
+   app doesn't help. Gmail access is restricted, and a published app that
+   Google hasn't verified can't sign in at all.
+6. Back in **Settings → Email**, paste the **Client ID** and **Client
+   secret**, save, and press **Connect Gmail**.
 
-## What JobPilot can and can't do
+## What JobPilot can access
 
-JobPilot can read mail and send it, and nothing more. The consent screen asks
-for four scopes: `gmail.readonly` and `gmail.send` do the work, while `openid`
-and `email` only tell JobPilot which address you connected. Deleting or
-modifying mail is outside what the token allows. Your client id and secret are
-stored encrypted per user (the secret never leaves the server) and the
-connected account is tied to your profile only.
+JobPilot can read your mail and send mail. It can't delete or change
+anything. Google's consent screen lists four permissions: `gmail.readonly` and
+`gmail.send` do the work, and `openid` and `email` only tell JobPilot which
+address you connected.
+
+Your client ID and secret are encrypted and stored with your account. The
+secret stays on the server and is never sent to your browser. The connected
+Gmail account is linked to your profile and nobody else's.
 
 ## Troubleshooting
 
 - **"Access blocked: app has not completed the Google verification
-  process".** Your Gmail isn't on the Test users list. Add it under
+  process".** Your Gmail address isn't on the test users list. Add it under
   **Audience → Test users**.
-- **403 "Request had insufficient authentication scopes".** A required
-  Gmail scope isn't on the consent screen. Add both under **Data access**,
-  then disconnect and reconnect in **Settings → Email** so a new token with
-  the right scopes is issued.
-- **Mailbox connects read-only, or networking can't send.** The token was
-  issued without `gmail.send`. Add the scope under **Data access**, then use
+- **403 "Request had insufficient authentication scopes".** One of the Gmail
+  permissions is missing. Add both under **Data access**, then disconnect and
+  connect again in **Settings → Email** so Google issues a new token.
+- **Gmail connects, but networking can't send.** You connected before adding
+  `gmail.send`. Add it under **Data access**, then press
   **Reconnect to enable sending** in **Settings → Email**.
-- **Google 500 after publishing.** A published app using restricted Gmail
-  scopes needs Google verification. Go back to Testing mode under
+- **Google shows a 500 error after you published the app.** Published apps
+  that use Gmail need Google's review. Switch back under
   **Audience → Publishing status → Back to testing**.
 
-Outlook and IMAP support are planned; Gmail is the only provider today.
+Gmail is the only email provider for now. Outlook and IMAP are planned.
 
-Next up: [Credentials](/docs/credentials), so the agent can sign in to boards.
+Next: [Credentials](/docs/credentials), so the agent can sign in to job
+boards.

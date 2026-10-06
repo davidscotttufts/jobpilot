@@ -4,7 +4,7 @@ import { accent, feedback, surfaces, textColors } from "@/theme/palette";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
-export const alt = "JobPilot - your job search on autopilot";
+export const alt = "JobPilot - an AI agent that applies to jobs for you";
 
 // Satori renders this - inline styles only, no MUI/emotion, every multi-child div is flex.
 export default function OpenGraphImage(): ImageResponse {
@@ -45,11 +45,11 @@ export default function OpenGraphImage(): ImageResponse {
             letterSpacing: -2,
           }}
         >
-          Your job search on autopilot, running on your machine.
+          An AI agent that applies to jobs for you.
         </div>
         <div style={{ color: textColors.secondary, fontSize: 30, lineHeight: 1.4, maxWidth: 940 }}>
-          Write your goals once; the Pilot finds roles, tailors your resume, applies, and chases
-          replies overnight - on your own Claude or Codex subscription.
+          It finds jobs, tailors your resume, and fills in applications. Free, and it runs on your
+          Claude or Codex subscription.
         </div>
       </div>
       <div style={{ display: "flex", color: textColors.disabled, fontSize: 24 }}>

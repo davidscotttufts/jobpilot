@@ -1,14 +1,11 @@
 import { z } from "zod/v4";
 
-// ── Response schemas ──────────────────────────────────────────────────────────
-
-/** A single day's count in a 30-day timeline series (`date` is UTC midnight of the bucketed day). */
+/** `date` is UTC midnight of the bucketed day. */
 const perDayPointSchema = z.object({
   date: z.date(),
   count: z.number().int(),
 });
 
-/** Dashboard analytics summary aggregating application and networking activity. */
 export const analyticsStatsSchema = z.object({
   totals: z.object({
     applications: z.number().int(),

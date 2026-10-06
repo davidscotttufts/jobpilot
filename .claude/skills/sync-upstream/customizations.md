@@ -4,68 +4,92 @@ What this fork deliberately does differently from upstream (suxrobGM/jobpilot), 
 sync keeps it. One entry per behaviour, not per commit. Rule 1 of `SKILL.md` protects every entry;
 drop an entry once upstream covers it, and note the PR.
 
-Last reviewed: 2026-09-17 (fork `main` ca597c80, 51 commits ahead of upstream, 43 behind).
+Last reviewed: 2026-10-05 (pilot v2 sync: 138 upstream commits in, 68 fork commits carried).
 
 ## Deliberate overrides of upstream values
 
-- **`MAX_OPEN_APPLY_CLAIMS` stays 100, not 20** (`apps/api/src/modules/pilot/agenda/constants.ts`).
-  It bounds the stale sweep's exclusion list; a claim past it can have its live job reset
-  mid-apply.
-- **The instructions form round-trips every config field it has no control for**
-  (`maxConcurrentApplies`, `reviewFirstApplies`) and passes `jobAlerts` through from the latest
-  state (`apps/web/src/components/features/pilot/instructions/form-schema.ts`). Rebuilding the
-  config from the form alone hands the schema's defaults back and silently resets them.
-- **The exact-URL duplicate arm has no 30-day window** (`applied-guard`); only the fuzzy
-  title+company arm expires. Upstream PR #34, open.
+- **The instructions form round-trips `jobAlerts`**, which it has no control for, from the latest
+  state (`apps/web/src/components/features/pilot/instructions/instructions-tab.tsx`, `toConfig`).
+  Rebuilding the config from the form alone hands the schema's defaults back and silently resets it.
 
 ## Pilot and apply loop
 
-- **Job alert email harvest** - `inbox.jobAlerts` agenda kind, `EmailMessage.links`/`harvestedAt`,
-  `PilotState.jobAlertsRequestedAt`, `/pilot/job-alerts` routes, the Job alert emails card at the
-  top of the Pilot overview, `plugin/skills/pilot/kinds/inbox.jobAlerts.md`. Upstream PR #37,
-  open (ported onto upstream: schedule helpers there are self-contained in
-  `packages/contracts/src/pilot/schedule.ts`).
-- **Pilot searches can repeat on chosen weekdays** - `cadence`/`cadenceDays`/`cadenceHour`/
-  `cadenceTimeZone`, `nextWeeklyRun`, the repeat controls on campaign rows.
-- **Apply concurrency** - `maxConcurrentApplies` enforced server-side, the in-flight reservation
-  scan (an `applying` row is a reservation; PR #30 open), browser leasing per claim, and a second
-  Playwright MCP server (`playwright-2`) that `job-worker` may use.
-- **Claim lifetime cap** - `MAX_CLAIM_LIFETIME_MS` for every claim kind, heartbeats included.
-  PR #29, open.
-- **Never auto-retry an application that may already be submitted** - the submit-attempt stamp,
-  the recovery hold on every route back into an apply, and `confirmNotSubmitted` as its exit.
-- **Review the first applications** - `reviewFirstApplies` holds the first N for approval.
-- **Record what was submitted** - `answers` and `phases` on the job result.
-- **Surface stuck work** - jobs only a person can finish, unanswered questions that drop a job,
-  and board-drift detection (a board serving a second host).
-- **Conversion and threshold cost** in the pilot stats, with the read-backwards caveat.
+- **Job alert email harvest** - `inbox.jobAlerts` task type (`pilot/tasks/gather-inbox.ts`,
+  priority 505, not held by the apply cap), `EmailMessage.links`/`harvestedAt`,
+  `PilotState.jobAlertsRequestedAt` ("run now", lapses after an hour or once a run starts after
+  it), `/pilot/job-alerts` routes (`pilot/job-alerts.controller.ts`),
+  `POST /email/job-alerts/harvested`, the Job alert emails card under the Pilot status bar, the Run
+  job alert button on the workspace, `plugin/skills/pilot/tasks/inbox.jobAlerts.md`. Upstream PR
+  #37, open (predates v2 - needs a port before it can merge).
+- **Pilot searches repeat on chosen weekdays, with per-search overrides** - `cadence`/`cadenceDays`/
+  `cadenceHour`/`cadenceTimeZone` (`nextWeeklyRun` in contracts `pilot/schedule.ts`), `minScore`/
+  `maxApplications` overriding the pilot-wide values (and `search.discover`'s `maxApplications`),
+  create-with-`campaignId` to repeat an existing campaign, the repeat controls on campaign rows.
+- **Idle wake honours search cooldown** - `earliestSearchWake` / `cooldownEndsAt` in
+  `pilot/tasks/run-history.ts`. Upstream's wake uses the earliest `nextRunAt`, so an overdue but
+  damped search kept the pilot cycling every 30s.
+- **Never auto-retry an application that may already be submitted** - the submit-attempt stamp
+  (`POST /campaigns/:id/jobs/:key/submit-attempt`, called by `job-applier` before submit), the
+  recovery hold in `patchJob` on every route back into an apply, `confirmNotSubmitted` as its only
+  exit, and `recoverApplyingJobs` replacing upstream's silent re-approve in both run expiry/cancel
+  and the stale-applying sweep (`pilot/tasks/maintenance.ts`, `run.service.ts`). Recovery and
+  board-drift answers are routed in `plugin/skills/pilot/tasks/question.answered.md`.
+- **Record what was submitted** - `phases` (`Job.phaseTimings`) and `answers` (`submittedAnswers`)
+  on the job result; `job-applier` returns them as `phases`/`submitted`. `report:phases` script.
+- **Surface stuck work** - the analytics needs-you list, the push when an unanswered question drops
+  a job, skip a parked question or its application (`/pilot/questions/:id/skip`,
+  `/skip-application`), and board-drift detection (`job-board/drift-sweep.ts`, run every 12th task
+  list refresh).
+- **Conversion and threshold cost** in analytics (`analytics/outcomes.ts`, `score-threshold.ts`),
+  with the read-backwards caveat.
+- **Gmail sync never loses mail silently** - catch-up syncs respect the quota, and every history
+  page is read before the cursor moves (`email/gmail.provider.ts`, `sync/sync.service.ts`). PR #41,
+  open.
+- **Skill hygiene** - `printf '%s\n' "$X" | jq`, never `echo`; `get-code` finds reset mail and
+  follows its tracking redirect; forms filled one page per `browser_fill_form`.
+- **FlexJobs' `click.mg.flexjobs.com` folds onto `flexjobs.com`** (`application/job-url.ts`).
 
 ## Web
 
-- **Load failures are shown, not rendered as empty** - data-table load-error overlay and
-  `QuerySection` error states. PR #31, open.
+- **Extra load-error states** - `QuerySection` error states on boards and applications, where
+  upstream's PR #31 data-table overlay does not reach.
 - **Accessibility and theme fixes** from the grade-ux audit: inbox count announcement, contrast
-  fixes, type-scale step, Portfolio single `h1`.
+  fixes (error/info `contrastText`), Portfolio single `h1`.
 - **React StrictMode on in dev.**
-- **Campaign actions on the rows**, with a repeat control on both.
+- **Campaign actions on the rows**, with a repeat control on both; "Run this campaign again"
+  (`/campaigns/new?from=`).
+- **The Orchestration card collapses**, remembered per browser (`hooks/use-persisted-boolean.ts`,
+  which upstream deleted as dead code). PR #40, open.
 - **Web dev server gets a larger heap** - `NODE_OPTIONS=--max-old-space-size=2048` in the
   `apps/web/package.json` `dev` script.
 
 ## Terminal host
 
-- **Serialize terminal session starts** so a remount cannot open two. PR #32, open.
-- **The dev stack supervises the host** and one dev service no longer kills the others.
+- **Kill the provider's process tree** when it ignores the stop hangup - 3s grace in
+  `Sessions/PtyProcess.cs` `Dispose()`.
+- **The dev stack supervises the host** (`Hosting/ServiceInstaller.cs`, `--install-service`, used by
+  the setup skill) and one dev service no longer kills the others (`concurrently` without `-k`).
 
 ## Local environment and repo hygiene
 
 - **Local database is the `jobpilot-db` Docker container** on `:5433`, reproducible and backed up
-  (`db:backup`/`db:restore`), not an SSH tunnel.
+  (`db:backup`/`db:restore`, `docker-compose.dev.yml`), not an SSH tunnel.
 - **Docker Desktop is capped at 2 GB memory / 512 MB swap** on this Mac (machine setting, not in
   the repo).
-- **`.gitignore` additions** for local strays and the pilot's cycle files by family.
-- **Project skills** that exist only here: `grade-ux`, `sync-upstream`, and `docs/` review notes.
+- **`.gitignore` additions** for local strays, credentials, `backups/`, and the pilot's cycle files.
+- **Project skills** that exist only here: `grade-ux`, `grade-code`, `grade-data`,
+  `grade-ai-exchange`, `sync-upstream`, and `docs/` review notes.
 
-## Already upstream (kept for history - no longer needs protecting)
+## Retired (kept for history - no longer protected)
 
+- 2026-10 sync (pilot v2, one run at a time - user decision): `maxConcurrentApplies`, browser
+  leasing, the `playwright-2` MCP server, parallel job-workers, `reviewFirstApplies` (never wired),
+  and the `MAX_OPEN_APPLY_CLAIMS = 100` override. Migration
+  `20261005120000_drop_apply_concurrency_config` strips the two config keys.
+- Taken as upstream's in the 2026-10 sync: PR #29 claim lifetime cap (`MAX_RUN_LIFETIME_MS`), PR
+  #30 in-flight reservation (`findApplyingSibling`), PR #31 data-table load errors, PR #32
+  serialized terminal starts, PR #34 exact-url dedupe without a window, the hard-blocked board
+  backoff (upstream's 24h `board.diagnose` cooldown), and the API error-body fix (`jobpilot-api`
+  prints it).
 - PR #25 pty winsize on Apple silicon, PR #26 block a second application to a job, PR #27 docs on
   `localhost:5433` - merged upstream, taken as theirs in the 2026-09 sync (`bcf90a66`).

@@ -5,7 +5,7 @@ import {
   OWNED_RESUME_ID,
   OWNED_VARIANT_ID,
   setup,
-} from "./job.service.test-helpers";
+} from "./fakes";
 import { describe, expect, it } from "bun:test";
 
 describe("CampaignJobService terminal results", () => {
@@ -187,5 +187,77 @@ describe("CampaignJobService terminal results", () => {
       matchScore: 88,
       skipReason: null,
     });
+  });
+});
+
+// Claim timings show that an apply took five minutes and nothing about where they went; the worker
+// is the only observer that can see inside one.
+describe("CampaignJobService phase timings", () => {
+  it("stores what the worker reported", async () => {
+    const state = setup();
+
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      phases: { navigate: 4200, fill: 48000, submit: 9100 },
+    });
+
+    expect(result.campaignJob).toMatchObject({
+      phaseTimings: { navigate: 4200, fill: 48000, submit: 9100 },
+    });
+  });
+
+  it("does not send an empty object, which would erase a previous attempt's numbers", async () => {
+    const state = setup();
+
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "blocked",
+      // What a worker using the wrong key names produces: Zod strips them, leaving {} - truthy,
+      // and previously written straight over real timings.
+      phases: {},
+    });
+
+    expect(state.lastResultWrite()?.phaseTimings).toBeUndefined();
+  });
+
+  it("clears the submit stamp once an outcome is recorded", async () => {
+    const state = setup();
+    state.setSubmitAttempted(new Date());
+
+    await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "failed",
+      failReason: "blocked",
+    });
+
+    expect(state.job.submitAttemptedAt).toBeNull();
+  });
+});
+
+describe("CampaignJobService submitted answers", () => {
+  it("records what the agent put in the form on the application", async () => {
+    const state = setup();
+
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      answers: [{ label: "Desired salary", value: "Negotiable" }],
+    });
+
+    expect(result.application).toMatchObject({
+      submittedAnswers: [{ label: "Desired salary", value: "Negotiable" }],
+    });
+  });
+
+  it("leaves the column unset when the agent reported none", async () => {
+    const state = setup();
+
+    const result = await state.service.recordJobResult("u1", "c1", "j1", {
+      outcome: "applied",
+      appliedAt: APPLIED_AT,
+      answers: [],
+    });
+
+    expect(result.application).not.toHaveProperty("submittedAnswers");
   });
 });

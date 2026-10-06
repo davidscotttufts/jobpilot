@@ -1,4 +1,5 @@
 using JobPilot.Terminal.Pilot;
+using JobPilot.Terminal.Providers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -18,9 +19,9 @@ public sealed class PilotStoreTests : IDisposable
 
     private PilotStore NewStore() => new(path, NullLogger<PilotStore>.Instance);
 
-    private static PilotPairing Pairing(bool running = true) => new()
+    private static PilotSettings SavedSettings(bool running = true) => new()
     {
-        Provider = "codex",
+        Provider = Provider.Codex,
         ApiToken = "secret-token",
         ApiUrl = "https://api.example",
         WebUrl = "https://web.example",
@@ -28,20 +29,14 @@ public sealed class PilotStoreTests : IDisposable
     };
 
     [Fact]
-    public void Current_IsNull_WhenNoFileExists()
-    {
-        Assert.Null(NewStore().Current);
-    }
-
-    [Fact]
     public void Save_RoundTripsThroughAFreshStore()
     {
-        NewStore().Save(Pairing());
+        NewStore().Save(SavedSettings());
 
         var reloaded = NewStore().Current;
 
         Assert.NotNull(reloaded);
-        Assert.Equal("codex", reloaded!.Provider);
+        Assert.Same(Provider.Codex, reloaded!.Provider);
         Assert.Equal("secret-token", reloaded.ApiToken);
         Assert.Equal("https://api.example", reloaded.ApiUrl);
         Assert.Equal("https://web.example", reloaded.WebUrl);
@@ -49,10 +44,10 @@ public sealed class PilotStoreTests : IDisposable
     }
 
     [Fact]
-    public void SetRunning_KeepsThePairing_AndPersists()
+    public void SetRunning_KeepsTheRest_AndPersists()
     {
         var store = NewStore();
-        store.Save(Pairing());
+        store.Save(SavedSettings());
 
         store.SetRunning(false);
 
@@ -62,33 +57,30 @@ public sealed class PilotStoreTests : IDisposable
     }
 
     [Fact]
-    public void SetRunning_IsANoOp_WhenUnpaired()
+    public void Changed_IsRaisedOnlyWhenSomethingChanged()
     {
         var store = NewStore();
+        var changes = 0;
+        store.Changed += () => changes++;
 
-        store.SetRunning(false);
-
+        store.SetRunning(false); // nothing saved yet
         Assert.Null(store.Current);
         Assert.False(File.Exists(path));
+
+        store.Save(SavedSettings());
+        store.SetRunning(true);  // already running
+        store.SetRunning(false);
+
+        Assert.Equal(2, changes);
     }
 
-    [Fact]
-    public void Load_TreatsACorruptFileAsUnpaired()
+    [Theory]
+    [InlineData("{ this is not valid json ")]
+    [InlineData("""{"provider":"gemini","token":"t","protected":false,"apiUrl":"https://a","webUrl":"https://w","running":true}""")]
+    public void Load_TreatsACorruptFileOrUnknownProviderAsNothingSaved(string json)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, "{ this is not valid json ");
-
-        Assert.Null(NewStore().Current);
-    }
-
-    [Fact]
-    public void Load_TreatsALegacyEnabledFileAsUnpaired()
-    {
-        // A pre-rename pilot.json lacks "running", fails deserialize, and is treated as unpaired (accepted churn).
-        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(
-            path,
-            """{"provider":"codex","apiUrl":"https://api.example","webUrl":"https://web.example","enabled":true,"token":"secret-token","protected":false}""");
+        File.WriteAllText(path, json);
 
         Assert.Null(NewStore().Current);
     }
@@ -98,10 +90,10 @@ public sealed class PilotStoreTests : IDisposable
     {
         if (!OperatingSystem.IsWindows())
         {
-            return; // DPAPI protection only applies on Windows.
+            return;
         }
 
-        NewStore().Save(Pairing());
+        NewStore().Save(SavedSettings());
 
         Assert.DoesNotContain("secret-token", File.ReadAllText(path));
     }
@@ -111,22 +103,22 @@ public sealed class PilotStoreTests : IDisposable
     {
         if (OperatingSystem.IsWindows())
         {
-            return; // Unix file mode is not meaningful on Windows.
+            return;
         }
 
-        NewStore().Save(Pairing());
+        NewStore().Save(SavedSettings());
 
         var mode = File.GetUnixFileMode(path);
         Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, mode);
     }
 
     [Fact]
-    public void Save_AtomicallyReplacesThePairing_WithoutLeavingTemporaryFiles()
+    public void Save_ReplacesTheFile_WithoutLeavingTemporaryFiles()
     {
         var store = NewStore();
-        store.Save(Pairing());
+        store.Save(SavedSettings());
 
-        store.Save(Pairing(running: false));
+        store.Save(SavedSettings(running: false));
 
         Assert.False(NewStore().Current!.Running);
         Assert.Empty(Directory.EnumerateFiles(temp.Root, ".pilot.json.*.tmp"));

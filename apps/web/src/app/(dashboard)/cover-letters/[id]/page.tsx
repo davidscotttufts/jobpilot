@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { type ReactElement, Suspense } from "react";
 import { Launch, PictureAsPdf } from "@mui/icons-material";
 import { Button, Chip, Typography } from "@mui/material";
 import type { Metadata } from "next";
@@ -7,6 +7,7 @@ import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { getFetchOptions } from "@/api/server";
 import { CoverLetterActions } from "@/components/features/cover-letters";
+import { DetailSkeleton } from "@/components/ui/data";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { formatAbsoluteTime } from "@/utils/format";
 
@@ -16,7 +17,18 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function CoverLetterDetailPage(props: PageProps): Promise<ReactElement> {
+export default function CoverLetterDetailPage(props: PageProps): ReactElement {
+  // Header and body are both the letter's own content, so they stream together.
+  return (
+    <PageShell maxWidth="md">
+      <Suspense fallback={<DetailSkeleton heights={[72, 480]} />}>
+        <CoverLetter params={props.params} />
+      </Suspense>
+    </PageShell>
+  );
+}
+
+async function CoverLetter(props: PageProps): Promise<ReactElement> {
   const { id } = await props.params;
 
   const opts = await getFetchOptions();
@@ -27,7 +39,7 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
   }
 
   return (
-    <PageShell maxWidth="md">
+    <>
       <PageHeader
         eyebrow={letter.company ?? "Cover letter"}
         title={letter.jobTitle ?? "Untitled role"}
@@ -79,6 +91,6 @@ export default async function CoverLetterDetailPage(props: PageProps): Promise<R
           Saved {formatAbsoluteTime(letter.createdAt)}
         </Typography>
       </SectionCard>
-    </PageShell>
+    </>
   );
 }

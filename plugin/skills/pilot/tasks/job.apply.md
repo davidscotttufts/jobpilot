@@ -1,0 +1,35 @@
+# `job.apply`
+
+Delegate one `job-applier` run with the payload's `campaignId`, `jobKey`, `url`, `board`, `brief`
+and `resumeId`, plus `runId:$RUN_ID`. Record its outcome:
+
+- `applied` / `failed` / `skipped` → `POST /api/campaigns/$CID/jobs/$KEY/result` in the shapes of
+  `../../_shared/campaign-flow.md` ("Terminal result writes"), passing the worker's
+  `resumeId`/`resumeVariantId`, `phases` and `submitted` (as `answers`) through.
+- `needs_user` with `category:"payment"` → `failed`, `failReason:"Payment required"`.
+- Any other `needs_user` → ask, then park the job. Copy the worker's `kind`, `question`, `options`
+  and `answerKey` verbatim (`options` defaults to `[]`; omit a null `answerKey`) into
+  `$JOBPILOT_TEMP/question.json`:
+
+```json
+{
+  "kind": "<worker kind>",
+  "subjectType": "job",
+  "subjectId": "<campaignId>:<jobKey>",
+  "prompt": "<worker question>",
+  "options": ["<worker options>"],
+  "answerKey": "<worker answerKey>",
+  "deepLink": "<JOBPILOT_WEB>/campaigns/<campaignId>"
+}
+```
+
+```bash
+jobpilot-api POST /api/pilot/questions --data @"$JOBPILOT_TEMP/question.json"
+jobpilot-api PATCH /api/campaigns/$CID/jobs/$KEY --data '{"status":"needs_user"}'
+```
+
+A `two_factor` question expires after about 5 minutes and the server skips the parked job; do
+nothing more.
+
+Summary: "Applied to <title> at <company> - score 87." / "Parked <company> application - needs your
+salary answer."

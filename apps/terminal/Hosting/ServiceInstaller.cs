@@ -104,7 +104,7 @@ public static class ServiceInstaller
     {
         // A build output must not become the machine's permanent :4102 owner: it never self-updates
         // and resolves its plugin tree from the repo, so it would quietly displace `bun run dev`.
-        // ProtocolRegistrar refuses the URL scheme for the same reason.
+        // UrlScheme refuses to register for the same reason.
         if (!HostInstall.IsPublishedHost)
         {
             output.WriteLine(
