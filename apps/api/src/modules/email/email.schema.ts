@@ -71,10 +71,10 @@ const matchedAppSchema = z
   })
   .nullable();
 
-/** An inbox message row. */
 /** The `links` JSON column: each job-alert link with the text a reader sees for it. */
 export const emailLinksSchema = z.array(z.object({ url: z.string(), text: z.string() }));
 
+/** An inbox message row. */
 export const emailMessageSchema = z.object({
   id: z.uuid(),
   accountId: z.uuid(),
