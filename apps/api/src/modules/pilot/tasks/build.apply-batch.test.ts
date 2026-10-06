@@ -9,7 +9,11 @@ const applyTasks = (tasks: PilotTask[]) =>
 const batchKeys = (task: PilotTask | undefined) =>
   task?.taskType === "job.applyBatch" ? task.payload.jobs.map((entry) => entry.jobKey) : [];
 
-const threeJobs = [job("j1", 90), job("j2", 80), job("j3", 70)];
+const threeJobs = [
+  job("j1", 90, { campaignId: "c1" }),
+  job("j2", 80, { campaignId: "c2" }),
+  job("j3", 70, { campaignId: "c3" }),
+];
 
 describe("buildTaskList apply batches", () => {
   it("keeps one task per job at the default of one concurrent apply", () => {
@@ -45,6 +49,26 @@ describe("buildTaskList apply batches", () => {
       "job.apply",
       "job.apply",
     ]);
+  });
+
+  it("takes only each campaign's best job, so no two browsers share a campaign", () => {
+    const config = cfg({ maxConcurrentApplies: 3 });
+    const approvedJobs = [
+      job("a1", 95, { campaignId: "a" }),
+      job("a2", 90, { campaignId: "a" }),
+      job("b1", 85, { campaignId: "b" }),
+      job("a3", 80, { campaignId: "a" }),
+      job("c1", 70, { campaignId: "c" }),
+    ];
+    const { tasks } = buildTaskList(base({ config, approvedJobs }));
+    expect(batchKeys(applyTasks(tasks)[0])).toEqual(["a1", "b1", "c1"]);
+  });
+
+  it("applies one at a time when every approved job is in the same campaign", () => {
+    const config = cfg({ maxConcurrentApplies: 3 });
+    const approvedJobs = [job("a1", 90, { campaignId: "a" }), job("a2", 80, { campaignId: "a" })];
+    const { tasks } = buildTaskList(base({ config, approvedJobs }));
+    expect(applyTasks(tasks).map((task) => task.taskType)).toEqual(["job.apply", "job.apply"]);
   });
 
   it("does not batch a single approved job", () => {

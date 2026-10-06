@@ -1,6 +1,7 @@
 # `job.applyBatch`
 
-`payload.jobs` holds 1-3 jobs, all already `applying`. Apply to them side by side, one browser each.
+`payload.jobs` holds 1-3 jobs, each from a different campaign and all already `applying`. Apply to
+them side by side, one browser each.
 
 1. Give entry _i_ (0-based) the browser server `playwright`, `playwright-2`, `playwright-3` in that
    order. Never two appliers on one server: a profile opens in exactly one browser.
