@@ -30,6 +30,7 @@ function makeService(over: Row = {}, jobStatus = "needs_user") {
     options: [],
     deepLink: null,
     answer: null,
+    writeForMe: false,
     answerKey: null,
     answeredAt: null,
     expiresAt: null,
@@ -112,7 +113,7 @@ describe("PilotQuestionService.createQuestion", () => {
 describe("PilotQuestionService.answerQuestion", () => {
   it("records the answer on an open question", async () => {
     const { svc } = makeService();
-    const question = await svc.answerQuestion("p1", "e1", { answer: "2 weeks" });
+    const question = await svc.answerQuestion("p1", "e1", { answer: "2 weeks", writeForMe: false });
     expect(question).toMatchObject({
       status: "answered",
       answer: "2 weeks",
@@ -122,7 +123,7 @@ describe("PilotQuestionService.answerQuestion", () => {
 
   it("saves the answer to a keyed question for reuse", async () => {
     const { svc, rec } = makeService({ answerKey: "relocation" });
-    await svc.answerQuestion("p1", "e1", { answer: "Yes, anywhere in the US" });
+    await svc.answerQuestion("p1", "e1", { answer: "Yes, anywhere in the US", writeForMe: false });
     expect(rec.savedAnswers).toEqual([
       expect.objectContaining({
         where: { userId_key: { userId: "p1", key: "relocation" } },
@@ -131,15 +132,27 @@ describe("PilotQuestionService.answerQuestion", () => {
     ]);
   });
 
+  it("records instructions for the pilot to write from, and never saves them as a fact", async () => {
+    const { svc, rec } = makeService({ answerKey: "relocation" });
+    const question = await svc.answerQuestion("p1", "e1", {
+      answer: "Say I'd relocate to Austin but prefer remote",
+      writeForMe: true,
+    });
+    expect(question).toMatchObject({ status: "answered", writeForMe: true });
+    expect(rec.savedAnswers).toHaveLength(0);
+  });
+
   it("never saves a 2FA code, even when keyed", async () => {
     const { svc, rec } = makeService({ kind: "two_factor", answerKey: "otp" });
-    await svc.answerQuestion("p1", "e1", { answer: "123456" });
+    await svc.answerQuestion("p1", "e1", { answer: "123456", writeForMe: false });
     expect(rec.savedAnswers).toHaveLength(0);
   });
 
   it("refuses a question that expired, leaving it as it was", async () => {
     const { svc, question } = makeService({ status: "expired" });
-    await expect(svc.answerQuestion("p1", "e1", { answer: "too late" })).rejects.toMatchObject({
+    await expect(
+      svc.answerQuestion("p1", "e1", { answer: "too late", writeForMe: false }),
+    ).rejects.toMatchObject({
       status: 409,
     });
     expect(question).toMatchObject({ status: "expired", answer: null });
