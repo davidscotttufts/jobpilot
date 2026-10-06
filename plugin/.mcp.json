@@ -13,6 +13,32 @@
         ".playwright-mcp/sessions"
       ]
     },
+    "playwright-2": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--snapshot-mode",
+        "none",
+        "--user-data-dir",
+        ".playwright-mcp-2",
+        "--save-session",
+        "--output-dir",
+        ".playwright-mcp-2/sessions"
+      ]
+    },
+    "playwright-3": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp@latest",
+        "--snapshot-mode",
+        "none",
+        "--user-data-dir",
+        ".playwright-mcp-3",
+        "--save-session",
+        "--output-dir",
+        ".playwright-mcp-3/sessions"
+      ]
+    },
     "upwork": {
       "type": "http",
       "url": "https://mcp.upwork.com/mcp"

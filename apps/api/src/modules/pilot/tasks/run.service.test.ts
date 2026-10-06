@@ -49,6 +49,8 @@ const snapshot: TaskList = {
     dailyApplyCap: 10,
     appliedToday: 0,
     capReached: false,
+    maxConcurrentApplies: 1,
+    applyingNow: 0,
     dailyNetworkingCap: 5,
     networkingSentToday: 0,
     resetsAt: now,
@@ -240,7 +242,13 @@ describe("RunService.cancel", () => {
     expect(jobReverts).toEqual([
       expect.objectContaining({
         where: {
-          AND: [expect.objectContaining({ status: "applying", key: "j1" }), expect.anything()],
+          AND: [
+            expect.objectContaining({
+              status: "applying",
+              OR: [{ campaignId: expect.any(String), key: "j1" }],
+            }),
+            expect.anything(),
+          ],
         },
         data: expect.objectContaining({ status: "needs_user" }),
       }),

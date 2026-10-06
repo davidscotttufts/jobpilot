@@ -11,6 +11,7 @@ import type { TaskJob } from "./gather-jobs";
 import type { Followup } from "./gather-outreach";
 import type { DueSearch } from "./gather-searches";
 import {
+  applyBatchTask,
   applyTask,
   boardDiagnoseTask,
   discoverTask,
@@ -64,6 +65,8 @@ export interface TaskListInput {
   openQuestions: number;
   activeRuns: number;
   appliedToday: number;
+  // Jobs already `applying`; they hold apply budget until their results land.
+  applyingNow: number;
   networkingSentToday: number;
   // No searches yet, or no goals to derive them from.
   awaitingSetup: boolean;
@@ -126,7 +129,7 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     ...input.approvedPromotions.map(promotionPostTask),
     ...input.duePlatforms.slice(0, PER_TASK_LIST.promotionDraft).map(promotionDraftTask),
   ];
-  if (!capReached) tasks.push(...input.approvedJobs.map(applyTask));
+  if (!capReached) tasks.push(...applyTasks(input));
   if (input.inbox.count > 0) tasks.push(inboxTask(input.inbox));
   // Ungated by the apply cap: harvesting only queues rows, and tomorrow's budget can spend them.
   if (input.jobAlerts) tasks.push(jobAlertsTask({ ...input.jobAlerts, minScore: config.minScore }));
@@ -214,6 +217,8 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
       dailyApplyCap: config.dailyApplyCap,
       appliedToday: input.appliedToday,
       capReached,
+      maxConcurrentApplies: config.maxConcurrentApplies,
+      applyingNow: input.applyingNow,
       dailyNetworkingCap: config.networking.dailyCap,
       networkingSentToday: input.networkingSentToday,
       resetsAt: nextDayReset(now),
@@ -222,6 +227,22 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     sleepSeconds,
     nextWakeAt: new Date(now.getTime() + sleepSeconds * 1000),
   };
+}
+
+/**
+ * One batch of the best approved jobs when more than one apply may run at once and the budget has
+ * room for two; otherwise upstream's one task per job. The run start rechecks the same budget.
+ */
+function applyTasks(input: TaskListInput): PilotTask[] {
+  const { config, approvedJobs, applyingNow } = input;
+  const room = Math.min(
+    config.maxConcurrentApplies - applyingNow,
+    config.dailyApplyCap - input.appliedToday - applyingNow,
+  );
+  if (room >= 2 && approvedJobs.length >= 2) {
+    return [applyBatchTask(approvedJobs.slice(0, room))];
+  }
+  return approvedJobs.map(applyTask);
 }
 
 /** Named so clients needn't re-derive the gating rules. */

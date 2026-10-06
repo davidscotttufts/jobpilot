@@ -6,7 +6,7 @@ import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import type { PilotJournalService } from "../journal.service";
 import { SERVER_SKIP_REASONS } from "../skip-reasons";
-import { GATHER_CAP, parseJobRef, parseJobSubject } from "./run-history";
+import { APPLY_TASK_TYPES, applyJobRefs, GATHER_CAP, parseJobSubject } from "./run-history";
 
 /** An `applying` job with no open run and no update for this long lost its driver. */
 const STALE_APPLYING_MS = 30 * 60 * 1000;
@@ -44,9 +44,7 @@ export async function runExpiry(
         where: { id: { in: expiredRuns.map((run) => run.id) }, finishedAt: null },
         data: { finishedAt: now, outcome: "expired" },
       });
-      const jobs = expiredRuns
-        .filter((run) => run.taskType === "job.apply")
-        .map((run) => parseJobRef(run.payload));
+      const jobs = expiredRuns.flatMap(applyJobRefs);
       if (jobs.length > 0) {
         const recovered = await recoverApplyingJobs(tx, userId, {
           status: "applying",
@@ -59,15 +57,20 @@ export async function runExpiry(
 
     // A crashed terminal apply takes no run, so its job would stay `applying` and block finalize.
     const openApplyRuns = await tx.pilotRun.findMany({
-      where: { userId, taskType: "job.apply", finishedAt: null, expiresAt: { gte: now } },
+      where: {
+        userId,
+        taskType: { in: APPLY_TASK_TYPES },
+        finishedAt: null,
+        expiresAt: { gte: now },
+      },
       take: MAX_OPEN_APPLY_RUNS,
-      select: { payload: true },
+      select: { taskType: true, payload: true },
     });
     const stale = await recoverApplyingJobs(tx, userId, {
       status: "applying",
       campaign: { userId },
       updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
-      NOT: openApplyRuns.map((run) => parseJobRef(run.payload)),
+      NOT: openApplyRuns.flatMap(applyJobRefs),
     });
     recoveryQuestions.push(...stale.questions);
 

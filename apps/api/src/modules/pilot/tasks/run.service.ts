@@ -11,19 +11,26 @@ import { conflict, findOwned, notFound } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
+  type Job,
   type PilotQuestion,
   type PilotRun as PilotRunModel,
   type PilotRunOutcome,
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
+import {
+  type AlreadyAppliedError,
+  guardApply,
+  skipAppliedDuplicate,
+  startApplying,
+} from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
 import { recoverApplyingJobs } from "@/modules/campaign/jobs/recover-applying";
 import { PilotJournalService } from "../journal.service";
 import { PilotQuestionService } from "../question.service";
+import { startApplyBatch } from "./apply-batch";
 import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
-import { parseJobRef } from "./run-history";
+import { applyJobRefs } from "./run-history";
 import { parseTaskListSnapshot } from "./snapshot";
 
 const RUN_TTL_MS = 15 * 60 * 1000;
@@ -88,12 +95,14 @@ export class RunService {
   ) {}
 
   async start(userId: string, taskListVersion: string, taskId: string) {
-    const { run, startedJob } = await guardApply(this.prisma, userId, () =>
+    const { run, started, duplicates } = await guardApply(this.prisma, userId, () =>
       this.prisma.$transaction((tx) =>
         this.startInTransaction(tx, userId, taskListVersion, taskId),
       ),
     );
-    if (startedJob) publishJob(userId, startedJob, "updated");
+    for (const job of started) publishJob(userId, job, "updated");
+    // After the commit, as guardApply does for a single apply: the batch's own writes rolled nothing back.
+    for (const duplicate of duplicates) await skipAppliedDuplicate(this.prisma, userId, duplicate);
     publish(
       pilotChannel,
       { userId },
@@ -142,10 +151,17 @@ export class RunService {
     if (open) throw conflict("This task is already started.");
 
     await assertStillStartable(tx, userId, task);
-    const startedJob =
-      task.taskType === "job.apply"
-        ? await startApplying(tx, userId, task.payload.campaignId, task.payload.jobKey)
-        : null;
+    let payload: unknown = task.payload;
+    let started: Job[] = [];
+    let duplicates: AlreadyAppliedError[] = [];
+    if (task.taskType === "job.apply") {
+      started = [await startApplying(tx, userId, task.payload.campaignId, task.payload.jobKey)];
+    } else if (task.taskType === "job.applyBatch") {
+      const batch = await startApplyBatch(tx, userId, task.payload.jobs, now);
+      // The run holds only what started, so recovery and the worker never see a dropped entry.
+      payload = { jobs: batch.jobs };
+      ({ started, duplicates } = batch);
+    }
 
     const run = await tx.pilotRun.create({
       data: {
@@ -153,11 +169,11 @@ export class RunService {
         taskType: task.taskType,
         subjectType: task.subjectType,
         subjectId: task.subjectId,
-        payload: toInputJson(task.payload),
+        payload: toInputJson(payload),
         expiresAt: new Date(now.getTime() + RUN_TTL_MS),
       },
     });
-    return { run, startedJob };
+    return { run, started, duplicates };
   }
 
   async get(userId: string, id: string) {
@@ -212,11 +228,12 @@ export class RunService {
     const parked: PilotQuestion[] = [];
     const finished = await this.prisma.$transaction(async (tx) => {
       // Parked for the user, not re-approved: the agent may have submitted before it was cut off.
-      if (outcome === "cancelled" && existing.taskType === "job.apply") {
+      const held = outcome === "cancelled" ? applyJobRefs(existing) : [];
+      if (held.length > 0) {
         const recovered = await recoverApplyingJobs(tx, userId, {
-          ...parseJobRef(existing.payload),
           status: "applying",
           campaign: { userId },
+          OR: held,
         });
         parked.push(...recovered.questions);
       }

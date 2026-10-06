@@ -112,9 +112,11 @@ describe("runExpiry", () => {
   });
 
   it("parks stranded applies, sparing ones an open run still covers", async () => {
-    const db = expiryDb({ openApplyRuns: [{ payload: { campaignId: "c1", jobKey: "held" } }] });
+    const db = expiryDb({
+      openApplyRuns: [{ taskType: "job.apply", payload: { campaignId: "c1", jobKey: "held" } }],
+    });
     await db.run();
-    const sweep = db.writes.jobs.find((w) => JSON.stringify(w.where.AND).includes("held"));
+    const sweep = db.writes.jobs.find((w) => JSON.stringify(w.where.AND ?? null).includes("held"));
     expect(sweep).toMatchObject({
       where: {
         AND: [

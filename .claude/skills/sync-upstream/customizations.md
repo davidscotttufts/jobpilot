@@ -14,6 +14,14 @@ Last reviewed: 2026-10-05 (pilot v2 sync: 138 upstream commits in, 68 fork commi
 
 ## Pilot and apply loop
 
+- **Parallel applies, one browser each** - rebuilt on pilot v2 as a `job.applyBatch` task: one run
+  holding up to `maxConcurrentApplies` (1-3, default 1) approved jobs, so the host's one-run loop is
+  untouched. The task list emits it only when the budget has room for two
+  (`pilot/tasks/build.ts` `applyTasks`); `startApplyBatch` (`pilot/tasks/apply-batch.ts`) rechecks
+  the daily cap counting in-flight applies and drops entries the apply guards refuse;
+  `applyJobRefs` makes expiry, cancel and the stale sweep treat every batch job like a `job.apply`.
+  The session gives each `job-applier` its own `browserServer` (`playwright`, `playwright-2`,
+  `playwright-3` in `plugin/.mcp.json`, separate profiles); `ScratchCleaner` sweeps all three.
 - **Job alert email harvest** - `inbox.jobAlerts` task type (`pilot/tasks/gather-inbox.ts`,
   priority 505, not held by the apply cap), `EmailMessage.links`/`harvestedAt`,
   `PilotState.jobAlertsRequestedAt` ("run now", lapses after an hour or once a run starts after
@@ -82,10 +90,9 @@ Last reviewed: 2026-10-05 (pilot v2 sync: 138 upstream commits in, 68 fork commi
 
 ## Retired (kept for history - no longer protected)
 
-- 2026-10 sync (pilot v2, one run at a time - user decision): `maxConcurrentApplies`, browser
-  leasing, the `playwright-2` MCP server, parallel job-workers, `reviewFirstApplies` (never wired),
-  and the `MAX_OPEN_APPLY_CLAIMS = 100` override. Migration
-  `20261005120000_drop_apply_concurrency_config` strips the two config keys.
+- 2026-10 sync: the claim-era browser lease API and parallel job-workers (parallel applies came
+  back as `job.applyBatch`, above), `reviewFirstApplies` (never wired; user declined to rebuild it),
+  and the `MAX_OPEN_APPLY_CLAIMS = 100` override.
 - Taken as upstream's in the 2026-10 sync: PR #29 claim lifetime cap (`MAX_RUN_LIFETIME_MS`), PR
   #30 in-flight reservation (`findApplyingSibling`), PR #31 data-table load errors, PR #32
   serialized terminal starts, PR #34 exact-url dedupe without a window, the hard-blocked board
