@@ -22,8 +22,11 @@ earlier syncs; rebasing would rewrite it. Never force-push.
    Otherwise stop and report - uncommitted or unpushed work is the user's to decide on.
 2. Nothing to do when `git rev-list --count main..origin/main` is 0: say so and stop.
 3. Stop the dev stack, so the pilot stops writing and watchers don't restart half-merged code:
-   `pkill -f "concurrently --restart-tries"`, then confirm ports 4100-4102 are free
-   (`lsof -iTCP:4100-4102 -sTCP:LISTEN`).
+   `pkill -9 -f "concurrently --restart-tries"` first - it ignores SIGTERM and respawns a killed
+   child within 2s - then `pkill -f "bun run --watch src/app.ts"` and the web and host children.
+   Wait 5s, then confirm ports 4100-4102 are free (`lsof -iTCP:4100-4102 -sTCP:LISTEN`). Bun
+   listens with SO_REUSEPORT, so a survivor and the new stack can both bind :4101 and split
+   requests - in-memory SSE events then reach only half the clients.
 4. `bun run db:backup` - the database holds the only copy of applications and pilot history.
    Note the dump path, and record row counts now, while nothing is writing:
 
@@ -129,7 +132,8 @@ in step 6.5, so the pilot keeps running on the code it had.
    ```
 
    Poll `localhost:4101/api/health` and `localhost:4102/healthz` until both answer, then check
-   `/healthz` shows the pilot `conducting` once the API is up.
+   `/healthz` shows the pilot `conducting` once the API is up. Confirm exactly one PID listens on
+   each port (`lsof -nP -iTCP:4100-4102 -sTCP:LISTEN`) and one `concurrently` is running.
 6. For each open fork PR upstream, check whether it still applies to `origin/main`; a PR that now
    conflicts needs a port (see memory `upstream-prs-need-a-port-from-origin-main`) - list them,
    don't port unasked.
