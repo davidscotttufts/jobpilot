@@ -32,18 +32,26 @@ export const timeZoneSchema = z
   .min(1)
   .refine(isTimeZone, { message: "Unknown IANA time zone." });
 
-/** The schedule fields a search carries, shared by its create, update, and response schemas. */
+const cadenceDaysSchema = z.array(weekdaySchema).max(7);
+/** Deduped and sorted: two Mondays are one Monday, and every reader renders them in week order. */
+const sortDays = (days: number[]) => [...new Set(days)].sort((a, b) => a - b);
+/** Hour of the day, in `cadenceTimeZone`. Minute granularity buys nothing at this cadence. */
+const cadenceHourSchema = z.number().int().min(0).max(23);
+
+/** The schedule fields a new search carries, defaulted. */
 export const pilotSearchScheduleFields = {
   cadence: pilotSearchCadenceSchema.default("adaptive"),
-  /** Deduped and sorted: two Mondays are one Monday, and every reader renders them in week order. */
-  cadenceDays: z
-    .array(weekdaySchema)
-    .max(7)
-    .default([])
-    .transform((days) => [...new Set(days)].sort((a, b) => a - b)),
-  /** Hour of the day, in `cadenceTimeZone`. Minute granularity buys nothing at this cadence. */
-  cadenceHour: z.number().int().min(0).max(23).default(8),
+  cadenceDays: cadenceDaysSchema.default([]).transform(sortDays),
+  cadenceHour: cadenceHourSchema.default(8),
   cadenceTimeZone: timeZoneSchema.default("UTC"),
+};
+
+/** The same fields for a patch: no defaults, or omitting one would reset the saved schedule. */
+export const pilotSearchSchedulePatchFields = {
+  cadence: pilotSearchCadenceSchema.optional(),
+  cadenceDays: cadenceDaysSchema.transform(sortDays).optional(),
+  cadenceHour: cadenceHourSchema.optional(),
+  cadenceTimeZone: timeZoneSchema.optional(),
 };
 
 /** Whether a schedule is actually pinned - a weekly cadence with no days left is not. */

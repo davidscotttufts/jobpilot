@@ -1,8 +1,13 @@
 import { z } from "zod/v4";
-import { pilotSearchCadenceSchema, pilotSearchScheduleFields } from "./schedule";
+import {
+  pilotSearchCadenceSchema,
+  pilotSearchScheduleFields,
+  pilotSearchSchedulePatchFields,
+} from "./schedule";
 
 // Shown to the user as plain text.
-const reasonSchema = z.string().max(500).default("");
+const reasonText = z.string().max(500);
+const reasonSchema = reasonText.default("");
 
 const pilotSearchFields = z.object({
   query: z.string().min(1),
@@ -35,6 +40,7 @@ export const createPilotSearchSchema = pilotSearchFields
 
 /** Partial patch: an omitted field is left unchanged (the pilot is the single writer). */
 export const updatePilotSearchSchema = pilotSearchFields
+  .extend({ reason: reasonText, ...pilotSearchSchedulePatchFields })
   .partial()
   .refine(weeklyNeedsDays, WEEKLY_DAYS_REQUIRED);
 
