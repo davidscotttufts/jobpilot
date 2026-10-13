@@ -1,7 +1,8 @@
 import { z } from "zod/v4";
 
 // Shown to the user as plain text.
-const reasonSchema = z.string().max(500).default("");
+const reasonText = z.string().max(500);
+const reasonSchema = reasonText.default("");
 
 export const createPilotSearchSchema = z.object({
   query: z.string().min(1),
@@ -10,7 +11,10 @@ export const createPilotSearchSchema = z.object({
   reason: reasonSchema,
 });
 
-export const updatePilotSearchSchema = createPilotSearchSchema.partial();
+/** A patch leaves an omitted field unchanged, so `reason` drops the create default here. */
+export const updatePilotSearchSchema = createPilotSearchSchema
+  .extend({ reason: reasonText })
+  .partial();
 
 export const reportPilotSearchRunSchema = z.object({
   jobsSeen: z.number().int().min(0),
