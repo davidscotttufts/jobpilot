@@ -1,5 +1,5 @@
 import { isPinnedWeekly, type TaskPayload } from "@jobpilot/contracts/pilot";
-import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
+import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import {
   cooldownEndsAt,
@@ -10,16 +10,20 @@ import {
   ranRecently,
 } from "./run-history";
 
-/** With room left under the apply cap, a search idle this long re-runs before it is due. */
+/** With apply room left, an idle search reruns early, and setup refills, at most this often. */
 const HUNGRY_RERUN_MS = 6 * HOUR_MS;
-/** Guards an in-flight or crashed run only; the cadence itself lives in `nextRunAt`. */
+/** Holds back a search whose last run is open, crashed, or unreported. */
 const SEARCH_RUN_COOLDOWN_MS = 2 * HOUR_MS;
-const SETUP_RETRY_MS = DAY_MS;
 
 export type DueSearch = Pick<
   TaskPayload<"search.discover">,
   "searchId" | "query" | "board" | "resumeId" | "campaignId" | "maxApplications"
 > & { minScore?: number };
+
+/** A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over. */
+function wasRescheduled(search: { nextRunAt: Date }, last: RunHistory | undefined): boolean {
+  return last?.finishedAt != null && search.nextRunAt > last.startedAt;
+}
 
 /**
  * When the earliest search can actually run. A damped search reports when its cooldown lifts, not
@@ -34,9 +38,10 @@ export function earliestSearchWake(
   for (const search of searches) {
     const last = latest.get(search.id);
     if (last && !last.finishedAt) continue;
-    const liftsAt = last?.finishedAt
-      ? cooldownEndsAt({ ...last, finishedAt: last.finishedAt }, SEARCH_RUN_COOLDOWN_MS)
-      : null;
+    const liftsAt =
+      last?.finishedAt && !wasRescheduled(search, last)
+        ? cooldownEndsAt({ ...last, finishedAt: last.finishedAt }, SEARCH_RUN_COOLDOWN_MS)
+        : null;
     const wake = liftsAt && liftsAt > search.nextRunAt ? liftsAt : search.nextRunAt;
     if (!earliest || wake < earliest) earliest = wake;
   }
@@ -82,11 +87,13 @@ export async function gatherDueSearches(
       select: { campaignId: true, pilotSearchId: true },
     }),
   ]);
+
   // Oldest first, so the newest campaign of a search wins the map entry.
   const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c.campaignId]));
-  const startable = searches.filter(
-    (search) => !ranRecently(latest.get(search.id), now, SEARCH_RUN_COOLDOWN_MS),
-  );
+  const startable = searches.filter((search) => {
+    const last = latest.get(search.id);
+    return wasRescheduled(search, last) || !ranRecently(last, now, SEARCH_RUN_COOLDOWN_MS);
+  });
 
   let due = startable.filter((search) => search.nextRunAt <= now);
   if (due.length === 0 && hungry) {
@@ -118,5 +125,5 @@ export async function gatherSetup(
   now: Date,
 ): Promise<TaskPayload<"search.setup"> | null> {
   const last = await latestRun(prisma, userId, "search.setup");
-  return ranRecently(last, now, SETUP_RETRY_MS) ? null : payload;
+  return ranRecently(last, now, HUNGRY_RERUN_MS) ? null : payload;
 }

@@ -44,6 +44,10 @@ describe("earliestSearchWake", () => {
     expect(wake([{ id: "a", nextRunAt: at(8) }], { a: finished(0.5, "done") })).toEqual(at(8));
   });
 
+  it("ignores the cooldown once a finished run rescheduled the search", () => {
+    expect(wake([{ id: "a", nextRunAt: at(0.5) }], { a: finished(0.25, "done") })).toEqual(at(0.5));
+  });
+
   it("skips a search whose run is still in flight", () => {
     const searches = [
       { id: "running", nextRunAt: at(-1) },

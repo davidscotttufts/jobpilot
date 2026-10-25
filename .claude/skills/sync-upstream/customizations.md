@@ -4,7 +4,7 @@ What this fork deliberately does differently from upstream (suxrobGM/jobpilot), 
 sync keeps it. One entry per behaviour, not per commit. Rule 1 of `SKILL.md` protects every entry;
 drop an entry once upstream covers it, and note the PR.
 
-Last reviewed: 2026-10-05 (pilot v2 sync: 138 upstream commits in, 68 fork commits carried).
+Last reviewed: 2026-10-25 (v2.2.1 sync: 3 upstream commits in, 76 fork commits carried).
 
 ## Deliberate overrides of upstream values
 
@@ -35,7 +35,9 @@ Last reviewed: 2026-10-05 (pilot v2 sync: 138 upstream commits in, 68 fork commi
   create-with-`campaignId` to repeat an existing campaign, the repeat controls on campaign rows.
 - **Idle wake honours search cooldown** - `earliestSearchWake` / `cooldownEndsAt` in
   `pilot/tasks/run-history.ts`. Upstream's wake uses the earliest `nextRunAt`, so an overdue but
-  damped search kept the pilot cycling every 30s.
+  damped search kept the pilot cycling every 30s. Since v2.2.1 a search rescheduled by its finished
+  run skips the cooldown; `wasRescheduled` in `gather-searches.ts` keeps the wake consistent with
+  that. PR #44, open.
 - **Never auto-retry an application that may already be submitted** - the submit-attempt stamp
   (`POST /campaigns/:id/jobs/:key/submit-attempt`, called by `job-applier` before submit), the
   recovery hold in `patchJob` on every route back into an apply, `confirmNotSubmitted` as its only
