@@ -20,6 +20,11 @@ export type DueSearch = Pick<
   "searchId" | "query" | "board" | "resumeId" | "campaignId"
 >;
 
+/** A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over. */
+function wasRescheduled(search: { nextRunAt: Date }, last: RunHistory | undefined): boolean {
+  return last?.finishedAt != null && search.nextRunAt > last.startedAt;
+}
+
 /**
  * When the earliest search can actually run. A damped search reports when its cooldown lifts, not
  * its overdue `nextRunAt`, which reads as "due now" and pins the idle sleep at its 30s floor. An
@@ -33,9 +38,10 @@ export function earliestSearchWake(
   for (const search of searches) {
     const last = latest.get(search.id);
     if (last && !last.finishedAt) continue;
-    const liftsAt = last?.finishedAt
-      ? cooldownEndsAt({ ...last, finishedAt: last.finishedAt }, SEARCH_RUN_COOLDOWN_MS)
-      : null;
+    const liftsAt =
+      last?.finishedAt && !wasRescheduled(search, last)
+        ? cooldownEndsAt({ ...last, finishedAt: last.finishedAt }, SEARCH_RUN_COOLDOWN_MS)
+        : null;
     const wake = liftsAt && liftsAt > search.nextRunAt ? liftsAt : search.nextRunAt;
     if (!earliest || wake < earliest) earliest = wake;
   }
@@ -82,9 +88,7 @@ export async function gatherDueSearches(
   const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c.campaignId]));
   const startable = searches.filter((search) => {
     const last = latest.get(search.id);
-    // A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over.
-    const rescheduled = last?.finishedAt != null && search.nextRunAt > last.startedAt;
-    return rescheduled || !ranRecently(last, now, SEARCH_RUN_COOLDOWN_MS);
+    return wasRescheduled(search, last) || !ranRecently(last, now, SEARCH_RUN_COOLDOWN_MS);
   });
 
   let due = startable.filter((search) => search.nextRunAt <= now);
