@@ -5,10 +5,10 @@ import {
   applicationSourceSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
+import { campaignJobSchema } from "@jobpilot/contracts/campaign";
 import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
-import { campaignJobSchema } from "@/modules/campaign/jobs/job.schema";
 import { contactSchema } from "@/modules/contact/contact.schema";
 import { emailMessageSchema } from "@/modules/email/email.schema";
 import { resumeSummarySchema } from "@/modules/resume/resume.schema";

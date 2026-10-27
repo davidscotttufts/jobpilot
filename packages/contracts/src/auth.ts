@@ -40,8 +40,8 @@ export const ResetPasswordSchema = z.object({
 /** Every bearer credential kind: a web session (cookie) or the agent's terminal token. */
 export const AUTH_TOKEN_KINDS = ["session", "terminal"] as const;
 
-/** Wire values for sign-in providers (lowercase; the API maps to the Prisma enum). */
-export const OAuthProviderSchema = z.enum(["google", "github"]);
+export const OAUTH_PROVIDERS = ["google", "github"] as const;
+export const OAuthProviderSchema = z.enum(OAUTH_PROVIDERS);
 
 /** Every reason the sign-in OAuth callback redirects back with (`?oauth=error&reason=`). */
 const OAUTH_ERROR_REASONS = [

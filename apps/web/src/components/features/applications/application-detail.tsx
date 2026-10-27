@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { ApplicationStatus, StatusTransitionInput } from "@jobpilot/contracts/application";
+import type { StatusTransitionInput } from "@jobpilot/contracts/application";
 import { Delete, Launch } from "@mui/icons-material";
 import { Button, IconButton, LinearProgress, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
@@ -31,16 +31,16 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
 
   const detail = useApiQuery(applicationQueries.detail(id));
 
-  const updateStatus = useApiMutation<
-    { id: string; status: ApplicationStatus },
-    StatusTransitionInput
-  >((vars) => api.applied({ id }).status.post(vars), {
-    successMessage: "Status updated",
-    invalidate: invalidations.application,
-    onSuccess: () => setStatusDialogOpen(false),
-  });
+  const updateStatus = useApiMutation(
+    (vars: StatusTransitionInput) => api.applied({ id }).status.post(vars),
+    {
+      successMessage: "Status updated",
+      invalidate: invalidations.application,
+      onSuccess: () => setStatusDialogOpen(false),
+    },
+  );
 
-  const remove = useApiMutation<{ deleted: string }, void>(() => api.applied({ id }).delete(), {
+  const remove = useApiMutation(() => api.applied({ id }).delete(), {
     successMessage: "Application deleted",
     invalidate: invalidations.application,
     onSuccess: () => router.replace("/"),

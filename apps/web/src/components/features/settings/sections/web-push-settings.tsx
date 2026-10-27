@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import type { PushSubscriptionDto, PushSubscriptionInput } from "@jobpilot/contracts/web-push";
+import type { PushSubscriptionInput } from "@jobpilot/contracts/web-push";
 import { Delete } from "@mui/icons-material";
 import {
   Box,
@@ -39,12 +39,12 @@ export function WebPushSettings(): ReactNode {
     enabled: supported === true && Boolean(publicKey),
   });
 
-  const subscribe = useApiMutation<PushSubscriptionDto, PushSubscriptionInput>(
-    (input) => api["web-push"].subscriptions.post(input),
+  const subscribe = useApiMutation(
+    (input: PushSubscriptionInput) => api["web-push"].subscriptions.post(input),
     { invalidate: [queryKeys.pilot.push()] },
   );
-  const remove = useApiMutation<{ deleted: string }, string>(
-    (endpoint) => api["web-push"].subscriptions.delete({ endpoint }),
+  const remove = useApiMutation(
+    (endpoint: string) => api["web-push"].subscriptions.delete({ endpoint }),
     { invalidate: [queryKeys.pilot.push()] },
   );
 

@@ -1,5 +1,5 @@
 import { canUnlink, resolveOAuthLogin } from "./oauth-login";
-import type { OAuthProfile } from "./oauth-providers";
+import type { OAuthProfile } from "./oauth-providers/sign-in-provider";
 import { describe, expect, it } from "bun:test";
 
 function profile(overrides: Partial<OAuthProfile> = {}): OAuthProfile {

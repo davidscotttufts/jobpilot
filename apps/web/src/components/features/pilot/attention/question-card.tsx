@@ -16,8 +16,8 @@ export function QuestionCard(props: QuestionCardProps): ReactElement {
   const { question } = props;
   const [freeText, setFreeText] = useState("");
 
-  const answer = useApiMutation<unknown, string>(
-    (value) => api.pilot.questions({ id: question.id }).answer.post({ answer: value }),
+  const answer = useApiMutation(
+    (value: string) => api.pilot.questions({ id: question.id }).answer.post({ answer: value }),
     { invalidate: [queryKeys.pilot.questionsAll()], successMessage: "Answer sent." },
   );
 

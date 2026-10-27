@@ -1,4 +1,4 @@
-import type { ChangeEmailInput, ChangePasswordInput } from "@jobpilot/contracts";
+import type { ChangeEmailInput, ChangePasswordInput } from "@jobpilot/contracts/auth";
 import { inject, injectable } from "@needle-di/core";
 import { hashPassword, verifyPassword } from "@/common/auth";
 import { badRequest, conflict, notFound, unauthorized } from "@/common/errors";

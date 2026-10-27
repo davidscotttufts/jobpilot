@@ -9,16 +9,8 @@ export type { ApplicationDetailDto, ApplicationDto, ApplicationEventDto } from "
 export type {
   AuthSessionResponse,
   AuthUserDto,
-  ChangeEmailResponse,
-  ChangePasswordResponse,
-  ConfirmEmailChangeResponse,
-  ForgotPasswordResponse,
   LogoutResponse,
   MeResponse,
-  ResendVerificationResponse,
-  ResetPasswordResponse,
-  UnlinkOAuthResponse,
-  VerifyEmailResponse,
 } from "./auth";
 export {
   type CampaignDetailDto,
@@ -32,7 +24,7 @@ export {
 } from "./campaign";
 export type { CoverLetterListItem } from "./cover-letter";
 export type { CredentialDto } from "./credential";
-export type { EmailMessageDto, OAuthClientStatus, SyncResultDto } from "./email";
+export type { EmailMessageDto, OAuthClientStatus } from "./email";
 export type { JobBoardDto } from "./job-board";
 export type { AdminJobListingDto, JobListingDto, JobListingSummaryDto } from "./job-listing";
 export type { ContactDto, NetworkingConfigDto, NetworkingMessageDto } from "./networking";
@@ -50,7 +42,6 @@ export type { ResumeDto, ResumeVariantDto, ResumeVariantListItem } from "./resum
 export type {
   CreateUpworkProposalRequest,
   UpdateUpworkProposalRequest,
-  UpworkInboxItemDto,
   UpworkProfileDto,
   UpworkProposalDto,
 } from "./upwork";

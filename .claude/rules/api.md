@@ -28,7 +28,8 @@ Pagination schemas live in `@jobpilot/contracts/pagination`, shared with web and
 
 Add a route with the `add-api-route` skill. The rules:
 
-- Validate requests with Zod from `@jobpilot/contracts`. Use `idParam` for uuid path ids.
+- A schema lives in its module's `<name>.schema.ts` unless another package (web, plugin
+  helpers) imports it; then it goes in `@jobpilot/contracts`. Use `idParam` for uuid path ids.
 - Every JSON route declares a Zod `response` schema that matches the service return exactly.
   Elysia strips fields not in the schema, and Eden types the web from it. SSE, file, and
   redirect routes return a raw `Response` with no `response` schema.

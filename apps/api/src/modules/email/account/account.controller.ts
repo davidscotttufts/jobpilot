@@ -2,7 +2,8 @@ import { sendEmailSchema } from "@jobpilot/contracts/networking";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
-import { accountDisconnectedSchema, accountStatusSchema, sentMessageSchema } from "../email.schema";
+import { okResponseSchema } from "@/types/response";
+import { accountStatusSchema, sentMessageSchema } from "../email.schema";
 import { EmailAccountService } from "./account.service";
 
 const account = container.get(EmailAccountService);
@@ -22,7 +23,7 @@ export const emailAccountController = new Elysia({
     },
   })
   .delete("/account", ({ user }) => account.disconnectAccount(user.id), {
-    response: accountDisconnectedSchema,
+    response: okResponseSchema,
     detail: {
       summary: "Disconnect mailbox account",
       description:

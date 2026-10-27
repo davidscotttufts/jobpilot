@@ -70,8 +70,8 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const { state } = props;
   const toast = useToast();
 
-  const save = useApiMutation<unknown, UpdatePilotInstructionsInput>(
-    (body) => api.pilot.instructions.put(body),
+  const save = useApiMutation(
+    (body: UpdatePilotInstructionsInput) => api.pilot.instructions.put(body),
     {
       invalidate: [queryKeys.pilot.state(), queryKeys.pilot.searches()],
       successMessage: "Instructions saved.",

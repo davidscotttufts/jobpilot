@@ -1,6 +1,7 @@
 import {
   addCampaignJobSchema,
   campaignJobResultSchema,
+  campaignJobSchema,
   patchCampaignJobSchema,
   rescanCampaignJobSchema,
   retryCampaignJobSchema,
@@ -14,7 +15,6 @@ import {
   campaignJobParams,
   campaignJobReasonListSchema,
   campaignJobResultResponseSchema,
-  campaignJobSchema,
   campaignJobsQuery,
 } from "./job.schema";
 import { CampaignJobService } from "./job.service";

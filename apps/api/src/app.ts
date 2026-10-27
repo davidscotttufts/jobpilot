@@ -14,7 +14,7 @@ import { securityController } from "@/modules/auth/security.controller";
 import { campaignController } from "@/modules/campaign/campaign.controller";
 import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
 import { captchaController } from "@/modules/captcha/captcha.controller";
-import { contactController } from "@/modules/contact";
+import { contactController } from "@/modules/contact/contact.controller";
 import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
 import { credentialController } from "@/modules/credential/credential.controller";
 import { emailAccountController } from "@/modules/email/account/account.controller";

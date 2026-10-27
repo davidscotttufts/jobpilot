@@ -33,7 +33,7 @@ function useStatusMutation(
   status: CampaignStatus,
   successMessage: string,
 ): ReturnType<typeof useApiMutation<unknown, void>> {
-  return useApiMutation<unknown, void>(
+  return useApiMutation(
     () => api.campaigns({ id: campaignId }).status.post({ status, actor: "user" }),
     { successMessage, invalidate: invalidations.campaign },
   );
@@ -53,12 +53,12 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
 
   const [rescanOpen, setRescanOpen] = useState(false);
 
-  const rescan = useApiMutation<unknown, number>(
-    (minScore) => campaignResource.patch({ config: { ...campaign.config, minScore } }),
+  const rescan = useApiMutation(
+    (minScore: number) => campaignResource.patch({ config: { ...campaign.config, minScore } }),
     { invalidate: invalidations.campaign },
   );
 
-  const remove = useApiMutation<unknown, void>(() => campaignResource.delete(), {
+  const remove = useApiMutation(() => campaignResource.delete(), {
     successMessage: "Campaign deleted",
     invalidate: invalidations.campaign,
     onSuccess: () => router.replace("/" as Route),

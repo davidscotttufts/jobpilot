@@ -24,10 +24,10 @@ export function ConnectCard(): ReactElement {
   const statusQuery = useApiQuery(emailQueries.account());
   const configQuery = useApiQuery(emailQueries.oauthClient());
 
-  const disconnect = useApiMutation<{ disconnected: boolean }, void>(
-    () => api.email.account.delete(),
-    { successMessage: "Email disconnected", invalidate: [queryKeys.email.all] },
-  );
+  const disconnect = useApiMutation(() => api.email.account.delete(), {
+    successMessage: "Email disconnected",
+    invalidate: [queryKeys.email.all],
+  });
 
   const connect = (): void => {
     window.location.href = `${API_BASE_URL}/api/email/oauth/start`;

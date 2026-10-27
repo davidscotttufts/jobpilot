@@ -22,30 +22,24 @@ export function ResumeHeaderBar(props: ResumeHeaderBarProps): ReactElement {
   const confirm = useConfirm();
   const [editingLabel, setEditingLabel] = useState(resume.label);
 
-  const renameLabel = useApiMutation<{ id: string }, { label: string }>(
-    (vars) => api.resumes({ id: resume.id }).put(vars),
+  const renameLabel = useApiMutation(
+    (vars: { label: string }) => api.resumes({ id: resume.id }).put(vars),
     {
       successMessage: "Renamed",
       invalidate: invalidations.resume,
     },
   );
 
-  const setPrimary = useApiMutation<{ primaryResumeId: string | null }, void>(
-    () => api.user["primary-resume"].put({ resumeId: resume.id }),
-    {
-      successMessage: "Set as primary",
-      invalidate: invalidations.resume,
-    },
-  );
+  const setPrimary = useApiMutation(() => api.user["primary-resume"].put({ resumeId: resume.id }), {
+    successMessage: "Set as primary",
+    invalidate: invalidations.resume,
+  });
 
-  const remove = useApiMutation<{ deleted: string }, void>(
-    () => api.resumes({ id: resume.id }).delete(),
-    {
-      successMessage: "Resume deleted",
-      invalidate: invalidations.resume,
-      onSuccess: () => router.push("/documents/resumes"),
-    },
-  );
+  const remove = useApiMutation(() => api.resumes({ id: resume.id }).delete(), {
+    successMessage: "Resume deleted",
+    invalidate: invalidations.resume,
+    onSuccess: () => router.push("/documents/resumes"),
+  });
 
   const handleDelete = async () => {
     const confirmed = await confirm({

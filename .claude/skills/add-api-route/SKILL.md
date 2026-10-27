@@ -8,8 +8,8 @@ description: Add a new JobPilot API route or module the standard way - contracts
 Follow the conventions in `.claude/rules/api.md` (response schemas, `z.date()`, global error
 envelope). Steps:
 
-1. Request schema: reuse or add in `packages/contracts` (or the module's `<name>.schema.ts`).
-   Uuid path ids via `idParam`.
+1. Request schema: in the module's `<name>.schema.ts`, or in `packages/contracts` when another
+   package imports it (the rule in `api.md`). Uuid path ids via `idParam`.
 2. Response schema: model the service's return **exactly** in `<name>.schema.ts`, or use a
    shared envelope from `@/types/response`. Elysia strips fields not in the schema.
 3. Route: in `modules/<name>/<name>.controller.ts`, add `body`/`query`/`params` as needed, the

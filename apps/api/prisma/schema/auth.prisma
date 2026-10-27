@@ -27,8 +27,8 @@ model VerificationToken {
 }
 
 enum OAuthProvider {
-  GOOGLE
-  GITHUB
+  google
+  github
 
   @@map("oauth_provider")
 }

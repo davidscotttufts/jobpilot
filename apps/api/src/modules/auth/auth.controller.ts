@@ -4,7 +4,7 @@ import {
   RegisterSchema,
   ResetPasswordSchema,
   VerifyEmailSchema,
-} from "@jobpilot/contracts";
+} from "@jobpilot/contracts/auth";
 import { Elysia } from "elysia";
 import { clearSessionCookie, readSessionCookie, setSessionCookie } from "@/common/auth";
 import { container } from "@/common/di/container";

@@ -4,7 +4,7 @@ import {
   APPLICATION_SOURCES,
   APPLICATION_STATUSES,
 } from "@jobpilot/contracts/application";
-import { AUTH_TOKEN_KINDS } from "@jobpilot/contracts/auth";
+import { AUTH_TOKEN_KINDS, OAUTH_PROVIDERS } from "@jobpilot/contracts/auth";
 import {
   CAMPAIGN_ACTORS,
   CAMPAIGN_JOB_STATUSES,
@@ -42,52 +42,57 @@ import { describe, expect, it } from "bun:test";
 
 // The web cannot import the generated Prisma client, so `@jobpilot/contracts` keeps its own copy of
 // every DB enum's values. This is the only thing stopping the two from drifting.
-const PAIRS: [string, readonly string[], Record<string, string>][] = [
-  ["ApplicationStatus", APPLICATION_STATUSES, prismaEnums.ApplicationStatus],
-  ["ApplicationSource", APPLICATION_SOURCES, prismaEnums.ApplicationSource],
-  ["ApplicationEventKind", APPLICATION_EVENT_KINDS, prismaEnums.ApplicationEventKind],
-  ["ApplicationEventSource", APPLICATION_EVENT_SOURCES, prismaEnums.ApplicationEventSource],
-  ["AuthTokenKind", AUTH_TOKEN_KINDS, prismaEnums.AuthTokenKind],
-  ["Availability", AVAILABILITY, prismaEnums.Availability],
-  ["SalaryCurrency", SALARY_CURRENCIES, prismaEnums.SalaryCurrency],
-  ["SalaryPeriod", SALARY_PERIODS, prismaEnums.SalaryPeriod],
-  ["CampaignActor", CAMPAIGN_ACTORS, prismaEnums.CampaignActor],
-  ["CampaignJobStatus", CAMPAIGN_JOB_STATUSES, prismaEnums.CampaignJobStatus],
-  ["CampaignSource", CAMPAIGN_SOURCES, prismaEnums.CampaignSource],
-  ["CampaignStatus", CAMPAIGN_STATUSES, prismaEnums.CampaignStatus],
-  ["ContactDiscoverySource", CONTACT_DISCOVERY_SOURCES, prismaEnums.ContactDiscoverySource],
-  ["ContactEmailSource", CONTACT_EMAIL_SOURCES, prismaEnums.ContactEmailSource],
-  [
-    "ContactLinkedinConnection",
-    CONTACT_LINKEDIN_CONNECTIONS,
-    prismaEnums.ContactLinkedinConnection,
-  ],
-  ["CoverLetterSource", COVER_LETTER_SOURCES, prismaEnums.CoverLetterSource],
-  ["CredentialKind", CREDENTIAL_KINDS, prismaEnums.CredentialKind],
-  ["ServiceProvider", SERVICE_PROVIDERS, prismaEnums.ServiceProvider],
-  ["EmailClassification", CLASSIFICATIONS, prismaEnums.EmailClassification],
-  ["EmailReviewStatus", REVIEW_STATUSES, prismaEnums.EmailReviewStatus],
-  ["JobListingStatus", JOB_LISTING_STATUSES, prismaEnums.JobListingStatus],
-  ["LinkedinMessageKind", LINKEDIN_KINDS, prismaEnums.LinkedinMessageKind],
-  ["NetworkingChannel", NETWORKING_CHANNELS, prismaEnums.NetworkingChannel],
-  ["NetworkingMessageStatus", NETWORKING_MESSAGE_STATUSES, prismaEnums.NetworkingMessageStatus],
-  ["PilotRunOutcome", PILOT_RUN_OUTCOMES, prismaEnums.PilotRunOutcome],
-  ["PilotJournalKind", PILOT_JOURNAL_KINDS, prismaEnums.PilotJournalKind],
-  ["PilotQuestionKind", PILOT_QUESTION_KINDS, prismaEnums.PilotQuestionKind],
-  ["PilotQuestionStatus", PILOT_QUESTION_STATUSES, prismaEnums.PilotQuestionStatus],
-  ["PromotionStatus", PROMOTION_STATUSES, prismaEnums.PromotionStatus],
-  ["UpworkInboxKind", UPWORK_INBOX_KINDS, prismaEnums.UpworkInboxKind],
-  ["UpworkInboxStatus", UPWORK_INBOX_STATUSES, prismaEnums.UpworkInboxStatus],
-  ["UpworkProfileStatus", UPWORK_PROFILE_STATUSES, prismaEnums.UpworkProfileStatus],
-  ["UpworkProposalOutcome", UPWORK_PROPOSAL_OUTCOMES, prismaEnums.UpworkProposalOutcome],
-  ["UpworkProposalSource", UPWORK_PROPOSAL_SOURCES, prismaEnums.UpworkProposalSource],
-  ["UpworkProposalStatus", UPWORK_PROPOSAL_STATUSES, prismaEnums.UpworkProposalStatus],
-  ["UserRole", ROLES, prismaEnums.UserRole],
-];
+/** Prisma-only enums: never on the wire, so no contracts copy. */
+const API_ONLY = ["VerificationTokenType"] as const;
+
+type PrismaEnumName = Exclude<keyof typeof prismaEnums, (typeof API_ONLY)[number]>;
+
+/** A Record over every Prisma enum, so a new one fails typecheck until it has a contracts copy. */
+const CONTRACTS: Record<PrismaEnumName, readonly string[]> = {
+  ApplicationEventKind: APPLICATION_EVENT_KINDS,
+  ApplicationEventSource: APPLICATION_EVENT_SOURCES,
+  ApplicationSource: APPLICATION_SOURCES,
+  ApplicationStatus: APPLICATION_STATUSES,
+  AuthTokenKind: AUTH_TOKEN_KINDS,
+  Availability: AVAILABILITY,
+  CampaignActor: CAMPAIGN_ACTORS,
+  CampaignJobStatus: CAMPAIGN_JOB_STATUSES,
+  CampaignSource: CAMPAIGN_SOURCES,
+  CampaignStatus: CAMPAIGN_STATUSES,
+  ContactDiscoverySource: CONTACT_DISCOVERY_SOURCES,
+  ContactEmailSource: CONTACT_EMAIL_SOURCES,
+  ContactLinkedinConnection: CONTACT_LINKEDIN_CONNECTIONS,
+  CoverLetterSource: COVER_LETTER_SOURCES,
+  CredentialKind: CREDENTIAL_KINDS,
+  EmailClassification: CLASSIFICATIONS,
+  EmailReviewStatus: REVIEW_STATUSES,
+  JobListingStatus: JOB_LISTING_STATUSES,
+  LinkedinMessageKind: LINKEDIN_KINDS,
+  NetworkingChannel: NETWORKING_CHANNELS,
+  NetworkingMessageStatus: NETWORKING_MESSAGE_STATUSES,
+  OAuthProvider: OAUTH_PROVIDERS,
+  PilotJournalKind: PILOT_JOURNAL_KINDS,
+  PilotQuestionKind: PILOT_QUESTION_KINDS,
+  PilotQuestionStatus: PILOT_QUESTION_STATUSES,
+  PilotRunOutcome: PILOT_RUN_OUTCOMES,
+  PromotionStatus: PROMOTION_STATUSES,
+  SalaryCurrency: SALARY_CURRENCIES,
+  SalaryPeriod: SALARY_PERIODS,
+  ServiceProvider: SERVICE_PROVIDERS,
+  UpworkInboxKind: UPWORK_INBOX_KINDS,
+  UpworkInboxStatus: UPWORK_INBOX_STATUSES,
+  UpworkProfileStatus: UPWORK_PROFILE_STATUSES,
+  UpworkProposalOutcome: UPWORK_PROPOSAL_OUTCOMES,
+  UpworkProposalSource: UPWORK_PROPOSAL_SOURCES,
+  UpworkProposalStatus: UPWORK_PROPOSAL_STATUSES,
+  UserRole: ROLES,
+};
 
 describe("contracts enums match the Prisma schema", () => {
-  for (const [name, contract, prismaEnum] of PAIRS) {
+  for (const [name, prismaEnum] of Object.entries(prismaEnums)) {
+    if ((API_ONLY as readonly string[]).includes(name)) continue;
     it(name, () => {
+      const contract = CONTRACTS[name as PrismaEnumName];
       expect([...contract].sort()).toEqual(Object.values(prismaEnum).sort());
     });
   }

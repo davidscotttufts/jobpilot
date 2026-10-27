@@ -40,8 +40,6 @@ export const accountStatusSchema = z.union([
 ]);
 
 /** Confirmation returned by disconnecting the mailbox (`account.disconnectAccount`). */
-export const accountDisconnectedSchema = z.object({ disconnected: z.boolean() });
-
 /** OAuth client config status (`account.getOAuthClient`) - never includes the secret. */
 export const oauthClientStatusSchema = z.object({
   configured: z.boolean(),
@@ -51,8 +49,6 @@ export const oauthClientStatusSchema = z.object({
 });
 
 /** Confirmation returned by removing the OAuth client (`account.deleteOAuthClient`). */
-export const oauthClientDeletedSchema = z.object({ deleted: z.boolean() });
-
 /** Matched-application summary embedded on a message (`matchedApp` relation). */
 const matchedAppSchema = z
   .object({

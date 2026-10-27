@@ -13,7 +13,7 @@ import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import { idResponseSchema } from "@/types/response";
+import { deletedResponseSchema } from "@/types/response";
 import {
   inboxQuery,
   proposalsQuery,
@@ -155,7 +155,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
   )
   .delete("/proposals/:id", ({ user, params }) => svc.deleteProposal(user.id, params.id), {
     params: idParam,
-    response: idResponseSchema,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete proposal",
       description:

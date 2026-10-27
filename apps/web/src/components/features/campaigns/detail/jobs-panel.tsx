@@ -92,7 +92,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   // Per-job requests commit independently, so a rejection can't invalidate the whole
   // batch - report the split instead of surfacing the first error as a total failure.
-  const reapply = useApiMutation<{ ok: number; failed: number }, void>(
+  const reapply = useApiMutation(
     async () => {
       const results = await Promise.allSettled(
         selectedForReapply.map((job) => {

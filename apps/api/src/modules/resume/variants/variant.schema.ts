@@ -17,7 +17,7 @@ export const pruneVariantsQuerySchema = z.object({
   unlinkedOnly: z.stringbool().optional(),
 });
 
-export const prunedResponseSchema = z.object({ deleted: z.number().int() });
+export const prunedResponseSchema = z.object({ deletedCount: z.number().int() });
 
 const bulletRewriteSchema = z.object({ original: z.string(), tailored: z.string() });
 

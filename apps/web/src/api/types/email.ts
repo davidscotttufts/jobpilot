@@ -6,6 +6,3 @@ export type OAuthClientStatus = Data<typeof api.email.oauth.client.get>;
 
 /** An inbox message, from `GET /api/email/messages`. */
 export type EmailMessageDto = Data<typeof api.email.messages.get>["items"][number];
-
-/** Sync result, from `POST /api/email/sync`. */
-export type SyncResultDto = Data<typeof api.email.sync.post>;

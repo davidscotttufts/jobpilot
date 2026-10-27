@@ -21,8 +21,8 @@ export function AdminRoleMenu(props: AdminRoleMenuProps): ReactElement {
   const router = useRouter();
   const confirm = useConfirm();
 
-  const setRole = useApiMutation<AdminUserDto, AssignableRole>(
-    (role) => api.admin.users({ id: user.id }).role.patch({ role }),
+  const setRole = useApiMutation(
+    (role: AssignableRole) => api.admin.users({ id: user.id }).role.patch({ role }),
     {
       successMessage: "Role updated.",
       onSuccess: () => router.refresh(),

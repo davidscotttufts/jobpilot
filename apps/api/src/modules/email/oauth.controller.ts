@@ -4,8 +4,9 @@ import { flowFailureReason, oauthStateCookies } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { env } from "@/env";
+import { okResponseSchema } from "@/types/response";
 import { EmailAccountService } from "./account/account.service";
-import { callbackQuery, oauthClientDeletedSchema, oauthClientStatusSchema } from "./email.schema";
+import { callbackQuery, oauthClientStatusSchema } from "./email.schema";
 
 const account = container.get(EmailAccountService);
 
@@ -36,7 +37,7 @@ export const emailOAuthController = new Elysia({
     },
   })
   .delete("/oauth/client", ({ user }) => account.deleteOAuthClient(user.id), {
-    response: oauthClientDeletedSchema,
+    response: okResponseSchema,
     detail: {
       summary: "Remove mailbox OAuth client config",
       description:

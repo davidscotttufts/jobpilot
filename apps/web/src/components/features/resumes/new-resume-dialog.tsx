@@ -18,18 +18,15 @@ export function NewResumeDialog(props: NewResumeDialogProps): ReactElement {
   const router = useRouter();
   const [label, setLabel] = useState("");
 
-  const create = useApiMutation<{ id: string }, { label: string }>(
-    (vars) => api.resumes.post(vars),
-    {
-      successMessage: "Resume created",
-      invalidate: invalidations.resume,
-      onSuccess: (data) => {
-        onClose();
-        setLabel("");
-        router.push(`/resumes/${data.id}`);
-      },
+  const create = useApiMutation((vars: { label: string }) => api.resumes.post(vars), {
+    successMessage: "Resume created",
+    invalidate: invalidations.resume,
+    onSuccess: (data) => {
+      onClose();
+      setLabel("");
+      router.push(`/resumes/${data.id}`);
     },
-  );
+  });
 
   return (
     <FormDialogShell

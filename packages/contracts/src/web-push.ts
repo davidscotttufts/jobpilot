@@ -27,4 +27,3 @@ const pushSubscriptionListItemSchema = z.object({
 export const pushSubscriptionListSchema = z.array(pushSubscriptionListItemSchema);
 
 export type PushSubscriptionInput = z.infer<typeof pushSubscriptionInputSchema>;
-export type PushSubscriptionDto = z.infer<typeof pushSubscriptionSchema>;

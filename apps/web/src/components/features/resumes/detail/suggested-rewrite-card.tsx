@@ -36,17 +36,14 @@ export function SuggestedRewriteCard(props: SuggestedRewriteCardProps): ReactNod
     enabled: suggestion !== undefined,
   });
 
-  const discard = useApiMutation<{ deleted: string }, string>(
-    (id) => api.resumes.variants({ id }).delete(),
-    {
-      successMessage: "Suggestion discarded",
-      invalidate: [queryKeys.resume.variants(resumeId)],
-    },
-  );
+  const discard = useApiMutation((id: string) => api.resumes.variants({ id }).delete(), {
+    successMessage: "Suggestion discarded",
+    invalidate: [queryKeys.resume.variants(resumeId)],
+  });
 
   // One call: the API writes the content onto the base and drops the suggestion in one transaction.
-  const accept = useApiMutation<{ id: string; version: number }, string>(
-    (variantId) => api.resumes.variants({ id: variantId }).apply.post(),
+  const accept = useApiMutation(
+    (variantId: string) => api.resumes.variants({ id: variantId }).apply.post(),
     {
       successMessage: "Resume updated",
       invalidate: [queryKeys.resume.variants(resumeId), ...invalidations.resume],

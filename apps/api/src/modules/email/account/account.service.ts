@@ -37,7 +37,7 @@ export class EmailAccountService {
 
   async disconnectAccount(userId: string) {
     await this.prisma.emailAccount.deleteMany({ where: { userId } });
-    return { disconnected: true };
+    return { ok: true as const };
   }
 
   /** Refreshes an expired token first; 422s when the mailbox lacks send scope (reconnect it). */
@@ -156,6 +156,6 @@ export class EmailAccountService {
       throw conflict("Disconnect the mailbox before removing its OAuth client.");
     }
     await this.prisma.emailOAuthClient.deleteMany({ where: { userId } });
-    return { deleted: true };
+    return { ok: true as const };
   }
 }

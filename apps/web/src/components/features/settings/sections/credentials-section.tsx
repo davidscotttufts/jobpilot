@@ -34,22 +34,16 @@ export function CredentialsSection(): ReactElement {
 
   const credentials = useApiQuery(credentialQueries.list());
 
-  const create = useApiMutation<CredentialDto, CredentialInput>(
-    (vars) => api.credentials.post(vars),
-    {
-      successMessage: "Credential added",
-      invalidate: [queryKeys.credentials.all],
-      onSuccess: () => setDialogOpen(false),
-    },
-  );
+  const create = useApiMutation((vars: CredentialInput) => api.credentials.post(vars), {
+    successMessage: "Credential added",
+    invalidate: [queryKeys.credentials.all],
+    onSuccess: () => setDialogOpen(false),
+  });
 
-  const remove = useApiMutation<{ deleted: string }, string>(
-    (id) => api.credentials({ id }).delete(),
-    {
-      successMessage: "Credential removed",
-      invalidate: [queryKeys.credentials.all],
-    },
-  );
+  const remove = useApiMutation((id: string) => api.credentials({ id }).delete(), {
+    successMessage: "Credential removed",
+    invalidate: [queryKeys.credentials.all],
+  });
 
   const handleDelete = async (credential: CredentialDto): Promise<void> => {
     const confirmed = await confirm({

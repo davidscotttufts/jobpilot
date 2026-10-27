@@ -38,12 +38,13 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
   const isConnectNote = message.linkedinKind === "connect_note";
   const terminal = isTerminalNetworkingStatus(message.status);
 
-  const save = useApiMutation<unknown, void>(
-    () => messageApi.patch({ subject: subject || null, body }),
-    { invalidate, successMessage: "Saved", onSuccess: onWritten },
-  );
+  const save = useApiMutation(() => messageApi.patch({ subject: subject || null, body }), {
+    invalidate,
+    successMessage: "Saved",
+    onSuccess: onWritten,
+  });
 
-  const approve = useApiMutation<unknown, void>(
+  const approve = useApiMutation(
     () => messageApi.patch({ subject: subject || null, body, status: "approved" }),
     {
       invalidate,
@@ -55,7 +56,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     },
   );
 
-  const send = useApiMutation<unknown, void>(
+  const send = useApiMutation(
     async () => {
       const sent = await api.email.send.post({
         to: message.contact.email ?? "",
@@ -82,7 +83,7 @@ export function NetworkingMessageDialog(props: NetworkingMessageDialogProps): Re
     },
   );
 
-  const skip = useApiMutation<unknown, void>(() => messageApi.result.post({ outcome: "skipped" }), {
+  const skip = useApiMutation(() => messageApi.result.post({ outcome: "skipped" }), {
     invalidate,
     successMessage: "Skipped",
     onSuccess: () => {

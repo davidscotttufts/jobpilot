@@ -1,5 +1,5 @@
-import type { OAuthErrorReason } from "@jobpilot/contracts";
-import type { OAuthProfile } from "./oauth-providers";
+import type { OAuthErrorReason } from "@jobpilot/contracts/auth";
+import type { OAuthProfile } from "./oauth-providers/sign-in-provider";
 
 export type OAuthLoginDecision =
   | { action: "signin"; userId: string }

@@ -1,5 +1,4 @@
 import type { OAuthProvider, User } from "@/generated/prisma/client";
-import { wireProvider } from "./oauth-providers";
 
 /** The public-safe view of a user returned to clients. */
 export function publicUser(user: User) {
@@ -22,7 +21,7 @@ export function meUser(user: User & { oauthAccounts: { provider: OAuthProvider }
     ...publicUser(user),
     // Existence only - the hash itself never leaves the service layer.
     hasPassword: user.passwordHash !== null,
-    providers: user.oauthAccounts.map((a) => wireProvider(a.provider)),
+    providers: user.oauthAccounts.map((a) => a.provider),
     username: user.username,
     availability: user.availability,
     firstName: user.firstName,

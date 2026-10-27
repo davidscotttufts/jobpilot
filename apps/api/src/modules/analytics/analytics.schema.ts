@@ -1,3 +1,4 @@
+import { statusSchema } from "@jobpilot/contracts/application";
 import { z } from "zod/v4";
 
 /** `date` is UTC midnight of the bucketed day. */
@@ -23,7 +24,7 @@ export const analyticsStatsSchema = z.object({
   responseRatePct: z.number().int(),
   statusBreakdown: z.array(
     z.object({
-      status: z.string(),
+      status: statusSchema,
       count: z.number().int(),
     }),
   ),

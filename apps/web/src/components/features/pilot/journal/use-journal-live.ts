@@ -6,7 +6,7 @@ import type {
   PilotJournalKind,
   PilotJournalPage,
 } from "@jobpilot/contracts/pilot";
-import { pilotChannel } from "@jobpilot/contracts/sse";
+import { type Jsonified, pilotChannel } from "@jobpilot/contracts/sse";
 import type { QueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/api/query-keys";
 import { type SseConnectionStatus, useSseChannel } from "@/lib/sse/client";
@@ -21,15 +21,12 @@ function takesKind(queryKey: readonly unknown[], kind: PilotJournalKind): boolea
   return !kinds?.length || kinds.includes(kind);
 }
 
-/** SSE delivers raw JSON, so `createdAt` arrives as an ISO string, not a revived Date. */
-function fromEvent(entry: unknown): PilotJournalEntry {
-  const raw = entry as PilotJournalEntry & { createdAt: string };
-  return { ...raw, createdAt: new Date(raw.createdAt) };
-}
-
 /** Prepends a streamed entry to every journal cache that takes its kind, so nothing refetches. */
-export function appendJournalEntry(queryClient: QueryClient, streamed: unknown): PilotJournalEntry {
-  const entry = fromEvent(streamed);
+export function appendJournalEntry(
+  queryClient: QueryClient,
+  streamed: Jsonified<PilotJournalEntry>,
+): PilotJournalEntry {
+  const entry = { ...streamed, createdAt: new Date(streamed.createdAt) };
   queryClient.setQueriesData<PilotJournalPage>(
     {
       queryKey: queryKeys.pilot.journalAll(),

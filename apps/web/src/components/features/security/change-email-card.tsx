@@ -5,7 +5,6 @@ import { type ChangeEmailInput, ChangeEmailSchema } from "@jobpilot/contracts/au
 import { Alert, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { ChangeEmailResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useSession } from "@/hooks/use-auth";
@@ -16,10 +15,9 @@ const DEFAULT_VALUES: ChangeEmailInput = { newEmail: "", currentPassword: "" };
 export function ChangeEmailCard(): ReactElement {
   const { user } = useSession();
 
-  const changeEmail = useApiMutation<ChangeEmailResponse, ChangeEmailInput>(
-    (body) => api.auth.email.change.post(body),
-    { showErrorToast: false },
-  );
+  const changeEmail = useApiMutation((body: ChangeEmailInput) => api.auth.email.change.post(body), {
+    showErrorToast: false,
+  });
 
   const form = useAppForm({
     defaultValues: DEFAULT_VALUES,

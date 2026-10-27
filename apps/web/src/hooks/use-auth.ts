@@ -61,17 +61,17 @@ export function useAuthActions(): UseAuthActionsResult {
   };
 
   // The forms render these errors inline - no toast on top.
-  const login = useApiMutation<AuthSessionResponse, LoginInput>(
-    (body) => api.auth.login.post(body),
-    { onSuccess: onSession, showErrorToast: false },
-  );
+  const login = useApiMutation((body: LoginInput) => api.auth.login.post(body), {
+    onSuccess: onSession,
+    showErrorToast: false,
+  });
 
-  const register = useApiMutation<AuthSessionResponse, RegisterInput>(
-    (body) => api.auth.register.post(body),
-    { onSuccess: onSession, showErrorToast: false },
-  );
+  const register = useApiMutation((body: RegisterInput) => api.auth.register.post(body), {
+    onSuccess: onSession,
+    showErrorToast: false,
+  });
 
-  const logout = useApiMutation<LogoutResponse, void>(() => api.auth.logout.post(), {
+  const logout = useApiMutation(() => api.auth.logout.post(), {
     onSuccess: () => {
       queryClient.clear();
       router.push("/login");

@@ -1,18 +1,14 @@
-import type { OAuthErrorReason, OAuthProviderInput } from "@jobpilot/contracts";
+import type { OAuthErrorReason, OAuthProviderInput } from "@jobpilot/contracts/auth";
 import { inject, injectable } from "@needle-di/core";
 import { OAuthFlowError } from "@/common/auth";
 import { conflict, notFound } from "@/common/errors";
 import { env } from "@/env";
-import { type OAuthProvider, PrismaClient } from "@/generated/prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
 import { AuthService } from "./auth.service";
 import { AuthTokenService } from "./auth-token.service";
 import { canUnlink, resolveOAuthLogin } from "./oauth-login";
-import {
-  dbProvider,
-  type OAuthProfile,
-  type OAuthProviderConfig,
-  signInProviders,
-} from "./oauth-providers";
+import { signInProviders } from "./oauth-providers";
+import type { OAuthProfile, OAuthProviderConfig } from "./oauth-providers/sign-in-provider";
 
 /** Google/GitHub sign-in. Identity only: no provider tokens stored, `wrappedDek` untouched. */
 @injectable()
@@ -42,7 +38,7 @@ export class OAuthService {
     return signInProviders[provider].getAuthorizeUrl(this.getConfig(provider), state);
   }
 
-  private linkAccount(userId: string, provider: OAuthProvider, profile: OAuthProfile) {
+  private linkAccount(userId: string, provider: OAuthProviderInput, profile: OAuthProfile) {
     return this.prisma.oAuthAccount.create({
       data: {
         userId,
@@ -54,12 +50,8 @@ export class OAuthService {
   }
 
   /** Complete a sign-in callback: known identity, auto-link, or fresh signup. */
-  async handleLogin(providerName: OAuthProviderInput, code: string) {
-    const profile = await signInProviders[providerName].exchangeCode(
-      this.getConfig(providerName),
-      code,
-    );
-    const provider = dbProvider(providerName);
+  async handleLogin(provider: OAuthProviderInput, code: string) {
+    const profile = await signInProviders[provider].exchangeCode(this.getConfig(provider), code);
 
     const account = await this.prisma.oAuthAccount.findUnique({
       where: {
@@ -117,12 +109,8 @@ export class OAuthService {
   }
 
   /** Explicitly link a provider identity to the signed-in account; no email match needed. */
-  async link(userId: string, providerName: OAuthProviderInput, code: string): Promise<void> {
-    const profile = await signInProviders[providerName].exchangeCode(
-      this.getConfig(providerName),
-      code,
-    );
-    const provider = dbProvider(providerName);
+  async link(userId: string, provider: OAuthProviderInput, code: string): Promise<void> {
+    const profile = await signInProviders[provider].exchangeCode(this.getConfig(provider), code);
 
     const [existing, mine] = await Promise.all([
       this.prisma.oAuthAccount.findUnique({
@@ -146,8 +134,7 @@ export class OAuthService {
     await this.linkAccount(userId, provider, profile);
   }
 
-  async unlink(userId: string, providerName: OAuthProviderInput): Promise<{ ok: true }> {
-    const provider = dbProvider(providerName);
+  async unlink(userId: string, provider: OAuthProviderInput): Promise<{ ok: true }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { passwordHash: true, oauthAccounts: { select: { provider: true } } },

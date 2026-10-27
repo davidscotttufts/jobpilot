@@ -1,4 +1,4 @@
-import { OAuthProviderSchema } from "@jobpilot/contracts";
+import { OAuthProviderSchema } from "@jobpilot/contracts/auth";
 import { roleSchema } from "@jobpilot/contracts/role";
 import { availabilitySchema } from "@jobpilot/contracts/user";
 import { z } from "zod/v4";

@@ -221,14 +221,14 @@ export class ResumeVariantService {
       skip: query.keep,
     });
     if (candidates.length === 0) {
-      return { deleted: 0 };
+      return { deletedCount: 0 };
     }
 
     const ids = candidates.map((variant) => variant.id);
     const result = await this.prisma.resumeVariant.deleteMany({ where: { id: { in: ids } } });
     await this.afterVariantsDeleted(resumeId, ...ids);
 
-    return { deleted: result.count };
+    return { deletedCount: result.count };
   }
 
   async renderVariantPdf(userId: string, id: string) {

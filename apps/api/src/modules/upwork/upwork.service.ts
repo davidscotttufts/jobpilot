@@ -301,6 +301,6 @@ export class UpworkService {
     await this.prisma.upworkProposal.delete({ where: { id } });
 
     publish(upworkChannel, { userId }, { type: "proposal.deleted", id });
-    return { id };
+    return { deleted: id };
   }
 }

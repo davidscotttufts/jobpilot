@@ -5,7 +5,6 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
     "./pilot": "./src/pilot/index.ts",
     "./sse": "./src/sse/index.ts",
     "./*": "./src/*.ts"

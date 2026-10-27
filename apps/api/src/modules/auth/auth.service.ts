@@ -1,4 +1,4 @@
-import type { LoginInput, RegisterInput } from "@jobpilot/contracts";
+import type { LoginInput, RegisterInput } from "@jobpilot/contracts/auth";
 import { inject, injectable } from "@needle-di/core";
 import { hashPassword, verifyPassword } from "@/common/auth";
 import { conflict, isPrismaError, notFound, PRISMA_ERRORS, unauthorized } from "@/common/errors";

@@ -71,10 +71,10 @@ export class CoverLetterService {
     };
   }
 
-  async remove(userId: string, id: string): Promise<{ ok: true }> {
+  async remove(userId: string, id: string): Promise<{ deleted: string }> {
     await this.get(userId, id);
     await this.prisma.coverLetter.delete({ where: { id } });
-    return { ok: true };
+    return { deleted: id };
   }
 
   /**

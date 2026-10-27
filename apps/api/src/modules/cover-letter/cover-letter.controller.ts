@@ -4,7 +4,7 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
-import { okResponseSchema } from "@/types/response";
+import { deletedResponseSchema } from "@/types/response";
 import {
   coverLetterCreatedSchema,
   coverLetterDetailSchema,
@@ -71,7 +71,7 @@ export const coverLetterController = new Elysia({
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
-    response: okResponseSchema,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete cover letter",
       description:

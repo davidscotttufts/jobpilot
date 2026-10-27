@@ -1,6 +1,11 @@
 "use client";
 
-import type { AnyChannel, ChannelEvent, ChannelUrlParams } from "@jobpilot/contracts/sse";
+import type {
+  AnyChannel,
+  ChannelEvent,
+  ChannelUrlParams,
+  Jsonified,
+} from "@jobpilot/contracts/sse";
 import { EventSource } from "eventsource";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE_URL } from "@/api/base-url";
@@ -200,9 +205,10 @@ interface UseSseChannelOptions<TEvent extends { type: string }> {
 export function useSseChannel<C extends AnyChannel>(
   channel: C,
   params: UrlParamsArg<C>,
-  options: UseSseChannelOptions<ChannelEvent<C>> = {},
+  options: UseSseChannelOptions<Jsonified<ChannelEvent<C>>> = {},
 ): SseConnectionStatus {
-  type TEvent = ChannelEvent<C>;
+  // Events arrive as parsed JSON: no Date revival, unlike Eden responses.
+  type TEvent = Jsonified<ChannelEvent<C>>;
   const url =
     options.enabled === false
       ? null

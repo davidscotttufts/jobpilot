@@ -8,7 +8,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { campaignQueries, jobBoardQueries, userQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { CampaignDto, CreateCampaignRequest } from "@/api/types";
+import type { CreateCampaignRequest } from "@/api/types";
 import { useLinkBoard } from "@/components/features/boards/use-link-board";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout";
@@ -50,10 +50,9 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
     staleTime: 10 * 60_000,
   });
 
-  const createCampaign = useApiMutation<CampaignDto, CreateCampaignRequest>(
-    (body) => api.campaigns.post(body),
-    { invalidate: [queryKeys.campaigns.all] },
-  );
+  const createCampaign = useApiMutation((body: CreateCampaignRequest) => api.campaigns.post(body), {
+    invalidate: [queryKeys.campaigns.all],
+  });
 
   const linkBoard = useLinkBoard();
 

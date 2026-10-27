@@ -38,8 +38,8 @@ export function ResumeEditor(props: ResumeEditorProps): ReactElement {
   // The newest version this editor produced, so its own save echoing back is not a conflict.
   const [ownVersion, setOwnVersion] = useState(version);
 
-  const save = useApiMutation<{ id: string; version: number }, ResumeData>(
-    (vars) => api.resumes({ id: resumeId }).put({ content: vars }),
+  const save = useApiMutation(
+    (vars: ResumeData) => api.resumes({ id: resumeId }).put({ content: vars }),
     {
       invalidate: invalidations.resume,
       onSuccess: (result) => setOwnVersion(result.version),

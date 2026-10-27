@@ -4,7 +4,6 @@ import type { ReactElement } from "react";
 import type { ConfirmEmailChangeInput } from "@jobpilot/contracts/auth";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { ConfirmEmailChangeResponse } from "@/api/types";
 import { MagicLinkView } from "./magic-link-view";
 
 interface ConfirmEmailChangeViewProps {
@@ -14,8 +13,8 @@ interface ConfirmEmailChangeViewProps {
 /** Lands from the email-change magic link; confirming revokes all sessions. */
 export function ConfirmEmailChangeView(props: ConfirmEmailChangeViewProps): ReactElement {
   const { token } = props;
-  const confirmChange = useApiMutation<ConfirmEmailChangeResponse, ConfirmEmailChangeInput>(
-    (body) => api.auth.email.change.confirm.post(body),
+  const confirmChange = useApiMutation((body: ConfirmEmailChangeInput) =>
+    api.auth.email.change.confirm.post(body),
   );
 
   return (

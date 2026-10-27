@@ -58,7 +58,7 @@ export function ResumesList(): ReactElement {
 
   const list = useApiQuery(resumeQueries.list());
 
-  const upload = useApiMutation<{ id: string }, File>((file) => api.resumes.upload.post({ file }), {
+  const upload = useApiMutation((file: File) => api.resumes.upload.post({ file }), {
     successMessage: "Resume uploaded",
     invalidate: invalidations.resume,
     onSuccess: ({ id }) => {
@@ -72,8 +72,8 @@ export function ResumesList(): ReactElement {
     },
   });
 
-  const setPrimary = useApiMutation<{ primaryResumeId: string | null }, string>(
-    (id) => api.user["primary-resume"].put({ resumeId: id }),
+  const setPrimary = useApiMutation(
+    (id: string) => api.user["primary-resume"].put({ resumeId: id }),
     {
       successMessage: "Primary resume updated",
       invalidate: invalidations.resume,

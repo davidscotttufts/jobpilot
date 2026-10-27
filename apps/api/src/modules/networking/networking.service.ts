@@ -16,7 +16,7 @@ import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "@/modules/campaign/campaign.summary";
 import { ensureCampaignOwned } from "@/modules/campaign/campaign.utils";
-import { createContactPayload } from "@/modules/contact";
+import { createContactPayload } from "@/modules/contact/contact.mapper";
 import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/journal-entries";
 
 export interface NetworkingMessageFilters {

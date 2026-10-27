@@ -22,18 +22,18 @@ export function AdminListingActions(props: AdminListingActionsProps): ReactEleme
   const confirm = useConfirm();
   const hidden = listing.status === "hidden";
 
-  const update = useApiMutation<AdminJobListingDto, AdminJobListingPatch>(
-    (patch) => api.admin.listings({ id: listing.id }).patch(patch),
+  const update = useApiMutation(
+    (patch: AdminJobListingPatch) => api.admin.listings({ id: listing.id }).patch(patch),
     {
       successMessage: hidden ? "Listing published" : "Listing hidden",
       onSuccess: () => router.refresh(),
     },
   );
 
-  const remove = useApiMutation<{ deleted: string }, void>(
-    () => api.admin.listings({ id: listing.id }).delete(),
-    { successMessage: "Listing deleted", onSuccess: () => router.refresh() },
-  );
+  const remove = useApiMutation(() => api.admin.listings({ id: listing.id }).delete(), {
+    successMessage: "Listing deleted",
+    onSuccess: () => router.refresh(),
+  });
 
   const handleDelete = async (): Promise<void> => {
     const confirmed = await confirm({

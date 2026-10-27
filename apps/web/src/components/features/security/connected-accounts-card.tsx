@@ -6,7 +6,6 @@ import { Alert, Box, Button, Stack, Tooltip, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { UnlinkOAuthResponse } from "@/api/types";
 import { OAUTH_PROVIDERS, oauthStartUrl, resolveOauthReason } from "@/components/features/auth";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useSession } from "@/hooks/use-auth";
@@ -28,8 +27,8 @@ export function ConnectedAccountsCard(props: ConnectedAccountsCardProps): ReactE
   const hasPassword = user?.hasPassword ?? true;
   const lastMethod = !hasPassword && linked.length === 1;
 
-  const unlink = useApiMutation<UnlinkOAuthResponse, OAuthProviderInput>(
-    (p) => api.auth.providers({ provider: p }).delete(),
+  const unlink = useApiMutation(
+    (p: OAuthProviderInput) => api.auth.providers({ provider: p }).delete(),
     { successMessage: "Account unlinked", invalidate: [queryKeys.auth.me()] },
   );
 

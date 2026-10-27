@@ -4,7 +4,6 @@ import { type ReactElement, useState } from "react";
 import { Alert, Button } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { ResendVerificationResponse } from "@/api/types";
 import { useSession } from "@/hooks/use-auth";
 
 /**
@@ -14,10 +13,9 @@ import { useSession } from "@/hooks/use-auth";
 export function VerifyEmailBanner(): ReactElement | null {
   const { user } = useSession();
   const [dismissed, setDismissed] = useState(false);
-  const resend = useApiMutation<ResendVerificationResponse, void>(
-    () => api.auth.email.resend.post(),
-    { successMessage: "Verification email sent - check your inbox." },
-  );
+  const resend = useApiMutation(() => api.auth.email.resend.post(), {
+    successMessage: "Verification email sent - check your inbox.",
+  });
 
   if (dismissed || !user || user.emailVerified) {
     return null;
