@@ -7,7 +7,7 @@ import {
 } from "@jobpilot/contracts/campaign";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
@@ -38,9 +38,9 @@ function toRow(campaign: WithSummary<Campaign>) {
   return { ...campaign, config: campaignConfigSchema.parse(campaign.config) };
 }
 
-@singleton()
+@injectable()
 export class CampaignService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async list(userId: string, query: z.infer<typeof campaignsQuery>) {
     const where: Prisma.CampaignWhereInput = {

@@ -16,7 +16,7 @@ the `db-migrate` skill.
 | Path | What it is |
 | --- | --- |
 | `app.ts` | Mounts every controller under `/api`. Exports `type App`, the source of Eden typing. |
-| `modules/<name>/` | `<name>.controller.ts` (thin Elysia routes, Zod request schemas, Swagger `detail`) delegates to `<name>.service.ts` (tsyringe `@singleton`, Prisma). No barrels. |
+| `modules/<name>/` | `<name>.controller.ts` (thin Elysia routes, Zod request schemas, Swagger `detail`) delegates to `<name>.service.ts` (Needle DI `@injectable()`, deps as `x = inject(X)` constructor defaults, Prisma). No barrels. |
 | `common/errors` | `HttpError`, `notFound()`, `conflict()`, `findOwned()` (ownership or 404). |
 | `common/middleware` | `authGuard`, the single auth gate. |
 | `common/rate-limit` | One `rateLimit(policy)` per route as `beforeHandle`. Policies in `RATE_LIMITS`. |
@@ -64,7 +64,9 @@ A closed set is a Prisma `enum`, never a `String` column.
 
 ## Traps
 
-- tsyringe-injected classes must be value imports, never `import type`. Erasing them breaks
-  decorator metadata at runtime. Biome's `useImportType` is off here for this reason.
+- Annotate an injected Prisma client: `prisma: PrismaClient = inject(PrismaClient)`. Its
+  constructor is generic, so inference alone types every query result as `any`.
+- Controllers resolve services at module load (`container.get`); middleware resolves per call so
+  a test can bind a fake on the container first. Tests construct services with `new X(fakes…)`.
 - Tests (`bun test`, colocated `*.test.ts`) run with no database and no env. Import the module
   under test directly, never through a barrel that pulls in Prisma or `@/env`.

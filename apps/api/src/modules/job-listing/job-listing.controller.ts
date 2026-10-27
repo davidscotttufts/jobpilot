@@ -13,7 +13,7 @@ import {
 } from "./job-listing.schema";
 import { JobListingService } from "./job-listing.service";
 
-const svc = container.resolve(JobListingService);
+const svc = container.get(JobListingService);
 
 /** Deliberately unguarded (auth is opt-in here): this backs the crawlable public /jobs pages. */
 export const publicJobListingController = new Elysia({

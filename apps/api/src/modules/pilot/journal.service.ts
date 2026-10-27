@@ -1,6 +1,6 @@
 import { cursorPage } from "@jobpilot/contracts/pagination";
 import type { CreatePilotJournalInput, PilotJournalKind } from "@jobpilot/contracts/pilot";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import {
   publishActivity,
   type RunsByCycle,
@@ -41,11 +41,11 @@ async function loadRuns(
   );
 }
 
-@singleton()
+@injectable()
 export class PilotJournalService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly push: PushService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly push = inject(PushService),
   ) {}
 
   async appendJournal(userId: string, body: CreatePilotJournalInput) {

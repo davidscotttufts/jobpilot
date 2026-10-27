@@ -14,8 +14,8 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { RunService } from "./run.service";
 import { TaskListService } from "./task-list.service";
 
-const taskList = container.resolve(TaskListService);
-const runs = container.resolve(RunService);
+const taskList = container.get(TaskListService);
+const runs = container.get(RunService);
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitRun = rateLimit(RATE_LIMITS.pilotRun);
 

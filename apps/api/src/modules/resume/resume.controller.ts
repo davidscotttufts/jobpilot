@@ -17,7 +17,7 @@ import {
 } from "./resume.schema";
 import { ResumeService } from "./resume.service";
 
-const svc = container.resolve(ResumeService);
+const svc = container.get(ResumeService);
 
 interface Upload {
   file: File;

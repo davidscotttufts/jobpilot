@@ -1,11 +1,11 @@
+import { injectable } from "@needle-di/core";
 import { Resend } from "resend";
-import { singleton } from "tsyringe";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 import type { Mailer, MailMessage } from "./mailer";
 
 /** Sends email through Resend. Bound to the {@link MAILER} token when RESEND_API_KEY is set. */
-@singleton()
+@injectable()
 export class ResendMailer implements Mailer {
   private readonly client = new Resend(env.RESEND_API_KEY);
 

@@ -8,7 +8,7 @@ import {
   type PromotionStatus,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { PushService } from "@/common/push/push.service";
 import { publish } from "@/common/sse";
@@ -46,12 +46,12 @@ function correctionOf(
   };
 }
 
-@singleton()
+@injectable()
 export class PromotionService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly push: PushService,
-    private readonly journal: PilotJournalService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly push = inject(PushService),
+    private readonly journal = inject(PilotJournalService),
   ) {}
 
   private findOwnedPost(userId: string, id: string) {

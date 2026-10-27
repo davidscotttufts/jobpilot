@@ -1,6 +1,6 @@
 import type { CoverLetterCreate, CoverLetterSource } from "@jobpilot/contracts/cover-letter";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf/render";
 import { slugifyForDownload } from "@/common/storage/storage";
@@ -21,9 +21,9 @@ export interface CoverLetterPdf {
   slug: string;
 }
 
-@singleton()
+@injectable()
 export class CoverLetterService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** One page of the user's cover letters, newest first (no body - list payload). */
   async list(userId: string, query: PaginationQuery) {

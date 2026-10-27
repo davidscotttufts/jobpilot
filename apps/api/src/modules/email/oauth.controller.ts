@@ -12,7 +12,7 @@ import {
   startQuery,
 } from "./email.schema";
 
-const account = container.resolve(EmailAccountService);
+const account = container.get(EmailAccountService);
 
 const OAUTH_COOKIE_PATH = "/api/email/oauth";
 const STATE_COOKIES = { state: "email_oauth_state", companion: "email_oauth_provider" };

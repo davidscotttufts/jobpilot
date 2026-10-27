@@ -13,7 +13,7 @@ import { PushService } from "@/common/push/push.service";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
 
-const push = container.resolve(PushService);
+const push = container.get(PushService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Push"] } })

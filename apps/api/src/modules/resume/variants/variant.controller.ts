@@ -19,7 +19,7 @@ import {
 } from "./variant.schema";
 import { ResumeVariantService } from "./variant.service";
 
-const svc = container.resolve(ResumeVariantService);
+const svc = container.get(ResumeVariantService);
 
 export const resumeVariantController = new Elysia({
   name: "resume-variants",

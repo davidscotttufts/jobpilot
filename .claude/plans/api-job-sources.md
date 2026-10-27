@@ -108,7 +108,7 @@ User decisions:
     `derivePostedWithinDays(lastRunAt, now)` (min 1, cap 30, undefined on first run),
     `splitNewPostings` (key + canonical-URL dedupe against existing campaign rows),
     `apiSearchHoldUntil` / `providerRetryAt` helpers, `summarizeFit`.
-  - `job-source-run.service.ts` (@singleton; value imports for tsyringe):
+  - `job-source-run.service.ts` (`@injectable()`, deps via `inject()`):
     `runForCampaign(userId, campaignId, opts? {pilotSearchId?, postedWithinDays?})`:
     ensure owned campaign, resolve adapter or 409, per-campaign and per-domain (4) concurrency
     slots, load `user.requiresSponsorship`, `adapter.search`, dedupe against campaign rows
@@ -217,7 +217,7 @@ User decisions:
 - Sparse enrichment: all-optional parse schema; zero-skill hits still become campaign jobs but
   are rejected by `buildListingDraft`'s quality gate.
 - Elysia strips undeclared response fields: declare `kind` and run-result fields everywhere.
-- Registry and adapters must not import Prisma or `@/env`; tsyringe needs value imports.
+- Registry and adapters must not import Prisma or `@/env`.
 
 ## Verification
 

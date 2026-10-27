@@ -6,7 +6,7 @@ import {
   type ReportPilotUsageInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, notFound } from "@/common/errors";
 import { reviveJsonDates, toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
@@ -77,11 +77,11 @@ async function assertStillStartable(
   if (remaining === 0) throw conflict(gone);
 }
 
-@singleton()
+@injectable()
 export class RunService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly journal: PilotJournalService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly journal = inject(PilotJournalService),
   ) {}
 
   async start(userId: string, taskListVersion: string, taskId: string) {

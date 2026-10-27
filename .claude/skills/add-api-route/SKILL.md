@@ -15,7 +15,7 @@ envelope). Steps:
 3. Route: in `modules/<name>/<name>.controller.ts`, add `body`/`query`/`params` as needed, the
    `response` success schema, a `detail` summary, and a `rateLimit(policy)` `beforeHandle`
    where the endpoint warrants one. No per-route error responses - they're declared globally.
-4. Logic in `<name>.service.ts` (tsyringe `@singleton`; injected classes stay value imports).
+4. Logic in `<name>.service.ts` (`@injectable()`; deps as `private readonly x = inject(X)`).
    New module: mirror an existing one and mount its controller in `app.ts`.
 5. Web side (if needed): Eden Treaty picks up types automatically; add query/mutation hooks
    under `apps/web/src/api/`.

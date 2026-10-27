@@ -1,5 +1,5 @@
 import type { JobBoardInput } from "@jobpilot/contracts/job-board";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
@@ -15,9 +15,9 @@ function project(row: LinkRow) {
   return { id: row.id, ...row.jobBoard };
 }
 
-@singleton()
+@injectable()
 export class JobBoardService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** Unpaginated: a user's boards are bounded by the catalog, and selects read the whole list. */
   async list(userId: string) {

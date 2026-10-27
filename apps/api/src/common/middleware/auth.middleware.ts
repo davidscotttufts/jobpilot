@@ -4,8 +4,6 @@ import { container } from "@/common/di/container";
 import { unauthorized } from "@/common/errors";
 import { ApiTokenService } from "@/modules/auth/api-token.service";
 
-const apiTokenService = container.resolve(ApiTokenService);
-
 interface AuthContext {
   headers: Record<string, string | undefined>;
   cookie: Record<string, Cookie<unknown> | undefined>;
@@ -28,7 +26,8 @@ export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise
   if (jwtUser) {
     return jwtUser;
   }
-  return apiTokenService.verify(token);
+  // Resolved per call, not at import, so a test can bind a fake before the first request.
+  return container.get(ApiTokenService).verify(token);
 }
 
 /** Derives `user`. Throws 401 when unauthenticated. */

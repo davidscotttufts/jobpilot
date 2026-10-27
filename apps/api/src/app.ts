@@ -1,4 +1,3 @@
-import "@/common/di/container";
 import { Elysia } from "elysia";
 import { db } from "@/common/database/prisma.client";
 import { logger } from "@/common/logger";

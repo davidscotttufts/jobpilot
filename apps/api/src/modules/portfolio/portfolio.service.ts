@@ -1,5 +1,5 @@
 import { resumeDataSchema } from "@jobpilot/contracts/resume";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { bucketPerDay, DAY_MS, startOfDay } from "@/common/date/buckets";
 import { notFound } from "@/common/errors";
 import { MemoryCache } from "@/common/memory-cache";
@@ -19,9 +19,9 @@ const activity = (r: { applications: number; messagesSent: number }) =>
 const LEADERBOARD_CAP = 50;
 const LEADERBOARD_TTL_MS = 5 * 60 * 1000;
 
-@singleton()
+@injectable()
 export class PortfolioService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private readonly leaderboardCache = new MemoryCache<LeaderboardWindow, LeaderboardResponse>({
     ttlMs: LEADERBOARD_TTL_MS,

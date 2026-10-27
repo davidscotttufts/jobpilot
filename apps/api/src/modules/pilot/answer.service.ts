@@ -1,12 +1,12 @@
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { notFound } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const answerFields = { key: true, value: true, updatedAt: true } as const;
 
-@singleton()
+@injectable()
 export class ProfileAnswerService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   list(userId: string) {
     return this.prisma.profileAnswer.findMany({

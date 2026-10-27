@@ -18,7 +18,7 @@ import {
 } from "./application.schema";
 import { ApplicationService } from "./application.service";
 
-const svc = container.resolve(ApplicationService);
+const svc = container.get(ApplicationService);
 const limitNote = rateLimit(RATE_LIMITS.applicationNote);
 
 export const applicationController = new Elysia({

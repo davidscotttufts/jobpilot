@@ -3,7 +3,7 @@ import type {
   ReportPilotSearchRunInput,
   UpdatePilotSearchInput,
 } from "@jobpilot/contracts/pilot";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { HOUR_MS } from "@/common/date/buckets";
 import { conflict, findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -35,9 +35,9 @@ export function scheduleNextRun(emptyRuns: number, run: ReportPilotSearchRunInpu
 }
 
 /** The pilot's self-managed discovery searches. */
-@singleton()
+@injectable()
 export class PilotSearchService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private clearTaskList(userId: string) {
     return this.prisma.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });

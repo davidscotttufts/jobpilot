@@ -4,7 +4,7 @@ import { authGuard } from "@/common/middleware";
 import { analyticsStatsSchema } from "./analytics.schema";
 import { AnalyticsService } from "./analytics.service";
 
-const analyticsService = container.resolve(AnalyticsService);
+const analyticsService = container.get(AnalyticsService);
 
 export const analyticsController = new Elysia({
   prefix: "/analytics",

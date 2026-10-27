@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { EmailProvider, OAuthClientUpsertInput } from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/networking";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { badRequest, conflict, ErrorCodes, HttpError, unprocessable } from "@/common/errors";
 import { env } from "@/env";
@@ -15,11 +15,11 @@ import {
 } from "../gmail.provider";
 import { loadFreshAccount, resolveOAuthClient } from "./account.utils";
 
-@singleton()
+@injectable()
 export class EmailAccountService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly crypto: CryptoService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly crypto = inject(CryptoService),
   ) {}
 
   async accountStatus(userId: string) {

@@ -1,8 +1,8 @@
-import { singleton } from "tsyringe";
+import { injectable } from "@needle-di/core";
 
 const VERSION = "2.0.0";
 
-@singleton()
+@injectable()
 export class HealthService {
   status() {
     return {

@@ -20,8 +20,8 @@ import {
 import { CampaignJobService } from "./job.service";
 import { CampaignJobQueryService } from "./job-query.service";
 
-const svc = container.resolve(CampaignJobService);
-const queries = container.resolve(CampaignJobQueryService);
+const svc = container.get(CampaignJobService);
+const queries = container.get(CampaignJobQueryService);
 
 export const campaignJobController = new Elysia({
   name: "campaign-jobs",

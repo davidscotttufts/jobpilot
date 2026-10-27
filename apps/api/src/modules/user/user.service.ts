@@ -1,11 +1,11 @@
-import {
-  type PortfolioSettingsPatch,
-  type SalaryCurrency,
-  type SalaryPeriod,
-  type UserWithAutoApplyInput,
+import type {
+  PortfolioSettingsPatch,
+  SalaryCurrency,
+  SalaryPeriod,
+  UserWithAutoApplyInput,
 } from "@jobpilot/contracts/user";
-import { singleton } from "tsyringe";
-import { conflict, findOwned, notFound } from "@/common/errors";
+import { inject, injectable } from "@needle-di/core";
+import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage/storage";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { PORTFOLIO_SETTINGS_SELECT } from "./user.mapper";
@@ -41,9 +41,23 @@ const USER_SCALAR_SELECT = {
   updatedAt: true,
 } as const;
 
-@singleton()
+@injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+
+  /**
+   * Gate for outward-facing actions (creating campaigns, composing networking messages):
+   * email verification is otherwise non-blocking, so this is the only enforcement.
+   */
+  async requireVerifiedEmail(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailVerified: true },
+    });
+    if (!user?.emailVerified) {
+      throw emailNotVerified();
+    }
+  }
 
   async get(userId: string) {
     const user = await findOwned(

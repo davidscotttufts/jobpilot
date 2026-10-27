@@ -13,7 +13,7 @@ import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { PromotionService } from "./promotion.service";
 
-const promotions = container.resolve(PromotionService);
+const promotions = container.get(PromotionService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const promotionController = new Elysia({

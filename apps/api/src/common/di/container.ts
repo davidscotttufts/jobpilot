@@ -1,23 +1,14 @@
-import "reflect-metadata";
-import { container } from "tsyringe";
+import { Container } from "@needle-di/core";
 import { db } from "@/common/database/prisma.client";
 import { ConsoleMailer, MAILER, ResendMailer } from "@/common/mail";
-import { VAPID_CONFIG, type VapidConfigHolder } from "@/common/push/push.service";
+import { VAPID_CONFIG } from "@/common/push/push.service";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 
-// Register the Prisma singleton so tsyringe resolves PrismaClient by class
-// reference in service constructors.
-container.registerInstance(PrismaClient, db);
+// Services are `@injectable()` and bind themselves on first `get`; only values and interface
+// tokens are bound here. env is read only here, so services stay testable without a full env.
+export const container = new Container();
 
-// Bind the Mailer token: Resend when an API key is configured, otherwise a console
-// mailer that logs magic links for local dev. Registered here so it exists before
-// controllers resolve services (e.g. AuthService) at import.
-container.registerSingleton(MAILER, env.RESEND_API_KEY ? ResendMailer : ConsoleMailer);
-
-// Web push VAPID config, or null when unconfigured. Wrapped in a holder so PushService gets a value
-// (not undefined) either way, and so env - which validates at load - is only touched here, never in
-// push.service.ts (keeping that module unit-testable without a full env).
 const vapid =
   env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY && env.VAPID_SUBJECT
     ? {
@@ -26,6 +17,10 @@ const vapid =
         subject: env.VAPID_SUBJECT,
       }
     : null;
-container.register<VapidConfigHolder>(VAPID_CONFIG, { useValue: { vapid } });
 
-export { container };
+container.bindAll(
+  { provide: PrismaClient, useValue: db },
+  // Resend when an API key is configured, otherwise a mailer that logs magic links for local dev.
+  { provide: MAILER, useClass: env.RESEND_API_KEY ? ResendMailer : ConsoleMailer },
+  { provide: VAPID_CONFIG, useValue: vapid },
+);

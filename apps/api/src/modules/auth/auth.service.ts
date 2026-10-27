@@ -1,5 +1,5 @@
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import {
   durationToMs,
   generateOpaqueToken,
@@ -12,15 +12,15 @@ import { conflict, notFound, unauthorized } from "@/common/errors";
 import { normalizeEmail } from "@/common/utils/email";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
-import { PrismaClient, type User, UserRole } from "@/generated/prisma/client";
+import { PrismaClient, type User, type UserRole } from "@/generated/prisma/client";
 import { meUser, principal, publicUser } from "./auth.mapper";
 
 const REFRESH_TTL_MS = durationToMs(env.REFRESH_TOKEN_EXPIRY, 30 * 86_400_000);
 
 /** Email/password accounts and refresh-token sessions. */
-@singleton()
+@injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** Mint an access JWT + a persisted (hashed) rotating refresh token. */
   private async issueTokens(user: User) {

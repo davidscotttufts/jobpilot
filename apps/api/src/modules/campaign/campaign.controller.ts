@@ -7,8 +7,9 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
-import { authGuard, requireVerifiedEmail } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
+import { UserService } from "@/modules/user/user.service";
 import {
   campaignDeletedSchema,
   campaignListSchema,
@@ -17,7 +18,8 @@ import {
 } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 
-const svc = container.resolve(CampaignService);
+const svc = container.get(CampaignService);
+const users = container.get(UserService);
 
 export const campaignController = new Elysia({
   prefix: "/campaigns",
@@ -36,7 +38,7 @@ export const campaignController = new Elysia({
   .post(
     "/",
     async ({ user, body }) => {
-      await requireVerifiedEmail(user.id);
+      await users.requireVerifiedEmail(user.id);
       return svc.create(user.id, body);
     },
     {

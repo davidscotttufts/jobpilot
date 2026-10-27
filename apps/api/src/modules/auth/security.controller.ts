@@ -12,8 +12,8 @@ import { REFRESH_COOKIE } from "./auth.cookies";
 import { SecurityService } from "./security.service";
 import { VerificationService } from "./verification.service";
 
-const securityService = container.resolve(SecurityService);
-const verificationService = container.resolve(VerificationService);
+const securityService = container.get(SecurityService);
+const verificationService = container.get(VerificationService);
 
 const limitEmailChangeConfirm = rateLimit(RATE_LIMITS.emailChangeConfirm);
 const limitPasswordChange = rateLimit(RATE_LIMITS.passwordChange);

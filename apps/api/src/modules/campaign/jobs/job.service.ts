@@ -6,7 +6,7 @@ import type {
   RetryCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned } from "@/common/errors";
 import { publish } from "@/common/sse";
 import {
@@ -56,11 +56,11 @@ export interface ScoredJobPromotion {
   threshold: number;
 }
 
-@singleton()
+@injectable()
 export class CampaignJobService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly listings: JobListingPublisher,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly listings = inject(JobListingPublisher),
   ) {}
 
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {

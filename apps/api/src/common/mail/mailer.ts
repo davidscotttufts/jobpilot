@@ -1,3 +1,4 @@
+import { InjectionToken } from "@needle-di/core";
 import type { ReactElement } from "react";
 
 /** A transactional email: a subject plus a React-rendered body. */
@@ -13,4 +14,4 @@ export interface Mailer {
 }
 
 /** DI token for the active {@link Mailer} implementation. */
-export const MAILER = Symbol("Mailer");
+export const MAILER = new InjectionToken<Mailer>("MAILER");

@@ -3,7 +3,7 @@ import type {
   resumeVariantPatchSchema,
 } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
@@ -29,11 +29,11 @@ type ResumeVariantCreateInput = z.infer<typeof resumeVariantCreateSchema>;
 type ResumeVariantPatch = z.infer<typeof resumeVariantPatchSchema>;
 type PruneVariantsQuery = z.infer<typeof pruneVariantsQuerySchema>;
 
-@singleton()
+@injectable()
 export class ResumeVariantService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly resumes: ResumeService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly resumes = inject(ResumeService),
   ) {}
 
   private findVariant(userId: string, id: string) {

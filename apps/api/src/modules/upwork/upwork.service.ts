@@ -13,7 +13,7 @@ import type {
   UpworkProposalStatus,
   UpworkQualityResult,
 } from "@jobpilot/contracts/upwork";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { decodeUpworkProposal, toUpworkInboxItemDto, toUpworkProfileDto } from "./upwork.mapper";
@@ -42,9 +42,9 @@ const ACCOUNT_SELECT = {
   updatedAt: true,
 } as const;
 
-@singleton()
+@injectable()
 export class UpworkService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   scoreClientQuality(client: UpworkClient): UpworkQualityResult {
     return scoreUpworkClient(client);

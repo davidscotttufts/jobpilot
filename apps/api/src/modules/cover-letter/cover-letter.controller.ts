@@ -13,7 +13,7 @@ import {
 } from "./cover-letter.schema";
 import { type CoverLetterPdf, CoverLetterService } from "./cover-letter.service";
 
-const svc = container.resolve(CoverLetterService);
+const svc = container.get(CoverLetterService);
 
 /** Wrap a rendered cover-letter PDF in an inline Response. */
 function pdfResponse({ buffer, slug }: CoverLetterPdf): Response {

@@ -5,7 +5,7 @@ import type {
   PilotQuestionStatus,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { PushService } from "@/common/push/push.service";
@@ -29,12 +29,12 @@ function expiryOf(body: CreatePilotQuestionInput): Date | null {
   return null;
 }
 
-@singleton()
+@injectable()
 export class PilotQuestionService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly push: PushService,
-    private readonly answers: ProfileAnswerService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly push = inject(PushService),
+    private readonly answers = inject(ProfileAnswerService),
   ) {}
 
   async createQuestion(userId: string, body: CreatePilotQuestionInput) {

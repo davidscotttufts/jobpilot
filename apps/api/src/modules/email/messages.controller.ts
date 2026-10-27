@@ -18,8 +18,8 @@ import {
 import { EmailService } from "./email.service";
 import { EmailSyncService } from "./sync/sync.service";
 
-const svc = container.resolve(EmailService);
-const sync = container.resolve(EmailSyncService);
+const svc = container.get(EmailService);
+const sync = container.get(EmailSyncService);
 
 /** Inbox messages (list/get/scan/approve/deny), inbound sync, and the events stream. */
 export const emailMessagesController = new Elysia({

@@ -10,7 +10,7 @@ import {
 } from "@jobpilot/contracts/networking";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { publishActivity, writeActivity } from "@/common/activity-log";
 import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
@@ -26,9 +26,9 @@ export interface NetworkingMessageFilters {
   order?: "asc" | "desc";
 }
 
-@singleton()
+@injectable()
 export class NetworkingService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** A campaign's board when `campaignId` is set, otherwise every campaign's messages. */
   async listNetworking(userId: string, query: PaginationQuery & NetworkingMessageFilters) {

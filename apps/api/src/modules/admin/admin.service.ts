@@ -2,7 +2,7 @@ import type { AdminPilotQuery, AdminUserQuery } from "@jobpilot/contracts/admin"
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { sumTokenUsage } from "@jobpilot/contracts/pilot";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { AuthUser } from "@/common/auth";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
@@ -22,9 +22,9 @@ const USER_SELECT = {
 
 type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
 
-@singleton()
+@injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async stats() {
     const weekStart = startOfWeek();

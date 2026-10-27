@@ -4,7 +4,7 @@ import type {
   JobListingStatus,
 } from "@jobpilot/contracts/job-listing";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { notFound } from "@/common/errors";
 import { MemoryCache } from "@/common/memory-cache";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
@@ -39,7 +39,7 @@ const SIMILAR_SOURCE_SELECT = {
   location: true,
 } satisfies Prisma.JobListingSelect;
 
-@singleton()
+@injectable()
 export class JobListingService {
   private readonly vocabulary = new MemoryCache<"all", SkillVocabulary>({ ttlMs: LOOKUP_TTL_MS });
   private readonly boardNames = new MemoryCache<"all", BoardNameLookup>({ ttlMs: LOOKUP_TTL_MS });
@@ -48,7 +48,7 @@ export class JobListingService {
     maxEntries: SIMILAR_CACHE_SIZE,
   });
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   list(query: JobListingQuery) {
     return this.page({ ...query, status: "published" }, (args) =>

@@ -5,7 +5,7 @@ import type {
 } from "@jobpilot/contracts/application";
 import { APPLICATION_STATUSES, SINGLE_APPLY_CAMPAIGN } from "@jobpilot/contracts/application";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { type DuplicateLookup, findAppliedDuplicate } from "./duplicate";
@@ -19,9 +19,9 @@ export interface AppliedListFilters {
   campaignId?: string;
 }
 
-@singleton()
+@injectable()
 export class ApplicationService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async list(userId: string, query: PaginationQuery & AppliedListFilters) {
     const where = this.where(userId, query);

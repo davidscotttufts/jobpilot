@@ -5,7 +5,7 @@ import { authGuard } from "@/common/middleware";
 import { accountDisconnectedSchema, accountStatusSchema, sentMessageSchema } from "../email.schema";
 import { EmailAccountService } from "./account.service";
 
-const account = container.resolve(EmailAccountService);
+const account = container.get(EmailAccountService);
 
 /** Mailbox account status, disconnect, and outbound send. */
 export const emailAccountController = new Elysia({

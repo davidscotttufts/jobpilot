@@ -1,6 +1,6 @@
 import type { AdminBoardInput, AdminBoardPatch } from "@jobpilot/contracts/job-board";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 
 /** How many profiles have linked the board - the only thing the catalog view adds to the row. */
@@ -12,9 +12,9 @@ type BoardRow = Prisma.JobBoardGetPayload<{ include: typeof WITH_ADOPTION }>;
  * CRUD on the global board catalog. No existence pre-checks - the error middleware already maps
  * Prisma P2002 -> 409 and P2025 -> 404.
  */
-@singleton()
+@injectable()
 export class AdminBoardService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private project(row: BoardRow) {
     const { _count, ...board } = row;

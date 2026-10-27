@@ -4,7 +4,7 @@ import { authGuard } from "@/common/middleware";
 import { fitResultSchema, scoreFitSchema } from "./scoring.schema";
 import { ScoringService } from "./scoring.service";
 
-const scoringService = container.resolve(ScoringService);
+const scoringService = container.get(ScoringService);
 
 export const scoringController = new Elysia({
   prefix: "/score-fit",

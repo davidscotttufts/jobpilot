@@ -11,7 +11,7 @@ import {
 } from "./job-board.schema";
 import { JobBoardService } from "./job-board.service";
 
-const svc = container.resolve(JobBoardService);
+const svc = container.get(JobBoardService);
 
 export const jobBoardController = new Elysia({
   prefix: "/job-boards",

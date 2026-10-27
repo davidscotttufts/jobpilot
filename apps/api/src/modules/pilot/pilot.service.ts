@@ -7,7 +7,7 @@ import {
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
@@ -24,9 +24,9 @@ import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 const PILOT_CAMPAIGN = { createdBy: "pilot" } as const;
 
 /** Pilot state, instructions, and the stats and liveness reads. */
-@singleton()
+@injectable()
 export class PilotService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private async toState(row: PilotStateModel): Promise<PilotState> {
     const config = pilotInstructionsConfigSchema.parse(row.instructionsConfig);

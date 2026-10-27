@@ -7,7 +7,8 @@ import { paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
-import { authGuard, requireVerifiedEmail } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
+import { UserService } from "@/modules/user/user.service";
 import {
   networkingMessageListSchema,
   networkingMessageParams,
@@ -17,7 +18,8 @@ import {
 } from "./networking.schema";
 import { NetworkingService } from "./networking.service";
 
-const svc = container.resolve(NetworkingService);
+const svc = container.get(NetworkingService);
+const users = container.get(UserService);
 
 export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] } })
   .use(authGuard)
@@ -51,7 +53,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
   .post(
     "/campaigns/:id/networking",
     async ({ user, params, body }) => {
-      await requireVerifiedEmail(user.id);
+      await users.requireVerifiedEmail(user.id);
       return svc.addNetworking(user.id, params.id, body);
     },
     {

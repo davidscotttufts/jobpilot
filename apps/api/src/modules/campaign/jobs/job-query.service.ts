@@ -1,14 +1,14 @@
 import type { CampaignJobReason } from "@jobpilot/contracts/campaign";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { ensureCampaignOwned } from "../campaign.utils";
 import type { campaignJobsQuery } from "./job.schema";
 
-@singleton()
+@injectable()
 export class CampaignJobQueryService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async listJobs(userId: string, campaignId: string, query: z.infer<typeof campaignJobsQuery>) {
     const where: Prisma.JobWhereInput = {

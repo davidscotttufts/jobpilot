@@ -1,7 +1,8 @@
 import { cron, Patterns } from "@elysiajs/cron";
-import { db } from "@/common/database/prisma.client";
+import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
+import { PrismaClient } from "@/generated/prisma/client";
 import { runRetentionCleanup } from "./cleanup";
 
 /** Daily job (03:30 server time, offset from prune-pdf-cache) that sweeps expired pilot/auth rows. */
@@ -14,7 +15,7 @@ export const cleanupJob = cron({
       return;
     }
 
-    runRetentionCleanup(db)
+    runRetentionCleanup(container.get(PrismaClient))
       .then((counts) => logger.info({ ...counts }, "Retention cleanup complete"))
       .catch((err) => logger.error({ err }, "Retention cleanup failed"));
   },

@@ -1,5 +1,5 @@
 import type { ApiTokenCreateInput } from "@jobpilot/contracts";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { type AuthUser, generateOpaqueToken, hashToken } from "@/common/auth";
 import { CryptoService, KeyUnrecoverableError, SECRET_CONTEXTS } from "@/common/crypto";
 import { notFound } from "@/common/errors";
@@ -10,11 +10,11 @@ import { principal } from "./auth.mapper";
 const TERMINAL_TOKEN_NAME = "terminal";
 
 /** Agent personal access tokens (PATs): long-lived bearer tokens for the local agent. */
-@singleton()
+@injectable()
 export class ApiTokenService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly crypto: CryptoService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly crypto = inject(CryptoService),
   ) {}
 
   /** Project a token row + its raw value into the minted-token response shape. */

@@ -30,7 +30,7 @@ import {
 } from "./upwork.schema";
 import { UpworkService } from "./upwork.service";
 
-const svc = container.resolve(UpworkService);
+const svc = container.get(UpworkService);
 
 export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: ["Upwork"] } })
   .post("/client-quality", ({ body }) => svc.scoreClientQuality(body.client), {

@@ -1,12 +1,11 @@
+import { inject, injectable } from "@needle-di/core";
 import { createElement } from "react";
-import { inject, singleton } from "tsyringe";
 import { generateOpaqueToken, hashPassword, hashToken } from "@/common/auth";
 import { badRequest, conflict, notFound } from "@/common/errors";
 import {
   EmailChangeEmail,
   emailChangeEmailSubject,
   MAILER,
-  type Mailer,
   PasswordResetEmail,
   passwordResetEmailSubject,
   VerificationEmail,
@@ -26,11 +25,11 @@ const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000; // 1 hour
  * password reset, and email change. Only token hashes are stored; the raw token
  * travels in the emailed link.
  */
-@singleton()
+@injectable()
 export class VerificationService {
   constructor(
-    private readonly prisma: PrismaClient,
-    @inject(MAILER) private readonly mailer: Mailer,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly mailer = inject(MAILER),
   ) {}
 
   /** Issue a single-use, expiring token; only its hash is stored. */

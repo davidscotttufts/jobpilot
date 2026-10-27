@@ -12,7 +12,7 @@ import {
 } from "./credential.schema";
 import { CredentialService } from "./credential.service";
 
-const svc = container.resolve(CredentialService);
+const svc = container.get(CredentialService);
 
 export const credentialController = new Elysia({
   prefix: "/credentials",

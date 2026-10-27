@@ -12,7 +12,7 @@ import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { PilotQuestionService } from "./question.service";
 
-const questions = container.resolve(PilotQuestionService);
+const questions = container.get(PilotQuestionService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotQuestionsController = new Elysia({

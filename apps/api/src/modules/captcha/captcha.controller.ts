@@ -6,7 +6,7 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { captchaSolveResultSchema } from "./captcha.schema";
 import { CaptchaService } from "./captcha.service";
 
-const svc = container.resolve(CaptchaService);
+const svc = container.get(CaptchaService);
 
 // Runs after authGuard's derive, so `user` is in context - the policy is user-keyed.
 const limitSolve = rateLimit(RATE_LIMITS.captchaSolve);

@@ -1,5 +1,5 @@
 import { inboxChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { CryptoService } from "@/common/crypto";
 import { ErrorCodes, HttpError, notFound } from "@/common/errors";
 import { logger } from "@/common/logger";
@@ -15,11 +15,11 @@ interface InboundForLinking {
   receivedAt: Date;
 }
 
-@singleton()
+@injectable()
 export class EmailSyncService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly crypto: CryptoService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly crypto = inject(CryptoService),
   ) {}
 
   /**

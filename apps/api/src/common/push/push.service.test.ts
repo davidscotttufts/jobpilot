@@ -3,16 +3,14 @@
 // injected via the constructor - so this loads with no database and no env.
 import webpush from "web-push";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { PushService, type VapidConfigHolder } from "./push.service";
+import { PushService, type VapidConfig } from "./push.service";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const VAPID = webpush.generateVAPIDKeys();
-const configured: VapidConfigHolder = {
-  vapid: {
-    publicKey: VAPID.publicKey,
-    privateKey: VAPID.privateKey,
-    subject: "mailto:test@jobpilot.dev",
-  },
+const configured: VapidConfig = {
+  publicKey: VAPID.publicKey,
+  privateKey: VAPID.privateKey,
+  subject: "mailto:test@jobpilot.dev",
 };
 
 interface Sub {
@@ -55,9 +53,9 @@ function makeDb(overrides: Partial<Rec> = {}) {
   return { db, rec };
 }
 
-const svc = (overrides?: Partial<Rec>, holder: VapidConfigHolder = configured) => {
+const svc = (overrides?: Partial<Rec>, vapid: VapidConfig | null = configured) => {
   const { db, rec } = makeDb(overrides);
-  return { push: new PushService(db as unknown as PrismaClient, holder), rec };
+  return { push: new PushService(db as unknown as PrismaClient, vapid), rec };
 };
 
 const realSend = webpush.sendNotification;
@@ -67,7 +65,7 @@ afterEach(() => {
 
 describe("PushService config", () => {
   it("reports unconfigured and a null public key when VAPID is absent", () => {
-    const { push } = svc({}, { vapid: null });
+    const { push } = svc({}, null);
     expect(push.isConfigured).toBe(false);
     expect(push.publicKey).toBeNull();
   });
@@ -130,7 +128,7 @@ describe("PushService sendToUser", () => {
     webpush.sendNotification = send as unknown as typeof webpush.sendNotification;
     const { push } = svc(
       { findMany: [{ id: "s1", endpoint: "e1", p256dh: "pub", auth: "sec" }] },
-      { vapid: null },
+      null,
     );
 
     await push.sendToUser("p1", { title: "t", body: "b" });

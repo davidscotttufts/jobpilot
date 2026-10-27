@@ -5,7 +5,7 @@ import { authGuard } from "@/common/middleware";
 import { contactListSchema } from "./contact.schema";
 import { ContactService } from "./contact.service";
 
-const contactService = container.resolve(ContactService);
+const contactService = container.get(ContactService);
 
 export const contactController = new Elysia({
   prefix: "/contacts",

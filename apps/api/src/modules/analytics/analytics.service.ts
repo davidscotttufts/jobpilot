@@ -1,5 +1,5 @@
 import { INTERVIEW_STATUSES } from "@jobpilot/contracts/application";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -9,9 +9,9 @@ const RESPONDED_STATUSES = [...INTERVIEW_STATUSES, "offer", "rejected"] as const
 /** Statuses that mean the message left the outbox. */
 const DISPATCHED_MESSAGE_STATUSES = ["sent", "replied", "bounced"] as const;
 
-@singleton()
+@injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async stats(userId: string) {
     const weekStart = startOfWeek();

@@ -24,9 +24,9 @@ import {
 import { AuthService } from "./auth.service";
 import { VerificationService } from "./verification.service";
 
-const authService = container.resolve(AuthService);
-const verificationService = container.resolve(VerificationService);
-const apiTokenService = container.resolve(ApiTokenService);
+const authService = container.get(AuthService);
+const verificationService = container.get(VerificationService);
+const apiTokenService = container.get(ApiTokenService);
 
 // One hook per route: each public route needs its own policy, and /me and /tokens/* stay unthrottled.
 const limitRegister = rateLimit(RATE_LIMITS.register);

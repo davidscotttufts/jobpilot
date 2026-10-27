@@ -9,7 +9,7 @@ import { setAuthCookies } from "./auth.cookies";
 import { oauthCallbackQuery, oauthProviderParams, oauthStartQuery } from "./auth.schema";
 import { OAuthService } from "./oauth.service";
 
-const oauthService = container.resolve(OAuthService);
+const oauthService = container.get(OAuthService);
 
 const OAUTH_COOKIE_PATH = "/api/auth/providers";
 const STATE_COOKIES = { state: "auth_oauth_state", companion: "auth_oauth_intent" };

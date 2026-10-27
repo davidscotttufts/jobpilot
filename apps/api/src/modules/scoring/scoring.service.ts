@@ -1,4 +1,4 @@
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent } from "@/modules/resume/content";
 import { type FitResult, scoreFit } from "./fit";
@@ -12,9 +12,9 @@ interface ScoreJobFitInput {
   minScore?: number;
 }
 
-@singleton()
+@injectable()
 export class ScoringService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /**
    * Loads the user's primary resume, derives fit inputs from it, merges any

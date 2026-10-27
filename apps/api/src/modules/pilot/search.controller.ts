@@ -13,7 +13,7 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
 import { PilotSearchService } from "./search.service";
 
-const searches = container.resolve(PilotSearchService);
+const searches = container.get(PilotSearchService);
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 

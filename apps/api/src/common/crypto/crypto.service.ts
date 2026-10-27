@@ -1,4 +1,4 @@
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { KeyUnrecoverableError } from "./errors";
@@ -12,12 +12,12 @@ const MASTER_KEY = Buffer.from(env.SECRET_MASTER_KEY, "base64");
  * the DEK encrypts that user's secrets (board logins, captcha keys, Gmail tokens).
  * Deleting the user drops the wrapped DEK, crypto-shredding their secrets.
  */
-@singleton()
+@injectable()
 export class CryptoService {
   /** Unwrapped DEKs, cached per process keyed by userId. */
   private readonly dekCache = new Map<string, Buffer>();
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private async getDek(userId: string): Promise<Buffer> {
     const cached = this.dekCache.get(userId);

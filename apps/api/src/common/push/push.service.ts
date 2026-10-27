@@ -1,4 +1,4 @@
-import { inject, singleton } from "tsyringe";
+import { InjectionToken, inject, injectable } from "@needle-di/core";
 import webpush from "web-push";
 import { PrismaClient } from "@/generated/prisma/client";
 
@@ -9,11 +9,7 @@ export interface VapidConfig {
   subject: string;
 }
 
-/** DI token for the VAPID config. Held in a wrapper so the useValue provider is never `null`. */
-export const VAPID_CONFIG = Symbol("VAPID_CONFIG");
-export interface VapidConfigHolder {
-  vapid: VapidConfig | null;
-}
+export const VAPID_CONFIG = new InjectionToken<VapidConfig | null>("VAPID_CONFIG");
 
 export interface PushPayload {
   title: string;
@@ -35,15 +31,12 @@ function truncate(text: string, max: number): string {
 // Intentionally no @/common/logger here: it imports @/env, which validates at load and would make
 // this module (and PilotService, which depends on it) impossible to unit-test without a full env.
 
-@singleton()
+@injectable()
 export class PushService {
-  private readonly vapid: VapidConfig | null;
-
   constructor(
-    private readonly prisma: PrismaClient,
-    @inject(VAPID_CONFIG) config: VapidConfigHolder,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly vapid = inject(VAPID_CONFIG),
   ) {
-    this.vapid = config.vapid;
     if (this.vapid) {
       webpush.setVapidDetails(this.vapid.subject, this.vapid.publicKey, this.vapid.privateKey);
     }

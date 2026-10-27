@@ -11,7 +11,7 @@ import {
   adminBoardRecordSchema,
 } from "./job-board.schema";
 
-const svc = container.resolve(AdminBoardService);
+const svc = container.get(AdminBoardService);
 
 /** Catalog CRUD for admins. Register new admin controllers in `admin.guard.test.ts`. */
 export const adminBoardController = new Elysia({

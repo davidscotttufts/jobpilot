@@ -5,7 +5,7 @@ import {
   pilotInstructionsConfigSchema,
   type TaskList,
 } from "@jobpilot/contracts/pilot";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { PushService } from "@/common/push/push.service";
@@ -72,14 +72,14 @@ async function allNamed<T extends Record<string, unknown>>(
   };
 }
 
-@singleton()
+@injectable()
 export class TaskListService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly campaignJobs: CampaignJobService,
-    private readonly journal: PilotJournalService,
-    private readonly push: PushService,
-    private readonly emailSync: EmailSyncService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly campaignJobs = inject(CampaignJobService),
+    private readonly journal = inject(PilotJournalService),
+    private readonly push = inject(PushService),
+    private readonly emailSync = inject(EmailSyncService),
   ) {}
 
   /** The current snapshot, with none of refresh's writes. */

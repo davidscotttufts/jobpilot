@@ -19,8 +19,8 @@ import {
 } from "./user.schema";
 import { UserService } from "./user.service";
 
-const svc = container.resolve(UserService);
-const portfolioSvc = container.resolve(PortfolioService);
+const svc = container.get(UserService);
+const portfolioSvc = container.get(PortfolioService);
 
 export const userController = new Elysia({
   prefix: "/user",

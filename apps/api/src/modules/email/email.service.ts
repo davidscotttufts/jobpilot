@@ -6,7 +6,7 @@ import {
 } from "@jobpilot/contracts/email";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inboxChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
 import { publish } from "@/common/sse";
@@ -18,9 +18,9 @@ import { emailStatusNote, verdictOps } from "./verdict";
 
 type MessageQuery = z.infer<typeof messageFilters>;
 
-@singleton()
+@injectable()
 export class EmailService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private messageWhere(userId: string, query: MessageQuery): Prisma.EmailMessageWhereInput {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;

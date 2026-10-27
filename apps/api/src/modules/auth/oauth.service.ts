@@ -1,5 +1,5 @@
 import type { OAuthErrorReason, OAuthProviderInput } from "@jobpilot/contracts";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict, notFound } from "@/common/errors";
 import { env } from "@/env";
 import { type OAuthProvider, PrismaClient } from "@/generated/prisma/client";
@@ -14,11 +14,11 @@ import {
 import { revokeRefreshTokens } from "./revoke-refresh-tokens";
 
 /** Google/GitHub sign-in. Identity only: no provider tokens stored, `wrappedDek` untouched. */
-@singleton()
+@injectable()
 export class OAuthService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly authService: AuthService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly authService = inject(AuthService),
   ) {}
 
   private getConfig(provider: OAuthProviderInput): OAuthProviderConfig {

@@ -1,5 +1,5 @@
 import type { CredentialInput, CredentialPatch } from "@jobpilot/contracts/credential";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { findOwned } from "@/common/errors";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -13,11 +13,11 @@ export interface ResolvedCredential {
   scope: string;
 }
 
-@singleton()
+@injectable()
 export class CredentialService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly crypto: CryptoService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly crypto = inject(CryptoService),
   ) {}
 
   private async decryptRow<T extends { password: string | null; apiKey: string | null }>(
