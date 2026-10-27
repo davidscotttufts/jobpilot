@@ -5,10 +5,8 @@
 // writes. Delete once it ran in prod.
 import { db } from "@/common/database/prisma.client";
 import { boardDomain } from "@/modules/job-board/board-host";
-import { JobBoardService } from "@/modules/job-board/job-board.service";
 
 const apply = process.argv.includes("--apply");
-const boards = new JobBoardService(db);
 
 const NOT_BOARD_SCOPES = ["default", "2captcha", "capsolver"];
 
@@ -39,20 +37,39 @@ const raws = await db.$queryRaw<RawRow[]>`
  * raw string -> the catalog row it lands on, or null for a label that is no hostname (the
  * migration then stores no board, and drops such a credential). A dry run names new rows `new:`.
  */
+// Bulk reads and writes: the tunnel makes each round trip ~150ms, so per-row calls take minutes.
+const domainOf = new Map(raws.map(({ raw }) => [raw, boardDomain(raw)]));
+const domains = [...new Set([...domainOf.values()].filter((d) => d !== null))];
+const known = async () => {
+  const rows = await db.jobBoard.findMany({
+    where: { domain: { in: domains } },
+    select: { id: true, domain: true },
+  });
+  return new Map(rows.map((board) => [board.domain, board]));
+};
+let byDomain = await known();
+const missing = new Set(domains.filter((domain) => !byDomain.has(domain)));
+const created = missing.size;
+if (apply && missing.size > 0) {
+  // Unlisted and named by the domain, as `JobBoardService.resolve` creates them.
+  await db.jobBoard.createMany({
+    data: [...missing].map((domain) => ({ domain, name: domain })),
+    skipDuplicates: true,
+  });
+  byDomain = await known();
+}
 const links = new Map<string, { id: string; domain: string } | null>();
-let created = 0;
 for (const { raw } of raws) {
-  const domain = boardDomain(raw);
+  const domain = domainOf.get(raw) ?? null;
   if (!domain) {
     links.set(raw, null);
     console.log(`  ${JSON.stringify(raw)} -> (not a hostname: no board)`);
     continue;
   }
-  const existing = await boards.find(raw);
-  if (!existing) created += 1;
-  const target = existing ?? (apply ? await boards.resolve(raw) : { id: `new:${domain}`, domain });
-  links.set(raw, target);
-  console.log(`  ${JSON.stringify(raw)} -> ${domain}${existing ? "" : "  (new unlisted row)"}`);
+  links.set(raw, byDomain.get(domain) ?? { id: `new:${domain}`, domain });
+  console.log(
+    `  ${JSON.stringify(raw)} -> ${domain}${missing.has(domain) ? "  (new unlisted row)" : ""}`,
+  );
 }
 const unlinked = [...links.values()].filter((link) => link === null).length;
 console.log(
@@ -83,14 +100,16 @@ console.log(`credentials: ${dropIds.length} duplicates to drop`);
 if (apply) {
   await db.$executeRaw`
     CREATE TABLE IF NOT EXISTS "board_links" ("raw" TEXT PRIMARY KEY, "job_board_id" TEXT)`;
-  await db.$transaction([
-    ...[...links].map(
-      ([raw, board]) => db.$executeRaw`
-        INSERT INTO "board_links" ("raw", "job_board_id") VALUES (${raw}, ${board?.id ?? null})
-        ON CONFLICT ("raw") DO UPDATE SET "job_board_id" = EXCLUDED."job_board_id"`,
-    ),
-    db.$executeRaw`DELETE FROM "credentials" WHERE "id" = ANY(${dropIds})`,
-  ]);
+  const rows = [...links];
+  // Single statements: a transaction of a thousand statements outlives Prisma's timeout here.
+  await db.$executeRaw`
+    INSERT INTO "board_links" ("raw", "job_board_id")
+    SELECT * FROM unnest(
+      ${rows.map(([raw]) => raw)}::text[],
+      ${rows.map(([, board]) => board?.id ?? null)}::text[]
+    )
+    ON CONFLICT ("raw") DO UPDATE SET "job_board_id" = EXCLUDED."job_board_id"`;
+  await db.$executeRaw`DELETE FROM "credentials" WHERE "id" = ANY(${dropIds})`;
 }
 console.log(
   apply ? "applied - now run the board_ids migration" : "dry run - pass --apply to write",
