@@ -7,7 +7,7 @@ import type {
 import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/credential";
 import { inject, injectable } from "@needle-di/core";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
-import { ErrorCodes, HttpError, notFound } from "@/common/errors";
+import { badGateway, notFound } from "@/common/errors";
 import { acquireSlot, RATE_LIMITS } from "@/common/rate-limit";
 import { sleep } from "@/common/utils";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -21,11 +21,6 @@ interface ProviderJob {
 
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLLS = 24; // ~120s budget
-
-/** 502 - the upstream solver failed or timed out. */
-function serviceError(message: string): HttpError {
-  return new HttpError(ErrorCodes.INTERNAL, message, 502);
-}
 
 const CAPSOLVER_TASK: Record<CaptchaType, string> = {
   recaptcha: "ReCaptchaV2TaskProxyLess",
@@ -129,7 +124,7 @@ export class CaptchaService {
       task: { type: CAPSOLVER_TASK[job.type], websiteURL: job.pageurl, websiteKey: job.sitekey },
     });
     if (created.errorId !== 0 || !created.taskId) {
-      throw serviceError(`CapSolver createTask failed: ${created.errorDescription ?? "unknown"}`);
+      throw badGateway(`CapSolver createTask failed: ${created.errorDescription ?? "unknown"}`);
     }
 
     const { taskId } = created;
@@ -138,18 +133,18 @@ export class CaptchaService {
 
       const res = await this.capSolverPost(apiKey, "getTaskResult", { taskId });
       if (res.errorId !== 0) {
-        throw serviceError(`CapSolver error: ${res.errorDescription ?? "unknown"}`);
+        throw badGateway(`CapSolver error: ${res.errorDescription ?? "unknown"}`);
       }
 
       if (res.status === "ready") {
         const token = res.solution?.gRecaptchaResponse ?? res.solution?.token;
         if (!token) {
-          throw serviceError("CapSolver returned no token");
+          throw badGateway("CapSolver returned no token");
         }
         return token;
       }
     }
-    throw serviceError("CapSolver timed out");
+    throw badGateway("CapSolver timed out");
   }
 
   private async capSolverPost(
@@ -164,7 +159,7 @@ export class CaptchaService {
       cache: "no-store",
     });
     if (!res.ok) {
-      throw serviceError(`CapSolver responded HTTP ${res.status}`);
+      throw badGateway(`CapSolver responded HTTP ${res.status}`);
     }
     return (await res.json()) as CapSolverResponse;
   }

@@ -86,7 +86,7 @@ Count it in `jobsSeen`. Its key is a shell-safe slug of `company-title`.
    clearance required`.
 4. **Save**: write `{key, title, company, location, url, board, matchScore, matchReason,
    status:"pending", brief}` (`brief` as a JSON string) to `$JOBPILOT_TEMP/<key>-job.json` and `POST
-   /api/campaigns/$CAMPAIGN_ID/jobs --data @...`. A `409` means it's already in the campaign: seen,
+   /api/campaigns/$CAMPAIGN_ID/jobs --data @...`. A `409` with code `DUPLICATE_JOB` means it's already in the campaign: seen,
    not new.
 5. **Skip** a row you just created that has a skip reason: `POST
    /api/campaigns/$CAMPAIGN_ID/jobs/<key>/result` `{"outcome":"skipped","skipReason":"<reason>"}`.

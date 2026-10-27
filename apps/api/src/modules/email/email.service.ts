@@ -8,7 +8,7 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
-import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
+import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
@@ -200,7 +200,7 @@ export class EmailService {
     );
 
     if (!message.matchedAppId) {
-      throw new HttpError(ErrorCodes.UNPROCESSABLE, "Message has no matched application", 422);
+      throw unprocessable("Message has no matched application");
     }
 
     const inferred: ApplicationStatus | undefined =
@@ -209,7 +209,7 @@ export class EmailService {
       (message.classification ? CLASSIFICATION_TO_STATUS[message.classification] : undefined);
 
     if (!inferred) {
-      throw new HttpError(ErrorCodes.UNPROCESSABLE, "No target status available", 422);
+      throw unprocessable("No target status available");
     }
 
     const app = await this.prisma.application.findFirst({

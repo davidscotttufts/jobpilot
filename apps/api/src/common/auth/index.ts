@@ -1,3 +1,4 @@
+export { flowFailureReason, OAuthFlowError } from "./oauth-flow";
 export { oauthStateCookies } from "./oauth-state";
 export { hashPassword, verifyPassword } from "./password";
 export {

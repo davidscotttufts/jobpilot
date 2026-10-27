@@ -1,6 +1,6 @@
-import { oauthClientUpsertSchema } from "@jobpilot/contracts/email";
+import { type EmailConnectErrorReason, oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { Elysia } from "elysia";
-import { oauthStateCookies } from "@/common/auth";
+import { flowFailureReason, oauthStateCookies } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { env } from "@/env";
@@ -68,24 +68,19 @@ export const emailOAuthController = new Elysia({
         stateCookies.clear();
         return redirect(`${env.APP_URL}/inbox?${params}`);
       };
-      const fail = (reason: string) =>
-        back(`emailConnect=error&reason=${encodeURIComponent(reason)}`);
+      const fail = (reason: EmailConnectErrorReason) => back(`emailConnect=error&reason=${reason}`);
 
       if (query.error) {
-        return fail(query.error);
+        return fail(query.error === "access_denied" ? "access_denied" : "provider_error");
       }
-      if (!query.code || !query.state) {
-        return fail("Missing code or state");
-      }
-
-      if (stateCookies.state() !== query.state) {
-        return fail("OAuth state mismatch");
+      if (!query.code || !query.state || stateCookies.state() !== query.state) {
+        return fail("invalid_callback");
       }
 
       try {
         await account.completeEmailOAuth(user.id, query.code);
       } catch (e) {
-        return fail(e instanceof Error ? e.message : "Failed to connect mailbox");
+        return fail(flowFailureReason<EmailConnectErrorReason>(e, "Gmail connect"));
       }
 
       return back("emailConnect=ok");

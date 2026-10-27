@@ -38,6 +38,19 @@ export const approveSchema = z.object({
   note: z.string().optional().nullable(),
 });
 
+/** Every reason the Gmail connect callback redirects back with (`?emailConnect=error&reason=`). */
+const EMAIL_CONNECT_ERROR_REASONS = [
+  "access_denied",
+  /** Missing code or state, or the state cookie did not match. */
+  "invalid_callback",
+  /** Google's consent screen let the user drop the read scope. */
+  "scope_not_granted",
+  /** Google rejected the code or returned unusable tokens. */
+  "provider_error",
+  "unexpected",
+] as const;
+export type EmailConnectErrorReason = (typeof EMAIL_CONNECT_ERROR_REASONS)[number];
+
 /**
  * Upsert the user's own Google OAuth client. `clientSecret` is optional so an
  * edit can leave it blank to keep the stored one; the service requires it on

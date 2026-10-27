@@ -1,22 +1,14 @@
+import { ErrorCodes, type ErrorResponse } from "@jobpilot/contracts/errors";
 import { Elysia } from "elysia";
 import { KeyUnrecoverableError } from "@/common/crypto/errors";
-import { ErrorCodes, HttpError, prismaCode } from "@/common/errors";
+import { HttpError, prismaCode } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 
-interface ErrorBody {
-  code: string;
-  message: string;
-  details?: unknown;
-}
-
-/**
- * Global error mapping. Returns the `{ code, message, details? }` body with the
- * right status. `code` is a stable string (web + agent read it).
- */
+/** Global error mapping: every failure leaves as the contracts `ErrorResponse` with its status. */
 export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
   { as: "global" },
-  ({ code, error, set }): ErrorBody => {
+  ({ code, error, set }): ErrorResponse => {
     if (error instanceof HttpError) {
       set.status = error.status;
       // Carried on the error, not set at the throw site: rate-limit 429s are thrown from services

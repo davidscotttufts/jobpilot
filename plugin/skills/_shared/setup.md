@@ -71,7 +71,9 @@ Don't call authed endpoints (they return `401`); stop and tell the user:
 > JobPilot runs through the agent terminal in your dashboard. Open $JOBPILOT_WEB and launch the agent there - it signs in automatically. Or run the `setup` skill to install the agent terminal.
 
 Responses are the **bare payload** (no `{ ok, data }` wrapper) - read fields at the top level.
-Errors are `{ code, message }` with an HTTP status.
+Errors are `{ code, message }` with an HTTP status; `jobpilot-api` prints `HTTP <status> <code>`.
+Branch on `code` (e.g. `ALREADY_APPLIED`, `DUPLICATE_JOB`, `PILOT_CONFLICT`, `STALE_WRITE`), never
+on message text.
 
 ## Profile
 

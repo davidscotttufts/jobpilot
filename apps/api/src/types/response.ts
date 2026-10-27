@@ -1,16 +1,5 @@
+import { errorResponseSchema } from "@jobpilot/contracts/errors";
 import { z } from "zod/v4";
-
-/**
- * Standard error envelope produced by the global error middleware
- * (`{ code, message, details? }`). `code` is a stable string the web client and
- * the agent's skills read. Used as the `response` schema for non-2xx statuses so
- * error shapes show up in Swagger.
- */
-const errorResponseSchema = z.object({
-  code: z.string(),
-  message: z.string(),
-  details: z.unknown().optional(),
-});
 
 /**
  * The standard error statuses this API emits, each mapped to the shared error

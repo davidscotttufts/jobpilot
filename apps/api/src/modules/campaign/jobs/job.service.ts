@@ -5,9 +5,10 @@ import type {
   RescanCampaignJobInput,
   RetryCampaignJobInput,
 } from "@jobpilot/contracts/campaign";
+import { ErrorCodes } from "@jobpilot/contracts/errors";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { conflict, findOwned } from "@/common/errors";
+import { conflict, findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
 import { publish } from "@/common/sse";
 import {
   type CampaignJobStatus,
@@ -66,9 +67,17 @@ export class CampaignJobService {
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
     await ensureCampaignOwned(this.prisma, userId, campaignId);
 
-    const job = await this.prisma.job.create({
-      data: { ...body, campaignId, status: body.status ?? "pending" },
-    });
+    let job: Job;
+    try {
+      job = await this.prisma.job.create({
+        data: { ...body, campaignId, status: body.status ?? "pending" },
+      });
+    } catch (error) {
+      if (isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
+        throw conflict(`The campaign already has job "${body.key}".`, ErrorCodes.DUPLICATE_JOB);
+      }
+      throw error;
+    }
 
     this.listings.publishInBackground(job);
     publishJob(userId, job, "added");

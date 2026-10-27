@@ -1,4 +1,5 @@
-import { conflict, ErrorCodes, HttpError } from "@/common/errors";
+import { ErrorCodes } from "@jobpilot/contracts/errors";
+import { conflict, HttpError } from "@/common/errors";
 import type { Job, Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
@@ -20,7 +21,7 @@ export interface JobPosting {
   company: string;
 }
 
-/** A profile never has more than a handful of applies open at once. */
+/** A user never has more than a handful of applies open at once. */
 const MAX_APPLYING = 100;
 
 export class AlreadyAppliedError extends HttpError {
@@ -34,8 +35,8 @@ export class AlreadyAppliedError extends HttpError {
     const day = appliedAt.toISOString().slice(0, 10);
     const tail = recorded ? " The job has been recorded as skipped with this reason;" : "";
     super(
-      ErrorCodes.CONFLICT,
-      `${duplicateSkipReason(duplicate)}: this profile applied to "${title}" at ${company} on ${day}.${tail} do not apply again.`,
+      ErrorCodes.ALREADY_APPLIED,
+      `${duplicateSkipReason(duplicate)}: you applied to "${title}" at ${company} on ${day}.${tail} do not apply again.`,
       409,
     );
     this.name = "AlreadyAppliedError";
@@ -76,7 +77,7 @@ async function findApplyingSibling(
 }
 
 /**
- * Refuses a move into `applying` for a posting this profile already applied to or is applying to.
+ * Refuses a move into `applying` for a posting the user already applied to or is applying to.
  * An applied duplicate throws `AlreadyAppliedError`, which `guardApply` turns into a skip; an
  * `applying` sibling only refuses, since that apply may still fail.
  */
@@ -89,6 +90,7 @@ export async function assertNotDuplicateApply(
   if (sibling) {
     throw conflict(
       `Already applying: another worker holds "${sibling.title}" at ${sibling.company} (${sibling.campaignId}/${sibling.key}). Record this job as skipped with reason "Already applied (in-flight)" instead of applying alongside it.`,
+      ErrorCodes.APPLY_IN_FLIGHT,
     );
   }
 

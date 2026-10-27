@@ -8,7 +8,7 @@ import {
   signAccessToken,
   verifyPassword,
 } from "@/common/auth";
-import { conflict, notFound, unauthorized } from "@/common/errors";
+import { conflict, isPrismaError, notFound, PRISMA_ERRORS, unauthorized } from "@/common/errors";
 import { normalizeEmail } from "@/common/utils/email";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
@@ -87,7 +87,7 @@ export class AuthService {
       });
     } catch (error) {
       // Concurrent signup slipped past the pre-check; keep the friendly message.
-      if (error && typeof error === "object" && "code" in error && error.code === "P2002") {
+      if (isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
         throw conflict("Email already registered");
       }
       throw error;

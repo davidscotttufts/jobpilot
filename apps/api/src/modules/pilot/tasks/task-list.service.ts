@@ -1,3 +1,4 @@
+import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
   channelAutonomy,
   networkingMode,
@@ -85,7 +86,7 @@ export class TaskListService {
   /** The current snapshot, with none of refresh's writes. */
   async getCurrent(userId: string) {
     const state = await this.prisma.pilotState.findUnique({ where: { userId } });
-    if (!state?.running) throw conflict("Pilot is stopped.");
+    if (!state?.running) throw conflict("Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
     const expiresAt = state.taskListExpiresAt;
     const live = state.taskListSnapshot && expiresAt && expiresAt > new Date();
     return { taskList: live ? parseTaskListSnapshot(state.taskListSnapshot) : null };
@@ -101,7 +102,7 @@ export class TaskListService {
         instructionsGoals: true,
       },
     });
-    if (!state?.running) throw conflict("Pilot is stopped.");
+    if (!state?.running) throw conflict("Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
 
     const now = new Date();
     const config = pilotInstructionsConfigSchema.parse(state.instructionsConfig);

@@ -1,18 +1,13 @@
 import { randomBytes } from "node:crypto";
-import type { OAuthClientUpsertInput } from "@jobpilot/contracts/email";
+import type { EmailConnectErrorReason, OAuthClientUpsertInput } from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/networking";
 import { inject, injectable } from "@needle-di/core";
+import { OAuthFlowError } from "@/common/auth";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { badGateway, badRequest, conflict, notFound, unprocessable } from "@/common/errors";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import {
-  GMAIL_READ_SCOPE,
-  GMAIL_SCOPES,
-  GmailClient,
-  scopeCanRead,
-  scopeCanSend,
-} from "../gmail.client";
+import { GMAIL_SCOPES, GmailClient, scopeCanRead, scopeCanSend } from "../gmail.client";
 import { MailboxSessionService } from "./mailbox-session.service";
 
 @injectable()
@@ -78,13 +73,17 @@ export class EmailAccountService {
 
   async completeEmailOAuth(userId: string, code: string): Promise<{ email: string }> {
     const config = await this.sessions.resolveOAuthClient(userId);
-    const { tokens, email } = await this.gmail.exchangeCode(config, code);
+    let exchanged: Awaited<ReturnType<GmailClient["exchangeCode"]>>;
+    try {
+      exchanged = await this.gmail.exchangeCode(config, code);
+    } catch (cause) {
+      throw new OAuthFlowError<EmailConnectErrorReason>("provider_error", { cause });
+    }
+    const { tokens, email } = exchanged;
 
     // Granular consent can drop a scope silently; storing that grant 403s every later sync.
     if (!scopeCanRead(tokens.scope)) {
-      throw unprocessable(
-        `Google did not grant ${GMAIL_READ_SCOPE}. Reconnect and allow every requested permission.`,
-      );
+      throw new OAuthFlowError<EmailConnectErrorReason>("scope_not_granted");
     }
 
     const accessToken = await this.crypto.encryptFor(

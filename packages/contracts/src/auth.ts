@@ -44,12 +44,22 @@ export const ResetPasswordSchema = z.object({
 /** Wire values for sign-in providers (lowercase; the API maps to the Prisma enum). */
 export const OAuthProviderSchema = z.enum(["google", "github"]);
 
-/** Machine reasons the OAuth callback can redirect back with (`?oauth=error&reason=`).
- *  Other reasons are provider prose (e.g. GitHub's error_description) shown as-is. */
+/** Every reason the sign-in OAuth callback redirects back with (`?oauth=error&reason=`). */
 const OAUTH_ERROR_REASONS = [
   "provider_not_configured",
   "email_unverified",
   "access_denied",
+  /** The provider reported a failure or returned an unusable profile. */
+  "provider_error",
+  /** Missing code or state, or the state cookie did not match. */
+  "invalid_callback",
+  /** A link callback arrived without a live session. */
+  "session_expired",
+  /** That provider identity is linked to another JobPilot account. */
+  "identity_taken",
+  /** This account already has an identity from that provider. */
+  "provider_already_linked",
+  "unexpected",
 ] as const;
 export type OAuthErrorReason = (typeof OAUTH_ERROR_REASONS)[number];
 

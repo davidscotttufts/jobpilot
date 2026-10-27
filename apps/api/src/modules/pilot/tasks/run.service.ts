@@ -1,3 +1,4 @@
+import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
   type PilotRun,
   type PilotRunResultInput,
@@ -74,7 +75,7 @@ async function assertStillStartable(
     default:
       return;
   }
-  if (remaining === 0) throw conflict(gone);
+  if (remaining === 0) throw conflict(gone, ErrorCodes.PILOT_CONFLICT);
 }
 
 @injectable()
@@ -118,13 +119,13 @@ export class RunService {
         select: { running: true },
       });
       const stale = "Task list is stale; refresh it before starting a run.";
-      throw conflict(state?.running ? stale : "Pilot is stopped.");
+      throw conflict(state?.running ? stale : "Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
     }
 
     const task = parseTaskListSnapshot(locked.taskListSnapshot).tasks.find(
       (entry) => entry.id === taskId,
     );
-    if (!task) throw conflict("Task is no longer available.");
+    if (!task) throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
 
     const open = await tx.pilotRun.findFirst({
       where: {
@@ -136,7 +137,7 @@ export class RunService {
       },
       select: { id: true },
     });
-    if (open) throw conflict("This task is already started.");
+    if (open) throw conflict("This task is already started.", ErrorCodes.PILOT_CONFLICT);
 
     await assertStillStartable(tx, userId, task, now);
     const startedJob =
@@ -168,7 +169,7 @@ export class RunService {
       { id, userId },
       "Run",
     );
-    if (run.finishedAt) throw conflict("Run is already finished.");
+    if (run.finishedAt) throw conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
 
     const now = Date.now();
     const ceiling = run.startedAt.getTime() + MAX_RUN_LIFETIME_MS;
@@ -179,7 +180,7 @@ export class RunService {
         expiresAt: new Date(Math.min(now + RUN_TTL_MS, ceiling)),
       },
     });
-    if (!updated) throw conflict("Run is already finished.");
+    if (!updated) throw conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
     return toPilotRun(updated);
   }
 
@@ -215,7 +216,7 @@ export class RunService {
         where: { id: existing.id, userId, finishedAt: null },
         data: { finishedAt: new Date(), outcome },
       });
-      if (!row) throw conflict("Run was finished concurrently.");
+      if (!row) throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
       return row;
     });
     return toPilotRun(finished);

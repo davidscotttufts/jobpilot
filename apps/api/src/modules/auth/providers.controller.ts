@@ -1,5 +1,6 @@
+import type { OAuthErrorReason } from "@jobpilot/contracts/auth";
 import { Elysia } from "elysia";
-import { generateOpaqueToken, oauthStateCookies } from "@/common/auth";
+import { flowFailureReason, generateOpaqueToken, oauthStateCookies } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard, resolveAuthUser } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
@@ -34,8 +35,8 @@ export const authProvidersController = new Elysia({
       try {
         authorizeUrl = oauthService.getAuthorizeUrl(params.provider, state);
       } catch (e) {
-        const reason = e instanceof Error ? e.message : "provider_not_configured";
-        return redirect(`${env.APP_URL}/login?oauth=error&reason=${encodeURIComponent(reason)}`);
+        const reason = flowFailureReason<OAuthErrorReason>(e, "OAuth sign-in start");
+        return redirect(`${env.APP_URL}/login?oauth=error&reason=${reason}`);
       }
 
       oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH).set(state, query.intent);
@@ -58,32 +59,27 @@ export const authProvidersController = new Elysia({
       const stateCookies = oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH);
       const intent = stateCookies.companion() === "link" ? "link" : "login";
       const errorPage = intent === "link" ? "/account/security" : "/login";
-      const fail = (reason: string) => {
+      const fail = (reason: OAuthErrorReason) => {
         stateCookies.clear();
-        return redirect(
-          `${env.APP_URL}${errorPage}?oauth=error&reason=${encodeURIComponent(reason)}`,
-        );
+        return redirect(`${env.APP_URL}${errorPage}?oauth=error&reason=${reason}`);
       };
 
       if (query.error) {
-        return fail(query.error);
+        return fail(query.error === "access_denied" ? "access_denied" : "provider_error");
       }
-      if (!query.code || !query.state) {
-        return fail("Missing code or state");
-      }
-      if (stateCookies.state() !== query.state) {
-        return fail("OAuth state mismatch");
+      if (!query.code || !query.state || stateCookies.state() !== query.state) {
+        return fail("invalid_callback");
       }
 
       if (intent === "link") {
         const principal = await resolveAuthUser({ headers, cookie });
         if (!principal) {
-          return fail("Session expired - sign in and try again");
+          return fail("session_expired");
         }
         try {
           await oauthService.link(principal.id, params.provider, query.code);
         } catch (e) {
-          return fail(e instanceof Error ? e.message : "Failed to link account");
+          return fail(flowFailureReason<OAuthErrorReason>(e, "OAuth link"));
         }
         stateCookies.clear();
         return redirect(`${env.APP_URL}/account/security?oauth=linked&provider=${params.provider}`);
@@ -96,7 +92,7 @@ export const authProvidersController = new Elysia({
         // Same landing as form login; the proxy bounces new users on to onboarding.
         return redirect(`${env.APP_URL}/workspace`);
       } catch (e) {
-        return fail(e instanceof Error ? e.message : "Sign-in failed");
+        return fail(flowFailureReason<OAuthErrorReason>(e, "OAuth sign-in"));
       }
     },
     {

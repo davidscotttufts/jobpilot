@@ -5,6 +5,7 @@ import {
   campaignConfigSupportsSource,
   type UpdateCampaignConfigInput,
 } from "@jobpilot/contracts/campaign";
+import { ErrorCodes } from "@jobpilot/contracts/errors";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
@@ -121,7 +122,10 @@ export class CampaignService {
       data: { config: body.config },
     });
     if (updated.count === 0) {
-      throw conflict("Campaign changed since it was fetched; re-fetch before updating config.");
+      throw conflict(
+        "Campaign changed since it was fetched; re-fetch before updating config.",
+        ErrorCodes.STALE_WRITE,
+      );
     }
     return this.withSummary(
       await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } }),
@@ -147,7 +151,7 @@ export class CampaignService {
       },
     });
     if (updated.count === 0) {
-      throw conflict("Campaign status changed concurrently.");
+      throw conflict("Campaign status changed concurrently.", ErrorCodes.STALE_WRITE);
     }
     publishCampaignStatus(userId, existing, body.status);
     return this.withSummary(

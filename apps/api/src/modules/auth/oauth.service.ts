@@ -1,5 +1,6 @@
 import type { OAuthErrorReason, OAuthProviderInput } from "@jobpilot/contracts";
 import { inject, injectable } from "@needle-di/core";
+import { OAuthFlowError } from "@/common/auth";
 import { conflict, notFound } from "@/common/errors";
 import { env } from "@/env";
 import { type OAuthProvider, PrismaClient } from "@/generated/prisma/client";
@@ -27,8 +28,7 @@ export class OAuthService {
         ? [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET]
         : [env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET];
     if (!clientId || !clientSecret) {
-      // Slug, not prose: the web maps it to friendly copy on the login page.
-      throw new Error("provider_not_configured" satisfies OAuthErrorReason);
+      throw new OAuthFlowError<OAuthErrorReason>("provider_not_configured");
     }
     return {
       clientId,
@@ -111,7 +111,7 @@ export class OAuthService {
         return this.authService.issueSession(user);
       }
       case "reject":
-        throw new Error(decision.reason);
+        throw new OAuthFlowError<OAuthErrorReason>(decision.reason);
     }
   }
 
@@ -137,10 +137,10 @@ export class OAuthService {
       if (existing.userId === userId) {
         return; // Already linked here - idempotent success.
       }
-      throw new Error("This account is already linked to another JobPilot user");
+      throw new OAuthFlowError<OAuthErrorReason>("identity_taken");
     }
     if (mine) {
-      throw new Error(`A ${providerName} account is already linked - unlink it first`);
+      throw new OAuthFlowError<OAuthErrorReason>("provider_already_linked");
     }
     await this.linkAccount(userId, provider, profile);
   }
