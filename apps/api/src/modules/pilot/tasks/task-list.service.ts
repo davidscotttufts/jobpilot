@@ -1,7 +1,5 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
-  channelAutonomy,
-  networkingMode,
   type PilotInstructionsConfig,
   pilotInstructionsConfigSchema,
   type TaskList,
@@ -15,6 +13,7 @@ import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { WebPushService } from "@/modules/web-push/web-push.service";
 import { PilotJournalService } from "../journal.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
+import { allowedToday } from "./allowed-today";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
 import { writeDigestIfDue } from "./digest";
 import {
@@ -127,7 +126,6 @@ export class TaskListService {
       where: { userId },
       data: {
         taskListVersion: taskList.version,
-        taskListBuiltAt: taskList.builtAt,
         taskListExpiresAt: taskList.expiresAt,
         taskListSnapshot: toInputJson(taskList),
       },
@@ -142,10 +140,6 @@ export class TaskListService {
     now: Date,
   ): Promise<Gathered> {
     const { prisma } = this;
-    // Off channels skip their reads entirely; sends and followups only ever act on email.
-    const emailOn = channelAutonomy(config, "email") !== null;
-    const outreachOn = networkingMode(config) !== null;
-
     const { searchCount, ...base } = await allNamed({
       openQuestions: prisma.pilotQuestion.count({ where: { userId, status: "open" } }),
       activeRuns: prisma.pilotRun.count({
@@ -153,33 +147,36 @@ export class TaskListService {
       }),
       searchCount: prisma.pilotSearch.count({ where: { userId } }),
       appliedToday: countAppliedToday(prisma, userId, now),
-      networkingSentToday: outreachOn ? countSentToday(prisma, userId, now) : 0,
+      networkingSentToday: countSentToday(prisma, userId, now),
       answeredQuestions: gatherAnsweredQuestions(prisma, userId),
       approvedJobs: gatherApprovedJobs(prisma, userId),
       queueScores: gatherQueueScores(prisma, userId, config.minScore, now),
       pausedCampaigns: gatherPausedCampaigns(prisma, userId, now),
-      boardDiagnose: gatherBoardDiagnoses(prisma, userId, now),
+      boardDiagnoses: gatherBoardDiagnoses(prisma, userId, now),
       inbox: gatherInbox(prisma, userId),
       interviewReplies: gatherInterviewReplies(prisma, userId),
       interviewPreps: gatherInterviewPreps(prisma, userId),
       upworkSync: gatherUpworkSync(prisma, userId, now),
-      approvedNetworking: emailOn ? gatherApprovedNetworking(prisma, userId) : [],
-      followups: emailOn ? gatherFollowups(prisma, userId, config, now) : [],
       approvedPromotions: gatherApprovedPromotions(prisma, userId, now),
       duePlatforms: gatherDuePlatforms(prisma, userId, config, now),
     });
 
-    const canSend = base.networkingSentToday < config.networking.dailyCap;
-    const hungry = base.appliedToday < config.dailyApplyCap;
+    // Work today's config or counts rule out skips its reads entirely.
+    const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, base);
+    const canApplyMore = appliesLeft > 0;
     // Scoring and discovery only matter once nothing approved is left to apply to.
-    const drained = base.approvedJobs.length === 0;
-    const [warmIntroCandidates, searches, scorePending] = await Promise.all([
-      outreachOn && canSend
-        ? gatherWarmIntroCandidates(prisma, userId, now, base.approvedJobs)
-        : [],
-      drained ? gatherDueSearches(prisma, userId, now, hungry) : NO_DUE_SEARCHES,
-      drained ? gatherScorePending(prisma, userId, config.minScore, now) : [],
-    ]);
+    const nothingApproved = base.approvedJobs.length === 0;
+    const emailOn = emailAutonomy !== null && sendsLeft > 0;
+    const [approvedNetworking, followups, warmIntroCandidates, searches, scorePending] =
+      await Promise.all([
+        emailOn ? gatherApprovedNetworking(prisma, userId) : [],
+        emailOn ? gatherFollowups(prisma, userId, config, now) : [],
+        outreach && sendsLeft > 0
+          ? gatherWarmIntroCandidates(prisma, userId, now, base.approvedJobs)
+          : [],
+        nothingApproved ? gatherDueSearches(prisma, userId, now, canApplyMore) : NO_DUE_SEARCHES,
+        nothingApproved ? gatherScorePending(prisma, userId, config.minScore, now) : [],
+      ]);
     // A job can sit in both lists; the Set keeps one contacts pass per job.
     await attachWarmContacts(prisma, userId, [
       ...new Set([...base.approvedJobs, ...warmIntroCandidates]),
@@ -187,7 +184,7 @@ export class TaskListService {
 
     const quiet = isPipelineQuiet({ ...base, ...searches, scorePending });
     // Blank goals need no task: emptyReason "awaitingSetup" already says so.
-    const canSetUp = quiet && goals !== "" && (searchCount === 0 || hungry);
+    const canSetUp = quiet && goals !== "" && (searchCount === 0 || canApplyMore);
     const [reviews, setup] = await Promise.all([
       quiet ? gatherCampaignReviews(prisma, userId, now) : NO_REVIEWS,
       canSetUp ? gatherSetup(prisma, userId, { goals, minScore: config.minScore }, now) : null,
@@ -197,6 +194,8 @@ export class TaskListService {
       ...base,
       ...searches,
       ...reviews,
+      approvedNetworking,
+      followups,
       warmIntroCandidates,
       scorePending,
       setup,

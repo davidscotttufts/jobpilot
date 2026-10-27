@@ -4,7 +4,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP, latestRun, latestRunBySubject, ranRecently } from "./run-history";
 
 /** With apply room left, an idle search reruns early, and setup refills, at most this often. */
-const HUNGRY_RERUN_MS = 6 * HOUR_MS;
+const IDLE_RERUN_MS = 6 * HOUR_MS;
 /** Holds back a search whose last run is open, crashed, or unreported. */
 const SEARCH_RUN_COOLDOWN_MS = 2 * HOUR_MS;
 
@@ -21,7 +21,7 @@ export async function gatherDueSearches(
   prisma: PrismaClient,
   userId: string,
   now: Date,
-  hungry: boolean,
+  canApplyMore: boolean,
 ): Promise<{ dueQueries: DueSearch[]; nextSearchRunAt: Date | null }> {
   const searches = await prisma.pilotSearch.findMany({
     where: { userId },
@@ -59,8 +59,8 @@ export async function gatherDueSearches(
   });
 
   let due = startable.filter((search) => search.nextRunAt <= now);
-  if (due.length === 0 && hungry) {
-    const idleSince = now.getTime() - HUNGRY_RERUN_MS;
+  if (due.length === 0 && canApplyMore) {
+    const idleSince = now.getTime() - IDLE_RERUN_MS;
     due = startable
       .filter((search) => !search.lastRunAt || search.lastRunAt.getTime() < idleSince)
       .slice(0, 1);
@@ -85,5 +85,5 @@ export async function gatherSetup(
   now: Date,
 ): Promise<TaskPayload<"search.setup"> | null> {
   const last = await latestRun(prisma, userId, "search.setup");
-  return ranRecently(last, now, HUNGRY_RERUN_MS) ? null : payload;
+  return ranRecently(last, now, IDLE_RERUN_MS) ? null : payload;
 }

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
-import { promoteScoredPendingJobs, runExpiry } from "./maintenance";
+import { expireAbandonedRuns, promoteScoredPendingJobs, runExpiry } from "./maintenance";
 import { describe, expect, it } from "bun:test";
 
 type Write = { where: Record<string, unknown>; data: Record<string, unknown> };
@@ -124,5 +124,28 @@ describe("promoteScoredPendingJobs", () => {
   it("prefers the campaign's own minScore", async () => {
     const [call] = await promote([scored(75, { minScore: 80 })]);
     expect(call[3]).toEqual([{ key: "jobkey", matchScore: 75, threshold: 80 }]);
+  });
+});
+
+describe("expireAbandonedRuns", () => {
+  it("expires runs once per user found by either scan, touching no queue or question", async () => {
+    const swept: string[] = [];
+    const tx = {
+      pilotRun: {
+        findMany: async (a: { where: { userId: string; taskType?: string } }) => {
+          if (!a.where.taskType) swept.push(a.where.userId);
+          return [];
+        },
+      },
+      job: { updateMany: async () => ({ count: 0 }) },
+    };
+    const db = {
+      pilotRun: { findMany: async () => [{ userId: "u1" }, { userId: "u2" }] },
+      campaign: { findMany: async () => [{ userId: "u2" }, { userId: "u3" }] },
+      $transaction: async (work: (t: unknown) => Promise<unknown>) => work(tx),
+    };
+    const users = await expireAbandonedRuns(db as unknown as PrismaClient, new Date());
+    expect(users).toBe(3);
+    expect(swept).toEqual(["u1", "u2", "u3"]);
   });
 });

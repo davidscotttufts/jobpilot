@@ -12,5 +12,4 @@ too broad or narrow, `minScore` off, skip reasons clustered? Make one change:
   `POST`/`PATCH`/`DELETE /api/pilot/searches[/:id]` (`GET /api/pilot/searches` for ids), with
   `reason` saying why.
 
-Detail `{"type":"tune"}` (the server dedupes reviews on it). Summary: "Campaign '<query>' yielding
-12% - narrowed query to '<new>', minScore 70->65."
+Summary: "Campaign '<query>' yielding 12% - narrowed query to '<new>', minScore 70->65."

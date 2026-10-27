@@ -29,10 +29,10 @@ describe("TaskListService search.discover", () => {
   });
 
   it("runs an idle search early while the apply cap has room, and not once it is spent", async () => {
-    const hungry = await service({
-      pilotSearches: [futureRow({ id: "s-hungry", lastRunAt: null })],
+    const idle = await service({
+      pilotSearches: [futureRow({ id: "s-idle", lastRunAt: null })],
     }).refresh("p1");
-    expect(discoverOf(hungry)?.subjectId).toBe("s-hungry");
+    expect(discoverOf(idle)?.subjectId).toBe("s-idle");
 
     const spent = await service({
       ...spentCap,
@@ -44,7 +44,9 @@ describe("TaskListService search.discover", () => {
   it("holds a search back while its last run is still open", async () => {
     const taskList = await service({
       pilotSearches: [dueRow({ id: "s-react" })],
-      searchRuns: [{ subjectId: "s-react", startedAt: new Date(), finishedAt: null }],
+      runs: {
+        "search.discover": [{ subjectId: "s-react", startedAt: new Date(), finishedAt: null }],
+      },
     }).refresh("p1");
     expect(discoverOf(taskList)).toBeUndefined();
   });
@@ -58,13 +60,13 @@ describe("TaskListService search.discover", () => {
     };
     const rewritten = await service({
       pilotSearches: [dueRow({ id: "s-react", nextRunAt: new Date(Date.now() - 60_000) })],
-      searchRuns: [run],
+      runs: { "search.discover": [run] },
     }).refresh("p1");
     expect(discoverOf(rewritten)?.subjectId).toBe("s-react");
 
     const unreported = await service({
       pilotSearches: [dueRow({ id: "s-react" })],
-      searchRuns: [run],
+      runs: { "search.discover": [run] },
     }).refresh("p1");
     expect(discoverOf(unreported)).toBeUndefined();
   });
@@ -111,7 +113,7 @@ describe("TaskListService search.setup", () => {
 
     const cases = [
       { ...spentCap, pilotSearches: [futureRow({ lastRunAt: new Date() })] },
-      { setupRun: { finishedAt: null } },
+      { latestRuns: { "search.setup": { finishedAt: null } } },
       { approvedJobs: [approvedJob()] },
     ];
     for (const over of cases) {

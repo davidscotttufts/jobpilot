@@ -2,12 +2,10 @@ import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { CRASH_OUTCOMES, GATHER_CAP, latestRun, ranRecently } from "./run-history";
+import { GATHER_CAP, latestRun, ranRecently, withoutConsumingRuns } from "./run-history";
 
 const INBOX_BATCH = 10;
 const UPWORK_SYNC_STALE_MS = 6 * HOUR_MS;
-/** Marks an ApplicationEvent note as a generated interview prep sheet. */
-const INTERVIEW_PREP_MARKER = "[interview-prep]";
 
 /** Answered questions no open or finished run has consumed yet. */
 export async function gatherAnsweredQuestions(
@@ -27,22 +25,18 @@ export async function gatherAnsweredQuestions(
       answer: true,
     },
   });
-  if (answered.length === 0) return [];
-
-  const runs = await prisma.pilotRun.findMany({
-    where: {
-      userId,
-      subjectType: "question",
-      subjectId: { in: answered.map((question) => question.id) },
-      OR: [{ finishedAt: null }, { outcome: { notIn: CRASH_OUTCOMES } }],
-    },
-    take: GATHER_CAP,
-    select: { subjectId: true },
-  });
-  const consumed = new Set(runs.map((run) => run.subjectId));
-  return answered
-    .filter((question) => !consumed.has(question.id))
-    .map(({ id, kind, ...question }) => ({ ...question, questionId: id, questionKind: kind }));
+  const open = await withoutConsumingRuns(
+    prisma,
+    userId,
+    "question.answered",
+    answered,
+    (question) => question.id,
+  );
+  return open.map(({ id, kind, ...question }) => ({
+    ...question,
+    questionId: id,
+    questionKind: kind,
+  }));
 }
 
 /** The oldest unclassified mail, plus how much is waiting in total. */
@@ -125,7 +119,7 @@ export async function gatherInterviewPreps(
     where: {
       userId,
       status: "interviewing",
-      events: { none: { kind: "note", note: { startsWith: INTERVIEW_PREP_MARKER } } },
+      events: { none: { kind: "interview_prep" } },
     },
     select: {
       id: true,

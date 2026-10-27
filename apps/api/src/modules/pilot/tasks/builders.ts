@@ -39,7 +39,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   scorePending: [],
   queueScores: [],
   pausedCampaigns: [],
-  boardDiagnose: [],
+  boardDiagnoses: [],
   inbox: { messageIds: [], count: 0 },
   interviewReplies: [],
   interviewPreps: [],

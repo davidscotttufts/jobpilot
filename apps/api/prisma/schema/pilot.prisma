@@ -56,7 +56,6 @@ model PilotState {
   instructionsConfig    Json      @default("{}") @map("instructions_config")
   instructionsUpdatedAt DateTime? @map("instructions_updated_at")
   taskListVersion       String?   @map("task_list_version")
-  taskListBuiltAt       DateTime? @map("task_list_built_at")
   taskListExpiresAt     DateTime? @map("task_list_expires_at")
   taskListSnapshot      Json?     @map("task_list_snapshot")
   lastCycleAt           DateTime? @map("last_cycle_at")

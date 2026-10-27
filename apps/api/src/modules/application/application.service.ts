@@ -6,10 +6,12 @@ import type {
 import { APPLICATION_STATUSES, SINGLE_APPLY_CAMPAIGN } from "@jobpilot/contracts/application";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inject, injectable } from "@needle-di/core";
+import type { z } from "zod/v4";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { boardFilter } from "@/modules/job-board/board-host";
 import { BOARD_REF_SELECT } from "@/modules/job-board/job-board.service";
+import type { appendNoteSchema } from "./application.schema";
 import { type DuplicateLookup, findAppliedDuplicate } from "./duplicate";
 import { statusChangeOps } from "./status-change";
 
@@ -142,7 +144,7 @@ export class ApplicationService {
     );
   }
 
-  async addEvent(userId: string, id: string, input: { kind: "note"; notes: string }) {
+  async addEvent(userId: string, id: string, input: z.infer<typeof appendNoteSchema>) {
     await findOwned(
       (where) => this.prisma.application.findFirst({ where, select: { id: true } }),
       { id, userId },

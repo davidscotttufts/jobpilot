@@ -1,6 +1,5 @@
 import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
-import type { TaskPayload } from "@jobpilot/contracts/pilot";
-import { z } from "zod/v4";
+import type { TaskPayload, TaskType } from "@jobpilot/contracts/pilot";
 import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { summarizeCampaigns } from "@/modules/campaign/campaign.summary";
@@ -159,35 +158,18 @@ export async function gatherPausedCampaigns(
     }));
 }
 
-const reviewMarkerSchema = z.object({ type: z.string().optional() }).loose();
-
-/** Tunes, rescans and retries; the agent's action journaled with `detail.type` holds each back a week. */
+/** Tunes, rescans and retries; a run of one holds the same campaign back a week. */
 export async function gatherCampaignReviews(prisma: PrismaClient, userId: string, now: Date) {
-  const [campaigns, markers] = await Promise.all([
-    prisma.campaign.findMany({
-      where: { userId, status: "in_progress", source: { not: "networking" } },
-      select: {
-        id: true,
-        query: true,
-        config: true,
-        source: true,
-        board: { select: { domain: true } },
-      },
-    }),
-    prisma.pilotJournalEntry.findMany({
-      where: {
-        userId,
-        kind: "action",
-        subjectType: "campaign",
-        createdAt: { gte: new Date(now.getTime() - REVIEW_REPEAT_MS) },
-      },
-      select: { subjectId: true, detail: true },
-    }),
-  ]);
-  const marked = new Set(
-    markers.map((marker) => `${reviewMarkerSchema.parse(marker.detail).type}:${marker.subjectId}`),
-  );
-  const isFresh = (type: string, campaignId: string) => !marked.has(`${type}:${campaignId}`);
+  const campaigns = await prisma.campaign.findMany({
+    where: { userId, status: "in_progress", source: { not: "networking" } },
+    select: {
+      id: true,
+      query: true,
+      config: true,
+      source: true,
+      board: { select: { domain: true } },
+    },
+  });
 
   const campaignTunes: TaskPayload<"campaign.tune">[] = [];
   const rescanSkipped: TaskPayload<"job.rescanSkipped">[] = [];
@@ -197,7 +179,7 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   for (const { id: campaignId, query, config, board, summary } of summaries) {
     if (summary.kind !== "jobs") continue;
     const converting = summary.qualified / summary.totalFound >= TUNE_MAX_QUALIFIED_RATIO;
-    if (summary.totalFound >= TUNE_MIN_JOBS && !converting && isFresh("tune", campaignId)) {
+    if (summary.totalFound >= TUNE_MIN_JOBS && !converting) {
       const { minScore } = campaignConfigSchema.parse(config);
       campaignTunes.push({
         campaignId,
@@ -212,19 +194,27 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
         topSkipReasons: [],
       });
     }
-    if (summary.skipped >= RESCAN_MIN_SKIPPED && isFresh("rescanSkipped", campaignId)) {
+    if (summary.skipped >= RESCAN_MIN_SKIPPED) {
       rescanSkipped.push({ campaignId, skippedCount: summary.skipped });
     }
-    if (summary.failed >= RETRY_MIN_FAILED && isFresh("retryFailed", campaignId)) {
+    if (summary.failed >= RETRY_MIN_FAILED) {
       retryFailed.push({ campaignId, failedCount: summary.failed });
     }
   }
 
-  if (campaignTunes.length > 0) {
+  const fresh = <T extends { campaignId: string }>(taskType: TaskType, rows: T[]) =>
+    withoutRecentRuns(prisma, userId, taskType, now, REVIEW_REPEAT_MS, rows, (r) => r.campaignId);
+  const [tunes, rescans, retries] = await Promise.all([
+    fresh("campaign.tune", campaignTunes),
+    fresh("job.rescanSkipped", rescanSkipped),
+    fresh("job.retryFailed", retryFailed),
+  ]);
+
+  if (tunes.length > 0) {
     const reasons = await prisma.job.groupBy({
       by: ["campaignId", "skipReason"],
       where: {
-        campaignId: { in: campaignTunes.map((tune) => tune.campaignId) },
+        campaignId: { in: tunes.map((tune) => tune.campaignId) },
         status: "skipped",
         skipReason: { not: null },
       },
@@ -232,11 +222,11 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
       orderBy: { _count: { skipReason: "desc" } },
     });
     const reasonsByCampaign = Map.groupBy(reasons, (row) => row.campaignId);
-    for (const tune of campaignTunes) {
+    for (const tune of tunes) {
       tune.topSkipReasons = (reasonsByCampaign.get(tune.campaignId) ?? [])
         .flatMap((row) => (row.skipReason ? [row.skipReason] : []))
         .slice(0, TOP_SKIP_REASONS);
     }
   }
-  return { campaignTunes, rescanSkipped, retryFailed };
+  return { campaignTunes: tunes, rescanSkipped: rescans, retryFailed: retries };
 }

@@ -1,15 +1,19 @@
 import { cursorPage } from "@jobpilot/contracts/pagination";
-import type { CreatePilotJournalInput, PilotJournalKind } from "@jobpilot/contracts/pilot";
-import { inject, injectable } from "@needle-di/core";
 import {
-  publishActivity,
-  type RunsByCycle,
-  toActivityEntry,
-  writeActivity,
-} from "@/common/activity-log";
+  type CreatePilotJournalInput,
+  type PilotJournalKind,
+  tokenUsage,
+} from "@jobpilot/contracts/pilot";
+import { inject, injectable } from "@needle-di/core";
 import { type PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
 import { WebPushService } from "@/modules/web-push/web-push.service";
-import { tokenUsage } from "./tasks/run-history";
+import {
+  publishJournalEntries,
+  type RunsByCycle,
+  toJournalEntry,
+  writeJournalEntries,
+} from "./journal-entries";
+import { PilotService } from "./pilot.service";
 
 const EXPORT_BATCH = 500;
 
@@ -46,11 +50,17 @@ export class PilotJournalService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly push = inject(WebPushService),
+    private readonly pilot = inject(PilotService),
   ) {}
 
   async appendJournal(userId: string, body: CreatePilotJournalInput) {
-    const rows = await this.prisma.$transaction((tx) => writeActivity(tx, userId, body));
-    const items = publishActivity(userId, rows, await loadRuns(this.prisma, userId, rows));
+    const rows = await this.prisma.$transaction((tx) => writeJournalEntries(tx, userId, body));
+    return { items: await this.publishAppended(userId, rows) };
+  }
+
+  /** After the entries commit: stream them, push alerts, and publish the state a cycle moved. */
+  async publishAppended(userId: string, rows: PilotJournalEntry[]) {
+    const items = publishJournalEntries(userId, rows, await loadRuns(this.prisma, userId, rows));
     // The host journals orchestrator failures as system entries; push them so they reach the phone.
     for (const entry of items.filter((item) => item.kind === "system")) {
       void this.push.sendToUser(userId, {
@@ -60,7 +70,10 @@ export class PilotJournalService {
         tag: "pilot-system",
       });
     }
-    return { items };
+    if (rows.some((row) => row.kind === "cycle")) {
+      await this.pilot.publishCurrentState(userId);
+    }
+    return items;
   }
 
   async listJournal(
@@ -78,7 +91,7 @@ export class PilotJournalService {
     });
     const { items, nextCursor } = cursorPage(rows, limit);
     const runs = await loadRuns(this.prisma, userId, items);
-    return { items: items.map((row) => toActivityEntry(row, runs)), nextCursor };
+    return { items: items.map((row) => toJournalEntry(row, runs)), nextCursor };
   }
 
   /** Oldest first, read in batches so the journal is never all in memory. */
@@ -101,7 +114,7 @@ export class PilotJournalService {
         }
         const runs = await loadRuns(prisma, userId, rows);
         for (const row of rows) {
-          controller.enqueue(encoder.encode(`${JSON.stringify(toActivityEntry(row, runs))}\n`));
+          controller.enqueue(encoder.encode(`${JSON.stringify(toJournalEntry(row, runs))}\n`));
         }
         cursor = rows[rows.length - 1].id;
       },

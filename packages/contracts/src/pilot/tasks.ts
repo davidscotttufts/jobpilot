@@ -5,7 +5,7 @@ import { storedDate } from "../utils/json";
 // An "off" channel is never emitted, so a worker only ever sees a resolved channel and mode.
 const outgoingMode = networkingModeSchema.shape;
 
-const TASK_SUBJECT_TYPES = [
+export const TASK_SUBJECT_TYPES = [
   "job",
   "campaign",
   "question",
@@ -59,6 +59,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     z.object({
       campaignId: z.string(),
       jobKey: z.string(),
+      jobTitle: z.string(),
       url: z.string(),
       board: nullableString,
       brief: nullableString,
@@ -263,6 +264,10 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
 type TaskFields = z.infer<typeof taskFieldsSchema>;
 export type TaskType = TaskFields["taskType"];
 export type TaskPayload<K extends TaskType> = Extract<TaskFields, { taskType: K }>["payload"];
+export type TaskSubjectType<K extends TaskType> = Extract<
+  TaskFields,
+  { taskType: K }
+>["subjectType"];
 
 const taskSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),

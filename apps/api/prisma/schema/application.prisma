@@ -14,6 +14,8 @@ enum ApplicationEventKind {
   status_change
   note
   email
+  // A generated interview prep sheet; its presence stops the pilot offering another.
+  interview_prep
 
   @@map("application_event_kind")
 }

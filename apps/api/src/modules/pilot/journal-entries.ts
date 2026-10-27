@@ -6,27 +6,47 @@ import {
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { z } from "zod/v4";
+import { toInputJson } from "@/common/json";
+import { publish } from "@/common/sse";
 import type {
   PilotJournalEntry as PilotJournalEntryModel,
   Prisma,
 } from "@/generated/prisma/client";
-import { toInputJson } from "./json";
-import { publish } from "./sse";
 
-type ActivityTransaction = Pick<Prisma.TransactionClient, "pilotJournalEntry" | "pilotState">;
+type JournalTransaction = Pick<Prisma.TransactionClient, "pilotJournalEntry" | "pilotState">;
+type CycleTransaction = Pick<Prisma.TransactionClient, "pilotState">;
 
 export type RunsByCycle = ReadonlyMap<string, PilotJournalRun>;
 
 const NO_RUNS: RunsByCycle = new Map();
 
-export function toActivityEntry(row: PilotJournalEntryModel, runs: RunsByCycle): PilotJournalEntry {
+export function toJournalEntry(row: PilotJournalEntryModel, runs: RunsByCycle): PilotJournalEntry {
   const run = row.cycleId ? (runs.get(row.cycleId) ?? null) : null;
   return { ...row, detail: z.record(z.string(), z.json()).parse(row.detail), run };
 }
 
+/**
+ * Counts finished pilot cycles: journaled or idle, each advances board rotation. A null sleep
+ * (stuck recovery) leaves no wake planned.
+ */
+export function recordCycle(
+  tx: CycleTransaction,
+  userId: string,
+  cycles: number,
+  sleepSeconds: number | null,
+  now: Date,
+) {
+  const nextWakeAt = sleepSeconds === null ? null : new Date(now.getTime() + sleepSeconds * 1000);
+  return tx.pilotState.upsert({
+    where: { userId },
+    create: { userId, lastCycleAt: now, cycleCount: cycles, nextWakeAt },
+    update: { lastCycleAt: now, cycleCount: { increment: cycles }, nextWakeAt },
+  });
+}
+
 /** Runs inside the caller's transaction, so cycle accounting commits with the entries. */
-export async function writeActivity(
-  tx: ActivityTransaction,
+export async function writeJournalEntries(
+  tx: JournalTransaction,
   userId: string,
   body: CreatePilotJournalInput,
   now = new Date(),
@@ -48,25 +68,18 @@ export async function writeActivity(
   const cycles = rows.filter((entry) => entry.kind === "cycle");
   const last = cycles.at(-1);
   if (last) {
-    // Stuck-recovery cycles journal no sleep, so they leave no wake planned.
-    const sleepSeconds = pilotCycleDetailSchema.safeParse(last.detail).data?.sleepSeconds;
-    const nextWakeAt =
-      sleepSeconds === undefined ? null : new Date(now.getTime() + sleepSeconds * 1000);
-    await tx.pilotState.upsert({
-      where: { userId },
-      create: { userId, lastCycleAt: now, cycleCount: cycles.length, nextWakeAt },
-      update: { lastCycleAt: now, cycleCount: { increment: cycles.length }, nextWakeAt },
-    });
+    const sleepSeconds = pilotCycleDetailSchema.safeParse(last.detail).data?.sleepSeconds ?? null;
+    await recordCycle(tx, userId, cycles.length, sleepSeconds, now);
   }
   return rows;
 }
 
-export function publishActivity(
+export function publishJournalEntries(
   userId: string,
   rows: PilotJournalEntryModel[],
   runs: RunsByCycle = NO_RUNS,
 ): PilotJournalEntry[] {
-  const items = rows.map((row) => toActivityEntry(row, runs));
+  const items = rows.map((row) => toJournalEntry(row, runs));
   for (const entry of items) {
     publish(pilotChannel, { userId }, { type: "journal.appended", entry });
   }

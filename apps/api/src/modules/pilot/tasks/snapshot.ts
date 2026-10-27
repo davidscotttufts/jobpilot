@@ -1,10 +1,12 @@
 import { type TaskList, taskListSchema } from "@jobpilot/contracts/pilot";
 import { Prisma } from "@/generated/prisma/client";
 
-/** Every write that changes a task list input carries this, or the agent works from a stale task list. */
+/**
+ * Drops the cached task list so the next fetch rebuilds it. Only config writes carry it
+ * (instructions, searches, start/stop); job and inbox changes wait out the snapshot's TTL.
+ */
 export const TASK_LIST_SNAPSHOT_RESET = {
   taskListVersion: null,
-  taskListBuiltAt: null,
   taskListExpiresAt: null,
   taskListSnapshot: Prisma.DbNull,
 } as const;

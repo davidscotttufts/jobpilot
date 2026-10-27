@@ -11,13 +11,13 @@ import {
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { publishActivity, writeActivity } from "@/common/activity-log";
 import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "@/modules/campaign/campaign.summary";
 import { ensureCampaignOwned } from "@/modules/campaign/campaign.utils";
 import { createContactPayload } from "@/modules/contact";
+import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/journal-entries";
 
 export interface NetworkingMessageFilters {
   campaignId?: string;
@@ -124,7 +124,7 @@ export class NetworkingService {
       }
       const activity =
         existing.status === "draft" && (subjectChanged || bodyChanged)
-          ? await writeActivity(tx, userId, {
+          ? await writeJournalEntries(tx, userId, {
               entries: [
                 {
                   kind: "correction",
@@ -144,7 +144,7 @@ export class NetworkingService {
       return { message, activity };
     });
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
-    publishActivity(userId, result.activity);
+    publishJournalEntries(userId, result.activity);
     return result.message;
   }
 

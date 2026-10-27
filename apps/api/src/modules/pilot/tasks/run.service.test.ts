@@ -1,7 +1,7 @@
-import type { CreatePilotJournalInput, PilotTask, TaskList } from "@jobpilot/contracts/pilot";
+import type { PilotTask, TaskList } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { subscribe } from "@/common/sse/server";
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
 import type { PilotJournalService } from "../journal.service";
 import { RunService } from "./run.service";
 import { describe, expect, it } from "bun:test";
@@ -21,6 +21,7 @@ const applyTask: PilotTask = {
   payload: {
     campaignId: "c1",
     jobKey: "j1",
+    jobTitle: "Engineer",
     url: "https://example.test/job",
     board: null,
     brief: null,
@@ -58,9 +59,9 @@ const snapshot: TaskList = {
 };
 
 function fakeJournal() {
-  const appended: CreatePilotJournalInput[] = [];
+  const appended: PilotJournalEntry[] = [];
   const journal = {
-    appendJournal: async (_userId: string, body: CreatePilotJournalInput) => appended.push(body),
+    publishAppended: async (_userId: string, rows: PilotJournalEntry[]) => appended.push(...rows),
   } as unknown as PilotJournalService;
   return { journal, appended };
 }
@@ -138,6 +139,7 @@ function closeDb(row: ReturnType<typeof runRow>) {
         return { count: 1 };
       },
     },
+    pilotJournalEntry: { createMany: async () => ({ count: 1 }) },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   return { db, jobReverts };
@@ -263,12 +265,13 @@ describe("RunService.postResult", () => {
     expect(run.outcome).toBe("done");
     expect(jobReverts).toHaveLength(0);
     expect(appended).toEqual([
-      {
+      expect.objectContaining({
         cycleId: RUN_ID,
-        entries: [
-          { kind: "action", summary: result.summary, subjectType: "job", subjectId: "c1:j1" },
-        ],
-      },
+        kind: "action",
+        summary: result.summary,
+        subjectType: "job",
+        subjectId: "c1:j1",
+      }),
     ]);
     expect(event).toEqual({ type: "run.finished", runId: RUN_ID, outcome: "done" });
   });

@@ -24,7 +24,11 @@ describe("TaskListService campaign.scorePending", () => {
   it("holds a campaign back while its last run is recent", async () => {
     const taskList = await service({
       scorePendingCampaigns: [campaign],
-      scorePendingRuns: [{ subjectId: "c1", startedAt: new Date(), finishedAt: new Date() }],
+      runs: {
+        "campaign.scorePending": [
+          { subjectId: "c1", startedAt: new Date(), finishedAt: new Date() },
+        ],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.scorePending")).toBe(false);
   });
@@ -66,7 +70,9 @@ describe("TaskListService campaign.reviewPaused", () => {
   it("holds a campaign back while its last review is recent", async () => {
     const taskList = await service({
       pausedCampaigns: [paused],
-      pausedReviewRuns: [{ subjectId: "c9", startedAt: new Date(), finishedAt: null }],
+      runs: {
+        "campaign.reviewPaused": [{ subjectId: "c9", startedAt: new Date(), finishedAt: null }],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.reviewPaused")).toBe(false);
   });
@@ -96,7 +102,7 @@ describe("TaskListService queue.score", () => {
   it("holds a campaign back while its last scoring run is still open", async () => {
     const taskList = await service({
       queuedCampaigns: [queued],
-      queueScoreRuns: [{ subjectId: "c1", startedAt: new Date(), finishedAt: null }],
+      runs: { "queue.score": [{ subjectId: "c1", startedAt: new Date(), finishedAt: null }] },
     }).refresh("p1");
     expect(hasTaskType(taskList, "queue.score")).toBe(false);
   });
@@ -136,14 +142,18 @@ describe("TaskListService campaign reviews", () => {
     expect(payloadOf("job.retryFailed")).toMatchObject({ failedCount: 3 });
   });
 
-  it("skips a review journaled for the same campaign this week", async () => {
+  it("skips a review that ran for the same campaign this week", async () => {
     const taskList = await service({
       ...laggard,
-      actionMarkers: [
-        { subjectId: "c1", detail: { type: "tune" } },
-        { subjectId: "c1", detail: { type: "rescanSkipped" } },
-        { subjectId: "other", detail: { type: "retryFailed" } },
-      ],
+      runs: {
+        "campaign.tune": [
+          { subjectId: "c1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        ],
+        "job.rescanSkipped": [
+          { subjectId: "c1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        ],
+        "job.retryFailed": [{ subjectId: "other", startedAt: new Date(), finishedAt: new Date() }],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.tune")).toBe(false);
     expect(hasTaskType(taskList, "job.rescanSkipped")).toBe(false);

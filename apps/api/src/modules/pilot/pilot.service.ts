@@ -13,6 +13,7 @@ import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { publishCampaignStatus } from "@/modules/campaign/campaign.utils";
+import { recordCycle } from "./journal-entries";
 import {
   costByTaskType,
   countAppliedToday,
@@ -20,6 +21,7 @@ import {
   countTodayOutcomes,
 } from "./pilot.stats";
 import { SERVER_SKIP_REASONS } from "./skip-reasons";
+import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 const PILOT_CAMPAIGN = { createdBy: "pilot" } as const;
@@ -52,8 +54,7 @@ export class PilotService {
       cycleCount: row.cycleCount,
       appliedToday,
       networkingSentToday,
-      // `>=` so a cap of 0 reads as reached, matching the task list.
-      capReached: appliedToday >= config.dailyApplyCap,
+      capReached: allowedToday(config, { appliedToday, networkingSentToday }).appliesLeft === 0,
       currentRun,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -227,14 +228,16 @@ export class PilotService {
 
   /** Counts as a cycle like a journaled one, so board rotation still advances while idle. */
   async recordIdleCycle(userId: string, body: RecordIdleCycleInput) {
-    const now = new Date();
-    const nextWakeAt = new Date(now.getTime() + body.sleepSeconds * 1000);
-    const row = await this.prisma.pilotState.upsert({
-      where: { userId },
-      create: { userId, lastCycleAt: now, cycleCount: 1, nextWakeAt },
-      update: { lastCycleAt: now, cycleCount: { increment: 1 }, nextWakeAt },
-    });
+    const row = await recordCycle(this.prisma, userId, 1, body.sleepSeconds, new Date());
     return this.publishState(row);
+  }
+
+  /** For writes made elsewhere, such as a journaled cycle. */
+  async publishCurrentState(userId: string) {
+    const row = await this.prisma.pilotState.findUnique({ where: { userId } });
+    if (row) {
+      await this.publishState(row);
+    }
   }
 
   getTodayOutcomes(userId: string) {

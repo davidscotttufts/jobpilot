@@ -1,5 +1,6 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
+  type CreatePilotJournalInput,
   type PilotRun,
   type PilotRunResultInput,
   type PilotTask,
@@ -17,10 +18,15 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
+import {
+  guardApply,
+  parseJobRef,
+  revertApplyingJobs,
+  startApplying,
+} from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
 import { PilotJournalService } from "../journal.service";
-import { parseJobRef, revertApplyingJobs } from "./run-history";
+import { writeJournalEntries } from "../journal-entries";
 import { parseTaskListSnapshot } from "./snapshot";
 import {
   networkingSendWhere,
@@ -78,6 +84,7 @@ async function assertStillStartable(
   if (remaining === 0) throw conflict(gone, ErrorCodes.PILOT_CONFLICT);
 }
 
+type JournalEntryInput = CreatePilotJournalInput["entries"][number];
 @injectable()
 export class RunService {
   constructor(
@@ -206,8 +213,14 @@ export class RunService {
     return findOwned((where) => this.prisma.pilotRun.findFirst({ where }), { id, userId }, "Run");
   }
 
-  private async close(userId: string, existing: PilotRunModel, outcome: PilotRunOutcome) {
-    const finished = await this.prisma.$transaction(async (tx) => {
+  /** `entries` journal under the run id in the same transaction, so a result never half-lands. */
+  private async close(
+    userId: string,
+    existing: PilotRunModel,
+    outcome: PilotRunOutcome,
+    entries: JournalEntryInput[] = [],
+  ) {
+    const { finished, journaled } = await this.prisma.$transaction(async (tx) => {
       // Otherwise the job stays `applying` until the stale sweep.
       if (outcome === "cancelled" && existing.taskType === "job.apply") {
         await revertApplyingJobs(tx, userId, [parseJobRef(existing.payload)]);
@@ -217,8 +230,13 @@ export class RunService {
         data: { finishedAt: new Date(), outcome },
       });
       if (!row) throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
-      return row;
+      const rows =
+        entries.length > 0
+          ? await writeJournalEntries(tx, userId, { cycleId: existing.id, entries })
+          : [];
+      return { finished: row, journaled: rows };
     });
+    await this.journal.publishAppended(userId, journaled);
     return toPilotRun(finished);
   }
 
@@ -227,15 +245,14 @@ export class RunService {
     const existing = await this.findRow(userId, id);
     if (existing.finishedAt) return toPilotRun(existing);
 
-    const run = await this.close(userId, existing, body.outcome);
-    const action = {
-      kind: "action" as const,
+    const action: JournalEntryInput = {
+      kind: "action",
       summary: body.summary,
-      subjectType: body.subjectType ?? run.subjectType,
-      subjectId: body.subjectId ?? run.subjectId,
+      subjectType: body.subjectType ?? existing.subjectType,
+      subjectId: body.subjectId ?? existing.subjectId,
       detail: body.detail,
     };
-    await this.journal.appendJournal(userId, { cycleId: id, entries: [action] });
+    const run = await this.close(userId, existing, body.outcome, [action]);
     // After the journal line, so a run.finished listener already sees the result.
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
     return run;

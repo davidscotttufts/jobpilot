@@ -40,6 +40,20 @@ export function newTokens(usage: TokenUsage): number {
   return usage.input + usage.output + usage.cacheWrite;
 }
 
+type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens";
+
+/** A run's token columns. Nullable so a Prisma `_sum` fits as is. */
+type TokenCounts = Record<TokenColumn, number | null>;
+
+export function tokenUsage(counts: TokenCounts): TokenUsage {
+  return {
+    input: counts.inputTokens ?? 0,
+    output: counts.outputTokens ?? 0,
+    cacheRead: counts.cacheReadTokens ?? 0,
+    cacheWrite: counts.cacheWriteTokens ?? 0,
+  };
+}
+
 export function sumTokenUsage(usages: TokenUsage[]): TokenUsage {
   return {
     input: usages.reduce((sum, usage) => sum + usage.input, 0),

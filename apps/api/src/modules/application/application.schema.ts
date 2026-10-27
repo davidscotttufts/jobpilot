@@ -24,9 +24,9 @@ export const applicationQuerySchema = z.object({
   company: z.string().trim().min(1).optional(),
 });
 
-/** Append a free-text note to an application's timeline (e.g. a generated interview prep sheet). */
+/** Append a free-text note, or a generated interview prep sheet, to an application's timeline. */
 export const appendNoteSchema = z.object({
-  kind: z.literal("note"),
+  kind: z.enum(["note", "interview_prep"]),
   notes: z.string().min(1),
 });
 

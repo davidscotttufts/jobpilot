@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 
 // One definition of "still workable" per task type, shared by its gather and the run-start
 // re-check: two copies drift, and a looser re-check starts a run on a row the gather would drop.
+// `job.apply`'s lives beside `startApplying` in campaign/jobs/apply-guard.ts.
 
 /** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
 export const NEEDS_WORKER_VISIT = {

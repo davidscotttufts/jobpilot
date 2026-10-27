@@ -1,6 +1,6 @@
 import type { AdminPilotQuery, AdminUserQuery } from "@jobpilot/contracts/admin";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { sumTokenUsage } from "@jobpilot/contracts/pilot";
+import { sumTokenUsage, tokenUsage } from "@jobpilot/contracts/pilot";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
 import { inject, injectable } from "@needle-di/core";
 import type { AuthUser } from "@/common/auth";
@@ -9,7 +9,6 @@ import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
-import { tokenUsage } from "@/modules/pilot/tasks/run-history";
 
 const USER_SELECT = {
   id: true,

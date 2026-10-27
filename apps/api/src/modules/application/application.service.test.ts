@@ -32,18 +32,18 @@ function makeDb(over: Over = {}) {
 }
 
 describe("ApplicationService.addEvent", () => {
-  it("appends a note event to an owned application", async () => {
+  it("appends an interview prep event to an owned application", async () => {
     const { db, created } = makeDb({ app: { id: "a1" } });
     const svc = new ApplicationService(db);
-    const event = await svc.addEvent("p1", "a1", { kind: "note", notes: "[interview-prep] sheet" });
+    const event = await svc.addEvent("p1", "a1", { kind: "interview_prep", notes: "sheet" });
 
     expect(created).toHaveLength(1);
     expect(created[0]).toMatchObject({
       applicationId: "a1",
-      kind: "note",
-      note: "[interview-prep] sheet",
+      kind: "interview_prep",
+      note: "sheet",
     });
-    expect(event).toMatchObject({ id: "ev-1", kind: "note", note: "[interview-prep] sheet" });
+    expect(event).toMatchObject({ id: "ev-1", kind: "interview_prep", note: "sheet" });
   });
 
   it("throws a 404 when the application is not owned", async () => {

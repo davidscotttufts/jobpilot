@@ -1,6 +1,7 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
+import { z } from "zod/v4";
 import { conflict, HttpError } from "@/common/errors";
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Job, Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
   type DuplicateReader,
@@ -130,6 +131,37 @@ export async function guardApply<T>(
   }
 }
 
+type JobRef = Pick<Job, "campaignId" | "key">;
+
+const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string().min(1) });
+
+/** The job a `job.apply` run payload points at. */
+export function parseJobRef(payload: unknown): JobRef {
+  const { campaignId, jobKey } = jobRefSchema.parse(payload);
+  return { campaignId, key: jobKey };
+}
+
+/** Hands `applying` jobs whose run ended without a result back to the queue. */
+export async function revertApplyingJobs(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  jobs: JobRef[],
+): Promise<void> {
+  if (jobs.length === 0) return;
+  await tx.job.updateMany({
+    where: { status: "applying", campaign: { userId }, OR: jobs },
+    data: { status: "approved" },
+  });
+}
+
+/** Jobs ready to apply to: the pilot's `job.apply` gather and its run-start re-check share this. */
+export function applyableJobWhere(userId: string) {
+  return {
+    status: "approved",
+    campaign: { userId, status: "in_progress" },
+  } satisfies Prisma.JobWhereInput;
+}
+
 /** Moves an approved job into `applying` inside the caller's transaction; wrap it in `guardApply`. */
 export async function startApplying(
   tx: Prisma.TransactionClient,
@@ -137,12 +169,7 @@ export async function startApplying(
   campaignId: string,
   key: string,
 ): Promise<JobRow> {
-  const where = {
-    campaignId,
-    key,
-    status: "approved",
-    campaign: { userId },
-  } satisfies Prisma.JobWhereInput;
+  const where = { ...applyableJobWhere(userId), campaignId, key } satisfies Prisma.JobWhereInput;
 
   const target = await tx.job.findFirst({
     where,

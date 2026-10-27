@@ -2,6 +2,7 @@ import { campaignConfigSchema } from "@jobpilot/contracts/campaign";
 import type { TaskPayload } from "@jobpilot/contracts/pilot";
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { applyableJobWhere } from "@/modules/campaign/jobs/apply-guard";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { GATHER_CAP, jobSubjectId, withoutRecentRuns } from "./run-history";
 
@@ -33,7 +34,7 @@ export interface TaskJob {
 /** Approved jobs of in-progress campaigns, best match first. */
 export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): Promise<TaskJob[]> {
   const rows = await prisma.job.findMany({
-    where: { status: "approved", campaign: { userId, status: "in_progress" } },
+    where: applyableJobWhere(userId),
     orderBy: { matchScore: "desc" },
     take: GATHER_CAP,
     select: {

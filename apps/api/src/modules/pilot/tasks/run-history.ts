@@ -1,13 +1,5 @@
-import type { TokenUsage } from "@jobpilot/contracts/pilot";
-import { z } from "zod/v4";
 import { HOUR_MS } from "@/common/date/buckets";
-import type {
-  Job,
-  PilotRun,
-  PilotRunOutcome,
-  Prisma,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import type { Job, PilotRun, PilotRunOutcome, PrismaClient } from "@/generated/prisma/client";
 
 /** Row cap for the unbounded gather and expiry scans. */
 export const GATHER_CAP = 200;
@@ -16,24 +8,10 @@ export const GATHER_CAP = 200;
 const CRASH_RETRY_MS = 2 * HOUR_MS;
 
 /** The agent never finished, as opposed to deciding. */
-export const CRASH_OUTCOMES: PilotRunOutcome[] = ["expired", "cancelled"];
+const CRASH_OUTCOMES: PilotRunOutcome[] = ["expired", "cancelled"];
 
 export function isCrash(outcome: PilotRunOutcome | null): boolean {
   return outcome !== null && CRASH_OUTCOMES.includes(outcome);
-}
-
-type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens";
-
-/** Nullable so a Prisma `_sum` fits as is. */
-type TokenCounts = Record<TokenColumn, number | null>;
-
-export function tokenUsage(counts: TokenCounts): TokenUsage {
-  return {
-    input: counts.inputTokens ?? 0,
-    output: counts.outputTokens ?? 0,
-    cacheRead: counts.cacheReadTokens ?? 0,
-    cacheWrite: counts.cacheWriteTokens ?? 0,
-  };
 }
 
 type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;
@@ -95,6 +73,29 @@ export async function withoutRecentRuns<T>(
   return rows.filter((row) => !ranRecently(latest.get(subjectOf(row)), now, cooldownMs));
 }
 
+/** Rows no open or decided run has taken yet: once-only work, where a crash hands it back. */
+export async function withoutConsumingRuns<T>(
+  prisma: PrismaClient,
+  userId: string,
+  taskType: string,
+  rows: T[],
+  subjectOf: (row: T) => string,
+): Promise<T[]> {
+  if (rows.length === 0) return [];
+  const runs = await prisma.pilotRun.findMany({
+    where: {
+      userId,
+      taskType,
+      subjectId: { in: rows.map(subjectOf) },
+      OR: [{ finishedAt: null }, { outcome: { notIn: CRASH_OUTCOMES } }],
+    },
+    take: GATHER_CAP,
+    select: { subjectId: true },
+  });
+  const consumed = new Set(runs.map((run) => run.subjectId));
+  return rows.filter((row) => !consumed.has(subjectOf(row)));
+}
+
 /** Every producer and damper read must agree on a job's subject byte for byte. */
 export function jobSubjectId(job: JobRef): string {
   return `${job.campaignId}:${job.key}`;
@@ -107,24 +108,4 @@ export function parseJobSubject(subjectId: string): JobRef {
     throw new Error(`Invalid job subject: ${subjectId}`);
   }
   return { campaignId: subjectId.slice(0, separator), key: subjectId.slice(separator + 1) };
-}
-
-const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string().min(1) });
-
-/** The job a `job.apply` run payload points at. */
-export function parseJobRef(payload: unknown): JobRef {
-  const { campaignId, jobKey } = jobRefSchema.parse(payload);
-  return { campaignId, key: jobKey };
-}
-
-export async function revertApplyingJobs(
-  tx: Prisma.TransactionClient,
-  userId: string,
-  jobs: JobRef[],
-): Promise<void> {
-  if (jobs.length === 0) return;
-  await tx.job.updateMany({
-    where: { status: "applying", campaign: { userId }, OR: jobs },
-    data: { status: "approved" },
-  });
 }

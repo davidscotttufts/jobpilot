@@ -99,7 +99,7 @@ export function resumeVariantWhere(c: RetentionCutoffs): Prisma.ResumeVariantWhe
 }
 
 export function applicationEventWhere(c: RetentionCutoffs): Prisma.ApplicationEventWhereInput {
-  // Closed only: a live application renders these as its timeline, and its "[interview-prep]" note blocks re-prep.
+  // Closed only: a live application renders these as its timeline, and its interview_prep event blocks re-prep.
   return {
     createdAt: { lt: c.applicationEvent },
     application: { status: { in: ["rejected", "withdrawn"] } },
