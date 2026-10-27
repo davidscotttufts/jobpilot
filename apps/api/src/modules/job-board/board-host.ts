@@ -1,11 +1,13 @@
+import { canonicalHost } from "@/common/utils/url";
+
 /** Agents store `https://www.naukri.com/`, `naukri.com` or `linkedin` alike; reduce to the host. */
 export function boardHost(board: string): string {
   const host = board
     .trim()
     .toLowerCase()
     .replace(/^[a-z]+:\/\//, "")
-    .replace(/^www\./, "");
-  return host.split("/")[0];
+    .split("/")[0];
+  return canonicalHost(host);
 }
 
 /** The host, then each parent domain (`in.indeed.com` -> `indeed.com`), then a bare name + `.com`. */

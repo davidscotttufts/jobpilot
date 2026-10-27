@@ -6,6 +6,10 @@ describe("boardHost", () => {
     expect(boardHost("https://www.LinkedIn.com/jobs/")).toBe("linkedin.com");
     expect(boardHost(" naukri.com ")).toBe("naukri.com");
   });
+
+  it("folds a host alias the way job URLs do", () => {
+    expect(boardHost("https://hiring.cafe/")).toBe("hiringcafe.com");
+  });
 });
 
 describe("hostCandidates", () => {

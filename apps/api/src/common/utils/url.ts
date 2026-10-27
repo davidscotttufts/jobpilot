@@ -24,6 +24,12 @@ const TRACKING_PARAMS = new Set([
   "trk",
 ]);
 
+/** Lowercase, without `www.`, aliases folded: the one host form job URLs and board domains share. */
+export function canonicalHost(host: string): string {
+  const bare = host.toLowerCase().replace(/^www\./, "");
+  return HOST_ALIASES[bare] ?? bare;
+}
+
 function isTracking(name: string): boolean {
   return name.startsWith("utm_") || TRACKING_PARAMS.has(name);
 }
@@ -47,8 +53,7 @@ export function normalizeJobUrl(raw: string): string {
 
   url.protocol = "https:";
   url.hash = "";
-  const host = url.hostname.toLowerCase().replace(/^www\./, "");
-  url.hostname = HOST_ALIASES[host] ?? host;
+  url.hostname = canonicalHost(url.hostname);
   for (const name of [...url.searchParams.keys()]) {
     if (isTracking(name.toLowerCase())) {
       url.searchParams.delete(name);
