@@ -96,7 +96,7 @@ export class PilotService {
         where: { userId, ...PILOT_CAMPAIGN, status: "in_progress" },
         orderBy: { startedAt: "asc" },
         select: {
-          campaignId: true,
+          id: true,
           query: true,
           _count: { select: { jobs: { where: { status: "approved" } } } },
         },
@@ -164,14 +164,14 @@ export class PilotService {
     const completing = change.completeCampaigns
       ? await this.prisma.campaign.findMany({
           where: { userId, ...PILOT_CAMPAIGN, status: "in_progress" },
-          select: { campaignId: true, source: true },
+          select: { id: true, source: true },
         })
       : [];
     if (completing.length > 0) {
       writes.push(
         this.prisma.campaign.updateMany({
           where: {
-            campaignId: { in: completing.map((campaign) => campaign.campaignId) },
+            id: { in: completing.map((campaign) => campaign.id) },
             status: "in_progress",
           },
           data: {

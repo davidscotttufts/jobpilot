@@ -59,7 +59,7 @@ unlimited:
 jobpilot-api POST /api/campaigns --data '{"query":"<query>","source":"auto_apply","config":{"board":"<domain>","resumeId":"<RESUME_ID>","minScore":<n>}}'
 ```
 
-Read `.campaignId` as `CAMPAIGN_ID`.
+Read `.id` as `CAMPAIGN_ID`.
 
 Either way, read the campaign's `config.resumeId` as `RESUME_ID` (`GET /api/campaigns/$CAMPAIGN_ID`;
 absent → the primary) and surface the live view: `$JOBPILOT_WEB/campaigns/<CAMPAIGN_ID>`.

@@ -104,7 +104,7 @@ export function CampaignComposer(props: CampaignComposerProps): ReactElement {
       }
 
       const campaign = await createCampaign.mutateAsync(buildCreateCampaignRequest(effective));
-      const campaignId = campaign.campaignId;
+      const campaignId = campaign.id;
       router.push(`/campaigns/${encodeURIComponent(campaignId)}`);
 
       void agent.injectSkill(

@@ -18,7 +18,7 @@ export const campaignsQuery = paginationQuerySchema.extend({
 });
 
 export const campaignSchema = z.object({
-  campaignId: z.uuid(),
+  id: z.uuid(),
   userId: z.uuid(),
   query: z.string(),
   source: campaignSourceSchema,
@@ -34,4 +34,3 @@ export const campaignSchema = z.object({
 });
 
 export const campaignListSchema = paginatedSchema(campaignSchema);
-export const campaignDeletedSchema = z.object({ deleted: z.boolean(), campaignId: z.uuid() });

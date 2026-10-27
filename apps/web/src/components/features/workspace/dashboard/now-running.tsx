@@ -38,7 +38,7 @@ export function NowRunning(): ReactNode {
     <SectionCard title="Now running">
       <Stack spacing={1.5}>
         {running.map((c) => (
-          <RunningRow key={c.campaignId} campaign={c} />
+          <RunningRow key={c.id} campaign={c} />
         ))}
       </Stack>
     </SectionCard>
@@ -49,9 +49,8 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
   const { campaign } = props;
   const p = progress(campaign);
 
-  const pause = useApiMutation<{ campaignId: string; status: string }, void>(
-    () =>
-      api.campaigns({ id: campaign.campaignId }).status.post({ status: "paused", actor: "user" }),
+  const pause = useApiMutation(
+    () => api.campaigns({ id: campaign.id }).status.post({ status: "paused", actor: "user" }),
     {
       successMessage: "Campaign paused",
       invalidate: invalidations.campaign,
@@ -79,7 +78,7 @@ function RunningRow(props: { campaign: CampaignDto }): ReactElement {
       <LinkButton
         size="small"
         variant="text"
-        href={`/campaigns/${encodeURIComponent(campaign.campaignId)}` as Route}
+        href={`/campaigns/${encodeURIComponent(campaign.id)}` as Route}
       >
         Open
       </LinkButton>

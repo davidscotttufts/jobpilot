@@ -45,12 +45,12 @@ export async function gatherDueSearches(
     prisma.campaign.findMany({
       where: { userId, status: "in_progress", source: "auto_apply", pilotSearchId: { in: ids } },
       orderBy: { startedAt: "asc" },
-      select: { campaignId: true, pilotSearchId: true },
+      select: { id: true, pilotSearchId: true },
     }),
   ]);
 
   // Oldest first, so the newest campaign of a search wins the map entry.
-  const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c.campaignId]));
+  const campaignBySearch = new Map(campaigns.map((c) => [c.pilotSearchId, c.id]));
   const startable = searches.filter((search) => {
     const last = latest.get(search.id);
     // A run report or a query rewrite moves `nextRunAt` past the run, and the cadence takes over.

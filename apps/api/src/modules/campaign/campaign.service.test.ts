@@ -4,7 +4,7 @@ import { emptySummary } from "./campaign.summary";
 import { describe, expect, it } from "bun:test";
 
 const row = {
-  campaignId: "c1",
+  id: "c1",
   userId: "u1",
   query: "typescript",
   source: "search" as const,
@@ -120,7 +120,7 @@ describe("CampaignService", () => {
       expectedUpdatedAt: row.updatedAt.toISOString(),
     });
     expect(wheres.at(-1)).toEqual({
-      campaignId: "c1",
+      id: "c1",
       userId: "u1",
       updatedAt: row.updatedAt,
     });

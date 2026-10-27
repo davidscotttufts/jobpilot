@@ -5,7 +5,7 @@ import { describe, expect, it } from "bun:test";
 
 describe("TaskListService campaign.scorePending", () => {
   const campaign = {
-    campaignId: "c1",
+    id: "c1",
     query: "react",
     config: { board: "linkedin", minScore: 70 },
     _count: { jobs: 9 },
@@ -31,7 +31,7 @@ describe("TaskListService campaign.scorePending", () => {
 
 describe("TaskListService campaign.reviewPaused", () => {
   const pausedAt = new Date(Date.now() - 60 * 60_000);
-  const paused = { campaignId: "c9", query: "react", config: {}, updatedAt: pausedAt };
+  const paused = { id: "c9", query: "react", config: {}, updatedAt: pausedAt };
   const answeredAt = (offsetMs: number) => new Date(pausedAt.getTime() + offsetMs);
 
   it("offers a paused auto-apply campaign for review", async () => {
@@ -74,7 +74,7 @@ describe("TaskListService campaign.reviewPaused", () => {
 describe("TaskListService queue.score", () => {
   const RESUME_ID = "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e";
   const queued = {
-    campaignId: "c1",
+    id: "c1",
     config: { resumeId: RESUME_ID, minScore: 55 },
     _count: { jobs: 3 },
     jobs: [{ key: "q1", url: "https://x/1" }],
@@ -106,7 +106,7 @@ describe("TaskListService campaign reviews", () => {
   const laggard = {
     quietCampaigns: [
       {
-        campaignId: "c1",
+        id: "c1",
         query: "react",
         config: { minScore: 70, board: "linkedin" },
         source: "search",
@@ -152,12 +152,12 @@ describe("TaskListService campaign reviews", () => {
 describe("TaskListService idle-campaign sweep", () => {
   it("completes an idle campaign server-side and journals it, with no task", async () => {
     const { svc, rec } = serviceWithRec({
-      finalizeCampaigns: [{ campaignId: "c3", query: "react" }],
+      finalizeCampaigns: [{ id: "c3", query: "react" }],
     });
     const taskList = await svc.refresh("p1");
     expect(rec.campaignUpdates).toHaveLength(1);
     expect(rec.campaignUpdates[0]).toMatchObject({
-      where: { campaignId: "c3", status: "in_progress" },
+      where: { id: "c3", status: "in_progress" },
       data: { status: "completed", statusActor: "pilot" },
     });
     expect(rec.journals).toContainEqual(

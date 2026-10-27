@@ -10,12 +10,8 @@ import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
 import { UserService } from "@/modules/user/user.service";
-import {
-  campaignDeletedSchema,
-  campaignListSchema,
-  campaignSchema,
-  campaignsQuery,
-} from "./campaign.schema";
+import { deletedResponseSchema } from "@/types/response";
+import { campaignListSchema, campaignSchema, campaignsQuery } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 
 const svc = container.get(CampaignService);
@@ -82,7 +78,7 @@ export const campaignController = new Elysia({
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
-    response: campaignDeletedSchema,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete campaign",
       description:

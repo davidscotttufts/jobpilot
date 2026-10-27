@@ -61,9 +61,7 @@ export const updatePilotInstructionsSchema = z.object({
 
 export const pilotInstructionsImpactSchema = z.object({
   searches: z.array(z.object({ id: z.uuid(), query: z.string(), reason: z.string() })),
-  campaigns: z.array(
-    z.object({ campaignId: z.uuid(), query: z.string(), approvedJobs: z.number().int() }),
-  ),
+  campaigns: z.array(z.object({ id: z.uuid(), query: z.string(), approvedJobs: z.number().int() })),
   approvedJobs: z.number().int(),
   oldestApprovedAt: z.date().nullable(),
 });

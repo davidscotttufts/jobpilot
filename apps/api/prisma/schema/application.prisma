@@ -57,7 +57,7 @@ model Application {
   failReason  String? @map("fail_reason")
 
   campaignId String?   @map("campaign_id")
-  campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   // The job it was applied from, set at creation; it always belongs to `campaignId`.
   jobId      String?   @map("job_id")
   job        Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)

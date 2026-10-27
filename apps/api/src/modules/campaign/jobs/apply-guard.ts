@@ -119,7 +119,7 @@ export async function guardApply<T>(
     });
     if (skipped) {
       const campaign = await prisma.campaign.findUniqueOrThrow({
-        where: { campaignId },
+        where: { id: campaignId },
         select: { source: true },
       });
       await publishStatusChange(prisma, userId, skipped, campaign.source);

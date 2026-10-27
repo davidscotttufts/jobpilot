@@ -25,7 +25,7 @@ Argument is `<campaign-id>`. If missing, list candidates and ask:
 jobpilot-api GET /api/campaigns --query status=paused
 ```
 
-Show each of `.items` as `campaignId`, `status`, `source`, `query`.
+Show each of `.items` as `id`, `status`, `source`, `query`.
 
 Fetch the campaign + jobs:
 

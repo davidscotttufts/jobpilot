@@ -33,7 +33,7 @@ export async function gatherScorePending(
     where: scorePendingWhere(userId),
     take: GATHER_CAP,
     select: {
-      campaignId: true,
+      id: true,
       query: true,
       config: true,
       _count: { select: { jobs: { where: NEEDS_WORKER_VISIT } } },
@@ -52,12 +52,12 @@ export async function gatherScorePending(
     now,
     BATCH_COOLDOWN_MS,
     campaigns,
-    (campaign) => campaign.campaignId,
+    (campaign) => campaign.id,
   );
   return startable.map((campaign) => {
     const config = campaignConfigSchema.parse(campaign.config);
     return {
-      campaignId: campaign.campaignId,
+      campaignId: campaign.id,
       query: campaign.query,
       board: config.board ?? null,
       resumeId: config.resumeId,
@@ -79,7 +79,7 @@ export async function gatherQueueScores(
     where: { userId, status: "in_progress", source: "apply", jobs: { some: QUEUED } },
     take: GATHER_CAP,
     select: {
-      campaignId: true,
+      id: true,
       config: true,
       _count: { select: { jobs: { where: QUEUED } } },
       jobs: {
@@ -97,12 +97,12 @@ export async function gatherQueueScores(
     now,
     BATCH_COOLDOWN_MS,
     campaigns,
-    (campaign) => campaign.campaignId,
+    (campaign) => campaign.id,
   );
   return startable.map((campaign) => {
     const config = campaignConfigSchema.parse(campaign.config);
     return {
-      campaignId: campaign.campaignId,
+      campaignId: campaign.id,
       resumeId: config.resumeId,
       minScore: config.minScore ?? fallbackMinScore,
       queuedCount: campaign._count.jobs,
@@ -121,11 +121,11 @@ export async function gatherPausedCampaigns(
     where: reviewPausedWhere(userId),
     orderBy: { updatedAt: "asc" },
     take: PAUSED_CANDIDATES,
-    select: { campaignId: true, query: true, config: true, updatedAt: true },
+    select: { id: true, query: true, config: true, updatedAt: true },
   });
   if (campaigns.length === 0) return [];
 
-  const ids = campaigns.map((campaign) => campaign.campaignId);
+  const ids = campaigns.map((campaign) => campaign.id);
   const [questions, latest] = await Promise.all([
     prisma.pilotQuestion.findMany({
       where: {
@@ -144,14 +144,14 @@ export async function gatherPausedCampaigns(
   return campaigns
     .filter((campaign) => {
       // An answer older than the pause belongs to an earlier pause episode.
-      const decided = (questionsByCampaign.get(campaign.campaignId) ?? []).some(
+      const decided = (questionsByCampaign.get(campaign.id) ?? []).some(
         (q) => q.status === "open" || (q.answeredAt != null && q.answeredAt > campaign.updatedAt),
       );
-      const damped = ranRecently(latest.get(campaign.campaignId), now, PAUSED_REVIEW_RETRY_MS);
+      const damped = ranRecently(latest.get(campaign.id), now, PAUSED_REVIEW_RETRY_MS);
       return !decided && !damped;
     })
     .map((campaign) => ({
-      campaignId: campaign.campaignId,
+      campaignId: campaign.id,
       query: campaign.query,
       board: campaignConfigSchema.parse(campaign.config).board ?? null,
       pausedAt: campaign.updatedAt,
@@ -165,7 +165,7 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   const [campaigns, markers] = await Promise.all([
     prisma.campaign.findMany({
       where: { userId, status: "in_progress", source: { not: "networking" } },
-      select: { campaignId: true, query: true, config: true, source: true },
+      select: { id: true, query: true, config: true, source: true },
     }),
     prisma.pilotJournalEntry.findMany({
       where: {
@@ -187,7 +187,7 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   const retryFailed: TaskPayload<"job.retryFailed">[] = [];
 
   const summaries = await summarizeCampaigns(prisma, campaigns);
-  for (const { campaignId, query, config, summary } of summaries) {
+  for (const { id: campaignId, query, config, summary } of summaries) {
     if (summary.kind !== "jobs") continue;
     const converting = summary.qualified / summary.totalFound >= TUNE_MAX_QUALIFIED_RATIO;
     if (summary.totalFound >= TUNE_MIN_JOBS && !converting && isFresh("tune", campaignId)) {

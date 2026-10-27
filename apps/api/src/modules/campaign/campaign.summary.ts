@@ -8,7 +8,7 @@ import { CAMPAIGN_JOB_STATUSES } from "@jobpilot/contracts/campaign";
 import { type Campaign, type CampaignSource, Prisma } from "@/generated/prisma/client";
 
 type SummaryClient = Pick<Prisma.TransactionClient, "$queryRaw" | "job" | "networkingMessage">;
-type CampaignRef = Pick<Campaign, "campaignId" | "source">;
+type CampaignRef = Pick<Campaign, "id" | "source">;
 
 interface StatusCount {
   status: string;
@@ -71,9 +71,9 @@ export async function summarizeCampaigns<T extends CampaignRef>(
   client: SummaryClient,
   campaigns: T[],
 ): Promise<WithSummary<T>[]> {
-  const ids = campaigns.map((c) => c.campaignId);
-  const networkingIds = campaigns.filter((c) => c.source === "networking").map((c) => c.campaignId);
-  const jobIds = campaigns.filter((c) => c.source !== "networking").map((c) => c.campaignId);
+  const ids = campaigns.map((c) => c.id);
+  const networkingIds = campaigns.filter((c) => c.source === "networking").map((c) => c.id);
+  const jobIds = campaigns.filter((c) => c.source !== "networking").map((c) => c.id);
 
   const [jobCounts, messageCounts, contacts] = await Promise.all([
     jobIds.length
@@ -104,14 +104,14 @@ export async function summarizeCampaigns<T extends CampaignRef>(
 
   return campaigns.map((campaign) => {
     const messages = messageCounts
-      .filter((row) => row.campaignId === campaign.campaignId)
+      .filter((row) => row.campaignId === campaign.id)
       .map((row) => ({ status: row.status, count: row._count._all }));
     if (campaign.source === "networking") {
-      const contact = contacts.find((row) => row.campaignId === campaign.campaignId);
+      const contact = contacts.find((row) => row.campaignId === campaign.id);
       return { ...campaign, summary: networkingSummary(messages, contact?.discovered ?? 0) };
     }
     const jobs = jobCounts
-      .filter((row) => row.campaignId === campaign.campaignId)
+      .filter((row) => row.campaignId === campaign.id)
       .map((row) => ({
         status: row.status,
         count: row._count._all,
@@ -127,6 +127,6 @@ export async function deriveCampaignSummary(
   campaignId: string,
   source: CampaignSource,
 ): Promise<CampaignSummary> {
-  const [campaign] = await summarizeCampaigns(client, [{ campaignId, source }]);
+  const [campaign] = await summarizeCampaigns(client, [{ id: campaignId, source }]);
   return campaign.summary;
 }

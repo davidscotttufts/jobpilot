@@ -73,8 +73,8 @@ describe("TaskListService search.discover", () => {
     const taskList = await service({
       pilotSearches: [dueRow({ id: "s1", query: "senior react" })],
       dueSearchCampaigns: [
-        { campaignId: "c-old", pilotSearchId: "s1" },
-        { campaignId: "c-new", pilotSearchId: "s1" },
+        { id: "c-old", pilotSearchId: "s1" },
+        { id: "c-new", pilotSearchId: "s1" },
       ],
     }).refresh("p1");
     expect(discoverOf(taskList)?.payload).toMatchObject({ campaignId: "c-new" });

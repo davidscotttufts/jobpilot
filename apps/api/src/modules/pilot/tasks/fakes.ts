@@ -35,7 +35,7 @@ export interface Over {
   contacts?: Row[];
   warmIntroRuns?: RunRow[];
   searchRuns?: RunRow[];
-  dueSearchCampaigns?: { campaignId: string; pilotSearchId: string }[];
+  dueSearchCampaigns?: { id: string; pilotSearchId: string }[];
   scorePendingCampaigns?: Row[];
   scorePendingRuns?: RunRow[];
   scoredPendingJobs?: Row[];

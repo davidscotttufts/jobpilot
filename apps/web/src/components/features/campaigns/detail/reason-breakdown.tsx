@@ -73,7 +73,7 @@ export function CampaignReasonBreakdown(props: CampaignReasonBreakdownProps): Re
   const { campaign } = props;
   const [open, setOpen] = useState(true);
 
-  const reasons = useApiQuery(campaignQueries.reasons(campaign.campaignId));
+  const reasons = useApiQuery(campaignQueries.reasons(campaign.id));
   const rows = reasons.data ?? [];
   const skipped = groupReasons(rows, "skipped");
   const failed = groupReasons(rows, "failed");

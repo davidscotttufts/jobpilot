@@ -85,7 +85,7 @@ export class CampaignService {
       const created = await tx.campaign.create({ data });
       await tx.job.createMany({
         data: unique.map((url) => ({
-          campaignId: created.campaignId,
+          campaignId: created.id,
           key: crypto.randomUUID(),
           // Nothing is known about a pasted link until a worker opens it; the host stands in.
           title: new URL(url).hostname,
@@ -117,7 +117,7 @@ export class CampaignService {
     // tune and a user edit to clobber each other.
     const updated = await this.prisma.campaign.updateMany({
       where: {
-        campaignId: id,
+        id,
         userId,
         ...(body.expectedUpdatedAt && { updatedAt: new Date(body.expectedUpdatedAt) }),
       },
@@ -129,9 +129,7 @@ export class CampaignService {
         ErrorCodes.STALE_WRITE,
       );
     }
-    return this.withSummary(
-      await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } }),
-    );
+    return this.withSummary(await this.prisma.campaign.findUniqueOrThrow({ where: { id } }));
   }
 
   async commandStatus(userId: string, id: string, body: CampaignStatusCommandInput) {
@@ -144,7 +142,7 @@ export class CampaignService {
     }
     const finished = body.status === "completed" || body.status === "failed";
     const updated = await this.prisma.campaign.updateMany({
-      where: { campaignId: id, userId, status: existing.status },
+      where: { id, userId, status: existing.status },
       data: {
         status: body.status,
         statusActor: body.actor,
@@ -156,9 +154,7 @@ export class CampaignService {
       throw conflict("Campaign status changed concurrently.", ErrorCodes.STALE_WRITE);
     }
     publishCampaignStatus(userId, existing, body.status);
-    return this.withSummary(
-      await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } }),
-    );
+    return this.withSummary(await this.prisma.campaign.findUniqueOrThrow({ where: { id } }));
   }
 
   async remove(userId: string, id: string) {
@@ -178,22 +174,22 @@ export class CampaignService {
           relatedAppId: null,
         },
       });
-      await tx.campaign.delete({ where: { campaignId: id } });
+      await tx.campaign.delete({ where: { id } });
     });
     publish(workspaceChannel, { userId }, { type: "campaign.deleted", campaignId: id });
-    return { deleted: true, campaignId: id };
+    return { deleted: id };
   }
 
   findCampaign(userId: string, campaignId: string) {
     return findOwned(
       (where) => this.prisma.campaign.findFirst({ where }),
-      { campaignId, userId },
+      { id: campaignId, userId },
       "Campaign",
     );
   }
 
   private async withSummary(campaign: Campaign) {
-    const summary = await deriveCampaignSummary(this.prisma, campaign.campaignId, campaign.source);
+    const summary = await deriveCampaignSummary(this.prisma, campaign.id, campaign.source);
     return toRow({ ...campaign, summary });
   }
 }

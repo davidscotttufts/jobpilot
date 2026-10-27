@@ -37,7 +37,7 @@ export function CampaignGroups(): ReactElement {
   const isEmpty = groups.every((g) => !g.pagination?.total);
 
   const open = (c: CampaignDto): void => {
-    router.push(`/campaigns/${encodeURIComponent(c.campaignId)}` as Route);
+    router.push(`/campaigns/${encodeURIComponent(c.id)}` as Route);
   };
 
   return (
@@ -115,7 +115,7 @@ function CampaignGroupSection(props: CampaignGroupSectionProps): ReactNode {
         {group.label} · {pagination.total}
       </Typography>
       {group.items.map((c) => (
-        <CampaignRow key={c.campaignId} campaign={c} onSelect={onOpen} onOpenDetail={onOpen} />
+        <CampaignRow key={c.id} campaign={c} onSelect={onOpen} onOpenDetail={onOpen} />
       ))}
       {/* The group heading already carries the total, so a one-page footer is noise. */}
       {pagination.totalPages > 1 && (

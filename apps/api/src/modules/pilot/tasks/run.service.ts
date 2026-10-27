@@ -62,13 +62,13 @@ async function assertStillStartable(
       break;
     case "campaign.reviewPaused":
       remaining = await tx.campaign.count({
-        where: { campaignId: subjectId, ...reviewPausedWhere(userId) },
+        where: { id: subjectId, ...reviewPausedWhere(userId) },
       });
       gone = "Campaign is no longer paused.";
       break;
     case "campaign.scorePending":
       remaining = await tx.campaign.count({
-        where: { campaignId: subjectId, ...scorePendingWhere(userId) },
+        where: { id: subjectId, ...scorePendingWhere(userId) },
       });
       gone = "Campaign has no jobs left to score.";
       break;

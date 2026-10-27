@@ -46,10 +46,10 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
   const confirm = useConfirm();
   const router = useRouter();
 
-  const campaignResource = api.campaigns({ id: campaign.campaignId });
+  const campaignResource = api.campaigns({ id: campaign.id });
 
-  const stop = useStatusMutation(campaign.campaignId, "paused", "Campaign paused");
-  const complete = useStatusMutation(campaign.campaignId, "completed", "Campaign marked as done");
+  const stop = useStatusMutation(campaign.id, "paused", "Campaign paused");
+  const complete = useStatusMutation(campaign.id, "completed", "Campaign marked as done");
 
   const [rescanOpen, setRescanOpen] = useState(false);
 
@@ -107,15 +107,15 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       // onError already toasted; keep the dialog open so the threshold isn't lost.
       return;
     }
-    void agent.injectSkill("rescan-skipped", campaign.campaignId);
+    void agent.injectSkill("rescan-skipped", campaign.id);
     setRescanOpen(false);
   };
 
   // Networking campaigns have no jobs to replay - re-run the networking skill instead of `resume-campaign`.
   const handleResume = (): void => {
     void (campaign.source === "networking"
-      ? agent.injectSkill("networking", `--campaign ${campaign.campaignId}`)
-      : agent.injectSkill("resume-campaign", campaign.campaignId));
+      ? agent.injectSkill("networking", `--campaign ${campaign.id}`)
+      : agent.injectSkill("resume-campaign", campaign.id));
   };
 
   const menuItems: DropdownMenuItem[] = [
@@ -134,7 +134,7 @@ export function CampaignActionsBar(props: CampaignActionsBarProps): ReactElement
       label: `Retry failed (${failedCount})`,
       icon: <Replay fontSize="sm" />,
       show: isAutoApply && failedCount > 0 && agentAvailable,
-      onClick: () => void agent.injectSkill("auto-apply", `retry-failed ${campaign.campaignId}`),
+      onClick: () => void agent.injectSkill("auto-apply", `retry-failed ${campaign.id}`),
     },
     {
       kind: "item",
