@@ -15,6 +15,7 @@ import type {
 } from "@jobpilot/contracts/upwork";
 import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { decodeUpworkProposal, toUpworkInboxItemDto, toUpworkProfileDto } from "./upwork.mapper";
 import { scoreUpworkClient } from "./upwork-quality";
@@ -151,7 +152,7 @@ export class UpworkService {
           kind: item.kind,
           title: item.title,
           clientName: item.clientName ?? null,
-          jobUrl: item.jobUrl ?? null,
+          jobUrl: item.jobUrl ? normalizeJobUrl(item.jobUrl) : null,
           body: item.body ?? null,
           receivedAt: new Date(item.receivedAt),
           raw: JSON.stringify(item.raw ?? {}),
@@ -223,7 +224,7 @@ export class UpworkService {
         userId,
         jobTitle: body.jobTitle,
         clientName: body.clientName ?? null,
-        jobUrl: body.jobUrl ?? null,
+        jobUrl: body.jobUrl ? normalizeJobUrl(body.jobUrl) : null,
         jobDescription: body.jobDescription ?? null,
         proposalText: body.proposalText ?? "",
         screeningAnswers: JSON.stringify(body.screeningAnswers ?? []),
@@ -258,7 +259,7 @@ export class UpworkService {
     const update: Prisma.UpworkProposalUpdateInput = {
       jobTitle: body.jobTitle,
       clientName: body.clientName,
-      jobUrl: body.jobUrl,
+      jobUrl: body.jobUrl ? normalizeJobUrl(body.jobUrl) : body.jobUrl,
       jobDescription: body.jobDescription,
       proposalText: body.proposalText,
       status: body.status,

@@ -85,12 +85,13 @@ export class ApplicationService {
   }
 
   async get(userId: string, id: string) {
-    const row = await findOwned(
+    return findOwned(
       (where) =>
         this.prisma.application.findFirst({
           where,
           include: {
             events: { orderBy: { createdAt: "asc" } },
+            job: { select: { description: true, salary: true, type: true } },
             resume: { select: { id: true, label: true, updatedAt: true } },
             resumeVariantUsed: {
               select: { id: true, resumeId: true, label: true, diffNotes: true, updatedAt: true },
@@ -135,17 +136,6 @@ export class ApplicationService {
       { id, userId },
       "Application",
     );
-
-    return { ...row, job: await this.findCampaignJob(row.campaignId, row.url) };
-  }
-
-  /** No FK exists: the job is matched by url within the campaign, so a single-apply row has none. */
-  private async findCampaignJob(campaignId: string | null, url: string) {
-    if (!campaignId) return null;
-    return this.prisma.job.findFirst({
-      where: { campaignId, url },
-      select: { description: true, salary: true, type: true },
-    });
   }
 
   async addEvent(userId: string, id: string, input: { kind: "note"; notes: string }) {

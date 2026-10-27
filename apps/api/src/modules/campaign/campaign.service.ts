@@ -13,6 +13,7 @@ import type { z } from "zod/v4";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
+import { normalizeJobUrl } from "@/common/utils/url";
 import {
   type Campaign,
   type CampaignStatus,
@@ -79,7 +80,7 @@ export class CampaignService {
 
   /** Seeds pasted links as `queued` jobs with the campaign, so a half-written batch can't strand them. */
   private async createWithQueuedJobs(data: Prisma.CampaignUncheckedCreateInput, urls: string[]) {
-    const unique = [...new Set(urls)];
+    const unique = [...new Set(urls.map(normalizeJobUrl))];
     const campaign = await this.prisma.$transaction(async (tx) => {
       const created = await tx.campaign.create({ data });
       await tx.job.createMany({

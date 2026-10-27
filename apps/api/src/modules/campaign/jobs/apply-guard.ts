@@ -7,7 +7,6 @@ import {
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
-import { canonicalizeJobUrl } from "@/modules/application/job-url";
 import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
 import { publishStatusChange } from "./job-events";
 
@@ -62,8 +61,7 @@ async function findApplyingSibling(
     select: { campaignId: true, key: true, url: true, title: true, company: true },
   });
 
-  const canonical = canonicalizeJobUrl(job.url);
-  const sameUrl = others.find((other) => canonicalizeJobUrl(other.url) === canonical);
+  const sameUrl = others.find((other) => other.url === job.url);
   if (sameUrl) {
     return sameUrl;
   }

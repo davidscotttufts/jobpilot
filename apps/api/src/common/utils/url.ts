@@ -1,27 +1,62 @@
+/** Boards serving one posting under a second hostname; the value is the form we store. */
+const HOST_ALIASES: Record<string, string> = {
+  "hiring.cafe": "hiringcafe.com",
+};
+
 /**
- * Strips what varies between two links to one page: fragment, host case, `www.`, tracking params,
- * param order. Null for anything unparseable or not http(s). Scheme and trailing slash are left to
- * the caller - the tables we store URLs in disagree on both.
+ * Params that say where the click came from, never which posting it points at. Only `gh_src` of
+ * Greenhouse's params: `gh_jid` is the posting id, so a `gh_` prefix would merge distinct jobs.
  */
-export function parseCanonicalUrl(raw: string, isTracking: (name: string) => boolean): URL | null {
+const TRACKING_PARAMS = new Set([
+  "campaign",
+  "fbclid",
+  "gclid",
+  "gh_src",
+  "msclkid",
+  "origin",
+  "ref",
+  "referer",
+  "referrer",
+  "refid",
+  "source",
+  "src",
+  "trackingid",
+  "trk",
+]);
+
+function isTracking(name: string): boolean {
+  return name.startsWith("utm_") || TRACKING_PARAMS.has(name);
+}
+
+/**
+ * The one stored form of a posting URL, so every table joins and dedupes on the same string:
+ * https, lowercase host without `www.`, host aliases folded, tracking params and fragment dropped,
+ * params sorted, no trailing slash (a bare root keeps its `/`). Unparseable or non-http(s) input
+ * comes back trimmed.
+ */
+export function normalizeJobUrl(raw: string): string {
   let url: URL;
   try {
     url = new URL(raw.trim());
   } catch {
-    return null;
+    return raw.trim();
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    return null;
+    return raw.trim();
   }
 
+  url.protocol = "https:";
   url.hash = "";
-  url.hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-
+  const host = url.hostname.toLowerCase().replace(/^www\./, "");
+  url.hostname = HOST_ALIASES[host] ?? host;
   for (const name of [...url.searchParams.keys()]) {
     if (isTracking(name.toLowerCase())) {
       url.searchParams.delete(name);
     }
   }
   url.searchParams.sort();
-  return url;
+  if (url.pathname.length > 1) {
+    url.pathname = url.pathname.replace(/\/+$/, "");
+  }
+  return url.toString();
 }

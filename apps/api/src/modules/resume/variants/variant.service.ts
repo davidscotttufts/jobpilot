@@ -14,6 +14,7 @@ import {
   generatedVariantPath,
   serveCachedPdf,
 } from "@/common/storage/storage";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent, toStoredContent } from "../content";
 import { ResumeService } from "../resume.service";
@@ -69,7 +70,8 @@ export class ResumeVariantService {
     resumeId: string,
     data: Omit<Prisma.ResumeVariantUncheckedCreateInput, "resumeId">,
   ): Promise<string> {
-    const variant = await this.prisma.resumeVariant.create({ data: { ...data, resumeId } });
+    const jobUrl = data.jobUrl ? normalizeJobUrl(data.jobUrl) : data.jobUrl;
+    const variant = await this.prisma.resumeVariant.create({ data: { ...data, jobUrl, resumeId } });
     publish(
       resumeChannel,
       { resumeId },

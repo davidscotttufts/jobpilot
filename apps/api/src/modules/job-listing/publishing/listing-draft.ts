@@ -1,11 +1,7 @@
 import { z } from "zod/v4";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { MAX_YEARS_EXPERIENCE } from "@/modules/scoring/scoring.schema";
-import {
-  canonicalizeUrl,
-  dedupeKey,
-  listingSlug,
-  normalizeListingLocation,
-} from "./listing-identity";
+import { dedupeKey, listingSlug, normalizeListingLocation } from "./listing-identity";
 
 const MAX_EXCERPT = 600;
 
@@ -146,6 +142,6 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     yearsExperience: yearsExperience(brief.yearsExperience),
     // Lowercased so the `?board=` filter is an indexed equality hit, not an ILIKE scan.
     board: clean(job.board)?.toLowerCase() ?? null,
-    url: canonicalizeUrl(url),
+    url: normalizeJobUrl(url),
   };
 }

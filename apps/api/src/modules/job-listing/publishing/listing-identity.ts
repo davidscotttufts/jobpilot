@@ -1,25 +1,7 @@
 import { createHash } from "node:crypto";
-import { parseCanonicalUrl, slugify } from "@/common/utils";
+import { slugify } from "@/common/utils";
 import { normalizeCompanyName } from "@/modules/scoring/applied-duplicates";
 import { normalizePhrase } from "@/modules/scoring/keyword-normalize";
-
-/** Query params that identify the referrer, not the posting. */
-const TRACKING_PARAMS = [
-  /^utm_/,
-  /^gh_/,
-  /^ref$/,
-  /^refid$/,
-  /^referer$/,
-  /^referrer$/,
-  /^source$/,
-  /^src$/,
-  /^trk$/,
-  /^trackingid$/,
-  /^origin$/,
-  /^campaign$/,
-  /^fbclid$/,
-  /^gclid$/,
-];
 
 const REMOTE_PATTERNS = [
   /\bremote\b/,
@@ -39,25 +21,6 @@ export function normalizeListingLocation(location: string | null | undefined): s
     return "remote";
   }
   return normalizePhrase(cleaned.split(",")[0] ?? "");
-}
-
-function isTracking(name: string): boolean {
-  return TRACKING_PARAMS.some((pattern) => pattern.test(name));
-}
-
-/**
- * Strip everything that varies between two links to one posting: host case, `www.`, tracking
- * params, fragment, trailing slash. Surviving params are sorted - boards emit them in any order.
- */
-export function canonicalizeUrl(rawUrl: string): string {
-  const url = parseCanonicalUrl(rawUrl, isTracking);
-  if (!url) {
-    return rawUrl.trim();
-  }
-
-  const query = url.searchParams.toString();
-  const path = url.pathname.replace(/\/+$/, "");
-  return `${url.protocol}//${url.host}${path}${query ? `?${query}` : ""}`;
 }
 
 export interface DedupeInput {

@@ -10,6 +10,7 @@ import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
 import { publish } from "@/common/sse";
+import { normalizeJobUrl } from "@/common/utils/url";
 import {
   type CampaignJobStatus,
   type CampaignSource,
@@ -70,7 +71,12 @@ export class CampaignJobService {
     let job: Job;
     try {
       job = await this.prisma.job.create({
-        data: { ...body, campaignId, status: body.status ?? "pending" },
+        data: {
+          ...body,
+          url: normalizeJobUrl(body.url),
+          campaignId,
+          status: body.status ?? "pending",
+        },
       });
     } catch (error) {
       if (isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {

@@ -2,7 +2,6 @@ import type { CampaignJobResultInput, CampaignJobStatus } from "@jobpilot/contra
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
 import type { Application, PrismaClient } from "@/generated/prisma/client";
-import { canonicalizeJobUrl } from "@/modules/application/job-url";
 
 export function isTerminalJob(status: CampaignJobStatus): boolean {
   return (CAMPAIGN_JOB_TERMINAL_OUTCOMES as readonly string[]).includes(status);
@@ -63,7 +62,7 @@ export async function writeJobResult(
     const application =
       data.outcome === "applied"
         ? await prisma.application.findUnique({
-            where: { userId_url: { userId, url: canonicalizeJobUrl(existing.url) } },
+            where: { userId_url: { userId, url: existing.url } },
           })
         : null;
     return { campaignJob: existing, application, source, changed: false };
@@ -97,19 +96,20 @@ export async function writeJobResult(
         create: { kind: "status_change", toStatus: "applied", source: "campaign" },
       } as const;
       application = await tx.application.upsert({
-        where: { userId_url: { userId, url: canonicalizeJobUrl(job.url) } },
+        where: { userId_url: { userId, url: job.url } },
         // A repost reuses this row, so the date has to move: the duplicate window measures from
         // it. A result already recorded (`count === 0`) must not, or the retry logs a second event.
         update: changed.count === 0 ? {} : { appliedAt, events: logApplied, ...submitted },
         create: {
           userId,
-          url: canonicalizeJobUrl(job.url),
+          url: job.url,
           title: job.title,
           company: job.company,
           location: job.location,
           board: job.board,
           source,
           campaignId,
+          jobId: job.id,
           matchScore: job.matchScore,
           matchReason: job.matchReason,
           appliedAt,
@@ -127,7 +127,8 @@ export async function writeJobResult(
         });
       }
 
-      // The letter is written before this row exists, so link it by the url it recorded.
+      // The letter is written before this row exists, so link it by the url; both sides are
+      // normalized on write.
       await tx.coverLetter.updateMany({
         where: { jobUrl: job.url, applicationId: null, userId },
         data: { applicationId: application.id },

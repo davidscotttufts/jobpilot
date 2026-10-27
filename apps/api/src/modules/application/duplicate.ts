@@ -1,11 +1,11 @@
 import { DAY_MS } from "@/common/date/buckets";
+import { normalizeJobUrl } from "@/common/utils/url";
 import type { Prisma } from "@/generated/prisma/client";
 import {
   APPLIED_DUPLICATE_THRESHOLD,
   APPLIED_DUPLICATE_WINDOW_DAYS,
   findFuzzyDuplicate,
 } from "@/modules/scoring/applied-duplicates";
-import { canonicalizeJobUrl } from "./job-url";
 
 /** A heavy month's worth; the fuzzy scan runs in-process, so it has to stay bounded. */
 const MAX_FUZZY_CANDIDATES = 1000;
@@ -46,7 +46,7 @@ export async function findAppliedDuplicate(
   const cutoff = new Date(Date.now() - APPLIED_DUPLICATE_WINDOW_DAYS * DAY_MS);
 
   if (lookup.url) {
-    const url = canonicalizeJobUrl(lookup.url);
+    const url = normalizeJobUrl(lookup.url);
     const exact = await db.application.findUnique({
       where: { userId_url: { userId, url } },
       select: MATCH_SELECT,

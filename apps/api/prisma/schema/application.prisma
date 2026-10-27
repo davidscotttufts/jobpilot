@@ -58,6 +58,9 @@ model Application {
 
   campaignId String?   @map("campaign_id")
   campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
+  // The job it was applied from, set at creation; it always belongs to `campaignId`.
+  jobId      String?   @map("job_id")
+  job        Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   // The resume actually submitted. Not the inverse of `resumeVariants` (variants created for this
   // application), which stays empty when tailoring reused an existing variant.
@@ -77,6 +80,7 @@ model Application {
   @@index([userId, appliedAt])
   @@index([appliedAt])
   @@index([campaignId])
+  @@index([jobId])
   // Both FKs are SetNull, so deleting a resume or variant scans this table without them.
   @@index([resumeId])
   @@index([resumeVariantId])

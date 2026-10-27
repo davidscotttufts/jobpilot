@@ -4,6 +4,7 @@ import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf/render";
 import { slugifyForDownload } from "@/common/storage/storage";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const LIST_SELECT = {
@@ -49,7 +50,7 @@ export class CoverLetterService {
       data: {
         userId,
         content: data.content,
-        jobUrl: data.jobUrl ?? null,
+        jobUrl: data.jobUrl ? normalizeJobUrl(data.jobUrl) : null,
         jobTitle: data.jobTitle ?? null,
         company: data.company ?? null,
         source: data.source,
