@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import {
   applicationEventWhere,
+  authTokenWhere,
   cutoffs,
   emailBodyWhere,
   journalDigestOldWhere,
@@ -8,7 +9,6 @@ import {
   promotionPostWhere,
   questionTerminalWhere,
   type RetentionCutoffs,
-  refreshTokenWhere,
   resumeVariantWhere,
   runDiscoverWhere,
   runFinishedWhere,
@@ -44,8 +44,8 @@ const RULES = [
     run: (db, c) => db.verificationToken.deleteMany({ where: verificationTokenWhere(c) }),
   },
   {
-    key: "refreshTokens",
-    run: (db, c) => db.refreshToken.deleteMany({ where: refreshTokenWhere(c) }),
+    key: "authTokens",
+    run: (db, c) => db.authToken.deleteMany({ where: authTokenWhere(c) }),
   },
   {
     key: "promotions",

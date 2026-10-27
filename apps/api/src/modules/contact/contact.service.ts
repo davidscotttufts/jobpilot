@@ -1,12 +1,12 @@
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { PrismaClient } from "@/generated/prisma/client";
 
-@singleton()
+@injectable()
 export class ContactService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  /** One page of the profile's contacts (newest first) for the networking page. */
+  /** One page of the user's contacts (newest first) for the networking page. */
   async list(userId: string, query: PaginationQuery) {
     const where = { userId };
     const [rows, total] = await Promise.all([

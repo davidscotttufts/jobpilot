@@ -14,6 +14,8 @@ enum ApplicationEventKind {
   status_change
   note
   email
+  // A generated interview prep sheet; its presence stops the pilot offering another.
+  interview_prep
 
   @@map("application_event_kind")
 }
@@ -45,7 +47,8 @@ model Application {
   title     String
   company   String
   location  String?
-  board     String?
+  boardId   String?           @map("board_id")
+  board     JobBoard?         @relation(fields: [boardId], references: [id], onDelete: SetNull)
   source    ApplicationSource
   appliedAt DateTime          @default(now()) @map("applied_at")
 
@@ -57,7 +60,10 @@ model Application {
   failReason  String? @map("fail_reason")
 
   campaignId String?   @map("campaign_id")
-  campaign   Campaign? @relation(fields: [campaignId], references: [campaignId], onDelete: SetNull)
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  // The job it was applied from, set at creation; it always belongs to `campaignId`.
+  jobId      String?   @map("job_id")
+  job        Job?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   // The resume actually submitted. Not the inverse of `resumeVariants` (variants created for this
   // application), which stays empty when tailoring reused an existing variant.
@@ -73,10 +79,12 @@ model Application {
   coverLetters   CoverLetter[]
 
   @@unique([userId, url])
+  @@index([boardId])
   // The duplicate scan filters on both columns; this also serves the bare userId lookups.
   @@index([userId, appliedAt])
   @@index([appliedAt])
   @@index([campaignId])
+  @@index([jobId])
   // Both FKs are SetNull, so deleting a resume or variant scans this table without them.
   @@index([resumeId])
   @@index([resumeVariantId])

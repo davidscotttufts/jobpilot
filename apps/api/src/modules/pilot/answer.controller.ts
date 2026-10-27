@@ -11,7 +11,7 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
 import { ProfileAnswerService } from "./answer.service";
 
-const answers = container.resolve(ProfileAnswerService);
+const answers = container.get(ProfileAnswerService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const profileAnswersController = new Elysia({

@@ -29,7 +29,7 @@ describe("TaskListService answered questions", () => {
   it("drops a question once a run has consumed it", async () => {
     const taskList = await service({
       answered: [answered],
-      questionRuns: [{ subjectId: "E1" }],
+      runs: { "question.answered": [{ subjectId: "E1", startedAt: new Date(), finishedAt: null }] },
     }).refresh("p1");
     expect(hasTaskType(taskList, "question.answered")).toBe(false);
   });
@@ -110,7 +110,9 @@ describe("TaskListService mail and Upwork sync", () => {
       // An unconnected MCP only journals "not connected", so a recent try holds it back.
       {
         upworkProfiles: 1,
-        upworkSyncRun: { startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        latestRuns: {
+          "upwork.syncInbox": { startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        },
       },
     ];
     for (const over of quiet) {
@@ -137,11 +139,12 @@ describe("TaskListService job-alert harvest", () => {
     const now = Date.now();
     const taskList = await service({
       jobAlertsRequestedAt: new Date(now - 60_000),
-      jobAlertsRun: {
-        startedAt: new Date(now - 30_000),
-        finishedAt: new Date(now - 10_000),
-        expiresAt: new Date(now + 60_000),
-        outcome: "done",
+      latestRuns: {
+        "inbox.jobAlerts": {
+          startedAt: new Date(now - 30_000),
+          finishedAt: new Date(now - 10_000),
+          outcome: "done",
+        },
       },
       jobAlertEmails: emails,
     }).refresh("p1");

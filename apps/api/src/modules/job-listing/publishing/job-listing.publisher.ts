@@ -1,4 +1,4 @@
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { isPrismaError, PRISMA_ERRORS } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -15,12 +15,12 @@ const MAX_CONCURRENT = 4;
 const MAX_QUEUED = 500;
 
 /** Publishes a campaign `Job` to the public job index, deduped across every user's campaigns. */
-@singleton()
+@injectable()
 export class JobListingPublisher {
   private active = 0;
   private readonly waiting: (() => void)[] = [];
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** A listing is a derived artifact, so a failure here must never fail the agent's job write. */
   publishInBackground(job: ListingSourceJob): void {
@@ -77,8 +77,8 @@ export class JobListingPublisher {
    */
   private async upsert(draft: ListingDraft, retry = true): Promise<PublishOutcome> {
     const now = new Date();
-    const { board, url, ...listing } = draft;
-    const source = { board, url, lastSeenAt: now };
+    const { boardId, url, ...listing } = draft;
+    const source = { boardId, url, lastSeenAt: now };
 
     try {
       const seen = await this.prisma.jobListingSource.findUnique({
@@ -89,7 +89,7 @@ export class JobListingPublisher {
       if (seen) {
         await this.prisma.jobListingSource.update({
           where: { url },
-          data: { lastSeenAt: now, ...(board && { board }) },
+          data: { lastSeenAt: now, ...(boardId && { boardId }) },
         });
         await this.prisma.jobListing.update({
           where: { id: seen.listingId },

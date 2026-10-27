@@ -29,10 +29,9 @@ export function ProfileReview(props: ProfileReviewProps): ReactElement {
   const [hourlyRate, setHourlyRate] = useState(profile.suggestedHourlyRate ?? "");
   const [overview, setOverview] = useState(profile.suggestedOverview ?? "");
 
-  const save = useApiMutation<UpworkProfileDto, UpdateUpworkProfileInput>(
-    (body) => api.upwork.profile.put(body),
-    { invalidate: [queryKeys.upworkProfile.all] },
-  );
+  const save = useApiMutation((body: UpdateUpworkProfileInput) => api.upwork.profile.put(body), {
+    invalidate: [queryKeys.upworkProfile.all],
+  });
 
   const isApplied = profile.status === "applied";
   const isApproved = profile.status === "approved";

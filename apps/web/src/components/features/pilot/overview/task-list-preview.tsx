@@ -67,7 +67,7 @@ interface TaskListPreviewProps {
 export function TaskListPreview(props: TaskListPreviewProps): ReactElement {
   const { running } = props;
   const query = useTaskList(running);
-  const refresh = useApiMutation<TaskList, void>(() => api.pilot.tasks.refresh.post(), {
+  const refresh = useApiMutation(() => api.pilot.tasks.refresh.post(), {
     invalidate: [queryKeys.pilot.taskList()],
   });
 

@@ -15,7 +15,7 @@ interface LinkBoardOptions {
 export function useLinkBoard(
   options?: LinkBoardOptions,
 ): ApiMutationResult<JobBoardDto, JobBoardInput> {
-  return useApiMutation<JobBoardDto, JobBoardInput>((body) => api["job-boards"].post(body), {
+  return useApiMutation((body: JobBoardInput) => api["job-boards"].post(body), {
     invalidate: [queryKeys.jobBoards.all],
     ...options,
   });

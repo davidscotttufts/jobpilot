@@ -4,13 +4,12 @@ import type {
   CaptchaSolveResult,
   CaptchaType,
 } from "@jobpilot/contracts/captcha";
-import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/credential";
-import { singleton } from "tsyringe";
-import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
-import { ErrorCodes, HttpError, notFound } from "@/common/errors";
+import type { ServiceProvider } from "@jobpilot/contracts/credential";
+import { inject, injectable } from "@needle-di/core";
+import { badGateway, notFound } from "@/common/errors";
 import { acquireSlot, RATE_LIMITS } from "@/common/rate-limit";
 import { sleep } from "@/common/utils";
-import { PrismaClient } from "@/generated/prisma/client";
+import { CredentialService } from "@/modules/credential/credential.service";
 
 /** A single CAPTCHA to solve, normalized across providers. */
 interface ProviderJob {
@@ -21,11 +20,6 @@ interface ProviderJob {
 
 const POLL_INTERVAL_MS = 5_000;
 const MAX_POLLS = 24; // ~120s budget
-
-/** 502 - the upstream solver failed or timed out. */
-function serviceError(message: string): HttpError {
-  return new HttpError(ErrorCodes.INTERNAL, message, 502);
-}
 
 const CAPSOLVER_TASK: Record<CaptchaType, string> = {
   recaptcha: "ReCaptchaV2TaskProxyLess",
@@ -41,21 +35,18 @@ interface CapSolverResponse {
   solution?: { gRecaptchaResponse?: string; token?: string };
 }
 
-@singleton()
+@injectable()
 export class CaptchaService {
-  constructor(
-    private readonly prisma: PrismaClient,
-    private readonly crypto: CryptoService,
-  ) {}
+  constructor(private readonly credentials = inject(CredentialService)) {}
 
   private solveWith(provider: ServiceProvider, apiKey: string, job: ProviderJob): Promise<string> {
-    return provider === "2captcha"
+    return provider === "two_captcha"
       ? this.solveWithTwoCaptcha(apiKey, job)
       : this.solveWithCapSolver(apiKey, job);
   }
 
   /**
-   * Resolve a CAPTCHA via the profile's configured solving service (2captcha / CapSolver)
+   * Resolve a CAPTCHA via the user's configured solving service (2captcha / CapSolver)
    * and return the token to inject. Throws 404 when no key is configured, 502 on solver failure.
    */
   async solve(userId: string, input: CaptchaSolveInput): Promise<CaptchaSolveResult> {
@@ -63,7 +54,7 @@ export class CaptchaService {
     // mid-poll, and a leaked counter would lock this user out permanently.
     const release = acquireSlot(`captcha-solve:${userId}`, RATE_LIMITS.captchaSolve.maxInFlight);
     try {
-      const cred = await this.resolveServiceCredential(userId, input.provider);
+      const cred = await this.credentials.resolveServiceKey(userId, input.provider ?? null);
       if (!cred) {
         throw notFound(
           "No captcha-solving service key configured. Add a 2captcha or CapSolver key in Settings.",
@@ -77,29 +68,6 @@ export class CaptchaService {
     } finally {
       release();
     }
-  }
-
-  private async resolveServiceCredential(
-    userId: string,
-    provider?: ServiceProvider,
-  ): Promise<{ provider: ServiceProvider; apiKey: string } | null> {
-    const rows = await this.prisma.credential.findMany({
-      where: { userId, scope: { in: [...SERVICE_PROVIDERS] }, NOT: { apiKey: null } },
-    });
-    // Honor an explicit provider; otherwise fall back in SERVICE_PROVIDERS preference order.
-    const order: readonly ServiceProvider[] = provider ? [provider] : SERVICE_PROVIDERS;
-    for (const p of order) {
-      const row = rows.find((r) => r.scope === p && r.apiKey);
-      if (row?.apiKey) {
-        const apiKey = await this.crypto.decryptFor(
-          userId,
-          SECRET_CONTEXTS.credentialApiKey,
-          row.apiKey,
-        );
-        return { provider: p, apiKey };
-      }
-    }
-    return null;
   }
 
   /**
@@ -129,7 +97,7 @@ export class CaptchaService {
       task: { type: CAPSOLVER_TASK[job.type], websiteURL: job.pageurl, websiteKey: job.sitekey },
     });
     if (created.errorId !== 0 || !created.taskId) {
-      throw serviceError(`CapSolver createTask failed: ${created.errorDescription ?? "unknown"}`);
+      throw badGateway(`CapSolver createTask failed: ${created.errorDescription ?? "unknown"}`);
     }
 
     const { taskId } = created;
@@ -138,18 +106,18 @@ export class CaptchaService {
 
       const res = await this.capSolverPost(apiKey, "getTaskResult", { taskId });
       if (res.errorId !== 0) {
-        throw serviceError(`CapSolver error: ${res.errorDescription ?? "unknown"}`);
+        throw badGateway(`CapSolver error: ${res.errorDescription ?? "unknown"}`);
       }
 
       if (res.status === "ready") {
         const token = res.solution?.gRecaptchaResponse ?? res.solution?.token;
         if (!token) {
-          throw serviceError("CapSolver returned no token");
+          throw badGateway("CapSolver returned no token");
         }
         return token;
       }
     }
-    throw serviceError("CapSolver timed out");
+    throw badGateway("CapSolver timed out");
   }
 
   private async capSolverPost(
@@ -164,7 +132,7 @@ export class CaptchaService {
       cache: "no-store",
     });
     if (!res.ok) {
-      throw serviceError(`CapSolver responded HTTP ${res.status}`);
+      throw badGateway(`CapSolver responded HTTP ${res.status}`);
     }
     return (await res.json()) as CapSolverResponse;
   }

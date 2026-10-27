@@ -4,15 +4,15 @@ import type {
   JobListingStatus,
 } from "@jobpilot/contracts/job-listing";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { notFound } from "@/common/errors";
 import { MemoryCache } from "@/common/memory-cache";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { type BoardNameLookup, loadBoardNameLookup } from "./board-names";
 import { listingOrder, listingWhere } from "./listing-filter";
 import {
   ADMIN_SELECT,
   DETAIL_SELECT,
+  publicBoardName,
   SUMMARY_SELECT,
   type SummaryRow,
   toSummary,
@@ -39,16 +39,15 @@ const SIMILAR_SOURCE_SELECT = {
   location: true,
 } satisfies Prisma.JobListingSelect;
 
-@singleton()
+@injectable()
 export class JobListingService {
   private readonly vocabulary = new MemoryCache<"all", SkillVocabulary>({ ttlMs: LOOKUP_TTL_MS });
-  private readonly boardNames = new MemoryCache<"all", BoardNameLookup>({ ttlMs: LOOKUP_TTL_MS });
   private readonly similarIds = new MemoryCache<string, string[]>({
     ttlMs: SIMILAR_TTL_MS,
     maxEntries: SIMILAR_CACHE_SIZE,
   });
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   list(query: JobListingQuery) {
     return this.page({ ...query, status: "published" }, (args) =>
@@ -69,15 +68,12 @@ export class JobListingService {
   }
 
   async bySlug(slug: string) {
-    const [listing, name] = await Promise.all([
-      this.findPublished(slug, DETAIL_SELECT),
-      this.boardNameFor(),
-    ]);
+    const listing = await this.findPublished(slug, DETAIL_SELECT);
     const sources = listing.sources.map((source) => ({
       ...source,
-      board: source.board && name(source.board),
+      board: publicBoardName(source.board),
     }));
-    return { ...toSummary(listing, name), sources };
+    return { ...toSummary(listing), sources };
   }
 
   async similar(slug: string) {
@@ -92,14 +88,11 @@ export class JobListingService {
       const { variants } = await this.skillVocabulary();
       return rankSimilarIds(this.prisma, listing, variants);
     });
-    const [rows, name] = await Promise.all([
-      this.prisma.jobListing.findMany({
-        where: { id: { in: ids }, status: "published" },
-        select: SUMMARY_SELECT,
-      }),
-      this.boardNameFor(),
-    ]);
-    return inRankedOrder(rows, ids).map((row) => toSummary(row, name));
+    const rows = await this.prisma.jobListing.findMany({
+      where: { id: { in: ids }, status: "published" },
+      select: SUMMARY_SELECT,
+    });
+    return inRankedOrder(rows, ids).map(toSummary);
   }
 
   /** Lets the web's 404 check skip the detail payload. */
@@ -119,11 +112,13 @@ export class JobListingService {
 
   // The error middleware already maps Prisma's P2025 to a 404.
   async setStatus(id: string, status: JobListingStatus) {
-    const [updated, name] = await Promise.all([
-      this.prisma.jobListing.update({ where: { id }, data: { status }, select: ADMIN_SELECT }),
-      this.boardNameFor(),
-    ]);
-    return toSummary(updated, name);
+    return toSummary(
+      await this.prisma.jobListing.update({
+        where: { id },
+        data: { status },
+        select: ADMIN_SELECT,
+      }),
+    );
   }
 
   /** Sources cascade with the listing. */
@@ -138,16 +133,11 @@ export class JobListingService {
   ) {
     const variants = query.tech?.length ? (await this.skillVocabulary()).variants : new Map();
     const where = listingWhere(query, variants, new Date());
-    const [rows, total, name] = await Promise.all([
+    const [rows, total] = await Promise.all([
       findRows({ where, orderBy: listingOrder(query.sort), ...pageSlice(query) }),
       this.prisma.jobListing.count({ where }),
-      this.boardNameFor(),
     ]);
-    return paginate(
-      rows.map((row) => toSummary(row, name)),
-      query,
-      total,
-    );
+    return paginate(rows.map(toSummary), query, total);
   }
 
   private async findPublished<T extends Prisma.JobListingSelect>(slug: string, select: T) {
@@ -163,9 +153,5 @@ export class JobListingService {
 
   private skillVocabulary(): Promise<SkillVocabulary> {
     return this.vocabulary.getOrLoad("all", () => loadSkillVocabulary(this.prisma));
-  }
-
-  private boardNameFor(): Promise<BoardNameLookup> {
-    return this.boardNames.getOrLoad("all", () => loadBoardNameLookup(this.prisma));
   }
 }

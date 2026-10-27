@@ -4,7 +4,8 @@ Multi-user AI job-application app. The web UI and API are cloud-hosted and share
 all state. Each user runs the agent locally: Claude Code or Codex in a .NET PTY host, plus
 Playwright. Dev ports: web `:4100`, API `:4101`, PTY host `:4102`.
 
-Auth: the web fetches the user's terminal token via `POST /api/auth/tokens/terminal` and hands
+Auth: the web signs in with an opaque session (httpOnly `session` cookie, a row in `auth_tokens`).
+It fetches the user's terminal token via `POST /api/auth/tokens/terminal` and hands
 it to the PTY host, which sets `JOBPILOT_API_TOKEN`. Skills call the API through
 `plugin/bin/jobpilot-api`, which sends it as `Authorization: Bearer`.
 
@@ -28,7 +29,7 @@ it to the PTY host, which sets `JOBPILOT_API_TOKEN`. Skills call the API through
 | `db:tunnel` | SSH tunnel to remote PostgreSQL on `localhost:5433`. |
 | `db:setup` | Prisma generate + migrate + seed. |
 | `test` | API tests + contracts tests. |
-| `build:api` / `build:web` / `build:terminal` | Production builds. |
+| `build:web` / `build:terminal` | Production builds. The API runs from source. |
 | `check` | Biome format + lint + import sort. Writes. |
 | `ci` | `biome ci --error-on-warnings`. |
 | `knip` | Dead files, exports, and dependencies. |

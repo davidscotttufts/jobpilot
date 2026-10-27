@@ -51,12 +51,12 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const pagination = usePaginationParams({ prefix: "jobs" });
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const isUpwork = campaign.config.board === UPWORK_DOMAIN;
+  const isUpwork = campaign.board?.domain === UPWORK_DOMAIN;
 
   // Filters run server-side, so they cover the whole campaign rather than the loaded page.
   const term = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);
   const jobs = useApiQuery(
-    campaignQueries.jobs(campaign.campaignId, {
+    campaignQueries.jobs(campaign.id, {
       ...pagination.query,
       status: statusFilter ?? undefined,
       search: term || undefined,
@@ -92,11 +92,11 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   // Per-job requests commit independently, so a rejection can't invalidate the whole
   // batch - report the split instead of surfacing the first error as a total failure.
-  const reapply = useApiMutation<{ ok: number; failed: number }, void>(
+  const reapply = useApiMutation(
     async () => {
       const results = await Promise.allSettled(
         selectedForReapply.map((job) => {
-          const endpoint = api.campaigns({ id: campaign.campaignId }).jobs({ key: job.key });
+          const endpoint = api.campaigns({ id: campaign.id }).jobs({ key: job.key });
           if (job.status === "failed") return endpoint.retry.post({});
           if (job.status === "approved") return Promise.resolve({ data: job, error: null });
           return endpoint.patch({ status: "approved" });
@@ -113,7 +113,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
           : `Re-applying ${ok} of ${plural(ok + failed, "job")} - ${failed} failed`,
       onSuccess: ({ ok }) => {
         if (ok > 0) {
-          void agent.injectSkill("apply", `campaign ${campaign.campaignId}`);
+          void agent.injectSkill("apply", `campaign ${campaign.id}`);
         }
         setSelection(EMPTY_SELECTION);
       },
@@ -122,7 +122,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
 
   const rescanSelected = (): void => {
     const keys = selectedSkipped.map((j) => j.key).join(",");
-    void agent.injectSkill("rescan-skipped", `${campaign.campaignId} --jobs ${keys}`);
+    void agent.injectSkill("rescan-skipped", `${campaign.id} --jobs ${keys}`);
     toast.success(`Rescanning ${plural(selectedSkipped.length, "skipped job")}`);
     resetSelection();
   };

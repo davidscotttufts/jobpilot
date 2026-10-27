@@ -6,9 +6,9 @@ import {
 } from "@jobpilot/contracts/email";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inboxChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
-import { ErrorCodes, findOwned, HttpError, notFound } from "@/common/errors";
+import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { statusChangeOps } from "@/modules/application/status-change";
@@ -18,14 +18,13 @@ import { emailStatusNote, verdictOps } from "./verdict";
 
 type MessageQuery = z.infer<typeof messageFilters>;
 
-/** A malformed `links` column reads as no links rather than failing the whole inbox response. */
 function withLinks<T extends { links: Prisma.JsonValue }>(row: T) {
-  return { ...row, links: emailLinksSchema.catch([]).parse(row.links) };
+  return { ...row, links: emailLinksSchema.parse(row.links) };
 }
 
-@singleton()
+@injectable()
 export class EmailService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private messageWhere(userId: string, query: MessageQuery): Prisma.EmailMessageWhereInput {
     const { reviewStatus, classification, since, domainHint, verificationDomain } = query;
@@ -214,7 +213,7 @@ export class EmailService {
     );
 
     if (!message.matchedAppId) {
-      throw new HttpError(ErrorCodes.UNPROCESSABLE, "Message has no matched application", 422);
+      throw unprocessable("Message has no matched application");
     }
 
     const inferred: ApplicationStatus | undefined =
@@ -223,7 +222,7 @@ export class EmailService {
       (message.classification ? CLASSIFICATION_TO_STATUS[message.classification] : undefined);
 
     if (!inferred) {
-      throw new HttpError(ErrorCodes.UNPROCESSABLE, "No target status available", 422);
+      throw unprocessable("No target status available");
     }
 
     const app = await this.prisma.application.findFirst({

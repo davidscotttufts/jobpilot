@@ -5,13 +5,12 @@ import { type ForgotPasswordInput, ForgotPasswordSchema } from "@jobpilot/contra
 import { Alert, Link, Stack, Typography } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { ForgotPasswordResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 
 const DEFAULT_VALUES: ForgotPasswordInput = { email: "" };
 
 export function ForgotPasswordForm(): ReactElement {
-  const forgotPassword = useApiMutation<ForgotPasswordResponse, ForgotPasswordInput>((body) =>
+  const forgotPassword = useApiMutation((body: ForgotPasswordInput) =>
     api.auth.password.forgot.post(body),
   );
 

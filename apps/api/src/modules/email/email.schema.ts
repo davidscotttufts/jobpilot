@@ -1,9 +1,5 @@
 import { statusSchema } from "@jobpilot/contracts/application";
-import {
-  classificationSchema,
-  emailProviderSchema,
-  reviewStatusSchema,
-} from "@jobpilot/contracts/email";
+import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -21,15 +17,13 @@ export const messagesQuery = paginationQuerySchema.extend(messageFilters.shape);
 
 export const messageCountSchema = z.object({ count: z.number().int().min(0) });
 
-export const startQuery = z.object({ provider: emailProviderSchema.optional() });
-
 export const callbackQuery = z.object({
   code: z.string().optional(),
   state: z.string().optional(),
   error: z.string().optional(),
 });
 
-/** Connection status of the profile's linked mailbox (`account.accountStatus`). */
+/** Connection status of the user's linked mailbox (`account.accountStatus`). */
 export const accountStatusSchema = z.union([
   z.object({
     connected: z.literal(false),
@@ -37,7 +31,6 @@ export const accountStatusSchema = z.union([
   }),
   z.object({
     connected: z.literal(true),
-    provider: z.string(),
     email: z.string(),
     lastSyncAt: z.date().nullable(),
     canSend: z.boolean(),
@@ -47,20 +40,15 @@ export const accountStatusSchema = z.union([
 ]);
 
 /** Confirmation returned by disconnecting the mailbox (`account.disconnectAccount`). */
-export const accountDisconnectedSchema = z.object({ disconnected: z.boolean() });
-
 /** OAuth client config status (`account.getOAuthClient`) - never includes the secret. */
 export const oauthClientStatusSchema = z.object({
   configured: z.boolean(),
-  provider: z.string(),
   clientId: z.string().nullable(),
   redirectUri: z.string(),
   scopes: z.array(z.string()),
 });
 
 /** Confirmation returned by removing the OAuth client (`account.deleteOAuthClient`). */
-export const oauthClientDeletedSchema = z.object({ deleted: z.boolean() });
-
 /** Matched-application summary embedded on a message (`matchedApp` relation). */
 const matchedAppSchema = z
   .object({

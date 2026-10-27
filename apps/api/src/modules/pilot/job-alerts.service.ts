@@ -5,17 +5,14 @@ import {
   pilotInstructionsConfigSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotService } from "./pilot.service";
-import {
-  findLastHarvestRun,
-  isLiveRunNowRequest,
-  pendingJobAlertsWhere,
-} from "./tasks/gather-inbox";
+import { isLiveRunNowRequest, pendingJobAlertsWhere } from "./tasks/gather-inbox";
+import { latestRun } from "./tasks/run-history";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 /** The harvest's campaigns are named by the `inbox.jobAlerts` skill; this is how a run finds its own. */
@@ -24,13 +21,12 @@ const HARVEST_CAMPAIGN_PREFIX = "Job alerts ·";
 /** A run-now click syncs first so the count is current, but never re-pulls a mailbox just synced. */
 const RUN_NOW_SYNC_STALE_MS = 2 * 60 * 1000;
 
-/** The job-alert harvest's schedule card: status, schedule edits, and "Run now". */
-@singleton()
+@injectable()
 export class JobAlertsService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly emailSync: EmailSyncService,
-    private readonly pilot: PilotService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly emailSync = inject(EmailSyncService),
+    private readonly pilot = inject(PilotService),
   ) {}
 
   private async loadConfig(userId: string) {
@@ -49,7 +45,7 @@ export class JobAlertsService {
         where: { userId },
         select: { running: true, jobAlertsRequestedAt: true },
       }),
-      findLastHarvestRun(this.prisma, userId),
+      latestRun(this.prisma, userId, "inbox.jobAlerts"),
       this.prisma.emailAccount.findUnique({ where: { userId }, select: { id: true } }),
     ]);
     const settings = config.jobAlerts;
@@ -65,7 +61,7 @@ export class JobAlertsService {
               startedAt: { gte: lastRun.startedAt },
             },
             orderBy: { startedAt: "asc" },
-            select: { campaignId: true, query: true },
+            select: { id: true, query: true },
           })
         : null,
     ]);
@@ -84,7 +80,7 @@ export class JobAlertsService {
             startedAt: lastRun.startedAt,
             finishedAt: lastRun.finishedAt,
             outcome: lastRun.outcome,
-            campaignId: campaign?.campaignId ?? null,
+            campaignId: campaign?.id ?? null,
             campaignQuery: campaign?.query ?? null,
           }
         : null,

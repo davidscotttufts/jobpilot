@@ -7,7 +7,6 @@ import { Button } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { AdminBoardDto } from "@/api/types";
 import { AdminBoardFormDialog } from "./board-form-dialog";
 
 /** Adds a board to the global catalog. Remounted by `key` so the dialog resets between opens. */
@@ -15,16 +14,13 @@ export function AddBoardButton(): ReactElement {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const create = useApiMutation<AdminBoardDto, AdminBoardInput>(
-    (values) => api.admin.boards.post(values),
-    {
-      successMessage: "Board added to the catalog",
-      onSuccess: () => {
-        setOpen(false);
-        router.refresh();
-      },
+  const create = useApiMutation((values: AdminBoardInput) => api.admin.boards.post(values), {
+    successMessage: "Board added to the catalog",
+    onSuccess: () => {
+      setOpen(false);
+      router.refresh();
     },
-  );
+  });
 
   return (
     <>

@@ -32,7 +32,6 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   networkingSentToday: 0,
   awaitingSetup: true,
   nextSearchRunAt: null,
-  nextJobAlertsAt: null,
   answeredQuestions: [],
   approvedJobs: [],
   warmIntroCandidates: [],
@@ -40,7 +39,7 @@ export const base = (over: Partial<TaskListInput> = {}): TaskListInput => ({
   scorePending: [],
   queueScores: [],
   pausedCampaigns: [],
-  boardDiagnose: [],
+  boardDiagnoses: [],
   inbox: { messageIds: [], count: 0 },
   jobAlerts: null,
   interviewReplies: [],
@@ -130,6 +129,7 @@ export const prep = (applicationId: string): TaskPayload<"interview.prep"> => ({
 });
 
 export const boardDiagnose = (board: string): TaskPayload<"board.diagnose"> => ({
+  jobBoardId: `${board}-id`,
   board,
   consecutiveFailures: 3,
   recentFailReasons: ["captcha"],

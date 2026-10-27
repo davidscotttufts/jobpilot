@@ -1,4 +1,5 @@
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import type {
   PatchUpworkInboxItemInput,
   SyncUpworkInboxInput,
@@ -13,8 +14,11 @@ import type {
   UpworkProposalStatus,
   UpworkQualityResult,
 } from "@jobpilot/contracts/upwork";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
+import { toInputJson } from "@/common/json";
+import { publish } from "@/common/sse";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { decodeUpworkProposal, toUpworkInboxItemDto, toUpworkProfileDto } from "./upwork.mapper";
 import { scoreUpworkClient } from "./upwork-quality";
@@ -24,13 +28,13 @@ interface UpworkProfileFields {
   currentTitle?: string | null;
   currentOverview?: string | null;
   currentHourlyRate?: string | null;
-  currentPortfolio?: string;
-  currentSkills?: string;
+  currentPortfolio?: Prisma.InputJsonValue;
+  currentSkills?: string[];
   suggestedTitle?: string | null;
   suggestedOverview?: string | null;
   suggestedHourlyRate?: string | null;
-  suggestedPortfolio?: string;
-  suggestedSkills?: string;
+  suggestedPortfolio?: Prisma.InputJsonValue;
+  suggestedSkills?: string[];
   status?: UpworkProfileStatus;
   appliedAt?: Date | null;
 }
@@ -42,9 +46,9 @@ const ACCOUNT_SELECT = {
   updatedAt: true,
 } as const;
 
-@singleton()
+@injectable()
 export class UpworkService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   scoreClientQuality(client: UpworkClient): UpworkQualityResult {
     return scoreUpworkClient(client);
@@ -63,20 +67,18 @@ export class UpworkService {
     if (input.currentOverview != null) fields.currentOverview = input.currentOverview;
     if (input.currentHourlyRate != null) fields.currentHourlyRate = input.currentHourlyRate;
     if (input.currentPortfolio != null) {
-      fields.currentPortfolio = JSON.stringify(input.currentPortfolio);
+      fields.currentPortfolio = toInputJson(input.currentPortfolio);
     }
-    if (input.currentSkills != null) fields.currentSkills = JSON.stringify(input.currentSkills);
+    if (input.currentSkills != null) fields.currentSkills = input.currentSkills;
     if (input.suggestedTitle != null) fields.suggestedTitle = input.suggestedTitle;
     if (input.suggestedOverview != null) fields.suggestedOverview = input.suggestedOverview;
     if (input.suggestedHourlyRate != null) {
       fields.suggestedHourlyRate = input.suggestedHourlyRate;
     }
     if (input.suggestedPortfolio != null) {
-      fields.suggestedPortfolio = JSON.stringify(input.suggestedPortfolio);
+      fields.suggestedPortfolio = toInputJson(input.suggestedPortfolio);
     }
-    if (input.suggestedSkills != null) {
-      fields.suggestedSkills = JSON.stringify(input.suggestedSkills);
-    }
+    if (input.suggestedSkills != null) fields.suggestedSkills = input.suggestedSkills;
     if (input.status != null) {
       fields.status = input.status;
       fields.appliedAt = input.status === "applied" ? new Date() : null;
@@ -88,6 +90,7 @@ export class UpworkService {
       update: fields,
     });
 
+    publish(upworkChannel, { userId }, { type: "profile.updated" });
     return toUpworkProfileDto(row);
   }
 
@@ -100,12 +103,14 @@ export class UpworkService {
 
   async upsertAccount(userId: string, input: UpdateUpworkAccountInput) {
     const fields = { connectsBalance: input.connectsBalance ?? null };
-    return this.prisma.upworkAccount.upsert({
+    const account = await this.prisma.upworkAccount.upsert({
       where: { userId },
       create: { userId, ...fields },
       update: fields,
       select: ACCOUNT_SELECT,
     });
+    publish(upworkChannel, { userId }, { type: "account.updated" });
+    return account;
   }
 
   async listInbox(
@@ -151,7 +156,7 @@ export class UpworkService {
           kind: item.kind,
           title: item.title,
           clientName: item.clientName ?? null,
-          jobUrl: item.jobUrl ?? null,
+          jobUrl: item.jobUrl ? normalizeJobUrl(item.jobUrl) : null,
           body: item.body ?? null,
           receivedAt: new Date(item.receivedAt),
           raw: JSON.stringify(item.raw ?? {}),
@@ -172,6 +177,7 @@ export class UpworkService {
       update: { lastSyncedAt: syncedAt },
     });
 
+    publish(upworkChannel, { userId }, { type: "inbox.synced" });
     return { created: upworkIds.length - known.size, updated: known.size };
   }
 
@@ -185,6 +191,7 @@ export class UpworkService {
       where: { id },
       data: { status: input.status },
     });
+    publish(upworkChannel, { userId }, { type: "inbox.updated", id });
     return toUpworkInboxItemDto(row);
   }
 
@@ -223,10 +230,10 @@ export class UpworkService {
         userId,
         jobTitle: body.jobTitle,
         clientName: body.clientName ?? null,
-        jobUrl: body.jobUrl ?? null,
+        jobUrl: body.jobUrl ? normalizeJobUrl(body.jobUrl) : null,
         jobDescription: body.jobDescription ?? null,
         proposalText: body.proposalText ?? "",
-        screeningAnswers: JSON.stringify(body.screeningAnswers ?? []),
+        screeningAnswers: toInputJson(body.screeningAnswers ?? []),
         status: body.status ?? "draft",
         notes: body.notes ?? null,
         source: body.source ?? "manual",
@@ -235,6 +242,7 @@ export class UpworkService {
       },
     });
 
+    publish(upworkChannel, { userId }, { type: "proposal.created", id: proposal.id });
     return decodeUpworkProposal(proposal);
   }
 
@@ -258,7 +266,7 @@ export class UpworkService {
     const update: Prisma.UpworkProposalUpdateInput = {
       jobTitle: body.jobTitle,
       clientName: body.clientName,
-      jobUrl: body.jobUrl,
+      jobUrl: body.jobUrl ? normalizeJobUrl(body.jobUrl) : body.jobUrl,
       jobDescription: body.jobDescription,
       proposalText: body.proposalText,
       status: body.status,
@@ -267,7 +275,7 @@ export class UpworkService {
     };
 
     if (body.screeningAnswers !== undefined) {
-      update.screeningAnswers = JSON.stringify(body.screeningAnswers);
+      update.screeningAnswers = toInputJson(body.screeningAnswers);
     }
 
     if (body.submittedAt !== undefined) {
@@ -278,6 +286,7 @@ export class UpworkService {
 
     const proposal = await this.prisma.upworkProposal.update({ where: { id }, data: update });
 
+    publish(upworkChannel, { userId }, { type: "proposal.updated", id });
     return decodeUpworkProposal(proposal);
   }
 
@@ -290,6 +299,7 @@ export class UpworkService {
 
     await this.prisma.upworkProposal.delete({ where: { id } });
 
-    return { id };
+    publish(upworkChannel, { userId }, { type: "proposal.deleted", id });
+    return { deleted: id };
   }
 }

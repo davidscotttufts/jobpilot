@@ -1,5 +1,5 @@
-import type { PushService } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { WebPushService } from "@/modules/web-push/web-push.service";
 import type { PilotJournalService } from "./journal.service";
 import { PromotionService } from "./promotion.service";
 import { describe, expect, it } from "bun:test";
@@ -38,7 +38,7 @@ function makeService(over: Row = {}) {
       },
     },
   };
-  const push = { sendToUser: async () => {} } as unknown as PushService;
+  const push = { sendToUser: async () => {} } as unknown as WebPushService;
   const journal = {
     appendJournal: async (_userId: string, body: { entries: Row[] }) => {
       journals.push(...body.entries);

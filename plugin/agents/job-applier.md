@@ -127,7 +127,7 @@ the step snapshot didn't enumerate (date picker, autocomplete), snapshot just it
 - **Salary**: `salaryExpectation`, else the `user.salaryPreferences[]` entry (`{appliesTo,
   minAmount, maxAmount, currency, period}`) whose `appliesTo` best fits (a lone generic entry fits
   all). Range → min-max; one field → `maxAmount`, else `minAmount`; convert the period when asked
-  (yearly ≈ hourly × 2080); brackets → closest. No plausible entry → unresolvable.
+  (yearly ≈ monthly × 12 ≈ hourly × 2080); brackets → closest. No plausible entry → unresolvable.
 - **Start date**: `autoApply.defaultStartDate`, else "2 weeks notice".
 - **Work authorization**: `user.{usAuthorized, requiresSponsorship, visaStatus, optExtension}`,
   closest option.

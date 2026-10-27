@@ -1,4 +1,6 @@
+import { ErrorCodes } from "@jobpilot/contracts/errors";
 import {
+  type CreatePilotJournalInput,
   type PilotRun,
   type PilotRunResultInput,
   type PilotTask,
@@ -6,9 +8,9 @@ import {
   type ReportPilotUsageInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, notFound } from "@/common/errors";
-import { reviveJsonDates, toInputJson } from "@/common/json";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
   type PilotRun as PilotRunModel,
@@ -16,19 +18,29 @@ import {
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
-import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
+import {
+  guardApply,
+  parseJobRef,
+  revertApplyingJobs,
+  startApplying,
+} from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
 import { PilotJournalService } from "../journal.service";
-import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
-import { parseJobRef, revertApplyingJobs } from "./run-history";
+import { writeJournalEntries } from "../journal-entries";
 import { parseTaskListSnapshot } from "./snapshot";
+import {
+  networkingSendWhere,
+  promotionPostWhere,
+  reviewPausedWhere,
+  scorePendingWhere,
+} from "./workable";
 
 const RUN_TTL_MS = 15 * 60 * 1000;
 /** Counted from `startedAt`, so a stuck driver that keeps heartbeating still expires. */
 const MAX_RUN_LIFETIME_MS = 25 * 60 * 1000;
 
 function toPilotRun(row: PilotRunModel): PilotRun {
-  return pilotRunSchema.parse({ ...row, payload: reviveJsonDates(row.payload) });
+  return pilotRunSchema.parse(row);
 }
 
 /** Re-checks task types whose row can change after the task list was built. */
@@ -36,6 +48,7 @@ async function assertStillStartable(
   tx: Prisma.TransactionClient,
   userId: string,
   task: PilotTask,
+  now: Date,
 ): Promise<void> {
   const { subjectId } = task;
   let remaining: number;
@@ -43,44 +56,40 @@ async function assertStillStartable(
   switch (task.taskType) {
     case "promotion.post":
       remaining = await tx.promotionPost.count({
-        where: { id: subjectId, userId, status: "approved" },
+        where: { id: subjectId, ...promotionPostWhere(userId, now) },
       });
-      gone = "Promotion post is no longer approved.";
+      gone = "Promotion post is no longer ready to post.";
       break;
     case "networking.send":
       remaining = await tx.networkingMessage.count({
-        where: { id: subjectId, userId, status: "approved" },
+        where: { id: subjectId, ...networkingSendWhere(userId) },
       });
-      gone = "Networking message is no longer approved.";
+      gone = "Networking message is no longer ready to send.";
       break;
     case "campaign.reviewPaused":
       remaining = await tx.campaign.count({
-        where: { campaignId: subjectId, userId, status: "paused" },
+        where: { id: subjectId, ...reviewPausedWhere(userId) },
       });
       gone = "Campaign is no longer paused.";
       break;
     case "campaign.scorePending":
       remaining = await tx.campaign.count({
-        where: {
-          campaignId: subjectId,
-          userId,
-          status: "in_progress",
-          jobs: { some: NEEDS_WORKER_VISIT },
-        },
+        where: { id: subjectId, ...scorePendingWhere(userId) },
       });
       gone = "Campaign has no jobs left to score.";
       break;
     default:
       return;
   }
-  if (remaining === 0) throw conflict(gone);
+  if (remaining === 0) throw conflict(gone, ErrorCodes.PILOT_CONFLICT);
 }
 
-@singleton()
+type JournalEntryInput = CreatePilotJournalInput["entries"][number];
+@injectable()
 export class RunService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly journal: PilotJournalService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly journal = inject(PilotJournalService),
   ) {}
 
   async start(userId: string, taskListVersion: string, taskId: string) {
@@ -90,12 +99,13 @@ export class RunService {
       ),
     );
     if (startedJob) publishJob(userId, startedJob, "updated");
+    const started = toPilotRun(run);
     publish(
       pilotChannel,
       { userId },
-      { type: "run.started", runId: run.id, taskType: run.taskType },
+      { type: "run.started", runId: started.id, taskType: started.taskType },
     );
-    return toPilotRun(run);
+    return started;
   }
 
   private async startInTransaction(
@@ -117,13 +127,13 @@ export class RunService {
         select: { running: true },
       });
       const stale = "Task list is stale; refresh it before starting a run.";
-      throw conflict(state?.running ? stale : "Pilot is stopped.");
+      throw conflict(state?.running ? stale : "Pilot is stopped.", ErrorCodes.PILOT_CONFLICT);
     }
 
     const task = parseTaskListSnapshot(locked.taskListSnapshot).tasks.find(
       (entry) => entry.id === taskId,
     );
-    if (!task) throw conflict("Task is no longer available.");
+    if (!task) throw conflict("Task is no longer available.", ErrorCodes.PILOT_CONFLICT);
 
     const open = await tx.pilotRun.findFirst({
       where: {
@@ -135,9 +145,9 @@ export class RunService {
       },
       select: { id: true },
     });
-    if (open) throw conflict("This task is already started.");
+    if (open) throw conflict("This task is already started.", ErrorCodes.PILOT_CONFLICT);
 
-    await assertStillStartable(tx, userId, task);
+    await assertStillStartable(tx, userId, task, now);
     const startedJob =
       task.taskType === "job.apply"
         ? await startApplying(tx, userId, task.payload.campaignId, task.payload.jobKey)
@@ -167,7 +177,7 @@ export class RunService {
       { id, userId },
       "Run",
     );
-    if (run.finishedAt) throw conflict("Run is already finished.");
+    if (run.finishedAt) throw conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
 
     const now = Date.now();
     const ceiling = run.startedAt.getTime() + MAX_RUN_LIFETIME_MS;
@@ -178,7 +188,7 @@ export class RunService {
         expiresAt: new Date(Math.min(now + RUN_TTL_MS, ceiling)),
       },
     });
-    if (!updated) throw conflict("Run is already finished.");
+    if (!updated) throw conflict("Run is already finished.", ErrorCodes.PILOT_CONFLICT);
     return toPilotRun(updated);
   }
 
@@ -204,8 +214,14 @@ export class RunService {
     return findOwned((where) => this.prisma.pilotRun.findFirst({ where }), { id, userId }, "Run");
   }
 
-  private async close(userId: string, existing: PilotRunModel, outcome: PilotRunOutcome) {
-    const finished = await this.prisma.$transaction(async (tx) => {
+  /** `entries` journal under the run id in the same transaction, so a result never half-lands. */
+  private async close(
+    userId: string,
+    existing: PilotRunModel,
+    outcome: PilotRunOutcome,
+    entries: JournalEntryInput[] = [],
+  ) {
+    const { finished, journaled } = await this.prisma.$transaction(async (tx) => {
       // Otherwise the job stays `applying` until the stale sweep.
       if (outcome === "cancelled" && existing.taskType === "job.apply") {
         await revertApplyingJobs(tx, userId, [parseJobRef(existing.payload)]);
@@ -214,9 +230,14 @@ export class RunService {
         where: { id: existing.id, userId, finishedAt: null },
         data: { finishedAt: new Date(), outcome },
       });
-      if (!row) throw conflict("Run was finished concurrently.");
-      return row;
+      if (!row) throw conflict("Run was finished concurrently.", ErrorCodes.PILOT_CONFLICT);
+      const rows =
+        entries.length > 0
+          ? await writeJournalEntries(tx, userId, { cycleId: existing.id, entries })
+          : [];
+      return { finished: row, journaled: rows };
     });
+    await this.journal.publishAppended(userId, journaled);
     return toPilotRun(finished);
   }
 
@@ -225,15 +246,14 @@ export class RunService {
     const existing = await this.findRow(userId, id);
     if (existing.finishedAt) return toPilotRun(existing);
 
-    const run = await this.close(userId, existing, body.outcome);
-    const action = {
-      kind: "action" as const,
+    const action: JournalEntryInput = {
+      kind: "action",
       summary: body.summary,
-      subjectType: body.subjectType ?? run.subjectType,
-      subjectId: body.subjectId ?? run.subjectId,
+      subjectType: body.subjectType ?? existing.subjectType,
+      subjectId: body.subjectId ?? existing.subjectId,
       detail: body.detail,
     };
-    await this.journal.appendJournal(userId, { cycleId: id, entries: [action] });
+    const run = await this.close(userId, existing, body.outcome, [action]);
     // After the journal line, so a run.finished listener already sees the result.
     publish(pilotChannel, { userId }, { type: "run.finished", runId: id, outcome: body.outcome });
     return run;

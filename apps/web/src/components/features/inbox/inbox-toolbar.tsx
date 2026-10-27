@@ -7,7 +7,6 @@ import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import type { InboxFilter } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { SyncResultDto } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { useAgent } from "@/providers/agent-provider";
 
@@ -28,7 +27,7 @@ export function InboxToolbar(props: InboxToolbarProps): ReactElement {
   const { filter, onFilterChange } = props;
   const { injectSkill } = useAgent();
 
-  const sync = useApiMutation<SyncResultDto, void>(() => api.email.sync.post(), {
+  const sync = useApiMutation(() => api.email.sync.post(), {
     successMessage: "Inbox synced",
     invalidate: [queryKeys.email.all],
   });

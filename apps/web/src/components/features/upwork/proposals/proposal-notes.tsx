@@ -5,7 +5,7 @@ import { Button, Stack, TextField } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
+import type { UpdateUpworkProposalRequest } from "@/api/types";
 import { SectionCard } from "@/components/ui/layout";
 
 interface ProposalNotesProps {
@@ -18,8 +18,8 @@ export function ProposalNotes(props: ProposalNotesProps): ReactElement {
   const { id, notes } = props;
   const [draft, setDraft] = useState<string | null>(null);
 
-  const save = useApiMutation<UpworkProposalDto, UpdateUpworkProposalRequest>(
-    (body) => api.upwork.proposals({ id }).patch(body),
+  const save = useApiMutation(
+    (body: UpdateUpworkProposalRequest) => api.upwork.proposals({ id }).patch(body),
     {
       invalidate: [queryKeys.upworkProposals.all],
       successMessage: "Notes saved",

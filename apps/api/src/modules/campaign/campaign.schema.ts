@@ -6,6 +6,7 @@ import {
   campaignStatusSchema,
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
+import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { csvArray, paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -18,7 +19,7 @@ export const campaignsQuery = paginationQuerySchema.extend({
 });
 
 export const campaignSchema = z.object({
-  campaignId: z.uuid(),
+  id: z.uuid(),
   userId: z.uuid(),
   query: z.string(),
   source: campaignSourceSchema,
@@ -29,9 +30,9 @@ export const campaignSchema = z.object({
   startedAt: z.date(),
   updatedAt: z.date(),
   completedAt: z.date().nullable(),
+  board: boardRefSchema.nullable(),
   config: campaignConfigSchema,
   summary: campaignSummarySchema,
 });
 
 export const campaignListSchema = paginatedSchema(campaignSchema);
-export const campaignDeletedSchema = z.object({ deleted: z.boolean(), campaignId: z.uuid() });

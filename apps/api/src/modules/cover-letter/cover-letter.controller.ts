@@ -4,7 +4,7 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
-import { okResponseSchema } from "@/types/response";
+import { deletedResponseSchema } from "@/types/response";
 import {
   coverLetterCreatedSchema,
   coverLetterDetailSchema,
@@ -13,7 +13,7 @@ import {
 } from "./cover-letter.schema";
 import { type CoverLetterPdf, CoverLetterService } from "./cover-letter.service";
 
-const svc = container.resolve(CoverLetterService);
+const svc = container.get(CoverLetterService);
 
 /** Wrap a rendered cover-letter PDF in an inline Response. */
 function pdfResponse({ buffer, slug }: CoverLetterPdf): Response {
@@ -37,7 +37,7 @@ export const coverLetterController = new Elysia({
     detail: {
       summary: "List cover letters",
       description:
-        "Returns one page of the active profile's saved cover letters, newest first, as `{ items, pagination }` - metadata only, without the letter body.",
+        "Returns one page of the user's saved cover letters, newest first, as `{ items, pagination }` - metadata only, without the letter body.",
     },
   })
   .post("/", ({ user, body }) => svc.create(user.id, body), {
@@ -45,8 +45,7 @@ export const coverLetterController = new Elysia({
     response: coverLetterCreatedSchema,
     detail: {
       summary: "Create cover letter",
-      description:
-        "Saves a new cover letter for the active profile and returns the created record.",
+      description: "Saves a new cover letter for the user and returns the created record.",
     },
   })
   .post(
@@ -67,16 +66,16 @@ export const coverLetterController = new Elysia({
     detail: {
       summary: "Get cover letter",
       description:
-        "Returns the full saved cover letter owned by the active profile, or a 404 if it does not exist.",
+        "Returns the full saved cover letter owned by the user, or a 404 if it does not exist.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
-    response: okResponseSchema,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete cover letter",
       description:
-        "Deletes the active profile's saved cover letter and returns an ok acknowledgement, or a 404 if it does not exist.",
+        "Deletes the user's saved cover letter and returns an ok acknowledgement, or a 404 if it does not exist.",
     },
   })
   .get(

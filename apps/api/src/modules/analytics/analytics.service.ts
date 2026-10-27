@@ -1,7 +1,8 @@
 import { INTERVIEW_STATUSES } from "@jobpilot/contracts/application";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { PrismaClient } from "@/generated/prisma/client";
+import { JobBoardService } from "@/modules/job-board/job-board.service";
 
 /** Statuses that mean the employer replied, whichever way it went. */
 const RESPONDED_STATUSES = [...INTERVIEW_STATUSES, "offer", "rejected"] as const;
@@ -9,9 +10,12 @@ const RESPONDED_STATUSES = [...INTERVIEW_STATUSES, "offer", "rejected"] as const
 /** Statuses that mean the message left the outbox. */
 const DISPATCHED_MESSAGE_STATUSES = ["sent", "replied", "bounced"] as const;
 
-@singleton()
+@injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly boards = inject(JobBoardService),
+  ) {}
 
   async stats(userId: string) {
     const weekStart = startOfWeek();
@@ -24,7 +28,7 @@ export class AnalyticsService {
       weekRejected,
       statusGroupRows,
       timelineRows,
-      boardGroupRows,
+      topBoards,
       failReasonRows,
       networkingStatusRows,
       contactCount,
@@ -63,13 +67,7 @@ export class AnalyticsService {
         where: { userId, appliedAt: { gte: timelineStart } },
         select: { appliedAt: true },
       }),
-      this.prisma.application.groupBy({
-        by: ["board"],
-        where: { userId, board: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 5,
-      }),
+      this.boards.topBoards({ userId }),
       this.prisma.job.groupBy({
         by: ["failReason"],
         where: { failReason: { not: null }, campaign: { userId } },
@@ -126,10 +124,6 @@ export class AnalyticsService {
       timelineRows.map((r) => r.appliedAt),
       timelineStart,
     );
-
-    const topBoards = boardGroupRows
-      .filter((r) => r.board)
-      .map((r) => ({ board: r.board as string, count: r._count._all }));
 
     const topRejectReasons = failReasonRows
       .filter((r) => r.failReason)

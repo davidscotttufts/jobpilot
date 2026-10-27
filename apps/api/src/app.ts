@@ -1,4 +1,3 @@
-import "@/common/di/container";
 import { Elysia } from "elysia";
 import { db } from "@/common/database/prisma.client";
 import { logger } from "@/common/logger";
@@ -15,7 +14,7 @@ import { securityController } from "@/modules/auth/security.controller";
 import { campaignController } from "@/modules/campaign/campaign.controller";
 import { campaignJobController } from "@/modules/campaign/jobs/job.controller";
 import { captchaController } from "@/modules/captcha/captcha.controller";
-import { contactController } from "@/modules/contact";
+import { contactController } from "@/modules/contact/contact.controller";
 import { coverLetterController } from "@/modules/cover-letter/cover-letter.controller";
 import { credentialController } from "@/modules/credential/credential.controller";
 import { emailAccountController } from "@/modules/email/account/account.controller";
@@ -36,15 +35,16 @@ import { pilotController } from "@/modules/pilot/pilot.controller";
 import { promotionController } from "@/modules/pilot/promotion.controller";
 import { pilotQuestionsController } from "@/modules/pilot/question.controller";
 import { pilotSearchController } from "@/modules/pilot/search.controller";
+import { expiryJob } from "@/modules/pilot/tasks/expiry.job";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
-import { pushController } from "@/modules/push/push.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
 import { scoringController } from "@/modules/scoring/scoring.controller";
 import { publicStatsController } from "@/modules/stats/stats.controller";
 import { upworkController } from "@/modules/upwork/upwork.controller";
 import { userController } from "@/modules/user/user.controller";
+import { webPushController } from "@/modules/web-push/web-push.controller";
 import { workspaceController } from "@/modules/workspace/workspace.controller";
 import { httpErrorResponses } from "@/types/response";
 
@@ -54,6 +54,7 @@ const app = new Elysia()
   .use(openapiPlugin)
   .use(pdfCacheJob)
   .use(cleanupJob)
+  .use(expiryJob)
   .onStop(async () => {
     await db.$disconnect();
   })
@@ -93,7 +94,7 @@ const app = new Elysia()
       .use(pilotQuestionsController)
       .use(profileAnswersController)
       .use(promotionController)
-      .use(pushController)
+      .use(webPushController)
       .use(workspaceController)
       .use(emailAccountController)
       .use(emailMessagesController)

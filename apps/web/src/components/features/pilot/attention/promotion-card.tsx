@@ -41,8 +41,8 @@ export function PromotionDraftCard(props: PromotionCardProps): ReactElement {
   const [title, setTitle] = useState(promotion.title ?? "");
   const [body, setBody] = useState(promotion.body);
 
-  const patch = useApiMutation<Promotion, PatchPromotionInput>(
-    (input) => api.pilot.promotions({ id: promotion.id }).patch(input),
+  const patch = useApiMutation(
+    (input: PatchPromotionInput) => api.pilot.promotions({ id: promotion.id }).patch(input),
     { invalidate: [queryKeys.pilot.promotionsAll()] },
   );
   const isLoading = patch.isPending;

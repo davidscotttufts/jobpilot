@@ -1,14 +1,15 @@
 import type { CampaignJobReason } from "@jobpilot/contracts/campaign";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { ensureCampaignOwned } from "../campaign.utils";
 import type { campaignJobsQuery } from "./job.schema";
+import { JOB_INCLUDE } from "./job-row";
 
-@singleton()
+@injectable()
 export class CampaignJobQueryService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async listJobs(userId: string, campaignId: string, query: z.infer<typeof campaignJobsQuery>) {
     const where: Prisma.JobWhereInput = {
@@ -25,7 +26,12 @@ export class CampaignJobQueryService {
     // The page is already ownership-scoped; the probe only tells a 404 from an empty page.
     const [, jobs, total] = await Promise.all([
       ensureCampaignOwned(this.prisma, userId, campaignId),
-      this.prisma.job.findMany({ where, orderBy: { createdAt: "asc" }, ...pageSlice(query) }),
+      this.prisma.job.findMany({
+        where,
+        include: JOB_INCLUDE,
+        orderBy: { createdAt: "asc" },
+        ...pageSlice(query),
+      }),
       this.prisma.job.count({ where }),
     ]);
     return paginate(jobs, query, total);

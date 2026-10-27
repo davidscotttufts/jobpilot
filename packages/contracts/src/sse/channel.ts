@@ -29,7 +29,16 @@ export function defineChannel<
 /** Constraint for generic functions that accept any channel descriptor. */
 // biome-ignore lint/suspicious/noExplicitAny: intentional wildcard supertype
 export type AnyChannel = Channel<any, any, any>;
-/** Event union carried by a channel. */
+/** What `JSON.parse` gives back for a `T` the server serialized: every `Date` arrives a string. */
+export type Jsonified<T> = T extends Date
+  ? string
+  : T extends readonly (infer U)[]
+    ? Jsonified<U>[]
+    : T extends object
+      ? { [K in keyof T]: Jsonified<T[K]> }
+      : T;
+
+/** Event union carried by a channel, as the server publishes it. */
 export type ChannelEvent<C> = C extends Channel<infer E, infer _U, infer _T> ? E : never;
 /** URL-param type of a channel (what the client passes). */
 export type ChannelUrlParams<C> = C extends Channel<infer _E, infer U, infer _T> ? U : never;

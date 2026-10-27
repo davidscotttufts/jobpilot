@@ -69,8 +69,8 @@ User decisions:
 
 - `apps/api/prisma/schema/job-board.prisma`: add enum `JobBoardKind { browser, api }`
   (`@@map("job_board_kind")`) and `kind JobBoardKind @default(browser)` on `JobBoard`.
-- Migration (per db-migrate skill: `db:migrate` create-only, hand-review, `db:migrate:apply`,
-  `db:generate`; never reset). SQL:
+- Migration (per db-migrate skill: `db:diff` against a restored copy, hand-review,
+  `db:migrate:apply`, `db:generate`; never reset). SQL:
   `CREATE TYPE "job_board_kind" AS ENUM ('browser','api');`
   `ALTER TABLE "job_boards" ADD COLUMN "kind" "job_board_kind" NOT NULL DEFAULT 'browser';`
   No pilot_states snapshot nulling: the agenda wire shape is unchanged.
@@ -108,7 +108,7 @@ User decisions:
     `derivePostedWithinDays(lastRunAt, now)` (min 1, cap 30, undefined on first run),
     `splitNewPostings` (key + canonical-URL dedupe against existing campaign rows),
     `apiSearchHoldUntil` / `providerRetryAt` helpers, `summarizeFit`.
-  - `job-source-run.service.ts` (@singleton; value imports for tsyringe):
+  - `job-source-run.service.ts` (`@injectable()`, deps via `inject()`):
     `runForCampaign(userId, campaignId, opts? {pilotSearchId?, postedWithinDays?})`:
     ensure owned campaign, resolve adapter or 409, per-campaign and per-domain (4) concurrency
     slots, load `user.requiresSponsorship`, `adapter.search`, dedupe against campaign rows
@@ -217,12 +217,12 @@ User decisions:
 - Sparse enrichment: all-optional parse schema; zero-skill hits still become campaign jobs but
   are rejected by `buildListingDraft`'s quality gate.
 - Elysia strips undeclared response fields: declare `kind` and run-result fields everywhere.
-- Registry and adapters must not import Prisma or `@/env`; tsyringe needs value imports.
+- Registry and adapters must not import Prisma or `@/env`.
 
 ## Verification
 
 1. `/verify` gate: Biome, API + web typechecks, API and contracts tests (all new tests DB-free).
-2. Migration: `db:migrate` create-only, review SQL, `db:migrate:apply` (after user confirms),
+2. Migration: per db-migrate skill, review SQL, `db:migrate:apply` (after user confirms),
    `db:generate`, `db:seed` (expect 12 boards).
 3. Swagger in dev: `GET /api/job-sources`, `POST /api/job-sources/runs`, `kind` on
    `/api/job-boards`.

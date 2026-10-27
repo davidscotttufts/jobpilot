@@ -5,9 +5,10 @@ import { describe, expect, it } from "bun:test";
 
 describe("TaskListService campaign.scorePending", () => {
   const campaign = {
-    campaignId: "c1",
+    id: "c1",
     query: "react",
-    config: { board: "linkedin", minScore: 70 },
+    config: { minScore: 70 },
+    board: { domain: "linkedin.com" },
     _count: { jobs: 9 },
     jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
   };
@@ -16,14 +17,18 @@ describe("TaskListService campaign.scorePending", () => {
     const taskList = await service({ scorePendingCampaigns: [campaign] }).refresh("p1");
     const task = findTask(taskList, "campaign.scorePending");
     expect(task?.subjectId).toBe("c1");
-    expect(task?.payload).toMatchObject({ board: "linkedin", minScore: 70, pendingCount: 9 });
+    expect(task?.payload).toMatchObject({ board: "linkedin.com", minScore: 70, pendingCount: 9 });
   });
 
   // An unscorable row stays pending forever and outranks discovery, so a recent run must hold it back.
   it("holds a campaign back while its last run is recent", async () => {
     const taskList = await service({
       scorePendingCampaigns: [campaign],
-      scorePendingRuns: [{ subjectId: "c1", startedAt: new Date(), finishedAt: new Date() }],
+      runs: {
+        "campaign.scorePending": [
+          { subjectId: "c1", startedAt: new Date(), finishedAt: new Date() },
+        ],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.scorePending")).toBe(false);
   });
@@ -31,7 +36,7 @@ describe("TaskListService campaign.scorePending", () => {
 
 describe("TaskListService campaign.reviewPaused", () => {
   const pausedAt = new Date(Date.now() - 60 * 60_000);
-  const paused = { campaignId: "c9", query: "react", config: {}, updatedAt: pausedAt };
+  const paused = { id: "c9", query: "react", config: {}, updatedAt: pausedAt };
   const answeredAt = (offsetMs: number) => new Date(pausedAt.getTime() + offsetMs);
 
   it("offers a paused auto-apply campaign for review", async () => {
@@ -65,7 +70,9 @@ describe("TaskListService campaign.reviewPaused", () => {
   it("holds a campaign back while its last review is recent", async () => {
     const taskList = await service({
       pausedCampaigns: [paused],
-      pausedReviewRuns: [{ subjectId: "c9", startedAt: new Date(), finishedAt: null }],
+      runs: {
+        "campaign.reviewPaused": [{ subjectId: "c9", startedAt: new Date(), finishedAt: null }],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.reviewPaused")).toBe(false);
   });
@@ -74,7 +81,7 @@ describe("TaskListService campaign.reviewPaused", () => {
 describe("TaskListService queue.score", () => {
   const RESUME_ID = "b0f1c2d3-4e5a-4b6c-8d7e-9f0a1b2c3d4e";
   const queued = {
-    campaignId: "c1",
+    id: "c1",
     config: { resumeId: RESUME_ID, minScore: 55 },
     _count: { jobs: 3 },
     jobs: [{ key: "q1", url: "https://x/1" }],
@@ -95,7 +102,7 @@ describe("TaskListService queue.score", () => {
   it("holds a campaign back while its last scoring run is still open", async () => {
     const taskList = await service({
       queuedCampaigns: [queued],
-      queueScoreRuns: [{ subjectId: "c1", startedAt: new Date(), finishedAt: null }],
+      runs: { "queue.score": [{ subjectId: "c1", startedAt: new Date(), finishedAt: null }] },
     }).refresh("p1");
     expect(hasTaskType(taskList, "queue.score")).toBe(false);
   });
@@ -106,9 +113,10 @@ describe("TaskListService campaign reviews", () => {
   const laggard = {
     quietCampaigns: [
       {
-        campaignId: "c1",
+        id: "c1",
         query: "react",
-        config: { minScore: 70, board: "linkedin" },
+        config: { minScore: 70 },
+        board: { domain: "linkedin.com" },
         source: "search",
       },
     ],
@@ -126,7 +134,7 @@ describe("TaskListService campaign reviews", () => {
     }).refresh("p1");
     const payloadOf = (taskType: TaskType) => findTask(taskList, taskType)?.payload;
     expect(payloadOf("campaign.tune")).toMatchObject({
-      config: { minScore: 70, board: "linkedin" },
+      config: { minScore: 70, board: "linkedin.com" },
       counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
       topSkipReasons: ["overqualified"],
     });
@@ -134,14 +142,18 @@ describe("TaskListService campaign reviews", () => {
     expect(payloadOf("job.retryFailed")).toMatchObject({ failedCount: 3 });
   });
 
-  it("skips a review journaled for the same campaign this week", async () => {
+  it("skips a review that ran for the same campaign this week", async () => {
     const taskList = await service({
       ...laggard,
-      actionMarkers: [
-        { subjectId: "c1", detail: { type: "tune" } },
-        { subjectId: "c1", detail: { type: "rescanSkipped" } },
-        { subjectId: "other", detail: { type: "retryFailed" } },
-      ],
+      runs: {
+        "campaign.tune": [
+          { subjectId: "c1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        ],
+        "job.rescanSkipped": [
+          { subjectId: "c1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        ],
+        "job.retryFailed": [{ subjectId: "other", startedAt: new Date(), finishedAt: new Date() }],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "campaign.tune")).toBe(false);
     expect(hasTaskType(taskList, "job.rescanSkipped")).toBe(false);
@@ -152,12 +164,12 @@ describe("TaskListService campaign reviews", () => {
 describe("TaskListService idle-campaign sweep", () => {
   it("completes an idle campaign server-side and journals it, with no task", async () => {
     const { svc, rec } = serviceWithRec({
-      finalizeCampaigns: [{ campaignId: "c3", query: "react" }],
+      finalizeCampaigns: [{ id: "c3", query: "react" }],
     });
     const taskList = await svc.refresh("p1");
     expect(rec.campaignUpdates).toHaveLength(1);
     expect(rec.campaignUpdates[0]).toMatchObject({
-      where: { campaignId: "c3", status: "in_progress" },
+      where: { id: { in: ["c3"] }, status: "in_progress" },
       data: { status: "completed", statusActor: "pilot" },
     });
     expect(rec.journals).toContainEqual(

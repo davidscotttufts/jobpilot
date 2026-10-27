@@ -1,4 +1,4 @@
-import { OAuthProviderSchema } from "@jobpilot/contracts";
+import { OAuthProviderSchema } from "@jobpilot/contracts/auth";
 import { roleSchema } from "@jobpilot/contracts/role";
 import { availabilitySchema } from "@jobpilot/contracts/user";
 import { z } from "zod/v4";
@@ -24,18 +24,15 @@ export const publicUserSchema = z.object({
   createdAt: z.date(),
 });
 
-/** Auth result returned by register/login/refresh - public user plus a fresh token pair. */
+/** Register/login result: the public user. The session itself rides the httpOnly cookie. */
 export const authSessionSchema = z.object({
   user: publicUserSchema,
-  accessToken: z.string(),
-  refreshToken: z.string(),
 });
 
 /**
  * The signed-in user's own merged view (mirrors `meUser`): account fields plus
  * the applicant profile columns. `contactEmail` is the applicant address; `email`
- * stays the login address. `updatedAt` is a `Date` (validated pre-serialization)
- * and `preferredLocations` is the stored JSON string.
+ * stays the login address. `updatedAt` is a `Date` (validated pre-serialization).
  */
 export const meSchema = publicUserSchema.extend({
   // Sign-in methods for the account security page; the hash itself never leaves the API.
@@ -61,7 +58,7 @@ export const meSchema = publicUserSchema.extend({
   visaStatus: z.string().nullable(),
   optExtension: z.string().nullable(),
   willingToRelocate: z.boolean(),
-  preferredLocations: z.string(),
+  preferredLocations: z.array(z.string()),
   eeoGender: z.string().nullable(),
   eeoRace: z.string().nullable(),
   eeoEthnicity: z.string().nullable(),
@@ -72,24 +69,9 @@ export const meSchema = publicUserSchema.extend({
   updatedAt: z.date(),
 });
 
-/**
- * An active personal access token row (mirrors `ApiTokenService.list`'s select).
- * The service returns raw Prisma rows, so date fields are `Date` objects.
- */
-const apiTokenSummarySchema = z.object({
+/** The agent's reusable terminal token (mirrors `AuthTokenService.getOrCreateTerminalToken`). */
+export const terminalTokenSchema = z.object({
   id: z.uuid(),
-  name: z.string(),
-  lastUsedAt: z.date().nullable(),
-  expiresAt: z.date().nullable(),
-  createdAt: z.date(),
-});
-
-export const apiTokenListSchema = z.array(apiTokenSummarySchema);
-
-/** A freshly minted token (mirrors `ApiTokenService.mint`) - the raw token is shown once. */
-export const apiTokenMintedSchema = z.object({
-  id: z.uuid(),
-  name: z.string(),
   token: z.string(),
   createdAt: z.date(),
 });

@@ -1,18 +1,19 @@
-import type { ChangeEmailInput, ChangePasswordInput } from "@jobpilot/contracts";
-import { singleton } from "tsyringe";
+import type { ChangeEmailInput, ChangePasswordInput } from "@jobpilot/contracts/auth";
+import { inject, injectable } from "@needle-di/core";
 import { hashPassword, verifyPassword } from "@/common/auth";
 import { badRequest, conflict, notFound, unauthorized } from "@/common/errors";
 import { normalizeEmail } from "@/common/utils/email";
 import { PrismaClient } from "@/generated/prisma/client";
-import { revokeRefreshTokens } from "./revoke-refresh-tokens";
+import { AuthTokenService } from "./auth-token.service";
 import { VerificationService } from "./verification.service";
 
 /** Password change/set and the email-change request gate. Never touches `wrappedDek`. */
-@singleton()
+@injectable()
 export class SecurityService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly verification: VerificationService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly verification = inject(VerificationService),
+    private readonly tokens = inject(AuthTokenService),
   ) {}
 
   /** Verify the current password when the account has one; OAuth-only accounts skip it. */
@@ -35,7 +36,7 @@ export class SecurityService {
   async changePassword(
     userId: string,
     input: ChangePasswordInput,
-    currentRefreshRaw: string | null,
+    currentTokenId: string,
   ): Promise<{ ok: true }> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -49,7 +50,7 @@ export class SecurityService {
     const passwordHash = await hashPassword(input.newPassword);
     await this.prisma.$transaction([
       this.prisma.user.update({ where: { id: userId }, data: { passwordHash } }),
-      revokeRefreshTokens(this.prisma, userId, currentRefreshRaw),
+      this.tokens.revokeSessions(userId, currentTokenId),
     ]);
     return { ok: true };
   }

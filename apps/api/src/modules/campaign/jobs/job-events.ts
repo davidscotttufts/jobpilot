@@ -1,10 +1,11 @@
 import type { CampaignSummary } from "@jobpilot/contracts/campaign";
 import { campaignChannel, workspaceChannel } from "@jobpilot/contracts/sse";
 import { publish } from "@/common/sse";
-import type { CampaignSource, Job, PrismaClient } from "@/generated/prisma/client";
+import type { CampaignSource, PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "../campaign.summary";
+import type { JobRow } from "./job-row";
 
-export function publishJob(userId: string, job: Job, kind: "added" | "updated"): void {
+export function publishJob(userId: string, job: JobRow, kind: "added" | "updated"): void {
   const { campaignId } = job;
   publish(campaignChannel, { campaignId }, { type: "job-update", payload: { kind, job } });
   publish(
@@ -33,7 +34,7 @@ export async function publishProgress(
 export function publishStatusChange(
   prisma: PrismaClient,
   userId: string,
-  job: Job,
+  job: JobRow,
   source: CampaignSource,
 ): Promise<CampaignSummary> {
   publishJob(userId, job, "updated");

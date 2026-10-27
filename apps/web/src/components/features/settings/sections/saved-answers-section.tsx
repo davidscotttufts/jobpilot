@@ -28,8 +28,9 @@ export function SavedAnswersSection(): ReactElement {
     errorMessage: "Failed to load saved answers",
   });
 
-  const save = useApiMutation<SavedAnswerDto, Pick<SavedAnswerDto, "key" | "value">>(
-    ({ key, value }) => api.pilot.answers({ key }).put({ value }),
+  const save = useApiMutation(
+    ({ key, value }: Pick<SavedAnswerDto, "key" | "value">) =>
+      api.pilot.answers({ key }).put({ value }),
     {
       invalidate: [queryKeys.pilot.answers()],
       successMessage: "Answer saved.",
@@ -37,13 +38,10 @@ export function SavedAnswersSection(): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ ok: true }, string>(
-    (key) => api.pilot.answers({ key }).delete(),
-    {
-      invalidate: [queryKeys.pilot.answers()],
-      successMessage: "Answer deleted.",
-    },
-  );
+  const remove = useApiMutation((key: string) => api.pilot.answers({ key }).delete(), {
+    invalidate: [queryKeys.pilot.answers()],
+    successMessage: "Answer deleted.",
+  });
 
   const handleDelete = async (answer: SavedAnswerDto): Promise<void> => {
     const confirmed = await confirm({

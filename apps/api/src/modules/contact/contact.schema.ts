@@ -29,5 +29,5 @@ export const contactSchema = z.object({
   updatedAt: z.date(),
 });
 
-/** The active profile's contacts, newest first. */
+/** The user's contacts, newest first. */
 export const contactListSchema = paginatedSchema(contactSchema);

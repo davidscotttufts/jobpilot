@@ -1,9 +1,10 @@
 import type { CoverLetterCreate, CoverLetterSource } from "@jobpilot/contracts/cover-letter";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { renderCoverLetterPdf } from "@/common/pdf/render";
 import { slugifyForDownload } from "@/common/storage/storage";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { PrismaClient } from "@/generated/prisma/client";
 
 const LIST_SELECT = {
@@ -21,11 +22,11 @@ export interface CoverLetterPdf {
   slug: string;
 }
 
-@singleton()
+@injectable()
 export class CoverLetterService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  /** One page of the active profile's cover letters, newest first (no body - list payload). */
+  /** One page of the user's cover letters, newest first (no body - list payload). */
   async list(userId: string, query: PaginationQuery) {
     const where = { userId };
     const [rows, total] = await Promise.all([
@@ -49,7 +50,7 @@ export class CoverLetterService {
       data: {
         userId,
         content: data.content,
-        jobUrl: data.jobUrl ?? null,
+        jobUrl: data.jobUrl ? normalizeJobUrl(data.jobUrl) : null,
         jobTitle: data.jobTitle ?? null,
         company: data.company ?? null,
         source: data.source,
@@ -70,10 +71,10 @@ export class CoverLetterService {
     };
   }
 
-  async remove(userId: string, id: string): Promise<{ ok: true }> {
+  async remove(userId: string, id: string): Promise<{ deleted: string }> {
     await this.get(userId, id);
     await this.prisma.coverLetter.delete({ where: { id } });
-    return { ok: true };
+    return { deleted: id };
   }
 
   /**

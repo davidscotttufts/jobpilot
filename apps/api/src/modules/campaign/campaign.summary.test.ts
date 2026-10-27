@@ -32,8 +32,8 @@ describe("summarizeCampaigns", () => {
         [{ campaignId: "c2", discovered: 4 }],
       ),
       [
-        { campaignId: "c1", source: "search" },
-        { campaignId: "c2", source: "networking" },
+        { id: "c1", source: "search" },
+        { id: "c2", source: "networking" },
       ],
     );
 

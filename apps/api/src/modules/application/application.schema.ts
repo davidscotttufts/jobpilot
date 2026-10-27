@@ -5,9 +5,10 @@ import {
   applicationSourceSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
+import { campaignJobSchema } from "@jobpilot/contracts/campaign";
+import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
-import { campaignJobSchema } from "@/modules/campaign/jobs/job.schema";
 import { contactSchema } from "@/modules/contact/contact.schema";
 import { emailMessageSchema } from "@/modules/email/email.schema";
 import { resumeSummarySchema } from "@/modules/resume/resume.schema";
@@ -23,9 +24,9 @@ export const applicationQuerySchema = z.object({
   company: z.string().trim().min(1).optional(),
 });
 
-/** Append a free-text note to an application's timeline (e.g. a generated interview prep sheet). */
+/** Append a free-text note, or a generated interview prep sheet, to an application's timeline. */
 export const appendNoteSchema = z.object({
-  kind: z.literal("note"),
+  kind: z.enum(["note", "interview_prep"]),
   notes: z.string().min(1),
 });
 
@@ -39,7 +40,7 @@ const applicationSchema = z.object({
   title: z.string(),
   company: z.string(),
   location: z.string().nullable(),
-  board: z.string().nullable(),
+  board: boardRefSchema.nullable(),
   source: applicationSourceSchema,
   appliedAt: z.date(),
   status: statusSchema,
@@ -94,10 +95,13 @@ const applicationCoverLetterSchema = z.object({
 });
 
 // Picked from the owning modules' schemas: a column rename breaks the build instead of splitting the wire shape.
-const applicationEmailSchema = emailMessageSchema
-  .pick({ id: true, subject: true, fromName: true, receivedAt: true })
-  // Free String column; only the email module's own mapper narrows it to the enum.
-  .extend({ classification: z.string().nullable() });
+const applicationEmailSchema = emailMessageSchema.pick({
+  id: true,
+  subject: true,
+  fromName: true,
+  receivedAt: true,
+  classification: true,
+});
 
 const applicationContactSchema = contactSchema.pick({
   id: true,

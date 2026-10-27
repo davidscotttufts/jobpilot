@@ -1,7 +1,8 @@
-import { makePush } from "@/common/push/push.fake";
-import type { PushPayload } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { makePush } from "@/modules/web-push/web-push.fake";
+import type { PushPayload } from "@/modules/web-push/web-push.service";
 import { PilotJournalService } from "./journal.service";
+import type { PilotService } from "./pilot.service";
 import { describe, expect, it } from "bun:test";
 
 type Row = Record<string, unknown>;
@@ -12,6 +13,7 @@ function makeService(rows: Row[] = [], pageSize = 2, runs: Row[] = []) {
     stateUpserts: [] as { update: Row }[],
     pushes: [] as { userId: string; payload: PushPayload }[],
     wheres: [] as Row[],
+    statePublishes: 0,
   };
   const db = {
     pilotJournalEntry: {
@@ -34,7 +36,12 @@ function makeService(rows: Row[] = [], pageSize = 2, runs: Row[] = []) {
     },
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
-  const svc = new PilotJournalService(db as unknown as PrismaClient, makePush(rec.pushes));
+  const pilot = {
+    publishCurrentState: async () => {
+      rec.statePublishes++;
+    },
+  } as unknown as PilotService;
+  const svc = new PilotJournalService(db as unknown as PrismaClient, makePush(rec.pushes), pilot);
   return { svc, rec };
 }
 
@@ -50,6 +57,7 @@ describe("PilotJournalService.appendJournal", () => {
     });
     expect(res.items).toHaveLength(2);
     expect(rec.stateUpserts).toHaveLength(1);
+    expect(rec.statePublishes).toBe(1);
     expect(rec.stateUpserts[0].update).toMatchObject({
       cycleCount: { increment: 1 },
       lastCycleAt: expect.any(Date),
@@ -57,6 +65,7 @@ describe("PilotJournalService.appendJournal", () => {
 
     await svc.appendJournal("p1", { entries: [{ kind: "action", summary: "did a thing" }] });
     expect(rec.stateUpserts).toHaveLength(1);
+    expect(rec.statePublishes).toBe(1);
   });
 
   it("plans the next wake from the cycle's sleep, and none for a cycle without one", async () => {

@@ -6,7 +6,6 @@ import { Alert, Link, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
-import type { ResetPasswordResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { useToast } from "@/providers/notification-provider";
 
@@ -18,7 +17,7 @@ export function ResetPasswordForm(props: ResetPasswordFormProps): ReactElement {
   const { token } = props;
   const router = useRouter();
   const toast = useToast();
-  const resetPassword = useApiMutation<ResetPasswordResponse, ResetPasswordInput>((body) =>
+  const resetPassword = useApiMutation((body: ResetPasswordInput) =>
     api.auth.password.reset.post(body),
   );
 

@@ -1,4 +1,4 @@
-# JobPilot API - run interpreted by Bun so the entrypoint can migrate at startup and tsyringe keeps its decorator metadata.
+# JobPilot API - run from source by Bun; migrations are applied separately (db-migrate skill).
 FROM oven/bun:1-alpine AS deps
 WORKDIR /app
 

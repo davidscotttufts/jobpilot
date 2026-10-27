@@ -1,4 +1,6 @@
-import { conflict, ErrorCodes, HttpError } from "@/common/errors";
+import { ErrorCodes } from "@jobpilot/contracts/errors";
+import { z } from "zod/v4";
+import { conflict, HttpError } from "@/common/errors";
 import type { Job, Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
@@ -6,9 +8,9 @@ import {
   duplicateSkipReason,
   findAppliedDuplicate,
 } from "@/modules/application/duplicate";
-import { canonicalizeJobUrl } from "@/modules/application/job-url";
 import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
 import { publishStatusChange } from "./job-events";
+import { JOB_INCLUDE, type JobRow } from "./job-row";
 
 type GuardReader = DuplicateReader & Pick<Prisma.TransactionClient, "job">;
 
@@ -20,7 +22,7 @@ export interface JobPosting {
   company: string;
 }
 
-/** A profile never has more than a handful of applies open at once. */
+/** A user never has more than a handful of applies open at once. */
 const MAX_APPLYING = 100;
 
 export class AlreadyAppliedError extends HttpError {
@@ -34,8 +36,8 @@ export class AlreadyAppliedError extends HttpError {
     const day = appliedAt.toISOString().slice(0, 10);
     const tail = recorded ? " The job has been recorded as skipped with this reason;" : "";
     super(
-      ErrorCodes.CONFLICT,
-      `${duplicateSkipReason(duplicate)}: this profile applied to "${title}" at ${company} on ${day}.${tail} do not apply again.`,
+      ErrorCodes.ALREADY_APPLIED,
+      `${duplicateSkipReason(duplicate)}: you applied to "${title}" at ${company} on ${day}.${tail} do not apply again.`,
       409,
     );
     this.name = "AlreadyAppliedError";
@@ -61,8 +63,7 @@ async function findApplyingSibling(
     select: { campaignId: true, key: true, url: true, title: true, company: true },
   });
 
-  const canonical = canonicalizeJobUrl(job.url);
-  const sameUrl = others.find((other) => canonicalizeJobUrl(other.url) === canonical);
+  const sameUrl = others.find((other) => other.url === job.url);
   if (sameUrl) {
     return sameUrl;
   }
@@ -76,7 +77,7 @@ async function findApplyingSibling(
 }
 
 /**
- * Refuses a move into `applying` for a posting this profile already applied to or is applying to.
+ * Refuses a move into `applying` for a posting the user already applied to or is applying to.
  * An applied duplicate throws `AlreadyAppliedError`, which `guardApply` turns into a skip; an
  * `applying` sibling only refuses, since that apply may still fail.
  */
@@ -89,6 +90,7 @@ export async function assertNotDuplicateApply(
   if (sibling) {
     throw conflict(
       `Already applying: another worker holds "${sibling.title}" at ${sibling.company} (${sibling.campaignId}/${sibling.key}). Record this job as skipped with reason "Already applied (in-flight)" instead of applying alongside it.`,
+      ErrorCodes.APPLY_IN_FLIGHT,
     );
   }
 
@@ -116,10 +118,11 @@ export async function guardApply<T>(
     const [skipped] = await prisma.job.updateManyAndReturn({
       where: { campaignId, key, status: { in: ["approved", "needs_user"] } },
       data: { status: "skipped", skipReason: duplicateSkipReason(error.duplicate) },
+      include: JOB_INCLUDE,
     });
     if (skipped) {
       const campaign = await prisma.campaign.findUniqueOrThrow({
-        where: { campaignId },
+        where: { id: campaignId },
         select: { source: true },
       });
       await publishStatusChange(prisma, userId, skipped, campaign.source);
@@ -128,19 +131,45 @@ export async function guardApply<T>(
   }
 }
 
+export type JobRef = Pick<Job, "campaignId" | "key">;
+
+const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string().min(1) });
+
+/** The job a `job.apply` run payload points at. */
+export function parseJobRef(payload: unknown): JobRef {
+  const { campaignId, jobKey } = jobRefSchema.parse(payload);
+  return { campaignId, key: jobKey };
+}
+
+/** Hands `applying` jobs whose run ended without a result back to the queue. */
+export async function revertApplyingJobs(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  jobs: JobRef[],
+): Promise<void> {
+  if (jobs.length === 0) return;
+  await tx.job.updateMany({
+    where: { status: "applying", campaign: { userId }, OR: jobs },
+    data: { status: "approved" },
+  });
+}
+
+/** Jobs ready to apply to: the pilot's `job.apply` gather and its run-start re-check share this. */
+export function applyableJobWhere(userId: string) {
+  return {
+    status: "approved",
+    campaign: { userId, status: "in_progress" },
+  } satisfies Prisma.JobWhereInput;
+}
+
 /** Moves an approved job into `applying` inside the caller's transaction; wrap it in `guardApply`. */
 export async function startApplying(
   tx: Prisma.TransactionClient,
   userId: string,
   campaignId: string,
   key: string,
-): Promise<Job> {
-  const where = {
-    campaignId,
-    key,
-    status: "approved",
-    campaign: { userId },
-  } satisfies Prisma.JobWhereInput;
+): Promise<JobRow> {
+  const where = { ...applyableJobWhere(userId), campaignId, key } satisfies Prisma.JobWhereInput;
 
   const target = await tx.job.findFirst({
     where,
@@ -150,7 +179,11 @@ export async function startApplying(
   await assertNotDuplicateApply(tx, userId, { ...target, campaignId, key });
 
   // An empty result is the lost race.
-  const [started] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
+  const [started] = await tx.job.updateManyAndReturn({
+    where,
+    data: { status: "applying" },
+    include: JOB_INCLUDE,
+  });
   if (!started) throw conflict("Job is no longer approved.");
   return started;
 }

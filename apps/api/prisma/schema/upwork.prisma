@@ -56,7 +56,7 @@ model UpworkProposal {
   jobDescription String? @map("job_description")
 
   proposalText     String @default("") @map("proposal_text")
-  screeningAnswers String @default("[]") @map("screening_answers") // JSON: { question: string, answer: string }[]
+  screeningAnswers Json   @default("[]") @map("screening_answers") // screeningAnswerSchema[]
 
   status  UpworkProposalStatus   @default(draft)
   outcome UpworkProposalOutcome?
@@ -77,9 +77,8 @@ model UpworkProposal {
   @@map("upwork_proposals")
 }
 
-// Only an `approved` row may be written back to Upwork. Portfolio columns hold JSON
-// { title, description, url?, skills?: string[] }[]; the MCP cannot write portfolio or
-// hourly rate, so those two stay advisory.
+// Only an `approved` row may be written back to Upwork. Portfolio columns hold
+// portfolioProjectSchema[]; the MCP cannot write portfolio or hourly rate, so those two stay advisory.
 model UpworkProfile {
   id     String @id @default(uuid())
   userId String @unique @map("user_id")
@@ -88,14 +87,14 @@ model UpworkProfile {
   currentTitle      String? @map("current_title")
   currentOverview   String? @map("current_overview")
   currentHourlyRate String? @map("current_hourly_rate")
-  currentPortfolio  String  @default("[]") @map("current_portfolio")
-  currentSkills     String  @default("[]") @map("current_skills")
+  currentPortfolio  Json     @default("[]") @map("current_portfolio")
+  currentSkills     String[] @default([]) @map("current_skills")
 
   suggestedTitle      String? @map("suggested_title")
   suggestedOverview   String? @map("suggested_overview")
   suggestedHourlyRate String? @map("suggested_hourly_rate")
-  suggestedPortfolio  String  @default("[]") @map("suggested_portfolio")
-  suggestedSkills     String  @default("[]") @map("suggested_skills")
+  suggestedPortfolio  Json     @default("[]") @map("suggested_portfolio")
+  suggestedSkills     String[] @default([]) @map("suggested_skills")
 
   status    UpworkProfileStatus @default(empty)
   updatedAt DateTime            @updatedAt @map("updated_at")

@@ -19,7 +19,7 @@ import {
 } from "./variant.schema";
 import { ResumeVariantService } from "./variant.service";
 
-const svc = container.resolve(ResumeVariantService);
+const svc = container.get(ResumeVariantService);
 
 export const resumeVariantController = new Elysia({
   name: "resume-variants",
@@ -74,7 +74,7 @@ export const resumeVariantController = new Elysia({
     detail: {
       summary: "Get resume variant",
       description:
-        "Returns a single tailored variant owned by the active profile, including its parsed content, diff notes, and rewrite audit.",
+        "Returns a single tailored variant owned by the user, including its parsed content, diff notes, and rewrite audit.",
     },
   })
   .patch("/variants/:id", ({ user, params, body }) => svc.updateVariant(user.id, params.id, body), {
@@ -93,7 +93,7 @@ export const resumeVariantController = new Elysia({
     detail: {
       summary: "Delete resume variant",
       description:
-        "Deletes a tailored variant owned by the active profile and returns the deleted variant id.",
+        "Deletes a tailored variant owned by the user and returns the deleted variant id.",
     },
   })
   .post("/variants/:id/apply", ({ user, params }) => svc.applyVariant(user.id, params.id), {

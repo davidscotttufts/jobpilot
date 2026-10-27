@@ -1,6 +1,9 @@
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
+import { HOUR_MS } from "@/common/date/buckets";
+import { MemoryCache } from "@/common/memory-cache";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
+import type { SecretContext } from "./contexts";
 import { KeyUnrecoverableError } from "./errors";
 import { decrypt, encrypt, generateDek, unwrapDek, wrapDek } from "./secret";
 
@@ -12,33 +15,27 @@ const MASTER_KEY = Buffer.from(env.SECRET_MASTER_KEY, "base64");
  * the DEK encrypts that user's secrets (board logins, captcha keys, Gmail tokens).
  * Deleting the user drops the wrapped DEK, crypto-shredding their secrets.
  */
-@singleton()
+@injectable()
 export class CryptoService {
-  /** Unwrapped DEKs, cached per process keyed by userId. */
-  private readonly dekCache = new Map<string, Buffer>();
+  /**
+   * Unwrapped DEKs per user. Bounded and expiring so a deleted user's key leaves memory; a shared
+   * in-flight load also stops two first requests from provisioning two keys.
+   */
+  private readonly deks = new MemoryCache<string, Buffer>({ ttlMs: HOUR_MS, maxEntries: 1000 });
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
-  private async getDek(userId: string): Promise<Buffer> {
-    const cached = this.dekCache.get(userId);
-    if (cached) {
-      return cached;
-    }
-
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { wrappedDek: true },
+  private getDek(userId: string): Promise<Buffer> {
+    return this.deks.getOrLoad(userId, async () => {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { wrappedDek: true },
+      });
+      if (!user) {
+        throw new Error(`Cannot resolve encryption key: no user ${userId}`);
+      }
+      return user.wrappedDek ? this.unwrap(userId, user.wrappedDek) : this.provisionDek(userId);
     });
-    if (!user) {
-      throw new Error(`Cannot resolve encryption key: no user ${userId}`);
-    }
-
-    const dek = user.wrappedDek
-      ? this.unwrap(userId, user.wrappedDek)
-      : await this.provisionDek(userId);
-
-    this.dekCache.set(userId, dek);
-    return dek;
   }
 
   /** Unwrap a stored DEK, translating an AES-GCM auth failure into `KeyUnrecoverableError`. */
@@ -71,18 +68,18 @@ export class CryptoService {
     return dek;
   }
 
-  async encryptFor(userId: string, ctx: string, plain: string): Promise<string> {
+  async encryptFor(userId: string, ctx: SecretContext, plain: string): Promise<string> {
     return encrypt(await this.getDek(userId), ctx, plain);
   }
 
-  async decryptFor(userId: string, ctx: string, blob: string): Promise<string> {
+  async decryptFor(userId: string, ctx: SecretContext, blob: string): Promise<string> {
     return decrypt(await this.getDek(userId), ctx, blob);
   }
 
   /** Encrypt an optional secret column value, passing null/undefined/empty through unchanged. */
   encryptField(
     userId: string,
-    ctx: string,
+    ctx: SecretContext,
     value: string | null | undefined,
   ): Promise<string | null | undefined> {
     if (value == null || value === "") {
@@ -92,7 +89,7 @@ export class CryptoService {
   }
 
   /** Decrypt a stored secret column value, passing null/empty through unchanged. */
-  decryptField(userId: string, ctx: string, value: string | null): Promise<string | null> {
+  decryptField(userId: string, ctx: SecretContext, value: string | null): Promise<string | null> {
     return value ? this.decryptFor(userId, ctx, value) : Promise.resolve(value);
   }
 }

@@ -10,7 +10,6 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { upworkInboxQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { UpworkInboxItemDto } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { EmptyState, PaginationFooter } from "@/components/ui/data";
 import { ColorChip } from "@/components/ui/display";
@@ -46,8 +45,9 @@ export function InboxList(): ReactElement {
     }),
   );
 
-  const setStatus = useApiMutation<UpworkInboxItemDto, { id: string; status: UpworkInboxStatus }>(
-    ({ id, status }) => api.upwork.inbox({ id }).patch({ status }),
+  const setStatus = useApiMutation(
+    ({ id, status }: { id: string; status: UpworkInboxStatus }) =>
+      api.upwork.inbox({ id }).patch({ status }),
     { invalidate: [queryKeys.upworkInbox.all] },
   );
 

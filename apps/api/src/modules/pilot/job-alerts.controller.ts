@@ -9,7 +9,7 @@ import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { JobAlertsService } from "./job-alerts.service";
 
-const jobAlerts = container.resolve(JobAlertsService);
+const jobAlerts = container.get(JobAlertsService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotJobAlertsController = new Elysia({

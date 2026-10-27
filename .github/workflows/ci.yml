@@ -84,8 +84,11 @@ jobs:
         working-directory: apps/api
         env:
           DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-          JWT_SECRET: ci-test-secret
           SECRET_MASTER_KEY: Y2ktdGVzdC1tYXN0ZXIta2V5LTMyLWJ5dGVzLWxvbmc=
+
+      - name: Test contracts
+        run: bun run test
+        working-directory: packages/contracts
 
       - name: Typegen web
         run: bun run typegen

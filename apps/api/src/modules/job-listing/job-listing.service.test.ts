@@ -2,6 +2,11 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { JobListingService } from "./job-listing.service";
 import { describe, expect, it } from "bun:test";
 
+const CATALOG: Record<string, { name: string; domain: string; listed: boolean }> = {
+  "linkedin.com": { name: "LinkedIn", domain: "linkedin.com", listed: true },
+  "naukri.com": { name: "Naukri typed by a user", domain: "naukri.com", listed: false },
+};
+
 interface Row {
   id: string;
   skills: string[];
@@ -13,7 +18,7 @@ const summary = (row: Row) => ({
   id: row.id,
   slug: row.id,
   skills: row.skills,
-  sources: row.boards.map((board) => ({ board })),
+  sources: row.boards.map((domain) => ({ board: domain && CATALOG[domain] })),
 });
 
 interface ListingFields {

@@ -1,25 +1,23 @@
 import { randomBytes } from "node:crypto";
-import type { EmailProvider, OAuthClientUpsertInput } from "@jobpilot/contracts/email";
+import type { EmailConnectErrorReason, OAuthClientUpsertInput } from "@jobpilot/contracts/email";
 import type { SendEmailInput } from "@jobpilot/contracts/networking";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
+import { OAuthFlowError } from "@/common/auth";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
-import { badRequest, conflict, ErrorCodes, HttpError, unprocessable } from "@/common/errors";
+import { badGateway, badRequest, conflict, notFound, unprocessable } from "@/common/errors";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-import {
-  accountCanSend,
-  GMAIL_READ_SCOPE,
-  GMAIL_SCOPES,
-  getProvider,
-  scopeCanRead,
-} from "../gmail.provider";
-import { loadFreshAccount, resolveOAuthClient } from "./account.utils";
+import { GMAIL_SCOPES, GmailClient, scopeCanRead, scopeCanSend } from "../gmail.client";
+import type { ExchangedCode } from "../gmail.types";
+import { MailboxSessionService } from "./mailbox-session.service";
 
-@singleton()
+@injectable()
 export class EmailAccountService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly crypto: CryptoService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly crypto = inject(CryptoService),
+    private readonly sessions = inject(MailboxSessionService),
+    private readonly gmail = inject(GmailClient),
   ) {}
 
   async accountStatus(userId: string) {
@@ -31,90 +29,56 @@ export class EmailAccountService {
 
     return {
       connected: true as const,
-      provider: account.provider,
       email: account.email,
       lastSyncAt: account.lastSyncAt,
-      canSend: accountCanSend(account),
+      canSend: scopeCanSend(account.scope),
       needsReauth: account.refreshFailedAt !== null,
     };
   }
 
   async disconnectAccount(userId: string) {
     await this.prisma.emailAccount.deleteMany({ where: { userId } });
-    return { disconnected: true };
+    return { ok: true as const };
   }
 
   /** Refreshes an expired token first; 422s when the mailbox lacks send scope (reconnect it). */
   async send(userId: string, body: SendEmailInput) {
-    const loaded = await loadFreshAccount(this.prisma, this.crypto, userId);
-    if (!loaded) {
-      throw new HttpError(ErrorCodes.NOT_FOUND, "No email account connected", 404);
+    const mailbox = await this.sessions.open(userId);
+    if (!mailbox) {
+      throw notFound("No email account connected");
     }
-    const { account, config } = loaded;
-    if (!accountCanSend(account)) {
-      throw new HttpError(
-        ErrorCodes.UNPROCESSABLE,
+    if (!scopeCanSend(mailbox.account.scope)) {
+      throw unprocessable(
         "Connected mailbox lacks send access. Reconnect it from email settings to enable sending.",
-        422,
       );
     }
 
     try {
-      return await getProvider(account.provider).sendMessage(config, account, {
-        to: body.to,
-        subject: body.subject,
-        body: body.body,
-        threadId: body.threadId,
-        attachments: body.attachments,
-      });
+      return await this.gmail.send(mailbox.session, body);
     } catch (e) {
-      throw new HttpError(
-        ErrorCodes.UNPROCESSABLE,
-        e instanceof Error ? e.message : "Failed to send message",
-        502,
-      );
+      throw badGateway(e instanceof Error ? e.message : "Failed to send message");
     }
   }
 
-  async buildAuthorizeUrl(
-    userId: string,
-    providerName: EmailProvider,
-  ): Promise<{ authorizeUrl: string; state: string }> {
-    if (providerName !== "gmail") {
-      throw badRequest(`Unsupported provider: ${providerName}`);
-    }
-
-    const config = await resolveOAuthClient(this.prisma, this.crypto, userId);
+  async buildAuthorizeUrl(userId: string): Promise<{ authorizeUrl: string; state: string }> {
+    const config = await this.sessions.resolveOAuthClient(userId);
     const state = randomBytes(16).toString("hex");
-    let authorizeUrl: string;
-    try {
-      authorizeUrl = getProvider(providerName).getAuthorizeUrl(config, state);
-    } catch (e) {
-      throw new HttpError(
-        ErrorCodes.UNPROCESSABLE,
-        e instanceof Error ? e.message : "Email provider unavailable",
-        400,
-      );
-    }
-
-    return { authorizeUrl, state };
+    return { authorizeUrl: this.gmail.authorizeUrl(config, state), state };
   }
 
-  async completeEmailOAuth(input: {
-    providerName: EmailProvider;
-    code: string;
-    userId: string;
-  }): Promise<{ email: string }> {
-    const { providerName, code, userId } = input;
-    const provider = getProvider(providerName);
-    const config = await resolveOAuthClient(this.prisma, this.crypto, userId);
-    const { tokens, email } = await provider.exchangeCode(config, code);
+  async completeEmailOAuth(userId: string, code: string): Promise<{ email: string }> {
+    const config = await this.sessions.resolveOAuthClient(userId);
+    let exchanged: ExchangedCode;
+    try {
+      exchanged = await this.gmail.exchangeCode(config, code);
+    } catch (cause) {
+      throw new OAuthFlowError<EmailConnectErrorReason>("provider_error", { cause });
+    }
+    const { tokens, email } = exchanged;
 
     // Granular consent can drop a scope silently; storing that grant 403s every later sync.
     if (!scopeCanRead(tokens.scope)) {
-      throw unprocessable(
-        `Google did not grant ${GMAIL_READ_SCOPE}. Reconnect and allow every requested permission.`,
-      );
+      throw new OAuthFlowError<EmailConnectErrorReason>("scope_not_granted");
     }
 
     const accessToken = await this.crypto.encryptFor(
@@ -126,7 +90,6 @@ export class EmailAccountService {
       (await this.crypto.encryptField(userId, SECRET_CONTEXTS.gmailTokens, tokens.refreshToken)) ??
       null;
     const fields = {
-      provider: providerName,
       email,
       accessToken,
       refreshToken,
@@ -149,7 +112,6 @@ export class EmailAccountService {
     const row = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });
     return {
       configured: row !== null,
-      provider: row?.provider ?? "gmail",
       clientId: row?.clientId ?? null,
       redirectUri: env.GOOGLE_OAUTH_REDIRECT_URI,
       scopes: GMAIL_SCOPES,
@@ -158,11 +120,6 @@ export class EmailAccountService {
 
   /** A blank clientSecret keeps the stored one; it is required on first create. */
   async upsertOAuthClient(userId: string, input: OAuthClientUpsertInput) {
-    const provider = input.provider ?? "gmail";
-    if (provider !== "gmail") {
-      throw badRequest(`Unsupported provider: ${provider}`);
-    }
-
     const existing = await this.prisma.emailOAuthClient.findUnique({ where: { userId } });
     const plainSecret = input.clientSecret?.trim();
 
@@ -181,8 +138,8 @@ export class EmailAccountService {
 
     await this.prisma.emailOAuthClient.upsert({
       where: { userId },
-      create: { userId, provider, clientId: input.clientId, clientSecret },
-      update: { provider, clientId: input.clientId, clientSecret },
+      create: { userId, clientId: input.clientId, clientSecret },
+      update: { clientId: input.clientId, clientSecret },
     });
 
     return this.getOAuthClient(userId);
@@ -194,6 +151,6 @@ export class EmailAccountService {
       throw conflict("Disconnect the mailbox before removing its OAuth client.");
     }
     await this.prisma.emailOAuthClient.deleteMany({ where: { userId } });
-    return { deleted: true };
+    return { ok: true as const };
   }
 }

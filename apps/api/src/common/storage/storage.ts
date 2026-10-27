@@ -1,5 +1,5 @@
 import { createReadStream } from "node:fs";
-import { mkdir, readdir, stat, unlink, utimes, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rename, stat, unlink, utimes, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { slugify } from "@/common/utils/slug";
 import { env } from "@/env";
@@ -128,7 +128,10 @@ export async function serveCachedPdf(
     await utimes(cachePath, now, now);
   } catch {
     await mkdir(GENERATED_DIR, { recursive: true });
-    await writeFile(cachePath, await render());
+    // Rename is atomic, so a concurrent request never streams a half-written PDF.
+    const tempPath = `${cachePath}.tmp-${crypto.randomUUID()}`;
+    await writeFile(tempPath, await render());
+    await rename(tempPath, cachePath);
   }
   return streamFile(cachePath, "application/pdf", `${slugifyForDownload(label)}.pdf`);
 }

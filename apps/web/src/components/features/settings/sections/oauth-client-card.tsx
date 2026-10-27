@@ -50,11 +50,11 @@ function OAuthClientForm(props: OAuthClientFormProps): ReactElement {
   const { config, connected } = props;
   const confirm = useConfirm();
 
-  const save = useApiMutation<OAuthClientStatus, OAuthClientUpsertInput>(
-    (vars) => api.email.oauth.client.put(vars),
-    { successMessage: "OAuth client saved", invalidate: [queryKeys.email.all] },
-  );
-  const remove = useApiMutation<{ deleted: boolean }, void>(() => api.email.oauth.client.delete(), {
+  const save = useApiMutation((vars: OAuthClientUpsertInput) => api.email.oauth.client.put(vars), {
+    successMessage: "OAuth client saved",
+    invalidate: [queryKeys.email.all],
+  });
+  const remove = useApiMutation(() => api.email.oauth.client.delete(), {
     successMessage: "OAuth client removed",
     invalidate: [queryKeys.email.all],
   });

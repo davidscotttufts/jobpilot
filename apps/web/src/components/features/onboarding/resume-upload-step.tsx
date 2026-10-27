@@ -32,26 +32,21 @@ export const ResumeUploadStep = withForm({
       await agent.injectSkill("extract-resume", String(id));
     };
 
-    const upload = useApiMutation<{ id: string }, File>(
-      (file) => api.resumes.upload.post({ file }),
-      {
-        successMessage: "Resume uploaded",
-        invalidate: invalidations.resume,
-        onSuccess: ({ id }) => {
-          setResumeId(id);
-          form.setFieldValue("primaryResumeId", id);
-          // Auto-fill needs the local agent; on mobile just keep the upload and move on.
-          if (agentAvailable) {
-            void startExtraction(id);
-          } else {
-            toast.info(
-              "Uploaded. Open JobPilot on your desktop to auto-fill your profile from it.",
-            );
-            onContinue();
-          }
-        },
+    const upload = useApiMutation((file: File) => api.resumes.upload.post({ file }), {
+      successMessage: "Resume uploaded",
+      invalidate: invalidations.resume,
+      onSuccess: ({ id }) => {
+        setResumeId(id);
+        form.setFieldValue("primaryResumeId", id);
+        // Auto-fill needs the local agent; on mobile just keep the upload and move on.
+        if (agentAvailable) {
+          void startExtraction(id);
+        } else {
+          toast.info("Uploaded. Open JobPilot on your desktop to auto-fill your profile from it.");
+          onContinue();
+        }
       },
-    );
+    });
 
     const { content } = useResumeExtraction(resumeId, state === "extracting");
 

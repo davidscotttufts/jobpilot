@@ -1,10 +1,11 @@
 import type { CampaignStatus, PrismaClient } from "@/generated/prisma/client";
+import { makeBoards } from "@/modules/job-board/job-board.fake";
 import { CampaignService } from "./campaign.service";
 import { emptySummary } from "./campaign.summary";
 import { describe, expect, it } from "bun:test";
 
 const row = {
-  campaignId: "c1",
+  id: "c1",
   userId: "u1",
   query: "typescript",
   source: "search" as const,
@@ -59,7 +60,7 @@ function makeService(current = row) {
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   return {
-    service: new CampaignService(db as unknown as PrismaClient),
+    service: new CampaignService(db as unknown as PrismaClient, makeBoards()),
     updates,
     wheres,
     listWheres,
@@ -120,7 +121,7 @@ describe("CampaignService", () => {
       expectedUpdatedAt: row.updatedAt.toISOString(),
     });
     expect(wheres.at(-1)).toEqual({
-      campaignId: "c1",
+      id: "c1",
       userId: "u1",
       updatedAt: row.updatedAt,
     });

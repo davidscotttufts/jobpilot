@@ -1,7 +1,6 @@
 import { hasRole, type Role } from "@jobpilot/contracts/role";
 import { Elysia } from "elysia";
 import type { AuthUser } from "@/common/auth";
-import { db } from "@/common/database/prisma.client";
 import { forbidden, unauthorized } from "@/common/errors";
 import { resolveAuthUser } from "./auth.middleware";
 
@@ -10,25 +9,15 @@ export const requireRole = (...roles: Role[]) =>
   new Elysia({ name: `role-${roles.join("-")}` }).derive(
     { as: "scoped" },
     async ({ headers, cookie }): Promise<{ user: AuthUser }> => {
+      // The token lookup reads the role from the user row, so a demotion applies on the next request.
       const user = await resolveAuthUser({ headers, cookie });
       if (!user) {
         throw unauthorized("Missing authorization");
       }
-      const satisfies = (role: string) => roles.some((required) => hasRole(role, required));
-      // Reject on the (possibly stale) JWT claim first: keeps the deny path off the DB.
-      if (!satisfies(user.role)) {
+      if (!roles.some((required) => hasRole(user.role, required))) {
         throw forbidden("Insufficient permissions");
       }
-      // Confirm against the row before granting, so a demoted admin is locked out on their next
-      // request rather than at token expiry. A promoted one still waits for their next refresh.
-      const current = await db.user.findUnique({
-        where: { id: user.id },
-        select: { role: true },
-      });
-      if (!current || !satisfies(current.role)) {
-        throw forbidden("Insufficient permissions");
-      }
-      return { user: { ...user, role: current.role } };
+      return { user };
     },
   );
 

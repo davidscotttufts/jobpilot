@@ -10,7 +10,7 @@ import { deletedResponseSchema } from "@/types/response";
 import { adminJobListingPageSchema, adminJobListingSchema } from "./job-listing.schema";
 import { JobListingService } from "./job-listing.service";
 
-const svc = container.resolve(JobListingService);
+const svc = container.get(JobListingService);
 
 /** Moderation for the public job index. Register new admin controllers in `admin.guard.test.ts`. */
 export const adminJobListingController = new Elysia({

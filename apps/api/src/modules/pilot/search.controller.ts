@@ -13,7 +13,7 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { deletedResponseSchema } from "@/types/response";
 import { PilotSearchService } from "./search.service";
 
-const searches = container.resolve(PilotSearchService);
+const searches = container.get(PilotSearchService);
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
@@ -24,8 +24,7 @@ export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { ta
     response: pilotSearchListSchema,
     detail: {
       summary: "List pilot searches",
-      description:
-        "Returns the profile's self-managed discovery searches ordered by next-run time.",
+      description: "Returns the user's self-managed discovery searches ordered by next-run time.",
     },
   })
   .post("/searches", ({ user, body }) => searches.create(user.id, body), {
@@ -35,7 +34,7 @@ export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { ta
     detail: {
       summary: "Create a pilot search",
       description:
-        "Creates a discovery search due immediately; a duplicate query+board for the profile returns 409.",
+        "Creates a discovery search due immediately; a duplicate query+board for the user returns 409.",
     },
   })
   .patch("/searches/:id", ({ user, params, body }) => searches.update(user.id, params.id, body), {
@@ -55,7 +54,7 @@ export const pilotSearchController = new Elysia({ prefix: "/pilot", detail: { ta
     response: deletedResponseSchema,
     detail: {
       summary: "Delete a pilot search",
-      description: "Deletes the profile's search by id and returns the id of the removed row.",
+      description: "Deletes the user's search by id and returns the id of the removed row.",
     },
   })
   .post(

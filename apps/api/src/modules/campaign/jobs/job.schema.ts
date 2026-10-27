@@ -1,6 +1,7 @@
 import { statusSchema } from "@jobpilot/contracts/application";
 import {
   campaignJobReasonSchema,
+  campaignJobSchema,
   campaignJobStatusSchema,
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
@@ -15,30 +16,6 @@ export const campaignJobsQuery = paginationQuerySchema.extend({
   search: z.string().trim().min(1).optional(),
 });
 
-export const campaignJobSchema = z.object({
-  id: z.uuid(),
-  campaignId: z.uuid(),
-  key: z.string(),
-  title: z.string(),
-  company: z.string(),
-  location: z.string().nullable(),
-  salary: z.string().nullable(),
-  type: z.string().nullable(),
-  url: z.string(),
-  board: z.string().nullable(),
-  matchScore: z.number().int().nullable(),
-  matchReason: z.string().nullable(),
-  status: campaignJobStatusSchema,
-  appliedAt: z.date().nullable(),
-  failReason: z.string().nullable(),
-  retryNotes: z.string().nullable(),
-  skipReason: z.string().nullable(),
-  description: z.string().nullable(),
-  brief: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
 export const campaignJobListSchema = paginatedSchema(campaignJobSchema);
 
 export const campaignJobReasonListSchema = z.array(campaignJobReasonSchema);
@@ -51,7 +28,7 @@ const campaignApplicationSchema = z.object({
   title: z.string(),
   company: z.string(),
   location: z.string().nullable(),
-  board: z.string().nullable(),
+  boardId: z.uuid().nullable(),
   source: z.string(),
   appliedAt: z.date(),
   status: statusSchema,

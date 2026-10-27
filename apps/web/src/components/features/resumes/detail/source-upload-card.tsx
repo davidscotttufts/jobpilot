@@ -21,21 +21,18 @@ export function SourceUploadCard(props: SourceUploadCardProps): ReactElement {
   const { resume } = props;
   const toast = useToast();
 
-  const upload = useApiMutation<{ id: string }, File>(
-    (file) => api.resumes({ id: resume.id }).source.post({ file }),
+  const upload = useApiMutation(
+    (file: File) => api.resumes({ id: resume.id }).source.post({ file }),
     {
       successMessage: "Source PDF uploaded",
       invalidate: invalidations.resume,
     },
   );
 
-  const remove = useApiMutation<{ id: string }, void>(
-    () => api.resumes({ id: resume.id }).source.delete(),
-    {
-      successMessage: "Source PDF removed",
-      invalidate: invalidations.resume,
-    },
-  );
+  const remove = useApiMutation(() => api.resumes({ id: resume.id }).source.delete(), {
+    successMessage: "Source PDF removed",
+    invalidate: invalidations.resume,
+  });
 
   return (
     <SectionCard

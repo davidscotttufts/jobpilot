@@ -6,10 +6,7 @@ export const createResumeSchema = z.object({
   content: resumeDataSchema.optional(),
 });
 
-export const updateResumeSchema = z.object({
-  label: z.string().min(1).optional(),
-  content: resumeDataSchema.optional(),
-});
+export const updateResumeSchema = createResumeSchema.partial();
 
 export const resumeSummarySchema = z.object({
   id: z.uuid(),

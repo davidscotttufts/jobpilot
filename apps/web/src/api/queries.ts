@@ -22,6 +22,7 @@ import type {
 } from "@jobpilot/contracts/upwork";
 import { api } from "@/api/client";
 import { queryKeys } from "@/api/query-keys";
+import type { LeaderboardWindow } from "@/api/types";
 
 /**
  * A read that feeds a `<Select>` rather than a table wants the whole (small) collection, not a
@@ -53,7 +54,7 @@ export const userQueries = {
 };
 
 export const leaderboardQueries = {
-  list: (window: "week" | "month" | "all") => ({
+  list: (window: LeaderboardWindow) => ({
     queryKey: queryKeys.leaderboard.list(window),
     queryFn: () => api.public.portfolio.leaderboard.get({ query: { window } }),
   }),
@@ -259,10 +260,10 @@ export const pilotQueries = {
   }),
   pushKey: () => ({
     queryKey: queryKeys.pilot.pushKey(),
-    queryFn: () => api.push["vapid-key"].get(),
+    queryFn: () => api["web-push"]["vapid-key"].get(),
   }),
   pushDevices: () => ({
     queryKey: queryKeys.pilot.pushDevices(),
-    queryFn: () => api.push.subscriptions.get(),
+    queryFn: () => api["web-push"].subscriptions.get(),
   }),
 };

@@ -5,9 +5,13 @@ import type {
 } from "@jobpilot/contracts/application";
 import { APPLICATION_STATUSES, SINGLE_APPLY_CAMPAIGN } from "@jobpilot/contracts/application";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
+import type { z } from "zod/v4";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { boardFilter } from "@/modules/job-board/board-host";
+import { BOARD_REF_SELECT } from "@/modules/job-board/job-board.service";
+import type { appendNoteSchema } from "./application.schema";
 import { type DuplicateLookup, findAppliedDuplicate } from "./duplicate";
 import { statusChangeOps } from "./status-change";
 
@@ -19,9 +23,9 @@ export interface AppliedListFilters {
   campaignId?: string;
 }
 
-@singleton()
+@injectable()
 export class ApplicationService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   async list(userId: string, query: PaginationQuery & AppliedListFilters) {
     const where = this.where(userId, query);
@@ -29,6 +33,7 @@ export class ApplicationService {
     const [rows, total] = await Promise.all([
       this.prisma.application.findMany({
         where,
+        include: { board: { select: BOARD_REF_SELECT } },
         orderBy: { appliedAt: "desc" },
         ...pageSlice(query),
       }),
@@ -69,7 +74,7 @@ export class ApplicationService {
     return {
       userId,
       ...(status && { status }),
-      ...(board && { board }),
+      ...(board && { board: boardFilter(board) }),
       ...(source && { source }),
       ...(campaignId && {
         campaignId: campaignId === SINGLE_APPLY_CAMPAIGN ? null : campaignId,
@@ -85,12 +90,14 @@ export class ApplicationService {
   }
 
   async get(userId: string, id: string) {
-    const row = await findOwned(
+    return findOwned(
       (where) =>
         this.prisma.application.findFirst({
           where,
           include: {
+            board: { select: BOARD_REF_SELECT },
             events: { orderBy: { createdAt: "asc" } },
+            job: { select: { description: true, salary: true, type: true } },
             resume: { select: { id: true, label: true, updatedAt: true } },
             resumeVariantUsed: {
               select: { id: true, resumeId: true, label: true, diffNotes: true, updatedAt: true },
@@ -135,20 +142,9 @@ export class ApplicationService {
       { id, userId },
       "Application",
     );
-
-    return { ...row, job: await this.findCampaignJob(row.campaignId, row.url) };
   }
 
-  /** No FK exists: the job is matched by url within the campaign, so a single-apply row has none. */
-  private async findCampaignJob(campaignId: string | null, url: string) {
-    if (!campaignId) return null;
-    return this.prisma.job.findFirst({
-      where: { campaignId, url },
-      select: { description: true, salary: true, type: true },
-    });
-  }
-
-  async addEvent(userId: string, id: string, input: { kind: "note"; notes: string }) {
+  async addEvent(userId: string, id: string, input: z.infer<typeof appendNoteSchema>) {
     await findOwned(
       (where) => this.prisma.application.findFirst({ where, select: { id: true } }),
       { id, userId },

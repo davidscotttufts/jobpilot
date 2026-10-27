@@ -1,5 +1,12 @@
+import type { OAuthErrorReason } from "@jobpilot/contracts/auth";
+import { OAuthFlowError } from "@/common/auth/oauth-flow";
 import { normalizeEmail } from "@/common/utils/email";
-import type { OAuthProfile, OAuthProviderConfig, SignInProvider } from "./sign-in-provider";
+import {
+  type OAuthProfile,
+  type OAuthProviderConfig,
+  providerError,
+  type SignInProvider,
+} from "./sign-in-provider";
 
 export interface GithubEmail {
   email: string;
@@ -38,11 +45,11 @@ export class GithubSignInProvider implements SignInProvider {
 
     const userRes = await fetch("https://api.github.com/user", { headers });
     if (!userRes.ok) {
-      throw new Error("Failed to load the GitHub profile");
+      throw providerError("Failed to load the GitHub profile");
     }
     const ghUser = (await userRes.json()) as { id?: number };
     if (!ghUser.id) {
-      throw new Error("Could not resolve the GitHub account");
+      throw providerError("Could not resolve the GitHub account");
     }
 
     // `/user.email` is often null; the emails endpoint carries the verified flags.
@@ -50,7 +57,7 @@ export class GithubSignInProvider implements SignInProvider {
     const emails = emailsRes.ok ? ((await emailsRes.json()) as GithubEmail[]) : [];
     const email = pickGithubEmail(emails);
     if (!email) {
-      throw new Error("No verified email on the GitHub account");
+      throw new OAuthFlowError<OAuthErrorReason>("email_unverified");
     }
     return {
       providerAccountId: String(ghUser.id),
@@ -72,7 +79,7 @@ export class GithubSignInProvider implements SignInProvider {
     });
     const body = (await res.json()) as { access_token?: string; error_description?: string };
     if (!body.access_token) {
-      throw new Error(body.error_description ?? "GitHub did not return an access token");
+      throw providerError(body.error_description ?? "GitHub did not return an access token");
     }
     return body.access_token;
   }

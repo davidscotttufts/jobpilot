@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@/generated/prisma/client";
+import { makeBoards } from "@/modules/job-board/job-board.fake";
 import type { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { CampaignJobService } from "./job.service";
 import { describe, expect, it } from "bun:test";
@@ -36,7 +37,7 @@ function setup() {
   };
   const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
   return {
-    service: new CampaignJobService(db as unknown as PrismaClient, listings),
+    service: new CampaignJobService(db as unknown as PrismaClient, listings, makeBoards()),
     jobUpdates,
   };
 }

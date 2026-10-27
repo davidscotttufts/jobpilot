@@ -11,7 +11,7 @@ export const captchaSolveSchema = z.object({
   sitekey: z.string().min(1),
   /** The page hosting the widget. */
   pageurl: z.url(),
-  /** Force a specific provider; otherwise the first configured key is used (2captcha preferred). */
+  /** Force a specific provider; otherwise the first configured key is used (2Captcha preferred). */
   provider: z.enum(SERVICE_PROVIDERS).optional(),
 });
 

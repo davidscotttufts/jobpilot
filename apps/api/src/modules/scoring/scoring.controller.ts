@@ -4,7 +4,7 @@ import { authGuard } from "@/common/middleware";
 import { fitResultSchema, scoreFitSchema } from "./scoring.schema";
 import { ScoringService } from "./scoring.service";
 
-const scoringService = container.resolve(ScoringService);
+const scoringService = container.get(ScoringService);
 
 export const scoringController = new Elysia({
   prefix: "/score-fit",
@@ -17,6 +17,6 @@ export const scoringController = new Elysia({
     detail: {
       summary: "Score job fit",
       description:
-        "Deterministically scores a job brief against the profile's resume-derived inputs plus any overrides. The verdict says whether to trust the score as-is or deliberate over the match evidence.",
+        "Deterministically scores a job brief against the user's resume-derived inputs plus any overrides. The verdict says whether to trust the score as-is or deliberate over the match evidence.",
     },
   });

@@ -91,7 +91,7 @@ jobpilot-api POST /api/campaigns \
   --data '{"query":"<title> at <company>","source":"apply","config":{"maxApplications":1}}'
 ```
 
-Keep `.campaignId` from the response as `CAMPAIGN_ID`.
+Keep `.id` from the response as `CAMPAIGN_ID`.
 
 ### 1.4 Add the Job
 
@@ -129,7 +129,7 @@ jobpilot-api GET /api/campaigns --query status=in_progress --query source=apply 
   --query jobStatus=queued --query page=1 --query limit=1
 ```
 
-Take `.items[0].campaignId` as `CAMPAIGN_ID`. Empty `.items` → **"Nothing queued. Start a campaign
+Take `.items[0].id` as `CAMPAIGN_ID`. Empty `.items` → **"Nothing queued. Start a campaign
 at $JOBPILOT_WEB/campaigns/new, pick Apply to links, and run this again."** and stop. Otherwise read
 `config` off that same campaign row: `minScore` overrides `minMatchScore`, `resumeId` overrides the
 primary resume, `maxApplications` caps Phase 5.

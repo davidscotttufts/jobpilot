@@ -3,7 +3,7 @@ import type {
   resumeVariantPatchSchema,
 } from "@jobpilot/contracts/resume";
 import { resumeChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { findOwned, notFound, unprocessable } from "@/common/errors";
 import { toInputJson } from "@/common/json";
@@ -14,6 +14,7 @@ import {
   generatedVariantPath,
   serveCachedPdf,
 } from "@/common/storage/storage";
+import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { readContent, toStoredContent } from "../content";
 import { ResumeService } from "../resume.service";
@@ -22,18 +23,18 @@ import {
   notProtectedVariant,
   type pruneVariantsQuerySchema,
   type TailorVariantBody,
-  type VariantRewriteAudit,
+  variantRewriteAuditSchema,
 } from "./variant.schema";
 
 type ResumeVariantCreateInput = z.infer<typeof resumeVariantCreateSchema>;
 type ResumeVariantPatch = z.infer<typeof resumeVariantPatchSchema>;
 type PruneVariantsQuery = z.infer<typeof pruneVariantsQuerySchema>;
 
-@singleton()
+@injectable()
 export class ResumeVariantService {
   constructor(
-    private readonly prisma: PrismaClient,
-    private readonly resumes: ResumeService,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly resumes = inject(ResumeService),
   ) {}
 
   private findVariant(userId: string, id: string) {
@@ -69,7 +70,8 @@ export class ResumeVariantService {
     resumeId: string,
     data: Omit<Prisma.ResumeVariantUncheckedCreateInput, "resumeId">,
   ): Promise<string> {
-    const variant = await this.prisma.resumeVariant.create({ data: { ...data, resumeId } });
+    const jobUrl = data.jobUrl ? normalizeJobUrl(data.jobUrl) : data.jobUrl;
+    const variant = await this.prisma.resumeVariant.create({ data: { ...data, jobUrl, resumeId } });
     publish(
       resumeChannel,
       { resumeId },
@@ -151,7 +153,8 @@ export class ResumeVariantService {
       applicationId: variant.applicationId,
       content: readContent(variant.content),
       diffNotes: variant.diffNotes,
-      rewrites: variant.rewrites as VariantRewriteAudit | null,
+      rewrites:
+        variant.rewrites === null ? null : variantRewriteAuditSchema.parse(variant.rewrites),
       createdAt: variant.createdAt,
       updatedAt: variant.updatedAt,
     };
@@ -218,14 +221,14 @@ export class ResumeVariantService {
       skip: query.keep,
     });
     if (candidates.length === 0) {
-      return { deleted: 0 };
+      return { deletedCount: 0 };
     }
 
     const ids = candidates.map((variant) => variant.id);
     const result = await this.prisma.resumeVariant.deleteMany({ where: { id: { in: ids } } });
     await this.afterVariantsDeleted(resumeId, ...ids);
 
-    return { deleted: result.count };
+    return { deletedCount: result.count };
   }
 
   async renderVariantPdf(userId: string, id: string) {

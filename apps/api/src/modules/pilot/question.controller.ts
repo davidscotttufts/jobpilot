@@ -12,7 +12,7 @@ import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { PilotQuestionService } from "./question.service";
 
-const questions = container.resolve(PilotQuestionService);
+const questions = container.get(PilotQuestionService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
 export const pilotQuestionsController = new Elysia({
@@ -34,7 +34,7 @@ export const pilotQuestionsController = new Elysia({
     response: pilotQuestionListSchema,
     detail: {
       summary: "List questions",
-      description: "Returns the profile's questions, optionally filtered by status.",
+      description: "Returns the user's questions, optionally filtered by status.",
     },
   })
   .post(

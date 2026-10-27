@@ -47,7 +47,7 @@ export function ApplicationsPanel(): ReactElement {
   const boards = useApiQuery(jobBoardQueries.list());
 
   const rows = apps.data?.items ?? [];
-  const campaignLabel = new Map((campaigns.data?.items ?? []).map((c) => [c.campaignId, c.query]));
+  const campaignLabel = new Map((campaigns.data?.items ?? []).map((c) => [c.id, c.query]));
 
   const counts = FUNNEL_GROUPS.reduce(
     (acc, g) => {
@@ -59,7 +59,7 @@ export function ApplicationsPanel(): ReactElement {
 
   const campaignOptions: SelectFieldOption[] = [
     { value: SINGLE_APPLY_CAMPAIGN, label: "Single applies" },
-    ...(campaigns.data?.items ?? []).map((c) => ({ value: c.campaignId, label: c.query })),
+    ...(campaigns.data?.items ?? []).map((c) => ({ value: c.id, label: c.query })),
   ];
   const boardOptions: SelectFieldOption[] = (boards.data ?? []).map((b) => ({
     value: b.name,

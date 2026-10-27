@@ -1,10 +1,11 @@
 import { z } from "zod/v4";
 import { networkingModeSchema } from "../networking";
+import { storedDate } from "../utils/json";
 
 // An "off" channel is never emitted, so a worker only ever sees a resolved channel and mode.
 const outgoingMode = networkingModeSchema.shape;
 
-const TASK_SUBJECT_TYPES = [
+export const TASK_SUBJECT_TYPES = [
   "job",
   "campaign",
   "question",
@@ -58,6 +59,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     z.object({
       campaignId: z.string(),
       jobKey: z.string(),
+      jobTitle: z.string(),
       url: z.string(),
       board: nullableString,
       brief: nullableString,
@@ -101,7 +103,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       query: z.string(),
       board: nullableString,
       // The campaign's last update, which approximates when it was paused.
-      pausedAt: z.date(),
+      pausedAt: storedDate,
     }),
   ),
   taskVariant(
@@ -143,7 +145,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       contactName: z.string(),
       contactEmail: z.string(),
       subject: nullableString,
-      sentAt: z.date(),
+      sentAt: storedDate,
       daysSince: z.number().int(),
       ...outgoingMode,
     }),
@@ -187,7 +189,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       threadId: nullableString,
       from: z.string(),
       subject: z.string(),
-      receivedAt: z.date(),
+      receivedAt: storedDate,
       company: z.string(),
       jobTitle: z.string(),
     }),
@@ -218,7 +220,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "upwork.syncInbox",
     "upwork",
     z.object({
-      lastSyncedAt: z.date().nullable(),
+      lastSyncedAt: storedDate.nullable(),
       unreadCount: z.number().int(),
     }),
   ),
@@ -226,6 +228,8 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "board.diagnose",
     "board",
     z.object({
+      jobBoardId: z.string(),
+      /** The board's domain. */
       board: z.string(),
       consecutiveFailures: z.number().int(),
       recentFailReasons: z.array(z.string()),
@@ -271,6 +275,10 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
 type TaskFields = z.infer<typeof taskFieldsSchema>;
 export type TaskType = TaskFields["taskType"];
 export type TaskPayload<K extends TaskType> = Extract<TaskFields, { taskType: K }>["payload"];
+export type TaskSubjectType<K extends TaskType> = Extract<
+  TaskFields,
+  { taskType: K }
+>["subjectType"];
 
 const taskSchema = z.intersection(
   z.object({ id: z.string(), priority: z.number(), title: z.string() }),
@@ -278,7 +286,7 @@ const taskSchema = z.intersection(
 );
 
 const taskListContentSchema = z.object({
-  builtAt: z.date(),
+  builtAt: storedDate,
   tasks: z.array(taskSchema),
   counts: z.object({
     openQuestions: z.number().int(),
@@ -292,16 +300,16 @@ const taskListContentSchema = z.object({
     capReached: z.boolean(),
     dailyNetworkingCap: z.number().int(),
     networkingSentToday: z.number().int(),
-    resetsAt: z.date(),
+    resetsAt: storedDate,
   }),
   emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),
   sleepSeconds: z.number(),
-  nextWakeAt: z.date(),
+  nextWakeAt: storedDate,
 });
 
 export const taskListSchema = taskListContentSchema.extend({
   version: z.uuid(),
-  expiresAt: z.date(),
+  expiresAt: storedDate,
 });
 
 export const currentTaskListSchema = z.object({ taskList: taskListSchema.nullable() });

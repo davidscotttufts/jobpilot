@@ -1,37 +1,34 @@
 import { z } from "zod/v4";
 
+export const CREDENTIAL_KINDS = ["board", "default", "service"] as const;
+export type CredentialKind = (typeof CREDENTIAL_KINDS)[number];
+
 /** Captcha-solving services whose API key can be stored as a service credential. */
-export const SERVICE_PROVIDERS = ["2captcha", "capsolver"] as const;
+export const SERVICE_PROVIDERS = ["two_captcha", "capsolver"] as const;
 export type ServiceProvider = (typeof SERVICE_PROVIDERS)[number];
 
-/**
- * A credential is one of two shapes, discriminated by which fields are filled:
- * - login: `scope` (domain or "default") + `email` + `password`.
- * - service: `scope` (a provider name, e.g. "2captcha") + `apiKey`.
- */
-export const credentialSchema = z
-  .object({
-    scope: z.string().min(1),
-    email: z.string().optional(),
-    password: z.string().optional(),
-    apiKey: z.string().optional(),
-  })
-  .refine(
-    (c) => {
-      const present = (v: string | undefined): boolean => (v ?? "").trim().length > 0;
-      const login = present(c.email) && present(c.password);
-      const service = present(c.apiKey);
-      // Exactly one shape, and a service credential carries no login fields.
-      return service ? !present(c.email) && !present(c.password) : login;
-    },
-    { message: "Provide an email + password, or an API key - not both." },
-  );
+const login = { email: z.string().trim().min(1), password: z.string().min(1) };
 
+/**
+ * A board login (`board` is the board's domain), the default login tried on boards without one,
+ * or a captcha service's API key.
+ */
+export const credentialSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("board"), board: z.string().trim().min(1), ...login }),
+  z.object({ kind: z.literal("default"), ...login }),
+  z.object({
+    kind: z.literal("service"),
+    provider: z.enum(SERVICE_PROVIDERS),
+    apiKey: z.string().trim().min(1),
+  }),
+]);
+
+/** The kind never changes; a field that doesn't belong to the row's kind is a 422. */
 export const credentialPatchSchema = z.object({
-  scope: z.string().min(1).optional(),
-  email: z.string().optional(),
-  password: z.string().optional(),
-  apiKey: z.string().optional(),
+  board: z.string().trim().min(1).optional(),
+  email: z.string().trim().min(1).optional(),
+  password: z.string().min(1).optional(),
+  apiKey: z.string().trim().min(1).optional(),
 });
 
 export type CredentialInput = z.infer<typeof credentialSchema>;

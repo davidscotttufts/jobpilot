@@ -23,8 +23,8 @@ export function AdminBoardActions(props: AdminBoardActionsProps): ReactElement {
   const router = useRouter();
   const confirm = useConfirm();
 
-  const update = useApiMutation<AdminBoardDto, AdminBoardPatch>(
-    (patch) => api.admin.boards({ id: board.id }).patch(patch),
+  const update = useApiMutation(
+    (patch: AdminBoardPatch) => api.admin.boards({ id: board.id }).patch(patch),
     {
       successMessage: "Board updated",
       onSuccess: () => {
@@ -34,10 +34,10 @@ export function AdminBoardActions(props: AdminBoardActionsProps): ReactElement {
     },
   );
 
-  const remove = useApiMutation<{ deleted: string }, void>(
-    () => api.admin.boards({ id: board.id }).delete(),
-    { successMessage: "Board removed", onSuccess: () => router.refresh() },
-  );
+  const remove = useApiMutation(() => api.admin.boards({ id: board.id }).delete(), {
+    successMessage: "Board removed",
+    onSuccess: () => router.refresh(),
+  });
 
   const handleDelete = async (): Promise<void> => {
     const confirmed = await confirm({

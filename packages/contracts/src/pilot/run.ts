@@ -1,6 +1,9 @@
 import { z } from "zod/v4";
 import { taskFieldsSchema } from "./tasks";
 
+/** Free-form structured detail on a journal entry. */
+export const journalDetailSchema = z.record(z.string(), z.json());
+
 export const PILOT_RUN_OUTCOMES = ["done", "failed", "cancelled", "expired"] as const;
 
 export const startPilotRunSchema = z.object({
@@ -14,7 +17,7 @@ export const pilotRunResultSchema = z.object({
   summary: z.string().trim().min(1),
   subjectType: z.string().min(1).optional(),
   subjectId: z.string().min(1).optional(),
-  detail: z.record(z.string(), z.json()).optional(),
+  detail: journalDetailSchema.optional(),
 });
 
 export const reportPilotUsageSchema = z.object({
@@ -38,6 +41,20 @@ export type TokenUsage = z.infer<typeof tokenUsageSchema>;
 /** Cache reads re-read context already sent and cost a fraction of the rest, so they are left out. */
 export function newTokens(usage: TokenUsage): number {
   return usage.input + usage.output + usage.cacheWrite;
+}
+
+type TokenColumn = "inputTokens" | "outputTokens" | "cacheReadTokens" | "cacheWriteTokens";
+
+/** A run's token columns. Nullable so a Prisma `_sum` fits as is. */
+type TokenCounts = Record<TokenColumn, number | null>;
+
+export function tokenUsage(counts: TokenCounts): TokenUsage {
+  return {
+    input: counts.inputTokens ?? 0,
+    output: counts.outputTokens ?? 0,
+    cacheRead: counts.cacheReadTokens ?? 0,
+    cacheWrite: counts.cacheWriteTokens ?? 0,
+  };
 }
 
 export function sumTokenUsage(usages: TokenUsage[]): TokenUsage {

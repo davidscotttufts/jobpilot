@@ -18,8 +18,8 @@ export async function ensureCampaignOwned(
   campaignId: string,
 ): Promise<void> {
   await findOwned(
-    (where) => prisma.campaign.findFirst({ where, select: { campaignId: true } }),
-    { campaignId, userId },
+    (where) => prisma.campaign.findFirst({ where, select: { id: true } }),
+    { id: campaignId, userId },
     "Campaign",
   );
 }
@@ -27,10 +27,10 @@ export async function ensureCampaignOwned(
 /** The SSE fan-out every status change emits, whichever path did the write. */
 export function publishCampaignStatus(
   userId: string,
-  campaign: Pick<Campaign, "campaignId" | "source">,
+  campaign: Pick<Campaign, "id" | "source">,
   status: CampaignStatus,
 ): void {
-  const { campaignId, source } = campaign;
+  const { id: campaignId, source } = campaign;
   publish(campaignChannel, { campaignId }, { type: "status", payload: { status } });
   if (status === "completed") {
     publish(workspaceChannel, { userId }, { type: "campaign.completed", campaignId });

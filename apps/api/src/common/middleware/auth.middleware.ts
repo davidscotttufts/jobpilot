@@ -1,10 +1,8 @@
 import { type Cookie, Elysia } from "elysia";
-import { type AuthUser, verifyAccessToken } from "@/common/auth";
+import { type AuthUser, readSessionCookie } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { unauthorized } from "@/common/errors";
-import { ApiTokenService } from "@/modules/auth/api-token.service";
-
-const apiTokenService = container.resolve(ApiTokenService);
+import { AuthTokenService } from "@/modules/auth/auth-token.service";
 
 interface AuthContext {
   headers: Record<string, string | undefined>;
@@ -12,23 +10,18 @@ interface AuthContext {
 }
 
 /**
- * Resolve the principal from a request: prefer `Authorization: Bearer` (web JWT
- * or the agent's PAT), then the httpOnly `accessToken` cookie. Returns null when
- * unauthenticated.
+ * Resolve the principal from a request: `Authorization: Bearer` (the agent's terminal token), then
+ * the httpOnly `session` cookie. Returns null when unauthenticated.
  */
 export async function resolveAuthUser({ headers, cookie }: AuthContext): Promise<AuthUser | null> {
   const authorization = headers.authorization;
   const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : undefined;
-  const cookieToken = cookie.accessToken?.value;
-  const token = bearer ?? (typeof cookieToken === "string" ? cookieToken : undefined);
+  const token = bearer ?? readSessionCookie(cookie);
   if (!token) {
     return null;
   }
-  const jwtUser = await verifyAccessToken(token);
-  if (jwtUser) {
-    return jwtUser;
-  }
-  return apiTokenService.verify(token);
+  // Resolved per call, not at import, so a test can bind a fake before the first request.
+  return container.get(AuthTokenService).verify(token);
 }
 
 /** Derives `user`. Throws 401 when unauthenticated. */

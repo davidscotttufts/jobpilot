@@ -10,7 +10,7 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { PilotJournalService } from "./journal.service";
 import { createPilotJournalResponseSchema } from "./pilot.schema";
 
-const journal = container.resolve(PilotJournalService);
+const journal = container.get(PilotJournalService);
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitJournal = rateLimit(RATE_LIMITS.pilotJournal);
 const limitJournalExport = rateLimit(RATE_LIMITS.pilotJournalExport);

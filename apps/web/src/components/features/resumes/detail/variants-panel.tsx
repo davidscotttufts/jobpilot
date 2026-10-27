@@ -41,15 +41,12 @@ export function VariantsPanel(props: VariantsPanelProps): ReactElement {
 
   const query = useApiQuery(resumeQueries.variants(resumeId));
 
-  const remove = useApiMutation<{ deleted: string }, string>(
-    (id) => api.resumes.variants({ id }).delete(),
-    {
-      successMessage: "Variant deleted",
-      invalidate: [queryKeys.resume.variants(resumeId)],
-    },
-  );
+  const remove = useApiMutation((id: string) => api.resumes.variants({ id }).delete(), {
+    successMessage: "Variant deleted",
+    invalidate: [queryKeys.resume.variants(resumeId)],
+  });
 
-  const prune = useApiMutation<{ deleted: number }, void>(
+  const prune = useApiMutation(
     () => api.resumes({ id: resumeId }).variants.delete(undefined, { query: {} }),
     {
       successMessage: "Unused variants pruned",

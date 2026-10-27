@@ -1,7 +1,7 @@
 export {
+  badGateway,
   badRequest,
   conflict,
-  ErrorCodes,
   emailNotVerified,
   forbidden,
   HttpError,

@@ -5,18 +5,17 @@ import {
   campaignConfigSupportsSource,
   type UpdateCampaignConfigInput,
 } from "@jobpilot/contracts/campaign";
+import { ErrorCodes } from "@jobpilot/contracts/errors";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { workspaceChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
-import {
-  type Campaign,
-  type CampaignStatus,
-  type Prisma,
-  PrismaClient,
-} from "@/generated/prisma/client";
+import { normalizeJobUrl } from "@/common/utils/url";
+import { type CampaignStatus, type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
 import type { campaignsQuery } from "./campaign.schema";
 import {
   deriveCampaignSummary,
@@ -34,13 +33,20 @@ const STATUS_TRANSITIONS: Record<CampaignStatus, readonly CampaignStatus[]> = {
   failed: [],
 };
 
-function toRow(campaign: WithSummary<Campaign>) {
+const CAMPAIGN_INCLUDE = { board: { select: BOARD_REF_SELECT } } satisfies Prisma.CampaignInclude;
+
+type CampaignRow = Prisma.CampaignGetPayload<{ include: typeof CAMPAIGN_INCLUDE }>;
+
+function toRow(campaign: WithSummary<CampaignRow>) {
   return { ...campaign, config: campaignConfigSchema.parse(campaign.config) };
 }
 
-@singleton()
+@injectable()
 export class CampaignService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly boards = inject(JobBoardService),
+  ) {}
 
   async list(userId: string, query: z.infer<typeof campaignsQuery>) {
     const where: Prisma.CampaignWhereInput = {
@@ -50,7 +56,12 @@ export class CampaignService {
       jobs: query.jobStatus ? { some: { status: query.jobStatus } } : undefined,
     };
     const [campaigns, total] = await Promise.all([
-      this.prisma.campaign.findMany({ where, orderBy: { startedAt: "desc" }, ...pageSlice(query) }),
+      this.prisma.campaign.findMany({
+        where,
+        include: CAMPAIGN_INCLUDE,
+        orderBy: { startedAt: "desc" },
+        ...pageSlice(query),
+      }),
       this.prisma.campaign.count({ where }),
     ]);
     const rows = await summarizeCampaigns(this.prisma, campaigns);
@@ -62,7 +73,8 @@ export class CampaignService {
       userId,
       query: body.query,
       source: body.source,
-      config: body.config ?? {},
+      boardId: await this.boards.resolveId(body.board ?? null),
+      config: toInputJson(body.config ?? {}),
       createdBy: body.createdBy,
       pilotSearchId: body.pilotSearchId ?? null,
     };
@@ -70,19 +82,19 @@ export class CampaignService {
       return this.createWithQueuedJobs(data, body.urls);
     }
 
-    const campaign = await this.prisma.campaign.create({ data });
+    const campaign = await this.prisma.campaign.create({ data, include: CAMPAIGN_INCLUDE });
     // A just-created campaign provably has no jobs or messages; skip the aggregate round trip.
     return toRow({ ...campaign, summary: emptySummary(campaign.source) });
   }
 
   /** Seeds pasted links as `queued` jobs with the campaign, so a half-written batch can't strand them. */
   private async createWithQueuedJobs(data: Prisma.CampaignUncheckedCreateInput, urls: string[]) {
-    const unique = [...new Set(urls)];
+    const unique = [...new Set(urls.map(normalizeJobUrl))];
     const campaign = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.campaign.create({ data });
+      const created = await tx.campaign.create({ data, include: CAMPAIGN_INCLUDE });
       await tx.job.createMany({
         data: unique.map((url) => ({
-          campaignId: created.campaignId,
+          campaignId: created.id,
           key: crypto.randomUUID(),
           // Nothing is known about a pasted link until a worker opens it; the host stands in.
           title: new URL(url).hostname,
@@ -114,17 +126,20 @@ export class CampaignService {
     // tune and a user edit to clobber each other.
     const updated = await this.prisma.campaign.updateMany({
       where: {
-        campaignId: id,
+        id,
         userId,
         ...(body.expectedUpdatedAt && { updatedAt: new Date(body.expectedUpdatedAt) }),
       },
-      data: { config: body.config },
+      data: { config: toInputJson(body.config) },
     });
     if (updated.count === 0) {
-      throw conflict("Campaign changed since it was fetched; re-fetch before updating config.");
+      throw conflict(
+        "Campaign changed since it was fetched; re-fetch before updating config.",
+        ErrorCodes.STALE_WRITE,
+      );
     }
     return this.withSummary(
-      await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } }),
+      await this.prisma.campaign.findUniqueOrThrow({ where: { id }, include: CAMPAIGN_INCLUDE }),
     );
   }
 
@@ -138,7 +153,7 @@ export class CampaignService {
     }
     const finished = body.status === "completed" || body.status === "failed";
     const updated = await this.prisma.campaign.updateMany({
-      where: { campaignId: id, userId, status: existing.status },
+      where: { id, userId, status: existing.status },
       data: {
         status: body.status,
         statusActor: body.actor,
@@ -147,11 +162,11 @@ export class CampaignService {
       },
     });
     if (updated.count === 0) {
-      throw conflict("Campaign status changed concurrently.");
+      throw conflict("Campaign status changed concurrently.", ErrorCodes.STALE_WRITE);
     }
     publishCampaignStatus(userId, existing, body.status);
     return this.withSummary(
-      await this.prisma.campaign.findUniqueOrThrow({ where: { campaignId: id } }),
+      await this.prisma.campaign.findUniqueOrThrow({ where: { id }, include: CAMPAIGN_INCLUDE }),
     );
   }
 
@@ -172,22 +187,22 @@ export class CampaignService {
           relatedAppId: null,
         },
       });
-      await tx.campaign.delete({ where: { campaignId: id } });
+      await tx.campaign.delete({ where: { id } });
     });
     publish(workspaceChannel, { userId }, { type: "campaign.deleted", campaignId: id });
-    return { deleted: true, campaignId: id };
+    return { deleted: id };
   }
 
   findCampaign(userId: string, campaignId: string) {
     return findOwned(
-      (where) => this.prisma.campaign.findFirst({ where }),
-      { campaignId, userId },
+      (where) => this.prisma.campaign.findFirst({ where, include: CAMPAIGN_INCLUDE }),
+      { id: campaignId, userId },
       "Campaign",
     );
   }
 
-  private async withSummary(campaign: Campaign) {
-    const summary = await deriveCampaignSummary(this.prisma, campaign.campaignId, campaign.source);
+  private async withSummary(campaign: CampaignRow) {
+    const summary = await deriveCampaignSummary(this.prisma, campaign.id, campaign.source);
     return toRow({ ...campaign, summary });
   }
 }

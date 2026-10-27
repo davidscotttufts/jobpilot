@@ -1,52 +1,20 @@
+import type { NetworkingMode } from "@jobpilot/contracts/networking";
 import {
-  channelAutonomy,
-  networkingMode,
+  nextDailyRun,
   type PilotInstructionsConfig,
   type PilotTask,
   type TaskListContent,
   type TaskPayload,
 } from "@jobpilot/contracts/pilot";
 import { nextDayReset } from "@/common/date/buckets";
+import { allowedToday } from "./allowed-today";
 import type { TaskJob } from "./gather-jobs";
 import type { Followup } from "./gather-outreach";
 import type { DueSearch } from "./gather-searches";
-import {
-  applyTask,
-  boardDiagnoseTask,
-  discoverTask,
-  followupTask,
-  inboxTask,
-  interviewPrepTask,
-  interviewReplyTask,
-  jobAlertsTask,
-  networkingSendTask,
-  promotionDraftTask,
-  promotionPostTask,
-  questionTask,
-  queueScoreTask,
-  rescanSkippedTask,
-  retryFailedTask,
-  reviewPausedTask,
-  scorePendingTask,
-  setupTask,
-  tuneTask,
-  upworkSyncTask,
-  warmIntroTask,
-} from "./make-tasks";
+import { makeTask, makeTasks, TASK_DEFS } from "./task-defs";
 
 const MAX_TASKS = 10;
 const MAX_TITLE_LENGTH = 200;
-/** Per-list caps keep one cycle focused; the rest drain over later cycles. */
-const PER_TASK_LIST = {
-  boardDiagnose: 1,
-  reviewPaused: 1,
-  interviewReply: 2,
-  interviewPrep: 1,
-  warmIntro: 1,
-  followup: 2,
-  promotionDraft: 1,
-  campaignReview: 1,
-} as const;
 const ACTIVE_SLEEP_SECONDS = 15;
 /** Floors a tiny `checkIntervalMinutes` so the loop can't spin. */
 const MIN_IDLE_SLEEP_SECONDS = 30;
@@ -67,9 +35,8 @@ export interface TaskListInput {
   networkingSentToday: number;
   // No searches yet, or no goals to derive them from.
   awaitingSetup: boolean;
-  // The idle sleep never runs past this or the next harvest slot.
+  // The idle sleep never runs past this or the next job-alert slot.
   nextSearchRunAt: Date | null;
-  nextJobAlertsAt: Date | null;
   answeredQuestions: TaskPayload<"question.answered">[];
   approvedJobs: TaskJob[];
   warmIntroCandidates: TaskJob[];
@@ -77,10 +44,9 @@ export interface TaskListInput {
   scorePending: TaskPayload<"campaign.scorePending">[];
   queueScores: TaskPayload<"queue.score">[];
   pausedCampaigns: TaskPayload<"campaign.reviewPaused">[];
-  boardDiagnose: TaskPayload<"board.diagnose">[];
+  boardDiagnoses: TaskPayload<"board.diagnose">[];
   inbox: TaskPayload<"inbox.review">;
-  // Null when the harvest is off, not due this slot, or has no unharvested mail.
-  jobAlerts: Omit<TaskPayload<"inbox.jobAlerts">, "minScore"> | null;
+  jobAlerts: TaskPayload<"inbox.jobAlerts"> | null;
   interviewReplies: TaskPayload<"interview.reply">[];
   interviewPreps: TaskPayload<"interview.prep">[];
   upworkSync: TaskPayload<"upwork.syncInbox"> | null;
@@ -108,45 +74,70 @@ export function isPipelineQuiet(work: PipelineWork): boolean {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+function applyTask(job: TaskJob): PilotTask {
+  const payload = {
+    campaignId: job.campaignId,
+    jobKey: job.key,
+    jobTitle: job.title,
+    url: job.url,
+    board: job.board,
+    brief: job.brief,
+    resumeId: job.resumeId,
+    matchScore: job.matchScore,
+    warmContacts: job.warmContacts,
+  };
+  return makeTask("job.apply", payload, job.matchScore ?? 0);
+}
+
+/** An empty contact list still earns the task: finding a first contact is the point. */
+function warmIntroPayload(job: TaskJob, mode: NetworkingMode): TaskPayload<"networking.warmIntro"> {
+  return {
+    campaignId: job.campaignId,
+    jobKey: job.key,
+    company: job.company,
+    jobTitle: job.title,
+    jobUrl: job.url,
+    contacts: job.warmContacts ?? [],
+    ...mode,
+  };
+}
+
 /** Ranks already-gathered work into the task list. Pure, so every gating rule is unit-testable. */
 export function buildTaskList(input: TaskListInput): TaskListContent {
   const { now, config } = input;
-  const capReached = input.appliedToday >= config.dailyApplyCap;
-  const sendsLeft = Math.max(0, config.networking.dailyCap - input.networkingSentToday);
-  const outreach = networkingMode(config);
-  const emailAutonomy = channelAutonomy(config, "email");
+  const { emailAutonomy, outreach, appliesLeft, sendsLeft } = allowedToday(config, input);
+  const capReached = appliesLeft === 0;
 
   const tasks: PilotTask[] = [
-    ...input.answeredQuestions.map(questionTask),
-    ...input.boardDiagnose.slice(0, PER_TASK_LIST.boardDiagnose).map(boardDiagnoseTask),
-    ...input.pausedCampaigns.slice(0, PER_TASK_LIST.reviewPaused).map(reviewPausedTask),
-    ...input.interviewReplies.slice(0, PER_TASK_LIST.interviewReply).map(interviewReplyTask),
-    ...input.interviewPreps.slice(0, PER_TASK_LIST.interviewPrep).map(interviewPrepTask),
-    ...input.queueScores.map(queueScoreTask),
-    ...input.approvedPromotions.map(promotionPostTask),
-    ...input.duePlatforms.slice(0, PER_TASK_LIST.promotionDraft).map(promotionDraftTask),
+    ...makeTasks("question.answered", input.answeredQuestions),
+    ...makeTasks("board.diagnose", input.boardDiagnoses),
+    ...makeTasks("campaign.reviewPaused", input.pausedCampaigns),
+    ...makeTasks("interview.reply", input.interviewReplies),
+    ...makeTasks("interview.prep", input.interviewPreps),
+    ...makeTasks("queue.score", input.queueScores),
+    ...makeTasks("promotion.post", input.approvedPromotions),
+    ...makeTasks("promotion.draft", input.duePlatforms),
   ];
   if (!capReached) tasks.push(...input.approvedJobs.map(applyTask));
-  if (input.inbox.count > 0) tasks.push(inboxTask(input.inbox));
-  // Ungated by the apply cap: harvesting only queues rows, and tomorrow's budget can spend them.
-  if (input.jobAlerts) tasks.push(jobAlertsTask({ ...input.jobAlerts, minScore: config.minScore }));
-  if (input.upworkSync) tasks.push(upworkSyncTask(input.upworkSync));
+  if (input.inbox.count > 0) tasks.push(makeTask("inbox.review", input.inbox));
+  // Ungated by the apply cap: harvesting only queues rows for later applies.
+  if (input.jobAlerts) tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
+  if (input.upworkSync) tasks.push(makeTask("upwork.syncInbox", input.upworkSync));
 
   if (outreach && sendsLeft > 0) {
-    const intros = input.warmIntroCandidates.slice(0, PER_TASK_LIST.warmIntro);
-    tasks.push(...intros.map((job) => warmIntroTask(job, outreach)));
+    const intros = input.warmIntroCandidates.map((job) => warmIntroPayload(job, outreach));
+    tasks.push(...makeTasks("networking.warmIntro", intros));
   }
   // Sends and followups act on email threads, and followups only get the budget sends leave over.
   if (emailAutonomy) {
     const sends = input.approvedNetworking.slice(0, sendsLeft);
-    const followupRoom = Math.min(PER_TASK_LIST.followup, sendsLeft - sends.length);
+    const followupCap = TASK_DEFS["networking.followup"].perList ?? 0;
+    const followups = input.followups
+      .slice(0, Math.min(followupCap, sendsLeft - sends.length))
+      .map((followup) => ({ ...followup, channel: "email" as const, autonomy: emailAutonomy }));
     tasks.push(
-      ...sends.map(networkingSendTask),
-      ...input.followups
-        .slice(0, followupRoom)
-        .map((followup) =>
-          followupTask({ ...followup, channel: "email", autonomy: emailAutonomy }),
-        ),
+      ...makeTasks("networking.send", sends),
+      ...makeTasks("networking.followup", followups),
     );
   }
 
@@ -154,31 +145,26 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   if (input.approvedJobs.length === 0) {
     const { boards } = config;
     const rotatedBoard = boards.length > 0 ? boards[input.cycleCount % boards.length] : undefined;
-    const newJobsTarget = clamp(
-      config.dailyApplyCap - input.appliedToday,
-      NEW_JOBS_TARGET_MIN,
-      NEW_JOBS_TARGET_MAX,
-    );
+    const newJobsTarget = clamp(appliesLeft, NEW_JOBS_TARGET_MIN, NEW_JOBS_TARGET_MAX);
+    const discoveries = input.dueQueries.map((search) => ({
+      ...search,
+      board: rotatedBoard ?? search.board,
+      minScore: config.minScore,
+      newJobsTarget,
+      maxPages: SEARCH_MAX_PAGES,
+    }));
     tasks.push(
-      ...input.scorePending.map(scorePendingTask),
-      ...input.dueQueries.map((search) =>
-        discoverTask({
-          ...search,
-          board: rotatedBoard ?? search.board,
-          minScore: config.minScore,
-          newJobsTarget,
-          maxPages: SEARCH_MAX_PAGES,
-        }),
-      ),
+      ...makeTasks("campaign.scorePending", input.scorePending),
+      ...makeTasks("search.discover", discoveries),
     );
   }
 
   if (isPipelineQuiet(input)) {
-    if (input.setup) tasks.push(setupTask(input.setup));
+    if (input.setup) tasks.push(makeTask("search.setup", input.setup));
     tasks.push(
-      ...input.campaignTunes.slice(0, PER_TASK_LIST.campaignReview).map(tuneTask),
-      ...input.rescanSkipped.slice(0, PER_TASK_LIST.campaignReview).map(rescanSkippedTask),
-      ...input.retryFailed.slice(0, PER_TASK_LIST.campaignReview).map(retryFailedTask),
+      ...makeTasks("campaign.tune", input.campaignTunes),
+      ...makeTasks("job.rescanSkipped", input.rescanSkipped),
+      ...makeTasks("job.retryFailed", input.retryFailed),
     );
   }
 
@@ -187,13 +173,17 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
     .slice(0, MAX_TASKS)
     .map((task) => ({ ...task, title: task.title.slice(0, MAX_TITLE_LENGTH) }));
 
+  const { jobAlerts } = config;
+  const nextJobAlertsAt = jobAlerts.enabled
+    ? nextDailyRun(jobAlerts.runHours, jobAlerts.timeZone, now)
+    : null;
   const secondsUntil = (at: Date | null) =>
     at ? Math.max(0, Math.round((at.getTime() - now.getTime()) / 1000)) : Number.POSITIVE_INFINITY;
   const idleSleep = clamp(
     Math.min(
       config.checkIntervalMinutes * 60,
       secondsUntil(input.nextSearchRunAt),
-      secondsUntil(input.nextJobAlertsAt),
+      secondsUntil(nextJobAlertsAt),
     ),
     MIN_IDLE_SLEEP_SECONDS,
     MAX_IDLE_SLEEP_SECONDS,

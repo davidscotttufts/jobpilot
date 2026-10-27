@@ -1,7 +1,7 @@
 "use client";
 
-import { type ReactElement, useState } from "react";
-import { Alert, Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
+import type { ReactElement } from "react";
+import { Alert, Box, Button, Stack, Typography } from "@mui/material";
 import { API_BASE_URL } from "@/api/base-url";
 import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
@@ -19,19 +19,18 @@ import { MailboxReauthAlert } from "./mailbox-reauth-alert";
  * with the OAuth client card).
  */
 export function ConnectCard(): ReactElement {
-  const [provider, setProvider] = useState("gmail");
   const confirm = useConfirm();
 
   const statusQuery = useApiQuery(emailQueries.account());
   const configQuery = useApiQuery(emailQueries.oauthClient());
 
-  const disconnect = useApiMutation<{ disconnected: boolean }, void>(
-    () => api.email.account.delete(),
-    { successMessage: "Email disconnected", invalidate: [queryKeys.email.all] },
-  );
+  const disconnect = useApiMutation(() => api.email.account.delete(), {
+    successMessage: "Email disconnected",
+    invalidate: [queryKeys.email.all],
+  });
 
-  const connect = (p: string): void => {
-    window.location.href = `${API_BASE_URL}/api/email/oauth/start?provider=${p}`;
+  const connect = (): void => {
+    window.location.href = `${API_BASE_URL}/api/email/oauth/start`;
   };
 
   const handleDisconnect = async (): Promise<void> => {
@@ -71,9 +70,7 @@ export function ConnectCard(): ReactElement {
         <Stack spacing={1.5}>
           <Box>
             <Typography variant="body2Strong">{status.email}</Typography>
-            <Typography variant="captionMuted">
-              {status.provider} · last synced {last}
-            </Typography>
+            <Typography variant="captionMuted">Gmail · last synced {last}</Typography>
           </Box>
           {status.needsReauth && <MailboxReauthAlert />}
           {!configured && (
@@ -92,7 +89,7 @@ export function ConnectCard(): ReactElement {
             <Button
               variant={status.canSend ? "outlined" : "contained"}
               disabled={!configured}
-              onClick={() => connect(status.provider ?? "gmail")}
+              onClick={connect}
             >
               {status.canSend ? "Reconnect" : "Reconnect to enable sending"}
             </Button>
@@ -111,19 +108,10 @@ export function ConnectCard(): ReactElement {
       description="Connect Gmail so JobPilot can track recruiter replies, auto-fill verification codes, and send networking emails."
     >
       <Stack spacing={1.5} sx={{ maxWidth: 360 }}>
-        <Select size="small" value={provider} onChange={(e) => setProvider(e.target.value)}>
-          <MenuItem value="gmail">Gmail</MenuItem>
-          <MenuItem value="outlook" disabled>
-            Outlook (coming soon)
-          </MenuItem>
-          <MenuItem value="imap" disabled>
-            IMAP (coming soon)
-          </MenuItem>
-        </Select>
         {!configured && (
           <Alert severity="info">Save your Google OAuth client above first, then connect.</Alert>
         )}
-        <Button variant="contained" disabled={!configured} onClick={() => connect(provider)}>
+        <Button variant="contained" disabled={!configured} onClick={connect}>
           Connect Gmail
         </Button>
       </Stack>

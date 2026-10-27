@@ -55,30 +55,24 @@ export function MessageReviewDialog(props: MessageReviewDialogProps): ReactNode 
 
   const appOptions = useApiQuery(applicationQueries.search(search), { enabled: open });
 
-  const patchMatch = useApiMutation<unknown, { matchedAppId: string | null }>(
-    (vars) => api.email.messages({ id: messageId! }).patch(vars),
+  const patchMatch = useApiMutation(
+    (vars: { matchedAppId: string | null }) => api.email.messages({ id: messageId! }).patch(vars),
     {
       invalidate: [queryKeys.email.all],
     },
   );
 
-  const approve = useApiMutation<unknown, void>(
-    () => api.email.messages({ id: messageId! }).approve.post({}),
-    {
-      successMessage: "Approved",
-      invalidate: invalidations.emailReview,
-      onSuccess: () => onClose(),
-    },
-  );
+  const approve = useApiMutation(() => api.email.messages({ id: messageId! }).approve.post({}), {
+    successMessage: "Approved",
+    invalidate: invalidations.emailReview,
+    onSuccess: () => onClose(),
+  });
 
-  const deny = useApiMutation<unknown, void>(
-    () => api.email.messages({ id: messageId! }).deny.post({}),
-    {
-      successMessage: "Denied",
-      invalidate: [queryKeys.email.all],
-      onSuccess: () => onClose(),
-    },
-  );
+  const deny = useApiMutation(() => api.email.messages({ id: messageId! }).deny.post({}), {
+    successMessage: "Denied",
+    invalidate: [queryKeys.email.all],
+    onSuccess: () => onClose(),
+  });
 
   if (!open || messageId == null) {
     return null;

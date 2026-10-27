@@ -49,8 +49,8 @@ export function NetworkingBoard(props: NetworkingBoardProps): ReactElement {
     queryKeys.campaigns.detail(campaignId),
   ];
 
-  const approveSelected = useApiMutation<string[], string[]>(
-    async (ids) => {
+  const approveSelected = useApiMutation(
+    async (ids: string[]) => {
       for (const id of ids) {
         const res = await api.campaigns({ id: campaignId }).networking({ messageId: id }).patch({
           status: "approved",

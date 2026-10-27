@@ -1,6 +1,6 @@
 import path from "node:path";
 import { resumeChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { badRequest, findOwned, notFound } from "@/common/errors";
 import { renderResumePdf } from "@/common/pdf/render";
@@ -30,9 +30,9 @@ interface SavedSource {
   sourceSizeBytes: number;
 }
 
-@singleton()
+@injectable()
 export class ResumeService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** Unpaginated: an account holds a handful of master resumes, and selects read the whole list. */
   async list(userId: string) {

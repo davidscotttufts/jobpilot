@@ -27,7 +27,12 @@ export const APPLICATION_SOURCES = [
 export const applicationSourceSchema = z.enum(APPLICATION_SOURCES);
 
 /** Activity-timeline event kinds on an application. */
-export const APPLICATION_EVENT_KINDS = ["status_change", "note", "email"] as const;
+export const APPLICATION_EVENT_KINDS = [
+  "status_change",
+  "note",
+  "email",
+  "interview_prep",
+] as const;
 export const applicationEventKindSchema = z.enum(APPLICATION_EVENT_KINDS);
 
 /** What originated an activity event. */

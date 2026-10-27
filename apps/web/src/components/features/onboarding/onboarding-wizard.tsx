@@ -51,18 +51,15 @@ export function OnboardingWizard(): ReactElement {
 
   // The user's single profile is co-created at registration, so onboarding just
   // populates it via PUT /profile - no draft/active-profile dance.
-  const save = useApiMutation<{ id: string }, UserWithAutoApplyInput>(
-    (vars) => api.user.put(vars),
-    {
-      successMessage: "Profile saved",
-      invalidate: [queryKeys.user.all],
-      onSuccess: () => {
-        queryClient.invalidateQueries();
-        // Profile saved (non-empty) clears the redirect gate, so the optional steps can navigate away safely.
-        setStep(PROFILE_STEPS);
-      },
+  const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
+    successMessage: "Profile saved",
+    invalidate: [queryKeys.user.all],
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      // Profile saved (non-empty) clears the redirect gate, so the optional steps can navigate away safely.
+      setStep(PROFILE_STEPS);
     },
-  );
+  });
 
   const form = useAppForm({
     defaultValues: USER_DEFAULT_VALUES,

@@ -1,17 +1,4 @@
-/** String error codes - kept stable because the web client and the agent's
- *  skills read `error.code`. Do not switch to numeric codes. */
-export const ErrorCodes = {
-  INVALID_REQUEST: "INVALID_REQUEST",
-  NOT_FOUND: "NOT_FOUND",
-  CONFLICT: "CONFLICT",
-  UNPROCESSABLE: "UNPROCESSABLE_ENTITY",
-  UNAUTHORIZED: "UNAUTHORIZED",
-  FORBIDDEN: "FORBIDDEN",
-  EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
-  RATE_LIMITED: "RATE_LIMITED",
-  KEY_UNRECOVERABLE: "KEY_UNRECOVERABLE",
-  INTERNAL: "INTERNAL_ERROR",
-} as const;
+import { type ErrorCode, ErrorCodes } from "@jobpilot/contracts/errors";
 
 /**
  * An error carrying the HTTP status + envelope code it maps to. Thrown anywhere
@@ -19,7 +6,7 @@ export const ErrorCodes = {
  */
 export class HttpError extends Error {
   constructor(
-    readonly code: string,
+    readonly code: ErrorCode,
     message: string,
     readonly status: number,
     readonly details?: unknown,
@@ -35,8 +22,9 @@ export function notFound(message = "Not found"): HttpError {
   return new HttpError(ErrorCodes.NOT_FOUND, message, 404);
 }
 
-export function conflict(message: string): HttpError {
-  return new HttpError(ErrorCodes.CONFLICT, message, 409);
+/** Pass a specific `code` when a client branches on this conflict. */
+export function conflict(message: string, code: ErrorCode = ErrorCodes.CONFLICT): HttpError {
+  return new HttpError(code, message, 409);
 }
 
 export function badRequest(message: string): HttpError {
@@ -53,6 +41,11 @@ export function unauthorized(message = "Unauthorized"): HttpError {
 
 export function forbidden(message = "Forbidden"): HttpError {
   return new HttpError(ErrorCodes.FORBIDDEN, message, 403);
+}
+
+/** An upstream service (Google, a CAPTCHA solver) failed or answered unusably. */
+export function badGateway(message: string): HttpError {
+  return new HttpError(ErrorCodes.BAD_GATEWAY, message, 502);
 }
 
 /**

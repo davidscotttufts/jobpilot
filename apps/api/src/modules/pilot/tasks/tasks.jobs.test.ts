@@ -41,9 +41,11 @@ describe("TaskListService warm intros", () => {
   it("drops an introduced job from the pool but keeps its contacts on the apply", async () => {
     const taskList = await service({
       approvedJobs: [approvedJob({ matchScore: 90, key: "j1" })],
-      warmIntroRuns: [
-        { subjectId: "c1:j1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
-      ],
+      runs: {
+        "networking.warmIntro": [
+          { subjectId: "c1:j1", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
+        ],
+      },
       contacts: [insider],
     }).refresh("p1");
     expect(hasTaskType(taskList, "networking.warmIntro")).toBe(false);
@@ -58,7 +60,7 @@ describe("TaskListService board.diagnose", () => {
     campaignId: "c1",
     key,
     url: `https://x/${key}`,
-    board: "linkedin",
+    board: { id: "b-linkedin", domain: "linkedin.com" },
     status: "failed",
     failReason: "captcha wall",
     campaign: { status: campaignStatus },
@@ -71,7 +73,8 @@ describe("TaskListService board.diagnose", () => {
     }).refresh("p1");
     const task = findTask(taskList, "board.diagnose");
     expect(task?.payload).toEqual({
-      board: "linkedin",
+      jobBoardId: "b-linkedin",
+      board: "linkedin.com",
       consecutiveFailures: 3,
       recentFailReasons: ["captcha wall", "captcha wall", "captcha wall"],
       testJob: { campaignId: "c1", jobKey: "b", url: "https://x/b" },
@@ -88,9 +91,16 @@ describe("TaskListService board.diagnose", () => {
   it("waits a day before diagnosing the same board again", async () => {
     const taskList = await service({
       boardDiagnoseJobs: [failed("a"), failed("b"), failed("c")],
-      boardDiagnoseRuns: [
-        { subjectId: "linkedin", startedAt: new Date(), finishedAt: new Date(), outcome: "done" },
-      ],
+      runs: {
+        "board.diagnose": [
+          {
+            subjectId: "b-linkedin",
+            startedAt: new Date(),
+            finishedAt: new Date(),
+            outcome: "done",
+          },
+        ],
+      },
     }).refresh("p1");
     expect(hasTaskType(taskList, "board.diagnose")).toBe(false);
   });

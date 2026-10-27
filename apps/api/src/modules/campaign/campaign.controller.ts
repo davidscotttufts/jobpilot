@@ -7,17 +7,15 @@ import { idParam } from "@jobpilot/contracts/shared";
 import { campaignChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
-import { authGuard, requireVerifiedEmail } from "@/common/middleware";
+import { authGuard } from "@/common/middleware";
 import { sseStream } from "@/common/sse";
-import {
-  campaignDeletedSchema,
-  campaignListSchema,
-  campaignSchema,
-  campaignsQuery,
-} from "./campaign.schema";
+import { UserService } from "@/modules/user/user.service";
+import { deletedResponseSchema } from "@/types/response";
+import { campaignListSchema, campaignSchema, campaignsQuery } from "./campaign.schema";
 import { CampaignService } from "./campaign.service";
 
-const svc = container.resolve(CampaignService);
+const svc = container.get(CampaignService);
+const users = container.get(UserService);
 
 export const campaignController = new Elysia({
   prefix: "/campaigns",
@@ -36,7 +34,7 @@ export const campaignController = new Elysia({
   .post(
     "/",
     async ({ user, body }) => {
-      await requireVerifiedEmail(user.id);
+      await users.requireVerifiedEmail(user.id);
       return svc.create(user.id, body);
     },
     {
@@ -80,7 +78,7 @@ export const campaignController = new Elysia({
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
     params: idParam,
-    response: campaignDeletedSchema,
+    response: deletedResponseSchema,
     detail: {
       summary: "Delete campaign",
       description:

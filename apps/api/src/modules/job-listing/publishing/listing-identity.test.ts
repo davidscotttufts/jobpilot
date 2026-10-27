@@ -1,38 +1,7 @@
-import {
-  canonicalizeUrl,
-  dedupeKey,
-  listingSlug,
-  normalizeListingLocation,
-} from "./listing-identity";
+import { dedupeKey, listingSlug, normalizeListingLocation } from "./listing-identity";
 import { describe, expect, it } from "bun:test";
 
 const acme = { title: "Senior Software Engineer", company: "Acme Inc.", location: "New York, NY" };
-
-describe("canonicalizeUrl", () => {
-  it("strips tracking params, fragment, trailing slash and www", () => {
-    expect(
-      canonicalizeUrl(
-        "https://WWW.Example.com/jobs/123/?utm_source=linkedin&gh_src=x&ref=abc#apply",
-      ),
-    ).toBe("https://example.com/jobs/123");
-  });
-
-  it("keeps params that identify the posting, in a stable order", () => {
-    expect(canonicalizeUrl("https://example.com/j?id=9&currentJobId=7&utm_medium=email")).toBe(
-      "https://example.com/j?currentJobId=7&id=9",
-    );
-  });
-
-  it("collapses two links to the same posting onto one key", () => {
-    const a = canonicalizeUrl("https://boards.example.com/acme/jobs/42?utm_campaign=spring");
-    const b = canonicalizeUrl("https://boards.example.com/acme/jobs/42/#content");
-    expect(a).toBe(b);
-  });
-
-  it("returns unparseable input untouched rather than throwing", () => {
-    expect(canonicalizeUrl("  not a url  ")).toBe("not a url");
-  });
-});
 
 describe("normalizeListingLocation", () => {
   it("maps remote-ish text onto one bucket", () => {

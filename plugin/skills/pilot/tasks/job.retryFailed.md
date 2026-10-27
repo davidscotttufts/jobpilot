@@ -5,5 +5,4 @@ status=failed`. For each job whose `failReason` is transient (timeout, 5xx, sess
 eligibility skip), `POST /api/campaigns/$CID/jobs/<key>/retry` with `{"retryNotes":"<its
 retryNotes>"}`. Don't apply; `job.apply` runs pick them up.
 
-Detail `{"type":"retryFailed"}`. Summary: "Queued 3 of 5 failed jobs for retry - 2 were eligibility
-failures."
+Summary: "Queued 3 of 5 failed jobs for retry - 2 were eligibility failures."

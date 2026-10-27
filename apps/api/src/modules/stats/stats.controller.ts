@@ -4,7 +4,7 @@ import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { publicStatsSchema } from "./stats.schema";
 import { StatsService } from "./stats.service";
 
-const svc = container.resolve(StatsService);
+const svc = container.get(StatsService);
 
 export const publicStatsController = new Elysia({
   prefix: "/public/stats",

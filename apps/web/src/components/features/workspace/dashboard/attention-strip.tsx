@@ -29,7 +29,7 @@ export function AttentionStrip(): ReactNode {
           <LinkButton
             size="small"
             color="inherit"
-            href={`/campaigns/${encodeURIComponent(only.campaignId)}` as Route}
+            href={`/campaigns/${encodeURIComponent(only.id)}` as Route}
           >
             Review
           </LinkButton>

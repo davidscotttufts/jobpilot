@@ -11,7 +11,7 @@ import {
   adminBoardRecordSchema,
 } from "./job-board.schema";
 
-const svc = container.resolve(AdminBoardService);
+const svc = container.get(AdminBoardService);
 
 /** Catalog CRUD for admins. Register new admin controllers in `admin.guard.test.ts`. */
 export const adminBoardController = new Elysia({
@@ -53,6 +53,6 @@ export const adminBoardController = new Elysia({
     detail: {
       summary: "Delete catalog board",
       description:
-        "Removes a board from the global catalog. This also unlinks it from every profile that had adopted it.",
+        "Removes a board from the global catalog, unlinking it from every user and clearing it on jobs and applications. Returns 409 while any user has a login saved for it.",
     },
   });

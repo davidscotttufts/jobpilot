@@ -22,8 +22,8 @@ export const DEFAULT_BOARDS: Prisma.JobBoardCreateManyInput[] = [
   },
   {
     name: "Hiring Cafe",
-    domain: "hiring.cafe",
-    searchUrl: "https://hiring.cafe",
+    domain: "hiringcafe.com",
+    searchUrl: "https://hiringcafe.com",
     isDefault: true,
     sortOrder: 3,
   },

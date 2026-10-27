@@ -34,7 +34,7 @@ describe("buildTaskList ranking", () => {
         config: NETWORKING_OFF,
         answeredQuestions: [question("q1")],
         interviewReplies: [reply("em1")],
-        boardDiagnose: [boardDiagnose("linkedin")],
+        boardDiagnoses: [boardDiagnose("linkedin")],
         pausedCampaigns: [pausedCampaign("c9")],
         approvedJobs: [job("j1", 100)],
         interviewPreps: [prep("app1")],
@@ -156,7 +156,7 @@ describe("buildTaskList gating", () => {
   it("holds each focused task type to its per-list cap", () => {
     const taskList = buildTaskList(
       base({
-        boardDiagnose: [boardDiagnose("linkedin"), boardDiagnose("indeed")],
+        boardDiagnoses: [boardDiagnose("linkedin"), boardDiagnose("indeed")],
         pausedCampaigns: [pausedCampaign("c1"), pausedCampaign("c2")],
         interviewReplies: [reply("e1"), reply("e2"), reply("e3")],
         interviewPreps: [prep("a1"), prep("a2")],

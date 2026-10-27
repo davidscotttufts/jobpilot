@@ -12,8 +12,8 @@ import {
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
-import { publish, sseStream } from "@/common/sse";
-import { idResponseSchema } from "@/types/response";
+import { sseStream } from "@/common/sse";
+import { deletedResponseSchema } from "@/types/response";
 import {
   inboxQuery,
   proposalsQuery,
@@ -30,7 +30,7 @@ import {
 } from "./upwork.schema";
 import { UpworkService } from "./upwork.service";
 
-const svc = container.resolve(UpworkService);
+const svc = container.get(UpworkService);
 
 export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: ["Upwork"] } })
   .post("/client-quality", ({ body }) => svc.scoreClientQuality(body.client), {
@@ -58,23 +58,15 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
         "Returns the profile-enhancement record for the user, or null if none exists yet.",
     },
   })
-  .put(
-    "/profile",
-    async ({ user, body }) => {
-      const profile = await svc.upsertProfile(user.id, body);
-      publish(upworkChannel, { userId: user.id }, { type: "profile.updated" });
-      return profile;
+  .put("/profile", ({ user, body }) => svc.upsertProfile(user.id, body), {
+    body: updateUpworkProfileSchema,
+    response: upworkProfileSchema,
+    detail: {
+      summary: "Upsert profile enhancement",
+      description:
+        "Creates or updates the profile-enhancement record for the user, writing only provided fields, and publishes a profile.updated event.",
     },
-    {
-      body: updateUpworkProfileSchema,
-      response: upworkProfileSchema,
-      detail: {
-        summary: "Upsert profile enhancement",
-        description:
-          "Creates or updates the profile-enhancement record for the active profile, writing only provided fields, and publishes a profile.updated event.",
-      },
-    },
-  )
+  })
   .get("/account", ({ user }) => svc.getAccount(user.id), {
     response: upworkAccountResponseSchema,
     detail: {
@@ -83,23 +75,15 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
         "Returns the mirrored Upwork account snapshot for the user, or null before the first sync.",
     },
   })
-  .put(
-    "/account",
-    async ({ user, body }) => {
-      const account = await svc.upsertAccount(user.id, body);
-      publish(upworkChannel, { userId: user.id }, { type: "account.updated" });
-      return account;
+  .put("/account", ({ user, body }) => svc.upsertAccount(user.id, body), {
+    body: updateUpworkAccountSchema,
+    response: upworkAccountSchema,
+    detail: {
+      summary: "Upsert account snapshot",
+      description:
+        "Writes the Connects balance the agent read from the Upwork MCP, stamps the sync time, and publishes an account.updated event.",
     },
-    {
-      body: updateUpworkAccountSchema,
-      response: upworkAccountSchema,
-      detail: {
-        summary: "Upsert account snapshot",
-        description:
-          "Writes the Connects balance the agent read from the Upwork MCP, stamps the sync time, and publishes an account.updated event.",
-      },
-    },
-  )
+  })
   .get("/inbox", ({ user, query }) => svc.listInbox(user.id, query), {
     query: inboxQuery,
     response: upworkInboxListSchema,
@@ -109,83 +93,55 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
         "Returns one page of the user's mirrored Upwork invitations, offers and message threads as `{ items, pagination }`, newest received first, optionally filtered by kind and status.",
     },
   })
-  .post(
-    "/inbox/sync",
-    async ({ user, body }) => {
-      const result = await svc.syncInbox(user.id, body);
-      publish(upworkChannel, { userId: user.id }, { type: "inbox.synced" });
-      return result;
+  .post("/inbox/sync", ({ user, body }) => svc.syncInbox(user.id, body), {
+    body: syncUpworkInboxSchema,
+    response: upworkInboxSyncResultSchema,
+    detail: {
+      summary: "Sync inbox items",
+      description:
+        "Upserts a batch of invitations, offers and message threads read from the Upwork MCP, keyed on Upwork's own id, and publishes an inbox.synced event. Anything the user archived stays archived. Stamps the account's lastSyncedAt.",
     },
-    {
-      body: syncUpworkInboxSchema,
-      response: upworkInboxSyncResultSchema,
-      detail: {
-        summary: "Sync inbox items",
-        description:
-          "Upserts a batch of invitations, offers and message threads read from the Upwork MCP, keyed on Upwork's own id, and publishes an inbox.synced event. Anything the user archived stays archived. Stamps the account's lastSyncedAt.",
-      },
+  })
+  .patch("/inbox/:id", ({ user, params, body }) => svc.updateInboxItem(user.id, params.id, body), {
+    params: idParam,
+    body: patchUpworkInboxItemSchema,
+    response: upworkInboxItemSchema,
+    detail: {
+      summary: "Update inbox item status",
+      description:
+        "Sets the read status of one inbox item owned by the user, publishes an inbox.updated event, and returns the updated item.",
     },
-  )
-  .patch(
-    "/inbox/:id",
-    async ({ user, params, body }) => {
-      const item = await svc.updateInboxItem(user.id, params.id, body);
-      publish(upworkChannel, { userId: user.id }, { type: "inbox.updated", id: params.id });
-      return item;
-    },
-    {
-      params: idParam,
-      body: patchUpworkInboxItemSchema,
-      response: upworkInboxItemSchema,
-      detail: {
-        summary: "Update inbox item status",
-        description:
-          "Sets the read status of one inbox item owned by the user, publishes an inbox.updated event, and returns the updated item.",
-      },
-    },
-  )
+  })
   .get("/proposals", ({ user, query }) => svc.listProposals(user.id, query), {
     query: proposalsQuery,
     response: upworkProposalListSchema,
     detail: {
       summary: "List proposals",
       description:
-        "Returns one page of the active profile's Upwork proposals as `{ items, pagination }`, newest-updated first, optionally filtered by status and a search term over job title and client name.",
+        "Returns one page of the user's Upwork proposals as `{ items, pagination }`, newest-updated first, optionally filtered by status and a search term over job title and client name.",
     },
   })
-  .post(
-    "/proposals",
-    async ({ user, body }) => {
-      const proposal = await svc.createProposal(user.id, body);
-      publish(upworkChannel, { userId: user.id }, { type: "proposal.created", id: proposal.id });
-      return proposal;
+  .post("/proposals", ({ user, body }) => svc.createProposal(user.id, body), {
+    body: createUpworkProposalSchema,
+    response: upworkProposalSchema,
+    detail: {
+      summary: "Create proposal",
+      description:
+        "Creates a new Upwork proposal for the user, publishes a proposal.created event, and returns the created proposal.",
     },
-    {
-      body: createUpworkProposalSchema,
-      response: upworkProposalSchema,
-      detail: {
-        summary: "Create proposal",
-        description:
-          "Creates a new Upwork proposal for the active profile, publishes a proposal.created event, and returns the created proposal.",
-      },
-    },
-  )
+  })
   .get("/proposals/:id", ({ user, params }) => svc.getProposal(user.id, params.id), {
     params: idParam,
     response: upworkProposalSchema,
     detail: {
       summary: "Get proposal",
       description:
-        "Returns a single Upwork proposal owned by the active profile, or 404 if it does not exist.",
+        "Returns a single Upwork proposal owned by the user, or 404 if it does not exist.",
     },
   })
   .patch(
     "/proposals/:id",
-    async ({ user, params, body }) => {
-      const proposal = await svc.updateProposal(user.id, params.id, body);
-      publish(upworkChannel, { userId: user.id }, { type: "proposal.updated", id: params.id });
-      return proposal;
-    },
+    ({ user, params, body }) => svc.updateProposal(user.id, params.id, body),
     {
       params: idParam,
       body: patchUpworkProposalSchema,
@@ -193,24 +149,16 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       detail: {
         summary: "Update proposal",
         description:
-          "Applies a partial update to an Upwork proposal owned by the active profile, publishes a proposal.updated event, and returns the updated proposal.",
+          "Applies a partial update to an Upwork proposal owned by the user, publishes a proposal.updated event, and returns the updated proposal.",
       },
     },
   )
-  .delete(
-    "/proposals/:id",
-    async ({ user, params }) => {
-      const result = await svc.deleteProposal(user.id, params.id);
-      publish(upworkChannel, { userId: user.id }, { type: "proposal.deleted", id: params.id });
-      return result;
+  .delete("/proposals/:id", ({ user, params }) => svc.deleteProposal(user.id, params.id), {
+    params: idParam,
+    response: deletedResponseSchema,
+    detail: {
+      summary: "Delete proposal",
+      description:
+        "Deletes an Upwork proposal owned by the user, publishes a proposal.deleted event, and returns the deleted proposal id.",
     },
-    {
-      params: idParam,
-      response: idResponseSchema,
-      detail: {
-        summary: "Delete proposal",
-        description:
-          "Deletes an Upwork proposal owned by the active profile, publishes a proposal.deleted event, and returns the deleted proposal id.",
-      },
-    },
-  );
+  });

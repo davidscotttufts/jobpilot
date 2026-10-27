@@ -1,6 +1,11 @@
 import { google } from "googleapis";
 import { normalizeEmail } from "@/common/utils/email";
-import type { OAuthProfile, OAuthProviderConfig, SignInProvider } from "./sign-in-provider";
+import {
+  type OAuthProfile,
+  type OAuthProviderConfig,
+  providerError,
+  type SignInProvider,
+} from "./sign-in-provider";
 
 export class GoogleSignInProvider implements SignInProvider {
   private makeClient(config: OAuthProviderConfig) {
@@ -20,13 +25,13 @@ export class GoogleSignInProvider implements SignInProvider {
     const client = this.makeClient(config);
     const { tokens } = await client.getToken(code);
     if (!tokens.access_token) {
-      throw new Error("Google did not return an access token");
+      throw providerError("Google did not return an access token");
     }
     client.setCredentials(tokens);
     const me = await google.oauth2({ version: "v2", auth: client }).userinfo.get();
     const { id, email, verified_email } = me.data;
     if (!id || !email) {
-      throw new Error("Could not resolve the Google account");
+      throw providerError("Could not resolve the Google account");
     }
     return {
       providerAccountId: id,

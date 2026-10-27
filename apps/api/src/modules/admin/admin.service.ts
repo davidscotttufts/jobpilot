@@ -1,14 +1,14 @@
 import type { AdminPilotQuery, AdminUserQuery } from "@jobpilot/contracts/admin";
 import { pageSlice, paginate } from "@jobpilot/contracts/pagination";
-import { sumTokenUsage } from "@jobpilot/contracts/pilot";
+import { sumTokenUsage, tokenUsage } from "@jobpilot/contracts/pilot";
 import { type AssignableRole, hasRole } from "@jobpilot/contracts/role";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import type { AuthUser } from "@/common/auth";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
-import { tokenUsage } from "@/modules/pilot/tasks/run-history";
 
 const USER_SELECT = {
   id: true,
@@ -22,9 +22,12 @@ const USER_SELECT = {
 
 type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
 
-@singleton()
+@injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly boards = inject(JobBoardService),
+  ) {}
 
   async stats() {
     const weekStart = startOfWeek();
@@ -41,7 +44,7 @@ export class AdminService {
       totalBoards,
       totalBoardLinks,
       statusRows,
-      topBoardRows,
+      topBoards,
       signupRows,
     ] = await Promise.all([
       this.prisma.user.count(),
@@ -61,13 +64,7 @@ export class AdminService {
       this.prisma.jobBoard.count(),
       this.prisma.userJobBoard.count(),
       this.prisma.application.groupBy({ by: ["status"], _count: { _all: true } }),
-      this.prisma.application.groupBy({
-        by: ["board"],
-        where: { board: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 5,
-      }),
+      this.boards.topBoards({}),
       this.prisma.user.findMany({
         where: { createdAt: { gte: timelineStart } },
         select: { createdAt: true },
@@ -93,9 +90,7 @@ export class AdminService {
         boardLinks: totalBoardLinks,
       },
       statusBreakdown: statusRows.map((row) => ({ status: row.status, count: row._count._all })),
-      topBoards: topBoardRows
-        .filter((row) => row.board)
-        .map((row) => ({ board: row.board as string, count: row._count._all })),
+      topBoards,
       signupsPerDay: bucketPerDay(
         signupRows.map((row) => row.createdAt),
         timelineStart,
@@ -192,9 +187,9 @@ export class AdminService {
         _max: { updatedAt: true },
       }),
       // The agent token's last use is the best sign the account actually runs JobPilot.
-      this.prisma.apiToken.groupBy({
+      this.prisma.authToken.groupBy({
         by: ["userId"],
-        where: { userId: { in: userIds } },
+        where: { userId: { in: userIds }, kind: "terminal" },
         _max: { lastUsedAt: true },
       }),
     ]);

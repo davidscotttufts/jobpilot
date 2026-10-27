@@ -2,6 +2,8 @@
 export const PRISMA_ERRORS = {
   /** Unique constraint violated. */
   UNIQUE_VIOLATION: "P2002",
+  /** A foreign key blocked the write, e.g. deleting a row a Restrict relation still points at. */
+  FOREIGN_KEY_VIOLATION: "P2003",
   /** Update/delete targeted a row that does not exist. */
   NOT_FOUND: "P2025",
 } as const;

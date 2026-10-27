@@ -3,7 +3,7 @@ import { container } from "@/common/di/container";
 import { healthStatusSchema } from "./health.schema";
 import { HealthService } from "./health.service";
 
-const healthService = container.resolve(HealthService);
+const healthService = container.get(HealthService);
 
 export const healthController = new Elysia({
   prefix: "/health",

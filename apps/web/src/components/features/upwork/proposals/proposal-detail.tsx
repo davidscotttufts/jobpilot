@@ -11,7 +11,7 @@ import { api } from "@/api/client";
 import { useApiMutation, useApiQuery } from "@/api/hooks";
 import { upworkAccountQueries, upworkProposalQueries } from "@/api/queries";
 import { queryKeys } from "@/api/query-keys";
-import type { UpdateUpworkProposalRequest, UpworkProposalDto } from "@/api/types";
+import type { UpdateUpworkProposalRequest } from "@/api/types";
 import { AgentOnlyButton } from "@/components/ui/buttons";
 import { PageHeader, PageShell, SectionCard } from "@/components/ui/layout";
 import { useSseChannel } from "@/lib/sse/client";
@@ -49,12 +49,12 @@ export function ProposalDetail(props: ProposalDetailProps): ReactElement {
     },
   });
 
-  const update = useApiMutation<UpworkProposalDto, UpdateUpworkProposalRequest>(
-    (body) => api.upwork.proposals({ id }).patch(body),
+  const update = useApiMutation(
+    (body: UpdateUpworkProposalRequest) => api.upwork.proposals({ id }).patch(body),
     { invalidate: [queryKeys.upworkProposals.all] },
   );
 
-  const remove = useApiMutation<{ id: string }, void>(() => api.upwork.proposals({ id }).delete(), {
+  const remove = useApiMutation(() => api.upwork.proposals({ id }).delete(), {
     successMessage: "Proposal deleted",
     invalidate: [queryKeys.upworkProposals.all],
     onSuccess: () => router.replace("/upwork" as Route),

@@ -17,7 +17,7 @@ import {
 } from "./pilot.schema";
 import { PilotService } from "./pilot.service";
 
-const pilot = container.resolve(PilotService);
+const pilot = container.get(PilotService);
 
 const limitTaskList = rateLimit(RATE_LIMITS.pilotTasks);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
@@ -31,7 +31,7 @@ export const pilotController = new Elysia({
     response: pilotStateSchema,
     detail: {
       summary: "Get pilot state",
-      description: "Returns the profile's Pilot state, creating it with defaults on first read.",
+      description: "Returns the user's Pilot state, creating it with defaults on first read.",
     },
   })
   .get("/instructions/impact", ({ user }) => pilot.instructionsImpact(user.id), {

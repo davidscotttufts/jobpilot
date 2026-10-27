@@ -10,14 +10,14 @@ import {
 } from "@jobpilot/contracts/networking";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { campaignChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
-import { publishActivity, writeActivity } from "@/common/activity-log";
+import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, notFound, unprocessable } from "@/common/errors";
 import { publish } from "@/common/sse";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { deriveCampaignSummary } from "@/modules/campaign/campaign.summary";
 import { ensureCampaignOwned } from "@/modules/campaign/campaign.utils";
-import { createContactPayload } from "@/modules/contact";
+import { createContactPayload } from "@/modules/contact/contact.mapper";
+import { publishJournalEntries, writeJournalEntries } from "@/modules/pilot/journal-entries";
 
 export interface NetworkingMessageFilters {
   campaignId?: string;
@@ -26,9 +26,9 @@ export interface NetworkingMessageFilters {
   order?: "asc" | "desc";
 }
 
-@singleton()
+@injectable()
 export class NetworkingService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** A campaign's board when `campaignId` is set, otherwise every campaign's messages. */
   async listNetworking(userId: string, query: PaginationQuery & NetworkingMessageFilters) {
@@ -124,7 +124,7 @@ export class NetworkingService {
       }
       const activity =
         existing.status === "draft" && (subjectChanged || bodyChanged)
-          ? await writeActivity(tx, userId, {
+          ? await writeJournalEntries(tx, userId, {
               entries: [
                 {
                   kind: "correction",
@@ -144,7 +144,7 @@ export class NetworkingService {
       return { message, activity };
     });
     publish(campaignChannel, { campaignId }, { type: "networking-update" });
-    publishActivity(userId, result.activity);
+    publishJournalEntries(userId, result.activity);
     return result.message;
   }
 

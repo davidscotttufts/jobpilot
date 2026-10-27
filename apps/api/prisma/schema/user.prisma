@@ -55,7 +55,7 @@ model User {
   visaStatus          String? @map("visa_status")
   optExtension        String? @map("opt_extension")
   willingToRelocate   Boolean @default(false) @map("willing_to_relocate")
-  preferredLocations  String  @default("[]") @map("preferred_locations")
+  preferredLocations  String[] @default([]) @map("preferred_locations")
 
   eeoGender           String? @map("eeo_gender")
   eeoRace             String? @map("eeo_race")
@@ -70,36 +70,35 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  refreshTokens      RefreshToken[]
-  apiTokens          ApiToken[]
+  authTokens         AuthToken[]
   verificationTokens VerificationToken[]
   oauthAccounts      OAuthAccount[]
 
-  resumes            Resume[]
-  autoApply          AutoApplySettings?
-  applications       Application[]
-  campaigns          Campaign[]
-  credentials        Credential[]
-  jobBoards          UserJobBoard[]
-  emailAccount       EmailAccount?
-  emailOAuthClient   EmailOAuthClient?
-  upworkProposals    UpworkProposal[]
-  upworkProfile      UpworkProfile?
-  upworkAccount      UpworkAccount?
-  upworkInboxItems   UpworkInboxItem[]
-  references         Reference[]
-  salaryPreferences  SalaryPreference[]
-  contacts           Contact[]
-  networkingMessages NetworkingMessage[]
-  coverLetters       CoverLetter[]
-  pilotState         PilotState?
-  pilotSearches      PilotSearch[]
-  pilotRuns          PilotRun[]
-  pilotQuestions     PilotQuestion[]
-  pilotJournal       PilotJournalEntry[]
-  profileAnswers     ProfileAnswer[]
-  pushSubscriptions  PushSubscription[]
-  promotionPosts     PromotionPost[]
+  resumes              Resume[]
+  autoApply            AutoApplySettings?
+  applications         Application[]
+  campaigns            Campaign[]
+  credentials          Credential[]
+  jobBoards            UserJobBoard[]
+  emailAccount         EmailAccount?
+  emailOAuthClient     EmailOAuthClient?
+  upworkProposals      UpworkProposal[]
+  upworkProfile        UpworkProfile?
+  upworkAccount        UpworkAccount?
+  upworkInboxItems     UpworkInboxItem[]
+  references           Reference[]
+  salaryPreferences    SalaryPreference[]
+  contacts             Contact[]
+  networkingMessages   NetworkingMessage[]
+  coverLetters         CoverLetter[]
+  pilotState           PilotState?
+  pilotSearches        PilotSearch[]
+  pilotRuns            PilotRun[]
+  pilotQuestions       PilotQuestion[]
+  pilotJournal         PilotJournalEntry[]
+  profileAnswers       ProfileAnswer[]
+  webPushSubscriptions WebPushSubscription[]
+  promotionPosts       PromotionPost[]
 
   @@map("users")
 }

@@ -24,10 +24,6 @@ export const RegisterSchema = z.object({
   password: PasswordSchema,
 });
 
-export const ApiTokenCreateSchema = z.object({
-  name: z.string().min(1).max(100),
-});
-
 export const VerifyEmailSchema = z.object({
   token: z.string().min(1),
 });
@@ -41,15 +37,28 @@ export const ResetPasswordSchema = z.object({
   password: PasswordSchema,
 });
 
-/** Wire values for sign-in providers (lowercase; the API maps to the Prisma enum). */
-export const OAuthProviderSchema = z.enum(["google", "github"]);
+/** Every bearer credential kind: a web session (cookie) or the agent's terminal token. */
+export const AUTH_TOKEN_KINDS = ["session", "terminal"] as const;
 
-/** Machine reasons the OAuth callback can redirect back with (`?oauth=error&reason=`).
- *  Other reasons are provider prose (e.g. GitHub's error_description) shown as-is. */
+export const OAUTH_PROVIDERS = ["google", "github"] as const;
+export const OAuthProviderSchema = z.enum(OAUTH_PROVIDERS);
+
+/** Every reason the sign-in OAuth callback redirects back with (`?oauth=error&reason=`). */
 const OAUTH_ERROR_REASONS = [
   "provider_not_configured",
   "email_unverified",
   "access_denied",
+  /** The provider reported a failure or returned an unusable profile. */
+  "provider_error",
+  /** Missing code or state, or the state cookie did not match. */
+  "invalid_callback",
+  /** A link callback arrived without a live session. */
+  "session_expired",
+  /** That provider identity is linked to another JobPilot account. */
+  "identity_taken",
+  /** This account already has an identity from that provider. */
+  "provider_already_linked",
+  "unexpected",
 ] as const;
 export type OAuthErrorReason = (typeof OAUTH_ERROR_REASONS)[number];
 
@@ -70,7 +79,6 @@ export const ConfirmEmailChangeSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
-export type ApiTokenCreateInput = z.infer<typeof ApiTokenCreateSchema>;
 export type VerifyEmailInput = z.infer<typeof VerifyEmailSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;

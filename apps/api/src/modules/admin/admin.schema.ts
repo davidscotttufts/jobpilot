@@ -1,3 +1,4 @@
+import { statusSchema } from "@jobpilot/contracts/application";
 import { paginatedSchema } from "@jobpilot/contracts/pagination";
 import { tokenUsageSchema } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
@@ -43,7 +44,7 @@ export const adminStatsSchema = z.object({
     boards: z.number().int(),
     boardLinks: z.number().int(),
   }),
-  statusBreakdown: z.array(z.object({ status: z.string(), count: z.number().int() })),
+  statusBreakdown: z.array(z.object({ status: statusSchema, count: z.number().int() })),
   topBoards: z.array(z.object({ board: z.string(), count: z.number().int() })),
   signupsPerDay: z.array(z.object({ date: z.date(), count: z.number().int() })),
 });

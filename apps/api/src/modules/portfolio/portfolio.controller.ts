@@ -11,7 +11,7 @@ import {
 } from "./portfolio.schema";
 import { PortfolioService } from "./portfolio.service";
 
-const svc = container.resolve(PortfolioService);
+const svc = container.get(PortfolioService);
 
 /** Deliberately unguarded (auth is opt-in): this backs the crawlable public /u/[username] pages. */
 export const publicPortfolioController = new Elysia({

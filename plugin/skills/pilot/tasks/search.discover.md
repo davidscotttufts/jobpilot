@@ -3,11 +3,11 @@
 Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarget, maxPages}`.
 
 1. **Campaign.** Use `campaignId` when set; never open a second campaign for one search. Otherwise
-   create one and read `.campaignId` as `CID` (`pilotSearchId` is how later runs find it):
+   create one and read `.id` as `CID` (`pilotSearchId` is how later runs find it):
 
    ```bash
    jobpilot-api POST /api/campaigns \
-     --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<searchId>","config":{"resumeId":"<resumeId>","minScore":<minScore>,"board":"<board>"}}'
+     --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<searchId>","board":"<board>","config":{"resumeId":"<resumeId>","minScore":<minScore>}}'
    ```
 
 2. **Search.** Delegate one `job-searcher` run with `{runId:$RUN_ID, campaignId:CID, query, board,

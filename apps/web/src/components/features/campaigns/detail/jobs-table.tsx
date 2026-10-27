@@ -66,7 +66,12 @@ export function CampaignJobsTable(props: CampaignJobsTableProps): ReactElement {
       ),
     },
     { field: "company", headerName: "Company", flex: 1, minWidth: 160 },
-    { field: "board", headerName: "Board", width: 130 },
+    {
+      field: "board",
+      headerName: "Board",
+      width: 130,
+      valueGetter: (_value, row) => row.board?.name ?? "",
+    },
     {
       field: "matchScore",
       headerName: "Score",

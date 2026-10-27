@@ -1,0 +1,135 @@
+import type { PushSubscriptionInput } from "@jobpilot/contracts/web-push";
+import { InjectionToken, inject, injectable } from "@needle-di/core";
+import webpush from "web-push";
+import { PrismaClient } from "@/generated/prisma/client";
+
+/** VAPID credentials; injected as `null` when any of the three env vars is unset (push disabled). */
+export interface VapidConfig {
+  publicKey: string;
+  privateKey: string;
+  subject: string;
+}
+
+export const VAPID_CONFIG = new InjectionToken<VapidConfig | null>("VAPID_CONFIG");
+
+export interface PushPayload {
+  title: string;
+  body: string;
+  url?: string;
+  tag?: string;
+}
+
+/** A push endpoint the receiver has dropped, so we prune the stored subscription. */
+const GONE_STATUSES = new Set([404, 410]);
+
+/** Push bodies are glanceable; keep them short so a phone banner never truncates mid-word. */
+const PUSH_BODY_MAX = 120;
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+// Intentionally no @/common/logger here: it imports @/env, which validates at load and would make
+// this module (and PilotService, which depends on it) impossible to unit-test without a full env.
+
+@injectable()
+export class WebPushService {
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly vapid = inject(VAPID_CONFIG),
+  ) {
+    if (this.vapid) {
+      webpush.setVapidDetails(this.vapid.subject, this.vapid.publicKey, this.vapid.privateKey);
+    }
+  }
+
+  get isConfigured(): boolean {
+    return this.vapid !== null;
+  }
+
+  /** The application-server key the browser needs to `pushManager.subscribe`; null when unconfigured. */
+  get publicKey(): string | null {
+    return this.vapid?.publicKey ?? null;
+  }
+
+  /** Upsert by endpoint. An endpoint can move between users (shared device), so a conflict reassigns it. */
+  async subscribe(userId: string, input: PushSubscriptionInput) {
+    return this.prisma.webPushSubscription.upsert({
+      where: { endpoint: input.endpoint },
+      create: {
+        userId,
+        endpoint: input.endpoint,
+        p256dh: input.keys.p256dh,
+        auth: input.keys.auth,
+        userAgent: input.userAgent ?? null,
+      },
+      update: {
+        userId,
+        p256dh: input.keys.p256dh,
+        auth: input.keys.auth,
+        userAgent: input.userAgent ?? null,
+      },
+      select: { id: true, endpoint: true, createdAt: true },
+    });
+  }
+
+  /** Delete the caller's own subscription for this endpoint; returns the removed id (404 if not owned). */
+  async unsubscribe(userId: string, endpoint: string): Promise<string | null> {
+    const row = await this.prisma.webPushSubscription.findFirst({
+      where: { userId, endpoint },
+      select: { id: true },
+    });
+    if (!row) {
+      return null;
+    }
+    await this.prisma.webPushSubscription.delete({ where: { id: row.id } });
+    return row.id;
+  }
+
+  async list(userId: string) {
+    return this.prisma.webPushSubscription.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, endpoint: true, userAgent: true, createdAt: true },
+    });
+  }
+
+  /**
+   * Fan a notification out to every one of the user's subscriptions. Never throws: catches
+   * internally so a call-site `void push.sendToUser(...)` cannot poison the request path. A
+   * 404/410 prunes the dead subscription; other errors are logged and swallowed.
+   */
+  async sendToUser(userId: string, payload: PushPayload): Promise<void> {
+    if (!this.isConfigured) {
+      return;
+    }
+    try {
+      const subs = await this.prisma.webPushSubscription.findMany({
+        where: { userId },
+        select: { id: true, endpoint: true, p256dh: true, auth: true },
+      });
+      const body = JSON.stringify({ ...payload, body: truncate(payload.body, PUSH_BODY_MAX) });
+      await Promise.all(subs.map((sub) => this.deliver(sub, body)));
+    } catch (err) {
+      console.error("[push] sendToUser failed", err);
+    }
+  }
+
+  private async deliver(
+    sub: { id: string; endpoint: string; p256dh: string; auth: string },
+    body: string,
+  ): Promise<void> {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        body,
+      );
+    } catch (err) {
+      if (err instanceof webpush.WebPushError && GONE_STATUSES.has(err.statusCode)) {
+        await this.prisma.webPushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+        return;
+      }
+      console.error("[push] delivery failed", err);
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "jobpilot",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -14,7 +14,6 @@
     "test": "bun --cwd=apps/api run test && bun --cwd=packages/contracts run test",
     "db:tunnel": "bash apps/api/scripts/db-tunnel.sh",
     "db:setup": "bun --cwd=apps/api run db:generate && bun --cwd=apps/api run db:migrate:apply && bun --cwd=apps/api run db:seed",
-    "build:api": "bun --cwd=apps/api run build",
     "build:web": "bun --cwd=apps/web run build",
     "build:terminal": "dotnet publish apps/terminal -c Release -o dist/terminal",
     "check": "biome check --write .",
@@ -25,7 +24,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
-    "@types/bun": "^1.4.2",
+    "@types/bun": "^1.4.4",
     "concurrently": "^10.0.5",
     "knip": "^6.38.0"
   }

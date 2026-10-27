@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { boardRefSchema } from "./job-board";
 import { networkingConfigSchema } from "./networking";
 import { isJsonObject } from "./utils/json";
 import { cleanReplacementChars } from "./utils/text";
@@ -39,8 +40,32 @@ export const CAMPAIGN_JOB_STATUSES = [
 ] as const;
 export const campaignJobStatusSchema = z.enum(CAMPAIGN_JOB_STATUSES);
 
+/** A campaign job as responses and the campaign event stream carry it. */
+export const campaignJobSchema = z.object({
+  id: z.uuid(),
+  campaignId: z.uuid(),
+  key: z.string(),
+  title: z.string(),
+  company: z.string(),
+  location: z.string().nullable(),
+  salary: z.string().nullable(),
+  type: z.string().nullable(),
+  url: z.string(),
+  board: boardRefSchema.nullable(),
+  matchScore: z.number().int().nullable(),
+  matchReason: z.string().nullable(),
+  status: campaignJobStatusSchema,
+  appliedAt: z.date().nullable(),
+  failReason: z.string().nullable(),
+  retryNotes: z.string().nullable(),
+  skipReason: z.string().nullable(),
+  description: z.string().nullable(),
+  brief: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
 export const campaignConfigSchema = z.object({
-  board: z.string().min(1).optional(),
   resumeId: z.uuid().optional(),
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
@@ -100,6 +125,8 @@ export const createCampaignSchema = z
   .object({
     query: z.string().min(1),
     source: campaignSourceSchema,
+    /** The board's domain; resolved to a catalog row, which is created unlisted when unknown. */
+    board: z.string().trim().min(1).optional(),
     config: campaignConfigSchema.optional(),
     createdBy: campaignActorSchema.default("user"),
     /** Set by the pilot's discovery run so the search can find this campaign again by id. */
@@ -239,4 +266,5 @@ export type PatchCampaignJobInput = z.infer<typeof patchCampaignJobSchema>;
 export type RescanCampaignJobInput = z.infer<typeof rescanCampaignJobSchema>;
 export type RetryCampaignJobInput = z.infer<typeof retryCampaignJobSchema>;
 export type CampaignSource = z.infer<typeof campaignSourceSchema>;
+export type CampaignJob = z.infer<typeof campaignJobSchema>;
 export type CampaignActor = z.infer<typeof campaignActorSchema>;

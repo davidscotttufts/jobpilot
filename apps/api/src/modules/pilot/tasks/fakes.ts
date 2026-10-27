@@ -1,7 +1,8 @@
-import { makePush, type SentPush } from "@/common/push/push.fake";
+import type { TaskType } from "@jobpilot/contracts/pilot";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { makePush, type SentPush } from "@/modules/web-push/web-push.fake";
 import type { PilotJournalService } from "../journal.service";
 import { TaskListService } from "./task-list.service";
 
@@ -15,6 +16,8 @@ interface RunRow {
   outcome?: string | null;
 }
 
+type LatestRun = Omit<RunRow, "subjectId" | "startedAt"> & { startedAt?: Date };
+
 interface Recorder {
   promoteScoredJobs: unknown[][];
   campaignUpdates: { where: Row; data: Row }[];
@@ -24,37 +27,28 @@ interface Recorder {
 }
 
 export interface Over {
+  /** Prior runs per task type, for the per-subject dampers. */
+  runs?: Partial<Record<TaskType, RunRow[]>>;
+  /** The latest run per task type, for the once-per-user dampers. */
+  latestRuns?: Partial<Record<TaskType, LatestRun | null>>;
   instructionsConfig?: unknown;
   instructionsGoals?: string;
   jobAlertsRequestedAt?: Date | null;
-  jobAlertsRun?: {
-    startedAt: Date;
-    finishedAt: Date | null;
-    expiresAt: Date;
-    outcome?: string | null;
-  } | null;
   jobAlertEmails?: { id: string }[];
   appliedToday?: number;
   pilotSearches?: Row[];
   answered?: Row[];
-  questionRuns?: { subjectId: string }[];
   approvedJobs?: Row[];
   recentAppliedJobs?: Row[];
   contacts?: Row[];
-  warmIntroRuns?: RunRow[];
-  searchRuns?: RunRow[];
-  dueSearchCampaigns?: { campaignId: string; pilotSearchId: string }[];
+  dueSearchCampaigns?: { id: string; pilotSearchId: string }[];
   scorePendingCampaigns?: Row[];
-  scorePendingRuns?: RunRow[];
   scoredPendingJobs?: Row[];
   pausedCampaigns?: Row[];
   campaignQuestions?: { subjectId: string; status: string; answeredAt: Date | null }[];
-  pausedReviewRuns?: RunRow[];
   finalizeCampaigns?: Row[];
   queuedCampaigns?: Row[];
-  queueScoreRuns?: RunRow[];
   boardDiagnoseJobs?: Row[];
-  boardDiagnoseRuns?: RunRow[];
   platformPosts?: { platform: string; createdAt: Date }[];
   interviewReplyApps?: Row[];
   interviewPrepApps?: Row[];
@@ -62,12 +56,9 @@ export interface Over {
   upworkAccount?: { lastSyncedAt: Date | null } | null;
   upworkProfiles?: number;
   upworkUnread?: number;
-  upworkSyncRun?: { startedAt: Date; finishedAt: Date | null; outcome?: string | null } | null;
   quietCampaigns?: Row[];
   quietJobCounts?: Row[];
-  actionMarkers?: { subjectId: string | null; detail: unknown }[];
   skipReasonRows?: { campaignId: string; skipReason: string | null; _count: { _all: number } }[];
-  setupRun?: { finishedAt: Date | null } | null;
   existingDigests?: number;
   digestApps?: number;
   jobsFailed?: number;
@@ -78,27 +69,10 @@ export interface Over {
 }
 
 function fakePilotRun(over: Over) {
-  const byTaskType: Record<string, RunRow[] | undefined> = {
-    "campaign.scorePending": over.scorePendingRuns,
-    "queue.score": over.queueScoreRuns,
-    "networking.warmIntro": over.warmIntroRuns,
-    "campaign.reviewPaused": over.pausedReviewRuns,
-    "search.discover": over.searchRuns,
-    "board.diagnose": over.boardDiagnoseRuns,
-  };
-  const latestByTaskType: Record<string, unknown> = {
-    "search.setup": over.setupRun,
-    "upwork.syncInbox": over.upworkSyncRun,
-    "inbox.jobAlerts": over.jobAlertsRun,
-  };
   return {
-    findMany: async (a: { where: { subjectType?: string; taskType?: string } }) => {
-      if (a.where.taskType) return byTaskType[a.where.taskType] ?? [];
-      if (a.where.subjectType === "question") return over.questionRuns ?? [];
-      return [];
-    },
-    findFirst: async (a: { where: { taskType: string } }) =>
-      latestByTaskType[a.where.taskType] ?? null,
+    findMany: async (a: { where: { taskType: TaskType } }) => over.runs?.[a.where.taskType] ?? [],
+    findFirst: async (a: { where: { taskType: TaskType } }) =>
+      over.latestRuns?.[a.where.taskType] ?? null,
     count: async () => 0,
     updateMany: async () => ({ count: 0 }),
   };
@@ -152,9 +126,9 @@ function fakeCampaign(over: Over, rec: Recorder) {
       if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];
     },
-    updateMany: async (a: { where: Row; data: Row }) => {
+    updateManyAndReturn: async (a: { where: Row; data: Row }) => {
       rec.campaignUpdates.push(a);
-      return { count: 1 };
+      return over.finalizeCampaigns ?? [];
     },
   };
 }
@@ -229,7 +203,6 @@ function makeTaskListDb(over: Over = {}) {
       // is what lets the race test see a concurrent writer.
       count: async () =>
         (over.existingDigests ?? 1) + rec.journals.filter((j) => j.kind === "digest").length,
-      findMany: async () => over.actionMarkers ?? [],
     },
     $executeRaw: async () => 0,
     // Serialized, as the advisory lock would, so concurrent digest writes queue up.

@@ -74,7 +74,7 @@ private address instead.
 
 The web app and API are hosted and shared by all users. Each user runs a
 terminal host and the provider plugin on their own machine. The local agent
-calls the API as the signed-in user, using a personal access token that the
+calls the API as the signed-in user, using a terminal token that the
 terminal host puts into the session's environment.
 
 ### Topology

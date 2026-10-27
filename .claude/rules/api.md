@@ -6,16 +6,17 @@ paths:
 
 # API conventions (`apps/api`, `packages/*`)
 
-Commands (`bun --cwd=apps/api run <name>`): `dev`, `build`, `typecheck`, `test`, `db:generate`,
-`db:migrate` (create only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`. Prisma
-schema is split by domain under `prisma/schema/*.prisma`.
+Commands (`bun --cwd=apps/api run <name>`): `dev`, `typecheck`, `test`, `db:generate`,
+`db:diff` (read-only SQL draft: database → schema), `db:migrate:apply`, `db:seed`, `db:reset`,
+`db:studio`. Prisma schema is split by domain under `prisma/schema/*.prisma`. Migrations follow
+the `db-migrate` skill.
 
 ## Structure (`src/`)
 
 | Path | What it is |
 | --- | --- |
 | `app.ts` | Mounts every controller under `/api`. Exports `type App`, the source of Eden typing. |
-| `modules/<name>/` | `<name>.controller.ts` (thin Elysia routes, Zod request schemas, Swagger `detail`) delegates to `<name>.service.ts` (tsyringe `@singleton`, Prisma). No barrels. |
+| `modules/<name>/` | `<name>.controller.ts` (thin Elysia routes, Zod request schemas, Swagger `detail`) delegates to `<name>.service.ts` (Needle DI `@injectable()`, deps as `x = inject(X)` constructor defaults, Prisma). No barrels. |
 | `common/errors` | `HttpError`, `notFound()`, `conflict()`, `findOwned()` (ownership or 404). |
 | `common/middleware` | `authGuard`, the single auth gate. |
 | `common/rate-limit` | One `rateLimit(policy)` per route as `beforeHandle`. Policies in `RATE_LIMITS`. |
@@ -27,14 +28,18 @@ Pagination schemas live in `@jobpilot/contracts/pagination`, shared with web and
 
 Add a route with the `add-api-route` skill. The rules:
 
-- Validate requests with Zod from `@jobpilot/contracts`. Use `idParam` for uuid path ids.
+- A schema lives in its module's `<name>.schema.ts` unless another package (web, plugin
+  helpers) imports it; then it goes in `@jobpilot/contracts`. Use `idParam` for uuid path ids.
 - Every JSON route declares a Zod `response` schema that matches the service return exactly.
   Elysia strips fields not in the schema, and Eden types the web from it. SSE, file, and
   redirect routes return a raw `Response` with no `response` schema.
 - Dates are `z.date()`, never `z.string()`. Return the Prisma `Date` and let Elysia serialize.
   Eden revives date-shaped strings into `Date`, so a string date lies to the web. Day buckets are
   UTC-midnight dates from `common/date/buckets.ts`. Only free text like `"Summer 2024"` stays a
-  string.
+  string. A date stored inside a JSON column uses `storedDate` (`@jobpilot/contracts/utils/json`).
+- `Json` columns: write with `toInputJson`, read with the column's Zod schema `parse`. No casts.
+  Changing a stored shape needs a data migration, and old rows must still parse: on the
+  restored copy (db-migrate skill), parse every stored row with the new schema before deploying.
 - Error responses are declared once in `app.ts` with
   `.guard({ as: "scoped", response: httpErrorResponses })`. Never per route.
 
@@ -63,7 +68,9 @@ A closed set is a Prisma `enum`, never a `String` column.
 
 ## Traps
 
-- tsyringe-injected classes must be value imports, never `import type`. Erasing them breaks
-  decorator metadata at runtime. Biome's `useImportType` is off here for this reason.
+- Annotate an injected Prisma client: `prisma: PrismaClient = inject(PrismaClient)`. Its
+  constructor is generic, so inference alone types every query result as `any`.
+- Controllers resolve services at module load (`container.get`); middleware resolves per call so
+  a test can bind a fake on the container first. Tests construct services with `new X(fakes…)`.
 - Tests (`bun test`, colocated `*.test.ts`) run with no database and no env. Import the module
   under test directly, never through a barrel that pulls in Prisma or `@/env`.

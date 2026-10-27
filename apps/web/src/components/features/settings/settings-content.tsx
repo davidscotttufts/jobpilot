@@ -91,14 +91,11 @@ function SettingsForm(props: SettingsFormProps): ReactElement {
   const { initialData } = props;
   const [, setDirty] = useState(false);
 
-  const save = useApiMutation<{ id: string }, UserWithAutoApplyInput>(
-    (vars) => api.user.put(vars),
-    {
-      successMessage: "Settings saved",
-      invalidate: [queryKeys.user.all],
-      onSuccess: () => setDirty(false),
-    },
-  );
+  const save = useApiMutation((vars: UserWithAutoApplyInput) => api.user.put(vars), {
+    successMessage: "Settings saved",
+    invalidate: [queryKeys.user.all],
+    onSuccess: () => setDirty(false),
+  });
 
   const form = useAppForm({
     defaultValues: initialData,

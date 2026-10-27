@@ -2,18 +2,17 @@ import {
   ChangeEmailSchema,
   ChangePasswordSchema,
   ConfirmEmailChangeSchema,
-} from "@jobpilot/contracts";
+} from "@jobpilot/contracts/auth";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
-import { REFRESH_COOKIE } from "./auth.cookies";
 import { SecurityService } from "./security.service";
 import { VerificationService } from "./verification.service";
 
-const securityService = container.resolve(SecurityService);
-const verificationService = container.resolve(VerificationService);
+const securityService = container.get(SecurityService);
+const verificationService = container.get(VerificationService);
 
 const limitEmailChangeConfirm = rateLimit(RATE_LIMITS.emailChangeConfirm);
 const limitPasswordChange = rateLimit(RATE_LIMITS.passwordChange);
@@ -33,10 +32,7 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
   .use(authGuard)
   .post(
     "/password/change",
-    ({ user, body, cookie }) => {
-      const raw = cookie[REFRESH_COOKIE]?.value;
-      return securityService.changePassword(user.id, body, typeof raw === "string" ? raw : null);
-    },
+    ({ user, body }) => securityService.changePassword(user.id, body, user.tokenId),
     {
       body: ChangePasswordSchema,
       beforeHandle: limitPasswordChange,

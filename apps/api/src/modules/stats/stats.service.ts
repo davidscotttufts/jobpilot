@@ -1,4 +1,4 @@
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { DAY_MS, startOfDay } from "@/common/date/buckets";
 import { MemoryCache } from "@/common/memory-cache";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -7,11 +7,11 @@ import type { PublicStats } from "./stats.schema";
 const WINDOW_DAYS = 30;
 const STATS_TTL_MS = 5 * 60_000;
 
-@singleton()
+@injectable()
 export class StatsService {
   private readonly cache = new MemoryCache<"public", PublicStats>({ ttlMs: STATS_TTL_MS });
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   /** Unauthenticated, so cached: every landing-page render would otherwise rescan the window. */
   publicStats(): Promise<PublicStats> {

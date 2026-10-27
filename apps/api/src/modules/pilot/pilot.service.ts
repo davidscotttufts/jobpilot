@@ -7,11 +7,13 @@ import {
   type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { singleton } from "tsyringe";
+import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { publishCampaignStatus } from "@/modules/campaign/campaign.utils";
+import { recordCycle } from "./journal-entries";
 import {
   costByTaskType,
   countAppliedToday,
@@ -19,14 +21,15 @@ import {
   countTodayOutcomes,
 } from "./pilot.stats";
 import { SERVER_SKIP_REASONS } from "./skip-reasons";
+import { allowedToday } from "./tasks/allowed-today";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 const PILOT_CAMPAIGN = { createdBy: "pilot" } as const;
 
 /** Pilot state, instructions, and the stats and liveness reads. */
-@singleton()
+@injectable()
 export class PilotService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 
   private async toState(row: PilotStateModel): Promise<PilotState> {
     const config = pilotInstructionsConfigSchema.parse(row.instructionsConfig);
@@ -51,8 +54,7 @@ export class PilotService {
       cycleCount: row.cycleCount,
       appliedToday,
       networkingSentToday,
-      // `>=` so a cap of 0 reads as reached, matching the task list.
-      capReached: appliedToday >= config.dailyApplyCap,
+      capReached: allowedToday(config, { appliedToday, networkingSentToday }).appliesLeft === 0,
       currentRun,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
@@ -95,7 +97,7 @@ export class PilotService {
         where: { userId, ...PILOT_CAMPAIGN, status: "in_progress" },
         orderBy: { startedAt: "asc" },
         select: {
-          campaignId: true,
+          id: true,
           query: true,
           _count: { select: { jobs: { where: { status: "approved" } } } },
         },
@@ -121,7 +123,7 @@ export class PilotService {
     const goalsChanged = (await this.readGoals(userId)) !== body.goals;
     const instructions = {
       instructionsGoals: body.goals,
-      instructionsConfig: body.config,
+      instructionsConfig: toInputJson(body.config),
       instructionsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
@@ -163,14 +165,14 @@ export class PilotService {
     const completing = change.completeCampaigns
       ? await this.prisma.campaign.findMany({
           where: { userId, ...PILOT_CAMPAIGN, status: "in_progress" },
-          select: { campaignId: true, source: true },
+          select: { id: true, source: true },
         })
       : [];
     if (completing.length > 0) {
       writes.push(
         this.prisma.campaign.updateMany({
           where: {
-            campaignId: { in: completing.map((campaign) => campaign.campaignId) },
+            id: { in: completing.map((campaign) => campaign.id) },
             status: "in_progress",
           },
           data: {
@@ -226,14 +228,16 @@ export class PilotService {
 
   /** Counts as a cycle like a journaled one, so board rotation still advances while idle. */
   async recordIdleCycle(userId: string, body: RecordIdleCycleInput) {
-    const now = new Date();
-    const nextWakeAt = new Date(now.getTime() + body.sleepSeconds * 1000);
-    const row = await this.prisma.pilotState.upsert({
-      where: { userId },
-      create: { userId, lastCycleAt: now, cycleCount: 1, nextWakeAt },
-      update: { lastCycleAt: now, cycleCount: { increment: 1 }, nextWakeAt },
-    });
+    const row = await recordCycle(this.prisma, userId, 1, body.sleepSeconds, new Date());
     return this.publishState(row);
+  }
+
+  /** For writes made elsewhere, such as a journaled cycle. */
+  async publishCurrentState(userId: string) {
+    const row = await this.prisma.pilotState.findUnique({ where: { userId } });
+    if (row) {
+      await this.publishState(row);
+    }
   }
 
   getTodayOutcomes(userId: string) {

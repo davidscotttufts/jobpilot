@@ -1,12 +1,11 @@
+import { inject, injectable } from "@needle-di/core";
 import { createElement } from "react";
-import { inject, singleton } from "tsyringe";
 import { generateOpaqueToken, hashPassword, hashToken } from "@/common/auth";
 import { badRequest, conflict, notFound } from "@/common/errors";
 import {
   EmailChangeEmail,
   emailChangeEmailSubject,
   MAILER,
-  type Mailer,
   PasswordResetEmail,
   passwordResetEmailSubject,
   VerificationEmail,
@@ -15,7 +14,7 @@ import {
 import { normalizeEmail } from "@/common/utils/email";
 import { env } from "@/env";
 import { PrismaClient, VerificationTokenType } from "@/generated/prisma/client";
-import { revokeRefreshTokens } from "./revoke-refresh-tokens";
+import { AuthTokenService } from "./auth-token.service";
 
 const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -26,11 +25,12 @@ const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000; // 1 hour
  * password reset, and email change. Only token hashes are stored; the raw token
  * travels in the emailed link.
  */
-@singleton()
+@injectable()
 export class VerificationService {
   constructor(
-    private readonly prisma: PrismaClient,
-    @inject(MAILER) private readonly mailer: Mailer,
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly mailer = inject(MAILER),
+    private readonly tokens = inject(AuthTokenService),
   ) {}
 
   /** Issue a single-use, expiring token; only its hash is stored. */
@@ -139,7 +139,7 @@ export class VerificationService {
         data: { consumedAt: new Date() },
       }),
       // Force re-login everywhere - a reset implies the old sessions may be compromised.
-      revokeRefreshTokens(this.prisma, record.userId),
+      this.tokens.revokeAll(record.userId),
     ]);
     return { ok: true };
   }
@@ -187,7 +187,7 @@ export class VerificationService {
         data: { consumedAt: new Date() },
       }),
       // The login identifier changed - force re-login everywhere.
-      revokeRefreshTokens(this.prisma, record.userId),
+      this.tokens.revokeSessions(record.userId),
     ]);
     return { ok: true };
   }

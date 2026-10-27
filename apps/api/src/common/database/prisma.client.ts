@@ -1,16 +1,12 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL environment variable is not set");
-}
 
 // Explicit pool bounds + timeouts: interactive transactions (campaign /result,
 // email approve, etc.) hold a pooled connection for their whole duration, so an
 // unbounded default pool can starve under the campaign apply loop.
 const adapter = new PrismaPg({
-  connectionString,
+  connectionString: env.DATABASE_URL,
   max: 10,
   idleTimeoutMillis: 30_000,
   connectionTimeoutMillis: 10_000,
@@ -18,5 +14,5 @@ const adapter = new PrismaPg({
 
 export const db = new PrismaClient({
   adapter,
-  log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+  log: env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
 });

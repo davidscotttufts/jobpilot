@@ -13,18 +13,23 @@ export function oauthStartUrl(provider: OAuthProviderInput, intent?: "link"): st
   return intent ? `${base}?intent=${intent}` : base;
 }
 
-/** Copy for every contract slug (Record over the union so a new slug fails the build);
- *  unknown reasons are provider prose and pass through as-is. */
+/** Copy for every contract slug (Record over the union so a new slug fails the build). */
 const REASON_COPY: Record<OAuthErrorReason, string> = {
   provider_not_configured: "This sign-in provider isn't configured yet.",
   email_unverified:
     "Your email isn't verified with that provider, so it can't be used to sign in here.",
   access_denied: "Sign-in was cancelled.",
+  provider_error: "The provider couldn't complete sign-in. Try again in a moment.",
+  invalid_callback: "The sign-in link expired. Start again.",
+  session_expired: "Your session expired. Sign in and try linking again.",
+  identity_taken: "That account is already linked to another JobPilot user.",
+  provider_already_linked: "You already linked an account from this provider. Unlink it first.",
+  unexpected: "Sign-in failed.",
 };
 
 export function resolveOauthReason(reason: string | undefined | null): string | null {
   if (!reason) {
     return null;
   }
-  return (REASON_COPY as Record<string, string>)[reason] ?? reason;
+  return (REASON_COPY as Record<string, string>)[reason] ?? REASON_COPY.unexpected;
 }

@@ -2,6 +2,7 @@
 // application/variant/cover-letter writes its result path touches.
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { makeBoards } from "@/modules/job-board/job-board.fake";
 import type { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { guardApply, startApplying } from "./apply-guard";
 import { CampaignJobService } from "./job.service";
@@ -133,7 +134,7 @@ export function setup() {
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   const listings = { publishInBackground: () => undefined } as unknown as JobListingPublisher;
-  const service = new CampaignJobService(db as unknown as PrismaClient, listings);
+  const service = new CampaignJobService(db as unknown as PrismaClient, listings, makeBoards());
   return {
     service,
     /** Starting a job.apply run: the move happens in a transaction wrapped in the duplicate guard. */

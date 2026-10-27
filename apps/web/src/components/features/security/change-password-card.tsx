@@ -6,7 +6,6 @@ import { Alert, Stack } from "@mui/material";
 import { api } from "@/api/client";
 import { useApiMutation } from "@/api/hooks";
 import { queryKeys } from "@/api/query-keys";
-import type { ChangePasswordResponse } from "@/api/types";
 import { useAppForm } from "@/components/ui/form/tanstack";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useSession } from "@/hooks/use-auth";
@@ -18,8 +17,8 @@ export function ChangePasswordCard(): ReactElement {
   const { user } = useSession();
   const hasPassword = user?.hasPassword ?? true;
 
-  const changePassword = useApiMutation<ChangePasswordResponse, ChangePasswordInput>(
-    (body) => api.auth.password.change.post(body),
+  const changePassword = useApiMutation(
+    (body: ChangePasswordInput) => api.auth.password.change.post(body),
     {
       showErrorToast: false,
       successMessage: hasPassword ? "Password updated" : "Password set",

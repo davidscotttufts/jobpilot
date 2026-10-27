@@ -15,7 +15,18 @@ import { ItemList, ItemRow } from "@/components/ui/display";
 import { LoadingSpinner } from "@/components/ui/feedback";
 import { SectionCard } from "@/components/ui/layout/section-card";
 import { useConfirm } from "@/providers/confirm-provider";
-import { CredentialFormDialog } from "./credential-form-dialog";
+import { CredentialFormDialog, PROVIDER_LABELS } from "./credential-form-dialog";
+
+/** What the credential is for: its board, "Default", or its captcha provider. */
+function credentialLabel(credential: CredentialDto): string {
+  if (credential.board) {
+    return credential.board.name;
+  }
+  if (credential.provider) {
+    return PROVIDER_LABELS[credential.provider];
+  }
+  return "Default";
+}
 
 export function CredentialsSection(): ReactElement {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -23,27 +34,21 @@ export function CredentialsSection(): ReactElement {
 
   const credentials = useApiQuery(credentialQueries.list());
 
-  const create = useApiMutation<CredentialDto, CredentialInput>(
-    (vars) => api.credentials.post(vars),
-    {
-      successMessage: "Credential added",
-      invalidate: [queryKeys.credentials.all],
-      onSuccess: () => setDialogOpen(false),
-    },
-  );
+  const create = useApiMutation((vars: CredentialInput) => api.credentials.post(vars), {
+    successMessage: "Credential added",
+    invalidate: [queryKeys.credentials.all],
+    onSuccess: () => setDialogOpen(false),
+  });
 
-  const remove = useApiMutation<{ deleted: string }, string>(
-    (id) => api.credentials({ id }).delete(),
-    {
-      successMessage: "Credential removed",
-      invalidate: [queryKeys.credentials.all],
-    },
-  );
+  const remove = useApiMutation((id: string) => api.credentials({ id }).delete(), {
+    successMessage: "Credential removed",
+    invalidate: [queryKeys.credentials.all],
+  });
 
   const handleDelete = async (credential: CredentialDto): Promise<void> => {
     const confirmed = await confirm({
       title: "Delete credential?",
-      description: `Remove the "${credential.scope}" credential? Skills using this scope will fall back to the next match.`,
+      description: `Remove the "${credentialLabel(credential)}" credential? Board logins fall back to the default.`,
       confirmLabel: "Delete",
       destructive: true,
     });
@@ -56,15 +61,15 @@ export function CredentialsSection(): ReactElement {
   const groups = [
     {
       title: "Job board logins",
-      items: rows.filter((c) => !c.apiKey),
+      items: rows.filter((c) => c.kind !== "service"),
       icon: <Lock fontSize="small" color="action" />,
       secondary: (c: CredentialDto) => c.email ?? "",
     },
     {
       title: "Captcha services",
-      items: rows.filter((c) => c.apiKey),
+      items: rows.filter((c) => c.kind === "service"),
       icon: <Key fontSize="small" color="action" />,
-      secondary: (c: CredentialDto) => `API key ••••${c.apiKey?.slice(-4) ?? ""}`,
+      secondary: (c: CredentialDto) => (c.hasApiKey ? "API key saved" : "No API key"),
     },
   ];
 
@@ -89,7 +94,7 @@ export function CredentialsSection(): ReactElement {
         <EmptyState
           variant="inline"
           title="No credentials yet"
-          description="Add a “default” credential, or one per board domain (e.g. linkedin.com)."
+          description="Add a default login, or one per board (e.g. LinkedIn)."
         />
       ) : (
         <Stack spacing={3}>
@@ -101,7 +106,7 @@ export function CredentialsSection(): ReactElement {
                   <ItemRow
                     key={c.id}
                     icon={group.icon}
-                    primary={c.scope}
+                    primary={credentialLabel(c)}
                     secondary={group.secondary(c)}
                     action={
                       <TooltipIconButton

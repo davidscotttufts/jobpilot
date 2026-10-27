@@ -29,7 +29,7 @@ function fakePrisma() {
     pilotRun: model("pilotRun", 3, 4),
     pilotQuestion: model("pilotQuestion", 5),
     verificationToken: model("verificationToken", 6),
-    refreshToken: model("refreshToken", 7),
+    authToken: model("authToken", 7),
     promotionPost: model("promotionPost", 8),
     emailMessage: model("emailMessage", 9),
     applicationEvent: model("applicationEvent", 10),
@@ -62,7 +62,7 @@ describe("runRetentionCleanup", () => {
     expect(JSON.stringify(calls.pilotQuestion?.[0]?.where)).not.toContain('"open"');
 
     expect(calls.verificationToken).toHaveLength(1);
-    expect(calls.refreshToken).toHaveLength(1);
+    expect(calls.authToken).toHaveLength(1);
 
     expect(calls.promotionPost).toHaveLength(1);
     const promoWhere = calls.promotionPost?.[0]?.where as { status: { in: string[] } };
@@ -93,7 +93,7 @@ describe("runRetentionCleanup", () => {
       runsDiscover: 4,
       questions: 5,
       verificationTokens: 6,
-      refreshTokens: 7,
+      authTokens: 7,
       promotions: 8,
       emailBodiesBlanked: 9,
       applicationEvents: 10,

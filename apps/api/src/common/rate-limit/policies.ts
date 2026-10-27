@@ -39,9 +39,6 @@ export const RATE_LIMITS = {
     message: "Verification email already sent. Check your inbox, then try again later.",
   },
 
-  /** Cheap and cookie-driven; exists only so a broken client retry loop can't spin the DB. */
-  refresh: { key: byIp, limit: 60, windowMs: 15 * MINUTE },
-
   /** OAuth start + callback: public redirects, so keyed by IP; loose enough for retries. */
   oauthStart: { key: byIp, limit: 20, windowMs: 15 * MINUTE },
 

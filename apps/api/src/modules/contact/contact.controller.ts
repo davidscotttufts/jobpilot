@@ -5,7 +5,7 @@ import { authGuard } from "@/common/middleware";
 import { contactListSchema } from "./contact.schema";
 import { ContactService } from "./contact.service";
 
-const contactService = container.resolve(ContactService);
+const contactService = container.get(ContactService);
 
 export const contactController = new Elysia({
   prefix: "/contacts",
@@ -18,6 +18,6 @@ export const contactController = new Elysia({
     detail: {
       summary: "List networking contacts",
       description:
-        "Returns one page of the active profile's networking contacts, ordered newest first, as `{ items, pagination }`.",
+        "Returns one page of the user's networking contacts, ordered newest first, as `{ items, pagination }`.",
     },
   });

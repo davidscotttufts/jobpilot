@@ -43,6 +43,20 @@ function fail(message, exitCode = 2) {
 }
 
 /**
+ * The error body's stable `code` plus a trailing space, or "" when the body has none.
+ * @param {string} body
+ * @returns {string}
+ */
+function errorCode(body) {
+  try {
+    const code = JSON.parse(body)?.code;
+    return typeof code === "string" ? `${code} ` : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
  * @param {string[]} argv Arguments after the script path.
  * @returns {ApiRequest}
  */
@@ -148,7 +162,7 @@ async function main() {
   if (!response.ok) {
     const detail = await response.text();
     fail(
-      `HTTP ${response.status} ${request.method} ${request.path}${detail ? `\n${detail}` : ""}`,
+      `HTTP ${response.status} ${errorCode(detail)}${request.method} ${request.path}${detail ? `\n${detail}` : ""}`,
       1,
     );
   }

@@ -3,6 +3,7 @@
 import {
   SALARY_CURRENCIES,
   type SalaryCurrency,
+  type SalaryPeriod,
   type SalaryPreferenceInput,
   USER_DEFAULT_VALUES,
 } from "@jobpilot/contracts/user";
@@ -30,8 +31,9 @@ const EMPTY_SALARY_PREFERENCE: SalaryPreferenceInput = {
   period: "yearly",
 };
 
-const PERIODS = [
+const PERIODS: { value: SalaryPeriod; label: string }[] = [
   { value: "yearly", label: "Per year" },
+  { value: "monthly", label: "Per month" },
   { value: "hourly", label: "Per hour" },
 ];
 

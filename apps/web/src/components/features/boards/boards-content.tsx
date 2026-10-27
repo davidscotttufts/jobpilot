@@ -42,13 +42,10 @@ export function BoardsContent(): ReactElement {
       !needle || b.name.toLowerCase().includes(needle) || b.domain.toLowerCase().includes(needle),
   );
 
-  const remove = useApiMutation<{ deleted: string }, string>(
-    (id) => api["job-boards"]({ id }).delete(),
-    {
-      successMessage: "Board removed",
-      invalidate: [queryKeys.jobBoards.all],
-    },
-  );
+  const remove = useApiMutation((id: string) => api["job-boards"]({ id }).delete(), {
+    successMessage: "Board removed",
+    invalidate: [queryKeys.jobBoards.all],
+  });
 
   const handleDelete = async (board: JobBoardDto): Promise<void> => {
     const confirmed = await confirm({

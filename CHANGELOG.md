@@ -2,6 +2,59 @@
 
 All notable changes to this project will be documented in this file.
 
+## v2.3.0 - 2026-10-27
+
+Update the plugin with this release: skills now send and read the new API shapes below.
+
+### Changed
+
+- Campaigns are identified by `id` (was `campaignId`), and a campaign's board is a top-level
+  `board` instead of `config.board`.
+- Board logins, the default login and captcha keys are now credential kinds. The settings dialog
+  picks a kind, then a board or a captcha provider, and the credential list never shows secrets.
+- Boards are stored once in the catalog and linked by id, so jobs, applications, listings and
+  searches agree on which board a posting came from. Each Workday tenant stays its own board.
+- Sign-in uses database sessions that end at once on password change or reset; everyone was
+  signed out once by this release.
+- API errors carry a stable `code` that skills branch on instead of message text.
+- Interview prep sheets are their own timeline event, and the pilot no longer needs journal
+  markers to avoid repeating campaign reviews.
+- The Gmail connection, browser push (now "web push") and salary preferences (adds monthly) were
+  reworked internally.
+
+### Fixed
+
+- An application now finds its job posting even when the job URL had tracking parameters.
+- Greenhouse postings that differ only by `gh_jid` are no longer merged into one listing.
+- A stopped pilot's runs now expire, so its jobs leave `applying`.
+- Swagger documents date fields as date-time, and cached resume PDFs are written atomically.
+
+## v2.2.1 - 2026-10-06
+
+### Added
+
+- The job index is a list with board names, sorting, and a posted-within filter, and each job
+  page shows similar jobs ranked by skills, title, remote, and region.
+- Job pages publish Google job posting data, and missing jobs and portfolios return real 404s.
+- The landing page is redesigned: the hero runs into the demo video with live numbers under it.
+- A new teaser video, edited in Remotion with a synthesized soundtrack.
+
+### Changed
+
+- When every pilot search is waiting on its schedule, setup adds or retires searches instead of
+  leaving the pilot idle for hours.
+- Pilot token usage shows new and cached tokens separately, labeled as the last 7 days.
+- Saved answers moved to profile settings.
+- Public pages and docs are rewritten in plain language.
+- Similar jobs and listing lookups are cached and indexed for faster pages.
+- Production deploys the API before building the web app.
+
+### Fixed
+
+- Warning and secondary text colors are applied again.
+- Pilot overview cards stretch to equal height.
+- Install commands no longer cause a hydration mismatch when ordered by OS.
+
 ## v2.2.0 - 2026-10-04
 
 ### Added

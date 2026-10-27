@@ -1,4 +1,3 @@
-// The scheduled job-alert harvest: when it is due, and how its task and wake-up land on the list.
 import { buildTaskList } from "./build";
 import { base, cfg, job } from "./builders";
 import { jobAlertsDue } from "./gather-inbox";
@@ -11,7 +10,6 @@ const at = (iso: string) => new Date(iso);
 const run = (startedAt: string, outcome: "done" | "failed" | "expired" | null) => ({
   startedAt: at(startedAt),
   finishedAt: outcome ? at(startedAt) : null,
-  expiresAt: at("2026-07-15T12:10:00Z"),
   outcome,
 });
 
@@ -65,16 +63,14 @@ describe("jobAlertsDue with Run now", () => {
 });
 
 describe("buildTaskList inbox.jobAlerts", () => {
-  const jobAlerts = { messageIds: ["e1", "e2"], count: 2, senderDomains: ["linkedin.com"] };
+  const jobAlerts = {
+    messageIds: ["e1", "e2"],
+    count: 2,
+    minScore: 60,
+    senderDomains: ["linkedin.com"],
+  };
   const taskTypes = (input: Parameters<typeof base>[0]) =>
     buildTaskList(base(input)).tasks.map((task) => task.taskType);
-
-  it("emits one harvest task carrying the pilot-wide threshold", () => {
-    const taskList = buildTaskList(base({ config: cfg({ minScore: 72 }), jobAlerts }));
-    const task = taskList.tasks.find((entry) => entry.taskType === "inbox.jobAlerts");
-    expect(task?.payload).toEqual({ ...jobAlerts, minScore: 72 });
-    expect(task?.subjectId).toBe("jobAlerts");
-  });
 
   it("ranks below applies and still runs once the daily cap is spent", () => {
     expect(taskTypes({ approvedJobs: [job("j1", 80)], jobAlerts })).toEqual([
@@ -89,10 +85,12 @@ describe("buildTaskList inbox.jobAlerts", () => {
   it("wakes an idle pilot for the next harvest slot", () => {
     const taskList = buildTaskList(
       base({
-        config: cfg({ checkIntervalMinutes: 240 }),
-        nextJobAlertsAt: new Date(NOW.getTime() + 45 * 60_000),
+        config: cfg({
+          checkIntervalMinutes: 240,
+          jobAlerts: { enabled: true, runHours: [13], timeZone: "UTC" },
+        }),
       }),
     );
-    expect(taskList.sleepSeconds).toBe(45 * 60);
+    expect(taskList.sleepSeconds).toBe(60 * 60);
   });
 });

@@ -15,7 +15,7 @@ import {
 } from "./admin.schema";
 import { AdminService } from "./admin.service";
 
-const svc = container.resolve(AdminService);
+const svc = container.get(AdminService);
 
 /** Stats and user/role management only. Feature-specific admin routes live in their own module. */
 export const adminController = new Elysia({

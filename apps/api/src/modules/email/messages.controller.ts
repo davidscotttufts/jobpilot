@@ -20,8 +20,8 @@ import {
 import { EmailService } from "./email.service";
 import { EmailSyncService } from "./sync/sync.service";
 
-const svc = container.resolve(EmailService);
-const sync = container.resolve(EmailSyncService);
+const svc = container.get(EmailService);
+const sync = container.get(EmailSyncService);
 
 /** Inbox messages (list/get/scan/approve/deny), inbound sync, and the events stream. */
 export const emailMessagesController = new Elysia({
@@ -35,7 +35,7 @@ export const emailMessagesController = new Elysia({
     detail: {
       summary: "List inbox messages",
       description:
-        "Returns one page of the profile's email messages as `{ items, pagination }`, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
+        "Returns one page of the user's email messages as `{ items, pagination }`, ordered newest first, filtered by the optional review status, classification, since date, domain hint, and verification domain query parameters.",
     },
   })
   .get("/messages/count", ({ user, query }) => svc.countMessages(user.id, query), {
@@ -53,7 +53,7 @@ export const emailMessagesController = new Elysia({
     detail: {
       summary: "Get inbox message",
       description:
-        "Returns a single email message owned by the profile, including its matched application summary, or 404 if not found.",
+        "Returns a single email message owned by the user, including its matched application summary, or 404 if not found.",
     },
   })
   .patch("/messages/:id", ({ user, params, body }) => svc.scanMessage(user.id, params.id, body), {
@@ -114,6 +114,6 @@ export const emailMessagesController = new Elysia({
     detail: {
       summary: "Stream inbox events",
       description:
-        "Opens a Server-Sent Events stream that emits the signed-in profile's inbox events (such as sync progress and message scan/review updates) as a raw streaming response.",
+        "Opens a Server-Sent Events stream that emits the signed-in user's inbox events (such as sync progress and message scan/review updates) as a raw streaming response.",
     },
   });

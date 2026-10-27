@@ -1,4 +1,5 @@
 import type { CreateContactInput } from "@jobpilot/contracts/networking";
+import { normalizeJobUrl } from "@/common/utils/url";
 
 /**
  * Map a validated contact payload to Prisma `Contact` create fields (sans
@@ -19,7 +20,7 @@ export function createContactPayload(c: CreateContactInput) {
     discoverySource: c.discoverySource ?? null,
     matchConfidence: c.matchConfidence ?? null,
     relatedAppId: c.relatedAppId ?? null,
-    relatedJobUrl: c.relatedJobUrl ?? null,
+    relatedJobUrl: c.relatedJobUrl ? normalizeJobUrl(c.relatedJobUrl) : null,
     notes: c.notes ?? null,
   };
 }
