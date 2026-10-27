@@ -11,12 +11,12 @@ import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotService } from "./pilot.service";
-import { isLiveRunNowRequest, pendingJobAlertsWhere } from "./tasks/gather-inbox";
+import { hasPendingRunNow, pendingJobAlertsWhere } from "./tasks/gather-inbox";
 import { latestRun } from "./tasks/run-history";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
-/** The harvest's campaigns are named by the `inbox.jobAlerts` skill; this is how a run finds its own. */
-const HARVEST_CAMPAIGN_PREFIX = "Job alerts ·";
+/** The import's campaigns are named by the `inbox.jobAlerts` skill; this is how a run finds its own. */
+const IMPORT_CAMPAIGN_PREFIX = "Job alerts ·";
 
 /** A run-now click syncs first so the count is current, but never re-pulls a mailbox just synced. */
 const RUN_NOW_SYNC_STALE_MS = 2 * 60 * 1000;
@@ -57,7 +57,7 @@ export class JobAlertsService {
             where: {
               userId,
               createdBy: "pilot",
-              query: { startsWith: HARVEST_CAMPAIGN_PREFIX },
+              query: { startsWith: IMPORT_CAMPAIGN_PREFIX },
               startedAt: { gte: lastRun.startedAt },
             },
             orderBy: { startedAt: "asc" },
@@ -74,7 +74,7 @@ export class JobAlertsService {
       mailboxConnected: account !== null,
       pendingEmails,
       nextRunAt: settings.enabled ? nextDailyRun(settings.runHours, settings.timeZone, now) : null,
-      requestedAt: isLiveRunNowRequest(requestedAt, lastRun, now) ? requestedAt : null,
+      requestedAt: hasPendingRunNow(requestedAt, lastRun, now) ? requestedAt : null,
       lastRun: lastRun
         ? {
             startedAt: lastRun.startedAt,
@@ -87,7 +87,7 @@ export class JobAlertsService {
     };
   }
 
-  /** Edits only the harvest block, so it never races the instructions editor's other fields. */
+  /** Edits only the import block, so it never races the instructions editor's other fields. */
   async updateSettings(userId: string, settings: PilotJobAlerts) {
     const config = await this.loadConfig(userId);
     const instructionsConfig = toInputJson({ ...config, jobAlerts: settings });

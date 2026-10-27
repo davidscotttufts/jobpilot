@@ -16,10 +16,10 @@ const JOB_ALERTS_BATCH = 40;
 /** Older alerts point at filled postings; shorter lost mail from a few days of app downtime. */
 const JOB_ALERTS_LOOKBACK_MS = 7 * DAY_MS;
 /** A Run now the pilot never got to lapses rather than firing hours later. */
-const JOB_ALERTS_REQUEST_TTL_MS = HOUR_MS;
+const RUN_NOW_EXPIRES_AFTER_MS = HOUR_MS;
 
 type JobAlertsSettings = PilotInstructionsConfig["jobAlerts"];
-type HarvestRun = Awaited<ReturnType<typeof latestRun>>;
+type LatestRun = Awaited<ReturnType<typeof latestRun>>;
 
 /** Answered questions no open or finished run has consumed yet. */
 export async function gatherAnsweredQuestions(
@@ -179,30 +179,30 @@ export async function gatherUpworkSync(
   return { lastSyncedAt, unreadCount };
 }
 
-export function isLiveRunNowRequest(
+export function hasPendingRunNow(
   requestedAt: Date | null,
-  lastRun: HarvestRun,
+  lastRun: LatestRun,
   now: Date,
 ): requestedAt is Date {
   if (requestedAt === null) return false;
-  if (now.getTime() - requestedAt.getTime() >= JOB_ALERTS_REQUEST_TTL_MS) return false;
+  if (now.getTime() - requestedAt.getTime() >= RUN_NOW_EXPIRES_AFTER_MS) return false;
   return !lastRun || lastRun.startedAt < requestedAt;
 }
 
-/** Run now fires regardless of schedule; otherwise one successful run per slot, failures retry hourly. */
+/** Run now fires regardless of schedule; otherwise one successful run per scheduled time, failures retry hourly. */
 export function jobAlertsDue(
   settings: JobAlertsSettings,
-  lastRun: HarvestRun,
+  lastRun: LatestRun,
   requestedAt: Date | null,
   now: Date,
 ): boolean {
   if (lastRun && !lastRun.finishedAt) return false;
-  if (isLiveRunNowRequest(requestedAt, lastRun, now)) return true;
+  if (hasPendingRunNow(requestedAt, lastRun, now)) return true;
   if (!settings.enabled) return false;
-  const slot = latestDailyRun(settings.runHours, settings.timeZone, now);
-  if (!slot) return false;
+  const lastScheduledRun = latestDailyRun(settings.runHours, settings.timeZone, now);
+  if (!lastScheduledRun) return false;
   if (!lastRun) return true;
-  if (lastRun.outcome === "done") return lastRun.startedAt < slot;
+  if (lastRun.outcome === "done") return lastRun.startedAt < lastScheduledRun;
   return !ranRecently(lastRun, now, HOUR_MS);
 }
 
@@ -213,7 +213,7 @@ export function pendingJobAlertsWhere(
 ): Prisma.EmailMessageWhereInput {
   return {
     account: { userId },
-    harvestedAt: null,
+    importedAt: null,
     receivedAt: { gte: new Date(now.getTime() - JOB_ALERTS_LOOKBACK_MS) },
     // Subdomains too: alerts come from hosts like `e.theladders.com`.
     OR: jobAlertSenderDomains(settings).flatMap((domain) => [

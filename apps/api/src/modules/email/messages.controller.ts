@@ -1,5 +1,5 @@
 import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
-import { markJobAlertsHarvestedSchema } from "@jobpilot/contracts/pilot";
+import { markJobAlertsImportedSchema } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
@@ -9,7 +9,7 @@ import { sseStream } from "@/common/sse";
 import {
   emailMessageListSchema,
   emailMessageSchema,
-  jobAlertsHarvestedSchema,
+  jobAlertsImportedSchema,
   messageApprovedSchema,
   messageCountSchema,
   messageDeniedSchema,
@@ -81,15 +81,15 @@ export const emailMessagesController = new Elysia({
     },
   )
   .post(
-    "/job-alerts/harvested",
-    ({ user, body }) => svc.markJobAlertsHarvested(user.id, body.messageIds),
+    "/job-alerts/imported",
+    ({ user, body }) => svc.markJobAlertsImported(user.id, body.messageIds),
     {
-      body: markJobAlertsHarvestedSchema,
-      response: jobAlertsHarvestedSchema,
+      body: markJobAlertsImportedSchema,
+      response: jobAlertsImportedSchema,
       detail: {
-        summary: "Mark job-alert emails harvested",
+        summary: "Mark job-alert emails imported",
         description:
-          "Stamps `harvestedAt` on the given job-alert emails once the pilot has pulled their job links into a campaign, so the next scheduled harvest skips them. Returns `{ harvested }`, the number of rows newly stamped.",
+          "Stamps `importedAt` on the given job-alert emails once the pilot has pulled their job links into a campaign, so the next scheduled import skips them. Returns `{ imported }`, the number of rows newly stamped.",
       },
     },
   )

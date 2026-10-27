@@ -1,6 +1,6 @@
 # `inbox.jobAlerts`
 
-Payload `{messageIds[], count, minScore, senderDomains[]}`: unharvested job-alert emails (LinkedIn,
+Payload `{messageIds[], count, minScore, senderDomains[]}`: unimported job-alert emails (LinkedIn,
 Ladders, We Work Remotely, ...) offered at the user's scheduled times or right after **Run now**.
 Turn **exactly** those `messageIds` into ONE new campaign of ranked jobs. Don't apply: the server
 promotes rows scoring at or above `minScore` on the next task list, and `job.apply` works them
@@ -8,7 +8,7 @@ highest score first.
 
 Load the profile and resumes per `../../_shared/setup.md`. `RESUME_ID` is `user.primaryResumeId`;
 when that is unset and the user has exactly one resume, use that one. No resume, or several and no
-primary → `outcome:"failed"`, summary "Job alert harvest needs a primary resume."
+primary → `outcome:"failed"`, summary "Job alert import needs a primary resume."
 
 ## 1. Collect links
 
@@ -68,7 +68,7 @@ after each message and at least every 10 minutes.
 ## 2. Skip what is already in the pipeline
 
 Alert emails repeat postings for days, and `applied/check` sees only applications. Collect the URLs
-of recent harvest campaigns: `GET /api/campaigns --query source=auto_apply --query limit=50`, keep
+of recent import campaigns: `GET /api/campaigns --query source=auto_apply --query limit=50`, keep
 those whose `query` starts with `Job alerts ·` and whose `startedAt` is in the last 7 days (newest
 first, so page on only while the last item is still inside the window), then page each one's `GET
 /api/campaigns/<id>/jobs --query limit=100`. Drop any posting whose canonical URL is already there
@@ -108,7 +108,7 @@ jq -n --arg q "Job alerts · $(date +'%b %-d %H:00')" --arg rid "$RESUME_ID" --a
 jobpilot-api POST /api/campaigns --data @"$JOBPILOT_TEMP/job-alerts-campaign.json"
 ```
 
-Read `.campaignId` as `CID` (brace it, `${CID}`, inside any string). Create one Job per posting in
+Read `.id` as `CID` (brace it, `${CID}`, inside any string). Create one Job per posting in
 ranked order with `POST /api/campaigns/$CID/jobs --data @"$JOBPILOT_TEMP/<key>-job.json"`:
 `{key, title, company, location, url, board, matchScore, matchReason, status:"pending", brief}`.
 `board` is the posting's domain, `matchReason` names the alert it came from, `brief` is a
@@ -125,14 +125,14 @@ for:
 Rows below `minScore` stay `pending` with their score: the server records their skip, so the
 campaign keeps the full ranked list.
 
-## 5. Mark harvested
+## 5. Mark imported
 
 Once every row is written, and also when nothing survived, stamp **all** payload `messageIds` (not
 only those that yielded postings) so the next run skips them:
 
 ```bash
-jq -n --argjson ids '<messageIds JSON array>' '{messageIds:$ids}' > "$JOBPILOT_TEMP/job-alerts-harvested.json"
-jobpilot-api POST /api/email/job-alerts/harvested --data @"$JOBPILOT_TEMP/job-alerts-harvested.json"
+jq -n --argjson ids '<messageIds JSON array>' '{messageIds:$ids}' > "$JOBPILOT_TEMP/job-alerts-imported.json"
+jobpilot-api POST /api/email/job-alerts/imported --data @"$JOBPILOT_TEMP/job-alerts-imported.json"
 ```
 
 A run that fails before this call skips it: the server re-offers the unstamped emails later, and
@@ -141,5 +141,5 @@ step 2 keeps the retry from duplicating rows it already wrote.
 Result: `subjectType:"campaign"`, `subjectId:$CID` when a campaign was made; otherwise keep the
 run's subject.
 
-Summary: "Harvested 6 alert emails - 31 postings, 22 new; 9 scored ≥ 70, 4 left for scoring.
-Campaign 'Job alerts · Sep 16 08:00'." / "Harvested 3 alert emails - no new postings."
+Summary: "Imported 6 alert emails - 31 postings, 22 new; 9 scored ≥ 70, 4 left for scoring.
+Campaign 'Job alerts · Sep 16 08:00'." / "Imported 3 alert emails - no new postings."

@@ -56,7 +56,7 @@ export const JOB_ALERT_EXCLUDED_MAILBOXES = [
 
 const hourSchema = z.number().int().min(0).max(23);
 
-/** When the pilot harvests job-alert emails into a campaign. Off until the user turns it on. */
+/** When the pilot imports job-alert emails into a campaign. Off until the user turns it on. */
 export const pilotJobAlertsSchema = z.object({
   enabled: z.boolean().default(false),
   /** Hours of the day, in `timeZone`. Deduped and sorted so every reader lists them in order. */
@@ -78,12 +78,11 @@ export function jobAlertSenderDomains(config: PilotJobAlerts): string[] {
   return [...new Set([...JOB_ALERT_SENDER_DOMAINS, ...config.extraSenderDomains])];
 }
 
-/** Marks harvested alert emails so the next run skips them. */
-export const markJobAlertsHarvestedSchema = z.object({
+/** Marks imported alert emails so the next run skips them. */
+export const markJobAlertsImportedSchema = z.object({
   messageIds: z.array(z.uuid()).min(1).max(200),
 });
 
-/** The most recent harvest run, and the campaign it opened when it opened one. */
 const jobAlertsLastRunSchema = z.object({
   startedAt: z.date(),
   finishedAt: z.date().nullable(),
@@ -93,18 +92,12 @@ const jobAlertsLastRunSchema = z.object({
   campaignQuery: z.string().nullable(),
 });
 
-/** Everything the schedule card renders, in one read. */
 export const jobAlertsStatusSchema = z.object({
-  settings: z.object({
-    enabled: z.boolean(),
-    runHours: z.array(z.number().int()),
-    timeZone: z.string(),
-    extraSenderDomains: z.array(z.string()),
-  }),
+  settings: pilotJobAlertsSchema,
   builtInSenderDomains: z.array(z.string()),
   pilotRunning: z.boolean(),
   mailboxConnected: z.boolean(),
-  // Unharvested alert emails inside the lookback window - what a run would read right now.
+  // Unimported alert emails inside the lookback window - what a run would read right now.
   pendingEmails: z.number().int(),
   nextRunAt: z.date().nullable(),
   requestedAt: z.date().nullable(),
@@ -112,11 +105,10 @@ export const jobAlertsStatusSchema = z.object({
 });
 
 export const runJobAlertsResultSchema = z.object({
-  // False when there was nothing to harvest, so no run was queued.
+  // False when there was nothing to import, so no run was queued.
   queued: z.boolean(),
   pendingEmails: z.number().int(),
   pilotRunning: z.boolean(),
 });
 
 export type JobAlertsStatus = z.infer<typeof jobAlertsStatusSchema>;
-export type RunJobAlertsResult = z.infer<typeof runJobAlertsResultSchema>;

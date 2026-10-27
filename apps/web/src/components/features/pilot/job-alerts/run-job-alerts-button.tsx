@@ -2,22 +2,15 @@
 
 import type { ReactElement } from "react";
 import { PlayArrow } from "@mui/icons-material";
-import { Box, Button, type ButtonProps, Tooltip } from "@mui/material";
-import { isActive, runBlocker, useJobAlerts } from "./use-job-alerts";
+import { Box, Button, Tooltip } from "@mui/material";
+import { isRunPending, runDisabledReason, useJobAlerts } from "./use-job-alerts";
 
-interface RunJobAlertsButtonProps {
-  label: string;
-  variant?: ButtonProps["variant"];
-}
-
-/** Queues a job-alert harvest; disabled, with the reason on hover, while one can't be queued. */
-export function RunJobAlertsButton(props: RunJobAlertsButtonProps): ReactElement {
-  const { label, variant = "contained" } = props;
+export function RunJobAlertsButton(): ReactElement {
   const { status, run } = useJobAlerts();
 
-  const blocker = status ? runBlocker(status) : null;
-  const active = isActive(status);
-  const hint = blocker ?? (active ? "A harvest is already queued or running." : "");
+  const disabledReason = status ? runDisabledReason(status) : null;
+  const active = isRunPending(status);
+  const hint = disabledReason ?? (active ? "An import is already queued or running." : "");
 
   return (
     // A disabled button emits no pointer events, so the tooltip needs an enabled span to hover over.
@@ -25,13 +18,12 @@ export function RunJobAlertsButton(props: RunJobAlertsButtonProps): ReactElement
       <Box component="span" sx={{ display: "inline-flex" }}>
         <Button
           size="small"
-          variant={variant}
+          variant="contained"
           startIcon={<PlayArrow />}
-          // A queued or running harvest already covers the mail a second click would queue.
-          disabled={!status || blocker !== null || active || run.isPending}
+          disabled={!status || disabledReason !== null || active || run.isPending}
           onClick={() => run.mutate()}
         >
-          {label}
+          Run now
         </Button>
       </Box>
     </Tooltip>

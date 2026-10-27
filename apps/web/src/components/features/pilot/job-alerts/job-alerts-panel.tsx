@@ -1,7 +1,11 @@
 "use client";
 
 import { type ReactElement, useState } from "react";
-import type { JobAlertsStatus, PilotJobAlerts } from "@jobpilot/contracts/pilot";
+import type {
+  JobAlertsStatus,
+  PILOT_RUN_OUTCOMES,
+  PilotJobAlerts,
+} from "@jobpilot/contracts/pilot";
 import { Schedule } from "@mui/icons-material";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
 import type { Route } from "next";
@@ -14,12 +18,12 @@ import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
 import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
-import { runBlocker, useJobAlerts } from "./use-job-alerts";
+import { runDisabledReason, useJobAlerts } from "./use-job-alerts";
 
-const OUTCOME_LABELS: Record<string, string> = {
+const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
   done: "finished",
   failed: "failed",
-  abandoned: "was abandoned",
+  cancelled: "was cancelled",
   expired: "timed out",
 };
 
@@ -34,7 +38,7 @@ function scheduleSummary(status: JobAlertsStatus): string {
 function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
   const { lastRun } = props.status;
   if (!lastRun) {
-    return <Typography variant="captionMuted">No harvest has run yet.</Typography>;
+    return <Typography variant="captionMuted">No import has run yet.</Typography>;
   }
   const finished = lastRun.outcome ? OUTCOME_LABELS[lastRun.outcome] : null;
   return (
@@ -42,7 +46,7 @@ function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
       <Typography variant="captionMuted">
         {finished
           ? `Last run ${finished} ${formatRelativeTime(lastRun.finishedAt ?? lastRun.startedAt)} ago`
-          : `Harvesting now - started ${formatRelativeTime(lastRun.startedAt)} ago`}
+          : `Importing now - started ${formatRelativeTime(lastRun.startedAt)} ago`}
       </Typography>
       {lastRun.campaignId && (
         <LinkButton
@@ -56,27 +60,16 @@ function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
   );
 }
 
-/**
- * The job-alert harvest: when it runs, what is waiting, and a Run now that wakes the pilot. The pilot
- * does the harvesting, so every action here only queues work for its next cycle.
- */
 export function JobAlertsPanel(): ReactElement {
   const [editing, setEditing] = useState(false);
   const { query, status } = useJobAlerts();
 
-  const save = useApiMutation<JobAlertsStatus, PilotJobAlerts>(
-    (body) => api.pilot["job-alerts"].put(body),
-    {
-      invalidate: [
-        queryKeys.pilot.jobAlerts(),
-        queryKeys.pilot.state(),
-        queryKeys.pilot.taskList(),
-      ],
-      successMessage: "Job alert schedule saved.",
-    },
-  );
+  const save = useApiMutation((body: PilotJobAlerts) => api.pilot["job-alerts"].put(body), {
+    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.state(), queryKeys.pilot.taskList()],
+    successMessage: "Job alert schedule saved.",
+  });
 
-  const blocker = status ? runBlocker(status) : null;
+  const disabledReason = status ? runDisabledReason(status) : null;
 
   return (
     <SectionCard
@@ -109,7 +102,7 @@ export function JobAlertsPanel(): ReactElement {
             <Typography variant="body2">
               {status.pendingEmails === 0
                 ? "No new alert emails waiting."
-                : `${plural(status.pendingEmails, "alert email")} waiting to be harvested.`}
+                : `${plural(status.pendingEmails, "alert email")} waiting to be imported.`}
             </Typography>
             {status.requestedAt && (
               <Typography variant="captionMuted">
@@ -118,16 +111,16 @@ export function JobAlertsPanel(): ReactElement {
               </Typography>
             )}
             <LastRun status={status} />
-            {blocker && (
+            {disabledReason && (
               <Alert severity="info" variant="outlined">
-                {blocker}
+                {disabledReason}
               </Alert>
             )}
             <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
               <Button size="small" startIcon={<Schedule />} onClick={() => setEditing(true)}>
                 Schedule
               </Button>
-              <RunJobAlertsButton label="Run now" />
+              <RunJobAlertsButton />
             </Stack>
           </Stack>
         )}

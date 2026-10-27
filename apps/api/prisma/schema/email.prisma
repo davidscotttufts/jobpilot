@@ -84,7 +84,7 @@ model EmailMessage {
   // URL means nothing without its anchor text.
   links       Json      @default("[]")
   // Set once the pilot has pulled this alert email's job links into a campaign.
-  harvestedAt DateTime? @map("harvested_at")
+  importedAt DateTime? @map("imported_at")
 
   // Provider message ids are unique per mailbox, not globally.
   @@unique([accountId, providerId])

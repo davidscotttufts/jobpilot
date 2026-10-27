@@ -20,9 +20,9 @@ export const pilotJobAlertsController = new Elysia({
   .get("/job-alerts", ({ user }) => jobAlerts.getStatus(user.id), {
     response: jobAlertsStatusSchema,
     detail: {
-      summary: "Get the job-alert harvest status",
+      summary: "Get the job-alert import status",
       description:
-        "Returns the harvest schedule, how many unharvested job-alert emails are waiting, the next scheduled run, any pending Run now request, and the most recent run with the campaign it opened.",
+        "Returns the import schedule, how many unimported job-alert emails are waiting, the next scheduled run, any pending Run now request, and the most recent run with the campaign it opened.",
     },
   })
   .put("/job-alerts", ({ user, body }) => jobAlerts.updateSettings(user.id, body), {
@@ -30,17 +30,17 @@ export const pilotJobAlertsController = new Elysia({
     beforeHandle: limitMutation,
     response: jobAlertsStatusSchema,
     detail: {
-      summary: "Update the job-alert harvest schedule",
+      summary: "Update the job-alert import schedule",
       description:
-        "Replaces only the harvest block of the pilot instructions (on/off, run hours, time zone, extra sender domains), wakes the pilot, and returns the refreshed status.",
+        "Replaces only the import block of the pilot instructions (on/off, run hours, time zone, extra sender domains), wakes the pilot, and returns the refreshed status.",
     },
   })
   .post("/job-alerts/run", ({ user }) => jobAlerts.runNow(user.id), {
     beforeHandle: limitMutation,
     response: runJobAlertsResultSchema,
     detail: {
-      summary: "Run the job-alert harvest now",
+      summary: "Run the job-alert import now",
       description:
-        "Syncs the mailbox if it is stale, then queues an off-schedule harvest for the next pilot cycle and wakes the pilot. Nothing is queued when no unharvested alert emails are waiting (`queued: false`); the request lapses after an hour if the pilot never gets to it.",
+        "Syncs the mailbox if it is stale, then queues an off-schedule import for the next pilot cycle and wakes the pilot. Nothing is queued when no unimported alert emails are waiting (`queued: false`); the request lapses after an hour if the pilot never gets to it.",
     },
   });

@@ -89,7 +89,7 @@ export const emailMessageSchema = z.object({
   verificationLink: z.string().nullable(),
   verificationDomain: z.string().nullable(),
   links: emailLinksSchema,
-  harvestedAt: z.date().nullable(),
+  importedAt: z.date().nullable(),
   matchedApp: matchedAppSchema,
 });
 
@@ -121,5 +121,5 @@ export const syncResultSchema = z.object({
   new: z.number().int(),
 });
 
-/** How many alert emails a harvest mark actually changed (`svc.markJobAlertsHarvested`). */
-export const jobAlertsHarvestedSchema = z.object({ harvested: z.number().int().min(0) });
+/** How many alert emails an import mark actually changed (`svc.markJobAlertsImported`). */
+export const jobAlertsImportedSchema = z.object({ imported: z.number().int().min(0) });

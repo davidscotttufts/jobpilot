@@ -190,12 +190,12 @@ function makeTaskListDb(over: Over = {}) {
         })),
       count: async () => over.promotionsPosted ?? 0,
     },
-    // Only the job-alert gather filters on `harvestedAt`; the inbox gather sees no mail.
+    // Only the job-alert gather filters on `importedAt`; the inbox gather sees no mail.
     emailMessage: {
       findMany: async (a: { where: Row }) =>
-        "harvestedAt" in a.where ? (over.jobAlertEmails ?? []) : [],
+        "importedAt" in a.where ? (over.jobAlertEmails ?? []) : [],
       count: async (a: { where: Row }) =>
-        "harvestedAt" in a.where ? (over.jobAlertEmails ?? []).length : 0,
+        "importedAt" in a.where ? (over.jobAlertEmails ?? []).length : 0,
     },
     contact: { findMany: async () => over.contacts ?? [] },
     pilotJournalEntry: {

@@ -65,7 +65,7 @@ type PipelineWork = Pick<
   "approvedJobs" | "dueQueries" | "scorePending" | "queueScores" | "jobAlerts"
 >;
 
-/** Setup and campaign reviews wait until no apply, discovery, harvest or scoring work is queued. */
+/** Setup and campaign reviews wait until no apply, discovery, import or scoring work is queued. */
 export function isPipelineQuiet(work: PipelineWork): boolean {
   const { approvedJobs, dueQueries, scorePending, queueScores, jobAlerts } = work;
   const queued = approvedJobs.length + dueQueries.length + scorePending.length + queueScores.length;
@@ -120,7 +120,7 @@ export function buildTaskList(input: TaskListInput): TaskListContent {
   ];
   if (!capReached) tasks.push(...input.approvedJobs.map(applyTask));
   if (input.inbox.count > 0) tasks.push(makeTask("inbox.review", input.inbox));
-  // Ungated by the apply cap: harvesting only queues rows for later applies.
+  // Ungated by the apply cap: importing only queues rows for later applies.
   if (input.jobAlerts) tasks.push(makeTask("inbox.jobAlerts", input.jobAlerts));
   if (input.upworkSync) tasks.push(makeTask("upwork.syncInbox", input.upworkSync));
 

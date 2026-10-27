@@ -37,7 +37,7 @@ function toFormValues(status: JobAlertsStatus): ScheduleFormValues {
   return {
     enabled: settings.enabled,
     runTimes: settings.runHours.map(hourLabel),
-    // A harvest never switched on still carries the schema's UTC; offer the viewer's own zone.
+    // A schedule never switched on still carries the schema's UTC; offer the viewer's own zone.
     timeZone: settings.enabled ? settings.timeZone : browserTimeZone(),
     extraSenderDomains: settings.extraSenderDomains,
   };
@@ -81,7 +81,7 @@ export function ScheduleDialog(props: ScheduleDialogProps): ReactElement {
       submitting={submitting}
     >
       <form.AppField name="enabled">
-        {(field) => <field.Switch label="Harvest job alert emails on a schedule" />}
+        {(field) => <field.Switch label="Import job alert emails on a schedule" />}
       </form.AppField>
       <form.AppField name="runTimes">
         {(field) => (

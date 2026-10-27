@@ -121,10 +121,10 @@ describe("TaskListService mail and Upwork sync", () => {
   });
 });
 
-describe("TaskListService job-alert harvest", () => {
+describe("TaskListService job-alert import", () => {
   const emails = [{ id: "m1" }, { id: "m2" }];
 
-  it("offers a harvest for a live Run now request, even with the schedule off", async () => {
+  it("offers an import for a live Run now request, even with the schedule off", async () => {
     const taskList = await service({
       jobAlertsRequestedAt: new Date(Date.now() - 60_000),
       jobAlertEmails: emails,
@@ -135,7 +135,7 @@ describe("TaskListService job-alert harvest", () => {
     });
   });
 
-  it("offers nothing once a harvest has started since the request", async () => {
+  it("offers nothing once an import has started since the request", async () => {
     const now = Date.now();
     const taskList = await service({
       jobAlertsRequestedAt: new Date(now - 60_000),

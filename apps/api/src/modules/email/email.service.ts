@@ -179,13 +179,13 @@ export class EmailService {
     return withLinks(row);
   }
 
-  /** Only unharvested rows count, so a retried mark reports 0 instead of re-stamping. */
-  async markJobAlertsHarvested(userId: string, messageIds: string[]) {
+  /** Only unimported rows count, so a retried mark reports 0 instead of re-stamping. */
+  async markJobAlertsImported(userId: string, messageIds: string[]) {
     const { count } = await this.prisma.emailMessage.updateMany({
-      where: { id: { in: messageIds }, account: { userId }, harvestedAt: null },
-      data: { harvestedAt: new Date() },
+      where: { id: { in: messageIds }, account: { userId }, importedAt: null },
+      data: { importedAt: new Date() },
     });
-    return { harvested: count };
+    return { imported: count };
   }
 
   async denyMessage(userId: string, id: string) {

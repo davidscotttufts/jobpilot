@@ -105,12 +105,12 @@ export const TASK_DEFS: { [K in TaskType]: TaskDef<K> } = {
     subjectId: (p) => p.campaignId,
     title: (p) => `Score discovered jobs: ${p.query}`,
   },
-  // Alert links are pre-filtered by the board, so harvest them before discovering more.
+  // Alert links are pre-filtered by the board, so import them before discovering more.
   "inbox.jobAlerts": {
     priority: 505,
     subjectType: "inbox",
     subjectId: () => "jobAlerts",
-    title: (p) => `Harvest job links from ${p.count} alert email(s)`,
+    title: (p) => `Import jobs from ${p.count} alert email(s)`,
   },
   "search.discover": {
     priority: 500,

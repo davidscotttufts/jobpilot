@@ -115,7 +115,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "inbox.jobAlerts",
     "inbox",
     z.object({
-      // Oldest first, capped per run; `count` is every unharvested alert email in the window.
+      // Oldest first, capped per run; `count` is every unimported alert email in the window.
       messageIds: z.array(z.string()),
       count: z.number().int(),
       minScore: z.number(),

@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE "email_messages" ADD COLUMN "harvested_at" TIMESTAMP(3),
+ALTER TABLE "email_messages" ADD COLUMN "imported_at" TIMESTAMP(3),
 ADD COLUMN "links" JSONB NOT NULL DEFAULT '[]';
 
 -- AlterTable

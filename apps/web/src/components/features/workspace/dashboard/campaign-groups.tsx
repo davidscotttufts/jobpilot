@@ -10,7 +10,6 @@ import { useApiQuery } from "@/api/hooks";
 import { campaignQueries } from "@/api/queries";
 import type { CampaignDto } from "@/api/types";
 import { CampaignRow } from "@/components/features/campaigns";
-import { RunJobAlertsButton } from "@/components/features/pilot";
 import { EmptyState, PaginationFooter, QuerySection } from "@/components/ui/data";
 import { SectionCard } from "@/components/ui/layout";
 import { usePaginationParams } from "@/hooks/use-pagination";
@@ -46,24 +45,16 @@ export function CampaignGroups(): ReactElement {
       title="Campaigns"
       description="A search the agent runs for you. It scores each job it finds against your resume. In auto-apply mode it applies to every job that scores above your cutoff."
       actions={
-        <Stack
-          direction="row"
-          spacing={1}
-          useFlexGap
-          sx={{ alignItems: "center", flexWrap: "wrap" }}
-        >
-          <RunJobAlertsButton label="Run job alert" variant="outlined" />
-          {agentAvailable && (
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<Add fontSize="md" />}
-              onClick={() => router.push("/campaigns/new")}
-            >
-              New campaign
-            </Button>
-          )}
-        </Stack>
+        agentAvailable && (
+          <Button
+            size="small"
+            variant="contained"
+            startIcon={<Add fontSize="md" />}
+            onClick={() => router.push("/campaigns/new")}
+          >
+            New campaign
+          </Button>
+        )
       }
     >
       <QuerySection
