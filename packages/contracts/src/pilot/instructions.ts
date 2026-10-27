@@ -57,7 +57,8 @@ export const NO_INSTRUCTIONS_CHANGE: PilotInstructionsChange = pilotInstructions
 
 export const updatePilotInstructionsSchema = z.object({
   goals: z.string().trim().min(1, "Write the pilot's goals before saving."),
-  config: pilotInstructionsConfigSchema,
+  // The job-alert block has its own route; the server keeps the stored one.
+  config: pilotInstructionsConfigSchema.omit({ jobAlerts: true }),
   onChange: pilotInstructionsChangeSchema.prefault({}),
 });
 

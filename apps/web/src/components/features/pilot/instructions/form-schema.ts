@@ -1,9 +1,9 @@
 import {
   PILOT_EMAIL_AUTONOMY,
   PILOT_LINKEDIN_AUTONOMY,
-  type PilotInstructionsConfig,
   type PilotState,
   pilotNetworkingSchema,
+  type UpdatePilotInstructionsInput,
 } from "@jobpilot/contracts/pilot";
 import { z } from "zod/v4";
 
@@ -43,21 +43,13 @@ export const INSTRUCTIONS_FORM_DEFAULTS: InstructionsFormValues = {
   promotionPlatforms: [],
 };
 
-/**
- * `jobAlerts` is passed through from the latest state, not the form: the schedule card edits it on
- * its own route, and a form copy loaded before that edit would silently undo it on save.
- */
-export function toConfig(
-  value: InstructionsFormValues,
-  jobAlerts: PilotInstructionsConfig["jobAlerts"],
-): PilotInstructionsConfig {
+export function toConfig(value: InstructionsFormValues): UpdatePilotInstructionsInput["config"] {
   return {
     dailyApplyCap: value.dailyApplyCap,
     minScore: value.minScore,
     checkIntervalMinutes: value.checkIntervalMinutes,
     boards: value.boards,
     networking: value.networking,
-    jobAlerts,
     promotion: {
       platforms: value.promotionPlatforms.map((p) => ({
         platform: p.platform.trim(),

@@ -91,7 +91,7 @@ function InstructionsEditor(props: InstructionsEditorProps): ReactElement {
   const commit = async (value: InstructionsFormValues, onChange: PilotInstructionsChange) => {
     await save.mutateAsync({
       goals: value.goals,
-      config: toConfig(value, state.instructionsConfig.jobAlerts),
+      config: toConfig(value),
       onChange,
     });
     setPending(null);
