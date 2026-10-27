@@ -1,7 +1,11 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { type JobBoardInput, jobBoardSchema } from "@jobpilot/contracts/job-board";
+import {
+  boardDomainSchema,
+  type JobBoardInput,
+  jobBoardSchema,
+} from "@jobpilot/contracts/job-board";
 import { Stack } from "@mui/material";
 import { useSelector } from "@tanstack/react-form";
 import { z } from "zod/v4";
@@ -19,10 +23,11 @@ const addBoardFormSchema = jobBoardSchema
     catalogDomain: z.string(),
     domain: z.string().trim().toLowerCase(),
   })
-  .refine((values) => values.catalogDomain !== OTHER_SITE || values.domain.length > 0, {
-    message: "Enter the site's domain",
-    path: ["domain"],
-  });
+  .refine(
+    (values) =>
+      values.catalogDomain !== OTHER_SITE || boardDomainSchema.safeParse(values.domain).success,
+    { message: "Enter a domain like linkedin.com", path: ["domain"] },
+  );
 
 const EMPTY: z.infer<typeof addBoardFormSchema> = {
   catalogDomain: OTHER_SITE,
