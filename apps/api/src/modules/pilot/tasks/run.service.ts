@@ -19,9 +19,14 @@ import {
 import { guardApply, startApplying } from "@/modules/campaign/jobs/apply-guard";
 import { publishJob } from "@/modules/campaign/jobs/job-events";
 import { PilotJournalService } from "../journal.service";
-import { NEEDS_WORKER_VISIT } from "./gather-campaigns";
 import { parseJobRef, revertApplyingJobs } from "./run-history";
 import { parseTaskListSnapshot } from "./snapshot";
+import {
+  networkingSendWhere,
+  promotionPostWhere,
+  reviewPausedWhere,
+  scorePendingWhere,
+} from "./workable";
 
 const RUN_TTL_MS = 15 * 60 * 1000;
 /** Counted from `startedAt`, so a stuck driver that keeps heartbeating still expires. */
@@ -36,6 +41,7 @@ async function assertStillStartable(
   tx: Prisma.TransactionClient,
   userId: string,
   task: PilotTask,
+  now: Date,
 ): Promise<void> {
   const { subjectId } = task;
   let remaining: number;
@@ -43,30 +49,25 @@ async function assertStillStartable(
   switch (task.taskType) {
     case "promotion.post":
       remaining = await tx.promotionPost.count({
-        where: { id: subjectId, userId, status: "approved" },
+        where: { id: subjectId, ...promotionPostWhere(userId, now) },
       });
-      gone = "Promotion post is no longer approved.";
+      gone = "Promotion post is no longer ready to post.";
       break;
     case "networking.send":
       remaining = await tx.networkingMessage.count({
-        where: { id: subjectId, userId, status: "approved" },
+        where: { id: subjectId, ...networkingSendWhere(userId) },
       });
-      gone = "Networking message is no longer approved.";
+      gone = "Networking message is no longer ready to send.";
       break;
     case "campaign.reviewPaused":
       remaining = await tx.campaign.count({
-        where: { campaignId: subjectId, userId, status: "paused" },
+        where: { campaignId: subjectId, ...reviewPausedWhere(userId) },
       });
       gone = "Campaign is no longer paused.";
       break;
     case "campaign.scorePending":
       remaining = await tx.campaign.count({
-        where: {
-          campaignId: subjectId,
-          userId,
-          status: "in_progress",
-          jobs: { some: NEEDS_WORKER_VISIT },
-        },
+        where: { campaignId: subjectId, ...scorePendingWhere(userId) },
       });
       gone = "Campaign has no jobs left to score.";
       break;
@@ -137,7 +138,7 @@ export class RunService {
     });
     if (open) throw conflict("This task is already started.");
 
-    await assertStillStartable(tx, userId, task);
+    await assertStillStartable(tx, userId, task, now);
     const startedJob =
       task.taskType === "job.apply"
         ? await startApplying(tx, userId, task.payload.campaignId, task.payload.jobKey)

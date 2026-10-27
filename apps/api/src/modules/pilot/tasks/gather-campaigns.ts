@@ -5,6 +5,7 @@ import { DAY_MS, HOUR_MS } from "@/common/date/buckets";
 import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { summarizeCampaigns } from "@/modules/campaign/campaign.summary";
 import { GATHER_CAP, latestRunBySubject, ranRecently, withoutRecentRuns } from "./run-history";
+import { NEEDS_WORKER_VISIT, reviewPausedWhere, scorePendingWhere } from "./workable";
 
 const BATCH_SIZE = 5;
 /** A row nothing can visit (dead URL, login wall) stays a candidate, so it must not win every cycle. */
@@ -19,12 +20,6 @@ const RETRY_MIN_FAILED = 3;
 const TOP_SKIP_REASONS = 3;
 const REVIEW_REPEAT_MS = 7 * DAY_MS;
 
-/** Pending rows a worker must open: never scored, or scored off a results row without a brief. */
-export const NEEDS_WORKER_VISIT = {
-  status: "pending",
-  OR: [{ matchScore: null }, { brief: null }],
-} satisfies Prisma.JobWhereInput;
-
 const QUEUED = { status: "queued" } satisfies Prisma.JobWhereInput;
 
 /** Auto-apply campaigns holding rows that still need a score or a brief. */
@@ -35,12 +30,7 @@ export async function gatherScorePending(
   now: Date,
 ): Promise<TaskPayload<"campaign.scorePending">[]> {
   const campaigns = await prisma.campaign.findMany({
-    where: {
-      userId,
-      status: "in_progress",
-      source: "auto_apply",
-      jobs: { some: NEEDS_WORKER_VISIT },
-    },
+    where: scorePendingWhere(userId),
     take: GATHER_CAP,
     select: {
       campaignId: true,
@@ -128,7 +118,7 @@ export async function gatherPausedCampaigns(
   now: Date,
 ): Promise<TaskPayload<"campaign.reviewPaused">[]> {
   const campaigns = await prisma.campaign.findMany({
-    where: { userId, status: "paused", source: "auto_apply" },
+    where: reviewPausedWhere(userId),
     orderBy: { updatedAt: "asc" },
     take: PAUSED_CANDIDATES,
     select: { campaignId: true, query: true, config: true, updatedAt: true },

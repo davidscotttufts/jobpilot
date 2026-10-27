@@ -2,25 +2,20 @@ import type { PilotInstructionsConfig, TaskPayload } from "@jobpilot/contracts/p
 import { DAY_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { GATHER_CAP } from "./run-history";
+import { networkingSendWhere, promotionPostWhere } from "./workable";
 
 /** The build step adds the channel and mode, which come from config rather than the row. */
 export type Followup = Omit<TaskPayload<"networking.followup">, "channel" | "autonomy">;
 
 // The where-clauses below guarantee a campaign and a contact email; the flatMaps convince the types.
 
-/** Approved email drafts, oldest first. LinkedIn drafts are never sent by the pilot. */
+/** Sendable drafts, oldest first. */
 export async function gatherApprovedNetworking(
   prisma: PrismaClient,
   userId: string,
 ): Promise<TaskPayload<"networking.send">[]> {
   const rows = await prisma.networkingMessage.findMany({
-    where: {
-      userId,
-      campaignId: { not: null },
-      channel: "email",
-      status: "approved",
-      contact: { email: { not: null } },
-    },
+    where: networkingSendWhere(userId),
     orderBy: { createdAt: "asc" },
     take: GATHER_CAP,
     select: {
@@ -101,18 +96,13 @@ export async function gatherFollowups(
   });
 }
 
-/** Approved posts whose schedule, if any, has arrived. */
 export async function gatherApprovedPromotions(
   prisma: PrismaClient,
   userId: string,
   now: Date,
 ): Promise<TaskPayload<"promotion.post">[]> {
   const rows = await prisma.promotionPost.findMany({
-    where: {
-      userId,
-      status: "approved",
-      OR: [{ scheduledFor: null }, { scheduledFor: { lte: now } }],
-    },
+    where: promotionPostWhere(userId, now),
     orderBy: { createdAt: "asc" },
     select: { id: true, platform: true, target: true, title: true, body: true },
   });
