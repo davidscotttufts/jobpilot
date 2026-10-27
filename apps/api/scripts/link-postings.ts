@@ -4,7 +4,6 @@
 // traffic: `bun scripts/link-postings.ts` reports; `--apply` writes. Delete once it ran in prod.
 import { db } from "@/common/database/prisma.client";
 import { normalizeJobUrl } from "@/common/utils/url";
-import type { Prisma } from "@/generated/prisma/client";
 
 const apply = process.argv.includes("--apply");
 
@@ -13,12 +12,12 @@ interface UrlRow {
   url: string | null;
 }
 
-/** Rewrites the rows of one column whose value is not yet normalized. */
-async function normalizeColumn(
-  label: string,
-  rows: UrlRow[],
-  write: (id: string, url: string) => Prisma.PrismaPromise<unknown>,
-): Promise<void> {
+/**
+ * Rewrites the rows of one column whose value is not yet normalized, in one statement: per-row
+ * updates through the tunnel outlive Prisma's transaction timeout.
+ */
+async function normalizeColumn(table: string, column: string, rows: UrlRow[]): Promise<void> {
+  const label = `${table}.${column}`;
   const changes = rows.flatMap((row) => {
     if (row.url === null) return [];
     const next = normalizeJobUrl(row.url);
@@ -26,7 +25,13 @@ async function normalizeColumn(
   });
   console.log(`${label}: ${changes.length} of ${rows.length} rows change`);
   if (apply && changes.length > 0) {
-    await db.$transaction(changes.map((change) => write(change.id, change.url)));
+    // Identifiers come from this file, never from data.
+    await db.$executeRawUnsafe(
+      `UPDATE "${table}" AS t SET "${column}" = v.url
+       FROM unnest($1::text[], $2::text[]) AS v(id, url) WHERE t.id = v.id`,
+      changes.map((change) => change.id),
+      changes.map((change) => change.url),
+    );
   }
 }
 
@@ -102,81 +107,74 @@ await mergeApplications();
 await mergeListingSources();
 
 await normalizeColumn(
-  "applications.url",
+  "applications",
+  "url",
   await db.application.findMany({ select: { id: true, url: true } }),
-  (id, url) => db.application.update({ where: { id }, data: { url } }),
 );
+await normalizeColumn("jobs", "url", await db.job.findMany({ select: { id: true, url: true } }));
 await normalizeColumn(
-  "jobs.url",
-  await db.job.findMany({ select: { id: true, url: true } }),
-  (id, url) => db.job.update({ where: { id }, data: { url } }),
-);
-await normalizeColumn(
-  "job_listing_sources.url",
+  "job_listing_sources",
+  "url",
   await db.jobListingSource.findMany({ select: { id: true, url: true } }),
-  (id, url) => db.jobListingSource.update({ where: { id }, data: { url } }),
 );
 await normalizeColumn(
-  "cover_letters.job_url",
+  "cover_letters",
+  "job_url",
   (await db.coverLetter.findMany({ select: { id: true, jobUrl: true } })).map((r) => ({
     id: r.id,
     url: r.jobUrl,
   })),
-  (id, url) => db.coverLetter.update({ where: { id }, data: { jobUrl: url } }),
 );
 await normalizeColumn(
-  "resume_variants.job_url",
+  "resume_variants",
+  "job_url",
   (await db.resumeVariant.findMany({ select: { id: true, jobUrl: true } })).map((r) => ({
     id: r.id,
     url: r.jobUrl,
   })),
-  (id, url) => db.resumeVariant.update({ where: { id }, data: { jobUrl: url } }),
 );
 await normalizeColumn(
-  "upwork_proposals.job_url",
+  "upwork_proposals",
+  "job_url",
   (await db.upworkProposal.findMany({ select: { id: true, jobUrl: true } })).map((r) => ({
     id: r.id,
     url: r.jobUrl,
   })),
-  (id, url) => db.upworkProposal.update({ where: { id }, data: { jobUrl: url } }),
 );
 await normalizeColumn(
-  "upwork_inbox_items.job_url",
+  "upwork_inbox_items",
+  "job_url",
   (await db.upworkInboxItem.findMany({ select: { id: true, jobUrl: true } })).map((r) => ({
     id: r.id,
     url: r.jobUrl,
   })),
-  (id, url) => db.upworkInboxItem.update({ where: { id }, data: { jobUrl: url } }),
 );
 await normalizeColumn(
-  "contacts.related_job_url",
+  "contacts",
+  "related_job_url",
   (await db.contact.findMany({ select: { id: true, relatedJobUrl: true } })).map((r) => ({
     id: r.id,
     url: r.relatedJobUrl,
   })),
-  (id, url) => db.contact.update({ where: { id }, data: { relatedJobUrl: url } }),
 );
 
-// Backfill job_id by (campaignId, url) - both columns are normalized now.
-const unlinked = await db.application.findMany({
-  where: { jobId: null, campaignId: { not: null } },
-  select: { id: true, campaignId: true, url: true },
-});
-let linked = 0;
-for (const application of unlinked) {
-  if (!application.campaignId) continue;
-  const job = await db.job.findFirst({
-    where: { campaignId: application.campaignId, url: application.url },
-    select: { id: true },
-    orderBy: { createdAt: "asc" },
-  });
-  if (!job) continue;
-  linked += 1;
-  if (apply) {
-    await db.application.update({ where: { id: application.id }, data: { jobId: job.id } });
-  }
+// Backfill job_id by (campaignId, url) - both columns are normalized now. The earliest job wins.
+const [{ unlinked, linkable }] = await db.$queryRaw<{ unlinked: number; linkable: number }[]>`
+  SELECT count(*)::int AS unlinked,
+         count(*) FILTER (WHERE EXISTS (
+           SELECT 1 FROM "jobs" j WHERE j."campaign_id" = a."campaign_id" AND j."url" = a."url"
+         ))::int AS linkable
+  FROM "applications" a WHERE a."job_id" IS NULL AND a."campaign_id" IS NOT NULL`;
+if (apply) {
+  await db.$executeRaw`
+    UPDATE "applications" a SET "job_id" = j."id"
+    FROM (
+      SELECT DISTINCT ON ("campaign_id", "url") "id", "campaign_id", "url"
+      FROM "jobs" ORDER BY "campaign_id", "url", "created_at"
+    ) j
+    WHERE a."job_id" IS NULL AND a."campaign_id" = j."campaign_id" AND a."url" = j."url"`;
 }
-console.log(`applications.job_id: ${linked} of ${unlinked.length} campaign applications linked`);
+console.log(`applications.job_id: ${linkable} of ${unlinked} campaign applications linked`);
 console.log(apply ? "applied" : "dry run - pass --apply to write");
 
 await db.$disconnect();
