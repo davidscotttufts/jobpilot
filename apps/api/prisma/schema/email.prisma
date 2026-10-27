@@ -65,7 +65,7 @@ model EmailMessage {
   id          String       @id @default(uuid())
   accountId   String       @map("account_id")
   account     EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  providerId  String       @unique @map("provider_id")
+  providerId  String       @map("provider_id")
   threadId    String?      @map("thread_id")
   subject     String
   fromAddress String       @map("from_address")
@@ -90,6 +90,8 @@ model EmailMessage {
   verificationLink   String? @map("verification_link")
   verificationDomain String? @map("verification_domain")
 
+  // Provider message ids are unique per mailbox, not globally.
+  @@unique([accountId, providerId])
   @@index([reviewStatus, receivedAt])
   @@index([matchedAppId])
   @@index([fromDomain, receivedAt])
