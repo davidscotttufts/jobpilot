@@ -12,11 +12,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
 import { PilotService } from "./pilot.service";
 import { hasPendingRunNow, pendingJobAlertsWhere } from "./tasks/gather-inbox";
-import { latestRun } from "./tasks/run-history";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
-
-/** The import's campaigns are named by the `inbox.jobAlerts` skill; this is how a run finds its own. */
-const IMPORT_CAMPAIGN_PREFIX = "Job alerts ·";
 
 /** A run-now click syncs first so the count is current, but never re-pulls a mailbox just synced. */
 const RUN_NOW_SYNC_STALE_MS = 2 * 60 * 1000;
@@ -45,22 +41,27 @@ export class JobAlertsService {
         where: { userId },
         select: { running: true, jobAlertsRequestedAt: true },
       }),
-      latestRun(this.prisma, userId, "inbox.jobAlerts"),
+      this.prisma.pilotRun.findFirst({
+        where: { userId, taskType: "inbox.jobAlerts" },
+        orderBy: { startedAt: "desc" },
+        select: {
+          startedAt: true,
+          finishedAt: true,
+          outcome: true,
+          subjectType: true,
+          subjectId: true,
+        },
+      }),
       this.prisma.emailAccount.findUnique({ where: { userId }, select: { id: true } }),
     ]);
     const settings = config.jobAlerts;
 
     const [pendingEmails, campaign] = await Promise.all([
       this.prisma.emailMessage.count({ where: pendingJobAlertsWhere(userId, settings, now) }),
-      lastRun
+      // The run's result names the campaign it opened.
+      lastRun?.subjectType === "campaign"
         ? this.prisma.campaign.findFirst({
-            where: {
-              userId,
-              createdBy: "pilot",
-              query: { startsWith: IMPORT_CAMPAIGN_PREFIX },
-              startedAt: { gte: lastRun.startedAt },
-            },
-            orderBy: { startedAt: "asc" },
+            where: { id: lastRun.subjectId, userId },
             select: { id: true, query: true },
           })
         : null,
