@@ -18,6 +18,6 @@ export const contactController = new Elysia({
     detail: {
       summary: "List networking contacts",
       description:
-        "Returns one page of the active profile's networking contacts, ordered newest first, as `{ items, pagination }`.",
+        "Returns one page of the user's networking contacts, ordered newest first, as `{ items, pagination }`.",
     },
   });

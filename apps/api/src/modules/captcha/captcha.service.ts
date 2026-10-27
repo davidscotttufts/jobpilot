@@ -55,7 +55,7 @@ export class CaptchaService {
   }
 
   /**
-   * Resolve a CAPTCHA via the profile's configured solving service (2captcha / CapSolver)
+   * Resolve a CAPTCHA via the user's configured solving service (2captcha / CapSolver)
    * and return the token to inject. Throws 404 when no key is configured, 502 on solver failure.
    */
   async solve(userId: string, input: CaptchaSolveInput): Promise<CaptchaSolveResult> {

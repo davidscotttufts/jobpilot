@@ -38,7 +38,7 @@ export const promotionController = new Elysia({
     detail: {
       summary: "List promotion posts",
       description:
-        "Returns one page of the profile's promotion posts as `{ items, pagination }`, newest first, optionally filtered by status.",
+        "Returns one page of the user's promotion posts as `{ items, pagination }`, newest first, optionally filtered by status.",
     },
   })
   .patch(

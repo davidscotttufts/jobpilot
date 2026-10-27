@@ -23,7 +23,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "List job boards",
       description:
-        "Returns the active profile's boards: listed catalog boards in catalog order, then the profile's own additions. Logins are credentials scoped to the board's domain - see `GET /credentials/resolve`.",
+        "Returns the user's boards: listed catalog boards in catalog order, then the user's own additions. Logins are credentials scoped to the board's domain - see `GET /credentials/resolve`.",
     },
   })
   .get("/catalog", ({ user }) => svc.catalog(user.id), {
@@ -31,7 +31,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "List available boards",
       description:
-        "Returns the listed boards from the global catalog that the active profile has not linked yet.",
+        "Returns the listed boards from the global catalog that the user has not linked yet.",
     },
   })
   .post("/", ({ user, body }) => svc.create(user.id, body), {
@@ -40,7 +40,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "Add job board",
       description:
-        "Links the catalog board with the given domain to the active profile. An unknown domain is added to the catalog unlisted, using `name` and `searchUrl`. Linking a board twice returns 409.",
+        "Links the catalog board with the given domain to the user. An unknown domain is added to the catalog unlisted, using `name` and `searchUrl`. Linking a board twice returns 409.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
@@ -49,6 +49,6 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "Remove job board",
       description:
-        "Unlinks the board from the active profile and returns the id of the removed link. The catalog row and any credential for the domain survive.",
+        "Unlinks the board from the user and returns the id of the removed link. The catalog row and any credential for the domain survive.",
     },
   });

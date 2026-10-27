@@ -71,7 +71,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       detail: {
         summary: "Upsert profile enhancement",
         description:
-          "Creates or updates the profile-enhancement record for the active profile, writing only provided fields, and publishes a profile.updated event.",
+          "Creates or updates the profile-enhancement record for the user, writing only provided fields, and publishes a profile.updated event.",
       },
     },
   )
@@ -150,7 +150,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     detail: {
       summary: "List proposals",
       description:
-        "Returns one page of the active profile's Upwork proposals as `{ items, pagination }`, newest-updated first, optionally filtered by status and a search term over job title and client name.",
+        "Returns one page of the user's Upwork proposals as `{ items, pagination }`, newest-updated first, optionally filtered by status and a search term over job title and client name.",
     },
   })
   .post(
@@ -166,7 +166,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       detail: {
         summary: "Create proposal",
         description:
-          "Creates a new Upwork proposal for the active profile, publishes a proposal.created event, and returns the created proposal.",
+          "Creates a new Upwork proposal for the user, publishes a proposal.created event, and returns the created proposal.",
       },
     },
   )
@@ -176,7 +176,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
     detail: {
       summary: "Get proposal",
       description:
-        "Returns a single Upwork proposal owned by the active profile, or 404 if it does not exist.",
+        "Returns a single Upwork proposal owned by the user, or 404 if it does not exist.",
     },
   })
   .patch(
@@ -193,7 +193,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       detail: {
         summary: "Update proposal",
         description:
-          "Applies a partial update to an Upwork proposal owned by the active profile, publishes a proposal.updated event, and returns the updated proposal.",
+          "Applies a partial update to an Upwork proposal owned by the user, publishes a proposal.updated event, and returns the updated proposal.",
       },
     },
   )
@@ -210,7 +210,7 @@ export const upworkController = new Elysia({ prefix: "/upwork", detail: { tags: 
       detail: {
         summary: "Delete proposal",
         description:
-          "Deletes an Upwork proposal owned by the active profile, publishes a proposal.deleted event, and returns the deleted proposal id.",
+          "Deletes an Upwork proposal owned by the user, publishes a proposal.deleted event, and returns the deleted proposal id.",
       },
     },
   );

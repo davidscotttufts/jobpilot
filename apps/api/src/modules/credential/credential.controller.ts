@@ -23,8 +23,7 @@ export const credentialController = new Elysia({
     response: credentialListSchema,
     detail: {
       summary: "List credentials",
-      description:
-        "Returns all stored login/service credentials for the active profile, ordered by scope.",
+      description: "Returns all stored login/service credentials for the user, ordered by scope.",
     },
   })
   .post("/", ({ user, body }) => svc.create(user.id, body), {
@@ -33,7 +32,7 @@ export const credentialController = new Elysia({
     detail: {
       summary: "Create credential",
       description:
-        "Creates a new login/service credential for the active profile and returns the created record.",
+        "Creates a new login/service credential for the user and returns the created record.",
     },
   })
   .get("/resolve", ({ user, query }) => svc.resolveCredential(user.id, query.domain), {
@@ -52,7 +51,7 @@ export const credentialController = new Elysia({
     detail: {
       summary: "Update credential",
       description:
-        "Updates the specified credential owned by the active profile and returns the updated record.",
+        "Updates the specified credential owned by the user and returns the updated record.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
@@ -60,7 +59,6 @@ export const credentialController = new Elysia({
     response: deletedResponseSchema,
     detail: {
       summary: "Delete credential",
-      description:
-        "Deletes the specified credential owned by the active profile and returns the deleted id.",
+      description: "Deletes the specified credential owned by the user and returns the deleted id.",
     },
   });

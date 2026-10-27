@@ -19,12 +19,12 @@ function project(row: LinkRow) {
 export class JobBoardService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /** Unpaginated: a profile's boards are bounded by the catalog, and selects read the whole list. */
+  /** Unpaginated: a user's boards are bounded by the catalog, and selects read the whole list. */
   async list(userId: string) {
     const rows = await this.prisma.userJobBoard.findMany({
       where: { userId },
       select: LINK_SELECT,
-      // Curated boards in catalog order, then the profile's own additions as they were added.
+      // Curated boards in catalog order, then the user's own additions as they were added.
       orderBy: [
         { jobBoard: { listed: "desc" } },
         { jobBoard: { sortOrder: "asc" } },

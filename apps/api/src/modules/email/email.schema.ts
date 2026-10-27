@@ -29,7 +29,7 @@ export const callbackQuery = z.object({
   error: z.string().optional(),
 });
 
-/** Connection status of the profile's linked mailbox (`account.accountStatus`). */
+/** Connection status of the user's linked mailbox (`account.accountStatus`). */
 export const accountStatusSchema = z.union([
   z.object({
     connected: z.literal(false),

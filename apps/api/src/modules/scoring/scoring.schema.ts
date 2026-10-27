@@ -28,7 +28,7 @@ export type FitProfile = z.infer<typeof fitProfileSchema>;
 export const scoreFitSchema = z.object({
   brief: jobBriefSchema,
   profile: fitProfileSchema.partial().optional(),
-  // Base resume to derive fit inputs from; falls back to the profile's primary.
+  // Base resume to derive fit inputs from; falls back to the user's primary.
   resumeId: z.uuid().optional(),
   // Threshold the verdict is measured against; defaults to the user's auto-apply minimum.
   minScore: z.number().int().min(0).max(100).optional(),

@@ -44,7 +44,7 @@ export const resumeController = new Elysia({
     detail: {
       summary: "List master resumes",
       description:
-        "Returns all of the active profile's master resumes ordered by most recently updated, with variant counts and the primary resume listed first.",
+        "Returns all of the user's master resumes ordered by most recently updated, with variant counts and the primary resume listed first.",
     },
   })
   .post("/", ({ user, body }) => svc.createJson(user.id, body), {
@@ -77,7 +77,7 @@ export const resumeController = new Elysia({
     detail: {
       summary: "Get resume",
       description:
-        "Returns a single master resume owned by the active profile, including its structured content, version, source-file metadata, and primary flag.",
+        "Returns a single master resume owned by the user, including its structured content, version, source-file metadata, and primary flag.",
     },
   })
   .put("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
@@ -110,7 +110,7 @@ export const resumeController = new Elysia({
       detail: {
         summary: "Stream resume change events",
         description:
-          "Opens a Server-Sent Events stream that emits content-change events for the resume after verifying the active profile owns it.",
+          "Opens a Server-Sent Events stream that emits content-change events for the resume after verifying the user owns it.",
       },
     },
   )

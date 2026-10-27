@@ -6,7 +6,7 @@ import { PrismaClient } from "@/generated/prisma/client";
 export class ContactService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /** One page of the profile's contacts (newest first) for the networking page. */
+  /** One page of the user's contacts (newest first) for the networking page. */
   async list(userId: string, query: PaginationQuery) {
     const where = { userId };
     const [rows, total] = await Promise.all([

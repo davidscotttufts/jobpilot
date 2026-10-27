@@ -30,7 +30,7 @@ export const networkingController = new Elysia({ detail: { tags: ["Campaigns"] }
       detail: {
         summary: "List networking messages across campaigns",
         description:
-          "Returns one page of the active profile's networking messages, newest first. Optional `status` and `campaignId` filters.",
+          "Returns one page of the user's networking messages, newest first. Optional `status` and `campaignId` filters.",
       },
     },
   )

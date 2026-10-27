@@ -34,7 +34,7 @@ export const pilotQuestionsController = new Elysia({
     response: pilotQuestionListSchema,
     detail: {
       summary: "List questions",
-      description: "Returns the profile's questions, optionally filtered by status.",
+      description: "Returns the user's questions, optionally filtered by status.",
     },
   })
   .post(

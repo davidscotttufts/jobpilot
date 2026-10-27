@@ -37,7 +37,7 @@ export const coverLetterController = new Elysia({
     detail: {
       summary: "List cover letters",
       description:
-        "Returns one page of the active profile's saved cover letters, newest first, as `{ items, pagination }` - metadata only, without the letter body.",
+        "Returns one page of the user's saved cover letters, newest first, as `{ items, pagination }` - metadata only, without the letter body.",
     },
   })
   .post("/", ({ user, body }) => svc.create(user.id, body), {
@@ -45,8 +45,7 @@ export const coverLetterController = new Elysia({
     response: coverLetterCreatedSchema,
     detail: {
       summary: "Create cover letter",
-      description:
-        "Saves a new cover letter for the active profile and returns the created record.",
+      description: "Saves a new cover letter for the user and returns the created record.",
     },
   })
   .post(
@@ -67,7 +66,7 @@ export const coverLetterController = new Elysia({
     detail: {
       summary: "Get cover letter",
       description:
-        "Returns the full saved cover letter owned by the active profile, or a 404 if it does not exist.",
+        "Returns the full saved cover letter owned by the user, or a 404 if it does not exist.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {
@@ -76,7 +75,7 @@ export const coverLetterController = new Elysia({
     detail: {
       summary: "Delete cover letter",
       description:
-        "Deletes the active profile's saved cover letter and returns an ok acknowledgement, or a 404 if it does not exist.",
+        "Deletes the user's saved cover letter and returns an ok acknowledgement, or a 404 if it does not exist.",
     },
   })
   .get(

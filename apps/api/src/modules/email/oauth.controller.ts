@@ -28,7 +28,7 @@ export const emailOAuthController = new Elysia({
     detail: {
       summary: "Get mailbox OAuth client config",
       description:
-        "Returns whether the profile has configured its own Google OAuth client, the client id, the redirect URI to register, and the requested scopes. Never returns the client secret.",
+        "Returns whether the user has configured its own Google OAuth client, the client id, the redirect URI to register, and the requested scopes. Never returns the client secret.",
     },
   })
   .put("/oauth/client", ({ user, body }) => account.upsertOAuthClient(user.id, body), {
@@ -37,7 +37,7 @@ export const emailOAuthController = new Elysia({
     detail: {
       summary: "Set mailbox OAuth client config",
       description:
-        "Creates or updates the profile's Google OAuth client (encrypting the secret at rest). A blank client secret on edit keeps the stored one; it is required on first create.",
+        "Creates or updates the user's Google OAuth client (encrypting the secret at rest). A blank client secret on edit keeps the stored one; it is required on first create.",
     },
   })
   .delete("/oauth/client", ({ user }) => account.deleteOAuthClient(user.id), {
@@ -45,7 +45,7 @@ export const emailOAuthController = new Elysia({
     detail: {
       summary: "Remove mailbox OAuth client config",
       description:
-        "Removes the profile's Google OAuth client. Returns 409 while a mailbox is still connected - disconnect it first.",
+        "Removes the user's Google OAuth client. Returns 409 while a mailbox is still connected - disconnect it first.",
     },
   })
   .get(

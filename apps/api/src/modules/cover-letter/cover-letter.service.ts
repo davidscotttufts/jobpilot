@@ -25,7 +25,7 @@ export interface CoverLetterPdf {
 export class CoverLetterService {
   constructor(private readonly prisma: PrismaClient) {}
 
-  /** One page of the active profile's cover letters, newest first (no body - list payload). */
+  /** One page of the user's cover letters, newest first (no body - list payload). */
   async list(userId: string, query: PaginationQuery) {
     const where = { userId };
     const [rows, total] = await Promise.all([

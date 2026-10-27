@@ -17,7 +17,7 @@ export class ScoringService {
   constructor(private readonly prisma: PrismaClient) {}
 
   /**
-   * Loads the profile's primary resume, derives fit inputs from it, merges any
+   * Loads the user's primary resume, derives fit inputs from it, merges any
    * caller-provided profile overrides, and scores the job brief.
    */
   async scoreJobFit(

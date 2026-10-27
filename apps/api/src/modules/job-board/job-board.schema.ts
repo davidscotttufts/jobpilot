@@ -14,10 +14,10 @@ export const jobBoardRecordSchema = z.object({
   searchUrl: z.string().nullable(),
 });
 
-/** The profile's boards: listed catalog boards in catalog order, then its own additions. */
+/** The user's boards: listed catalog boards in catalog order, then its own additions. */
 export const jobBoardListSchema = z.array(jobBoardRecordSchema);
 
-/** Listed global boards the profile has not linked yet - the add-board picker. `id` is the board's. */
+/** Listed global boards the user has not linked yet - the add-board picker. `id` is the board's. */
 export const jobBoardCatalogSchema = z.array(jobBoardRecordSchema);
 
 /** A global catalog row plus `adoption` - how many profiles have linked it. Admin view. */

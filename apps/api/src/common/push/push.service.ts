@@ -104,7 +104,7 @@ export class PushService {
   }
 
   /**
-   * Fan a notification out to every one of the profile's subscriptions. Never throws: catches
+   * Fan a notification out to every one of the user's subscriptions. Never throws: catches
    * internally so a call-site `void push.sendToUser(...)` cannot poison the request path. A
    * 404/410 prunes the dead subscription; other errors are logged and swallowed.
    */

@@ -86,7 +86,7 @@ export class AdminBoardService {
     });
   }
 
-  /** Cascades to every profile's link row - the board disappears from those users' boards. */
+  /** Cascades to every user's link row - the board disappears from those users' boards. */
   async remove(id: string) {
     await this.prisma.jobBoard.delete({ where: { id } });
     return { deleted: id };
