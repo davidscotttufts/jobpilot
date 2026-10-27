@@ -28,7 +28,7 @@ it to the PTY host, which sets `JOBPILOT_API_TOKEN`. Skills call the API through
 | `db:tunnel` | SSH tunnel to remote PostgreSQL on `localhost:5433`. |
 | `db:setup` | Prisma generate + migrate + seed. |
 | `test` | API tests + contracts tests. |
-| `build:api` / `build:web` / `build:terminal` | Production builds. |
+| `build:web` / `build:terminal` | Production builds. The API runs from source. |
 | `check` | Biome format + lint + import sort. Writes. |
 | `ci` | `biome ci --error-on-warnings`. |
 | `knip` | Dead files, exports, and dependencies. |

@@ -6,9 +6,10 @@ paths:
 
 # API conventions (`apps/api`, `packages/*`)
 
-Commands (`bun --cwd=apps/api run <name>`): `dev`, `build`, `typecheck`, `test`, `db:generate`,
-`db:migrate` (create only), `db:migrate:apply`, `db:seed`, `db:reset`, `db:studio`. Prisma
-schema is split by domain under `prisma/schema/*.prisma`.
+Commands (`bun --cwd=apps/api run <name>`): `dev`, `typecheck`, `test`, `db:generate`,
+`db:diff` (read-only SQL draft: database → schema), `db:migrate:apply`, `db:seed`, `db:reset`,
+`db:studio`. Prisma schema is split by domain under `prisma/schema/*.prisma`. Migrations follow
+the `db-migrate` skill.
 
 ## Structure (`src/`)
 

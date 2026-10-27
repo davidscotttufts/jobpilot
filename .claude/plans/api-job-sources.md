@@ -69,8 +69,8 @@ User decisions:
 
 - `apps/api/prisma/schema/job-board.prisma`: add enum `JobBoardKind { browser, api }`
   (`@@map("job_board_kind")`) and `kind JobBoardKind @default(browser)` on `JobBoard`.
-- Migration (per db-migrate skill: `db:migrate` create-only, hand-review, `db:migrate:apply`,
-  `db:generate`; never reset). SQL:
+- Migration (per db-migrate skill: `db:diff` against a restored copy, hand-review,
+  `db:migrate:apply`, `db:generate`; never reset). SQL:
   `CREATE TYPE "job_board_kind" AS ENUM ('browser','api');`
   `ALTER TABLE "job_boards" ADD COLUMN "kind" "job_board_kind" NOT NULL DEFAULT 'browser';`
   No pilot_states snapshot nulling: the agenda wire shape is unchanged.
@@ -222,7 +222,7 @@ User decisions:
 ## Verification
 
 1. `/verify` gate: Biome, API + web typechecks, API and contracts tests (all new tests DB-free).
-2. Migration: `db:migrate` create-only, review SQL, `db:migrate:apply` (after user confirms),
+2. Migration: per db-migrate skill, review SQL, `db:migrate:apply` (after user confirms),
    `db:generate`, `db:seed` (expect 12 boards).
 3. Swagger in dev: `GET /api/job-sources`, `POST /api/job-sources/runs`, `kind` on
    `/api/job-boards`.
