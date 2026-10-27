@@ -2,6 +2,7 @@
 
 import type { ReactElement } from "react";
 import {
+  JOB_ALERT_SENDER_DOMAINS,
   type JobAlertsStatus,
   type PilotJobAlerts,
   timeZoneSchema,
@@ -10,13 +11,10 @@ import { Typography } from "@mui/material";
 import { z } from "zod/v4";
 import { FormDialog } from "@/components/ui/form";
 import { useAppForm } from "@/components/ui/form/tanstack";
+import { hourLabel } from "./use-job-alerts";
 
 /** Every whole hour as a run-time option, "00:00" through "23:00". */
 const RUN_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => hourLabel(hour));
-
-function hourLabel(hour: number): string {
-  return `${String(hour).padStart(2, "0")}:00`;
-}
 
 function browserTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -108,7 +106,7 @@ export function ScheduleDialog(props: ScheduleDialogProps): ReactElement {
         )}
       </form.AppField>
       <Typography variant="captionMuted">
-        Always included: {status.builtInSenderDomains.join(", ")}.
+        Always included: {JOB_ALERT_SENDER_DOMAINS.join(", ")}.
       </Typography>
     </FormDialog>
   );

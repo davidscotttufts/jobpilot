@@ -179,11 +179,7 @@ export async function gatherUpworkSync(
   return { lastSyncedAt, unreadCount };
 }
 
-export function hasPendingRunNow(
-  requestedAt: Date | null,
-  lastRun: LatestRun,
-  now: Date,
-): requestedAt is Date {
+export function hasPendingRunNow(requestedAt: Date | null, lastRun: LatestRun, now: Date): boolean {
   if (requestedAt === null) return false;
   if (now.getTime() - requestedAt.getTime() >= RUN_NOW_EXPIRES_AFTER_MS) return false;
   return !lastRun || lastRun.startedAt < requestedAt;

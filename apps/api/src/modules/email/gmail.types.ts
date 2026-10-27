@@ -1,4 +1,4 @@
-import type { EmailLink } from "./email.utils";
+import type { EmailLink } from "./email.schema";
 
 /** The user's own Google OAuth client (app); the redirect URI is the shared, env-configured one. */
 export interface OAuthClientConfig {

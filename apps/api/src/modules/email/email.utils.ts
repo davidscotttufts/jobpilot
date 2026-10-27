@@ -1,3 +1,5 @@
+import type { EmailLink } from "./email.schema";
+
 /** A single email header name/value pair as returned by Gmail's API. */
 export interface EmailHeader {
   name?: string | null;
@@ -114,6 +116,12 @@ export function buildMimeMessage(input: {
   return `${headers.join("\r\n")}\r\n\r\n${parts.join("\r\n")}`;
 }
 
+interface GmailPart {
+  mimeType?: string;
+  body?: { data?: string };
+  parts?: unknown[];
+}
+
 /**
  * Walk a Gmail message payload tree and return the best text representation.
  *
@@ -125,9 +133,7 @@ export function extractPlainText(payload: unknown): string {
   const stack: unknown[] = [payload];
   let html: string | null = null;
   while (stack.length > 0) {
-    const node = stack.pop() as
-      | { mimeType?: string; body?: { data?: string }; parts?: unknown[] }
-      | undefined;
+    const node = stack.pop() as GmailPart | undefined;
 
     if (!node) {
       continue;
@@ -143,42 +149,26 @@ export function extractPlainText(payload: unknown): string {
     }
   }
 
-  if (html) {
-    return html
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
+  return html ? htmlToText(html) : "";
+}
 
-  return "";
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** One alert digest carries a few dozen postings; the cap bounds a pathological newsletter. */
 const MAX_LINKS = 300;
 const MAX_LINK_LENGTH = 2048;
 const MAX_LINK_TEXT = 200;
-
-/** A link and the text a reader sees for it - the only way to tell a posting from "Unsubscribe". */
-export interface EmailLink {
-  url: string;
-  text: string;
-}
-
-function visibleText(html: string): string {
-  return html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, MAX_LINK_TEXT);
-}
 
 /**
  * Every distinct http(s) link in a Gmail payload, in document order: anchors from HTML parts (with
@@ -190,9 +180,7 @@ export function extractLinks(payload: unknown): EmailLink[] {
   const found: EmailLink[] = [];
   const stack: unknown[] = [payload];
   while (stack.length > 0) {
-    const node = stack.shift() as
-      | { mimeType?: string; body?: { data?: string }; parts?: unknown[] }
-      | undefined;
+    const node = stack.shift() as GmailPart | undefined;
     if (!node) {
       continue;
     }
@@ -202,8 +190,11 @@ export function extractLinks(payload: unknown): EmailLink[] {
         /<a\b[^>]*?href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
       )) {
         const alt = match[2].match(/alt\s*=\s*["']([^"']*)["']/i)?.[1] ?? "";
-        const text = visibleText(match[2]) || alt.trim().slice(0, MAX_LINK_TEXT);
-        found.push({ url: match[1].replace(/&amp;/g, "&").trim(), text });
+        const text = htmlToText(match[2]) || alt.trim();
+        found.push({
+          url: match[1].replace(/&amp;/g, "&").trim(),
+          text: text.slice(0, MAX_LINK_TEXT),
+        });
       }
     }
     if (node.body?.data && node.mimeType === "text/plain") {

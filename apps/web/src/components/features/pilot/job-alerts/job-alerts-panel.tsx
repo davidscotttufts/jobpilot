@@ -18,7 +18,7 @@ import { SectionCard } from "@/components/ui/layout";
 import { formatRelativeTime, formatTimeUntil, plural } from "@/utils/format";
 import { RunJobAlertsButton } from "./run-job-alerts-button";
 import { ScheduleDialog } from "./schedule-dialog";
-import { runDisabledReason, useJobAlerts } from "./use-job-alerts";
+import { hourLabel, runDisabledReason, useJobAlerts } from "./use-job-alerts";
 
 const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
   done: "finished",
@@ -30,13 +30,17 @@ const OUTCOME_LABELS: Record<(typeof PILOT_RUN_OUTCOMES)[number], string> = {
 function scheduleSummary(status: JobAlertsStatus): string {
   const { settings } = status;
   if (!settings.enabled) return "Not scheduled - runs only when you click Run now.";
-  const times = settings.runHours.map((hour) => `${String(hour).padStart(2, "0")}:00`).join(", ");
+  const times = settings.runHours.map(hourLabel).join(", ");
   const next = status.nextRunAt ? ` · next in ${formatTimeUntil(status.nextRunAt)}` : "";
   return `Runs daily at ${times} ${settings.timeZone}${next}`;
 }
 
-function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
-  const { lastRun } = props.status;
+interface LastRunProps {
+  lastRun: JobAlertsStatus["lastRun"];
+}
+
+function LastRun(props: LastRunProps): ReactElement {
+  const { lastRun } = props;
   if (!lastRun) {
     return <Typography variant="captionMuted">No import has run yet.</Typography>;
   }
@@ -48,12 +52,12 @@ function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
           ? `Last run ${finished} ${formatRelativeTime(lastRun.finishedAt ?? lastRun.startedAt)} ago`
           : `Importing now - started ${formatRelativeTime(lastRun.startedAt)} ago`}
       </Typography>
-      {lastRun.campaignId && (
+      {lastRun.campaign && (
         <LinkButton
           size="small"
-          href={`/campaigns/${encodeURIComponent(lastRun.campaignId)}` as Route}
+          href={`/campaigns/${encodeURIComponent(lastRun.campaign.id)}` as Route}
         >
-          {lastRun.campaignQuery ?? "Open campaign"}
+          {lastRun.campaign.query}
         </LinkButton>
       )}
     </Stack>
@@ -62,10 +66,10 @@ function LastRun(props: { status: JobAlertsStatus }): ReactElement | null {
 
 export function JobAlertsPanel(): ReactElement {
   const [editing, setEditing] = useState(false);
-  const { query, status } = useJobAlerts();
+  const { query, status, run } = useJobAlerts();
 
   const save = useApiMutation((body: PilotJobAlerts) => api.pilot["job-alerts"].put(body), {
-    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.state(), queryKeys.pilot.taskList()],
+    invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
     successMessage: "Job alert schedule saved.",
   });
 
@@ -110,7 +114,7 @@ export function JobAlertsPanel(): ReactElement {
                 next cycle.
               </Typography>
             )}
-            <LastRun status={status} />
+            <LastRun lastRun={status.lastRun} />
             {disabledReason && (
               <Alert severity="info" variant="outlined">
                 {disabledReason}
@@ -120,7 +124,12 @@ export function JobAlertsPanel(): ReactElement {
               <Button size="small" startIcon={<Schedule />} onClick={() => setEditing(true)}>
                 Schedule
               </Button>
-              <RunJobAlertsButton />
+              <RunJobAlertsButton
+                status={status}
+                disabledReason={disabledReason}
+                submitting={run.isPending}
+                onRun={() => run.mutate()}
+              />
             </Stack>
           </Stack>
         )}

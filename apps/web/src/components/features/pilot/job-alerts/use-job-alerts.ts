@@ -6,11 +6,14 @@ import { queryKeys } from "@/api/query-keys";
 import { useToast } from "@/providers/notification-provider";
 import { plural } from "@/utils/format";
 
-const ACTIVE_POLL_MS = 15_000;
-const IDLE_POLL_MS = 120_000;
+// Run events arrive over SSE (pilot-live.tsx); the poll only catches newly synced mail.
+const POLL_MS = 120_000;
 
-export function isRunPending(status: JobAlertsStatus | undefined): boolean {
-  if (!status) return false;
+export function hourLabel(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+export function isRunPending(status: JobAlertsStatus): boolean {
   if (status.requestedAt !== null) return true;
   return status.lastRun !== null && status.lastRun.outcome === null;
 }
@@ -25,10 +28,7 @@ export function runDisabledReason(status: JobAlertsStatus): string | null {
 
 export function useJobAlerts() {
   const toast = useToast();
-  const query = useApiQuery(pilotQueries.jobAlerts(), {
-    refetchInterval: (current) =>
-      isRunPending(current.state.data) ? ACTIVE_POLL_MS : IDLE_POLL_MS,
-  });
+  const query = useApiQuery(pilotQueries.jobAlerts(), { refetchInterval: POLL_MS });
   const run = useApiMutation(() => api.pilot["job-alerts"].run.post(), {
     invalidate: [queryKeys.pilot.jobAlerts(), queryKeys.pilot.taskList()],
     onSuccess: (result) => {

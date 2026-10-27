@@ -1,5 +1,4 @@
 import { approveSchema, scanMessageSchema } from "@jobpilot/contracts/email";
-import { markJobAlertsImportedSchema } from "@jobpilot/contracts/pilot";
 import { idParam } from "@jobpilot/contracts/shared";
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { Elysia } from "elysia";
@@ -10,6 +9,7 @@ import {
   emailMessageListSchema,
   emailMessageSchema,
   jobAlertsImportedSchema,
+  markJobAlertsImportedSchema,
   messageApprovedSchema,
   messageCountSchema,
   messageDeniedSchema,

@@ -78,23 +78,17 @@ export function jobAlertSenderDomains(config: PilotJobAlerts): string[] {
   return [...new Set([...JOB_ALERT_SENDER_DOMAINS, ...config.extraSenderDomains])];
 }
 
-/** Marks imported alert emails so the next run skips them. */
-export const markJobAlertsImportedSchema = z.object({
-  messageIds: z.array(z.uuid()).min(1).max(200),
-});
-
 const jobAlertsLastRunSchema = z.object({
   startedAt: z.date(),
   finishedAt: z.date().nullable(),
   // Null while the run is still in flight.
   outcome: z.enum(PILOT_RUN_OUTCOMES).nullable(),
-  campaignId: z.uuid().nullable(),
-  campaignQuery: z.string().nullable(),
+  // The campaign the run opened, once it has.
+  campaign: z.object({ id: z.uuid(), query: z.string() }).nullable(),
 });
 
 export const jobAlertsStatusSchema = z.object({
   settings: pilotJobAlertsSchema,
-  builtInSenderDomains: z.array(z.string()),
   pilotRunning: z.boolean(),
   mailboxConnected: z.boolean(),
   // Unimported alert emails inside the lookback window - what a run would read right now.
@@ -108,7 +102,6 @@ export const runJobAlertsResultSchema = z.object({
   // False when there was nothing to import, so no run was queued.
   queued: z.boolean(),
   pendingEmails: z.number().int(),
-  pilotRunning: z.boolean(),
 });
 
 export type JobAlertsStatus = z.infer<typeof jobAlertsStatusSchema>;
