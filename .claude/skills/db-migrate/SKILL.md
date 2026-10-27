@@ -6,7 +6,7 @@ description: Create and apply a Prisma migration safely against the remote (tunn
 # DB migrate
 
 The tunneled database (`bun run db:tunnel`, `localhost:5433`) is **production**. `prisma migrate
-dev` demands a reset there (two applied migrations were edited), so never run it. All commands
+dev` can demand a reset there, which wipes it, so never run it. All commands
 are `bun --cwd=apps/api run …`.
 
 1. Edit the schema - split by domain under `apps/api/prisma/schema/*.prisma`.
@@ -20,7 +20,8 @@ are `bun --cwd=apps/api run …`.
    `migrate deploy` applies every pending migration at once, so a script can't run between two of
    them. When the migration needs the script's output, run the script first against the old
    schema, have it fill a staging table the migration joins on, and make the migration
-   `RAISE EXCEPTION` before any change if rows are left unmapped (`20261026070000_board_ids`).
+   `RAISE EXCEPTION` before any change if rows are left unmapped (`20261026070000_board_ids` in git history).
+   Partial unique indexes aren't in the Prisma schema; `db:diff` won't emit them, so write them by hand.
 4. `db:migrate:apply` against the copy, run the data script, spot-check counts and samples, and
    run the app against the copy. Then `db:generate`.
 5. Ask the user before touching production.
