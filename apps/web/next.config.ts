@@ -12,6 +12,10 @@ const config: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,
+  experimental: {
+    turbopackRustReactCompiler: true,
+    turbopackGc: true,
+  },
   typedRoutes: true,
   allowedDevOrigins: ["127.0.0.1"],
   pageExtensions: ["ts", "tsx", "md", "mdx"],

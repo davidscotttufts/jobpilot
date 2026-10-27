@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { InstallGuide } from "@/components/features/install";
 import { MarketingShell } from "@/components/features/marketing";
 
+export const ensureStatic = "navigation";
+
 export const metadata: Metadata = {
   title: "Install JobPilot",
   description:

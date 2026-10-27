@@ -3,6 +3,8 @@ import { Box, Container } from "@mui/material";
 import { DocsBreadcrumbJsonLd, DocsSidebar } from "@/components/features/docs";
 import { MarketingFooter, MarketingNav } from "@/components/features/marketing";
 
+export const ensureStatic = "navigation";
+
 interface DocsLayoutProps {
   children: ReactNode;
 }

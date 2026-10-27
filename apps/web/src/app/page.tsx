@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+// The live strips are `use cache` so they prerender; a request-time read here would fail the build.
+export const ensureStatic = "navigation";
+
 const SOFTWARE_DESCRIPTION =
   "A free, open-source AI agent that finds jobs, tailors your resume, and applies for you. It runs on your computer with your Claude Code or Codex subscription.";
 
