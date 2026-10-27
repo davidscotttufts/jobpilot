@@ -94,10 +94,13 @@ const applicationCoverLetterSchema = z.object({
 });
 
 // Picked from the owning modules' schemas: a column rename breaks the build instead of splitting the wire shape.
-const applicationEmailSchema = emailMessageSchema
-  .pick({ id: true, subject: true, fromName: true, receivedAt: true })
-  // Free String column; only the email module's own mapper narrows it to the enum.
-  .extend({ classification: z.string().nullable() });
+const applicationEmailSchema = emailMessageSchema.pick({
+  id: true,
+  subject: true,
+  fromName: true,
+  receivedAt: true,
+  classification: true,
+});
 
 const applicationContactSchema = contactSchema.pick({
   id: true,
