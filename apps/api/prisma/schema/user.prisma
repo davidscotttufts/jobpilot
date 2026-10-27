@@ -55,7 +55,7 @@ model User {
   visaStatus          String? @map("visa_status")
   optExtension        String? @map("opt_extension")
   willingToRelocate   Boolean @default(false) @map("willing_to_relocate")
-  preferredLocations  String  @default("[]") @map("preferred_locations")
+  preferredLocations  String[] @default([]) @map("preferred_locations")
 
   eeoGender           String? @map("eeo_gender")
   eeoRace             String? @map("eeo_race")

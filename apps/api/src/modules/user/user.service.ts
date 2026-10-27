@@ -125,7 +125,6 @@ export class UserService {
     return {
       user: {
         ...user,
-        preferredLocations: JSON.parse(user.preferredLocations) as string[],
         references,
         salaryPreferences,
         updatedAt: user.updatedAt,
@@ -147,13 +146,11 @@ export class UserService {
       salaryPreferences,
       ...userFields
     } = body;
-    const preferredLocationsJson = JSON.stringify(preferredLocations);
-
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         ...userFields,
-        preferredLocations: preferredLocationsJson,
+        preferredLocations,
         primaryResumeId: primaryResumeId ?? null,
       },
     });

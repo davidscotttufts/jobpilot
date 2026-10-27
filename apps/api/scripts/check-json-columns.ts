@@ -8,6 +8,7 @@ import {
   taskListSchema,
 } from "@jobpilot/contracts/pilot";
 import { resumeDataSchema } from "@jobpilot/contracts/resume";
+import { portfolioProjectSchema, screeningAnswerSchema } from "@jobpilot/contracts/upwork";
 import { z } from "zod/v4";
 import { db } from "@/common/database/prisma.client";
 import { variantRewriteAuditSchema } from "@/modules/resume/variants/variant.schema";
@@ -48,8 +49,8 @@ const checks: Check[] = [
     label: "campaigns.config",
     schema: campaignConfigSchema,
     rows: async () =>
-      (await db.campaign.findMany({ select: { campaignId: true, config: true } })).map((r) => ({
-        id: r.campaignId,
+      (await db.campaign.findMany({ select: { id: true, config: true } })).map((r) => ({
+        id: r.id,
         value: r.config,
       })),
   },
@@ -82,6 +83,30 @@ const checks: Check[] = [
         id: r.id,
         value: r.options,
       })),
+  },
+  {
+    label: "upwork_proposals.screening_answers",
+    schema: z.array(screeningAnswerSchema),
+    rows: async () =>
+      (await db.upworkProposal.findMany({ select: { id: true, screeningAnswers: true } })).map(
+        (r) => ({ id: r.id, value: r.screeningAnswers }),
+      ),
+  },
+  {
+    label: "upwork_profiles.current_portfolio",
+    schema: z.array(portfolioProjectSchema),
+    rows: async () =>
+      (await db.upworkProfile.findMany({ select: { id: true, currentPortfolio: true } })).map(
+        (r) => ({ id: r.id, value: r.currentPortfolio }),
+      ),
+  },
+  {
+    label: "upwork_profiles.suggested_portfolio",
+    schema: z.array(portfolioProjectSchema),
+    rows: async () =>
+      (await db.upworkProfile.findMany({ select: { id: true, suggestedPortfolio: true } })).map(
+        (r) => ({ id: r.id, value: r.suggestedPortfolio }),
+      ),
   },
 ];
 

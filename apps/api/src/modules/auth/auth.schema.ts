@@ -32,8 +32,7 @@ export const authSessionSchema = z.object({
 /**
  * The signed-in user's own merged view (mirrors `meUser`): account fields plus
  * the applicant profile columns. `contactEmail` is the applicant address; `email`
- * stays the login address. `updatedAt` is a `Date` (validated pre-serialization)
- * and `preferredLocations` is the stored JSON string.
+ * stays the login address. `updatedAt` is a `Date` (validated pre-serialization).
  */
 export const meSchema = publicUserSchema.extend({
   // Sign-in methods for the account security page; the hash itself never leaves the API.
@@ -59,7 +58,7 @@ export const meSchema = publicUserSchema.extend({
   visaStatus: z.string().nullable(),
   optExtension: z.string().nullable(),
   willingToRelocate: z.boolean(),
-  preferredLocations: z.string(),
+  preferredLocations: z.array(z.string()),
   eeoGender: z.string().nullable(),
   eeoRace: z.string().nullable(),
   eeoEthnicity: z.string().nullable(),

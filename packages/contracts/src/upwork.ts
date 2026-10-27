@@ -44,7 +44,6 @@ export const patchUpworkProposalSchema = z.object({
   submittedAt: z.iso.datetime().optional().nullable(),
 });
 
-export type ScreeningAnswer = z.infer<typeof screeningAnswerSchema>;
 export type UpworkProposalInput = z.infer<typeof createUpworkProposalSchema>;
 export type UpworkProposalPatch = z.infer<typeof patchUpworkProposalSchema>;
 

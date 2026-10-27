@@ -16,6 +16,7 @@ import type {
 } from "@jobpilot/contracts/upwork";
 import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
@@ -27,13 +28,13 @@ interface UpworkProfileFields {
   currentTitle?: string | null;
   currentOverview?: string | null;
   currentHourlyRate?: string | null;
-  currentPortfolio?: string;
-  currentSkills?: string;
+  currentPortfolio?: Prisma.InputJsonValue;
+  currentSkills?: string[];
   suggestedTitle?: string | null;
   suggestedOverview?: string | null;
   suggestedHourlyRate?: string | null;
-  suggestedPortfolio?: string;
-  suggestedSkills?: string;
+  suggestedPortfolio?: Prisma.InputJsonValue;
+  suggestedSkills?: string[];
   status?: UpworkProfileStatus;
   appliedAt?: Date | null;
 }
@@ -66,20 +67,18 @@ export class UpworkService {
     if (input.currentOverview != null) fields.currentOverview = input.currentOverview;
     if (input.currentHourlyRate != null) fields.currentHourlyRate = input.currentHourlyRate;
     if (input.currentPortfolio != null) {
-      fields.currentPortfolio = JSON.stringify(input.currentPortfolio);
+      fields.currentPortfolio = toInputJson(input.currentPortfolio);
     }
-    if (input.currentSkills != null) fields.currentSkills = JSON.stringify(input.currentSkills);
+    if (input.currentSkills != null) fields.currentSkills = input.currentSkills;
     if (input.suggestedTitle != null) fields.suggestedTitle = input.suggestedTitle;
     if (input.suggestedOverview != null) fields.suggestedOverview = input.suggestedOverview;
     if (input.suggestedHourlyRate != null) {
       fields.suggestedHourlyRate = input.suggestedHourlyRate;
     }
     if (input.suggestedPortfolio != null) {
-      fields.suggestedPortfolio = JSON.stringify(input.suggestedPortfolio);
+      fields.suggestedPortfolio = toInputJson(input.suggestedPortfolio);
     }
-    if (input.suggestedSkills != null) {
-      fields.suggestedSkills = JSON.stringify(input.suggestedSkills);
-    }
+    if (input.suggestedSkills != null) fields.suggestedSkills = input.suggestedSkills;
     if (input.status != null) {
       fields.status = input.status;
       fields.appliedAt = input.status === "applied" ? new Date() : null;
@@ -234,7 +233,7 @@ export class UpworkService {
         jobUrl: body.jobUrl ? normalizeJobUrl(body.jobUrl) : null,
         jobDescription: body.jobDescription ?? null,
         proposalText: body.proposalText ?? "",
-        screeningAnswers: JSON.stringify(body.screeningAnswers ?? []),
+        screeningAnswers: toInputJson(body.screeningAnswers ?? []),
         status: body.status ?? "draft",
         notes: body.notes ?? null,
         source: body.source ?? "manual",
@@ -276,7 +275,7 @@ export class UpworkService {
     };
 
     if (body.screeningAnswers !== undefined) {
-      update.screeningAnswers = JSON.stringify(body.screeningAnswers);
+      update.screeningAnswers = toInputJson(body.screeningAnswers);
     }
 
     if (body.submittedAt !== undefined) {
