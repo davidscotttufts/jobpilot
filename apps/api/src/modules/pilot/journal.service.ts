@@ -7,8 +7,8 @@ import {
   toActivityEntry,
   writeActivity,
 } from "@/common/activity-log";
-import { PushService } from "@/common/push/push.service";
 import { type PilotJournalEntry, PrismaClient } from "@/generated/prisma/client";
+import { WebPushService } from "@/modules/web-push/web-push.service";
 import { tokenUsage } from "./tasks/run-history";
 
 const EXPORT_BATCH = 500;
@@ -45,7 +45,7 @@ async function loadRuns(
 export class PilotJournalService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly push = inject(PushService),
+    private readonly push = inject(WebPushService),
   ) {}
 
   async appendJournal(userId: string, body: CreatePilotJournalInput) {

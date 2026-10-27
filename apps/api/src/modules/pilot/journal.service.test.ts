@@ -1,6 +1,6 @@
-import { makePush } from "@/common/push/push.fake";
-import type { PushPayload } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { makePush } from "@/modules/web-push/web-push.fake";
+import type { PushPayload } from "@/modules/web-push/web-push.service";
 import { PilotJournalService } from "./journal.service";
 import { describe, expect, it } from "bun:test";
 

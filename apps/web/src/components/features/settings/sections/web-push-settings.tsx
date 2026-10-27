@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
-import type { PushSubscriptionDto, PushSubscriptionInput } from "@jobpilot/contracts/push";
+import type { PushSubscriptionDto, PushSubscriptionInput } from "@jobpilot/contracts/web-push";
 import { Delete } from "@mui/icons-material";
 import {
   Box,
@@ -24,7 +24,7 @@ import { useToast } from "@/providers/notification-provider";
 import { urlBase64ToUint8Array } from "@/utils/base64";
 import { formatRelativeTime } from "@/utils/format";
 
-export function PushSettings(): ReactNode {
+export function WebPushSettings(): ReactNode {
   const toast = useToast();
   // null = support not probed yet; avoids flashing the unsupported caption on first paint.
   const [supported, setSupported] = useState<boolean | null>(null);
@@ -40,11 +40,11 @@ export function PushSettings(): ReactNode {
   });
 
   const subscribe = useApiMutation<PushSubscriptionDto, PushSubscriptionInput>(
-    (input) => api.push.subscriptions.post(input),
+    (input) => api["web-push"].subscriptions.post(input),
     { invalidate: [queryKeys.pilot.push()] },
   );
   const remove = useApiMutation<{ deleted: string }, string>(
-    (endpoint) => api.push.subscriptions.delete({ endpoint }),
+    (endpoint) => api["web-push"].subscriptions.delete({ endpoint }),
     { invalidate: [queryKeys.pilot.push()] },
   );
 

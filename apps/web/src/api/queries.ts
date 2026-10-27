@@ -255,10 +255,10 @@ export const pilotQueries = {
   }),
   pushKey: () => ({
     queryKey: queryKeys.pilot.pushKey(),
-    queryFn: () => api.push["vapid-key"].get(),
+    queryFn: () => api["web-push"]["vapid-key"].get(),
   }),
   pushDevices: () => ({
     queryKey: queryKeys.pilot.pushDevices(),
-    queryFn: () => api.push.subscriptions.get(),
+    queryFn: () => api["web-push"].subscriptions.get(),
   }),
 };

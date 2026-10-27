@@ -60,7 +60,7 @@ const referenceSchema = z.object({
 
 export type ReferenceInput = z.infer<typeof referenceSchema>;
 
-export const SALARY_PERIODS = ["yearly", "hourly"] as const;
+export const SALARY_PERIODS = ["yearly", "monthly", "hourly"] as const;
 
 export type SalaryPeriod = (typeof SALARY_PERIODS)[number];
 

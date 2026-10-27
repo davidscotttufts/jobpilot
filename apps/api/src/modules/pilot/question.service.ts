@@ -9,9 +9,9 @@ import { inject, injectable } from "@needle-di/core";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { PushService } from "@/common/push/push.service";
 import { publish } from "@/common/sse";
 import { type PilotQuestion as PilotQuestionModel, PrismaClient } from "@/generated/prisma/client";
+import { WebPushService } from "@/modules/web-push/web-push.service";
 import { ProfileAnswerService } from "./answer.service";
 
 /** An unanswered 2FA code is useless within minutes, and expiring it frees the job it parked. */
@@ -34,7 +34,7 @@ function expiryOf(body: CreatePilotQuestionInput): Date | null {
 export class PilotQuestionService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly push = inject(PushService),
+    private readonly push = inject(WebPushService),
     private readonly answers = inject(ProfileAnswerService),
   ) {}
 

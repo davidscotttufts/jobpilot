@@ -1,9 +1,4 @@
-import type {
-  PortfolioSettingsPatch,
-  SalaryCurrency,
-  SalaryPeriod,
-  UserWithAutoApplyInput,
-} from "@jobpilot/contracts/user";
+import type { PortfolioSettingsPatch, UserWithAutoApplyInput } from "@jobpilot/contracts/user";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, emailNotVerified, findOwned, notFound } from "@/common/errors";
 import { resumePath } from "@/common/storage/storage";
@@ -132,11 +127,7 @@ export class UserService {
         ...user,
         preferredLocations: JSON.parse(user.preferredLocations) as string[],
         references,
-        // The columns are plain TEXT; assert the enums the response schema declares.
-        salaryPreferences: salaryPreferences as ((typeof salaryPreferences)[number] & {
-          currency: SalaryCurrency;
-          period: SalaryPeriod;
-        })[],
+        salaryPreferences,
         updatedAt: user.updatedAt,
       },
       autoApply,

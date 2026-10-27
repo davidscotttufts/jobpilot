@@ -9,10 +9,10 @@ import {
 import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
 import { toInputJson } from "@/common/json";
-import { PushService } from "@/common/push/push.service";
 import { PrismaClient } from "@/generated/prisma/client";
 import { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { WebPushService } from "@/modules/web-push/web-push.service";
 import { PilotJournalService } from "../journal.service";
 import { countAppliedToday, countSentToday } from "../pilot.stats";
 import { buildTaskList, isPipelineQuiet, type TaskListInput } from "./build";
@@ -79,7 +79,7 @@ export class TaskListService {
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly campaignJobs = inject(CampaignJobService),
     private readonly journal = inject(PilotJournalService),
-    private readonly push = inject(PushService),
+    private readonly push = inject(WebPushService),
     private readonly emailSync = inject(EmailSyncService),
   ) {}
 

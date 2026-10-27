@@ -32,7 +32,7 @@ function truncate(text: string, max: number): string {
 // this module (and PilotService, which depends on it) impossible to unit-test without a full env.
 
 @injectable()
-export class PushService {
+export class WebPushService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly vapid = inject(VAPID_CONFIG),
@@ -56,7 +56,7 @@ export class PushService {
     userId: string,
     input: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string },
   ) {
-    return this.prisma.pushSubscription.upsert({
+    return this.prisma.webPushSubscription.upsert({
       where: { endpoint: input.endpoint },
       create: {
         userId,
@@ -77,19 +77,19 @@ export class PushService {
 
   /** Delete the caller's own subscription for this endpoint; returns the removed id (404 if not owned). */
   async unsubscribe(userId: string, endpoint: string): Promise<string | null> {
-    const row = await this.prisma.pushSubscription.findFirst({
+    const row = await this.prisma.webPushSubscription.findFirst({
       where: { userId, endpoint },
       select: { id: true },
     });
     if (!row) {
       return null;
     }
-    await this.prisma.pushSubscription.delete({ where: { id: row.id } });
+    await this.prisma.webPushSubscription.delete({ where: { id: row.id } });
     return row.id;
   }
 
   async list(userId: string) {
-    return this.prisma.pushSubscription.findMany({
+    return this.prisma.webPushSubscription.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: { id: true, endpoint: true, userAgent: true, createdAt: true },
@@ -106,7 +106,7 @@ export class PushService {
       return;
     }
     try {
-      const subs = await this.prisma.pushSubscription.findMany({
+      const subs = await this.prisma.webPushSubscription.findMany({
         where: { userId },
         select: { id: true, endpoint: true, p256dh: true, auth: true },
       });
@@ -128,7 +128,7 @@ export class PushService {
       );
     } catch (err) {
       if (err instanceof webpush.WebPushError && GONE_STATUSES.has(err.statusCode)) {
-        await this.prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+        await this.prisma.webPushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
         return;
       }
       console.error("[push] delivery failed", err);

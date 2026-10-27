@@ -4,19 +4,22 @@ import {
   pushSubscriptionSchema,
   pushUnsubscribeSchema,
   vapidKeySchema,
-} from "@jobpilot/contracts/push";
+} from "@jobpilot/contracts/web-push";
 import { Elysia } from "elysia";
 import { container } from "@/common/di/container";
 import { notFound } from "@/common/errors";
 import { authGuard } from "@/common/middleware";
-import { PushService } from "@/common/push/push.service";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
+import { WebPushService } from "@/modules/web-push/web-push.service";
 import { deletedResponseSchema } from "@/types/response";
 
-const push = container.get(PushService);
+const push = container.get(WebPushService);
 const limitMutation = rateLimit(RATE_LIMITS.pilotMutation);
 
-export const pushController = new Elysia({ prefix: "/push", detail: { tags: ["Push"] } })
+export const webPushController = new Elysia({
+  prefix: "/web-push",
+  detail: { tags: ["Web Push"] },
+})
   .use(authGuard)
   .get("/vapid-key", () => ({ publicKey: push.publicKey }), {
     response: vapidKeySchema,

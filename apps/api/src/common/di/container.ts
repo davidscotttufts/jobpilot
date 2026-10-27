@@ -1,9 +1,9 @@
 import { Container } from "@needle-di/core";
 import { db } from "@/common/database/prisma.client";
 import { ConsoleMailer, MAILER, ResendMailer } from "@/common/mail";
-import { VAPID_CONFIG } from "@/common/push/push.service";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
+import { VAPID_CONFIG } from "@/modules/web-push/web-push.service";
 
 // Services are `@injectable()` and bind themselves on first `get`; only values and interface
 // tokens are bound here. env is read only here, so services stay testable without a full env.

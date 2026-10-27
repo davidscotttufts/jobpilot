@@ -1,7 +1,7 @@
-import { makePush, type SentPush } from "@/common/push/push.fake";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { CampaignJobService } from "@/modules/campaign/jobs/job.service";
 import type { EmailSyncService } from "@/modules/email/sync/sync.service";
+import { makePush, type SentPush } from "@/modules/web-push/web-push.fake";
 import type { PilotJournalService } from "../journal.service";
 import { TaskListService } from "./task-list.service";
 

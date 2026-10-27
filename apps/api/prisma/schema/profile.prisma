@@ -20,8 +20,8 @@ model SalaryPreference {
   appliesTo String @map("applies_to")
   minAmount Float? @map("min_amount")
   maxAmount Float? @map("max_amount")
-  currency  String @default("USD")
-  period    String @default("yearly")
+  currency  SalaryCurrency @default(USD)
+  period    SalaryPeriod @default(yearly)
   position  Int    @default(0)
 
   @@index([userId])
@@ -37,4 +37,23 @@ model AutoApplySettings {
   defaultStartDate           String @default("2 weeks notice") @map("default_start_date")
 
   @@map("auto_apply_settings")
+}
+
+enum SalaryPeriod {
+  yearly
+  monthly
+  hourly
+
+  @@map("salary_period")
+}
+
+enum SalaryCurrency {
+  USD
+  EUR
+  GBP
+  CAD
+  AUD
+  INR
+
+  @@map("salary_currency")
 }

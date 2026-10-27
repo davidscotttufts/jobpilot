@@ -14,3 +14,5 @@ export const SECRET_CONTEXTS = {
   emailOAuthClient: "email:oauthClient",
   apiTokenTerminal: "apiToken:terminal",
 } as const;
+
+export type SecretContext = (typeof SECRET_CONTEXTS)[keyof typeof SECRET_CONTEXTS];

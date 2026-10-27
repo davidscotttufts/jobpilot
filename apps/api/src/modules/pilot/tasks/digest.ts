@@ -1,6 +1,6 @@
 import { DAY_MS, minutesOfDay, startOfDay } from "@/common/date/buckets";
-import type { PushService } from "@/common/push/push.service";
 import type { PrismaClient } from "@/generated/prisma/client";
+import type { WebPushService } from "@/modules/web-push/web-push.service";
 import type { PilotJournalService } from "../journal.service";
 
 const DIGEST_HOUR_UTC = 7;
@@ -8,7 +8,7 @@ const DIGEST_HOUR_UTC = 7;
 interface DigestDeps {
   prisma: PrismaClient;
   journal: PilotJournalService;
-  push: PushService;
+  push: WebPushService;
 }
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;

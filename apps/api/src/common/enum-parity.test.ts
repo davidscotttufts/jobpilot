@@ -35,7 +35,7 @@ import {
   UPWORK_PROPOSAL_SOURCES,
   UPWORK_PROPOSAL_STATUSES,
 } from "@jobpilot/contracts/upwork";
-import { AVAILABILITY } from "@jobpilot/contracts/user";
+import { AVAILABILITY, SALARY_CURRENCIES, SALARY_PERIODS } from "@jobpilot/contracts/user";
 import * as prismaEnums from "@/generated/prisma/enums";
 import { describe, expect, it } from "bun:test";
 
@@ -48,6 +48,8 @@ const PAIRS: [string, readonly string[], Record<string, string>][] = [
   ["ApplicationEventSource", APPLICATION_EVENT_SOURCES, prismaEnums.ApplicationEventSource],
   ["AuthTokenKind", AUTH_TOKEN_KINDS, prismaEnums.AuthTokenKind],
   ["Availability", AVAILABILITY, prismaEnums.Availability],
+  ["SalaryCurrency", SALARY_CURRENCIES, prismaEnums.SalaryCurrency],
+  ["SalaryPeriod", SALARY_PERIODS, prismaEnums.SalaryPeriod],
   ["CampaignActor", CAMPAIGN_ACTORS, prismaEnums.CampaignActor],
   ["CampaignJobStatus", CAMPAIGN_JOB_STATUSES, prismaEnums.CampaignJobStatus],
   ["CampaignSource", CAMPAIGN_SOURCES, prismaEnums.CampaignSource],

@@ -1,4 +1,4 @@
-model PushSubscription {
+model WebPushSubscription {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -9,5 +9,5 @@ model PushSubscription {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
-  @@map("push_subscriptions")
+  @@map("web_push_subscriptions")
 }

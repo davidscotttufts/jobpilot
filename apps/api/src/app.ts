@@ -36,13 +36,13 @@ import { pilotQuestionsController } from "@/modules/pilot/question.controller";
 import { pilotSearchController } from "@/modules/pilot/search.controller";
 import { pilotTasksController } from "@/modules/pilot/tasks/tasks.controller";
 import { publicPortfolioController } from "@/modules/portfolio/portfolio.controller";
-import { pushController } from "@/modules/push/push.controller";
 import { publicResumeController, resumeController } from "@/modules/resume/resume.controller";
 import { resumeVariantController } from "@/modules/resume/variants/variant.controller";
 import { scoringController } from "@/modules/scoring/scoring.controller";
 import { publicStatsController } from "@/modules/stats/stats.controller";
 import { upworkController } from "@/modules/upwork/upwork.controller";
 import { userController } from "@/modules/user/user.controller";
+import { webPushController } from "@/modules/web-push/web-push.controller";
 import { workspaceController } from "@/modules/workspace/workspace.controller";
 import { httpErrorResponses } from "@/types/response";
 
@@ -90,7 +90,7 @@ const app = new Elysia()
       .use(pilotQuestionsController)
       .use(profileAnswersController)
       .use(promotionController)
-      .use(pushController)
+      .use(webPushController)
       .use(workspaceController)
       .use(emailAccountController)
       .use(emailMessagesController)

@@ -97,7 +97,7 @@ model User {
   pilotQuestions     PilotQuestion[]
   pilotJournal       PilotJournalEntry[]
   profileAnswers     ProfileAnswer[]
-  pushSubscriptions  PushSubscription[]
+  webPushSubscriptions WebPushSubscription[]
   promotionPosts     PromotionPost[]
 
   @@map("users")

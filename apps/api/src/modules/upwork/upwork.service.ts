@@ -1,4 +1,5 @@
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
+import { upworkChannel } from "@jobpilot/contracts/sse";
 import type {
   PatchUpworkInboxItemInput,
   SyncUpworkInboxInput,
@@ -15,6 +16,7 @@ import type {
 } from "@jobpilot/contracts/upwork";
 import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
+import { publish } from "@/common/sse";
 import { normalizeJobUrl } from "@/common/utils/url";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { decodeUpworkProposal, toUpworkInboxItemDto, toUpworkProfileDto } from "./upwork.mapper";
@@ -89,6 +91,7 @@ export class UpworkService {
       update: fields,
     });
 
+    publish(upworkChannel, { userId }, { type: "profile.updated" });
     return toUpworkProfileDto(row);
   }
 
@@ -101,12 +104,14 @@ export class UpworkService {
 
   async upsertAccount(userId: string, input: UpdateUpworkAccountInput) {
     const fields = { connectsBalance: input.connectsBalance ?? null };
-    return this.prisma.upworkAccount.upsert({
+    const account = await this.prisma.upworkAccount.upsert({
       where: { userId },
       create: { userId, ...fields },
       update: fields,
       select: ACCOUNT_SELECT,
     });
+    publish(upworkChannel, { userId }, { type: "account.updated" });
+    return account;
   }
 
   async listInbox(
@@ -173,6 +178,7 @@ export class UpworkService {
       update: { lastSyncedAt: syncedAt },
     });
 
+    publish(upworkChannel, { userId }, { type: "inbox.synced" });
     return { created: upworkIds.length - known.size, updated: known.size };
   }
 
@@ -186,6 +192,7 @@ export class UpworkService {
       where: { id },
       data: { status: input.status },
     });
+    publish(upworkChannel, { userId }, { type: "inbox.updated", id });
     return toUpworkInboxItemDto(row);
   }
 
@@ -236,6 +243,7 @@ export class UpworkService {
       },
     });
 
+    publish(upworkChannel, { userId }, { type: "proposal.created", id: proposal.id });
     return decodeUpworkProposal(proposal);
   }
 
@@ -279,6 +287,7 @@ export class UpworkService {
 
     const proposal = await this.prisma.upworkProposal.update({ where: { id }, data: update });
 
+    publish(upworkChannel, { userId }, { type: "proposal.updated", id });
     return decodeUpworkProposal(proposal);
   }
 
@@ -291,6 +300,7 @@ export class UpworkService {
 
     await this.prisma.upworkProposal.delete({ where: { id } });
 
+    publish(upworkChannel, { userId }, { type: "proposal.deleted", id });
     return { id };
   }
 }

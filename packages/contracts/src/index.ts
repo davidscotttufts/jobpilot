@@ -1,3 +1,3 @@
 export * from "./auth";
 export * from "./pilot";
-export * from "./push";
+export * from "./web-push";

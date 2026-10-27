@@ -1,9 +1,9 @@
-// Fake-Prisma unit test for PushService. web-push is stubbed by swapping sendNotification on the
+// Fake-Prisma unit test for WebPushService. web-push is stubbed by swapping sendNotification on the
 // shared module object (WebPushError stays the real class so `instanceof` still holds), and VAPID is
 // injected via the constructor - so this loads with no database and no env.
 import webpush from "web-push";
 import type { PrismaClient } from "@/generated/prisma/client";
-import { PushService, type VapidConfig } from "./push.service";
+import { type VapidConfig, WebPushService } from "./web-push.service";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const VAPID = webpush.generateVAPIDKeys();
@@ -37,7 +37,7 @@ interface Rec {
 function makeDb(overrides: Partial<Rec> = {}) {
   const rec: Rec = { deletedIds: [], findFirst: null, findMany: [], ...overrides };
   const db = {
-    pushSubscription: {
+    webPushSubscription: {
       upsert: async (a: UpsertArgs) => {
         rec.upsertArgs = a;
         return { id: "sub-new", endpoint: a.create.endpoint as string, createdAt: new Date() };
@@ -55,7 +55,7 @@ function makeDb(overrides: Partial<Rec> = {}) {
 
 const svc = (overrides?: Partial<Rec>, vapid: VapidConfig | null = configured) => {
   const { db, rec } = makeDb(overrides);
-  return { push: new PushService(db as unknown as PrismaClient, vapid), rec };
+  return { push: new WebPushService(db as unknown as PrismaClient, vapid), rec };
 };
 
 const realSend = webpush.sendNotification;
@@ -63,7 +63,7 @@ afterEach(() => {
   webpush.sendNotification = realSend;
 });
 
-describe("PushService config", () => {
+describe("WebPushService config", () => {
   it("reports unconfigured and a null public key when VAPID is absent", () => {
     const { push } = svc({}, null);
     expect(push.isConfigured).toBe(false);
@@ -77,7 +77,7 @@ describe("PushService config", () => {
   });
 });
 
-describe("PushService subscribe", () => {
+describe("WebPushService subscribe", () => {
   it("upserts by endpoint and returns the DTO", async () => {
     const { push, rec } = svc();
     const dto = await push.subscribe("p1", {
@@ -103,7 +103,7 @@ describe("PushService subscribe", () => {
   });
 });
 
-describe("PushService unsubscribe", () => {
+describe("WebPushService unsubscribe", () => {
   it("deletes the owned row and returns its id", async () => {
     const owned: Sub = { id: "sub-1", endpoint: "https://push/abc", p256dh: "pub", auth: "sec" };
     const { push, rec } = svc({ findFirst: owned });
@@ -122,7 +122,7 @@ describe("PushService unsubscribe", () => {
   });
 });
 
-describe("PushService sendToUser", () => {
+describe("WebPushService sendToUser", () => {
   it("sends nothing when unconfigured", async () => {
     const send = mock(async () => ({}) as never);
     webpush.sendNotification = send as unknown as typeof webpush.sendNotification;
