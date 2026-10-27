@@ -38,8 +38,8 @@ Add a route with the `add-api-route` skill. The rules:
   UTC-midnight dates from `common/date/buckets.ts`. Only free text like `"Summer 2024"` stays a
   string. A date stored inside a JSON column uses `storedDate` (`@jobpilot/contracts/utils/json`).
 - `Json` columns: write with `toInputJson`, read with the column's Zod schema `parse`. No casts.
-  Changing a stored shape needs a data migration; `scripts/check-json-columns.ts` reports rows
-  that no longer parse.
+  Changing a stored shape needs a data migration, and old rows must still parse: on the
+  restored copy (db-migrate skill), parse every stored row with the new schema before deploying.
 - Error responses are declared once in `app.ts` with
   `.guard({ as: "scoped", response: httpErrorResponses })`. Never per route.
 
