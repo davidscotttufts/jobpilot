@@ -11,6 +11,7 @@ import { workspaceChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import type { z } from "zod/v4";
 import { conflict, findOwned, unprocessable } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
   type Campaign,
@@ -63,7 +64,7 @@ export class CampaignService {
       userId,
       query: body.query,
       source: body.source,
-      config: body.config ?? {},
+      config: toInputJson(body.config ?? {}),
       createdBy: body.createdBy,
       pilotSearchId: body.pilotSearchId ?? null,
     };
@@ -119,7 +120,7 @@ export class CampaignService {
         userId,
         ...(body.expectedUpdatedAt && { updatedAt: new Date(body.expectedUpdatedAt) }),
       },
-      data: { config: body.config },
+      data: { config: toInputJson(body.config) },
     });
     if (updated.count === 0) {
       throw conflict(

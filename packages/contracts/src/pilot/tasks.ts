@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { networkingModeSchema } from "../networking";
+import { storedDate } from "../utils/json";
 
 // An "off" channel is never emitted, so a worker only ever sees a resolved channel and mode.
 const outgoingMode = networkingModeSchema.shape;
@@ -101,7 +102,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       query: z.string(),
       board: nullableString,
       // The campaign's last update, which approximates when it was paused.
-      pausedAt: z.date(),
+      pausedAt: storedDate,
     }),
   ),
   taskVariant(
@@ -132,7 +133,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       contactName: z.string(),
       contactEmail: z.string(),
       subject: nullableString,
-      sentAt: z.date(),
+      sentAt: storedDate,
       daysSince: z.number().int(),
       ...outgoingMode,
     }),
@@ -176,7 +177,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
       threadId: nullableString,
       from: z.string(),
       subject: z.string(),
-      receivedAt: z.date(),
+      receivedAt: storedDate,
       company: z.string(),
       jobTitle: z.string(),
     }),
@@ -207,7 +208,7 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "upwork.syncInbox",
     "upwork",
     z.object({
-      lastSyncedAt: z.date().nullable(),
+      lastSyncedAt: storedDate.nullable(),
       unreadCount: z.number().int(),
     }),
   ),
@@ -267,7 +268,7 @@ const taskSchema = z.intersection(
 );
 
 const taskListContentSchema = z.object({
-  builtAt: z.date(),
+  builtAt: storedDate,
   tasks: z.array(taskSchema),
   counts: z.object({
     openQuestions: z.number().int(),
@@ -281,16 +282,16 @@ const taskListContentSchema = z.object({
     capReached: z.boolean(),
     dailyNetworkingCap: z.number().int(),
     networkingSentToday: z.number().int(),
-    resetsAt: z.date(),
+    resetsAt: storedDate,
   }),
   emptyReason: z.enum(["capReached", "awaitingSetup", "clear"]).nullable(),
   sleepSeconds: z.number(),
-  nextWakeAt: z.date(),
+  nextWakeAt: storedDate,
 });
 
 export const taskListSchema = taskListContentSchema.extend({
   version: z.uuid(),
-  expiresAt: z.date(),
+  expiresAt: storedDate,
 });
 
 export const currentTaskListSchema = z.object({ taskList: taskListSchema.nullable() });

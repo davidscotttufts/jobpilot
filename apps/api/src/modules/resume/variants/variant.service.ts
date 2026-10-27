@@ -22,7 +22,7 @@ import {
   notProtectedVariant,
   type pruneVariantsQuerySchema,
   type TailorVariantBody,
-  type VariantRewriteAudit,
+  variantRewriteAuditSchema,
 } from "./variant.schema";
 
 type ResumeVariantCreateInput = z.infer<typeof resumeVariantCreateSchema>;
@@ -151,7 +151,8 @@ export class ResumeVariantService {
       applicationId: variant.applicationId,
       content: readContent(variant.content),
       diffNotes: variant.diffNotes,
-      rewrites: variant.rewrites as VariantRewriteAudit | null,
+      rewrites:
+        variant.rewrites === null ? null : variantRewriteAuditSchema.parse(variant.rewrites),
       createdAt: variant.createdAt,
       updatedAt: variant.updatedAt,
     };

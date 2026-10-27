@@ -1,4 +1,4 @@
-import type { ResumeData } from "@jobpilot/contracts/resume";
+import { type ResumeData, resumeDataSchema } from "@jobpilot/contracts/resume";
 import { toInputJson } from "@/common/json";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -26,7 +26,8 @@ export function toStoredContent(content: ResumeData): Prisma.InputJsonValue {
   });
 }
 
-/** No parse: every write went through `resumeDataSchema`. */
+/** Validates on read too: a shape change to `ResumeData` must ship with a data migration, not a
+ *  silent misread of older rows. */
 export function readContent(value: Prisma.JsonValue): ResumeData {
-  return value as unknown as ResumeData;
+  return resumeDataSchema.parse(value);
 }

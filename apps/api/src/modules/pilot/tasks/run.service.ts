@@ -9,7 +9,7 @@ import {
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { conflict, findOwned, notFound } from "@/common/errors";
-import { reviveJsonDates, toInputJson } from "@/common/json";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import {
   type PilotRun as PilotRunModel,
@@ -34,7 +34,7 @@ const RUN_TTL_MS = 15 * 60 * 1000;
 const MAX_RUN_LIFETIME_MS = 25 * 60 * 1000;
 
 function toPilotRun(row: PilotRunModel): PilotRun {
-  return pilotRunSchema.parse({ ...row, payload: reviveJsonDates(row.payload) });
+  return pilotRunSchema.parse(row);
 }
 
 /** Re-checks task types whose row can change after the task list was built. */

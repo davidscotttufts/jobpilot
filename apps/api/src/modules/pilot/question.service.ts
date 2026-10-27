@@ -8,6 +8,7 @@ import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { z } from "zod/v4";
 import { conflict, findOwned } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { PushService } from "@/common/push/push.service";
 import { publish } from "@/common/sse";
 import { type PilotQuestion as PilotQuestionModel, PrismaClient } from "@/generated/prisma/client";
@@ -45,7 +46,7 @@ export class PilotQuestionService {
         subjectType: body.subjectType ?? null,
         subjectId: body.subjectId ?? null,
         prompt: body.prompt,
-        options: body.options,
+        options: toInputJson(body.options),
         deepLink: body.deepLink ?? null,
         expiresAt: expiryOf(body),
         answerKey: body.answerKey ?? null,

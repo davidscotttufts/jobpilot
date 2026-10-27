@@ -35,7 +35,10 @@ Add a route with the `add-api-route` skill. The rules:
 - Dates are `z.date()`, never `z.string()`. Return the Prisma `Date` and let Elysia serialize.
   Eden revives date-shaped strings into `Date`, so a string date lies to the web. Day buckets are
   UTC-midnight dates from `common/date/buckets.ts`. Only free text like `"Summer 2024"` stays a
-  string.
+  string. A date stored inside a JSON column uses `storedDate` (`@jobpilot/contracts/utils/json`).
+- `Json` columns: write with `toInputJson`, read with the column's Zod schema `parse`. No casts.
+  Changing a stored shape needs a data migration; `scripts/check-json-columns.ts` reports rows
+  that no longer parse.
 - Error responses are declared once in `app.ts` with
   `.guard({ as: "scoped", response: httpErrorResponses })`. Never per route.
 

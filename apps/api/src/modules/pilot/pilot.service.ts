@@ -9,6 +9,7 @@ import {
 import { pilotChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
 import { conflict } from "@/common/errors";
+import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import { type PilotState as PilotStateModel, PrismaClient } from "@/generated/prisma/client";
 import { publishCampaignStatus } from "@/modules/campaign/campaign.utils";
@@ -121,7 +122,7 @@ export class PilotService {
     const goalsChanged = (await this.readGoals(userId)) !== body.goals;
     const instructions = {
       instructionsGoals: body.goals,
-      instructionsConfig: body.config,
+      instructionsConfig: toInputJson(body.config),
       instructionsUpdatedAt: new Date(),
       ...TASK_LIST_SNAPSHOT_RESET,
     };
