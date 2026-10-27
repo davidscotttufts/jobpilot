@@ -90,10 +90,7 @@ export async function gatherWarmIntroCandidates(
   ];
   const startable = await withoutRecentRuns(
     prisma,
-    userId,
-    "networking.warmIntro",
-    now,
-    WARM_INTRO_APPLIED_WINDOW_MS,
+    { userId, taskType: "networking.warmIntro", now, cooldownMs: WARM_INTRO_APPLIED_WINDOW_MS },
     candidates,
     jobSubjectId,
   );
@@ -172,10 +169,7 @@ export async function gatherBoardDiagnoses(
   }
   const due = await withoutRecentRuns(
     prisma,
-    userId,
-    "board.diagnose",
-    now,
-    BOARD_DIAGNOSE_COOLDOWN_MS,
+    { userId, taskType: "board.diagnose", now, cooldownMs: BOARD_DIAGNOSE_COOLDOWN_MS },
     unhealthy,
     (diagnosis) => diagnosis.jobBoardId,
   );

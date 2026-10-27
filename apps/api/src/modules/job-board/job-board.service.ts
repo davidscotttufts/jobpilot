@@ -64,33 +64,18 @@ export class JobBoardService {
    */
   async find(input: string): Promise<BoardRef | null> {
     const host = boardHost(input);
-    if (!host) {
-      return null;
-    }
-    const candidates = hostCandidates(host);
-    const rows = await this.prisma.jobBoard.findMany({
-      where: { domain: { in: candidates } },
-      select: BOARD_REF_SELECT,
-    });
-    // Most specific first: a catalog row for `in.indeed.com` beats `indeed.com`.
-    for (const candidate of candidates) {
-      const row = rows.find((r) => r.domain === candidate);
-      if (row) {
-        return row;
-      }
-    }
-    return null;
+    return host ? this.findByHost(host) : null;
   }
 
   /** `find`, else a new unlisted row: every write that takes a board string goes through this. */
-  async resolve(input: string, fields: NewBoardFields = {}): Promise<BoardRef | null> {
-    const found = await this.find(input);
-    if (found) {
-      return found;
-    }
+  async resolve(input: string, fields: NewBoardFields = {}): Promise<BoardRef> {
     const host = boardHost(input);
     if (!host) {
-      return null;
+      throw unprocessable("Board domain is empty.");
+    }
+    const found = await this.findByHost(host);
+    if (found) {
+      return found;
     }
     const domain = newBoardDomain(host);
     // An unknown domain enters the catalog unlisted: admins see it, other users are not offered it.
@@ -105,10 +90,26 @@ export class JobBoardService {
 
   /** `resolve` for a nullable board field, down to the id a foreign key stores. */
   async resolveId(input: string | null): Promise<string | null> {
-    if (input === null) {
+    if (input === null || !boardHost(input)) {
       return null;
     }
-    return (await this.resolve(input))?.id ?? null;
+    return (await this.resolve(input)).id;
+  }
+
+  private async findByHost(host: string): Promise<BoardRef | null> {
+    const candidates = hostCandidates(host);
+    const rows = await this.prisma.jobBoard.findMany({
+      where: { domain: { in: candidates } },
+      select: BOARD_REF_SELECT,
+    });
+    // Most specific first: a catalog row for `in.indeed.com` beats `indeed.com`.
+    for (const candidate of candidates) {
+      const row = rows.find((r) => r.domain === candidate);
+      if (row) {
+        return row;
+      }
+    }
+    return null;
   }
 
   /** The boards with the most applications matching `where`, by name. */
@@ -134,9 +135,6 @@ export class JobBoardService {
   /** Links by domain. A second link to the same board is a 409 from the unique index. */
   async create(userId: string, input: JobBoardInput) {
     const board = await this.resolve(input.domain, input);
-    if (!board) {
-      throw unprocessable("Board domain is empty.");
-    }
     const row = await this.prisma.userJobBoard.create({
       data: { userId, jobBoardId: board.id },
       select: LINK_SELECT,

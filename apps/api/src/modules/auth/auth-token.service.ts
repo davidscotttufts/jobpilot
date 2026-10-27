@@ -1,6 +1,7 @@
 import { inject, injectable } from "@needle-di/core";
 import { type AuthUser, generateOpaqueToken, hashToken } from "@/common/auth";
 import { CryptoService, KeyUnrecoverableError, SECRET_CONTEXTS } from "@/common/crypto";
+import { DAY_MS } from "@/common/date/buckets";
 import { logger } from "@/common/logger";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -24,7 +25,7 @@ export class AuthTokenService {
         userId,
         kind: "session",
         tokenHash: hashToken(raw),
-        expiresAt: new Date(Date.now() + env.SESSION_TTL_DAYS * 86_400_000),
+        expiresAt: new Date(Date.now() + env.SESSION_TTL_DAYS * DAY_MS),
       },
     });
     return raw;

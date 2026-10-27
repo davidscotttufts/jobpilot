@@ -1,11 +1,11 @@
 import {
   type CreatePilotJournalInput,
+  journalDetailSchema,
   type PilotJournalEntry,
   type PilotJournalRun,
   pilotCycleDetailSchema,
 } from "@jobpilot/contracts/pilot";
 import { pilotChannel } from "@jobpilot/contracts/sse";
-import { z } from "zod/v4";
 import { toInputJson } from "@/common/json";
 import { publish } from "@/common/sse";
 import type {
@@ -22,7 +22,7 @@ const NO_RUNS: RunsByCycle = new Map();
 
 export function toJournalEntry(row: PilotJournalEntryModel, runs: RunsByCycle): PilotJournalEntry {
   const run = row.cycleId ? (runs.get(row.cycleId) ?? null) : null;
-  return { ...row, detail: z.record(z.string(), z.json()).parse(row.detail), run };
+  return { ...row, detail: journalDetailSchema.parse(row.detail), run };
 }
 
 /**

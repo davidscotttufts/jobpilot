@@ -1,5 +1,6 @@
 import {
   type CredentialInput,
+  type CredentialKind,
   type CredentialPatch,
   SERVICE_PROVIDERS,
   type ServiceProvider,
@@ -7,15 +8,18 @@ import {
 import { inject, injectable } from "@needle-di/core";
 import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { findOwned, unprocessable } from "@/common/errors";
-import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { type Credential, type Prisma, PrismaClient } from "@/generated/prisma/client";
 import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
 
-export interface ResolvedCredential {
-  /** The credential row - the target for `PATCH /credentials/<id>` after a password reset. */
-  id: string;
+interface Login {
   email: string;
   password: string;
-  kind: "board" | "default";
+}
+
+export interface ResolvedCredential extends Login {
+  /** The credential row - the target for `PATCH /credentials/<id>` after a password reset. */
+  id: string;
+  kind: Exclude<CredentialKind, "service">;
 }
 
 interface ServiceKey {
@@ -70,7 +74,7 @@ export class CredentialService {
       data.password = await this.encryptPassword(userId, input.password);
     }
     if (input.kind === "board") {
-      data.jobBoardId = await this.resolveBoardId(input.board);
+      data.jobBoardId = (await this.boards.resolve(input.board)).id;
     }
     // A second credential for the same board, provider or default is a 409 from a unique index.
     const row = await this.prisma.credential.create({ data, include: CREDENTIAL_INCLUDE });
@@ -96,7 +100,7 @@ export class CredentialService {
 
     const data: Prisma.CredentialUncheckedUpdateInput = { email: patch.email };
     if (patch.board !== undefined) {
-      data.jobBoardId = await this.resolveBoardId(patch.board);
+      data.jobBoardId = (await this.boards.resolve(patch.board)).id;
     }
     if (patch.password !== undefined) {
       data.password = await this.encryptPassword(userId, patch.password);
@@ -173,14 +177,6 @@ export class CredentialService {
     return null;
   }
 
-  private async resolveBoardId(domain: string): Promise<string> {
-    const board = await this.boards.resolve(domain);
-    if (!board) {
-      throw unprocessable("Board domain is empty.");
-    }
-    return board.id;
-  }
-
   private encryptPassword(userId: string, password: string): Promise<string> {
     return this.crypto.encryptFor(userId, SECRET_CONTEXTS.credentialPassword, password);
   }
@@ -192,8 +188,8 @@ export class CredentialService {
   /** A row with both login fields present and the password decrypted - or null. */
   private async toLogin(
     userId: string,
-    row: { email: string | null; password: string | null },
-  ): Promise<{ email: string; password: string } | null> {
+    row: Pick<Credential, "email" | "password">,
+  ): Promise<Login | null> {
     const email = row.email?.trim();
     const stored = row.password?.trim();
     if (!email || !stored) {

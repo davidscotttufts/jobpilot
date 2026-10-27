@@ -12,6 +12,7 @@ import {
   stripQuotedReplies,
 } from "./email.utils";
 import type {
+  ExchangedCode,
   MailboxSession,
   NormalizedMessage,
   OAuthClientConfig,
@@ -96,10 +97,7 @@ export class GmailClient {
   }
 
   /** Trades the callback's `code` for tokens and resolves the mailbox address. */
-  async exchangeCode(
-    config: OAuthClientConfig,
-    code: string,
-  ): Promise<{ tokens: TokenSet; email: string }> {
+  async exchangeCode(config: OAuthClientConfig, code: string): Promise<ExchangedCode> {
     const client = oauthClient(config);
     const { tokens } = await client.getToken(code);
     if (!tokens.access_token) {

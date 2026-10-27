@@ -1,5 +1,6 @@
 import { HOUR_MS } from "@/common/date/buckets";
-import type { Job, PilotRun, PilotRunOutcome, PrismaClient } from "@/generated/prisma/client";
+import type { PilotRun, PilotRunOutcome, PrismaClient } from "@/generated/prisma/client";
+import type { JobRef } from "@/modules/campaign/jobs/apply-guard";
 
 /** Row cap for the unbounded gather and expiry scans. */
 export const GATHER_CAP = 200;
@@ -15,8 +16,6 @@ export function isCrash(outcome: PilotRunOutcome | null): boolean {
 }
 
 type RunHistory = Pick<PilotRun, "startedAt" | "finishedAt" | "outcome">;
-
-type JobRef = Pick<Job, "campaignId" | "key">;
 
 const HISTORY_SELECT = { startedAt: true, finishedAt: true, outcome: true } as const;
 
@@ -59,12 +58,16 @@ export function ranRecently(
   return now.getTime() - last.finishedAt.getTime() < cooldown;
 }
 
+interface RecentRunFilter {
+  userId: string;
+  taskType: string;
+  now: Date;
+  cooldownMs: number;
+}
+
 export async function withoutRecentRuns<T>(
   prisma: PrismaClient,
-  userId: string,
-  taskType: string,
-  now: Date,
-  cooldownMs: number,
+  { userId, taskType, now, cooldownMs }: RecentRunFilter,
   rows: T[],
   subjectOf: (row: T) => string,
 ): Promise<T[]> {

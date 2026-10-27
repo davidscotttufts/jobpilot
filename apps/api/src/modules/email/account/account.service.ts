@@ -8,6 +8,7 @@ import { badGateway, badRequest, conflict, notFound, unprocessable } from "@/com
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
 import { GMAIL_SCOPES, GmailClient, scopeCanRead, scopeCanSend } from "../gmail.client";
+import type { ExchangedCode } from "../gmail.types";
 import { MailboxSessionService } from "./mailbox-session.service";
 
 @injectable()
@@ -53,13 +54,7 @@ export class EmailAccountService {
     }
 
     try {
-      return await this.gmail.send(mailbox.session, {
-        to: body.to,
-        subject: body.subject,
-        body: body.body,
-        threadId: body.threadId,
-        attachments: body.attachments,
-      });
+      return await this.gmail.send(mailbox.session, body);
     } catch (e) {
       throw badGateway(e instanceof Error ? e.message : "Failed to send message");
     }
@@ -73,7 +68,7 @@ export class EmailAccountService {
 
   async completeEmailOAuth(userId: string, code: string): Promise<{ email: string }> {
     const config = await this.sessions.resolveOAuthClient(userId);
-    let exchanged: Awaited<ReturnType<GmailClient["exchangeCode"]>>;
+    let exchanged: ExchangedCode;
     try {
       exchanged = await this.gmail.exchangeCode(config, code);
     } catch (cause) {

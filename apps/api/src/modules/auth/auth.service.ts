@@ -99,7 +99,7 @@ export class AuthService {
     return this.issueSession(user);
   }
 
-  async logout(rawSession: string | undefined): Promise<void> {
+  async logout(rawSession: string | null): Promise<void> {
     if (rawSession) {
       await this.tokens.revoke(rawSession);
     }

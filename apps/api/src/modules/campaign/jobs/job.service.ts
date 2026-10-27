@@ -108,8 +108,9 @@ export class CampaignJobService {
     }
 
     const { status: _, board, ...fields } = patch;
-    // An absent `board` leaves the column alone; null clears it.
-    const boardField = board === undefined ? {} : { boardId: await this.boards.resolveId(board) };
+    // An absent or unchanged `board` leaves the column alone; null clears it.
+    const keepsBoard = board === undefined || board === existing.board?.domain;
+    const boardField = keepsBoard ? {} : { boardId: await this.boards.resolveId(board) };
     const job = await guardApply(this.prisma, userId, () =>
       this.prisma.$transaction(async (tx) => {
         if (moveTo === "applying") {

@@ -169,7 +169,7 @@ describe("TaskListService idle-campaign sweep", () => {
     const taskList = await svc.refresh("p1");
     expect(rec.campaignUpdates).toHaveLength(1);
     expect(rec.campaignUpdates[0]).toMatchObject({
-      where: { id: "c3", status: "in_progress" },
+      where: { id: { in: ["c3"] }, status: "in_progress" },
       data: { status: "completed", statusActor: "pilot" },
     });
     expect(rec.journals).toContainEqual(

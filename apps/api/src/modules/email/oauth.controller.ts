@@ -71,15 +71,13 @@ export const emailOAuthController = new Elysia({
       };
       const fail = (reason: EmailConnectErrorReason) => back(`emailConnect=error&reason=${reason}`);
 
-      if (query.error) {
-        return fail(query.error === "access_denied" ? "access_denied" : "provider_error");
-      }
-      if (!query.code || !query.state || stateCookies.state() !== query.state) {
-        return fail("invalid_callback");
+      const { code, reason } = stateCookies.checkCallback(query);
+      if (reason) {
+        return fail(reason);
       }
 
       try {
-        await account.completeEmailOAuth(user.id, query.code);
+        await account.completeEmailOAuth(user.id, code);
       } catch (e) {
         return fail(flowFailureReason<EmailConnectErrorReason>(e, "Gmail connect"));
       }

@@ -1,6 +1,9 @@
 import { z } from "zod/v4";
 import { taskFieldsSchema } from "./tasks";
 
+/** Free-form structured detail on a journal entry. */
+export const journalDetailSchema = z.record(z.string(), z.json());
+
 export const PILOT_RUN_OUTCOMES = ["done", "failed", "cancelled", "expired"] as const;
 
 export const startPilotRunSchema = z.object({
@@ -14,7 +17,7 @@ export const pilotRunResultSchema = z.object({
   summary: z.string().trim().min(1),
   subjectType: z.string().min(1).optional(),
   subjectId: z.string().min(1).optional(),
-  detail: z.record(z.string(), z.json()).optional(),
+  detail: journalDetailSchema.optional(),
 });
 
 export const reportPilotUsageSchema = z.object({

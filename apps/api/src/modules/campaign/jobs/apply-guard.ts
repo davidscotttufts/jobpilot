@@ -131,7 +131,7 @@ export async function guardApply<T>(
   }
 }
 
-type JobRef = Pick<Job, "campaignId" | "key">;
+export type JobRef = Pick<Job, "campaignId" | "key">;
 
 const jobRefSchema = z.object({ campaignId: z.string().min(1), jobKey: z.string().min(1) });
 

@@ -124,9 +124,9 @@ function fakeCampaign(over: Over, rec: Recorder) {
       if ("jobs" in a.where) return over.scorePendingCampaigns ?? [];
       return over.quietCampaigns ?? [];
     },
-    updateMany: async (a: { where: Row; data: Row }) => {
+    updateManyAndReturn: async (a: { where: Row; data: Row }) => {
       rec.campaignUpdates.push(a);
-      return { count: 1 };
+      return over.finalizeCampaigns ?? [];
     },
   };
 }

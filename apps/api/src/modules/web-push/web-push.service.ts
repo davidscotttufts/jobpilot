@@ -1,3 +1,4 @@
+import type { PushSubscriptionInput } from "@jobpilot/contracts/web-push";
 import { InjectionToken, inject, injectable } from "@needle-di/core";
 import webpush from "web-push";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -52,10 +53,7 @@ export class WebPushService {
   }
 
   /** Upsert by endpoint. An endpoint can move between users (shared device), so a conflict reassigns it. */
-  async subscribe(
-    userId: string,
-    input: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string },
-  ) {
+  async subscribe(userId: string, input: PushSubscriptionInput) {
     return this.prisma.webPushSubscription.upsert({
       where: { endpoint: input.endpoint },
       create: {

@@ -16,6 +16,10 @@ const APPROVED_JOB_STALE_MS = 7 * DAY_MS;
 const FINALIZE_IDLE_MS = 10 * 60 * 1000;
 const MAX_OPEN_APPLY_RUNS = 20;
 
+function staleApplyingBefore(now: Date): Date {
+  return new Date(now.getTime() - STALE_APPLYING_MS);
+}
+
 /** Ends runs past their expiry and hands the jobs they, or a crashed terminal, left `applying` back. */
 async function expireRuns(tx: Prisma.TransactionClient, userId: string, now: Date) {
   const expiredRuns = await tx.pilotRun.findMany({
@@ -44,7 +48,7 @@ async function expireRuns(tx: Prisma.TransactionClient, userId: string, now: Dat
     where: {
       status: "applying",
       campaign: { userId },
-      updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
+      updatedAt: { lt: staleApplyingBefore(now) },
       NOT: openApplyRuns.map((run) => parseJobRef(run.payload)),
     },
     data: { status: "approved" },
@@ -68,7 +72,7 @@ export async function expireAbandonedRuns(prisma: PrismaClient, now: Date): Prom
         jobs: {
           some: {
             status: "applying",
-            updatedAt: { lt: new Date(now.getTime() - STALE_APPLYING_MS) },
+            updatedAt: { lt: staleApplyingBefore(now) },
           },
         },
       },
@@ -185,24 +189,21 @@ export async function finalizeIdleCampaigns(
         },
       ],
     },
+    select: { id: true },
+  });
+  if (idle.length === 0) return;
+
+  // Guarded on status, so a concurrent transition wins over the sweep.
+  const completed = await prisma.campaign.updateManyAndReturn({
+    where: { id: { in: idle.map((campaign) => campaign.id) }, userId, status: "in_progress" },
+    data: {
+      status: "completed",
+      statusActor: "pilot",
+      statusReason: "No active work remaining.",
+      completedAt: now,
+    },
     select: { id: true, query: true, source: true },
   });
-
-  const results = await Promise.all(
-    idle.map((campaign) =>
-      // Guarded on status, so a concurrent transition wins over the sweep.
-      prisma.campaign.updateMany({
-        where: { id: campaign.id, userId, status: "in_progress" },
-        data: {
-          status: "completed",
-          statusActor: "pilot",
-          statusReason: "No active work remaining.",
-          completedAt: now,
-        },
-      }),
-    ),
-  );
-  const completed = idle.filter((_, index) => results[index].count > 0);
   if (completed.length === 0) return;
 
   for (const campaign of completed) publishCampaignStatus(userId, campaign, "completed");

@@ -1,4 +1,5 @@
 import { inject, injectable } from "@needle-di/core";
+import { HOUR_MS } from "@/common/date/buckets";
 import { MemoryCache } from "@/common/memory-cache";
 import { env } from "@/env";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -20,7 +21,7 @@ export class CryptoService {
    * Unwrapped DEKs per user. Bounded and expiring so a deleted user's key leaves memory; a shared
    * in-flight load also stops two first requests from provisioning two keys.
    */
-  private readonly deks = new MemoryCache<string, Buffer>({ ttlMs: 60 * 60_000, maxEntries: 1000 });
+  private readonly deks = new MemoryCache<string, Buffer>({ ttlMs: HOUR_MS, maxEntries: 1000 });
 
   constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
 

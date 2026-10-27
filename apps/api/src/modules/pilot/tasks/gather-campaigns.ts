@@ -47,10 +47,7 @@ export async function gatherScorePending(
   });
   const startable = await withoutRecentRuns(
     prisma,
-    userId,
-    "campaign.scorePending",
-    now,
-    BATCH_COOLDOWN_MS,
+    { userId, taskType: "campaign.scorePending", now, cooldownMs: BATCH_COOLDOWN_MS },
     campaigns,
     (campaign) => campaign.id,
   );
@@ -92,10 +89,7 @@ export async function gatherQueueScores(
   });
   const startable = await withoutRecentRuns(
     prisma,
-    userId,
-    "queue.score",
-    now,
-    BATCH_COOLDOWN_MS,
+    { userId, taskType: "queue.score", now, cooldownMs: BATCH_COOLDOWN_MS },
     campaigns,
     (campaign) => campaign.id,
   );
@@ -202,12 +196,12 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
     }
   }
 
-  const fresh = <T extends { campaignId: string }>(taskType: TaskType, rows: T[]) =>
-    withoutRecentRuns(prisma, userId, taskType, now, REVIEW_REPEAT_MS, rows, (r) => r.campaignId);
+  const filter = (taskType: TaskType) => ({ userId, taskType, now, cooldownMs: REVIEW_REPEAT_MS });
+  const byCampaign = (row: Pick<TaskPayload<"campaign.tune">, "campaignId">) => row.campaignId;
   const [tunes, rescans, retries] = await Promise.all([
-    fresh("campaign.tune", campaignTunes),
-    fresh("job.rescanSkipped", rescanSkipped),
-    fresh("job.retryFailed", retryFailed),
+    withoutRecentRuns(prisma, filter("campaign.tune"), campaignTunes, byCampaign),
+    withoutRecentRuns(prisma, filter("job.rescanSkipped"), rescanSkipped, byCampaign),
+    withoutRecentRuns(prisma, filter("job.retryFailed"), retryFailed, byCampaign),
   ]);
 
   if (tunes.length > 0) {

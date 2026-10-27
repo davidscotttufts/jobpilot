@@ -68,11 +68,9 @@ export const authProvidersController = new Elysia({
         return redirect(`${env.APP_URL}${errorPage}?oauth=error&reason=${reason}`);
       };
 
-      if (query.error) {
-        return fail(query.error === "access_denied" ? "access_denied" : "provider_error");
-      }
-      if (!query.code || !query.state || stateCookies.state() !== query.state) {
-        return fail("invalid_callback");
+      const { code, reason } = stateCookies.checkCallback(query);
+      if (reason) {
+        return fail(reason);
       }
 
       if (intent === "link") {
@@ -81,7 +79,7 @@ export const authProvidersController = new Elysia({
           return fail("session_expired");
         }
         try {
-          await oauthService.link(principal.id, params.provider, query.code);
+          await oauthService.link(principal.id, params.provider, code);
         } catch (e) {
           return fail(flowFailureReason<OAuthErrorReason>(e, "OAuth link"));
         }
@@ -90,7 +88,7 @@ export const authProvidersController = new Elysia({
       }
 
       try {
-        const result = await oauthService.handleLogin(params.provider, query.code);
+        const result = await oauthService.handleLogin(params.provider, code);
         stateCookies.clear();
         setSessionCookie(cookie, result.token);
         // Same landing as form login; the proxy bounces new users on to onboarding.

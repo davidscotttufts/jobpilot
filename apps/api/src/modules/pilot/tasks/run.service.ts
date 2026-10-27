@@ -99,12 +99,13 @@ export class RunService {
       ),
     );
     if (startedJob) publishJob(userId, startedJob, "updated");
+    const started = toPilotRun(run);
     publish(
       pilotChannel,
       { userId },
-      { type: "run.started", runId: run.id, taskType: run.taskType },
+      { type: "run.started", runId: started.id, taskType: started.taskType },
     );
-    return toPilotRun(run);
+    return started;
   }
 
   private async startInTransaction(

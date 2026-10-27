@@ -18,6 +18,11 @@ export interface TokenSet {
   scope?: string | null;
 }
 
+export interface ExchangedCode {
+  tokens: TokenSet;
+  email: string;
+}
+
 /**
  * A connected mailbox ready to call Gmail with: tokens already decrypted and refreshed. A distinct
  * type from the `EmailAccount` row, whose token columns hold ciphertext.

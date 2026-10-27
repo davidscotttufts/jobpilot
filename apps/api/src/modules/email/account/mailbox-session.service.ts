@@ -4,7 +4,7 @@ import { badRequest, unauthorized } from "@/common/errors";
 import { env } from "@/env";
 import { type EmailAccount, PrismaClient } from "@/generated/prisma/client";
 import { GmailClient } from "../gmail.client";
-import type { MailboxSession, OAuthClientConfig } from "../gmail.types";
+import type { MailboxSession, OAuthClientConfig, TokenSet } from "../gmail.types";
 
 /** A connected mailbox: the stored row (ids, scope, sync state) and a session ready for Gmail. */
 interface OpenMailbox {
@@ -49,10 +49,15 @@ export class MailboxSessionService {
 
     const decrypt = (value: string | null) =>
       this.crypto.decryptField(userId, SECRET_CONTEXTS.gmailTokens, value);
+    const [config, accessToken, refreshToken] = await Promise.all([
+      this.resolveOAuthClient(userId),
+      decrypt(account.accessToken),
+      decrypt(account.refreshToken),
+    ]);
     const session: MailboxSession = {
-      config: await this.resolveOAuthClient(userId),
-      accessToken: await decrypt(account.accessToken),
-      refreshToken: await decrypt(account.refreshToken),
+      config,
+      accessToken,
+      refreshToken,
       tokenExpiresAt: account.tokenExpiresAt,
       historyId: account.historyId,
     };
@@ -73,7 +78,7 @@ export class MailboxSessionService {
     session: MailboxSession,
     refreshToken: string,
   ): Promise<OpenMailbox> {
-    let refreshed: Awaited<ReturnType<GmailClient["refresh"]>>;
+    let refreshed: TokenSet;
     try {
       refreshed = await this.gmail.refresh(session.config, refreshToken);
     } catch {
@@ -84,20 +89,17 @@ export class MailboxSessionService {
       throw unauthorized("Google rejected the mailbox token. Reconnect it from email settings.");
     }
 
-    const fresh = {
-      accessToken: refreshed.accessToken,
-      refreshToken: refreshed.refreshToken ?? refreshToken,
-      tokenExpiresAt: refreshed.expiresAt ?? null,
-      scope: refreshed.scope ?? account.scope,
-    };
+    const nextRefreshToken = refreshed.refreshToken ?? refreshToken;
+    const tokenExpiresAt = refreshed.expiresAt ?? null;
     const encrypt = (value: string) =>
       this.crypto.encryptFor(account.userId, SECRET_CONTEXTS.gmailTokens, value);
     const updated = await this.prisma.emailAccount.update({
       where: { id: account.id },
       data: {
-        ...fresh,
-        accessToken: await encrypt(fresh.accessToken),
-        refreshToken: await encrypt(fresh.refreshToken),
+        accessToken: await encrypt(refreshed.accessToken),
+        refreshToken: await encrypt(nextRefreshToken),
+        tokenExpiresAt,
+        scope: refreshed.scope ?? account.scope,
         refreshFailedAt: null,
       },
     });
@@ -105,9 +107,9 @@ export class MailboxSessionService {
       account: updated,
       session: {
         ...session,
-        accessToken: fresh.accessToken,
-        refreshToken: fresh.refreshToken,
-        tokenExpiresAt: fresh.tokenExpiresAt,
+        accessToken: refreshed.accessToken,
+        refreshToken: nextRefreshToken,
+        tokenExpiresAt,
       },
     };
   }
