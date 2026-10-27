@@ -4,6 +4,7 @@ import {
   campaignJobStatusSchema,
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
+import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -25,7 +26,7 @@ export const campaignJobSchema = z.object({
   salary: z.string().nullable(),
   type: z.string().nullable(),
   url: z.string(),
-  board: z.string().nullable(),
+  board: boardRefSchema.nullable(),
   matchScore: z.number().int().nullable(),
   matchReason: z.string().nullable(),
   status: campaignJobStatusSchema,
@@ -51,7 +52,7 @@ const campaignApplicationSchema = z.object({
   title: z.string(),
   company: z.string(),
   location: z.string().nullable(),
-  board: z.string().nullable(),
+  boardId: z.uuid().nullable(),
   source: z.string(),
   appliedAt: z.date(),
   status: statusSchema,

@@ -14,16 +14,17 @@ import { normalizeJobUrl } from "@/common/utils/url";
 import {
   type CampaignJobStatus,
   type CampaignSource,
-  type Job,
   type Prisma,
   PrismaClient,
 } from "@/generated/prisma/client";
+import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { JobListingPublisher } from "@/modules/job-listing/publishing/job-listing.publisher";
 import { deriveCampaignSummary } from "../campaign.summary";
 import { ensureCampaignOwned, PROMOTABLE_SOURCES } from "../campaign.utils";
 import { assertNotDuplicateApply, guardApply } from "./apply-guard";
 import { publishJob, publishProgress, publishStatusChange } from "./job-events";
 import { isTerminalJob, writeJobResult } from "./job-result";
+import { JOB_INCLUDE, type JobRow } from "./job-row";
 
 const ALLOWED_TRANSITIONS: Record<CampaignJobStatus, readonly CampaignJobStatus[]> = {
   // A score pass promotes a pasted link into the normal pipeline; nothing ever moves back to queued.
@@ -48,7 +49,7 @@ interface JobTransition {
 }
 
 interface TransitionResult {
-  job: Job;
+  job: JobRow;
   changed: boolean;
 }
 
@@ -63,20 +64,25 @@ export class CampaignJobService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly listings = inject(JobListingPublisher),
+    private readonly boards = inject(JobBoardService),
   ) {}
 
   async addJob(userId: string, campaignId: string, body: AddCampaignJobInput) {
     await ensureCampaignOwned(this.prisma, userId, campaignId);
 
-    let job: Job;
+    const { board, ...fields } = body;
+    const boardId = await this.boards.resolveId(board ?? null);
+    let job: JobRow;
     try {
       job = await this.prisma.job.create({
         data: {
-          ...body,
+          ...fields,
+          boardId,
           url: normalizeJobUrl(body.url),
           campaignId,
           status: body.status ?? "pending",
         },
+        include: JOB_INCLUDE,
       });
     } catch (error) {
       if (isPrismaError(error, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
@@ -101,7 +107,9 @@ export class CampaignJobService {
       throw conflict(`Job cannot transition from ${existing.status} to ${moveTo}.`);
     }
 
-    const { status: _, ...fields } = patch;
+    const { status: _, board, ...fields } = patch;
+    // An absent `board` leaves the column alone; null clears it.
+    const boardField = board === undefined ? {} : { boardId: await this.boards.resolveId(board) };
     const job = await guardApply(this.prisma, userId, () =>
       this.prisma.$transaction(async (tx) => {
         if (moveTo === "applying") {
@@ -118,7 +126,11 @@ export class CampaignJobService {
           });
           if (changed.count === 0) throw conflict("Job status changed concurrently.");
         }
-        return tx.job.update({ where: { campaignId_key: { campaignId, key } }, data: fields });
+        return tx.job.update({
+          where: { campaignId_key: { campaignId, key } },
+          data: { ...fields, ...boardField },
+          include: JOB_INCLUDE,
+        });
       }),
     );
 
@@ -184,7 +196,7 @@ export class CampaignJobService {
     const groups = Map.groupBy(candidates, (c) => `${c.matchScore >= c.threshold}:${c.matchScore}`);
 
     const jobs = await this.prisma.$transaction(async (tx) => {
-      const moved: Job[] = [];
+      const moved: JobRow[] = [];
       for (const group of groups.values()) {
         const { matchScore, threshold } = group[0];
         const approved = matchScore >= threshold;
@@ -202,6 +214,7 @@ export class CampaignJobService {
                 status: "skipped",
                 skipReason: `Below minimum match score (${matchScore} < ${threshold})`,
               },
+          include: JOB_INCLUDE,
         });
         moved.push(...updated);
       }
@@ -234,7 +247,10 @@ export class CampaignJobService {
   private findJob(userId: string, campaignId: string, key: string) {
     return findOwned(
       (where) =>
-        this.prisma.job.findFirst({ where, include: { campaign: { select: { source: true } } } }),
+        this.prisma.job.findFirst({
+          where,
+          include: { ...JOB_INCLUDE, campaign: { select: { source: true } } },
+        }),
       { campaignId, key, campaign: { userId } },
       "Campaign job",
     );
@@ -261,6 +277,7 @@ export class CampaignJobService {
     });
     const job = await this.prisma.job.findUniqueOrThrow({
       where: { campaignId_key: { campaignId, key } },
+      include: JOB_INCLUDE,
     });
     if (changed.count === 0) {
       if (job.status === transition.to) return { job, changed: false };

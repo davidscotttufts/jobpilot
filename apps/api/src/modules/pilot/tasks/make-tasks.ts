@@ -171,7 +171,7 @@ export const boardDiagnoseTask = (payload: TaskPayload<"board.diagnose">) =>
   task(
     "board.diagnose",
     "board",
-    payload.board,
+    payload.jobBoardId,
     `Board failing: ${payload.board} (${payload.consecutiveFailures})`,
     payload,
   );

@@ -23,7 +23,8 @@ export const credentialController = new Elysia({
     response: credentialListSchema,
     detail: {
       summary: "List credentials",
-      description: "Returns all stored login/service credentials for the user, ordered by scope.",
+      description:
+        "Returns the user's credentials - board logins, the default login and captcha-service keys - without secrets: `hasPassword` and `hasApiKey` say whether each is set.",
     },
   })
   .post("/", ({ user, body }) => svc.create(user.id, body), {
@@ -32,7 +33,7 @@ export const credentialController = new Elysia({
     detail: {
       summary: "Create credential",
       description:
-        "Creates a new login/service credential for the user and returns the created record.",
+        "Creates a board login (`board` is the board's domain), the default login, or a captcha-service key, and returns the record without secrets. A second credential for the same board, provider, or default returns 409.",
     },
   })
   .get("/resolve", ({ user, query }) => svc.resolveCredential(user.id, query.domain), {
@@ -41,7 +42,7 @@ export const credentialController = new Elysia({
     detail: {
       summary: "Resolve login for domain",
       description:
-        "Resolves the effective login for a board domain: the credential scoped to the domain, else the one scoped to `default`. Returns the email/password with the credential id (the target for a password update) and matched scope, or null when no complete pair is found.",
+        "Resolves the effective login for a board domain: the board's own credential, else the default. Returns the email/password with the credential id (the target for a password update) and the `kind` that matched, or null when no complete pair is found.",
     },
   })
   .patch("/:id", ({ user, params, body }) => svc.update(user.id, params.id, body), {
@@ -51,7 +52,7 @@ export const credentialController = new Elysia({
     detail: {
       summary: "Update credential",
       description:
-        "Updates the specified credential owned by the user and returns the updated record.",
+        "Updates the specified credential owned by the user and returns the record without secrets. A field that does not belong to the credential's kind returns 422.",
     },
   })
   .delete("/:id", ({ user, params }) => svc.remove(user.id, params.id), {

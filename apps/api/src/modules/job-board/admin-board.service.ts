@@ -1,7 +1,9 @@
 import type { AdminBoardInput, AdminBoardPatch } from "@jobpilot/contracts/job-board";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inject, injectable } from "@needle-di/core";
+import { conflict, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { boardHost } from "./board-host";
 
 /** How many profiles have linked the board - the only thing the catalog view adds to the row. */
 const WITH_ADOPTION = { _count: { select: { userBoards: true } } } as const;
@@ -48,7 +50,10 @@ export class AdminBoardService {
   }
 
   async create(input: AdminBoardInput) {
-    const board = await this.prisma.jobBoard.create({ data: input });
+    // Stored as a bare host so the resolver matches it whatever form an agent reports.
+    const board = await this.prisma.jobBoard.create({
+      data: { ...input, domain: boardHost(input.domain) },
+    });
     if (board.isDefault) {
       await this.backfillDefault(board.id);
     }
@@ -60,7 +65,10 @@ export class AdminBoardService {
       where: { id },
       select: { isDefault: true },
     });
-    await this.prisma.jobBoard.update({ where: { id }, data: input });
+    await this.prisma.jobBoard.update({
+      where: { id },
+      data: { ...input, domain: input.domain && boardHost(input.domain) },
+    });
     if (!before.isDefault && input.isDefault) {
       await this.backfillDefault(id);
     }
@@ -86,9 +94,19 @@ export class AdminBoardService {
     });
   }
 
-  /** Cascades to every user's link row - the board disappears from those users' boards. */
+  /**
+   * Cascades to every user's link row - the board disappears from those users' boards - and clears
+   * it on jobs and applications. A board someone stored a login for is refused.
+   */
   async remove(id: string) {
-    await this.prisma.jobBoard.delete({ where: { id } });
+    try {
+      await this.prisma.jobBoard.delete({ where: { id } });
+    } catch (error) {
+      if (isPrismaError(error, PRISMA_ERRORS.FOREIGN_KEY_VIOLATION)) {
+        throw conflict("Users have saved logins for this board; it cannot be deleted.");
+      }
+      throw error;
+    }
     return { deleted: id };
   }
 }

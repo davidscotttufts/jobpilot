@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 
 /** Board and link only, never who found it. */
 const jobListingSourceSchema = z.object({
-  /** The board's display name ("LinkedIn"), or its bare host when the catalog has no listed row. */
+  /** The board's display name ("LinkedIn"), or its domain when the catalog row is unlisted. */
   board: z.string().nullable(),
   url: z.string(),
   lastSeenAt: z.date(),

@@ -216,6 +216,8 @@ export const taskFieldsSchema = z.discriminatedUnion("taskType", [
     "board.diagnose",
     "board",
     z.object({
+      jobBoardId: z.string(),
+      /** The board's domain. */
       board: z.string(),
       consecutiveFailures: z.number().int(),
       recentFailReasons: z.array(z.string()),

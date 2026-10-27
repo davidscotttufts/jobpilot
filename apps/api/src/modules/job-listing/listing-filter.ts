@@ -5,6 +5,7 @@ import {
 } from "@jobpilot/contracts/job-listing";
 import { DAY_MS } from "@/common/date/buckets";
 import type { Prisma } from "@/generated/prisma/client";
+import { boardFilter } from "@/modules/job-board/board-host";
 import { resolveSkillFilter } from "./skill-vocabulary";
 
 /** `variants` maps a lowercased skill to its stored casings; `hasSome` itself is case-sensitive. */
@@ -21,8 +22,7 @@ export function listingWhere(
     ...(remote !== undefined && { remote }),
     ...(location && { location: { contains: location, mode: "insensitive" } }),
     ...(skills.length > 0 && { skills: { hasSome: skills } }),
-    // Stored lowercase, so this is an indexed equality rather than an ILIKE scan.
-    ...(board && { sources: { some: { board: board.toLowerCase() } } }),
+    ...(board && { sources: { some: { board: boardFilter(board) } } }),
     ...(posted && {
       firstSeenAt: { gte: new Date(now.getTime() - JOB_LISTING_POSTED_WITHIN[posted] * DAY_MS) },
     }),

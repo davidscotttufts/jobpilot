@@ -2,6 +2,7 @@ import type { CampaignJobResultInput, CampaignJobStatus } from "@jobpilot/contra
 import { CAMPAIGN_JOB_TERMINAL_OUTCOMES } from "@jobpilot/contracts/campaign";
 import { conflict, findOwned } from "@/common/errors";
 import type { Application, PrismaClient } from "@/generated/prisma/client";
+import { JOB_INCLUDE } from "./job-row";
 
 export function isTerminalJob(status: CampaignJobStatus): boolean {
   return (CAMPAIGN_JOB_TERMINAL_OUTCOMES as readonly string[]).includes(status);
@@ -49,7 +50,11 @@ export async function writeJobResult(
   data: CampaignJobResultInput,
 ) {
   const existing = await findOwned(
-    (where) => prisma.job.findFirst({ where, include: { campaign: { select: { source: true } } } }),
+    (where) =>
+      prisma.job.findFirst({
+        where,
+        include: { ...JOB_INCLUDE, campaign: { select: { source: true } } },
+      }),
     { campaignId, key, campaign: { userId } },
     "Campaign job",
   );
@@ -85,7 +90,10 @@ export async function writeJobResult(
         matchScore: data.matchScore,
       },
     });
-    const job = await tx.job.findUniqueOrThrow({ where: { campaignId_key: { campaignId, key } } });
+    const job = await tx.job.findUniqueOrThrow({
+      where: { campaignId_key: { campaignId, key } },
+      include: JOB_INCLUDE,
+    });
     if (changed.count === 0 && job.status !== data.outcome) {
       throw conflict(`Job already finished with outcome ${job.status}.`);
     }
@@ -106,7 +114,7 @@ export async function writeJobResult(
           title: job.title,
           company: job.company,
           location: job.location,
-          board: job.board,
+          boardId: job.boardId,
           source,
           campaignId,
           jobId: job.id,

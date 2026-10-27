@@ -8,6 +8,8 @@ import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/p
 import { inject, injectable } from "@needle-di/core";
 import { findOwned } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { boardFilter } from "@/modules/job-board/board-host";
+import { BOARD_REF_SELECT } from "@/modules/job-board/job-board.service";
 import { type DuplicateLookup, findAppliedDuplicate } from "./duplicate";
 import { statusChangeOps } from "./status-change";
 
@@ -29,6 +31,7 @@ export class ApplicationService {
     const [rows, total] = await Promise.all([
       this.prisma.application.findMany({
         where,
+        include: { board: { select: BOARD_REF_SELECT } },
         orderBy: { appliedAt: "desc" },
         ...pageSlice(query),
       }),
@@ -69,7 +72,7 @@ export class ApplicationService {
     return {
       userId,
       ...(status && { status }),
-      ...(board && { board }),
+      ...(board && { board: boardFilter(board) }),
       ...(source && { source }),
       ...(campaignId && {
         campaignId: campaignId === SINGLE_APPLY_CAMPAIGN ? null : campaignId,
@@ -90,6 +93,7 @@ export class ApplicationService {
         this.prisma.application.findFirst({
           where,
           include: {
+            board: { select: BOARD_REF_SELECT },
             events: { orderBy: { createdAt: "asc" } },
             job: { select: { description: true, salary: true, type: true } },
             resume: { select: { id: true, label: true, updatedAt: true } },

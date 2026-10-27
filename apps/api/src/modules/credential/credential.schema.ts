@@ -1,15 +1,18 @@
+import { CREDENTIAL_KINDS, SERVICE_PROVIDERS } from "@jobpilot/contracts/credential";
+import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { z } from "zod/v4";
 
 export const domainResolveQuery = z.object({ domain: z.string().trim().min(1) });
 
-/** A stored credential row with its secret fields decrypted (mirrors the `Credential` model). */
+/** A stored credential without its secrets: the agent reads those through `/resolve` only. */
 export const credentialRecordSchema = z.object({
   id: z.uuid(),
-  userId: z.uuid(),
-  scope: z.string(),
+  kind: z.enum(CREDENTIAL_KINDS),
+  board: boardRefSchema.nullable(),
+  provider: z.enum(SERVICE_PROVIDERS).nullable(),
   email: z.string().nullable(),
-  password: z.string().nullable(),
-  apiKey: z.string().nullable(),
+  hasPassword: z.boolean(),
+  hasApiKey: z.boolean(),
 });
 
 export const credentialListSchema = z.array(credentialRecordSchema);
@@ -20,6 +23,6 @@ export const resolvedCredentialSchema = z
     id: z.uuid(),
     email: z.string(),
     password: z.string(),
-    scope: z.string(),
+    kind: z.enum(["board", "default"]),
   })
   .nullable();

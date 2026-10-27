@@ -1,6 +1,6 @@
 import { ErrorCodes } from "@jobpilot/contracts/errors";
 import { conflict, HttpError } from "@/common/errors";
-import type { Job, Prisma, PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import {
   type AppliedDuplicate,
   type DuplicateReader,
@@ -9,6 +9,7 @@ import {
 } from "@/modules/application/duplicate";
 import { findFuzzyDuplicate } from "@/modules/scoring/applied-duplicates";
 import { publishStatusChange } from "./job-events";
+import { JOB_INCLUDE, type JobRow } from "./job-row";
 
 type GuardReader = DuplicateReader & Pick<Prisma.TransactionClient, "job">;
 
@@ -116,6 +117,7 @@ export async function guardApply<T>(
     const [skipped] = await prisma.job.updateManyAndReturn({
       where: { campaignId, key, status: { in: ["approved", "needs_user"] } },
       data: { status: "skipped", skipReason: duplicateSkipReason(error.duplicate) },
+      include: JOB_INCLUDE,
     });
     if (skipped) {
       const campaign = await prisma.campaign.findUniqueOrThrow({
@@ -134,7 +136,7 @@ export async function startApplying(
   userId: string,
   campaignId: string,
   key: string,
-): Promise<Job> {
+): Promise<JobRow> {
   const where = {
     campaignId,
     key,
@@ -150,7 +152,11 @@ export async function startApplying(
   await assertNotDuplicateApply(tx, userId, { ...target, campaignId, key });
 
   // An empty result is the lost race.
-  const [started] = await tx.job.updateManyAndReturn({ where, data: { status: "applying" } });
+  const [started] = await tx.job.updateManyAndReturn({
+    where,
+    data: { status: "applying" },
+    include: JOB_INCLUDE,
+  });
   if (!started) throw conflict("Job is no longer approved.");
   return started;
 }

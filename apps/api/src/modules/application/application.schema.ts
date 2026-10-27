@@ -5,6 +5,7 @@ import {
   applicationSourceSchema,
   statusSchema,
 } from "@jobpilot/contracts/application";
+import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 import { campaignJobSchema } from "@/modules/campaign/jobs/job.schema";
@@ -39,7 +40,7 @@ const applicationSchema = z.object({
   title: z.string(),
   company: z.string(),
   location: z.string().nullable(),
-  board: z.string().nullable(),
+  board: boardRefSchema.nullable(),
   source: applicationSourceSchema,
   appliedAt: z.date(),
   status: statusSchema,

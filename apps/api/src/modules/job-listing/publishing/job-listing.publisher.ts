@@ -77,8 +77,8 @@ export class JobListingPublisher {
    */
   private async upsert(draft: ListingDraft, retry = true): Promise<PublishOutcome> {
     const now = new Date();
-    const { board, url, ...listing } = draft;
-    const source = { board, url, lastSeenAt: now };
+    const { boardId, url, ...listing } = draft;
+    const source = { boardId, url, lastSeenAt: now };
 
     try {
       const seen = await this.prisma.jobListingSource.findUnique({
@@ -89,7 +89,7 @@ export class JobListingPublisher {
       if (seen) {
         await this.prisma.jobListingSource.update({
           where: { url },
-          data: { lastSeenAt: now, ...(board && { board }) },
+          data: { lastSeenAt: now, ...(boardId && { boardId }) },
         });
         await this.prisma.jobListing.update({
           where: { id: seen.listingId },

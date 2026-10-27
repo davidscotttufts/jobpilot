@@ -2,7 +2,7 @@
 
 ## Proactive Login
 
-**Always attempt to log in before interacting with a board** if a credential resolves for it (a credential scoped to the board domain, or `default`). Many sites limit functionality without login (no apply, fewer results, rate limiting).
+**Always attempt to log in before interacting with a board** if a credential resolves for it (the board's own login, or the default). Many sites limit functionality without login (no apply, fewer results, rate limiting).
 
 1. Take a `browser_snapshot` narrowed to the header. A Sign in / Log in control (or a visible password field) means **not** logged in; an account/avatar menu means logged in → skip auth.
 2. If not logged in:
@@ -35,13 +35,13 @@ Ask the user to complete it; wait for confirmation.
 
 ## Credential lookup
 
-Resolve the login in **one call** - the API applies the precedence (credential scoped to the domain → `default`) server-side. Never pick from `/api/credentials` by hand.
+Resolve the login in **one call** - the API applies the precedence (the board's login → the default login) server-side. Never pick from `/api/credentials` by hand.
 
 ```bash
 jobpilot-api GET /api/credentials/resolve --query domain=<board-domain>
 ```
 
-`data` → `{ id, email, password, scope }` (`scope`: the board domain or `default`) or `null`. Null → report to the user and proceed without login (some boards allow it). Use the resolved `email`/`password` exactly; never substitute the `default` credential when a domain match exists.
+`data` → `{ id, email, password, kind }` (`kind`: `board` or `default`) or `null`. Null → report to the user and proceed without login (some boards allow it). Use the resolved `email`/`password` exactly; never substitute the default login when the board has its own.
 
 ## Login outcomes
 

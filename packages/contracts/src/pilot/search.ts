@@ -1,11 +1,13 @@
 import { z } from "zod/v4";
+import { boardRefSchema } from "../job-board";
 
 // Shown to the user as plain text.
 const reasonSchema = z.string().max(500).default("");
 
 export const createPilotSearchSchema = z.object({
   query: z.string().min(1),
-  board: z.string().optional(),
+  /** The board's domain, resolved to a catalog row. */
+  board: z.string().trim().min(1).optional(),
   resumeId: z.string().optional(),
   reason: reasonSchema,
 });
@@ -22,7 +24,7 @@ export const pilotSearchSchema = z.object({
   id: z.uuid(),
   userId: z.uuid(),
   query: z.string(),
-  board: z.string().nullable(),
+  board: boardRefSchema.nullable(),
   resumeId: z.string().nullable(),
   reason: z.string(),
   lastRunAt: z.date().nullable(),

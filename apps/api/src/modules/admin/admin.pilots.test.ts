@@ -1,6 +1,7 @@
 // 401/403 on /pilots is covered by admin.guard.test.ts, which walks every /api/admin route.
 
 import type { PrismaClient } from "@/generated/prisma/client";
+import { makeBoards } from "@/modules/job-board/job-board.fake";
 import { AdminService } from "./admin.service";
 import { describe, expect, it } from "bun:test";
 
@@ -52,6 +53,7 @@ describe("AdminService.listPilots", () => {
         ],
         [{ userId: "p1", _count: { _all: 2 } }],
       ),
+      makeBoards(),
     );
 
     const page = await svc.listPilots({ page: 1, limit: 20 });

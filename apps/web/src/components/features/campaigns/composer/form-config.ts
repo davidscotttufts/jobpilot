@@ -134,7 +134,6 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
     // the user stops. No board → criteria-only discovery.
     const searchesBoard = isBoardSelected(values.board);
     return {
-      ...(searchesBoard ? { board: values.board } : {}),
       ...(searchesBoard && isCap(values.maxApps) ? { maxJobs: values.maxApps } : {}),
       networking: {
         channels: values.channels,
@@ -146,10 +145,9 @@ function buildCampaignConfig(values: ComposerFormValues): CreateCampaignRequest[
   }
   if (values.mode !== "auto_apply") {
     // Omit maxJobs when empty so the search runs unlimited.
-    return { board: values.board, ...(isCap(values.maxJobs) ? { maxJobs: values.maxJobs } : {}) };
+    return isCap(values.maxJobs) ? { maxJobs: values.maxJobs } : {};
   }
   return {
-    board: values.board,
     minScore: values.minScore,
     ...(isCap(values.maxApps) ? { maxApplications: values.maxApps } : {}),
   };
@@ -171,6 +169,8 @@ export function buildCreateCampaignRequest(values: ComposerFormValues): CreateCa
   return {
     query: values.query.trim(),
     source: values.mode,
+    // Networking without a board discovers from criteria alone.
+    ...(isBoardSelected(values.board) ? { board: values.board } : {}),
     // resumeId is campaign-wide (mandatory for search/auto-apply/networking), not mode-specific.
     config: { resumeId: values.resumeId, ...buildCampaignConfig(values) },
     createdBy: "user",

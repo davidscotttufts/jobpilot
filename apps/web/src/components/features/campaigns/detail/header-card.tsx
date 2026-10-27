@@ -52,7 +52,9 @@ export function CampaignHeaderCard(props: CampaignHeaderCardProps): ReactElement
                 {campaign.source} · Started {formatRelativeTime(campaign.startedAt)} ago
               </Typography>
               <PilotBadge createdBy={campaign.createdBy} />
-              {cfg.board && <Chip size="small" label={`Board: ${cfg.board}`} variant="outlined" />}
+              {campaign.board && (
+                <Chip size="small" label={`Board: ${campaign.board.name}`} variant="outlined" />
+              )}
               {!isAutoApply && typeof cfg.maxJobs === "number" && (
                 <Chip size="small" label={`Jobs: ${cfg.maxJobs}`} variant="outlined" />
               )}

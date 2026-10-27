@@ -4,13 +4,12 @@ import type {
   CaptchaSolveResult,
   CaptchaType,
 } from "@jobpilot/contracts/captcha";
-import { SERVICE_PROVIDERS, type ServiceProvider } from "@jobpilot/contracts/credential";
+import type { ServiceProvider } from "@jobpilot/contracts/credential";
 import { inject, injectable } from "@needle-di/core";
-import { CryptoService, SECRET_CONTEXTS } from "@/common/crypto";
 import { badGateway, notFound } from "@/common/errors";
 import { acquireSlot, RATE_LIMITS } from "@/common/rate-limit";
 import { sleep } from "@/common/utils";
-import { PrismaClient } from "@/generated/prisma/client";
+import { CredentialService } from "@/modules/credential/credential.service";
 
 /** A single CAPTCHA to solve, normalized across providers. */
 interface ProviderJob {
@@ -38,13 +37,10 @@ interface CapSolverResponse {
 
 @injectable()
 export class CaptchaService {
-  constructor(
-    private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly crypto = inject(CryptoService),
-  ) {}
+  constructor(private readonly credentials = inject(CredentialService)) {}
 
   private solveWith(provider: ServiceProvider, apiKey: string, job: ProviderJob): Promise<string> {
-    return provider === "2captcha"
+    return provider === "two_captcha"
       ? this.solveWithTwoCaptcha(apiKey, job)
       : this.solveWithCapSolver(apiKey, job);
   }
@@ -58,7 +54,7 @@ export class CaptchaService {
     // mid-poll, and a leaked counter would lock this user out permanently.
     const release = acquireSlot(`captcha-solve:${userId}`, RATE_LIMITS.captchaSolve.maxInFlight);
     try {
-      const cred = await this.resolveServiceCredential(userId, input.provider);
+      const cred = await this.credentials.resolveServiceKey(userId, input.provider ?? null);
       if (!cred) {
         throw notFound(
           "No captcha-solving service key configured. Add a 2captcha or CapSolver key in Settings.",
@@ -72,29 +68,6 @@ export class CaptchaService {
     } finally {
       release();
     }
-  }
-
-  private async resolveServiceCredential(
-    userId: string,
-    provider?: ServiceProvider,
-  ): Promise<{ provider: ServiceProvider; apiKey: string } | null> {
-    const rows = await this.prisma.credential.findMany({
-      where: { userId, scope: { in: [...SERVICE_PROVIDERS] }, NOT: { apiKey: null } },
-    });
-    // Honor an explicit provider; otherwise fall back in SERVICE_PROVIDERS preference order.
-    const order: readonly ServiceProvider[] = provider ? [provider] : SERVICE_PROVIDERS;
-    for (const p of order) {
-      const row = rows.find((r) => r.scope === p && r.apiKey);
-      if (row?.apiKey) {
-        const apiKey = await this.crypto.decryptFor(
-          userId,
-          SECRET_CONTEXTS.credentialApiKey,
-          row.apiKey,
-        );
-        return { provider: p, apiKey };
-      }
-    }
-    return null;
   }
 
   /**

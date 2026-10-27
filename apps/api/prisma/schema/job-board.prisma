@@ -12,12 +12,18 @@ model JobBoard {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  userBoards UserJobBoard[]
+  userBoards     UserJobBoard[]
+  credentials    Credential[]
+  jobs           Job[]
+  applications   Application[]
+  listingSources JobListingSource[]
+  pilotSearches  PilotSearch[]
+  campaigns      Campaign[]
 
   @@map("job_boards")
 }
 
-// A user's adoption of a global board. Logins live in Credential, keyed by the board's domain.
+// A user's adoption of a global board. Logins live in Credential, keyed by the board.
 model UserJobBoard {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")

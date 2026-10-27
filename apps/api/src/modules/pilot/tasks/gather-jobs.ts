@@ -41,15 +41,16 @@ export async function gatherApprovedJobs(prisma: PrismaClient, userId: string): 
       key: true,
       title: true,
       url: true,
-      board: true,
+      board: { select: { domain: true } },
       brief: true,
       matchScore: true,
       company: true,
       campaign: { select: { config: true } },
     },
   });
-  return rows.map(({ campaign, ...job }) => ({
+  return rows.map(({ campaign, board, ...job }) => ({
     ...job,
+    board: board?.domain ?? null,
     resumeId: campaignConfigSchema.parse(campaign.config).resumeId,
   }));
 }
@@ -134,14 +135,14 @@ export async function gatherBoardDiagnoses(
   now: Date,
 ): Promise<TaskPayload<"board.diagnose">[]> {
   const rows = await prisma.job.findMany({
-    where: { status: { in: ["applied", "failed"] }, board: { not: null }, campaign: { userId } },
+    where: { status: { in: ["applied", "failed"] }, boardId: { not: null }, campaign: { userId } },
     orderBy: { createdAt: "desc" },
     take: BOARD_HEALTH_SCAN,
     select: {
       campaignId: true,
       key: true,
       url: true,
-      board: true,
+      board: { select: { id: true, domain: true } },
       status: true,
       failReason: true,
       campaign: { select: { status: true } },
@@ -149,7 +150,9 @@ export async function gatherBoardDiagnoses(
   });
 
   const unhealthy: TaskPayload<"board.diagnose">[] = [];
-  for (const [board, jobs] of Map.groupBy(rows, (row) => row.board ?? "")) {
+  for (const jobs of Map.groupBy(rows, (row) => row.board?.id).values()) {
+    const { board } = jobs[0];
+    if (!board) continue;
     const firstSuccess = jobs.findIndex((job) => job.status !== "failed");
     const failed = firstSuccess === -1 ? jobs : jobs.slice(0, firstSuccess);
     if (failed.length < BOARD_HEALTH_MIN_FAILURES) continue;
@@ -157,7 +160,8 @@ export async function gatherBoardDiagnoses(
     // The agent retries the test job into the apply queue, which only reads in-progress campaigns.
     const probe = failed.find((job) => job.campaign.status === "in_progress");
     unhealthy.push({
-      board,
+      jobBoardId: board.id,
+      board: board.domain,
       consecutiveFailures: failed.length,
       recentFailReasons: failed
         .flatMap((job) => (job.failReason ? [job.failReason] : []))
@@ -172,7 +176,7 @@ export async function gatherBoardDiagnoses(
     now,
     BOARD_DIAGNOSE_COOLDOWN_MS,
     unhealthy,
-    (diagnosis) => diagnosis.board,
+    (diagnosis) => diagnosis.jobBoardId,
   );
   return due.sort((a, b) => b.consecutiveFailures - a.consecutiveFailures);
 }

@@ -155,6 +155,6 @@ is a bug; `Read`/`Grep` it back out of `$JOBPILOT_TEMP` instead.
 
 ## 4. Credentials
 
-Resolve a board login with `GET /api/credentials/resolve` per `./auth.md` ("Credential lookup"). The
-raw rows at `GET /api/credentials` (logins + captcha-service keys) are only for listing or editing
-them.
+Resolve a board login with `GET /api/credentials/resolve` per `./auth.md` ("Credential lookup").
+`GET /api/credentials` lists logins and captcha-service keys without their secrets
+(`hasPassword`, `hasApiKey`); it is only for listing or editing them.

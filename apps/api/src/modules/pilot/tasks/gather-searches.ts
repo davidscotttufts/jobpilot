@@ -30,7 +30,7 @@ export async function gatherDueSearches(
     select: {
       id: true,
       query: true,
-      board: true,
+      board: { select: { domain: true } },
       resumeId: true,
       nextRunAt: true,
       lastRunAt: true,
@@ -69,7 +69,7 @@ export async function gatherDueSearches(
     dueQueries: due.map((search) => ({
       searchId: search.id,
       query: search.query,
-      board: search.board ?? undefined,
+      board: search.board?.domain,
       resumeId: search.resumeId ?? undefined,
       campaignId: campaignBySearch.get(search.id),
     })),

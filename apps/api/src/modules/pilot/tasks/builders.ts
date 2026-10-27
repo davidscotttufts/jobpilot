@@ -128,6 +128,7 @@ export const prep = (applicationId: string): TaskPayload<"interview.prep"> => ({
 });
 
 export const boardDiagnose = (board: string): TaskPayload<"board.diagnose"> => ({
+  jobBoardId: `${board}-id`,
   board,
   consecutiveFailures: 3,
   recentFailReasons: ["captcha"],

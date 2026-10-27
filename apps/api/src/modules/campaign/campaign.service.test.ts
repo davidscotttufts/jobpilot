@@ -1,4 +1,5 @@
 import type { CampaignStatus, PrismaClient } from "@/generated/prisma/client";
+import { makeBoards } from "@/modules/job-board/job-board.fake";
 import { CampaignService } from "./campaign.service";
 import { emptySummary } from "./campaign.summary";
 import { describe, expect, it } from "bun:test";
@@ -59,7 +60,7 @@ function makeService(current = row) {
     $transaction: async (work: (tx: unknown) => Promise<unknown>) => work(db),
   };
   return {
-    service: new CampaignService(db as unknown as PrismaClient),
+    service: new CampaignService(db as unknown as PrismaClient, makeBoards()),
     updates,
     wheres,
     listWheres,

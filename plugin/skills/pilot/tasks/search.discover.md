@@ -7,7 +7,7 @@ Payload `{searchId, query, board?, resumeId?, minScore, campaignId?, newJobsTarg
 
    ```bash
    jobpilot-api POST /api/campaigns \
-     --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<searchId>","config":{"resumeId":"<resumeId>","minScore":<minScore>,"board":"<board>"}}'
+     --data '{"query":"<query>","source":"auto_apply","createdBy":"pilot","pilotSearchId":"<searchId>","board":"<board>","config":{"resumeId":"<resumeId>","minScore":<minScore>}}'
    ```
 
 2. **Search.** Delegate one `job-searcher` run with `{runId:$RUN_ID, campaignId:CID, query, board,

@@ -45,7 +45,8 @@ model Application {
   title     String
   company   String
   location  String?
-  board     String?
+  boardId   String?           @map("board_id")
+  board     JobBoard?         @relation(fields: [boardId], references: [id], onDelete: SetNull)
   source    ApplicationSource
   appliedAt DateTime          @default(now()) @map("applied_at")
 
@@ -76,6 +77,7 @@ model Application {
   coverLetters   CoverLetter[]
 
   @@unique([userId, url])
+  @@index([boardId])
   // The duplicate scan filters on both columns; this also serves the bare userId lookups.
   @@index([userId, appliedAt])
   @@index([appliedAt])

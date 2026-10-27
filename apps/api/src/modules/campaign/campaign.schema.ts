@@ -6,6 +6,7 @@ import {
   campaignStatusSchema,
   campaignSummarySchema,
 } from "@jobpilot/contracts/campaign";
+import { boardRefSchema } from "@jobpilot/contracts/job-board";
 import { csvArray, paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -29,6 +30,7 @@ export const campaignSchema = z.object({
   startedAt: z.date(),
   updatedAt: z.date(),
   completedAt: z.date().nullable(),
+  board: boardRefSchema.nullable(),
   config: campaignConfigSchema,
   summary: campaignSummarySchema,
 });

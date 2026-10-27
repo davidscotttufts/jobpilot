@@ -1,6 +1,7 @@
 # `board.diagnose`
 
-Payload `{board, consecutiveFailures, recentFailReasons, testJob}`: the board keeps failing. Find
+Payload `{jobBoardId, board, consecutiveFailures, recentFailReasons, testJob}` (`board` is the
+domain): the board keeps failing. Find
 out why without applying. Log in per `../../_shared/auth.md`; that alone often shows the cause
 (expired login, changed flow, bot wall). When `testJob` is set, open its `url` and check that the
 posting and its apply form load.

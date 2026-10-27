@@ -74,7 +74,8 @@ model PilotSearch {
   userId       String    @map("user_id")
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   query        String
-  board        String?
+  boardId      String?   @map("board_id")
+  board        JobBoard? @relation(fields: [boardId], references: [id], onDelete: SetNull)
   resumeId     String?   @map("resume_id")
   // The pilot's one-liner on why it chose this search, shown verbatim in the web UI.
   reason       String    @default("")
@@ -91,6 +92,7 @@ model PilotSearch {
   campaigns Campaign[]
 
   @@index([userId, nextRunAt])
+  @@index([boardId])
   @@map("pilot_searches")
 }
 

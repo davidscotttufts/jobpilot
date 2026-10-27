@@ -36,6 +36,7 @@ export async function gatherScorePending(
       id: true,
       query: true,
       config: true,
+      board: { select: { domain: true } },
       _count: { select: { jobs: { where: NEEDS_WORKER_VISIT } } },
       jobs: {
         where: NEEDS_WORKER_VISIT,
@@ -59,7 +60,7 @@ export async function gatherScorePending(
     return {
       campaignId: campaign.id,
       query: campaign.query,
-      board: config.board ?? null,
+      board: campaign.board?.domain ?? null,
       resumeId: config.resumeId,
       minScore: config.minScore ?? fallbackMinScore,
       pendingCount: campaign._count.jobs,
@@ -121,7 +122,7 @@ export async function gatherPausedCampaigns(
     where: reviewPausedWhere(userId),
     orderBy: { updatedAt: "asc" },
     take: PAUSED_CANDIDATES,
-    select: { id: true, query: true, config: true, updatedAt: true },
+    select: { id: true, query: true, updatedAt: true, board: { select: { domain: true } } },
   });
   if (campaigns.length === 0) return [];
 
@@ -153,7 +154,7 @@ export async function gatherPausedCampaigns(
     .map((campaign) => ({
       campaignId: campaign.id,
       query: campaign.query,
-      board: campaignConfigSchema.parse(campaign.config).board ?? null,
+      board: campaign.board?.domain ?? null,
       pausedAt: campaign.updatedAt,
     }));
 }
@@ -165,7 +166,13 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   const [campaigns, markers] = await Promise.all([
     prisma.campaign.findMany({
       where: { userId, status: "in_progress", source: { not: "networking" } },
-      select: { id: true, query: true, config: true, source: true },
+      select: {
+        id: true,
+        query: true,
+        config: true,
+        source: true,
+        board: { select: { domain: true } },
+      },
     }),
     prisma.pilotJournalEntry.findMany({
       where: {
@@ -187,15 +194,15 @@ export async function gatherCampaignReviews(prisma: PrismaClient, userId: string
   const retryFailed: TaskPayload<"job.retryFailed">[] = [];
 
   const summaries = await summarizeCampaigns(prisma, campaigns);
-  for (const { id: campaignId, query, config, summary } of summaries) {
+  for (const { id: campaignId, query, config, board, summary } of summaries) {
     if (summary.kind !== "jobs") continue;
     const converting = summary.qualified / summary.totalFound >= TUNE_MAX_QUALIFIED_RATIO;
     if (summary.totalFound >= TUNE_MIN_JOBS && !converting && isFresh("tune", campaignId)) {
-      const { minScore, board } = campaignConfigSchema.parse(config);
+      const { minScore } = campaignConfigSchema.parse(config);
       campaignTunes.push({
         campaignId,
         query,
-        config: { minScore: minScore ?? null, board: board ?? null },
+        config: { minScore: minScore ?? null, board: board?.domain ?? null },
         counts: {
           totalFound: summary.totalFound,
           qualified: summary.qualified,

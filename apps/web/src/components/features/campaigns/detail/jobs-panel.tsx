@@ -51,7 +51,7 @@ export function CampaignJobsPanel(props: CampaignJobsPanelProps): ReactElement {
   const pagination = usePaginationParams({ prefix: "jobs" });
   const [selection, setSelection] = useState<GridRowSelectionModel>(EMPTY_SELECTION);
 
-  const isUpwork = campaign.config.board === UPWORK_DOMAIN;
+  const isUpwork = campaign.board?.domain === UPWORK_DOMAIN;
 
   // Filters run server-side, so they cover the whole campaign rather than the loaded page.
   const term = useDebouncedValue(search.trim(), SEARCH_DEBOUNCE_MS);

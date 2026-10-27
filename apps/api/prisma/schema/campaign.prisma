@@ -39,6 +39,9 @@ model Campaign {
   updatedAt     DateTime       @updatedAt @map("updated_at")
   completedAt   DateTime?      @map("completed_at")
   config        Json           @default("{}")
+  // The board a search, auto-apply or networking campaign works; null for pasted links.
+  boardId       String?        @map("board_id")
+  board         JobBoard?      @relation(fields: [boardId], references: [id], onDelete: SetNull)
   // Discovery reuses a campaign by this id, not by query text: the pilot may rewrite a search's query.
   pilotSearchId String?        @map("pilot_search_id")
 
@@ -53,5 +56,6 @@ model Campaign {
   @@index([userId, pilotSearchId])
   // The pilot activity probe takes MAX(updatedAt) per user every two minutes.
   @@index([userId, updatedAt])
+  @@index([boardId])
   @@map("campaigns")
 }

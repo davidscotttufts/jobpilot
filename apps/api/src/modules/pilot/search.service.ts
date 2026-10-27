@@ -6,7 +6,8 @@ import type {
 import { inject, injectable } from "@needle-di/core";
 import { HOUR_MS } from "@/common/date/buckets";
 import { conflict, findOwned } from "@/common/errors";
-import { PrismaClient } from "@/generated/prisma/client";
+import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { BOARD_REF_SELECT, JobBoardService } from "@/modules/job-board/job-board.service";
 import { TASK_LIST_SNAPSHOT_RESET } from "./tasks/snapshot";
 
 /** A run with this many new jobs is "good": re-run it soon while the board is yielding. */
@@ -34,10 +35,15 @@ export function scheduleNextRun(emptyRuns: number, run: ReportPilotSearchRunInpu
   };
 }
 
+const SEARCH_INCLUDE = { board: { select: BOARD_REF_SELECT } } satisfies Prisma.PilotSearchInclude;
+
 /** The pilot's self-managed discovery searches. */
 @injectable()
 export class PilotSearchService {
-  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly boards = inject(JobBoardService),
+  ) {}
 
   private clearTaskList(userId: string) {
     return this.prisma.pilotState.updateMany({ where: { userId }, data: TASK_LIST_SNAPSHOT_RESET });
@@ -50,11 +56,11 @@ export class PilotSearchService {
   private async assertUnique(
     userId: string,
     query: string,
-    board: string | null,
-    exceptId?: string,
+    boardId: string | null,
+    exceptId: string | null = null,
   ) {
     const clash = await this.prisma.pilotSearch.findFirst({
-      where: { userId, query, board, ...(exceptId ? { id: { not: exceptId } } : {}) },
+      where: { userId, query, boardId, ...(exceptId ? { id: { not: exceptId } } : {}) },
       select: { id: true },
     });
     if (clash) throw conflict("A search with this query and board already exists.");
@@ -65,7 +71,7 @@ export class PilotSearchService {
       (where) =>
         this.prisma.pilotSearch.findFirst({
           where,
-          select: { query: true, board: true, emptyRuns: true },
+          select: { query: true, boardId: true, emptyRuns: true },
         }),
       { id, userId },
       "Search",
@@ -73,20 +79,25 @@ export class PilotSearchService {
   }
 
   list(userId: string) {
-    return this.prisma.pilotSearch.findMany({ where: { userId }, orderBy: { nextRunAt: "asc" } });
+    return this.prisma.pilotSearch.findMany({
+      where: { userId },
+      include: SEARCH_INCLUDE,
+      orderBy: { nextRunAt: "asc" },
+    });
   }
 
   async create(userId: string, input: CreatePilotSearchInput) {
-    const board = input.board ?? null;
-    await this.assertUnique(userId, input.query, board);
+    const boardId = await this.boards.resolveId(input.board ?? null);
+    await this.assertUnique(userId, input.query, boardId);
     const row = await this.prisma.pilotSearch.create({
       data: {
         userId,
         query: input.query,
-        board,
+        boardId,
         resumeId: input.resumeId ?? null,
         reason: input.reason,
       },
+      include: SEARCH_INCLUDE,
     });
     await this.clearTaskList(userId);
     return row;
@@ -95,16 +106,18 @@ export class PilotSearchService {
   async update(userId: string, id: string, input: UpdatePilotSearchInput) {
     const existing = await this.findOwnedSearch(userId, id);
     const query = input.query ?? existing.query;
-    const board = input.board === undefined ? existing.board : input.board;
+    const boardId =
+      input.board === undefined ? existing.boardId : await this.boards.resolveId(input.board);
     // A different query or board is a different search, so its schedule starts over.
-    const isNewSearch = query !== existing.query || board !== existing.board;
-    if (isNewSearch) await this.assertUnique(userId, query, board, id);
+    const isNewSearch = query !== existing.query || boardId !== existing.boardId;
+    if (isNewSearch) await this.assertUnique(userId, query, boardId, id);
 
     const row = await this.prisma.pilotSearch.update({
       where: { id },
+      include: SEARCH_INCLUDE,
       data: {
         query: input.query,
-        board: input.board,
+        ...(input.board !== undefined && { boardId }),
         resumeId: input.resumeId,
         reason: input.reason,
         ...(isNewSearch
@@ -127,6 +140,7 @@ export class PilotSearchService {
     const existing = await this.findOwnedSearch(userId, id);
     const row = await this.prisma.pilotSearch.update({
       where: { id },
+      include: SEARCH_INCLUDE,
       data: scheduleNextRun(existing.emptyRuns, input, new Date()),
     });
     await this.clearTaskList(userId);

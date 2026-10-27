@@ -4,14 +4,17 @@ import { z } from "zod/v4";
 const boardDomain = z.string().trim().toLowerCase().min(1);
 
 /**
- * Links a catalog board to the profile by domain. An unknown domain is added to the catalog
- * unlisted, named by `name` (or the domain itself). Logins are credentials scoped to the domain.
+ * Links a catalog board to the user by domain. An unknown domain is added to the catalog
+ * unlisted, named by `name` (or the domain itself). Logins are board credentials.
  */
 export const jobBoardSchema = z.object({
   domain: boardDomain,
   name: z.string().trim().optional(),
   searchUrl: z.string().trim().optional(),
 });
+
+/** A board inside another resource's response, e.g. the board a job was found on. */
+export const boardRefSchema = z.object({ id: z.uuid(), domain: z.string(), name: z.string() });
 
 /** A global catalog row. */
 export const adminBoardSchema = z.object({

@@ -1,7 +1,22 @@
 import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { inject, injectable } from "@needle-di/core";
-import { findOwned } from "@/common/errors";
+import { findOwned, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { boardHost, hostCandidates, newBoardDomain } from "./board-host";
+
+/** How a board appears inside another resource's response. */
+export const BOARD_REF_SELECT = {
+  id: true,
+  domain: true,
+  name: true,
+} satisfies Prisma.JobBoardSelect;
+
+export type BoardRef = Prisma.JobBoardGetPayload<{ select: typeof BOARD_REF_SELECT }>;
+
+interface NewBoardFields {
+  name?: string;
+  searchUrl?: string;
+}
 
 /** A link is identity plus the catalog fields it exposes; `id` is the link's, for DELETE. */
 const LINK_SELECT = {
@@ -43,19 +58,85 @@ export class JobBoardService {
     });
   }
 
+  /**
+   * The catalog row a board string names, by its host then each parent domain, or null. Read-only:
+   * filters use it, so a typo in `?board=` never adds a catalog row.
+   */
+  async find(input: string): Promise<BoardRef | null> {
+    const host = boardHost(input);
+    if (!host) {
+      return null;
+    }
+    const candidates = hostCandidates(host);
+    const rows = await this.prisma.jobBoard.findMany({
+      where: { domain: { in: candidates } },
+      select: BOARD_REF_SELECT,
+    });
+    // Most specific first: a catalog row for `in.indeed.com` beats `indeed.com`.
+    for (const candidate of candidates) {
+      const row = rows.find((r) => r.domain === candidate);
+      if (row) {
+        return row;
+      }
+    }
+    return null;
+  }
+
+  /** `find`, else a new unlisted row: every write that takes a board string goes through this. */
+  async resolve(input: string, fields: NewBoardFields = {}): Promise<BoardRef | null> {
+    const found = await this.find(input);
+    if (found) {
+      return found;
+    }
+    const host = boardHost(input);
+    if (!host) {
+      return null;
+    }
+    const domain = newBoardDomain(host);
+    // An unknown domain enters the catalog unlisted: admins see it, other users are not offered it.
+    // Upsert, since two agents can report the same new board at once.
+    return this.prisma.jobBoard.upsert({
+      where: { domain },
+      create: { domain, name: fields.name || domain, searchUrl: fields.searchUrl || null },
+      update: {},
+      select: BOARD_REF_SELECT,
+    });
+  }
+
+  /** `resolve` for a nullable board field, down to the id a foreign key stores. */
+  async resolveId(input: string | null): Promise<string | null> {
+    if (input === null) {
+      return null;
+    }
+    return (await this.resolve(input))?.id ?? null;
+  }
+
+  /** The boards with the most applications matching `where`, by name. */
+  async topBoards(where: Prisma.ApplicationWhereInput, take = 5) {
+    const rows = await this.prisma.application.groupBy({
+      by: ["boardId"],
+      where: { ...where, boardId: { not: null } },
+      _count: { _all: true },
+      orderBy: { _count: { id: "desc" } },
+      take,
+    });
+    const boards = await this.prisma.jobBoard.findMany({
+      where: { id: { in: rows.flatMap((row) => (row.boardId ? [row.boardId] : [])) } },
+      select: { id: true, name: true },
+    });
+    const names = new Map(boards.map((board) => [board.id, board.name]));
+    return rows.flatMap((row) => {
+      const board = row.boardId ? names.get(row.boardId) : null;
+      return board ? [{ board, count: row._count._all }] : [];
+    });
+  }
+
   /** Links by domain. A second link to the same board is a 409 from the unique index. */
   async create(userId: string, input: JobBoardInput) {
-    // An unknown domain enters the catalog unlisted: admins see it, other users are not offered it.
-    const board = await this.prisma.jobBoard.upsert({
-      where: { domain: input.domain },
-      create: {
-        domain: input.domain,
-        name: input.name || input.domain,
-        searchUrl: input.searchUrl || null,
-      },
-      update: {},
-      select: { id: true },
-    });
+    const board = await this.resolve(input.domain, input);
+    if (!board) {
+      throw unprocessable("Board domain is empty.");
+    }
     const row = await this.prisma.userJobBoard.create({
       data: { userId, jobBoardId: board.id },
       select: LINK_SELECT,

@@ -17,6 +17,10 @@ are `bun --cwd=apps/api run …`.
    `apps/api/prisma/migrations/<yyyymmddhhmmss>_<name>/migration.sql` and edit it: Prisma turns
    renames into drop + add - hand-edit to `ALTER ... RENAME` when data must survive. Data fixes
    that need TS logic go in a one-off `apps/api/scripts/<name>.ts` with a `--dry-run` report.
+   `migrate deploy` applies every pending migration at once, so a script can't run between two of
+   them. When the migration needs the script's output, run the script first against the old
+   schema, have it fill a staging table the migration joins on, and make the migration
+   `RAISE EXCEPTION` before any change if rows are left unmapped (`20261026070000_board_ids`).
 4. `db:migrate:apply` against the copy, run the data script, spot-check counts and samples, and
    run the app against the copy. Then `db:generate`.
 5. Ask the user before touching production.

@@ -56,7 +56,7 @@ create one; `resumeId` defaults to `user.primaryResumeId`, and leave `maxApplica
 unlimited:
 
 ```bash
-jobpilot-api POST /api/campaigns --data '{"query":"<query>","source":"auto_apply","config":{"board":"<domain>","resumeId":"<RESUME_ID>","minScore":<n>}}'
+jobpilot-api POST /api/campaigns --data '{"query":"<query>","source":"auto_apply","board":"<domain>","config":{"resumeId":"<RESUME_ID>","minScore":<n>}}'
 ```
 
 Read `.id` as `CAMPAIGN_ID`.

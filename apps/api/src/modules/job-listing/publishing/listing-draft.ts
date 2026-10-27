@@ -34,7 +34,7 @@ export interface ListingSourceJob {
   location?: string | null;
   salary?: string | null;
   type?: string | null;
-  board?: string | null;
+  boardId?: string | null;
   description?: string | null;
   brief?: string | null;
 }
@@ -53,7 +53,7 @@ export interface ListingDraft {
   requirements: string[];
   responsibilities: string[];
   yearsExperience: number | null;
-  board: string | null;
+  boardId: string | null;
   url: string;
 }
 
@@ -140,8 +140,7 @@ export function buildListingDraft(job: ListingSourceJob): ListingDraft | null {
     requirements: bullets(brief.requirements),
     responsibilities: bullets(brief.responsibilities),
     yearsExperience: yearsExperience(brief.yearsExperience),
-    // Lowercased so the `?board=` filter is an indexed equality hit, not an ILIKE scan.
-    board: clean(job.board)?.toLowerCase() ?? null,
+    boardId: job.boardId ?? null,
     url: normalizeJobUrl(url),
   };
 }

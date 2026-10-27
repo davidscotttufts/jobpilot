@@ -38,8 +38,8 @@ owns per-job variants, guarded in `apps/api/src/modules/resume/tailoring/structu
 
   The host injects `JOBPILOT_API`, `JOBPILOT_API_TOKEN`, and `JOBPILOT_WEB` (for user-facing
   links).
-- Load profile, resume, and credentials per `skills/_shared/setup.md`. Credential order: board
-  override, `scope === <domain>`, `scope === "default"`. Log in before searching.
+- Load profile, resume, and credentials per `skills/_shared/setup.md`. Resolve a board login with
+  `GET /api/credentials/resolve` (the board's login, else the default). Log in before searching.
 - Dedupe with `GET /api/applied/check` before applying.
 - Campaigns: `PATCH /api/campaigns/[id]/jobs/[jobKey]` for non-terminal transitions.
   `POST .../jobs/[jobKey]/result` for applied / failed / skipped. It updates the job and creates

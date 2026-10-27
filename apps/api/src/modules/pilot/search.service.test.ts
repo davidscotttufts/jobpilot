@@ -1,5 +1,6 @@
 import { HOUR_MS } from "@/common/date/buckets";
 import type { PrismaClient } from "@/generated/prisma/client";
+import { makeBoards } from "@/modules/job-board/job-board.fake";
 import { PilotSearchService, scheduleNextRun } from "./search.service";
 import { describe, expect, it } from "bun:test";
 
@@ -65,16 +66,16 @@ function makeService(over: SearchRows = {}) {
       },
     },
   };
-  return { svc: new PilotSearchService(db as unknown as PrismaClient), rec };
+  return { svc: new PilotSearchService(db as unknown as PrismaClient, makeBoards()), rec };
 }
 
 describe("PilotSearchService", () => {
-  const existing = { id: "s1", query: "react", board: null, emptyRuns: 0 };
+  const existing = { id: "s1", query: "react", boardId: null, emptyRuns: 0 };
 
   it("creates a search and clears the cached task list", async () => {
     const { svc, rec } = makeService();
     await svc.create("p1", { query: "react", reason: "core stack" });
-    expect(rec.creates[0]).toMatchObject({ userId: "p1", query: "react", board: null });
+    expect(rec.creates[0]).toMatchObject({ userId: "p1", query: "react", boardId: null });
     expect(rec.taskListResets).toBe(1);
   });
 

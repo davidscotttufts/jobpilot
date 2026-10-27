@@ -7,6 +7,7 @@ import type { AuthUser } from "@/common/auth";
 import { bucketPerDay, startOfTimeline, startOfWeek } from "@/common/date/buckets";
 import { badRequest, forbidden, notFound } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
+import { JobBoardService } from "@/modules/job-board/job-board.service";
 import { COST_WINDOW_MS } from "@/modules/pilot/pilot.stats";
 import { tokenUsage } from "@/modules/pilot/tasks/run-history";
 
@@ -24,7 +25,10 @@ type AdminUserRow = Prisma.UserGetPayload<{ select: typeof USER_SELECT }>;
 
 @injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly boards = inject(JobBoardService),
+  ) {}
 
   async stats() {
     const weekStart = startOfWeek();
@@ -41,7 +45,7 @@ export class AdminService {
       totalBoards,
       totalBoardLinks,
       statusRows,
-      topBoardRows,
+      topBoards,
       signupRows,
     ] = await Promise.all([
       this.prisma.user.count(),
@@ -61,13 +65,7 @@ export class AdminService {
       this.prisma.jobBoard.count(),
       this.prisma.userJobBoard.count(),
       this.prisma.application.groupBy({ by: ["status"], _count: { _all: true } }),
-      this.prisma.application.groupBy({
-        by: ["board"],
-        where: { board: { not: null } },
-        _count: { _all: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 5,
-      }),
+      this.boards.topBoards({}),
       this.prisma.user.findMany({
         where: { createdAt: { gte: timelineStart } },
         select: { createdAt: true },
@@ -93,9 +91,7 @@ export class AdminService {
         boardLinks: totalBoardLinks,
       },
       statusBreakdown: statusRows.map((row) => ({ status: row.status, count: row._count._all })),
-      topBoards: topBoardRows
-        .filter((row) => row.board)
-        .map((row) => ({ board: row.board as string, count: row._count._all })),
+      topBoards,
       signupsPerDay: bucketPerDay(
         signupRows.map((row) => row.createdAt),
         timelineStart,

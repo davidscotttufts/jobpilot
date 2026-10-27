@@ -74,31 +74,31 @@ model User {
   verificationTokens VerificationToken[]
   oauthAccounts      OAuthAccount[]
 
-  resumes            Resume[]
-  autoApply          AutoApplySettings?
-  applications       Application[]
-  campaigns          Campaign[]
-  credentials        Credential[]
-  jobBoards          UserJobBoard[]
-  emailAccount       EmailAccount?
-  emailOAuthClient   EmailOAuthClient?
-  upworkProposals    UpworkProposal[]
-  upworkProfile      UpworkProfile?
-  upworkAccount      UpworkAccount?
-  upworkInboxItems   UpworkInboxItem[]
-  references         Reference[]
-  salaryPreferences  SalaryPreference[]
-  contacts           Contact[]
-  networkingMessages NetworkingMessage[]
-  coverLetters       CoverLetter[]
-  pilotState         PilotState?
-  pilotSearches      PilotSearch[]
-  pilotRuns          PilotRun[]
-  pilotQuestions     PilotQuestion[]
-  pilotJournal       PilotJournalEntry[]
-  profileAnswers     ProfileAnswer[]
+  resumes              Resume[]
+  autoApply            AutoApplySettings?
+  applications         Application[]
+  campaigns            Campaign[]
+  credentials          Credential[]
+  jobBoards            UserJobBoard[]
+  emailAccount         EmailAccount?
+  emailOAuthClient     EmailOAuthClient?
+  upworkProposals      UpworkProposal[]
+  upworkProfile        UpworkProfile?
+  upworkAccount        UpworkAccount?
+  upworkInboxItems     UpworkInboxItem[]
+  references           Reference[]
+  salaryPreferences    SalaryPreference[]
+  contacts             Contact[]
+  networkingMessages   NetworkingMessage[]
+  coverLetters         CoverLetter[]
+  pilotState           PilotState?
+  pilotSearches        PilotSearch[]
+  pilotRuns            PilotRun[]
+  pilotQuestions       PilotQuestion[]
+  pilotJournal         PilotJournalEntry[]
+  profileAnswers       ProfileAnswer[]
   webPushSubscriptions WebPushSubscription[]
-  promotionPosts     PromotionPost[]
+  promotionPosts       PromotionPost[]
 
   @@map("users")
 }

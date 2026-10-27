@@ -110,7 +110,7 @@ export function ApplicationDetail(props: ApplicationDetailProps): ReactElement {
               <StatusChip status={app.status} />
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ flexWrap: "wrap" }}>
-              <LabelValue label="Board">{app.board ?? ""}</LabelValue>
+              <LabelValue label="Board">{app.board?.name ?? ""}</LabelValue>
               <LabelValue label="Source">{app.source}</LabelValue>
               <LabelValue label="Location">{app.location ?? ""}</LabelValue>
               <LabelValue label="Match score">

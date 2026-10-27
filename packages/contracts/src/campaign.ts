@@ -40,7 +40,6 @@ export const CAMPAIGN_JOB_STATUSES = [
 export const campaignJobStatusSchema = z.enum(CAMPAIGN_JOB_STATUSES);
 
 export const campaignConfigSchema = z.object({
-  board: z.string().min(1).optional(),
   resumeId: z.uuid().optional(),
   minScore: z.number().int().min(0).max(100).optional(),
   maxApplications: z.number().int().min(1).max(500).optional(),
@@ -100,6 +99,8 @@ export const createCampaignSchema = z
   .object({
     query: z.string().min(1),
     source: campaignSourceSchema,
+    /** The board's domain; resolved to a catalog row, which is created unlisted when unknown. */
+    board: z.string().trim().min(1).optional(),
     config: campaignConfigSchema.optional(),
     createdBy: campaignActorSchema.default("user"),
     /** Set by the pilot's discovery run so the search can find this campaign again by id. */

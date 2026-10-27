@@ -23,7 +23,7 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "List job boards",
       description:
-        "Returns the user's boards: listed catalog boards in catalog order, then the user's own additions. Logins are credentials scoped to the board's domain - see `GET /credentials/resolve`.",
+        "Returns the user's boards: listed catalog boards in catalog order, then the user's own additions. Logins are board credentials - see `GET /credentials/resolve`.",
     },
   })
   .get("/catalog", ({ user }) => svc.catalog(user.id), {
@@ -49,6 +49,6 @@ export const jobBoardController = new Elysia({
     detail: {
       summary: "Remove job board",
       description:
-        "Unlinks the board from the user and returns the id of the removed link. The catalog row and any credential for the domain survive.",
+        "Unlinks the board from the user and returns the id of the removed link. The catalog row and any credential for the board survive.",
     },
   });

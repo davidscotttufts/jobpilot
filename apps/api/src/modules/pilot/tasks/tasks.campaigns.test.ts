@@ -7,7 +7,8 @@ describe("TaskListService campaign.scorePending", () => {
   const campaign = {
     id: "c1",
     query: "react",
-    config: { board: "linkedin", minScore: 70 },
+    config: { minScore: 70 },
+    board: { domain: "linkedin.com" },
     _count: { jobs: 9 },
     jobs: [{ key: "j1", url: "https://x/j1", title: "Engineer" }],
   };
@@ -16,7 +17,7 @@ describe("TaskListService campaign.scorePending", () => {
     const taskList = await service({ scorePendingCampaigns: [campaign] }).refresh("p1");
     const task = findTask(taskList, "campaign.scorePending");
     expect(task?.subjectId).toBe("c1");
-    expect(task?.payload).toMatchObject({ board: "linkedin", minScore: 70, pendingCount: 9 });
+    expect(task?.payload).toMatchObject({ board: "linkedin.com", minScore: 70, pendingCount: 9 });
   });
 
   // An unscorable row stays pending forever and outranks discovery, so a recent run must hold it back.
@@ -108,7 +109,8 @@ describe("TaskListService campaign reviews", () => {
       {
         id: "c1",
         query: "react",
-        config: { minScore: 70, board: "linkedin" },
+        config: { minScore: 70 },
+        board: { domain: "linkedin.com" },
         source: "search",
       },
     ],
@@ -126,7 +128,7 @@ describe("TaskListService campaign reviews", () => {
     }).refresh("p1");
     const payloadOf = (taskType: TaskType) => findTask(taskList, taskType)?.payload;
     expect(payloadOf("campaign.tune")).toMatchObject({
-      config: { minScore: 70, board: "linkedin" },
+      config: { minScore: 70, board: "linkedin.com" },
       counts: { totalFound: 40, qualified: 4, applied: 1, skipped: 36 },
       topSkipReasons: ["overqualified"],
     });

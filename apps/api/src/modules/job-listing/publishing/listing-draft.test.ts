@@ -13,7 +13,7 @@ const job = (overrides: Partial<ListingSourceJob> = {}): ListingSourceJob => ({
   location: "New York, NY",
   salary: "$180k",
   type: "Full-time",
-  board: "linkedin.com",
+  boardId: "linkedin-board",
   description: "A long description.",
   brief,
   ...overrides,
@@ -115,9 +115,11 @@ describe("projection", () => {
   });
 
   it("gives two reposts of one posting the same dedupe key but different source urls", () => {
-    const a = buildListingDraft(job({ url: "https://linkedin.com/jobs/1", board: "linkedin.com" }));
+    const a = buildListingDraft(
+      job({ url: "https://linkedin.com/jobs/1", boardId: "linkedin-board" }),
+    );
     const b = buildListingDraft(
-      job({ url: "https://indeed.com/viewjob?jk=9", board: "indeed.com" }),
+      job({ url: "https://indeed.com/viewjob?jk=9", boardId: "indeed-board" }),
     );
     expect(a?.dedupeKey).toBe(b?.dedupeKey as string);
     expect(a?.slug).toBe(b?.slug as string);
