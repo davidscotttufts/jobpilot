@@ -1,15 +1,6 @@
+import { injectable } from "@needle-di/core";
 import { google } from "googleapis";
-import { unprocessable } from "@/common/errors";
-import type { EmailAccount, EmailProvider } from "@/generated/prisma/client";
-import type {
-  MailboxProvider,
-  NormalizedMessage,
-  OAuthClientConfig,
-  SendMessageInput,
-  SentMessage,
-  SyncResult,
-  TokenSet,
-} from "./email.provider";
+import { badGateway, unprocessable } from "@/common/errors";
 import {
   buildMimeMessage,
   domainOf,
@@ -20,6 +11,15 @@ import {
   parseAddress,
   stripQuotedReplies,
 } from "./email.utils";
+import type {
+  MailboxSession,
+  NormalizedMessage,
+  OAuthClientConfig,
+  SendMessageInput,
+  SentMessage,
+  SyncResult,
+  TokenSet,
+} from "./gmail.types";
 
 /**
  * Derived from `google.auth.OAuth2` so the type always matches the bundled
@@ -69,23 +69,25 @@ export function scopeCanRead(scope: string | null | undefined): boolean {
   return grants(scope, GMAIL_READ_SCOPE);
 }
 
-class GmailProvider implements MailboxProvider {
-  private makeOAuthClient(config: OAuthClientConfig): OAuth2Client {
-    return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
-  }
+function oauthClient(config: OAuthClientConfig): OAuth2Client {
+  return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUri);
+}
 
-  private clientForAccount(config: OAuthClientConfig, account: EmailAccount): OAuth2Client {
-    const client = this.makeOAuthClient(config);
-    client.setCredentials({
-      access_token: account.accessToken,
-      refresh_token: account.refreshToken,
-      expiry_date: account.tokenExpiresAt?.getTime(),
-    });
-    return client;
-  }
+function gmailFor(session: MailboxSession) {
+  const auth = oauthClient(session.config);
+  auth.setCredentials({
+    access_token: session.accessToken,
+    refresh_token: session.refreshToken,
+    expiry_date: session.tokenExpiresAt?.getTime(),
+  });
+  return google.gmail({ version: "v1", auth });
+}
 
-  getAuthorizeUrl(config: OAuthClientConfig, state: string): string {
-    return this.makeOAuthClient(config).generateAuthUrl({
+@injectable()
+export class GmailClient {
+  /** The consent-screen URL; `state` is the CSRF token the caller keeps in a cookie. */
+  authorizeUrl(config: OAuthClientConfig, state: string): string {
+    return oauthClient(config).generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
       scope: GMAIL_SCOPES,
@@ -93,24 +95,22 @@ class GmailProvider implements MailboxProvider {
     });
   }
 
+  /** Trades the callback's `code` for tokens and resolves the mailbox address. */
   async exchangeCode(
     config: OAuthClientConfig,
     code: string,
   ): Promise<{ tokens: TokenSet; email: string }> {
-    const client = this.makeOAuthClient(config);
+    const client = oauthClient(config);
     const { tokens } = await client.getToken(code);
-
     if (!tokens.access_token) {
-      throw new Error("Google did not return an access token");
+      throw badGateway("Google did not return an access token.");
     }
 
     client.setCredentials(tokens);
-    const oauth2 = google.oauth2({ version: "v2", auth: client });
-    const me = await oauth2.userinfo.get();
+    const me = await google.oauth2({ version: "v2", auth: client }).userinfo.get();
     const email = me.data.email;
-
     if (!email) {
-      throw new Error("Could not resolve Google account email");
+      throw badGateway("Google did not return the account's email address.");
     }
 
     return {
@@ -125,12 +125,11 @@ class GmailProvider implements MailboxProvider {
   }
 
   async refresh(config: OAuthClientConfig, refreshToken: string): Promise<TokenSet> {
-    const client = this.makeOAuthClient(config);
+    const client = oauthClient(config);
     client.setCredentials({ refresh_token: refreshToken });
     const { credentials } = await client.refreshAccessToken();
-
     if (!credentials.access_token) {
-      throw new Error("Failed to refresh Google access token");
+      throw badGateway("Google did not return a refreshed access token.");
     }
 
     return {
@@ -141,14 +140,8 @@ class GmailProvider implements MailboxProvider {
     };
   }
 
-  async sendMessage(
-    config: OAuthClientConfig,
-    account: EmailAccount,
-    input: SendMessageInput,
-  ): Promise<SentMessage> {
-    const auth = this.clientForAccount(config, account);
-    const gmail = google.gmail({ version: "v1", auth });
-
+  /** Callers check `scopeCanSend` first; this assumes the grant includes send. */
+  async send(session: MailboxSession, input: SendMessageInput): Promise<SentMessage> {
     const raw = encodeBase64Url(
       buildMimeMessage({
         to: input.to,
@@ -159,7 +152,7 @@ class GmailProvider implements MailboxProvider {
       }),
     );
 
-    const res = await gmail.users.messages.send({
+    const res = await gmailFor(session).users.messages.send({
       userId: "me",
       requestBody: { raw, threadId: input.threadId },
     });
@@ -170,22 +163,32 @@ class GmailProvider implements MailboxProvider {
     };
   }
 
-  async syncMessages(config: OAuthClientConfig, account: EmailAccount): Promise<SyncResult> {
-    const auth = this.clientForAccount(config, account);
-    const gmail = google.gmail({ version: "v1", auth });
+  /**
+   * Delta sync from `historyId` when the cursor is still valid, otherwise a recent-mail list.
+   * Returns the new cursor for the caller to persist.
+   */
+  async sync(session: MailboxSession): Promise<SyncResult> {
+    try {
+      return await this.fetchNewMessages(session);
+    } catch (error) {
+      rethrowGmailError(error);
+    }
+  }
 
+  private async fetchNewMessages(session: MailboxSession): Promise<SyncResult> {
+    const gmail = gmailFor(session);
     const messageIds: string[] = [];
     let newHistoryId: string | null = null;
 
-    if (account.historyId) {
+    if (session.historyId) {
       try {
         const res = await gmail.users.history.list({
           userId: "me",
-          startHistoryId: account.historyId,
+          startHistoryId: session.historyId,
           historyTypes: ["messageAdded"],
         });
 
-        newHistoryId = res.data.historyId ?? account.historyId;
+        newHistoryId = res.data.historyId ?? session.historyId;
 
         for (const h of res.data.history ?? []) {
           for (const ma of h.messagesAdded ?? []) {
@@ -197,7 +200,7 @@ class GmailProvider implements MailboxProvider {
       }
     }
 
-    if (!account.historyId || newHistoryId === null) {
+    if (!session.historyId || newHistoryId === null) {
       const res = await gmail.users.messages.list({
         userId: "me",
         maxResults: 50,
@@ -219,13 +222,10 @@ class GmailProvider implements MailboxProvider {
       try {
         const msg = await gmail.users.messages.get({ userId: "me", id, format: "full" });
         const headers = (msg.data.payload?.headers ?? []) as EmailHeader[];
-        const fromHeader = headerValue(headers, "From");
-        const { email, name } = parseAddress(fromHeader);
-        const internal = msg.data.internalDate
+        const { email, name } = parseAddress(headerValue(headers, "From"));
+        const receivedAt = msg.data.internalDate
           ? new Date(Number(msg.data.internalDate))
           : new Date();
-
-        const plain = stripQuotedReplies(extractPlainText(msg.data.payload));
 
         newMessages.push({
           providerId: msg.data.id ?? id,
@@ -235,35 +235,14 @@ class GmailProvider implements MailboxProvider {
           fromName: name,
           fromDomain: domainOf(email),
           snippet: msg.data.snippet ?? "",
-          rawBody: plain,
-          receivedAt: internal,
+          rawBody: stripQuotedReplies(extractPlainText(msg.data.payload)),
+          receivedAt,
         });
       } catch {
         // skip individual failures
       }
     }
 
-    return {
-      fetched: messageIds.length,
-      newMessages,
-      historyId: newHistoryId,
-    };
+    return { fetched: messageIds.length, newMessages, historyId: newHistoryId };
   }
-}
-
-const gmailProvider = new GmailProvider();
-
-export function getProvider(name: EmailProvider): MailboxProvider {
-  if (name === "gmail") {
-    return gmailProvider;
-  }
-  throw new Error(`Unsupported email provider: ${name}`);
-}
-
-/** Whether the account's stored scope permits sending (currently Gmail-only). */
-export function accountCanSend(account: { provider: string; scope: string | null }): boolean {
-  if (account.provider === "gmail") {
-    return scopeCanSend(account.scope);
-  }
-  return false;
 }

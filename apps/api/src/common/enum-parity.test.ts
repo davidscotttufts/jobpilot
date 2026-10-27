@@ -11,7 +11,7 @@ import {
   CAMPAIGN_STATUSES,
 } from "@jobpilot/contracts/campaign";
 import { COVER_LETTER_SOURCES } from "@jobpilot/contracts/cover-letter";
-import { CLASSIFICATIONS, EMAIL_PROVIDERS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
+import { CLASSIFICATIONS, REVIEW_STATUSES } from "@jobpilot/contracts/email";
 import { JOB_LISTING_STATUSES } from "@jobpilot/contracts/job-listing";
 import {
   CONTACT_DISCOVERY_SOURCES,
@@ -59,7 +59,6 @@ const PAIRS: [string, readonly string[], Record<string, string>][] = [
   ],
   ["CoverLetterSource", COVER_LETTER_SOURCES, prismaEnums.CoverLetterSource],
   ["EmailClassification", CLASSIFICATIONS, prismaEnums.EmailClassification],
-  ["EmailProvider", EMAIL_PROVIDERS, prismaEnums.EmailProvider],
   ["EmailReviewStatus", REVIEW_STATUSES, prismaEnums.EmailReviewStatus],
   ["JobListingStatus", JOB_LISTING_STATUSES, prismaEnums.JobListingStatus],
   ["LinkedinMessageKind", LINKEDIN_KINDS, prismaEnums.LinkedinMessageKind],

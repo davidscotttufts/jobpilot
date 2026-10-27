@@ -7,7 +7,7 @@ import {
   rethrowGmailError,
   scopeCanRead,
   scopeCanSend,
-} from "./gmail.provider";
+} from "./gmail.client";
 import { describe, expect, it } from "bun:test";
 
 const FULL_GRANT = GMAIL_SCOPES.join(" ");

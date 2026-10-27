@@ -1,12 +1,11 @@
 import { inboxChannel } from "@jobpilot/contracts/sse";
 import { inject, injectable } from "@needle-di/core";
-import { CryptoService } from "@/common/crypto";
-import { ErrorCodes, HttpError, notFound } from "@/common/errors";
+import { isPrismaError, notFound, PRISMA_ERRORS } from "@/common/errors";
 import { logger } from "@/common/logger";
 import { publish } from "@/common/sse";
 import { PrismaClient } from "@/generated/prisma/client";
-import { loadFreshAccount } from "../account/account.utils";
-import { getProvider, rethrowGmailError } from "../gmail.provider";
+import { MailboxSessionService } from "../account/mailbox-session.service";
+import { GmailClient } from "../gmail.client";
 
 /** The fields the reply-linker needs from a freshly-synced inbound message. */
 interface InboundForLinking {
@@ -19,7 +18,8 @@ interface InboundForLinking {
 export class EmailSyncService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
-    private readonly crypto = inject(CryptoService),
+    private readonly sessions = inject(MailboxSessionService),
+    private readonly gmail = inject(GmailClient),
   ) {}
 
   /**
@@ -52,26 +52,15 @@ export class EmailSyncService {
   }
 
   async syncInbox(userId: string) {
-    let loaded: Awaited<ReturnType<typeof loadFreshAccount>>;
-    try {
-      loaded = await loadFreshAccount(this.prisma, this.crypto, userId);
-    } catch (e) {
-      throw new HttpError(
-        ErrorCodes.UNPROCESSABLE,
-        e instanceof Error ? e.message : "Token refresh failed",
-        401,
-      );
-    }
-    if (!loaded) {
+    const mailbox = await this.sessions.open(userId);
+    if (!mailbox) {
       throw notFound("No email account connected");
     }
-
-    const { account: active, config } = loaded;
-    const provider = getProvider(active.provider);
+    const { account: active, session } = mailbox;
 
     publish(inboxChannel, { userId }, { type: "sync.started" });
 
-    const result = await provider.syncMessages(config, active).catch(rethrowGmailError);
+    const result = await this.gmail.sync(session);
 
     let inserted = 0;
     const insertedForLinking: InboundForLinking[] = [];
@@ -98,7 +87,7 @@ export class EmailSyncService {
           receivedAt: m.receivedAt,
         });
       } catch (e) {
-        if ((e as { code?: string }).code === "P2002") {
+        if (isPrismaError(e, PRISMA_ERRORS.UNIQUE_VIOLATION)) {
           continue;
         }
         throw e;

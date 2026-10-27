@@ -1,10 +1,3 @@
-enum EmailProvider {
-  gmail
-  outlook
-  imap
-
-  @@map("email_provider")
-}
 
 enum EmailClassification {
   interviewing
@@ -29,7 +22,6 @@ model EmailAccount {
   id              String        @id @default(uuid())
   userId          String        @unique @map("user_id")
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider        EmailProvider
   email           String
   accessToken     String?       @map("access_token")
   refreshToken    String?       @map("refresh_token")
@@ -52,7 +44,6 @@ model EmailOAuthClient {
   id           String        @id @default(uuid())
   userId       String        @unique @map("user_id")
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider     EmailProvider @default(gmail)
   clientId     String        @map("client_id") // plaintext (semi-public)
   clientSecret String        @map("client_secret") // ciphertext (per-user DEK)
   createdAt    DateTime      @default(now()) @map("created_at")

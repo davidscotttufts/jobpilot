@@ -1,10 +1,6 @@
 import { z } from "zod/v4";
 import { type ApplicationStatus, statusSchema } from "./application";
 
-export const EMAIL_PROVIDERS = ["gmail", "outlook", "imap"] as const;
-export const emailProviderSchema = z.enum(EMAIL_PROVIDERS);
-export type EmailProvider = z.infer<typeof emailProviderSchema>;
-
 export const CLASSIFICATIONS = [
   "interviewing",
   "rejected",
@@ -48,7 +44,6 @@ export const approveSchema = z.object({
  * first create.
  */
 export const oauthClientUpsertSchema = z.object({
-  provider: emailProviderSchema.optional(),
   clientId: z.string().trim().min(1, "Client ID is required"),
   clientSecret: z.string().optional(),
 });

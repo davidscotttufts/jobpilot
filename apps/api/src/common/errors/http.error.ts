@@ -10,6 +10,7 @@ export const ErrorCodes = {
   EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED",
   RATE_LIMITED: "RATE_LIMITED",
   KEY_UNRECOVERABLE: "KEY_UNRECOVERABLE",
+  BAD_GATEWAY: "BAD_GATEWAY",
   INTERNAL: "INTERNAL_ERROR",
 } as const;
 
@@ -53,6 +54,11 @@ export function unauthorized(message = "Unauthorized"): HttpError {
 
 export function forbidden(message = "Forbidden"): HttpError {
   return new HttpError(ErrorCodes.FORBIDDEN, message, 403);
+}
+
+/** An upstream service (Google, a CAPTCHA solver) failed or answered unusably. */
+export function badGateway(message: string): HttpError {
+  return new HttpError(ErrorCodes.BAD_GATEWAY, message, 502);
 }
 
 /**

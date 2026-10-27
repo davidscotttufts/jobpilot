@@ -1,9 +1,5 @@
 import { statusSchema } from "@jobpilot/contracts/application";
-import {
-  classificationSchema,
-  emailProviderSchema,
-  reviewStatusSchema,
-} from "@jobpilot/contracts/email";
+import { classificationSchema, reviewStatusSchema } from "@jobpilot/contracts/email";
 import { paginatedSchema, paginationQuerySchema } from "@jobpilot/contracts/pagination";
 import { z } from "zod/v4";
 
@@ -21,8 +17,6 @@ export const messagesQuery = paginationQuerySchema.extend(messageFilters.shape);
 
 export const messageCountSchema = z.object({ count: z.number().int().min(0) });
 
-export const startQuery = z.object({ provider: emailProviderSchema.optional() });
-
 export const callbackQuery = z.object({
   code: z.string().optional(),
   state: z.string().optional(),
@@ -37,7 +31,6 @@ export const accountStatusSchema = z.union([
   }),
   z.object({
     connected: z.literal(true),
-    provider: z.string(),
     email: z.string(),
     lastSyncAt: z.date().nullable(),
     canSend: z.boolean(),
@@ -52,7 +45,6 @@ export const accountDisconnectedSchema = z.object({ disconnected: z.boolean() })
 /** OAuth client config status (`account.getOAuthClient`) - never includes the secret. */
 export const oauthClientStatusSchema = z.object({
   configured: z.boolean(),
-  provider: z.string(),
   clientId: z.string().nullable(),
   redirectUri: z.string(),
   scopes: z.array(z.string()),

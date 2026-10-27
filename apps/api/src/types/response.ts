@@ -27,6 +27,7 @@ export const httpErrorResponses = {
   422: errorResponseSchema,
   429: errorResponseSchema,
   500: errorResponseSchema,
+  502: errorResponseSchema,
 } as const;
 
 /** `{ id }` - returned by most create/update routes. */

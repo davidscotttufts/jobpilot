@@ -1,21 +1,16 @@
-import { emailProviderSchema, oauthClientUpsertSchema } from "@jobpilot/contracts/email";
+import { oauthClientUpsertSchema } from "@jobpilot/contracts/email";
 import { Elysia } from "elysia";
 import { oauthStateCookies } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { env } from "@/env";
 import { EmailAccountService } from "./account/account.service";
-import {
-  callbackQuery,
-  oauthClientDeletedSchema,
-  oauthClientStatusSchema,
-  startQuery,
-} from "./email.schema";
+import { callbackQuery, oauthClientDeletedSchema, oauthClientStatusSchema } from "./email.schema";
 
 const account = container.get(EmailAccountService);
 
 const OAUTH_COOKIE_PATH = "/api/email/oauth";
-const STATE_COOKIES = { state: "email_oauth_state", companion: "email_oauth_provider" };
+const STATE_COOKIES = { state: "email_oauth_state" };
 
 /** Bring-your-own Google OAuth client config + the connect (authorize/callback) flow. */
 export const emailOAuthController = new Elysia({
@@ -50,19 +45,17 @@ export const emailOAuthController = new Elysia({
   })
   .get(
     "/oauth/start",
-    async ({ user, query, cookie, redirect }) => {
-      const providerName = query.provider ?? "gmail";
-      const { authorizeUrl, state } = await account.buildAuthorizeUrl(user.id, providerName);
+    async ({ user, cookie, redirect }) => {
+      const { authorizeUrl, state } = await account.buildAuthorizeUrl(user.id);
 
-      oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH).set(state, providerName);
+      oauthStateCookies(cookie, STATE_COOKIES, OAUTH_COOKIE_PATH).set(state);
       return redirect(authorizeUrl);
     },
     {
-      query: startQuery,
       detail: {
         summary: "Start mailbox OAuth flow",
         description:
-          "Builds the provider authorize URL, stores the OAuth state and provider in short-lived cookies, and redirects the browser to the provider's consent screen.",
+          "Builds the Google authorize URL, stores the OAuth state in a short-lived cookie, and redirects the browser to Google's consent screen.",
       },
     },
   )
@@ -85,18 +78,12 @@ export const emailOAuthController = new Elysia({
         return fail("Missing code or state");
       }
 
-      // The provider round-trips through a cookie, so it comes back as a raw string.
-      const providerName = emailProviderSchema.catch("gmail").parse(stateCookies.companion());
       if (stateCookies.state() !== query.state) {
         return fail("OAuth state mismatch");
       }
 
       try {
-        await account.completeEmailOAuth({
-          providerName,
-          code: query.code,
-          userId: user.id,
-        });
+        await account.completeEmailOAuth(user.id, query.code);
       } catch (e) {
         return fail(e instanceof Error ? e.message : "Failed to connect mailbox");
       }
