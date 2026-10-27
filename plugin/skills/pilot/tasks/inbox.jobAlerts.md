@@ -73,8 +73,7 @@ those whose `query` starts with `Job alerts ·` and whose `startedAt` is in the 
 first, so page on only while the last item is still inside the window), then page each one's `GET
 /api/campaigns/<id>/jobs --query limit=100`. Drop any posting whose canonical URL is already there
 (compare canonical forms of both). Run the applied-check (`../../_shared/campaign-flow.md`) on the
-rest, with commas stripped from `title` and `company`: a comma turns the query param into an array
-and 422s even when encoded.
+rest.
 
 ## 3. Rank
 
