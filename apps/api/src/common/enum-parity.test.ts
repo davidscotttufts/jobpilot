@@ -4,6 +4,7 @@ import {
   APPLICATION_SOURCES,
   APPLICATION_STATUSES,
 } from "@jobpilot/contracts/application";
+import { AUTH_TOKEN_KINDS } from "@jobpilot/contracts/auth";
 import {
   CAMPAIGN_ACTORS,
   CAMPAIGN_JOB_STATUSES,
@@ -45,6 +46,7 @@ const PAIRS: [string, readonly string[], Record<string, string>][] = [
   ["ApplicationSource", APPLICATION_SOURCES, prismaEnums.ApplicationSource],
   ["ApplicationEventKind", APPLICATION_EVENT_KINDS, prismaEnums.ApplicationEventKind],
   ["ApplicationEventSource", APPLICATION_EVENT_SOURCES, prismaEnums.ApplicationEventSource],
+  ["AuthTokenKind", AUTH_TOKEN_KINDS, prismaEnums.AuthTokenKind],
   ["Availability", AVAILABILITY, prismaEnums.Availability],
   ["CampaignActor", CAMPAIGN_ACTORS, prismaEnums.CampaignActor],
   ["CampaignJobStatus", CAMPAIGN_JOB_STATUSES, prismaEnums.CampaignJobStatus],

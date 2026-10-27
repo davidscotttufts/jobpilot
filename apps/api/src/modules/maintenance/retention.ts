@@ -71,7 +71,7 @@ export function verificationTokenWhere(c: RetentionCutoffs): Prisma.Verification
   return { OR: [{ expiresAt: { lt: c.token } }, { consumedAt: { lt: c.token } }] };
 }
 
-export function refreshTokenWhere(c: RetentionCutoffs): Prisma.RefreshTokenWhereInput {
+export function authTokenWhere(c: RetentionCutoffs): Prisma.AuthTokenWhereInput {
   return { OR: [{ expiresAt: { lt: c.token } }, { revokedAt: { lt: c.token } }] };
 }
 

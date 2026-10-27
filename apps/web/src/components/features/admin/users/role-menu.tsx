@@ -24,8 +24,7 @@ export function AdminRoleMenu(props: AdminRoleMenuProps): ReactElement {
   const setRole = useApiMutation<AdminUserDto, AssignableRole>(
     (role) => api.admin.users({ id: user.id }).role.patch({ role }),
     {
-      // A promoted user's access token still claims their old role until it refreshes.
-      successMessage: "Role updated. The user picks it up on their next sign-in.",
+      successMessage: "Role updated.",
       onSuccess: () => router.refresh(),
     },
   );

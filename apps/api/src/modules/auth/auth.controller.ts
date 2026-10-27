@@ -1,38 +1,30 @@
 import {
-  ApiTokenCreateSchema,
   ForgotPasswordSchema,
   LoginSchema,
   RegisterSchema,
   ResetPasswordSchema,
   VerifyEmailSchema,
 } from "@jobpilot/contracts";
-import { idParam } from "@jobpilot/contracts/shared";
 import { Elysia } from "elysia";
+import { clearSessionCookie, readSessionCookie, setSessionCookie } from "@/common/auth";
 import { container } from "@/common/di/container";
 import { logger } from "@/common/logger";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
-import { ApiTokenService } from "./api-token.service";
-import { clearAuthCookies, REFRESH_COOKIE, setAuthCookies } from "./auth.cookies";
-import {
-  apiTokenListSchema,
-  apiTokenMintedSchema,
-  authSessionSchema,
-  meSchema,
-} from "./auth.schema";
+import { authSessionSchema, meSchema, terminalTokenSchema } from "./auth.schema";
 import { AuthService } from "./auth.service";
+import { AuthTokenService } from "./auth-token.service";
 import { VerificationService } from "./verification.service";
 
 const authService = container.get(AuthService);
 const verificationService = container.get(VerificationService);
-const apiTokenService = container.get(ApiTokenService);
+const authTokens = container.get(AuthTokenService);
 
 // One hook per route: each public route needs its own policy, and /me and /tokens/* stay unthrottled.
 const limitRegister = rateLimit(RATE_LIMITS.register);
 const limitLoginIp = rateLimit(RATE_LIMITS.loginPerIp);
 const limitLoginAccount = rateLimit(RATE_LIMITS.loginPerAccount);
-const limitRefresh = rateLimit(RATE_LIMITS.refresh);
 const limitEmailVerify = rateLimit(RATE_LIMITS.emailVerify);
 const limitForgotIp = rateLimit(RATE_LIMITS.forgotPerIp);
 const limitForgotEmail = rateLimit(RATE_LIMITS.forgotPerEmail);
@@ -44,7 +36,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     "/register",
     async ({ body, cookie }) => {
       const result = await authService.register(body);
-      setAuthCookies(cookie, result.accessToken, result.refreshToken);
+      setSessionCookie(cookie, result.token);
       // Best-effort: a mail outage shouldn't block sign-up; the user can resend from the gate.
       if (!result.user.emailVerified) {
         try {
@@ -53,7 +45,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
           logger.error({ err: error, userId: result.user.id }, "Failed to send verification email");
         }
       }
-      return result;
+      return { user: result.user };
     },
     {
       body: RegisterSchema,
@@ -62,7 +54,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       detail: {
         summary: "Register a new account",
         description:
-          "Creates a new user with empty profile fields, sets access and refresh token cookies, and returns the public user with freshly issued tokens.",
+          "Creates a new user with empty profile fields, opens a session in the httpOnly `session` cookie, and returns the public user.",
       },
     },
   )
@@ -70,8 +62,8 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
     "/login",
     async ({ body, cookie }) => {
       const result = await authService.login(body);
-      setAuthCookies(cookie, result.accessToken, result.refreshToken);
-      return result;
+      setSessionCookie(cookie, result.token);
+      return { user: result.user };
     },
     {
       body: LoginSchema,
@@ -80,34 +72,15 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       detail: {
         summary: "Log in with credentials",
         description:
-          "Verifies the email and password, sets access and refresh token cookies, and returns the public user with freshly issued tokens.",
-      },
-    },
-  )
-  .post(
-    "/refresh",
-    async ({ cookie }) => {
-      const raw = cookie[REFRESH_COOKIE]?.value;
-      const result = await authService.rotateRefresh(typeof raw === "string" ? raw : "");
-      setAuthCookies(cookie, result.accessToken, result.refreshToken);
-      return result;
-    },
-    {
-      beforeHandle: limitRefresh,
-      response: authSessionSchema,
-      detail: {
-        summary: "Rotate refresh token",
-        description:
-          "Validates the refresh token cookie, revokes the old refresh token, sets new access and refresh token cookies, and returns the public user with freshly issued tokens.",
+          "Verifies the email and password, opens a session in the httpOnly `session` cookie, and returns the public user.",
       },
     },
   )
   .post(
     "/logout",
     async ({ cookie }) => {
-      const raw = cookie[REFRESH_COOKIE]?.value;
-      await authService.logout(typeof raw === "string" ? raw : "");
-      clearAuthCookies(cookie);
+      await authService.logout(readSessionCookie(cookie));
+      clearSessionCookie(cookie);
       return { ok: true as const };
     },
     {
@@ -115,7 +88,7 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
       detail: {
         summary: "Log out current session",
         description:
-          "Revokes the refresh token from the cookie, clears the auth cookies, and returns an acknowledgement.",
+          "Revokes the session from the cookie, clears the cookie, and returns an acknowledgement.",
       },
     },
   )
@@ -171,37 +144,11 @@ export const authController = new Elysia({ prefix: "/auth", detail: { tags: ["Au
         "Returns the authenticated user's public account details along with their associated profile.",
     },
   })
-  .get("/tokens", ({ user }) => apiTokenService.list(user.id), {
-    response: apiTokenListSchema,
-    detail: {
-      summary: "List agent API tokens",
-      description:
-        "Returns the authenticated user's active (non-revoked) personal access tokens with their metadata, excluding the secret token values.",
-    },
-  })
-  .post("/tokens", ({ user, body }) => apiTokenService.mint(user.id, body), {
-    body: ApiTokenCreateSchema,
-    response: apiTokenMintedSchema,
-    detail: {
-      summary: "Create agent API token",
-      description:
-        "Mints a new personal access token for the authenticated user and returns its details including the raw token, which is shown only once.",
-    },
-  })
-  .post("/tokens/terminal", ({ user }) => apiTokenService.getOrCreateTerminalToken(user.id), {
-    response: apiTokenMintedSchema,
+  .post("/tokens/terminal", ({ user }) => authTokens.getOrCreateTerminalToken(user.id), {
+    response: terminalTokenSchema,
     detail: {
       summary: "Get or create the agent terminal token",
       description:
         "Returns the authenticated user's single reusable terminal token, provisioning it on first use. The raw token is stored encrypted at rest, so the same value is returned on every call - the web sends it to the local terminal host on session start.",
-    },
-  })
-  .delete("/tokens/:id", ({ user, params }) => apiTokenService.revoke(user.id, params.id), {
-    params: idParam,
-    response: okResponseSchema,
-    detail: {
-      summary: "Revoke agent API token",
-      description:
-        "Revokes the specified personal access token owned by the authenticated user and returns an acknowledgement.",
     },
   });

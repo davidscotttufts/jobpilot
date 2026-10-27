@@ -10,9 +10,8 @@ const EnvSchema = z.object({
 
   DATABASE_URL: z.string().min(1),
 
-  JWT_SECRET: z.string().min(1),
-  JWT_EXPIRY: z.string().default("1d"),
-  REFRESH_TOKEN_EXPIRY: z.string().default("30d"),
+  // How long a web session stays valid after sign-in.
+  SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
   // Master key wrapping per-user DEKs (`openssl rand -base64 32`); rotating it re-wraps DEKs, not the data.
   SECRET_MASTER_KEY: z

@@ -1,12 +1,16 @@
 import type { OAuthErrorReason } from "@jobpilot/contracts/auth";
 import { Elysia } from "elysia";
-import { flowFailureReason, generateOpaqueToken, oauthStateCookies } from "@/common/auth";
+import {
+  flowFailureReason,
+  generateOpaqueToken,
+  oauthStateCookies,
+  setSessionCookie,
+} from "@/common/auth";
 import { container } from "@/common/di/container";
 import { authGuard, resolveAuthUser } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { env } from "@/env";
 import { okResponseSchema } from "@/types/response";
-import { setAuthCookies } from "./auth.cookies";
 import { oauthCallbackQuery, oauthProviderParams, oauthStartQuery } from "./auth.schema";
 import { OAuthService } from "./oauth.service";
 
@@ -88,7 +92,7 @@ export const authProvidersController = new Elysia({
       try {
         const result = await oauthService.handleLogin(params.provider, query.code);
         stateCookies.clear();
-        setAuthCookies(cookie, result.accessToken, result.refreshToken);
+        setSessionCookie(cookie, result.token);
         // Same landing as form login; the proxy bounces new users on to onboarding.
         return redirect(`${env.APP_URL}/workspace`);
       } catch (e) {

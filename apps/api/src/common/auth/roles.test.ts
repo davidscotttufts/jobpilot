@@ -23,7 +23,7 @@ describe("role ladder", () => {
   });
 
   it("rejects a role that is not on the ladder", () => {
-    // The JWT claim is untrusted, so this is the case that matters.
+    // An unknown role string must never satisfy a requirement.
     expect(hasRole(undefined, "USER")).toBe(false);
     expect(hasRole("", "USER")).toBe(false);
     expect(hasRole("root", "USER")).toBe(false);

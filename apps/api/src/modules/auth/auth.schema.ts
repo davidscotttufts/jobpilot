@@ -24,11 +24,9 @@ export const publicUserSchema = z.object({
   createdAt: z.date(),
 });
 
-/** Auth result returned by register/login/refresh - public user plus a fresh token pair. */
+/** Register/login result: the public user. The session itself rides the httpOnly cookie. */
 export const authSessionSchema = z.object({
   user: publicUserSchema,
-  accessToken: z.string(),
-  refreshToken: z.string(),
 });
 
 /**
@@ -72,24 +70,9 @@ export const meSchema = publicUserSchema.extend({
   updatedAt: z.date(),
 });
 
-/**
- * An active personal access token row (mirrors `ApiTokenService.list`'s select).
- * The service returns raw Prisma rows, so date fields are `Date` objects.
- */
-const apiTokenSummarySchema = z.object({
+/** The agent's reusable terminal token (mirrors `AuthTokenService.getOrCreateTerminalToken`). */
+export const terminalTokenSchema = z.object({
   id: z.uuid(),
-  name: z.string(),
-  lastUsedAt: z.date().nullable(),
-  expiresAt: z.date().nullable(),
-  createdAt: z.date(),
-});
-
-export const apiTokenListSchema = z.array(apiTokenSummarySchema);
-
-/** A freshly minted token (mirrors `ApiTokenService.mint`) - the raw token is shown once. */
-export const apiTokenMintedSchema = z.object({
-  id: z.uuid(),
-  name: z.string(),
   token: z.string(),
   createdAt: z.date(),
 });

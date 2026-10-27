@@ -192,9 +192,9 @@ export class AdminService {
         _max: { updatedAt: true },
       }),
       // The agent token's last use is the best sign the account actually runs JobPilot.
-      this.prisma.apiToken.groupBy({
+      this.prisma.authToken.groupBy({
         by: ["userId"],
-        where: { userId: { in: userIds } },
+        where: { userId: { in: userIds }, kind: "terminal" },
         _max: { lastUsedAt: true },
       }),
     ]);

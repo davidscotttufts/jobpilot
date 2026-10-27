@@ -1,6 +1,7 @@
 import { DAY_MS } from "@/common/date/buckets";
 import {
   applicationEventWhere,
+  authTokenWhere,
   cutoffs,
   emailBodyWhere,
   journalDigestOldWhere,
@@ -8,7 +9,6 @@ import {
   promotionPostWhere,
   questionTerminalWhere,
   RETENTION_DAYS,
-  refreshTokenWhere,
   resumeVariantWhere,
   runDiscoverWhere,
   runFinishedWhere,
@@ -90,8 +90,8 @@ describe("where-builders", () => {
     });
   });
 
-  it("refreshTokenWhere matches expiry or revocation past grace", () => {
-    expect(refreshTokenWhere(c)).toEqual({
+  it("authTokenWhere matches expiry or revocation past grace", () => {
+    expect(authTokenWhere(c)).toEqual({
       OR: [{ expiresAt: { lt: c.token } }, { revokedAt: { lt: c.token } }],
     });
   });

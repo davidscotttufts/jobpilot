@@ -1,11 +1,5 @@
-import type { AuthUser } from "@/common/auth";
 import type { OAuthProvider, User } from "@/generated/prisma/client";
 import { wireProvider } from "./oauth-providers";
-
-/** The principal carried on a request (authGuard derive, access-token subject). */
-export function principal(user: User): AuthUser {
-  return { id: user.id, role: user.role, email: user.email };
-}
 
 /** The public-safe view of a user returned to clients. */
 export function publicUser(user: User) {

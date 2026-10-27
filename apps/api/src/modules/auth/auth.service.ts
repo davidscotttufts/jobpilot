@@ -1,44 +1,25 @@
 import type { LoginInput, RegisterInput } from "@jobpilot/contracts";
 import { inject, injectable } from "@needle-di/core";
-import {
-  durationToMs,
-  generateOpaqueToken,
-  hashPassword,
-  hashToken,
-  signAccessToken,
-  verifyPassword,
-} from "@/common/auth";
+import { hashPassword, verifyPassword } from "@/common/auth";
 import { conflict, isPrismaError, notFound, PRISMA_ERRORS, unauthorized } from "@/common/errors";
 import { normalizeEmail } from "@/common/utils/email";
 import { randomUsername } from "@/common/utils/username";
 import { env } from "@/env";
 import { PrismaClient, type User, type UserRole } from "@/generated/prisma/client";
-import { meUser, principal, publicUser } from "./auth.mapper";
+import { meUser, publicUser } from "./auth.mapper";
+import { AuthTokenService } from "./auth-token.service";
 
-const REFRESH_TTL_MS = durationToMs(env.REFRESH_TOKEN_EXPIRY, 30 * 86_400_000);
-
-/** Email/password accounts and refresh-token sessions. */
+/** Email/password accounts and the sessions they open. */
 @injectable()
 export class AuthService {
-  constructor(private readonly prisma: PrismaClient = inject(PrismaClient)) {}
+  constructor(
+    private readonly prisma: PrismaClient = inject(PrismaClient),
+    private readonly tokens = inject(AuthTokenService),
+  ) {}
 
-  /** Mint an access JWT + a persisted (hashed) rotating refresh token. */
-  private async issueTokens(user: User) {
-    const accessToken = await signAccessToken(principal(user));
-    const refreshToken = generateOpaqueToken();
-    await this.prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: hashToken(refreshToken),
-        expiresAt: new Date(Date.now() + REFRESH_TTL_MS),
-      },
-    });
-    return { accessToken, refreshToken };
-  }
-
-  /** Build the standard auth response: public user + a fresh token pair. */
+  /** The public user plus a new session token for the controller to set as the cookie. */
   async issueSession(user: User) {
-    return { user: publicUser(user), ...(await this.issueTokens(user)) };
+    return { user: publicUser(user), token: await this.tokens.createSession(user.id) };
   }
 
   async register(input: RegisterInput) {
@@ -118,36 +99,10 @@ export class AuthService {
     return this.issueSession(user);
   }
 
-  /** Validate + rotate a refresh token; revoke the old one. */
-  async rotateRefresh(rawRefresh: string) {
-    if (!rawRefresh) {
-      throw unauthorized("Missing refresh token");
+  async logout(rawSession: string | undefined): Promise<void> {
+    if (rawSession) {
+      await this.tokens.revoke(rawSession);
     }
-    const record = await this.prisma.refreshToken.findUnique({
-      where: { tokenHash: hashToken(rawRefresh) },
-    });
-    if (!record || record.revokedAt || record.expiresAt < new Date()) {
-      throw unauthorized("Invalid or expired refresh token");
-    }
-    const user = await this.prisma.user.findUnique({ where: { id: record.userId } });
-    if (!user) {
-      throw unauthorized("Invalid refresh token");
-    }
-    await this.prisma.refreshToken.update({
-      where: { id: record.id },
-      data: { revokedAt: new Date() },
-    });
-    return this.issueSession(user);
-  }
-
-  async logout(rawRefresh: string): Promise<void> {
-    if (!rawRefresh) {
-      return;
-    }
-    await this.prisma.refreshToken.updateMany({
-      where: { tokenHash: hashToken(rawRefresh), revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
   }
 
   async me(userId: string) {

@@ -24,10 +24,6 @@ export const RegisterSchema = z.object({
   password: PasswordSchema,
 });
 
-export const ApiTokenCreateSchema = z.object({
-  name: z.string().min(1).max(100),
-});
-
 export const VerifyEmailSchema = z.object({
   token: z.string().min(1),
 });
@@ -40,6 +36,9 @@ export const ResetPasswordSchema = z.object({
   token: z.string().min(1),
   password: PasswordSchema,
 });
+
+/** Every bearer credential kind: a web session (cookie) or the agent's terminal token. */
+export const AUTH_TOKEN_KINDS = ["session", "terminal"] as const;
 
 /** Wire values for sign-in providers (lowercase; the API maps to the Prisma enum). */
 export const OAuthProviderSchema = z.enum(["google", "github"]);
@@ -80,7 +79,6 @@ export const ConfirmEmailChangeSchema = z.object({
 
 export type LoginInput = z.infer<typeof LoginSchema>;
 export type RegisterInput = z.infer<typeof RegisterSchema>;
-export type ApiTokenCreateInput = z.infer<typeof ApiTokenCreateSchema>;
 export type VerifyEmailInput = z.infer<typeof VerifyEmailSchema>;
 export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;

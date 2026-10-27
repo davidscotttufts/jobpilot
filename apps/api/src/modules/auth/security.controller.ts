@@ -8,7 +8,6 @@ import { container } from "@/common/di/container";
 import { authGuard } from "@/common/middleware";
 import { RATE_LIMITS, rateLimit } from "@/common/rate-limit";
 import { okResponseSchema } from "@/types/response";
-import { REFRESH_COOKIE } from "./auth.cookies";
 import { SecurityService } from "./security.service";
 import { VerificationService } from "./verification.service";
 
@@ -33,10 +32,7 @@ export const securityController = new Elysia({ prefix: "/auth", detail: { tags: 
   .use(authGuard)
   .post(
     "/password/change",
-    ({ user, body, cookie }) => {
-      const raw = cookie[REFRESH_COOKIE]?.value;
-      return securityService.changePassword(user.id, body, typeof raw === "string" ? raw : null);
-    },
+    ({ user, body }) => securityService.changePassword(user.id, body, user.tokenId),
     {
       body: ChangePasswordSchema,
       beforeHandle: limitPasswordChange,

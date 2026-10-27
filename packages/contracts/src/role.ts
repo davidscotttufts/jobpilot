@@ -15,7 +15,7 @@ const RANK: Record<Role, number> = { USER: 0, ADMIN: 1, SUPER_ADMIN: 2 };
 
 /**
  * Does `actual` satisfy `required`? Shared by the API guard and the web nav, so the ladder is
- * defined once. `actual` is a raw string (an untrusted JWT claim): anything off the ladder fails.
+ * defined once. `actual` is a raw string (from the request principal): anything off the ladder fails.
  */
 export function hasRole(actual: string | undefined, required: Role): boolean {
   const rank = RANK[actual as Role];

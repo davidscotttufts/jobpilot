@@ -5,6 +5,7 @@ import { conflict, notFound } from "@/common/errors";
 import { env } from "@/env";
 import { type OAuthProvider, PrismaClient } from "@/generated/prisma/client";
 import { AuthService } from "./auth.service";
+import { AuthTokenService } from "./auth-token.service";
 import { canUnlink, resolveOAuthLogin } from "./oauth-login";
 import {
   dbProvider,
@@ -12,7 +13,6 @@ import {
   type OAuthProviderConfig,
   signInProviders,
 } from "./oauth-providers";
-import { revokeRefreshTokens } from "./revoke-refresh-tokens";
 
 /** Google/GitHub sign-in. Identity only: no provider tokens stored, `wrappedDek` untouched. */
 @injectable()
@@ -20,6 +20,7 @@ export class OAuthService {
   constructor(
     private readonly prisma: PrismaClient = inject(PrismaClient),
     private readonly authService = inject(AuthService),
+    private readonly tokens = inject(AuthTokenService),
   ) {}
 
   private getConfig(provider: OAuthProviderInput): OAuthProviderConfig {
@@ -92,7 +93,7 @@ export class OAuthService {
         // access (account pre-hijacking). The owner can set a new password from account security.
         const [, , user] = await this.prisma.$transaction([
           this.linkAccount(decision.userId, provider, profile),
-          revokeRefreshTokens(this.prisma, decision.userId),
+          this.tokens.revokeAll(decision.userId),
           this.prisma.user.update({
             where: { id: decision.userId },
             data: { emailVerified: true, passwordHash: null },

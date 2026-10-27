@@ -4,6 +4,33 @@ import { env } from "@/env";
 type CookieJar = Record<string, Cookie<unknown>>;
 
 const isProduction = env.NODE_ENV === "production";
+const SESSION_COOKIE = "session";
+const sessionOptions = {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: isProduction,
+  path: "/",
+} as const;
+
+/** The raw session token from the httpOnly cookie, if any. */
+export function readSessionCookie(
+  cookie: Record<string, Cookie<unknown> | undefined>,
+): string | undefined {
+  const value = cookie[SESSION_COOKIE]?.value;
+  return typeof value === "string" && value ? value : undefined;
+}
+
+export function setSessionCookie(cookie: CookieJar, token: string): void {
+  cookie[SESSION_COOKIE]!.set({
+    ...sessionOptions,
+    maxAge: env.SESSION_TTL_DAYS * 86_400,
+    value: token,
+  });
+}
+
+export function clearSessionCookie(cookie: CookieJar): void {
+  cookie[SESSION_COOKIE]!.set({ ...sessionOptions, maxAge: 0, value: "" });
+}
 
 /**
  * The short-lived httpOnly cookies backing an OAuth redirect flow: the CSRF state, plus an optional
