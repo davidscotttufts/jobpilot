@@ -2,10 +2,10 @@
 -- resolver's matching (host, parent domains, bare name + .com) is TypeScript, so
 -- scripts/link-boards.ts runs first against the old schema: it creates any missing catalog rows,
 -- merges credentials that resolve to the same board, and fills "board_links" (raw string ->
--- job_boards.id). This migration then only joins on it.
+-- job_boards.id, null for a label that is no hostname). This migration then only joins on it.
 
 -- A fresh database never ran the script and has no rows to link.
-CREATE TABLE IF NOT EXISTS "board_links" ("raw" TEXT PRIMARY KEY, "job_board_id" TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS "board_links" ("raw" TEXT PRIMARY KEY, "job_board_id" TEXT);
 
 -- Refuse to drop a board string the script did not link: nothing below has run yet.
 DO $$
@@ -81,8 +81,8 @@ UPDATE "credentials" SET "kind" = 'default' WHERE "scope" = 'default';
 UPDATE "credentials" SET "kind" = 'service', "provider" = 'two_captcha' WHERE "scope" = '2captcha';
 UPDATE "credentials" SET "kind" = 'service', "provider" = 'capsolver' WHERE "scope" = 'capsolver';
 UPDATE "credentials" t SET "kind" = 'board', "job_board_id" = l."job_board_id" FROM "board_links" l
-WHERE t."kind" IS NULL AND l."raw" = t."scope";
--- Only an empty scope is left, which never resolved to a login.
+WHERE t."kind" IS NULL AND l."raw" = t."scope" AND l."job_board_id" IS NOT NULL;
+-- Left: empty scopes and ones that are no hostname; neither ever resolved to a login.
 DELETE FROM "credentials" WHERE "kind" IS NULL;
 
 DROP INDEX "credentials_user_id_scope_key";

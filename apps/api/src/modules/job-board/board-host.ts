@@ -1,34 +1,34 @@
 import { canonicalHost } from "@/common/utils/url";
+import type { Prisma } from "@/generated/prisma/client";
 
-/** Agents store `https://www.naukri.com/`, `naukri.com` or `linkedin` alike; reduce to the host. */
-export function boardHost(board: string): string {
-  const host = board
-    .trim()
-    .toLowerCase()
-    .replace(/^[a-z]+:\/\//, "")
-    .split("/")[0];
-  return canonicalHost(host);
-}
+/** Dot-separated hostname labels; rejects source labels agents sometimes store as a board. */
+const HOSTNAME = /^[a-z0-9-]+(\.[a-z0-9-]+)*$/;
 
-/** The host, then each parent domain (`in.indeed.com` -> `indeed.com`), then a bare name + `.com`. */
-export function hostCandidates(host: string): string[] {
-  const labels = host.split(".");
-  if (labels.length === 1) {
-    return [host, `${host}.com`];
+/**
+ * A board's identity: agents store `https://www.naukri.com/`, `naukri.com` or `linkedin` alike,
+ * so reduce to the host, and a bare name to `<name>.com`. Exact, never a parent domain: Workday
+ * tenants (`cisco.wd5.myworkdayjobs.com`) are separate boards with separate logins. Null when the
+ * input is no hostname at all (`indeed_priority`, `Doxel first-party Lever`).
+ */
+export function boardDomain(input: string): string | null {
+  const host = canonicalHost(
+    input
+      .trim()
+      .toLowerCase()
+      .replace(/^[a-z]+:\/\//, "")
+      .split("/")[0],
+  );
+  if (!HOSTNAME.test(host)) {
+    return null;
   }
-  const candidates: string[] = [];
-  for (let start = 0; start <= labels.length - 2; start++) {
-    candidates.push(labels.slice(start).join("."));
-  }
-  return candidates;
-}
-
-/** The domain a board unknown to the catalog is added under: a bare name becomes `<name>.com`. */
-export function newBoardDomain(host: string): string {
   return host.includes(".") ? host : `${host}.com`;
 }
 
-/** A `where` on the board relation matching what `JobBoardService.find` would resolve. */
-export function boardFilter(input: string) {
-  return { domain: { in: hostCandidates(boardHost(input)) } };
+/** A board filter: the domain and its subdomains, so `indeed.com` also finds `in.indeed.com`. */
+export function boardFilter(input: string): Prisma.JobBoardWhereInput {
+  const domain = boardDomain(input);
+  if (!domain) {
+    return { domain: { in: [] } };
+  }
+  return { OR: [{ domain }, { domain: { endsWith: `.${domain}` } }] };
 }

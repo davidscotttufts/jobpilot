@@ -2,7 +2,7 @@ import type { JobBoardInput } from "@jobpilot/contracts/job-board";
 import { inject, injectable } from "@needle-di/core";
 import { findOwned, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { boardHost, hostCandidates, newBoardDomain } from "./board-host";
+import { boardDomain } from "./board-host";
 
 /** How a board appears inside another resource's response. */
 export const BOARD_REF_SELECT = {
@@ -58,26 +58,21 @@ export class JobBoardService {
     });
   }
 
-  /**
-   * The catalog row a board string names, by its host then each parent domain, or null. Read-only:
-   * filters use it, so a typo in `?board=` never adds a catalog row.
-   */
+  /** The catalog row a board string names, or null. Read-only, so a typo never adds a row. */
   async find(input: string): Promise<BoardRef | null> {
-    const host = boardHost(input);
-    return host ? this.findByHost(host) : null;
+    const domain = boardDomain(input);
+    if (!domain) {
+      return null;
+    }
+    return this.prisma.jobBoard.findUnique({ where: { domain }, select: BOARD_REF_SELECT });
   }
 
   /** `find`, else a new unlisted row: every write that takes a board string goes through this. */
   async resolve(input: string, fields: NewBoardFields = {}): Promise<BoardRef> {
-    const host = boardHost(input);
-    if (!host) {
-      throw unprocessable("Board domain is empty.");
+    const domain = boardDomain(input);
+    if (!domain) {
+      throw unprocessable(`"${input}" is not a board domain.`);
     }
-    const found = await this.findByHost(host);
-    if (found) {
-      return found;
-    }
-    const domain = newBoardDomain(host);
     // An unknown domain enters the catalog unlisted: admins see it, other users are not offered it.
     // Upsert, since two agents can report the same new board at once.
     return this.prisma.jobBoard.upsert({
@@ -88,28 +83,12 @@ export class JobBoardService {
     });
   }
 
-  /** `resolve` for a nullable board field, down to the id a foreign key stores. */
+  /** `resolve` for a nullable board field; a label that is no hostname stores no board. */
   async resolveId(input: string | null): Promise<string | null> {
-    if (input === null || !boardHost(input)) {
+    if (input === null || !boardDomain(input)) {
       return null;
     }
     return (await this.resolve(input)).id;
-  }
-
-  private async findByHost(host: string): Promise<BoardRef | null> {
-    const candidates = hostCandidates(host);
-    const rows = await this.prisma.jobBoard.findMany({
-      where: { domain: { in: candidates } },
-      select: BOARD_REF_SELECT,
-    });
-    // Most specific first: a catalog row for `in.indeed.com` beats `indeed.com`.
-    for (const candidate of candidates) {
-      const row = rows.find((r) => r.domain === candidate);
-      if (row) {
-        return row;
-      }
-    }
-    return null;
   }
 
   /** The boards with the most applications matching `where`, by name. */

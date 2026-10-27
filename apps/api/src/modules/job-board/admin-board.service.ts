@@ -1,9 +1,18 @@
 import type { AdminBoardInput, AdminBoardPatch } from "@jobpilot/contracts/job-board";
 import { type PaginationQuery, pageSlice, paginate } from "@jobpilot/contracts/pagination";
 import { inject, injectable } from "@needle-di/core";
-import { conflict, isPrismaError, PRISMA_ERRORS } from "@/common/errors";
+import { conflict, isPrismaError, PRISMA_ERRORS, unprocessable } from "@/common/errors";
 import { type Prisma, PrismaClient } from "@/generated/prisma/client";
-import { boardHost } from "./board-host";
+import { boardDomain } from "./board-host";
+
+/** Stored in resolver form, so an agent reporting any spelling of it lands on this row. */
+function catalogDomain(input: string): string {
+  const domain = boardDomain(input);
+  if (!domain) {
+    throw unprocessable(`"${input}" is not a board domain.`);
+  }
+  return domain;
+}
 
 /** How many profiles have linked the board - the only thing the catalog view adds to the row. */
 const WITH_ADOPTION = { _count: { select: { userBoards: true } } } as const;
@@ -50,9 +59,8 @@ export class AdminBoardService {
   }
 
   async create(input: AdminBoardInput) {
-    // Stored as a bare host so the resolver matches it whatever form an agent reports.
     const board = await this.prisma.jobBoard.create({
-      data: { ...input, domain: boardHost(input.domain) },
+      data: { ...input, domain: catalogDomain(input.domain) },
     });
     if (board.isDefault) {
       await this.backfillDefault(board.id);
@@ -67,7 +75,7 @@ export class AdminBoardService {
     });
     await this.prisma.jobBoard.update({
       where: { id },
-      data: { ...input, domain: input.domain && boardHost(input.domain) },
+      data: { ...input, domain: input.domain && catalogDomain(input.domain) },
     });
     if (!before.isDefault && input.isDefault) {
       await this.backfillDefault(id);

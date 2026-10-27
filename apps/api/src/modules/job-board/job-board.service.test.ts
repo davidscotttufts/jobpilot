@@ -14,11 +14,12 @@ function makeService() {
   const links: Record<string, unknown>[] = [];
   const db = {
     jobBoard: {
-      findMany: async ({ where }: { where: { domain: { in: string[] } } }) =>
-        CATALOG.filter((row) => where.domain.in.includes(row.domain)),
-      upsert: async (args: Record<string, unknown>) => {
+      findUnique: async ({ where }: { where: { domain: string } }) =>
+        CATALOG.find((row) => row.domain === where.domain) ?? null,
+      // Mirrors `update: {}`: an existing row comes back untouched.
+      upsert: async (args: { where: { domain: string } }) => {
         upserts.push(args);
-        return { id: "new" };
+        return CATALOG.find((row) => row.domain === args.where.domain) ?? { id: "new" };
       },
     },
     userJobBoard: {
@@ -43,7 +44,7 @@ describe("JobBoardService", () => {
   it("links by domain without touching the catalog row", async () => {
     const { svc, upserts, links } = makeService();
     await svc.create("u1", { domain: "linkedin.com", name: "ignored" });
-    expect(upserts).toEqual([]);
+    expect(upserts[0]).toMatchObject({ where: { domain: "linkedin.com" }, update: {} });
     expect(links[0]).toEqual({ userId: "u1", jobBoardId: "b1" });
   });
 
@@ -58,18 +59,29 @@ describe("JobBoardService", () => {
 });
 
 describe("JobBoardService.resolve", () => {
-  it("matches a URL, a regional subdomain or a bare name to its catalog row", async () => {
+  it("lands a URL or a bare name on the catalog row's exact domain", async () => {
+    const { svc } = makeService();
+    expect((await svc.resolve("https://www.LinkedIn.com/jobs/")).id).toBe("b1");
+    expect((await svc.resolve("linkedin")).id).toBe("b1");
+  });
+
+  it("keeps a subdomain as its own board instead of folding it into the parent", async () => {
     const { svc, upserts } = makeService();
-    expect((await svc.resolve("https://www.LinkedIn.com/jobs/"))?.id).toBe("b1");
-    expect((await svc.resolve("fr.indeed.com"))?.id).toBe("b2");
-    expect((await svc.resolve("linkedin"))?.id).toBe("b1");
-    expect(upserts).toEqual([]);
+    expect((await svc.resolve("cisco.wd5.myworkdayjobs.com")).id).toBe("new");
+    expect(upserts[0]).toMatchObject({ where: { domain: "cisco.wd5.myworkdayjobs.com" } });
   });
 
   it("adds an unknown bare name as its .com domain", async () => {
     const { svc, upserts } = makeService();
     await svc.resolve("naukri");
     expect(upserts[0]).toMatchObject({ create: { domain: "naukri.com", name: "naukri.com" } });
+  });
+
+  it("refuses a label that is no hostname, and stores no board for it", async () => {
+    const { svc, upserts } = makeService();
+    await expect(svc.resolve("indeed_priority")).rejects.toMatchObject({ status: 422 });
+    expect(await svc.resolveId("Doxel first-party Lever")).toBeNull();
+    expect(upserts).toEqual([]);
   });
 
   it("finds nothing for a board the catalog has never seen, without creating it", async () => {
